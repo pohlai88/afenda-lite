@@ -103,6 +103,30 @@ queries:
   - id: human-resources.offer.list
     moduleId: human-resources
     permission: human-resources.offer.approve
+  - id: human-resources.onboarding-case.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-tasks.list
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.probation-review.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.employment-confirmation.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.termination.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-case.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-tasks.list
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.clearance.get-by-offboarding-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read

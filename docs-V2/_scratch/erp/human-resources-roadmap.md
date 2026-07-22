@@ -190,16 +190,18 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 
 ---
 
-### HR6 — Lifecycle slice (onboarding → offboarding)
+### HR6 / mission HR-05 — Lifecycle slice (onboarding → offboarding) — **DONE** (2026-07-22)
 
 | | |
 | --- | --- |
 | **Depends on** | HR5 |
-| **In scope** | DDL for lifecycle tables (`hr_onboarding_case` … `hr_clearance`); probation, confirmation, transfer, termination, offboarding commands; emits through `offboarding.completed.v1` |
+| **In scope** | DDL `0039_hr_lifecycle_ddl` for `hr_onboarding_case` … `hr_clearance` + `hr_employment_movement`; probation, confirmation, transfer, termination, offboarding commands; emits through `offboarding.completed.v1` |
 | **Out of scope** | Admin auth revoke (app saga); payroll final pay |
 | **Reference** | Scratch §2 onboarding/offboarding; termination → event → saga diagram |
-| **Verify** | `pnpm --filter @afenda/human-resources test` |
-| **Done when** | Happy path: offer accepted → employee created → onboarding complete → termination → offboarding complete with events |
+| **Verify** | `pnpm --filter @afenda/human-resources check` · `pnpm validate:modules` · `pnpm governance:packages` |
+| **Done when** | Happy path: employee + employment → onboarding complete → probation → confirmation → transfer → termination → offboarding complete with events |
+| **Evidence** | Domain statuses + FKs/uniques on ten lifecycle tables; memory + drizzle stores; lifecycle test matrix; same-org transfer only; no Auth/Payroll package writes; lifecycle stays `scaffolded` |
+| **Mission alias** | Chat mission **HR-05** |
 
 ---
 

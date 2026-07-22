@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	type AnyPgColumn,
+	boolean,
 	date,
 	index,
 	integer,
@@ -299,8 +300,56 @@ export const hrReportingLine = pgTable(
 	],
 );
 
-export const hrEmploymentMovement = createErpScaffoldTable(
+export const hrEmploymentMovement = pgTable(
 	"hr_employment_movement",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** transfer */
+		movementKind: text("movement_kind").notNull(),
+		fromAssignmentId: uuid("from_assignment_id")
+			.notNull()
+			.references(() => hrWorkAssignment.id),
+		toAssignmentId: uuid("to_assignment_id")
+			.notNull()
+			.references(() => hrWorkAssignment.id),
+		fromPositionId: uuid("from_position_id")
+			.notNull()
+			.references(() => hrPosition.id),
+		toPositionId: uuid("to_position_id")
+			.notNull()
+			.references(() => hrPosition.id),
+		effectiveOn: date("effective_on", { mode: "string" }).notNull(),
+		reason: text("reason").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_movement_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employment_movement_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_employment_movement_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
 );
 
 export const hrJobRequisition = pgTable(
@@ -525,17 +574,361 @@ export const hrEmploymentOffer = pgTable(
 	],
 );
 
-export const hrOnboardingCase = createErpScaffoldTable("hr_onboarding_case");
-export const hrOnboardingTask = createErpScaffoldTable("hr_onboarding_task");
-export const hrProbationReview = createErpScaffoldTable("hr_probation_review");
-export const hrEmploymentConfirmation = createErpScaffoldTable(
-	"hr_employment_confirmation",
+export const hrOnboardingCase = pgTable(
+	"hr_onboarding_case",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** in_progress | completed | cancelled */
+		status: text("status").notNull(),
+		sourceOfferId: uuid("source_offer_id").references(
+			() => hrEmploymentOffer.id,
+		),
+		startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_onboarding_case_org_id_idx").on(t.organizationId, t.id),
+		index("hr_onboarding_case_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_onboarding_case_org_employment_open_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'in_progress'`),
+		uniqueIndex("hr_onboarding_case_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
 );
-export const hrTermination = createErpScaffoldTable("hr_termination");
-export const hrOffboardingCase = createErpScaffoldTable("hr_offboarding_case");
-export const hrOffboardingTask = createErpScaffoldTable("hr_offboarding_task");
-export const hrExitInterview = createErpScaffoldTable("hr_exit_interview");
-export const hrClearance = createErpScaffoldTable("hr_clearance");
+
+export const hrOnboardingTask = pgTable(
+	"hr_onboarding_task",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		caseId: uuid("case_id")
+			.notNull()
+			.references(() => hrOnboardingCase.id),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		mandatory: boolean("mandatory").notNull(),
+		/** pending | completed | waived */
+		status: text("status").notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_onboarding_task_org_id_idx").on(t.organizationId, t.id),
+		index("hr_onboarding_task_org_case_idx").on(t.organizationId, t.caseId),
+		uniqueIndex("hr_onboarding_task_org_case_code_uidx").on(
+			t.organizationId,
+			t.caseId,
+			t.code,
+		),
+	],
+);
+
+export const hrProbationReview = pgTable(
+	"hr_probation_review",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** open | closed */
+		status: text("status").notNull(),
+		startsOn: date("starts_on", { mode: "string" }).notNull(),
+		endsOn: date("ends_on", { mode: "string" }).notNull(),
+		/** null while open; passed | failed when closed */
+		outcome: text("outcome"),
+		outcomeActorId: text("outcome_actor_id"),
+		outcomeRecordedOn: date("outcome_recorded_on", { mode: "string" }),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_probation_review_org_id_idx").on(t.organizationId, t.id),
+		index("hr_probation_review_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_probation_review_org_employment_open_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'open'`),
+		uniqueIndex("hr_probation_review_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrEmploymentConfirmation = pgTable(
+	"hr_employment_confirmation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		confirmedOn: date("confirmed_on", { mode: "string" }).notNull(),
+		confirmedBy: text("confirmed_by").notNull(),
+		evidenceNote: text("evidence_note").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_confirmation_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_employment_confirmation_org_employment_uidx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_employment_confirmation_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrTermination = pgTable(
+	"hr_termination",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** draft | finalized */
+		status: text("status").notNull(),
+		reasonCode: text("reason_code").notNull(),
+		reasonDetail: text("reason_detail").notNull(),
+		effectiveOn: date("effective_on", { mode: "string" }).notNull(),
+		finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_termination_org_id_idx").on(t.organizationId, t.id),
+		index("hr_termination_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_termination_org_employment_finalized_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'finalized'`),
+		uniqueIndex("hr_termination_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrOffboardingCase = pgTable(
+	"hr_offboarding_case",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		terminationId: uuid("termination_id").references(() => hrTermination.id),
+		/** in_progress | completed | cancelled */
+		status: text("status").notNull(),
+		startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_offboarding_case_org_id_idx").on(t.organizationId, t.id),
+		index("hr_offboarding_case_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_offboarding_case_org_employment_open_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'in_progress'`),
+		uniqueIndex("hr_offboarding_case_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrOffboardingTask = pgTable(
+	"hr_offboarding_task",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		caseId: uuid("case_id")
+			.notNull()
+			.references(() => hrOffboardingCase.id),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		mandatory: boolean("mandatory").notNull(),
+		/** pending | completed | waived */
+		status: text("status").notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_offboarding_task_org_id_idx").on(t.organizationId, t.id),
+		index("hr_offboarding_task_org_case_idx").on(t.organizationId, t.caseId),
+		uniqueIndex("hr_offboarding_task_org_case_code_uidx").on(
+			t.organizationId,
+			t.caseId,
+			t.code,
+		),
+	],
+);
+
+export const hrExitInterview = pgTable(
+	"hr_exit_interview",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		offboardingCaseId: uuid("offboarding_case_id")
+			.notNull()
+			.references(() => hrOffboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		conductedOn: date("conducted_on", { mode: "string" }).notNull(),
+		notes: text("notes").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_exit_interview_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_exit_interview_org_case_uidx").on(
+			t.organizationId,
+			t.offboardingCaseId,
+		),
+	],
+);
+
+export const hrClearance = pgTable(
+	"hr_clearance",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		offboardingCaseId: uuid("offboarding_case_id")
+			.notNull()
+			.references(() => hrOffboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** pending | cleared */
+		status: text("status").notNull(),
+		clearedOn: date("cleared_on", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_clearance_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_clearance_org_case_uidx").on(
+			t.organizationId,
+			t.offboardingCaseId,
+		),
+	],
+);
 
 export const hrLearningCourse = createErpScaffoldTable("hr_learning_course");
 export const hrLearningProgram = createErpScaffoldTable("hr_learning_program");

@@ -2,17 +2,27 @@ import type {
 	HumanResourcesApplicationId,
 	HumanResourcesAssignmentId,
 	HumanResourcesCandidateId,
+	HumanResourcesClearanceId,
 	HumanResourcesDepartmentId,
 	HumanResourcesEmployeeId,
+	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
+	HumanResourcesEmploymentMovementId,
+	HumanResourcesExitInterviewId,
 	HumanResourcesInterviewEvaluationId,
 	HumanResourcesInterviewId,
 	HumanResourcesJobId,
+	HumanResourcesOffboardingCaseId,
+	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
+	HumanResourcesOnboardingCaseId,
+	HumanResourcesOnboardingTaskId,
 	HumanResourcesPositionId,
+	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
+	HumanResourcesTerminationId,
 } from "./brands";
 import type {
 	DepartmentStatus,
@@ -21,6 +31,16 @@ import type {
 	PositionStatus,
 	ReportingRelationshipKind,
 } from "./shared/employment-status";
+import type {
+	ClearanceStatus,
+	LifecycleTaskStatus,
+	MovementKind,
+	OffboardingCaseStatus,
+	OnboardingCaseStatus,
+	ProbationOutcome,
+	ProbationStatus,
+	TerminationStatus,
+} from "./shared/lifecycle-status";
 import type {
 	ApplicationStatus,
 	CandidateStatus,
@@ -303,4 +323,165 @@ export type OfferListPage = {
 	totalCount: number;
 	page: number;
 	pageSize: number;
+};
+
+export type OnboardingCase = {
+	id: HumanResourcesOnboardingCaseId;
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	status: OnboardingCaseStatus;
+	sourceOfferId: HumanResourcesOfferId | null;
+	startedAt: Date;
+	completedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OnboardingTask = {
+	id: HumanResourcesOnboardingTaskId;
+	organizationId: string;
+	caseId: HumanResourcesOnboardingCaseId;
+	code: string;
+	title: string;
+	mandatory: boolean;
+	status: LifecycleTaskStatus;
+	completedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ProbationReview = {
+	id: HumanResourcesProbationReviewId;
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	status: ProbationStatus;
+	startsOn: string;
+	endsOn: string;
+	outcome: ProbationOutcome | null;
+	outcomeActorId: string | null;
+	outcomeRecordedOn: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmploymentConfirmation = {
+	id: HumanResourcesEmploymentConfirmationId;
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	confirmedOn: string;
+	confirmedBy: string;
+	evidenceNote: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmploymentMovement = {
+	id: HumanResourcesEmploymentMovementId;
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	movementKind: MovementKind;
+	fromAssignmentId: HumanResourcesAssignmentId;
+	toAssignmentId: HumanResourcesAssignmentId;
+	fromPositionId: HumanResourcesPositionId;
+	toPositionId: HumanResourcesPositionId;
+	effectiveOn: string;
+	reason: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type Termination = {
+	id: HumanResourcesTerminationId;
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	status: TerminationStatus;
+	reasonCode: string;
+	reasonDetail: string;
+	effectiveOn: string;
+	finalizedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OffboardingCase = {
+	id: HumanResourcesOffboardingCaseId;
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	terminationId: HumanResourcesTerminationId | null;
+	status: OffboardingCaseStatus;
+	startedAt: Date;
+	completedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OffboardingTask = {
+	id: HumanResourcesOffboardingTaskId;
+	organizationId: string;
+	caseId: HumanResourcesOffboardingCaseId;
+	code: string;
+	title: string;
+	mandatory: boolean;
+	status: LifecycleTaskStatus;
+	completedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ExitInterview = {
+	id: HumanResourcesExitInterviewId;
+	organizationId: string;
+	offboardingCaseId: HumanResourcesOffboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	conductedOn: string;
+	notes: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type Clearance = {
+	id: HumanResourcesClearanceId;
+	organizationId: string;
+	offboardingCaseId: HumanResourcesOffboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	status: ClearanceStatus;
+	clearedOn: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
 };

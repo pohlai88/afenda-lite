@@ -67,6 +67,10 @@ import {
 	parseHumanResourcesRequisitionId,
 } from "./brands";
 import {
+	attachDrizzleLifecycle,
+	type DrizzleLifecycleMethods,
+} from "./drizzle-lifecycle";
+import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
@@ -1184,7 +1188,19 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-export class DrizzleHumanResourcesStore implements HumanResourcesStore {
+type DrizzleWorkforceStore = Omit<
+	HumanResourcesStore,
+	keyof DrizzleLifecycleMethods
+>;
+
+/** Drizzle store: workforce methods on the class; lifecycle methods attached at construct. */
+export class DrizzleHumanResourcesStore implements DrizzleWorkforceStore {
+	constructor() {
+		attachDrizzleLifecycle(
+			this as unknown as Parameters<typeof attachDrizzleLifecycle>[0],
+		);
+	}
+
 	async getEmployeeById(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
@@ -6420,6 +6436,6 @@ export class DrizzleHumanResourcesStore implements HumanResourcesStore {
 	}
 }
 
-export function createDrizzleHumanResourcesStore(): DrizzleHumanResourcesStore {
-	return new DrizzleHumanResourcesStore();
+export function createDrizzleHumanResourcesStore(): HumanResourcesStore {
+	return new DrizzleHumanResourcesStore() as unknown as HumanResourcesStore;
 }

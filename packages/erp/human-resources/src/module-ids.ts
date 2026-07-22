@@ -94,6 +94,34 @@ export const HUMAN_RESOURCES_COMMAND_OFFER_EXPIRE =
 	"human-resources.offer.expire" as const;
 export const HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW =
 	"human-resources.offer.withdraw" as const;
+export const HUMAN_RESOURCES_COMMAND_ONBOARDING_START =
+	"human-resources.onboarding.start" as const;
+export const HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK =
+	"human-resources.onboarding.complete-task" as const;
+export const HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE =
+	"human-resources.onboarding.complete" as const;
+export const HUMAN_RESOURCES_COMMAND_PROBATION_OPEN =
+	"human-resources.probation.open" as const;
+export const HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND =
+	"human-resources.probation.extend" as const;
+export const HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME =
+	"human-resources.probation.record-outcome" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM =
+	"human-resources.employment.confirm" as const;
+export const HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER =
+	"human-resources.assignment.transfer" as const;
+export const HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE =
+	"human-resources.termination.finalize" as const;
+export const HUMAN_RESOURCES_COMMAND_OFFBOARDING_START =
+	"human-resources.offboarding.start" as const;
+export const HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK =
+	"human-resources.offboarding.complete-task" as const;
+export const HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW =
+	"human-resources.offboarding.record-exit-interview" as const;
+export const HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE =
+	"human-resources.offboarding.record-clearance" as const;
+export const HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE =
+	"human-resources.offboarding.complete" as const;
 
 export const HUMAN_RESOURCES_COMMAND_IDS = [
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
@@ -144,6 +172,20 @@ export const HUMAN_RESOURCES_COMMAND_IDS = [
 	HUMAN_RESOURCES_COMMAND_OFFER_DECLINE,
 	HUMAN_RESOURCES_COMMAND_OFFER_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
 ] as const;
 
 export type HumanResourcesCommandId =
@@ -198,6 +240,22 @@ export const HUMAN_RESOURCES_QUERY_OFFER_GET =
 	"human-resources.offer.get" as const;
 export const HUMAN_RESOURCES_QUERY_OFFER_LIST =
 	"human-resources.offer.list" as const;
+export const HUMAN_RESOURCES_QUERY_ONBOARDING_CASE_GET =
+	"human-resources.onboarding-case.get" as const;
+export const HUMAN_RESOURCES_QUERY_ONBOARDING_TASKS_LIST =
+	"human-resources.onboarding-tasks.list" as const;
+export const HUMAN_RESOURCES_QUERY_PROBATION_REVIEW_GET =
+	"human-resources.probation-review.get" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONFIRMATION_GET =
+	"human-resources.employment-confirmation.get" as const;
+export const HUMAN_RESOURCES_QUERY_TERMINATION_GET =
+	"human-resources.termination.get" as const;
+export const HUMAN_RESOURCES_QUERY_OFFBOARDING_CASE_GET =
+	"human-resources.offboarding-case.get" as const;
+export const HUMAN_RESOURCES_QUERY_OFFBOARDING_TASKS_LIST =
+	"human-resources.offboarding-tasks.list" as const;
+export const HUMAN_RESOURCES_QUERY_CLEARANCE_GET_BY_OFFBOARDING_CASE =
+	"human-resources.clearance.get-by-offboarding-case" as const;
 
 export const HUMAN_RESOURCES_QUERY_IDS = [
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
@@ -225,6 +283,14 @@ export const HUMAN_RESOURCES_QUERY_IDS = [
 	HUMAN_RESOURCES_QUERY_INTERVIEW_EVALUATION_GET,
 	HUMAN_RESOURCES_QUERY_OFFER_GET,
 	HUMAN_RESOURCES_QUERY_OFFER_LIST,
+	HUMAN_RESOURCES_QUERY_ONBOARDING_CASE_GET,
+	HUMAN_RESOURCES_QUERY_ONBOARDING_TASKS_LIST,
+	HUMAN_RESOURCES_QUERY_PROBATION_REVIEW_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONFIRMATION_GET,
+	HUMAN_RESOURCES_QUERY_TERMINATION_GET,
+	HUMAN_RESOURCES_QUERY_OFFBOARDING_CASE_GET,
+	HUMAN_RESOURCES_QUERY_OFFBOARDING_TASKS_LIST,
+	HUMAN_RESOURCES_QUERY_CLEARANCE_GET_BY_OFFBOARDING_CASE,
 ] as const;
 
 export type HumanResourcesQueryId = (typeof HUMAN_RESOURCES_QUERY_IDS)[number];

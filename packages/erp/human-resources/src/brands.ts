@@ -114,6 +114,86 @@ export const humanResourcesOfferIdSchema = z
 	.brand<"HumanResourcesOfferId">();
 export type HumanResourcesOfferId = z.infer<typeof humanResourcesOfferIdSchema>;
 
+export const humanResourcesOnboardingCaseIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesOnboardingCaseId">();
+export type HumanResourcesOnboardingCaseId = z.infer<
+	typeof humanResourcesOnboardingCaseIdSchema
+>;
+
+export const humanResourcesOnboardingTaskIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesOnboardingTaskId">();
+export type HumanResourcesOnboardingTaskId = z.infer<
+	typeof humanResourcesOnboardingTaskIdSchema
+>;
+
+export const humanResourcesProbationReviewIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesProbationReviewId">();
+export type HumanResourcesProbationReviewId = z.infer<
+	typeof humanResourcesProbationReviewIdSchema
+>;
+
+export const humanResourcesEmploymentConfirmationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesEmploymentConfirmationId">();
+export type HumanResourcesEmploymentConfirmationId = z.infer<
+	typeof humanResourcesEmploymentConfirmationIdSchema
+>;
+
+export const humanResourcesEmploymentMovementIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesEmploymentMovementId">();
+export type HumanResourcesEmploymentMovementId = z.infer<
+	typeof humanResourcesEmploymentMovementIdSchema
+>;
+
+export const humanResourcesTerminationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesTerminationId">();
+export type HumanResourcesTerminationId = z.infer<
+	typeof humanResourcesTerminationIdSchema
+>;
+
+export const humanResourcesOffboardingCaseIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesOffboardingCaseId">();
+export type HumanResourcesOffboardingCaseId = z.infer<
+	typeof humanResourcesOffboardingCaseIdSchema
+>;
+
+export const humanResourcesOffboardingTaskIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesOffboardingTaskId">();
+export type HumanResourcesOffboardingTaskId = z.infer<
+	typeof humanResourcesOffboardingTaskIdSchema
+>;
+
+export const humanResourcesExitInterviewIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesExitInterviewId">();
+export type HumanResourcesExitInterviewId = z.infer<
+	typeof humanResourcesExitInterviewIdSchema
+>;
+
+export const humanResourcesClearanceIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesClearanceId">();
+export type HumanResourcesClearanceId = z.infer<
+	typeof humanResourcesClearanceIdSchema
+>;
+
 /** Brand after UUID generation or trusted DB load — never cast without parse. */
 export function parseHumanResourcesEmployeeId(
 	id: string,
@@ -305,6 +385,146 @@ export function parseHumanResourcesOfferId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid offer identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesOnboardingCaseId(
+	id: string,
+): Result<HumanResourcesOnboardingCaseId> {
+	const parsed = humanResourcesOnboardingCaseIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid onboarding case identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesOnboardingTaskId(
+	id: string,
+): Result<HumanResourcesOnboardingTaskId> {
+	const parsed = humanResourcesOnboardingTaskIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid onboarding task identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesProbationReviewId(
+	id: string,
+): Result<HumanResourcesProbationReviewId> {
+	const parsed = humanResourcesProbationReviewIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid probation review identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesEmploymentConfirmationId(
+	id: string,
+): Result<HumanResourcesEmploymentConfirmationId> {
+	const parsed = humanResourcesEmploymentConfirmationIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employment confirmation identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesEmploymentMovementId(
+	id: string,
+): Result<HumanResourcesEmploymentMovementId> {
+	const parsed = humanResourcesEmploymentMovementIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employment movement identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesTerminationId(
+	id: string,
+): Result<HumanResourcesTerminationId> {
+	const parsed = humanResourcesTerminationIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid termination identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesOffboardingCaseId(
+	id: string,
+): Result<HumanResourcesOffboardingCaseId> {
+	const parsed = humanResourcesOffboardingCaseIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid offboarding case identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesOffboardingTaskId(
+	id: string,
+): Result<HumanResourcesOffboardingTaskId> {
+	const parsed = humanResourcesOffboardingTaskIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid offboarding task identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesExitInterviewId(
+	id: string,
+): Result<HumanResourcesExitInterviewId> {
+	const parsed = humanResourcesExitInterviewIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid exit interview identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesClearanceId(
+	id: string,
+): Result<HumanResourcesClearanceId> {
+	const parsed = humanResourcesClearanceIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid clearance identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

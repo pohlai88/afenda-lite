@@ -47,3 +47,69 @@ export function fingerprintOfferAccept(input: { offerId: string }): string {
 		offerId: input.offerId,
 	});
 }
+
+export function fingerprintOnboardingStart(input: {
+	employmentId: string;
+	sourceOfferId: string | null;
+}): string {
+	return sha256Fingerprint({
+		employmentId: input.employmentId,
+		sourceOfferId: input.sourceOfferId,
+	});
+}
+
+export function fingerprintProbationOpen(input: {
+	employmentId: string;
+	startsOn: string;
+	endsOn: string;
+}): string {
+	return sha256Fingerprint({
+		employmentId: input.employmentId,
+		startsOn: input.startsOn,
+		endsOn: input.endsOn,
+	});
+}
+
+export function fingerprintConfirmation(input: {
+	employmentId: string;
+	confirmedOn: string;
+}): string {
+	return sha256Fingerprint({
+		employmentId: input.employmentId,
+		confirmedOn: input.confirmedOn,
+	});
+}
+
+export function fingerprintTransfer(input: {
+	employmentId: string;
+	fromPositionId: string;
+	toPositionId: string;
+	effectiveOn: string;
+}): string {
+	return sha256Fingerprint({
+		employmentId: input.employmentId,
+		fromPositionId: input.fromPositionId,
+		toPositionId: input.toPositionId,
+		effectiveOn: input.effectiveOn,
+	});
+}
+
+export function fingerprintTermination(input: {
+	employmentId: string;
+	effectiveOn: string;
+}): string {
+	return sha256Fingerprint({
+		employmentId: input.employmentId,
+		effectiveOn: input.effectiveOn,
+	});
+}
+
+export function fingerprintOffboardingStart(input: {
+	employmentId: string;
+	terminationId: string | null;
+}): string {
+	return sha256Fingerprint({
+		employmentId: input.employmentId,
+		terminationId: input.terminationId,
+	});
+}

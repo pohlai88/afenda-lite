@@ -274,6 +274,13 @@
 			"when": 1784588000000,
 			"tag": "0038_hr_recruitment_ddl",
 			"breakpoints": true
+		},
+		{
+			"idx": 39,
+			"version": "7",
+			"when": 1784589000000,
+			"tag": "0039_hr_lifecycle_ddl",
+			"breakpoints": true
 		}
 	]
 }

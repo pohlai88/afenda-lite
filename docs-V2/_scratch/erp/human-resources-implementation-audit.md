@@ -114,20 +114,20 @@ Every table maps to **exactly one** aggregate folder. Write owner for all rows: 
 | `hr_interview_evaluation` | recruitment | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
 | `hr_employment_offer` | recruitment | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
 
-### 3.4 lifecycle (10)
+### 3.4 lifecycle (10) — designed via `0039_hr_lifecycle_ddl` (HR6 / HR-05)
 
 | Table | Aggregate folder | PK | org_id | FKs | Uniques | Status | Effective dates | Version | Actors | Soft-delete | Profile |
 | ----- | ---------------- | -- | ------ | --- | ------- | ------ | --------------- | ------- | ------ | ----------- | ------- |
-| `hr_employment_movement` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_onboarding_case` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_onboarding_task` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_probation_review` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_employment_confirmation` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_termination` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_offboarding_case` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_offboarding_task` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_exit_interview` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
-| `hr_clearance` | lifecycle | `id` | yes | none | none | none | none | none | none | none | ScaffoldStandard |
+| `hr_employment_movement` | lifecycle | `id` | yes | employment/employee/assignments/positions | org+idempotency | kind=`transfer` | `effective_on` | yes | yes | no | Designed |
+| `hr_onboarding_case` | lifecycle | `id` | yes | employment/employee/offer? | open per employment | in_progress\|completed\|cancelled | started/completed | yes | yes | no | Designed |
+| `hr_onboarding_task` | lifecycle | `id` | yes | case | org+case+code | pending\|completed\|waived | completed_at | yes | yes | no | Designed |
+| `hr_probation_review` | lifecycle | `id` | yes | employment/employee | open interval guard | open\|closed | starts_on/ends_on | yes | yes | no | Designed |
+| `hr_employment_confirmation` | lifecycle | `id` | yes | employment/employee | one per employment | immutable insert | confirmed_on | yes | yes | no | Designed |
+| `hr_termination` | lifecycle | `id` | yes | employment/employee | one finalized / emp | draft\|finalized | effective_on | yes | yes | no | Designed |
+| `hr_offboarding_case` | lifecycle | `id` | yes | employment/employee/termination? | open per employment | in_progress\|completed\|cancelled | started/completed | yes | yes | no | Designed |
+| `hr_offboarding_task` | lifecycle | `id` | yes | case | org+case+code | pending\|completed\|waived | completed_at | yes | yes | no | Designed |
+| `hr_exit_interview` | lifecycle | `id` | yes | case/employment | one per case | — | conducted_on | yes | yes | no | Designed |
+| `hr_clearance` | lifecycle | `id` | yes | case/employment | one per case | pending\|cleared | cleared_on | yes | yes | no | Designed |
 
 Note: transfer is represented by aggregate name `transfer` in `HUMAN_RESOURCES_AGGREGATES` and folder `src/lifecycle/transfer.ts`; persistence for movements is `hr_employment_movement` (no separate `hr_transfer` table).
 
@@ -290,7 +290,7 @@ Label: **SCHEMA_UNCONFIRMED** unless a column exists on disk. No guessed state m
 | Employee create idempotency | `hr_employee` unique indexes + store conflict handling | **Confirmed** | Yes (shipped) |
 | Employee optimistic concurrency | `hr_employee.version` | Column present; no update command yet | Update path later |
 | Recruitment funnel (requisition → offer accepted) | [human-resource.md](./human-resource.md) §2 diagram + `0038` CHECKs | **Confirmed** — statuses on six recruitment tables | **DONE** — HR5 / HR-04 |
-| Lifecycle (onboard → terminate → offboard) | Scratch §2 + event names | No status enums in DDL | **BLOCKED** — HR6 DDL |
+| Lifecycle (onboard → terminate → offboard) | Scratch §2 + event names + `0039` CHECKs | **Confirmed** — statuses on ten lifecycle tables | **DONE** — HR6 / HR-05 |
 | Employment status for payroll (`active` \| `notice` \| `terminated`) | Scratch §7 `PayrollEmployeeQueryPort` DTO | **Not a column** — design in HR2 `hr_employment` | **BLOCKED** — open question |
 | Leave / timesheet approval | Event + permission catalog | No tables | **BLOCKED** — GATE-TL |
 
@@ -414,7 +414,8 @@ Q3 remains open for leave/time work.
 | **HR4** (position/assignment commands) | **DONE** for position/assignment |
 | **HR-03** (dept/job/reporting-line + position FKs) | **DONE** — `0037_hr_organization_structure_ddl` |
 | **HR5 / HR-04** (recruitment funnel) | **DONE** — `0038_hr_recruitment_ddl` + requisition→offer accept handoff |
-| **Next** | Lifecycle HR6 (chat mission HR-05) — onboarding/offboarding; consume `OfferAcceptanceHandoff` |
+| **HR6 / HR-05** (lifecycle) | **DONE** — `0039_hr_lifecycle_ddl` + onboarding→offboarding commands/events |
+| **Next** | Compensation HR7 (chat mission HR-06) — C&B agreements; no gross-to-net |
 
 ---
 
