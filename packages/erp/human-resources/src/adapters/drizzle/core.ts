@@ -202,6 +202,10 @@ import {
 	attachDrizzleLifecycle,
 	type DrizzleLifecycleMethods,
 } from "./lifecycle";
+import {
+	attachDrizzleWorkforcePlanning,
+	type DrizzleWorkforcePlanningMethods,
+} from "./workforce-planning";
 
 type EmployeeSqlRow = {
 	id: string;
@@ -1215,6 +1219,7 @@ type DrizzleWorkforceStore = Omit<
 	| keyof DrizzleLeaveMethods
 	| keyof DrizzlePerformanceMethods
 	| keyof DrizzleEmployeeRelationsMethods
+	| keyof DrizzleWorkforcePlanningMethods
 >;
 
 /** Drizzle store: workforce methods on the class; lifecycle methods attached at construct. */
@@ -1240,6 +1245,9 @@ export class DrizzleHumanResourcesStore {
 		);
 		attachDrizzleEmployeeRelations(
 			this as unknown as Parameters<typeof attachDrizzleEmployeeRelations>[0],
+		);
+		attachDrizzleWorkforcePlanning(
+			this as unknown as Parameters<typeof attachDrizzleWorkforcePlanning>[0],
 		);
 	}
 
@@ -4558,6 +4566,7 @@ export class DrizzleHumanResourcesStore {
 			actorId: input.actorUserId,
 			correlationId: meta.correlationId,
 		});
+		const releaseReservationsAuditId = randomUUID();
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
@@ -4597,8 +4606,34 @@ export class DrizzleHumanResourcesStore {
 									${payloadJson}::jsonb, 'pending', 0
 								FROM mutated
 								RETURNING id
+							),
+							released_reservations AS (
+								UPDATE hr_headcount_reservation r
+								SET status = 'released',
+									version = r.version + 1,
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								FROM mutated m
+								WHERE r.requisition_id = m.id
+									AND r.organization_id = m.organization_id
+									AND r.status = 'active'
+									AND m.status IN ('cancelled', 'closed')
+								RETURNING r.id, r.organization_id
+							),
+							reservations_audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${releaseReservationsAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
+								FROM released_reservations
+								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited, outboxed
+							LEFT JOIN released_reservations ON true
+							LEFT JOIN reservations_audited ON true
 						`
 						: sql`
 							WITH mutated AS (
@@ -4622,8 +4657,34 @@ export class DrizzleHumanResourcesStore {
 									'human-resources', 'hr_job_requisition', id, 'UPDATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							released_reservations AS (
+								UPDATE hr_headcount_reservation r
+								SET status = 'released',
+									version = r.version + 1,
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								FROM mutated m
+								WHERE r.requisition_id = m.id
+									AND r.organization_id = m.organization_id
+									AND r.status = 'active'
+									AND m.status IN ('cancelled', 'closed')
+								RETURNING r.id, r.organization_id
+							),
+							reservations_audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${releaseReservationsAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
+								FROM released_reservations
+								RETURNING id
 							)
 							SELECT mutated.* FROM mutated, audited
+							LEFT JOIN released_reservations ON true
+							LEFT JOIN reservations_audited ON true
 						`,
 				],
 			);
@@ -6259,6 +6320,7 @@ export class DrizzleHumanResourcesStore {
 		const offerAuditId = randomUUID();
 		const applicationAuditId = randomUUID();
 		const eventId = randomUUID();
+		const reservationAuditId = randomUUID();
 		const nextOfferVersion = input.expectedVersion + 1;
 		const nextApplicationVersion = applicationRecord.version + 1;
 		const payloadJson = eventPayloadJson({
@@ -6342,12 +6404,37 @@ export class DrizzleHumanResourcesStore {
 							${payloadJson}::jsonb, 'pending', 0
 						FROM updated_offer
 						RETURNING id
+					),
+					consumed_reservation AS (
+						UPDATE hr_headcount_reservation r
+						SET status = 'consumed',
+							version = r.version + 1,
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						FROM updated_application ua
+						WHERE r.requisition_id = ua.requisition_id
+							AND r.organization_id = ua.organization_id
+							AND r.status = 'active'
+						RETURNING r.id, r.organization_id
+					),
+					reservation_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${reservationAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
+						FROM consumed_reservation
+						RETURNING id
 					)
 					SELECT
 						updated_offer.*,
 						updated_application.candidate_id,
 						updated_application.requisition_id
 					FROM updated_offer, offer_audited, updated_application, application_audited, outboxed
+					LEFT JOIN consumed_reservation ON true
+					LEFT JOIN reservation_audited ON true
 				`,
 			]);
 			const row = rows[0];

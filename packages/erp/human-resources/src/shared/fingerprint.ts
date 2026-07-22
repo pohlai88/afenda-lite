@@ -417,20 +417,6 @@ export function fingerprintCompetencyAssessmentSupersede(input: {
 	return sha256Fingerprint(input);
 }
 
-export function fingerprintTalentProfileAssessmentCreate(input: {
-	talentProfileId: string;
-	methodCode: string;
-	classification: string;
-	assessorUserId: string;
-}): string {
-	return sha256Fingerprint({
-		talentProfileId: input.talentProfileId,
-		methodCode: input.methodCode,
-		classification: input.classification.trim(),
-		assessorUserId: input.assessorUserId,
-	});
-}
-
 export function fingerprintTalentPoolCreate(input: {
 	code: string;
 	name: string;

@@ -130,6 +130,8 @@ type LeaveMemoryHost = LeaveMemoryAttachmentTarget &
 		| "grantLeaveEntitlement"
 		| "adjustLeaveEntitlement"
 		| "listLeaveRequestSegments"
+		| "getLeavePolicyEligibility"
+		| "getEmploymentById"
 	>;
 
 function idempotencyKey(organizationId: string, key: string): string {
@@ -216,11 +218,9 @@ async function emitOutbox(
 }
 
 function tenureDaysOn(startsOn: string, asOfDate: string): number {
-	const [startYear, startMonth, startDay] = startsOn.split("-").map(Number);
-	const [asOfYear, asOfMonth, asOfDay] = asOfDate.split("-").map(Number);
-	const start = Date.UTC(startYear, startMonth - 1, startDay);
-	const asOf = Date.UTC(asOfYear, asOfMonth - 1, asOfDay);
-	return Math.floor((asOf - start) / (1000 * 60 * 60 * 24));
+	const startMs = Date.parse(`${startsOn}T00:00:00.000Z`);
+	const asOfMs = Date.parse(`${asOfDate}T00:00:00.000Z`);
+	return Math.floor((asOfMs - startMs) / (1000 * 60 * 60 * 24));
 }
 
 function isPolicyEffectiveOn(
@@ -323,6 +323,10 @@ export const leaveMemoryMethods = {
 		}
 
 		const policy = candidates[0];
+		if (policy === undefined) {
+			return ok(null);
+		}
+
 		const eligibility = await this.getLeavePolicyEligibility({
 			organizationId: input.organizationId,
 			policyId: policy.id,

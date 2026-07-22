@@ -2534,7 +2534,6 @@ export type UpdateTalentProfileInput = z.infer<
 export const recordTalentProfileAssessmentInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
-			idempotencyKey: humanResourcesIdempotencyKeySchema,
 			talentProfileId: humanResourcesTalentProfileIdSchema,
 			methodCode: talentProfileAssessmentMethodCodeSchema,
 			classification: z.string().trim().min(1).max(100),

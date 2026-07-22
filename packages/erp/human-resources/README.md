@@ -59,8 +59,10 @@ Also shipped on the same barrel (schema-backed): organization structure (departm
 | `human-resources.compensation-grade.*` / `salary-band.*` / `employee-compensation.*` / `compensation-review.*` | command | `compensation.manage` | HR-07 |
 | `human-resources.benefit-plan.*` / `benefit-enrollment.*` | command | `benefits.manage` | HR-07 |
 | `human-resources.approved-compensation-handoff.get` | query | `compensation.read` | HR-07 |
+| `human-resources.headcount-plan.*` | command/query | `workforce-plan.read` / `workforce-plan.prepare` / `workforce-plan.approve` | HR-WFP-01 |
+| `human-resources.headcount.reserve` / `headcount.exceptional-adjust` | command | `headcount.reserve` / `headcount.exceptional-adjust` | HR-WFP-01 |
 
-**Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position status: `active` \| `frozen` \| `closed` — assignment create requires `active`. Department/job status: `active` \| `archived`. Position create requires active department + job. No headcount authority — not enforced. `employee.read` is **not** sufficient for organization-structure mutation.
+**Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position status: `active` \| `frozen` \| `closed` — assignment create requires `active`. Department/job status: `active` \| `archived`. Position create requires active department + job. **Workforce planning (HR-WFP-01):** approved headcount plans own FTE/headcount capacity (and optional cost envelopes) per `planning_scope_key` + period; `reserveHeadcount` is explicit — `approveRequisition` does not auto-reserve; `cancelRequisition` / `closeRequisition` release active reservations; `acceptOffer` consumes the active reservation. Hard boundary: planning capacity only — no payroll, finance budgets, or salary calculation. `employee.read` is **not** sufficient for organization-structure mutation.
 
 **Recruitment (HR-04):** Requisition `draft` → `submitted` → `approved` → `open` ↔ `on_hold` → `closed` \| `cancelled`. Application `submitted` → `in_review` → `interviewing` → `offered` → `accepted` (or reject/withdraw). Offer `draft` → `issued` → `accepted` \| `declined` \| `expired` \| `withdrawn`. `acceptOffer` returns `OfferAcceptanceHandoff` and emits `offer.accepted.v1` — it does **not** create an employee. Evaluation `private_notes` are omitted from interview lists; `interview-evaluation.get` requires `interview.record`.
 
@@ -93,7 +95,7 @@ Command schemas are `.strict()` and keep tenant fields only at the top level (no
 | Mutation roots | All **43** `hr_*` tables are `HARD_TENANT_ROOT` in `@afenda/db` (`hard-tenant-roots.ts`) and `pnpm audit:tenancy-nulls` |
 | Lookup contract | Store methods require `organizationId`; bare-ID cross-org get is prohibited |
 | Stamp last | Composition root stamps `organizationId` after client payload; DB `NOT NULL` is the final integrity boundary |
-| Domain DDL (HR2 + HR-03 + HR-04 + HR-05 + HR-07) | Core workforce via `0036`; organization structure via `0037`; recruitment via `0038`; lifecycle via `0039`; compensation-benefits via `0040` (`hr_compensation_grade` … `hr_benefit_enrollment`) |
+| Domain DDL (HR2 + HR-03 + HR-04 + HR-05 + HR-07 + HR-WFP-01) | Core workforce via `0036`; organization structure via `0037`; recruitment via `0038`; lifecycle via `0039`; compensation-benefits via `0040`; workforce planning via `0046` (`hr_headcount_plan` … `hr_headcount_reservation`) |
 | Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position; reporting → same-org employees — enforced in memory + Drizzle |
 | Terminate closes open | Status → `terminated` always sets `ends_on` (caller value or startsOn) so open unique index releases; emits `employee.terminated.v1` |
 

@@ -35,10 +35,8 @@ import {
 	type HumanResourcesEmployeeCaseId,
 } from "../../brands";
 import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type {
 	EmployeeCase,
@@ -516,10 +514,7 @@ function paginateCases(
 }
 
 function idempotencyConflict(): Result<never> {
-	return conflict(
-		"Idempotency key reused with different payload",
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-	);
+	return conflict("Idempotency key reused with different payload");
 }
 
 async function fetchCaseById(input: {
@@ -675,7 +670,7 @@ async function listCasesForOrg(
 	}
 }
 
-export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
+const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	ThisType<EmployeeRelationsHost & DrizzleEmployeeRelationsMethods> = {
 	async findEmployeeCaseByIdempotencyKey(input) {
 		try {
@@ -2445,9 +2440,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	},
 };
 
-export function attachDrizzleEmployeeRelations(
-	target: EmployeeRelationsHost & DrizzleEmployeeRelationsMethods,
-): void {
+export function attachDrizzleEmployeeRelations(target: EmployeeRelationsHost): void {
 	Object.assign(target, drizzleEmployeeRelationsMethods);
 }
 

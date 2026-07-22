@@ -276,6 +276,28 @@ hr_exit_interview
 hr_clearance
 ```
 
+## Employee relations ownership (HR-ER-01)
+
+Confidential internal employment cases (grievance, conduct, disciplinary review). Not whistleblowing, legal case management, or occupational safety incidents. Evidence via document reference only — no binary storage in HR tables.
+
+```text
+Employee case
+Case event (append-only)
+Case action (recommend / approve)
+Case appeal
+```
+
+Suggested tables:
+
+```text
+hr_employee_case
+hr_employee_case_event
+hr_employee_case_action
+hr_employee_case_appeal
+```
+
+Termination outcomes hand off to lifecycle `finalizeTermination` — cases never auto-terminate employment.
+
 HR owns the workforce lifecycle, but it must not directly change Auth, Admin, Payroll, Payments or Accounting tables.
 
 For example:

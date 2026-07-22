@@ -475,7 +475,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	},
 
 	async resolveApplicableLeavePolicy(input) {
-		const employment = await this.getEmploymentById({
+		const host = this as LeaveHost;
+		const employment = await host.getEmploymentById({
 			organizationId: input.organizationId,
 			employmentId: input.employmentId,
 		});
@@ -558,7 +559,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	},
 
 	async getPrimaryManagerForEmployee(input) {
-		const primary = await this.resolvePrimaryManager({
+		const host = this as LeaveHost;
+		const primary = await host.resolvePrimaryManager({
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 			asOf: input.asOf,
@@ -1786,29 +1788,53 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 	async getApprovedLeaveHandoff(input) {
 		try {
-			const rows = await db
-				.select()
-				.from(hrLeaveRequest)
-				.where(
-					and(
-						eq(hrLeaveRequest.organizationId, input.organizationId),
-						eq(hrLeaveRequest.employeeId, input.employeeId),
-						eq(hrLeaveRequest.status, "approved"),
-					),
-				);
-			const approved = rows.filter((row) => row.approvedAt !== null);
+			const request = await this.getLeaveRequestById({
+				organizationId: input.organizationId,
+				requestId: input.requestId,
+			});
+			if (!request.ok) return request;
+			if (
+				request.data === null ||
+				request.data.status !== "approved" ||
+				request.data.approvedAt === null
+			) {
+				return ok(null);
+			}
+
+			const policy = await this.getLeavePolicyById({
+				organizationId: input.organizationId,
+				policyId: request.data.policyId,
+			});
+			if (!policy.ok) return policy;
+			if (policy.data === null) {
+				return ok(null);
+			}
+
+			const segments = await this.listLeaveRequestSegments({
+				organizationId: input.organizationId,
+				requestId: request.data.id,
+			});
+			if (!segments.ok) return segments;
+
 			const handoff: ApprovedLeaveHandoff = {
 				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				approvedRequests: approved.map((row) => ({
-					requestId: row.id as HumanResourcesLeaveRequestId,
-					policyId: row.policyId as HumanResourcesLeavePolicyId,
-					startDate: row.startDate,
-					endDate: row.endDate,
-					requestedQuantity: row.requestedQuantity,
-					unit: row.unit as LeaveRequest["unit"],
-					approvedAt: row.approvedAt as Date,
+				employeeId: request.data.employeeId,
+				employmentId: request.data.employmentId,
+				requestId: request.data.id,
+				policyId: request.data.policyId,
+				policyVersion: policy.data.version,
+				paid: policy.data.paid,
+				unit: request.data.unit,
+				startDate: request.data.startDate,
+				endDate: request.data.endDate,
+				quantity: request.data.requestedQuantity,
+				segments: segments.data.map((segment) => ({
+					date: segment.segmentDate,
+					quantity: segment.quantity,
+					dayPortion: segment.dayPortion,
 				})),
+				approvedAt: request.data.approvedAt.toISOString(),
+				correlationId: input.correlationId,
 			};
 			return ok(handoff);
 		} catch (error) {

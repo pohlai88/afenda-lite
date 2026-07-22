@@ -368,8 +368,10 @@ function mapHeadcountReservationSql(
 	if (!planLineId.ok) return planLineId;
 	const requisitionId = parseHumanResourcesRequisitionId(row.requisition_id);
 	if (!requisitionId.ok) return requisitionId;
-	const status = headcountReservationStatusSchemaParse(row.status);
-	if (!status.ok) return status;
+	const status = headcountReservationStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid headcount reservation status");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -387,15 +389,6 @@ function mapHeadcountReservationSql(
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	});
-}
-
-function headcountReservationStatusSchemaParse(
-	value: string,
-): Result<HeadcountReservationStatus> {
-	if (value === "active" || value === "released" || value === "consumed") {
-		return ok(value);
-	}
-	return fail("INTERNAL_ERROR", "Invalid headcount reservation status");
 }
 
 type WorkforcePlanningHost = Pick<HumanResourcesStore, "getRequisitionById">;
@@ -867,8 +860,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		if (source.data.status !== "approved") {
 			return invalidState("Only approved headcount plans can be superseded");
 		}
+		const sourcePlan = source.data;
 		const versionCheck = assertExpectedVersion(
-			source.data.version,
+			sourcePlan.version,
 			record.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
@@ -898,9 +892,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 							)
 							SELECT
 								${brandedId.data}, ${record.organizationId}, ${record.code}, ${record.title},
-								${source.data.planningScopeKey}, ${source.data.periodStart}, ${source.data.periodEnd},
-								'draft', ${source.data.planVersion + 1}, source_check.id,
-								${source.data.costEnvelopeAmount}, ${source.data.costEnvelopeCurrencyCode},
+								${sourcePlan.planningScopeKey}, ${sourcePlan.periodStart}, ${sourcePlan.periodEnd},
+								'draft', ${sourcePlan.planVersion + 1}, source_check.id,
+								${sourcePlan.costEnvelopeAmount}, ${sourcePlan.costEnvelopeCurrencyCode},
 								${record.createIdempotencyKey}, ${record.createRequestFingerprint}, 1,
 								${record.createdBy}, ${record.createdBy}
 							FROM source_check
@@ -1435,10 +1429,11 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		});
 		if (!line.ok) return line;
 		if (line.data === null) return notFound("Headcount plan line not found");
+		const planLine = line.data;
 
 		const plan = await this.getHeadcountPlanById({
 			organizationId: record.organizationId,
-			planId: line.data.planId,
+			planId: planLine.planId,
 		});
 		if (!plan.ok) return plan;
 		if (plan.data === null || plan.data.status !== "approved") {
@@ -1453,7 +1448,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		);
 		if (!existingReservations.ok) return existingReservations;
 		const availability = computeLineAvailability({
-			line: line.data,
+			line: planLine,
 			reservations: existingReservations.data,
 		});
 		const availabilityCheck = assertReservationWithinAvailability({
@@ -1478,7 +1473,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 								reserved_fte, reserved_headcount, status, create_idempotency_key,
 								create_request_fingerprint, version, created_by, updated_by
 							) VALUES (
-								${brandedId.data}, ${record.organizationId}, ${line.data.planId},
+								${brandedId.data}, ${record.organizationId}, ${planLine.planId},
 								${record.planLineId}, ${record.requisitionId}, ${record.reservedFte},
 								${record.reservedHeadcount}, 'active', ${record.createIdempotencyKey},
 								${record.createRequestFingerprint}, 1, ${record.createdBy}, ${record.createdBy}
@@ -1808,13 +1803,8 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 	},
 };
 
-type WorkforcePlanVarianceLine =
-	WorkforcePlanVariance["lines"][number];
-
-import type { WorkforcePlanVariance } from "../../types";
-
-export function attachDrizzleWorkforcePlanning<
-	T extends WorkforcePlanningHost,
->(target: T): T & DrizzleWorkforcePlanningMethods {
-	return Object.assign(target, drizzleWorkforcePlanningMethods);
+export function attachDrizzleWorkforcePlanning(
+	target: WorkforcePlanningHost,
+): void {
+	Object.assign(target, drizzleWorkforcePlanningMethods);
 }
