@@ -700,13 +700,12 @@ export type LearningAssignment = {
 	id: HumanResourcesLearningAssignmentId;
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
-	employmentId: HumanResourcesEmploymentId;
 	courseId: HumanResourcesCourseId;
 	sessionId: HumanResourcesSessionId | null;
-	assignedOn: string;
+	assignedBy: string;
+	assignedAt: Date;
 	dueOn: string | null;
 	status: AssignmentStatus;
-	assigneeNote: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;

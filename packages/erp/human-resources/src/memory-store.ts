@@ -159,6 +159,7 @@ import {
 	assertSessionCapacityAvailable,
 	assertEmploymentActiveForAssignment,
 	assertAssignmentEnrollable,
+	assertAssignmentWaivable,
 	assertAssignmentNotTerminal,
 	assertCompletionRecordable,
 	assertNoDuplicateCompletion,
@@ -8450,7 +8451,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 				a.organizationId === input.organizationId &&
 				a.sessionId !== null &&
 				a.sessionId === input.sessionId &&
-				a.status === "enrolled",
+				a.status === "in_progress",
 		).length;
 		return ok(count);
 	}
@@ -8744,6 +8745,304 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			.map((s) => ({ ...s }));
 
 		return ok({ sessions, totalCount, page: input.page, pageSize: input.pageSize });
+	}
+
+	// Learning Assignment methods
+	async getLearningAssignmentById(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesLearningAssignmentId;
+	}): Promise<Result<LearningAssignment | null>> {
+		const assignment = this.learningAssignments.get(input.assignmentId);
+		if (!assignment || assignment.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...assignment });
+	}
+
+	async findLearningAssignmentByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentLearningAssignmentRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.assignmentIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, assignment: { ...record.assignment } });
+	}
+
+	async createLearningAssignment(
+		record: LearningAssignmentCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningAssignment>> {
+		const employee = this.employees.get(record.employeeId);
+		if (!employee || employee.organizationId !== record.organizationId) {
+			return notFound(
+				"Employee not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const course = this.courses.get(record.courseId);
+		if (!course || course.organizationId !== record.organizationId) {
+			return notFound(
+				"Course not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const activeGuard = assertCourseActive(course.status);
+		if (!activeGuard.ok) {
+			return activeGuard;
+		}
+
+		if (record.sessionId !== null) {
+			const session = this.sessions.get(record.sessionId);
+			if (!session || session.organizationId !== record.organizationId) {
+				return notFound(
+					"Session not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			if (session.courseId !== record.courseId) {
+				return conflict("Session does not belong to the specified course");
+			}
+			if (!isSessionActive(session.status)) {
+				return conflict("Session is not active for enrollment");
+			}
+		}
+
+		const idResult = parseHumanResourcesLearningAssignmentId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const assignment: LearningAssignment = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+			courseId: record.courseId,
+			sessionId: record.sessionId,
+			assignedBy: record.assignedBy,
+			assignedAt: record.assignedAt,
+			dueOn: record.dueOn,
+			status: "pending",
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.learningAssignments.set(assignment.id, assignment);
+
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createRequestFingerprint,
+		);
+		this.assignmentIdempotencyByKey.set(idempotencyKey, {
+			assignment: { ...assignment },
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: assignment.organizationId,
+			actorUserId: assignment.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_assignment",
+			entityId: assignment.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.learningAssignments.delete(assignment.id);
+			this.assignmentIdempotencyByKey.delete(idempotencyKey);
+			return audit;
+		}
+
+		return ok({ ...assignment });
+	}
+
+	async enrollLearningAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesLearningAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningAssignment>> {
+		const assignment = this.learningAssignments.get(input.assignmentId);
+		if (!assignment || assignment.organizationId !== input.organizationId) {
+			return notFound("Assignment not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			assignment.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const course = this.courses.get(assignment.courseId);
+		if (!course) {
+			return notFound("Course not found");
+		}
+
+		let sessionStatus: SessionStatus = "scheduled";
+		let maxParticipants: number | null = null;
+		let enrolledCount = 0;
+
+		if (assignment.sessionId !== null) {
+			const session = this.sessions.get(assignment.sessionId);
+			if (!session) {
+				return notFound("Session not found");
+			}
+			sessionStatus = session.status;
+			maxParticipants = session.capacity;
+			const countResult = await this.countEnrolledInSession({
+				organizationId: input.organizationId,
+				sessionId: assignment.sessionId,
+			});
+			if (!countResult.ok) {
+				return countResult;
+			}
+			enrolledCount = countResult.data;
+		}
+
+		const enrollableGuard = assertAssignmentEnrollable({
+			assignmentStatus: assignment.status,
+			courseStatus: course.status,
+			sessionStatus,
+			maxParticipants,
+			enrolledCount,
+		});
+		if (!enrollableGuard.ok) {
+			return enrollableGuard;
+		}
+
+		const now = new Date();
+		const updated: LearningAssignment = {
+			...assignment,
+			status: "in_progress",
+			version: assignment.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.learningAssignments.set(input.assignmentId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_assignment",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.learningAssignments.set(input.assignmentId, assignment);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async waiveLearningAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesLearningAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningAssignment>> {
+		const assignment = this.learningAssignments.get(input.assignmentId);
+		if (!assignment || assignment.organizationId !== input.organizationId) {
+			return notFound("Assignment not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			assignment.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const waivableGuard = assertAssignmentWaivable(assignment.status);
+		if (!waivableGuard.ok) {
+			return waivableGuard;
+		}
+
+		const now = new Date();
+		const updated: LearningAssignment = {
+			...assignment,
+			status: "withdrawn",
+			version: assignment.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.learningAssignments.set(input.assignmentId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_assignment",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.learningAssignments.set(input.assignmentId, assignment);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async listLearningAssignments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: AssignmentStatus;
+		employeeId?: HumanResourcesEmployeeId;
+		courseId?: HumanResourcesCourseId;
+	}): Promise<Result<LearningAssignmentListPage>> {
+		let filtered = Array.from(this.learningAssignments.values()).filter(
+			(a) => a.organizationId === input.organizationId,
+		);
+
+		if (input.status !== undefined) {
+			filtered = filtered.filter((a) => a.status === input.status);
+		}
+		if (input.employeeId !== undefined) {
+			filtered = filtered.filter((a) => a.employeeId === input.employeeId);
+		}
+		if (input.courseId !== undefined) {
+			filtered = filtered.filter((a) => a.courseId === input.courseId);
+		}
+
+		filtered.sort((a, b) => b.assignedAt.getTime() - a.assignedAt.getTime());
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const assignments = filtered
+			.slice(start, start + input.pageSize)
+			.map((a) => ({ ...a }));
+
+		return ok({ assignments, totalCount, page: input.page, pageSize: input.pageSize });
 	}
 }
 
