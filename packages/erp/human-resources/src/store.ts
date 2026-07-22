@@ -407,9 +407,10 @@ export type LearningAssignmentCreateRecord = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	courseId: HumanResourcesCourseId;
-	assignedOn: string;
-	targetCompletionDate: string | null;
-	mandatory: boolean;
+	sessionId: HumanResourcesSessionId | null;
+	assignedBy: string;
+	assignedAt: Date;
+	dueOn: string | null;
 	createdBy: string;
 	createRequestFingerprint: string;
 };

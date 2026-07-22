@@ -13,15 +13,15 @@ export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
 export const ASSIGNMENT_STATUSES = [
 	"pending",
-	"enrolled",
-	"waived",
+	"in_progress",
 	"completed",
+	"withdrawn",
 ] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number];
 
 export const ASSIGNMENT_TERMINAL_STATUSES = [
-	"waived",
 	"completed",
+	"withdrawn",
 ] as const satisfies readonly AssignmentStatus[];
 
 export const CERTIFICATION_STATUSES = ["active", "expired", "revoked"] as const;
@@ -45,11 +45,11 @@ export function isSessionTerminal(status: SessionStatus): boolean {
 }
 
 export function isAssignmentActive(status: AssignmentStatus): boolean {
-	return status === "pending" || status === "enrolled";
+	return status === "pending" || status === "in_progress";
 }
 
 export function isAssignmentTerminal(status: AssignmentStatus): boolean {
-	return status === "waived" || status === "completed";
+	return status === "withdrawn" || status === "completed";
 }
 
 export function isCertificationActive(status: CertificationStatus): boolean {

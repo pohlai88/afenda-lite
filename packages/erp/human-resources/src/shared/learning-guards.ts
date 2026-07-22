@@ -157,6 +157,13 @@ export function assertEmploymentActiveForAssignment(
 	return ok(undefined);
 }
 
+export function assertAssignmentWaivable(status: AssignmentStatus): Result<true> {
+	if (isAssignmentTerminal(status)) {
+		return invalidState("Cannot waive a terminal assignment");
+	}
+	return ok(true);
+}
+
 export function assertAssignmentEnrollable(input: {
 	assignmentStatus: AssignmentStatus;
 	courseStatus: CourseStatus;
@@ -187,10 +194,10 @@ export function canTransitionAssignmentStatus(
 ): boolean {
 	if (current === next) return false;
 	if (isAssignmentTerminal(current)) return false;
-	if (current === "pending" && (next === "enrolled" || next === "waived")) {
+	if (current === "pending" && (next === "in_progress" || next === "withdrawn")) {
 		return true;
 	}
-	if (current === "enrolled" && (next === "completed" || next === "waived")) {
+	if (current === "in_progress" && (next === "completed" || next === "withdrawn")) {
 		return true;
 	}
 	return false;
@@ -213,7 +220,7 @@ export function assertAssignmentNotTerminal(
 	status: AssignmentStatus,
 ): Result<void> {
 	if (isAssignmentTerminal(status)) {
-		return invalidState("Cannot modify completed or waived assignment");
+		return invalidState("Cannot modify completed or withdrawn assignment");
 	}
 	return ok(undefined);
 }
@@ -226,8 +233,8 @@ export function assertCompletionRecordable(input: {
 	completedOn: string;
 	sessionStartsOn: string;
 }): Result<void> {
-	if (input.assignmentStatus !== "enrolled") {
-		return invalidState("Assignment must be enrolled to record completion");
+	if (input.assignmentStatus !== "in_progress") {
+		return invalidState("Assignment must be in progress to record completion");
 	}
 	if (input.sessionStatus !== "completed") {
 		return invalidState("Session must be completed to record completion");
