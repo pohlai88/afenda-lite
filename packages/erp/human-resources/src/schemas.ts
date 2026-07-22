@@ -1444,7 +1444,8 @@ export const applyApprovedCompensationResultInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			reviewId: humanResourcesCompensationReviewIdSchema,
-			expectedVersion: humanResourcesExpectedVersionSchema,
+			reason: z.string().trim().min(1).max(500),
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
 		})
 		.strict();
 
