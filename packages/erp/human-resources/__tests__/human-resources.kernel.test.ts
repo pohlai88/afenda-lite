@@ -53,7 +53,7 @@ describe("@afenda/human-resources kernel", () => {
 		);
 		expect(parsed.ok).toBe(false);
 		if (!parsed.ok) {
-			expect(parsed.code).toBe("BAD_REQUEST");
+			expect(parsed.code).toBe("VALIDATION_ERROR");
 			expect(humanResourcesCodeFromResult(parsed)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);

@@ -103,6 +103,7 @@ async function seedPublishedRequirement(
 		{
 			organizationId: input.organizationId,
 			actorUserId: ACTOR,
+			correlationId: `corr-req-${input.code}`,
 			code: input.code,
 			name: `Requirement ${input.code}`,
 			documentType: "passport",
@@ -116,6 +117,7 @@ async function seedPublishedRequirement(
 		{
 			organizationId: input.organizationId,
 			actorUserId: ACTOR,
+			correlationId: `corr-pub-${input.code}`,
 			requirementId: created.data.id,
 			expectedVersion: created.data.version,
 		},
@@ -139,6 +141,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-valid",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -173,6 +176,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-bad-expiry",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-06-01",
@@ -202,6 +206,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-no-verify",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -217,6 +222,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-verify-denied",
 				documentId: registered.data.id,
 				evidenceDate: "2026-01-02",
 				expectedVersion: registered.data.version,
@@ -247,6 +253,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-reject",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -262,6 +269,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-reject",
 				documentId: registered.data.id,
 				rejectionReason: "Image unreadable",
 				expectedVersion: registered.data.version,
@@ -288,6 +296,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-reverify",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -303,6 +312,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-verify-first",
 				documentId: registered.data.id,
 				evidenceDate: "2026-01-02",
 				expectedVersion: registered.data.version,
@@ -316,6 +326,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-revoke",
 				documentId: firstVerify.data.id,
 				expectedVersion: firstVerify.data.version,
 			},
@@ -328,6 +339,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-verify-second",
 				documentId: revoked.data.id,
 				evidenceDate: "2026-02-01",
 				expectedVersion: revoked.data.version,
@@ -364,6 +376,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-expire",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2024-01-01",
@@ -380,6 +393,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-verify-expire",
 				documentId: registered.data.id,
 				evidenceDate: "2024-02-01",
 				expectedVersion: registered.data.version,
@@ -393,6 +407,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-mark-expired",
 				documentId: verified.data.id,
 				expectedVersion: verified.data.version,
 			},
@@ -418,6 +433,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-mask",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -434,6 +450,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-list-docs",
 				employeeId: employee.id,
 			},
 			ready,
@@ -456,6 +473,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_B,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-cross",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -485,6 +503,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-eligibility",
 				employeeId: employee.id,
 				countryCode: "US",
 				issuedOn: "2026-01-01",
@@ -500,6 +519,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-verify-work-eligibility",
 				eligibilityId: recorded.data.id,
 				evidenceDate: "2026-01-02",
 				expectedVersion: recorded.data.version,
@@ -513,6 +533,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-suspend-work-eligibility",
 				eligibilityId: verified.data.id,
 				expectedVersion: verified.data.version,
 			},
@@ -531,6 +552,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-compliance-summary",
 				employeeId: employee.id,
 				asOf: "2026-06-01",
 			},
@@ -556,6 +578,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-policy-v1",
 				employeeId: employee.id,
 				policyCode: "CODE_OF_CONDUCT",
 				policyVersion: "2026.1",
@@ -577,6 +600,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-acknowledge-policy",
 				acknowledgementId: issued.data.id,
 				expectedVersion: issued.data.version,
 			},
@@ -596,6 +620,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-supersede-policy",
 				acknowledgementId: acknowledged.data.id,
 				newPolicyVersion: "2026.2",
 				expectedVersion: acknowledged.data.version,
@@ -612,6 +637,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-list-outstanding",
 				employeeId: employee.id,
 			},
 			ready,
@@ -651,6 +677,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-employment",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -663,6 +690,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-eligibility-employment",
 				employeeId: employee.id,
 				countryCode: "US",
 				issuedOn: "2026-01-01",
@@ -674,6 +702,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-policy-employment",
 				employeeId: employee.id,
 				policyCode: "HANDBOOK",
 				policyVersion: "1",
@@ -704,6 +733,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-rollback",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -736,6 +766,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-doc-data-uri",
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
@@ -769,6 +800,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-compliance-summary-reqs",
 				employeeId: employee.id,
 			},
 			ready,
@@ -805,6 +837,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
+				correlationId: "corr-close-eligibility",
 				employeeId: employee.id,
 				countryCode: "US",
 				issuedOn: "2026-01-01",
@@ -819,6 +852,7 @@ describe("human-resources compliance (memory)", () => {
 			{
 				organizationId: ORG_A,
 				actorUserId: VERIFIER,
+				correlationId: "corr-close-work-eligibility",
 				eligibilityId: recorded.data.id,
 				expectedVersion: recorded.data.version,
 			},

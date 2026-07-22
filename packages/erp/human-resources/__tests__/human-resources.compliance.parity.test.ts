@@ -71,6 +71,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 				{
 					organizationId,
 					actorUserId,
+					correlationId: `corr-create-req-${suffix}`,
 					code: `REQ-${suffix}`,
 					name: "Passport",
 					documentType: "passport",
@@ -84,6 +85,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 				{
 					organizationId,
 					actorUserId,
+					correlationId: `corr-publish-req-${suffix}`,
 					requirementId: requirement.data.id,
 					expectedVersion: requirement.data.version,
 				},
@@ -96,6 +98,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 				{
 					organizationId,
 					actorUserId,
+					correlationId: `corr-register-doc-${suffix}`,
 					employeeId: employee.id,
 					requirementId: published.data.id,
 					documentType: "passport",
@@ -113,6 +116,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 				{
 					organizationId,
 					actorUserId,
+					correlationId: `corr-verify-doc-${suffix}`,
 					documentId: document.data.id,
 					evidenceDate: "2026-01-02",
 					expectedVersion: document.data.version,
@@ -127,6 +131,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 				{
 					organizationId,
 					actorUserId,
+					correlationId: `corr-record-eligibility-${suffix}`,
 					employeeId: employee.id,
 					countryCode: "US",
 					issuedOn: "2026-01-01",
@@ -141,6 +146,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 				{
 					organizationId,
 					actorUserId,
+					correlationId: `corr-issue-policy-${suffix}`,
 					employeeId: employee.id,
 					policyCode: "HANDBOOK",
 					policyVersion: "1",

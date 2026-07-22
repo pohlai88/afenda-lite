@@ -13,7 +13,7 @@ export function parseHumanResourcesInput<TSchema extends z.ZodType>(
 ): Result<z.infer<TSchema>> {
 	const parsed = schema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", message, {
+		return fail("VALIDATION_ERROR", message, {
 			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 			fieldErrors: parsed.error.flatten().fieldErrors,
 		});

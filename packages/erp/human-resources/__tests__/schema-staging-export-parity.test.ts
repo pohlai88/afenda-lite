@@ -9,7 +9,7 @@ import * as complianceTree from "../src/schemas/compliance";
 import * as mainTree from "../src/schemas/index";
 import * as complianceBarrel from "../src/schemas-compliance";
 
-const EXPECTED_COMPLIANCE_EXPORT_COUNT = 29;
+const EXPECTED_COMPLIANCE_EXPORT_COUNT = 28;
 
 function runtimeExportKeys(module: Record<string, unknown>): string[] {
 	return Object.keys(module).sort();
