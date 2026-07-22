@@ -6,9 +6,12 @@ import type {
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
+	HumanResourcesCertificationId,
 	HumanResourcesClearanceId,
 	HumanResourcesCompensationGradeId,
 	HumanResourcesCompensationReviewId,
+	HumanResourcesCompletionId,
+	HumanResourcesCourseId,
 	HumanResourcesDepartmentId,
 	HumanResourcesEmployeeCompensationId,
 	HumanResourcesEmployeeId,
@@ -17,6 +20,7 @@ import type {
 	HumanResourcesEmploymentId,
 	HumanResourcesInterviewId,
 	HumanResourcesJobId,
+	HumanResourcesLearningAssignmentId,
 	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
@@ -27,6 +31,7 @@ import type {
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
 	HumanResourcesSalaryBandId,
+	HumanResourcesSessionId,
 	HumanResourcesTerminationId,
 } from "./brands";
 import type { MutationPorts } from "./ports";
@@ -42,6 +47,12 @@ import type {
 	JobStatus,
 	PositionStatus,
 } from "./shared/employment-status";
+import type {
+	AssignmentStatus,
+	CertificationStatus,
+	CourseStatus,
+	SessionStatus,
+} from "./shared/learning-status";
 import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
@@ -63,15 +74,19 @@ import type {
 	Candidate,
 	CandidateApplication,
 	CandidateListPage,
+	CertificationListPage,
 	Clearance,
 	CompensationGrade,
 	CompensationGradeListPage,
 	CompensationReview,
 	CompensationReviewListPage,
+	CompletionListPage,
+	CourseListPage,
 	Department,
 	Employee,
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
+	EmployeeCertification,
 	EmployeeListPage,
 	Employment,
 	EmploymentConfirmation,
@@ -83,6 +98,11 @@ import type {
 	InterviewListPage,
 	Job,
 	JobRequisition,
+	LearningAssignment,
+	LearningAssignmentListPage,
+	LearningCompletion,
+	LearningCourse,
+	LearningSession,
 	OffboardingCase,
 	OffboardingTask,
 	OfferAcceptanceHandoff,
@@ -96,6 +116,7 @@ import type {
 	RequisitionListPage,
 	SalaryBand,
 	SalaryBandListPage,
+	SessionListPage,
 	Termination,
 	WorkAssignment,
 } from "./types";
@@ -348,6 +369,85 @@ export type OffboardingCaseCreateRecord = {
 export type IdempotentOffboardingCaseRecord = {
 	offboardingCase: OffboardingCase;
 	startRequestFingerprint: string;
+};
+
+export type CourseCreateRecord = {
+	organizationId: string;
+	code: string;
+	title: string;
+	description: string | null;
+	durationHours: string | null;
+	createdBy: string;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentCourseRecord = {
+	course: LearningCourse;
+	createRequestFingerprint: string;
+};
+
+export type SessionCreateRecord = {
+	organizationId: string;
+	courseId: HumanResourcesCourseId;
+	startsOn: string;
+	endsOn: string | null;
+	location: string | null;
+	maxParticipants: number | null;
+	createdBy: string;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentSessionRecord = {
+	session: LearningSession;
+	createRequestFingerprint: string;
+};
+
+export type LearningAssignmentCreateRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	courseId: HumanResourcesCourseId;
+	assignedOn: string;
+	targetCompletionDate: string | null;
+	mandatory: boolean;
+	createdBy: string;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentLearningAssignmentRecord = {
+	assignment: LearningAssignment;
+	createRequestFingerprint: string;
+};
+
+export type CompletionCreateRecord = {
+	organizationId: string;
+	assignmentId: HumanResourcesLearningAssignmentId;
+	completedOn: string;
+	resultNotes: string | null;
+	certificateEvidence: string | null;
+	createdBy: string;
+	recordRequestFingerprint: string;
+};
+
+export type IdempotentCompletionRecord = {
+	completion: LearningCompletion;
+	recordRequestFingerprint: string;
+};
+
+export type CertificationCreateRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	courseId: HumanResourcesCourseId;
+	completionId: HumanResourcesCompletionId;
+	issuedOn: string;
+	expiresOn: string | null;
+	certificateEvidence: string | null;
+	createdBy: string;
+	issueRequestFingerprint: string;
+};
+
+export type IdempotentCertificationRecord = {
+	certification: EmployeeCertification;
+	issueRequestFingerprint: string;
 };
 
 /**
