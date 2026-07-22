@@ -18,14 +18,14 @@ import {
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(116);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(116);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(154);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(154);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);
-		expect(hrRoots).toHaveLength(43);
+		expect(hrRoots).toHaveLength(81);
 		expect(hrRoots[0]).toBe("hr_employee");
-		expect(hrRoots.at(-1)).toBe("hr_compensation_review");
+		expect(hrRoots.at(-1)).toBe("hr_policy_acknowledgement");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("supplier_credit_note_line");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
 			"financial_posting_exception",

@@ -1,4 +1,4 @@
-import { createDrizzleHumanResourcesStore } from "./drizzle-store";
+import { createDrizzleHumanResourcesStore } from "./adapters/drizzle";
 import { MemoryHumanResourcesStore } from "./memory-store";
 import type { HumanResourcesStore } from "./store";
 

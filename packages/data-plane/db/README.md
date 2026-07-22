@@ -38,10 +38,13 @@ Living tables include `platform_permission`, `platform_role`, `platform_role_ass
 ```bash
 pnpm --filter @afenda/db db:generate
 pnpm --filter @afenda/db db:check
+pnpm --filter @afenda/db db:migration-status
 pnpm --filter @afenda/db db:migrate
 pnpm --filter @afenda/db db:verify-migrate-ban
 pnpm --filter @afenda/db db:introspect
 ```
+
+**Canonical funnel:** `db:generate` → `db:check` → `AFENDA_ALLOW_DB_MIGRATE=1 db:migrate`. No `db:push`, no ad-hoc `apply-*.mjs`, no Neon MCP DDL apply. Cursor hooks block shell bypasses and MCP `prepare_database_migration` / DDL `run_sql`.
 
 `db:migrate` runs the guarded migrate path (`scripts/db-migrate-guard.mjs`), not raw `drizzle-kit migrate`. Requires `AFENDA_ALLOW_DB_MIGRATE=1`. A sole `0000_*.sql` baseline also needs `AFENDA_ALLOW_BASELINE_MIGRATE=1` (empty-DB / Mode C apply only). Migrations that the guard classifies as destructive also require `AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1` (explicit ops approval — never set in CI by default).
 

@@ -57,7 +57,7 @@ export async function requireHumanResourcesQueryPermission(
 	});
 }
 
-async function requireHumanResourcesPermission(
+export async function requireHumanResourcesPermission(
 	authorization: HumanResourcesAuthorizationPort | undefined,
 	input: {
 		organizationId: string;

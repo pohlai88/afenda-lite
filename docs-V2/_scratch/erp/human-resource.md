@@ -464,6 +464,70 @@ HR must not calculate gross-to-net payroll. Payroll must not silently change emp
 
 ---
 
+# 4.1 Leave administration (HR-LEAVE-01)
+
+Leave owns **leave facts** only — policies, entitlements, append-only adjustments, requests, and approval history. Balance is **derived**: `opening_quantity + Σ(posted adjustment.delta)`; approve posts `consumption` adjustments; cancel-approved posts `cancellation_reversal`. No monetary valuation.
+
+**Calendar dependency:** segment expansion uses injected `WorkCalendarPort` (HR-TIME-01 DDL not required).
+
+Suggested tables:
+
+```text
+hr_leave_policy
+hr_leave_policy_eligibility
+hr_leave_entitlement
+hr_leave_adjustment
+hr_leave_request
+hr_leave_request_segment
+hr_leave_approval_decision
+```
+
+FK graph: policy → eligibility; policy + employee + employment → entitlement; entitlement → adjustment (optional `source_request_id`); entitlement + policy + employee + employment → request → segments + approval_decisions.
+
+Talent administration (HR-TALENT-01) tables:
+
+```text
+hr_competency
+hr_job_competency
+hr_competency_assessment
+hr_talent_profile
+hr_talent_profile_assessment
+hr_talent_pool
+hr_talent_pool_member
+hr_career_plan
+hr_career_plan_action
+hr_succession_plan
+hr_succession_candidate
+```
+
+Evidence-based assessments supersede prior records; talent data stays in `@afenda/human-resources`.
+
+---
+
+# 4.2 Performance management (HR-PERF-01)
+
+Performance owns **cycle, goal, review, and improvement-plan facts** only. No compensation mutation, payroll writes, auto-termination, or high-potential classification.
+
+Suggested tables:
+
+```text
+hr_performance_cycle
+hr_performance_cycle_participant
+hr_performance_goal
+hr_performance_goal_progress
+hr_performance_review
+hr_performance_review_participant
+hr_performance_assessment
+hr_performance_improvement_plan
+hr_performance_improvement_checkpoint
+```
+
+FK graph: cycle → participants; cycle + employee + employment → goals → progress entries; cycle + employee + employment → reviews → participants + assessments; finalized review → improvement plan → checkpoints.
+
+Lifecycle: cycle `draft|open|closed|cancelled`; goal `draft|submitted|approved|rejected|active|closed|cancelled`; review `draft|self_submitted|manager_submitted|returned|acknowledged|finalized|reopened`; PIP `draft|open|acknowledged|completed|unsuccessful|cancelled`. Finalized reviews are immutable; exceptional reopen requires `human-resources.performance.review.reopen`.
+
+---
+
 # 5. `packages/erp/payroll`
 
 ## Package identity
@@ -740,6 +804,10 @@ human-resources.compensation.changed.v1
 human-resources.benefit-enrollment.changed.v1
 
 human-resources.leave.approved.v1
+human-resources.leave.requested.v1
+human-resources.leave.rejected.v1
+human-resources.leave.cancelled.v1
+human-resources.leave.entitlement-adjusted.v1
 human-resources.timesheet.approved.v1
 human-resources.certification.expiring.v1
 ```
@@ -780,6 +848,15 @@ human-resources.offboarding.manage
 
 human-resources.leave.request
 human-resources.leave.approve
+human-resources.leave-policy.read
+human-resources.leave-policy.manage
+human-resources.leave-entitlement.read
+human-resources.leave-entitlement.grant
+human-resources.leave-entitlement.adjust
+human-resources.leave-request.own
+human-resources.leave-request.approve-team
+human-resources.leave-request.backdate
+human-resources.leave-request.sensitive-read
 human-resources.attendance.manage
 human-resources.timesheet.approve
 

@@ -94,13 +94,20 @@ App code must not `db.select()` tenant tables without `withOrg`. Audit null-org:
 
 ## Migrate + catalog
 
+**Canonical funnel only** (N2): `db:generate` → `db:check` → operator `db:migrate`. No `db:push`, no ad-hoc `apply-*.mjs`, no Neon MCP DDL (`prepare_database_migration` / DDL `run_sql`). Cursor hooks enforce shell + MCP blocks (`.cursor/hooks/no-drizzle-baseline-migrate.mjs`).
+
 | Command | Job |
 |---------|-----|
-| `pnpm --filter @afenda/db db:migrate` | Guarded migrate entry (`db-migrate-guard.mjs`) |
+| `pnpm --filter @afenda/db db:generate` | Generate forward SQL from Drizzle schema |
+| `pnpm --filter @afenda/db db:check` | Journal assert + `drizzle-kit check` (CI) |
+| `pnpm --filter @afenda/db db:migration-status` | Read-only journal vs `drizzle.__drizzle_migrations` |
+| `pnpm --filter @afenda/db db:migrate` | Guarded migrate (`db-migrate-guard.mjs`; requires `AFENDA_ALLOW_DB_MIGRATE=1`) |
 | `pnpm --filter @afenda/db db:verify-migrate-ban` | Verify migrate ban posture |
 | `pnpm --filter @afenda/db db:ensure-permission-catalog` | Permission catalog seed (not baseline migrate) |
 
-Do not invent ad-hoc SQL migrate paths outside `@afenda/db` scripts.
+Forward migrate (existing DB): `AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate`. Destructive SQL also needs `AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1`. Sole `0000_*.sql` baseline after empty-DB wipe also needs `AFENDA_ALLOW_BASELINE_MIGRATE=1`.
+
+Do not invent ad-hoc SQL migrate paths outside `@afenda/db` guarded migrate.
 
 ---
 

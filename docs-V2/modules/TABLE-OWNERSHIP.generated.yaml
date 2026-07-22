@@ -238,6 +238,158 @@ tables:
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
     table: hr_compensation_review
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_policy
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_policy_eligibility
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_entitlement
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_adjustment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_request
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_request_segment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_leave_approval_decision
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_cycle
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_cycle_participant
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_goal
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_goal_progress
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_review
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_review_participant
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_assessment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_improvement_plan
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_improvement_checkpoint
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_competency
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_job_competency
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_competency_assessment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_talent_profile
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_talent_profile_assessment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_talent_pool
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_talent_pool_member
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_career_plan
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_career_plan_action
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_succession_plan
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_succession_candidate
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_headcount_plan
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_headcount_plan_line
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_headcount_reservation
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_case
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_case_event
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_case_action
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_case_appeal
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_document_requirement
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_document
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_work_eligibility
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_policy_acknowledgement
   - moduleId: inventory
     packageName: "@afenda/inventory"
     schemaOwner: "@afenda/db"

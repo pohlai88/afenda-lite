@@ -115,10 +115,31 @@ permissions:
   - code: human-resources.offboarding.manage
     moduleId: human-resources
     namespace: human-resources
-  - code: human-resources.leave.request
+  - code: human-resources.leave-policy.read
     moduleId: human-resources
     namespace: human-resources
-  - code: human-resources.leave.approve
+  - code: human-resources.leave-policy.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-entitlement.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-entitlement.grant
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-entitlement.adjust
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-request.own
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-request.approve-team
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-request.backdate
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave-request.sensitive-read
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.attendance.manage
@@ -128,6 +149,21 @@ permissions:
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.performance.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.own.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.manager.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.improvement-plan.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.review.reopen
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.confidential.read
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.learning.manage
@@ -143,6 +179,93 @@ permissions:
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.benefits.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.open
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.assigned.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.investigate
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.finding
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.action.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.appeal
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-case.exceptional.admin
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.workforce-plan.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.workforce-plan.prepare
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.workforce-plan.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.headcount.reserve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.headcount.exceptional-adjust
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.document-requirement.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-document.own.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-document.own.register
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee-document.verify
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.work-eligibility.verify
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.compliance.administer
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.identity-document.sensitive.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.policy-acknowledgement.administer
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.competency.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.competency.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.competency.assess
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.career-plan.own.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.career-plan.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.talent.admin
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.talent.profile.sensitive.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.succession.admin
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.succession.executive.read
     moduleId: human-resources
     namespace: human-resources
   - code: inventory.movement.create

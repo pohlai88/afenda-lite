@@ -56,6 +56,9 @@ Also shipped on the same barrel (schema-backed): organization structure (departm
 | `human-resources.onboarding.*` | command/query | `onboarding.manage` / `employee.read` | HR-05 |
 | `human-resources.probation.*` / `employment.confirm` / `assignment.transfer` / `termination.finalize` | command/query | `employment.manage` / `employee.read` | HR-05 |
 | `human-resources.offboarding.*` | command/query | `offboarding.manage` / `employee.read` | HR-05 |
+| `human-resources.compensation-grade.*` / `salary-band.*` / `employee-compensation.*` / `compensation-review.*` | command | `compensation.manage` | HR-07 |
+| `human-resources.benefit-plan.*` / `benefit-enrollment.*` | command | `benefits.manage` | HR-07 |
+| `human-resources.approved-compensation-handoff.get` | query | `compensation.read` | HR-07 |
 
 **Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position status: `active` \| `frozen` \| `closed` — assignment create requires `active`. Department/job status: `active` \| `archived`. Position create requires active department + job. No headcount authority — not enforced. `employee.read` is **not** sufficient for organization-structure mutation.
 
@@ -63,7 +66,9 @@ Also shipped on the same barrel (schema-backed): organization structure (departm
 
 **Lifecycle (HR-05):** Onboarding (`in_progress` → `completed`) seeds mandatory/optional tasks and emits `onboarding.started.v1` / `onboarding.completed.v1`. Probation is open/closed with `passed`\|`failed`; confirmation is unique per employment and does **not** change employment status. Transfer atomically ends the open assignment, opens a new one, records `hr_employment_movement`, and emits `employee.transferred.v1`. Finalized termination sets employment `terminated` + `ends_on` and emits `employee.terminated.v1`. Offboarding requires notice/terminated (or linked finalized termination), seeds tasks + pending clearance, and completes only when mandatory tasks, exit interview, and cleared clearance are present — independent of payroll.
 
-`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, department, job, position, assignment, reporting line, recruitment, and lifecycle aggregates. Remaining folders under time/leave/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
+**Compensation & benefits (HR-07):** Agreement-only slice — grades, salary bands, employee compensation, review workflow, benefit plans/enrollments. No gross-to-net payroll. `getApprovedCompensationHandoff` returns `null` when the employee exists but has no active compensation (not an empty fabricated object). Sensitive read uses `compensation.read` only — `employee.read` is insufficient. Currency codes validate via `@afenda/master-data` (`CurrencyLookupPort`). Events: `compensation.changed.v1`, `benefit-enrollment.changed.v1`. **Next open slice: HR-08 Learning.**
+
+`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, department, job, position, assignment, reporting line, recruitment, lifecycle, and compensation-benefits aggregates. Remaining folders under time/leave/learning/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
 
 **Authorization:** permission checks go through an injected `HumanResourcesAuthorizationPort` at the composition root — never import `@afenda/admin` here. Route-level checks in `apps/web` are not sufficient.
 
@@ -88,7 +93,7 @@ Command schemas are `.strict()` and keep tenant fields only at the top level (no
 | Mutation roots | All **43** `hr_*` tables are `HARD_TENANT_ROOT` in `@afenda/db` (`hard-tenant-roots.ts`) and `pnpm audit:tenancy-nulls` |
 | Lookup contract | Store methods require `organizationId`; bare-ID cross-org get is prohibited |
 | Stamp last | Composition root stamps `organizationId` after client payload; DB `NOT NULL` is the final integrity boundary |
-| Domain DDL (HR2 + HR-03 + HR-04 + HR-05) | Core workforce via `0036`; organization structure via `0037`; recruitment via `0038`; lifecycle via `0039` (`hr_onboarding_case` … `hr_clearance`) |
+| Domain DDL (HR2 + HR-03 + HR-04 + HR-05 + HR-07) | Core workforce via `0036`; organization structure via `0037`; recruitment via `0038`; lifecycle via `0039`; compensation-benefits via `0040` (`hr_compensation_grade` … `hr_benefit_enrollment`) |
 | Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position; reporting → same-org employees — enforced in memory + Drizzle |
 | Terminate closes open | Status → `terminated` always sets `ends_on` (caller value or startsOn) so open unique index releases; emits `employee.terminated.v1` |
 

@@ -54,8 +54,11 @@ Schema and migrations live in [`packages/data-plane/db`](packages/data-plane/db)
 ```bash
 pnpm db:generate   # or: pnpm --filter @afenda/db db:generate
 pnpm db:check      # journal assert + drizzle-kit check (also runs in CI)
+pnpm db:migration-status  # read-only journal vs Neon ledger (ops)
 pnpm db:migrate    # fail-closed; requires AFENDA_ALLOW_DB_MIGRATE=1; never auto-run on deploy
 ```
+
+No `db:push`, no ad-hoc `apply-*.mjs`, no Neon MCP DDL for schema changes — only the guarded migrate path above.
 
 Product runtime requires pooled `DATABASE_URL` (`-pooler`). Migrate/ops may use the same key without `-pooler` (operator shell override only — no `DIRECT_*` product var).
 

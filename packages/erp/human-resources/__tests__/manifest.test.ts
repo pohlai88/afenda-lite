@@ -60,7 +60,7 @@ describe("humanResourcesModuleManifest", () => {
 		expect(HUMAN_RESOURCES_PERMISSION_CODES).toContain(
 			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 		);
-		expect(humanResourcesModuleManifest.events.emits).toHaveLength(16);
+		expect(humanResourcesModuleManifest.events.emits).toHaveLength(45);
 		expect(humanResourcesModuleManifest.owns.commands).toEqual([
 			...HUMAN_RESOURCES_COMMAND_IDS,
 		]);
@@ -168,7 +168,7 @@ describe("humanResourcesModuleManifest", () => {
 	});
 
 	it("registers every mutation table as a hard tenant root (HR1)", () => {
-		expect(HUMAN_RESOURCES_MUTATION_TABLES).toHaveLength(43);
+		expect(HUMAN_RESOURCES_MUTATION_TABLES).toHaveLength(81);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);

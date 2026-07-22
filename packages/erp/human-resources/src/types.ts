@@ -4,14 +4,32 @@ import type {
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
+	HumanResourcesCareerPlanActionId,
+	HumanResourcesCareerPlanId,
 	HumanResourcesCertificationId,
+	HumanResourcesCompetencyAssessmentId,
+	HumanResourcesCompetencyId,
+	HumanResourcesGoalId,
+	HumanResourcesHeadcountPlanId,
+	HumanResourcesHeadcountPlanLineId,
+	HumanResourcesHeadcountReservationId,
+	HumanResourcesImprovementPlanId,
+	HumanResourcesImprovementCheckpointId,
+	HumanResourcesPerformanceCycleId,
+	HumanResourcesPerformanceCycleParticipantId,
+	HumanResourcesGoalProgressId,
+	HumanResourcesReviewId,
+	HumanResourcesReviewParticipantId,
+	HumanResourcesAssessmentId,
 	HumanResourcesClearanceId,
 	HumanResourcesCompensationGradeId,
 	HumanResourcesCompensationReviewId,
 	HumanResourcesCompletionId,
 	HumanResourcesCourseId,
 	HumanResourcesDepartmentId,
+	HumanResourcesDocumentRequirementId,
 	HumanResourcesEmployeeCompensationId,
+	HumanResourcesEmployeeDocumentId,
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentContractId,
@@ -20,28 +38,36 @@ import type {
 	HumanResourcesExitInterviewId,
 	HumanResourcesInterviewEvaluationId,
 	HumanResourcesInterviewId,
+	HumanResourcesJobCompetencyId,
 	HumanResourcesJobId,
 	HumanResourcesLearningAssignmentId,
+	HumanResourcesLeaveAdjustmentId,
+	HumanResourcesLeaveApprovalDecisionId,
+	HumanResourcesLeaveEntitlementId,
+	HumanResourcesLeavePolicyId,
+	HumanResourcesLeaveRequestId,
+	HumanResourcesLeaveRequestSegmentId,
 	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
 	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingTaskId,
 	HumanResourcesPositionId,
+	HumanResourcesPolicyAcknowledgementId,
 	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
 	HumanResourcesSalaryBandId,
 	HumanResourcesSessionId,
+	HumanResourcesSuccessionCandidateId,
+	HumanResourcesSuccessionPlanId,
+	HumanResourcesTalentPoolId,
+	HumanResourcesTalentPoolMemberId,
+	HumanResourcesTalentProfileAssessmentId,
+	HumanResourcesTalentProfileId,
 	HumanResourcesTerminationId,
+	HumanResourcesWorkEligibilityId,
 } from "./brands";
-import type {
-	DepartmentStatus,
-	EmploymentStatus,
-	JobStatus,
-	PositionStatus,
-	ReportingRelationshipKind,
-} from "./shared/employment-status";
 import type {
 	BenefitEnrollmentStatus,
 	BenefitPlanStatus,
@@ -50,6 +76,41 @@ import type {
 	EmployeeCompensationStatus,
 	SalaryBandStatus,
 } from "./shared/compensation-status";
+import type {
+	DocumentRequirementStatus,
+	EmployeeDocumentVerificationStatus,
+	PolicyAcknowledgementStatus,
+	WorkEligibilityStatus,
+} from "./shared/compliance-status";
+import type {
+	DepartmentStatus,
+	EmploymentStatus,
+	JobStatus,
+	PositionStatus,
+	ReportingRelationshipKind,
+} from "./shared/employment-status";
+import type {
+	AssignmentStatus,
+	CertificationStatus,
+	CourseStatus,
+	SessionStatus,
+} from "./shared/learning-status";
+import type { PerformanceRatingScale } from "./shared/performance-rating";
+import type {
+	HeadcountEmploymentType,
+	HeadcountPlanStatus,
+	HeadcountReservationStatus,
+} from "./shared/workforce-planning-status";
+import type {
+	PerformanceAssessmentKind,
+	PerformanceCheckpointOutcome,
+	PerformanceCycleParticipantStatus,
+	PerformanceCycleStatus,
+	PerformanceGoalStatus,
+	PerformanceImprovementPlanStatus,
+	PerformanceReviewStatus,
+	PerformanceWeightingModel,
+} from "./shared/performance-status";
 import type {
 	ClearanceStatus,
 	LifecycleTaskStatus,
@@ -61,6 +122,22 @@ import type {
 	TerminationStatus,
 } from "./shared/lifecycle-status";
 import type {
+	CareerPlanActionStatus,
+	CareerPlanStatus,
+	CompetencyAssessmentStatus,
+	CompetencyScaleCode,
+	CompetencyStatus,
+	JobCompetencyStatus,
+	SuccessionCandidateStatus,
+	SuccessionPlanStatus,
+	SuccessionReadinessCode,
+	TalentPoolMemberStatus,
+	TalentPoolStatus,
+	TalentProfileAssessmentMethodCode,
+	TalentProfileAssessmentStatus,
+	TalentProfileStatus,
+} from "./shared/talent-status";
+import type {
 	ApplicationStatus,
 	CandidateStatus,
 	InterviewEvaluationResult,
@@ -69,11 +146,16 @@ import type {
 	RequisitionStatus,
 } from "./shared/recruitment-status";
 import type {
-	AssignmentStatus,
-	CertificationStatus,
-	CourseStatus,
-	SessionStatus,
-} from "./shared/learning-status";
+	ApprovalDecision,
+	DayPortion,
+	LeaveAdjustmentKind,
+	LeaveAdjustmentStatus,
+	LeaveEntitlementStatus,
+	LeavePolicyStatus,
+	LeaveRequestStatus,
+	LeaveType,
+	LeaveUnit,
+} from "./shared/leave-status";
 
 export type Employee = {
 	id: HumanResourcesEmployeeId;
@@ -736,10 +818,13 @@ export type EmployeeCertification = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	courseId: HumanResourcesCourseId;
+	completionId: HumanResourcesCompletionId;
 	certificationCode: string;
 	issuedOn: string;
 	expiresOn: string | null;
 	status: CertificationStatus;
+	revokedAt: Date | null;
+	revokedBy: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -782,13 +867,984 @@ export type CertificationListPage = {
 	pageSize: number;
 };
 
-/**
- * Minimized DTO for approved compensation handoff to payroll or external systems.
- * Active agreement + active enrollments only.
- */
 export type ApprovedCompensationHandoff = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	activeCompensation: EmployeeCompensation | null;
 	activeBenefitEnrollments: BenefitEnrollment[];
+};
+
+export type LeavePolicy = {
+	id: HumanResourcesLeavePolicyId;
+	organizationId: string;
+	code: string;
+	name: string;
+	leaveType: LeaveType;
+	unit: LeaveUnit;
+	paid: boolean;
+	sensitive: boolean;
+	allowsNegativeBalance: boolean;
+	allowSelfApproval: boolean;
+	allowsPartialDay: boolean;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	status: LeavePolicyStatus;
+	supersedesPolicyId: HumanResourcesLeavePolicyId | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeavePolicyEligibility = {
+	id: string;
+	organizationId: string;
+	policyId: HumanResourcesLeavePolicyId;
+	minTenureDays: number | null;
+	allowedEmploymentStatuses: EmploymentStatus[];
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeaveEntitlement = {
+	id: HumanResourcesLeaveEntitlementId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	policyId: HumanResourcesLeavePolicyId;
+	periodStart: string;
+	periodEnd: string;
+	openingQuantity: string;
+	status: LeaveEntitlementStatus;
+	createIdempotencyKey: string;
+	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeaveAdjustment = {
+	id: HumanResourcesLeaveAdjustmentId;
+	organizationId: string;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	sourceRequestId: HumanResourcesLeaveRequestId | null;
+	kind: LeaveAdjustmentKind;
+	delta: string;
+	reason: string;
+	source: string;
+	status: LeaveAdjustmentStatus;
+	createIdempotencyKey: string;
+	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeaveRequest = {
+	id: HumanResourcesLeaveRequestId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	policyId: HumanResourcesLeavePolicyId;
+	startDate: string;
+	endDate: string;
+	requestedQuantity: string;
+	unit: LeaveUnit;
+	status: LeaveRequestStatus;
+	isBackdated: boolean;
+	backdateJustification: string | null;
+	approvedAt: Date | null;
+	createIdempotencyKey: string;
+	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeaveRequestSegment = {
+	id: HumanResourcesLeaveRequestSegmentId;
+	organizationId: string;
+	requestId: HumanResourcesLeaveRequestId;
+	segmentDate: string;
+	quantity: string;
+	dayPortion: DayPortion;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeaveApprovalDecision = {
+	id: HumanResourcesLeaveApprovalDecisionId;
+	organizationId: string;
+	requestId: HumanResourcesLeaveRequestId;
+	decision: ApprovalDecision;
+	decidedBy: string;
+	decidedAt: Date;
+	note: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LeaveBalance = {
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	employeeId: HumanResourcesEmployeeId;
+	policyId: HumanResourcesLeavePolicyId;
+	unit: LeaveUnit;
+	openingQuantity: string;
+	balance: string;
+};
+
+export type ApprovedLeaveHandoff = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	requestId: HumanResourcesLeaveRequestId;
+	policyId: HumanResourcesLeavePolicyId;
+	policyVersion: number;
+	paid: boolean;
+	unit: LeaveUnit;
+	startDate: string;
+	endDate: string;
+	quantity: string;
+	segments: Array<{ date: string; quantity: string; dayPortion: string }>;
+	approvedAt: string;
+	correlationId: string;
+};
+
+export type ResolvedLeavePolicy = {
+	policy: LeavePolicy;
+	eligibility: LeavePolicyEligibility;
+};
+
+export type LeavePolicyListPage = {
+	policies: LeavePolicy[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type LeaveEntitlementListPage = {
+	entitlements: LeaveEntitlement[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type LeaveRequestListPage = {
+	requests: LeaveRequest[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type TeamCalendarLeaveEntry = {
+	request: LeaveRequest;
+	segments: LeaveRequestSegment[];
+};
+
+export type TeamCalendarLeavePage = {
+	entries: TeamCalendarLeaveEntry[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PerformanceCycle = {
+	id: HumanResourcesPerformanceCycleId;
+	organizationId: string;
+	code: string;
+	name: string;
+	periodStart: string;
+	periodEnd: string;
+	ratingScale: PerformanceRatingScale;
+	weightingModel: PerformanceWeightingModel;
+	status: PerformanceCycleStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceCycleParticipant = {
+	id: HumanResourcesPerformanceCycleParticipantId;
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	status: PerformanceCycleParticipantStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceGoal = {
+	id: HumanResourcesGoalId;
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	title: string;
+	description: string | null;
+	weight: string | null;
+	periodStart: string;
+	periodEnd: string;
+	exceptionOutsideCycle: boolean;
+	status: PerformanceGoalStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceGoalProgress = {
+	id: HumanResourcesGoalProgressId;
+	organizationId: string;
+	goalId: HumanResourcesGoalId;
+	recordedAt: Date;
+	progressNote: string;
+	progressValue: string | null;
+	recordedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceReview = {
+	id: HumanResourcesReviewId;
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	overallRating: string | null;
+	acknowledgementNote: string | null;
+	status: PerformanceReviewStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceReviewParticipant = {
+	id: HumanResourcesReviewParticipantId;
+	organizationId: string;
+	reviewId: HumanResourcesReviewId;
+	role: "self" | "manager" | "delegated";
+	employeeId: HumanResourcesEmployeeId | null;
+	userId: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceAssessment = {
+	id: HumanResourcesAssessmentId;
+	organizationId: string;
+	reviewId: HumanResourcesReviewId;
+	kind: PerformanceAssessmentKind;
+	rating: string | null;
+	commentsSensitive: string | null;
+	submittedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceImprovementPlan = {
+	id: HumanResourcesImprovementPlanId;
+	organizationId: string;
+	reviewId: HumanResourcesReviewId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	performanceGap: string;
+	expectedOutcome: string;
+	measurableActions: string;
+	supportResources: string;
+	dueDate: string;
+	accountableManagerEmployeeId: HumanResourcesEmployeeId;
+	status: PerformanceImprovementPlanStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceImprovementCheckpoint = {
+	id: HumanResourcesImprovementCheckpointId;
+	organizationId: string;
+	planId: HumanResourcesImprovementPlanId;
+	sequenceNumber: number;
+	dueDate: string;
+	outcome: PerformanceCheckpointOutcome;
+	notes: string | null;
+	recordedBy: string | null;
+	recordedAt: Date | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceCycleListPage = {
+	cycles: PerformanceCycle[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PerformanceCycleParticipantListPage = {
+	participants: PerformanceCycleParticipant[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PerformanceGoalListPage = {
+	goals: PerformanceGoal[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PerformanceReviewListPage = {
+	reviews: PerformanceReview[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PerformanceImprovementPlanListPage = {
+	plans: PerformanceImprovementPlan[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PerformanceAssessmentProjection = {
+	id: HumanResourcesAssessmentId;
+	kind: PerformanceAssessmentKind;
+	rating: string | null;
+	commentsSensitive: string | null;
+	submittedAt: Date | null;
+	version: number;
+};
+
+export type PerformanceReviewDetail = {
+	review: PerformanceReview;
+	participants: PerformanceReviewParticipant[];
+	assessments: PerformanceAssessmentProjection[];
+};
+
+export type EmployeePerformanceHistoryEntry = {
+	review: PerformanceReview;
+	overallRating: string | null;
+	assessments: PerformanceAssessmentProjection[];
+	goals: PerformanceGoal[];
+	improvementPlans: PerformanceImprovementPlan[];
+};
+
+export type EmployeePerformanceHistory = {
+	employeeId: HumanResourcesEmployeeId;
+	entries: EmployeePerformanceHistoryEntry[];
+};
+
+export function projectPerformanceAssessment(
+	assessment: PerformanceAssessment,
+	includeConfidential: boolean,
+): PerformanceAssessmentProjection {
+	if (includeConfidential) {
+		return {
+			id: assessment.id,
+			kind: assessment.kind,
+			rating: assessment.rating,
+			commentsSensitive: assessment.commentsSensitive,
+			submittedAt: assessment.submittedAt,
+			version: assessment.version,
+		};
+	}
+	return {
+		id: assessment.id,
+		kind: assessment.kind,
+		rating: null,
+		commentsSensitive: null,
+		submittedAt: assessment.submittedAt,
+		version: assessment.version,
+	};
+}
+
+export function projectPerformanceReviewDetail(
+	input: {
+		review: PerformanceReview;
+		participants: PerformanceReviewParticipant[];
+		assessments: PerformanceAssessment[];
+	},
+	includeConfidential: boolean,
+): PerformanceReviewDetail {
+	return {
+		review: includeConfidential
+			? input.review
+			: {
+					...input.review,
+					overallRating: null,
+					acknowledgementNote: input.review.acknowledgementNote,
+				},
+		participants: input.participants,
+		assessments: input.assessments.map((assessment) =>
+			projectPerformanceAssessment(assessment, includeConfidential),
+		),
+	};
+}
+
+export type HeadcountPlan = {
+	id: HumanResourcesHeadcountPlanId;
+	organizationId: string;
+	code: string;
+	title: string;
+	planningScopeKey: string;
+	periodStart: string;
+	periodEnd: string;
+	status: HeadcountPlanStatus;
+	planVersion: number;
+	supersedesPlanId: HumanResourcesHeadcountPlanId | null;
+	approvedBy: string | null;
+	approvedAt: Date | null;
+	rejectedBy: string | null;
+	rejectedAt: Date | null;
+	rejectionReason: string | null;
+	costEnvelopeAmount: string | null;
+	costEnvelopeCurrencyCode: string | null;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type HeadcountPlanLine = {
+	id: HumanResourcesHeadcountPlanLineId;
+	organizationId: string;
+	planId: HumanResourcesHeadcountPlanId;
+	departmentId: HumanResourcesDepartmentId | null;
+	jobId: HumanResourcesJobId | null;
+	positionId: HumanResourcesPositionId | null;
+	locationCode: string | null;
+	employmentType: HeadcountEmploymentType | null;
+	plannedFte: string;
+	plannedHeadcount: number;
+	costEnvelopeAmount: string | null;
+	costEnvelopeCurrencyCode: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type HeadcountReservation = {
+	id: HumanResourcesHeadcountReservationId;
+	organizationId: string;
+	planId: HumanResourcesHeadcountPlanId;
+	planLineId: HumanResourcesHeadcountPlanLineId;
+	requisitionId: HumanResourcesRequisitionId;
+	reservedFte: string;
+	reservedHeadcount: number;
+	status: HeadcountReservationStatus;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type HeadcountPlanListPage = {
+	plans: HeadcountPlan[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type HeadcountReservationListPage = {
+	reservations: HeadcountReservation[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type HeadcountLineAvailability = {
+	planLineId: string;
+	plannedFte: string;
+	plannedHeadcount: number;
+	reservedFte: string;
+	reservedHeadcount: number;
+	consumedFte: string;
+	consumedHeadcount: number;
+	availableFte: string;
+	availableHeadcount: number;
+};
+
+export type HeadcountAvailability = {
+	planId: HumanResourcesHeadcountPlanId;
+	planLineId: HumanResourcesHeadcountPlanLineId;
+	lines: HeadcountLineAvailability[];
+};
+
+export type RecruitmentHeadcountHandoff = {
+	organizationId: string;
+	requisitionId: HumanResourcesRequisitionId;
+	approvedPlan: HeadcountPlan | null;
+	availability: HeadcountLineAvailability | null;
+	activeReservation: HeadcountReservation | null;
+};
+
+export type WorkforcePlanVariance = {
+	planId: HumanResourcesHeadcountPlanId;
+	lines: Array<
+		HeadcountLineAvailability & {
+			varianceFte: string;
+			varianceHeadcount: number;
+		}
+	>;
+};
+
+export type DocumentRequirement = {
+	id: HumanResourcesDocumentRequirementId;
+	organizationId: string;
+	code: string;
+	name: string;
+	documentType: string;
+	issuingJurisdiction: string | null;
+	appliesToNote: string | null;
+	status: DocumentRequirementStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmployeeDocument = {
+	id: HumanResourcesEmployeeDocumentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	requirementId: HumanResourcesDocumentRequirementId | null;
+	documentType: string;
+	issuingJurisdiction: string | null;
+	issuedOn: string;
+	expiresOn: string | null;
+	verificationStatus: EmployeeDocumentVerificationStatus;
+	verifiedBy: string | null;
+	verifiedAt: Date | null;
+	rejectionReason: string | null;
+	documentRef: string;
+	identifierLast4: string | null;
+	identifierFingerprint: string | null;
+	metadata: Record<string, unknown> | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmployeeDocumentListItem = {
+	id: HumanResourcesEmployeeDocumentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	requirementId: HumanResourcesDocumentRequirementId | null;
+	documentType: string;
+	issuingJurisdiction: string | null;
+	issuedOn: string;
+	expiresOn: string | null;
+	verificationStatus: EmployeeDocumentVerificationStatus;
+	verifiedAt: Date | null;
+	version: number;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmployeeDocumentSensitiveDetail = EmployeeDocumentListItem & {
+	identifierLast4: string | null;
+	documentRef: string;
+	metadata: Record<string, unknown> | null;
+	rejectionReason: string | null;
+	verifiedBy: string | null;
+};
+
+export type WorkEligibility = {
+	id: HumanResourcesWorkEligibilityId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	countryCode: string;
+	jurisdiction: string | null;
+	status: WorkEligibilityStatus;
+	issuedOn: string;
+	expiresOn: string | null;
+	verifiedBy: string | null;
+	verifiedAt: Date | null;
+	documentRef: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PolicyAcknowledgement = {
+	id: HumanResourcesPolicyAcknowledgementId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	policyCode: string;
+	policyVersion: string;
+	requirementStatus: PolicyAcknowledgementStatus;
+	issuedAt: Date;
+	acknowledgedAt: Date | null;
+	acknowledgedBy: string | null;
+	supersedesAcknowledgementId: HumanResourcesPolicyAcknowledgementId | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type DocumentRequirementListPage = {
+	requirements: DocumentRequirement[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type EmployeeDocumentListPage = {
+	documents: EmployeeDocumentListItem[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type WorkEligibilityRiskListPage = {
+	eligibilities: WorkEligibility[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PolicyAcknowledgementListPage = {
+	acknowledgements: PolicyAcknowledgement[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type EmployeeComplianceSummary = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	missingRequiredDocumentCount: number;
+	expiringDocumentCount: number;
+	workEligibilityAtRisk: boolean;
+	outstandingPolicyAcknowledgementCount: number;
+};
+
+export type IdempotentEmployeeDocumentRecord = {
+	document: EmployeeDocument;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentWorkEligibilityRecord = {
+	eligibility: WorkEligibility;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentPolicyAcknowledgementRecord = {
+	acknowledgement: PolicyAcknowledgement;
+	createRequestFingerprint: string;
+};
+
+export type Competency = {
+	id: HumanResourcesCompetencyId;
+	organizationId: string;
+	code: string;
+	name: string;
+	description: string | null;
+	category: string | null;
+	scaleCode: CompetencyScaleCode;
+	status: CompetencyStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompetencyListPage = {
+	competencies: Competency[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type JobCompetency = {
+	id: HumanResourcesJobCompetencyId;
+	organizationId: string;
+	jobId: HumanResourcesJobId;
+	competencyId: HumanResourcesCompetencyId;
+	requiredLevel: number;
+	status: JobCompetencyStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompetencyAssessment = {
+	id: HumanResourcesCompetencyAssessmentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	competencyId: HumanResourcesCompetencyId;
+	assessorUserId: string;
+	evidenceSource: string;
+	scaleCode: CompetencyScaleCode;
+	level: number;
+	effectiveOn: string;
+	status: CompetencyAssessmentStatus;
+	supersedesAssessmentId: HumanResourcesCompetencyAssessmentId | null;
+	supersededByAssessmentId: HumanResourcesCompetencyAssessmentId | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmployeeCompetencyProfile = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	assessments: CompetencyAssessment[];
+};
+
+export type TalentProfile = {
+	id: HumanResourcesTalentProfileId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	summary: string | null;
+	currentClassification: string | null;
+	status: TalentProfileStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TalentProfileAssessment = {
+	id: HumanResourcesTalentProfileAssessmentId;
+	organizationId: string;
+	talentProfileId: HumanResourcesTalentProfileId;
+	methodCode: TalentProfileAssessmentMethodCode;
+	classification: string;
+	evidenceSummary: string;
+	assessorUserId: string;
+	status: TalentProfileAssessmentStatus;
+	confirmedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TalentPool = {
+	id: HumanResourcesTalentPoolId;
+	organizationId: string;
+	code: string;
+	name: string;
+	description: string | null;
+	status: TalentPoolStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TalentPoolMember = {
+	id: HumanResourcesTalentPoolMemberId;
+	organizationId: string;
+	poolId: HumanResourcesTalentPoolId;
+	employeeId: HumanResourcesEmployeeId;
+	nominatorUserId: string;
+	status: TalentPoolMemberStatus;
+	nominatedAt: Date;
+	approvedAt: Date | null;
+	removedAt: Date | null;
+	approverUserId: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TalentPoolMemberListPage = {
+	members: TalentPoolMember[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type CareerPlan = {
+	id: HumanResourcesCareerPlanId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	ownerUserId: string;
+	code: string;
+	title: string;
+	status: CareerPlanStatus;
+	acknowledgedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CareerPlanAction = {
+	id: HumanResourcesCareerPlanActionId;
+	organizationId: string;
+	careerPlanId: HumanResourcesCareerPlanId;
+	title: string;
+	dueOn: string | null;
+	status: CareerPlanActionStatus;
+	learningAssignmentId: HumanResourcesLearningAssignmentId | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CareerPlanWithActions = CareerPlan & {
+	actions: CareerPlanAction[];
+};
+
+export type CareerPlanListPage = {
+	careerPlans: CareerPlan[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type SuccessionPlan = {
+	id: HumanResourcesSuccessionPlanId;
+	organizationId: string;
+	code: string;
+	title: string;
+	positionId: HumanResourcesPositionId;
+	status: SuccessionPlanStatus;
+	allowsExternalCandidates: boolean;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type SuccessionPlanListPage = {
+	successionPlans: SuccessionPlan[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type SuccessionCandidate = {
+	id: HumanResourcesSuccessionCandidateId;
+	organizationId: string;
+	successionPlanId: HumanResourcesSuccessionPlanId;
+	employeeId: HumanResourcesEmployeeId | null;
+	externalCandidateRef: string | null;
+	nominatorUserId: string;
+	readiness: SuccessionReadinessCode;
+	readinessEffectiveOn: string;
+	evidenceSummary: string;
+	status: SuccessionCandidateStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type SuccessionCandidateListPage = {
+	candidates: SuccessionCandidate[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type PositionSuccessionCoverage = {
+	organizationId: string;
+	positionId: HumanResourcesPositionId;
+	successionPlans: SuccessionPlan[];
+	readyNowCandidateCount: number;
+	readySoonCandidateCount: number;
+	totalActiveCandidateCount: number;
+};
+
+export type IdempotentCompetencyRecord = {
+	competency: Competency;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentCompetencyAssessmentRecord = {
+	assessment: CompetencyAssessment;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentTalentProfileRecord = {
+	profile: TalentProfile;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentTalentPoolRecord = {
+	pool: TalentPool;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentTalentPoolMemberRecord = {
+	member: TalentPoolMember;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentCareerPlanRecord = {
+	careerPlan: CareerPlan;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentSuccessionPlanRecord = {
+	successionPlan: SuccessionPlan;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentSuccessionCandidateRecord = {
+	candidate: SuccessionCandidate;
+	createRequestFingerprint: string;
 };

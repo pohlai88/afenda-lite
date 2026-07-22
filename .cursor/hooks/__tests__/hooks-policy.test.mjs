@@ -86,6 +86,49 @@ describe("no-drizzle-baseline-migrate", () => {
 		assert.equal(out.permission, "allow");
 	});
 
+	it("denies drizzle-kit push and db:push", () => {
+		for (const command of [
+			"drizzle-kit push",
+			"pnpm db:push",
+			"cd packages/data-plane/db && pnpm exec drizzle-kit push",
+		]) {
+			const out = runHook("no-drizzle-baseline-migrate.mjs", { command });
+			assert.equal(out.permission, "deny", command);
+		}
+	});
+
+	it("denies ad-hoc apply-*.mjs scripts", () => {
+		const out = runHook("no-drizzle-baseline-migrate.mjs", {
+			command:
+				"node packages/data-plane/db/scripts/apply-0043-leave.mjs",
+		});
+		assert.equal(out.permission, "deny");
+	});
+
+	it("denies Neon MCP prepare_database_migration and DDL run_sql", () => {
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				tool_name: "prepare_database_migration",
+				arguments: { sql: "CREATE TABLE foo (id int)" },
+			}).permission,
+			"deny",
+		);
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				tool_name: "run_sql",
+				arguments: { query: "CREATE TABLE hr_test (id text)" },
+			}).permission,
+			"deny",
+		);
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				tool_name: "run_sql",
+				arguments: { query: "SELECT 1" },
+			}).permission,
+			"allow",
+		);
+	});
+
 	it("denies on invalid JSON payload (fail-closed)", () => {
 		const result = spawnSync(
 			process.execPath,
@@ -366,7 +409,7 @@ describe("smoke matrix — false-ban guards", () => {
 		}
 	});
 
-	it("drizzle allows generate/check; denies drizzle-kit migrate", () => {
+	it("drizzle allows generate/check/migration-status; denies drizzle-kit migrate and push", () => {
 		assert.equal(
 			runHook("no-drizzle-baseline-migrate.mjs", {
 				command: "pnpm --filter @afenda/db db:generate",
@@ -381,7 +424,19 @@ describe("smoke matrix — false-ban guards", () => {
 		);
 		assert.equal(
 			runHook("no-drizzle-baseline-migrate.mjs", {
+				command: "pnpm --filter @afenda/db db:migration-status",
+			}).permission,
+			"allow",
+		);
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
 				command: "drizzle-kit migrate",
+			}).permission,
+			"deny",
+		);
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				command: "drizzle-kit push",
 			}).permission,
 			"deny",
 		);

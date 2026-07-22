@@ -18,10 +18,7 @@ import {
 	runCompensationQuery,
 } from "../shared/compensation-command";
 import { fingerprintBenefitEnrollment } from "../shared/fingerprint";
-import type {
-	ApprovedCompensationHandoff,
-	BenefitEnrollment,
-} from "../types";
+import type { ApprovedCompensationHandoff, BenefitEnrollment } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT =
 	"benefit_enrollment" as const;

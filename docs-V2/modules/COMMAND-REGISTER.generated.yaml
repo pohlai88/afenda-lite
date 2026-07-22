@@ -262,6 +262,477 @@ commands:
   - id: human-resources.offboarding.complete
     moduleId: human-resources
     permission: human-resources.offboarding.manage
+  - id: human-resources.course.create
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.course.update
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.course.activate
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.course.archive
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.session.create
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.session.start
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.session.complete
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.session.cancel
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.learning-assignment.create
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.learning-assignment.enrol
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.learning-assignment.waive
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.completion.record
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.certification.issue
+    moduleId: human-resources
+    permission: human-resources.certification.manage
+  - id: human-resources.certification.revoke
+    moduleId: human-resources
+    permission: human-resources.certification.manage
+  - id: human-resources.certification.expire
+    moduleId: human-resources
+    permission: human-resources.certification.manage
+  - id: human-resources.compensation-grade.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-grade.update
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-grade.archive
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.salary-band.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.salary-band.supersede
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.salary-band.archive
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.end
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review.create-draft
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review.record-recommendation
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review.finalize
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review.apply-approved-result
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.benefit-plan.create
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-plan.update
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-plan.archive
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.enrol
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.end
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.cancel
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.employee-case.open
+    moduleId: human-resources
+    permission: human-resources.employee-case.open
+  - id: human-resources.employee-case.update-classification
+    moduleId: human-resources
+    permission: human-resources.employee-case.investigate
+  - id: human-resources.employee-case.assign-owner
+    moduleId: human-resources
+    permission: human-resources.employee-case.investigate
+  - id: human-resources.employee-case.add-participant
+    moduleId: human-resources
+    permission: human-resources.employee-case.investigate
+  - id: human-resources.employee-case.record-event
+    moduleId: human-resources
+    permission: human-resources.employee-case.investigate
+  - id: human-resources.employee-case.add-evidence-reference
+    moduleId: human-resources
+    permission: human-resources.employee-case.investigate
+  - id: human-resources.employee-case.redact-evidence-reference
+    moduleId: human-resources
+    permission: human-resources.employee-case.exceptional.admin
+  - id: human-resources.employee-case.issue-interim-measure
+    moduleId: human-resources
+    permission: human-resources.employee-case.investigate
+  - id: human-resources.employee-case.record-finding
+    moduleId: human-resources
+    permission: human-resources.employee-case.finding
+  - id: human-resources.employee-case.recommend-action
+    moduleId: human-resources
+    permission: human-resources.employee-case.action.approve
+  - id: human-resources.employee-case.approve-action
+    moduleId: human-resources
+    permission: human-resources.employee-case.action.approve
+  - id: human-resources.employee-case.record-appeal
+    moduleId: human-resources
+    permission: human-resources.employee-case.appeal
+  - id: human-resources.employee-case.resolve-appeal
+    moduleId: human-resources
+    permission: human-resources.employee-case.appeal
+  - id: human-resources.employee-case.close
+    moduleId: human-resources
+    permission: human-resources.employee-case.exceptional.admin
+  - id: human-resources.employee-case.reopen
+    moduleId: human-resources
+    permission: human-resources.employee-case.exceptional.admin
+  - id: human-resources.leave-policy.create
+    moduleId: human-resources
+    permission: human-resources.leave-policy.manage
+  - id: human-resources.leave-policy.update
+    moduleId: human-resources
+    permission: human-resources.leave-policy.manage
+  - id: human-resources.leave-policy.publish
+    moduleId: human-resources
+    permission: human-resources.leave-policy.manage
+  - id: human-resources.leave-policy.supersede
+    moduleId: human-resources
+    permission: human-resources.leave-policy.manage
+  - id: human-resources.leave-policy.archive
+    moduleId: human-resources
+    permission: human-resources.leave-policy.manage
+  - id: human-resources.leave-entitlement.grant
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.grant
+  - id: human-resources.leave-entitlement.carry-forward
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.grant
+  - id: human-resources.leave-entitlement.expire
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.grant
+  - id: human-resources.leave-entitlement.adjust
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.adjust
+  - id: human-resources.leave-request.create-draft
+    moduleId: human-resources
+    permission: human-resources.leave-request.own
+  - id: human-resources.leave-request.submit
+    moduleId: human-resources
+    permission: human-resources.leave-request.own
+  - id: human-resources.leave-request.approve
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.leave-request.reject
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.leave-request.return
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.leave-request.withdraw
+    moduleId: human-resources
+    permission: human-resources.leave-request.own
+  - id: human-resources.leave-request.cancel-approved
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.headcount-plan.create
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.prepare
+  - id: human-resources.headcount-plan.update
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.prepare
+  - id: human-resources.headcount-plan-line.add
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.prepare
+  - id: human-resources.headcount-plan-line.update
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.prepare
+  - id: human-resources.headcount-plan-line.remove
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.prepare
+  - id: human-resources.headcount-plan.submit
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.prepare
+  - id: human-resources.headcount-plan.approve
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.approve
+  - id: human-resources.headcount-plan.reject
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.approve
+  - id: human-resources.headcount-plan.supersede
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.approve
+  - id: human-resources.headcount-plan.close
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.approve
+  - id: human-resources.headcount.reserve
+    moduleId: human-resources
+    permission: human-resources.headcount.reserve
+  - id: human-resources.headcount-reservation.release
+    moduleId: human-resources
+    permission: human-resources.headcount.reserve
+  - id: human-resources.headcount-reservation.consume
+    moduleId: human-resources
+    permission: human-resources.headcount.reserve
+  - id: human-resources.performance-cycle.create
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.update
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.open
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.close
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.cancel
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.add-participant
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.remove-participant
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-goal.create
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.update
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.submit
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.approve
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.reject
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.record-progress
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.close
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.cancel
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.start
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.submit-self-assessment
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-review.submit-manager-assessment
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.return-for-correction
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.acknowledge
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-review.finalize
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.reopen
+    moduleId: human-resources
+    permission: human-resources.performance.review.reopen
+  - id: human-resources.improvement-plan.create
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.open
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.acknowledge
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.record-checkpoint
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.amend
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.complete
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.close-unsuccessful
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.cancel
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.competency.create
+    moduleId: human-resources
+    permission: human-resources.competency.manage
+  - id: human-resources.competency.update
+    moduleId: human-resources
+    permission: human-resources.competency.manage
+  - id: human-resources.competency.retire
+    moduleId: human-resources
+    permission: human-resources.competency.manage
+  - id: human-resources.job-competency.map
+    moduleId: human-resources
+    permission: human-resources.competency.manage
+  - id: human-resources.job-competency.remove
+    moduleId: human-resources
+    permission: human-resources.competency.manage
+  - id: human-resources.competency-assessment.record
+    moduleId: human-resources
+    permission: human-resources.competency.assess
+  - id: human-resources.competency-assessment.supersede
+    moduleId: human-resources
+    permission: human-resources.competency.assess
+  - id: human-resources.talent-profile.create
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-profile.update
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-profile-assessment.record
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-profile-assessment.confirm
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-profile.archive
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-pool.create
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-pool.update
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-pool.close
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-pool-member.nominate
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-pool-member.approve
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-pool-member.remove
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.career-plan.create
+    moduleId: human-resources
+    permission: human-resources.career-plan.manage
+  - id: human-resources.career-plan.update
+    moduleId: human-resources
+    permission: human-resources.career-plan.manage
+  - id: human-resources.career-plan.acknowledge
+    moduleId: human-resources
+    permission: human-resources.career-plan.own.read
+  - id: human-resources.career-plan-action.add
+    moduleId: human-resources
+    permission: human-resources.career-plan.manage
+  - id: human-resources.career-plan-action.complete
+    moduleId: human-resources
+    permission: human-resources.career-plan.manage
+  - id: human-resources.career-plan.close
+    moduleId: human-resources
+    permission: human-resources.career-plan.manage
+  - id: human-resources.succession-plan.create
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.succession-plan.update
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.succession-candidate.nominate
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.succession-candidate.assess-readiness
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.succession-candidate.approve
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.succession-candidate.remove
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.succession-plan.close
+    moduleId: human-resources
+    permission: human-resources.succession.admin
+  - id: human-resources.document-requirement.create
+    moduleId: human-resources
+    permission: human-resources.document-requirement.manage
+  - id: human-resources.document-requirement.update
+    moduleId: human-resources
+    permission: human-resources.document-requirement.manage
+  - id: human-resources.document-requirement.publish
+    moduleId: human-resources
+    permission: human-resources.document-requirement.manage
+  - id: human-resources.document-requirement.retire
+    moduleId: human-resources
+    permission: human-resources.document-requirement.manage
+  - id: human-resources.employee-document.register
+    moduleId: human-resources
+    permission: human-resources.employee-document.own.register
+  - id: human-resources.employee-document.update-metadata
+    moduleId: human-resources
+    permission: human-resources.employee-document.own.register
+  - id: human-resources.employee-document.verify
+    moduleId: human-resources
+    permission: human-resources.employee-document.verify
+  - id: human-resources.employee-document.reject
+    moduleId: human-resources
+    permission: human-resources.employee-document.verify
+  - id: human-resources.employee-document.revoke-verification
+    moduleId: human-resources
+    permission: human-resources.employee-document.verify
+  - id: human-resources.employee-document.mark-expired
+    moduleId: human-resources
+    permission: human-resources.employee-document.verify
+  - id: human-resources.work-eligibility.record
+    moduleId: human-resources
+    permission: human-resources.work-eligibility.verify
+  - id: human-resources.work-eligibility.verify
+    moduleId: human-resources
+    permission: human-resources.work-eligibility.verify
+  - id: human-resources.work-eligibility.suspend
+    moduleId: human-resources
+    permission: human-resources.work-eligibility.verify
+  - id: human-resources.work-eligibility.renew
+    moduleId: human-resources
+    permission: human-resources.work-eligibility.verify
+  - id: human-resources.work-eligibility.close
+    moduleId: human-resources
+    permission: human-resources.work-eligibility.verify
+  - id: human-resources.policy-acknowledgement.issue
+    moduleId: human-resources
+    permission: human-resources.policy-acknowledgement.administer
+  - id: human-resources.policy-acknowledgement.acknowledge
+    moduleId: human-resources
+    permission: human-resources.policy-acknowledgement.administer
+  - id: human-resources.policy-acknowledgement.revoke
+    moduleId: human-resources
+    permission: human-resources.policy-acknowledgement.administer
+  - id: human-resources.policy-acknowledgement.supersede
+    moduleId: human-resources
+    permission: human-resources.policy-acknowledgement.administer
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

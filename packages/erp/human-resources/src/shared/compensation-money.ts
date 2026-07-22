@@ -1,7 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { humanResourcesErrorDetails } from "../error-codes";
-import { HUMAN_RESOURCES_ERROR_INVALID_INPUT } from "../error-codes";
+import {
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 
 /**
  * Compare money amounts order: min <= mid <= max.

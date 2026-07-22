@@ -127,6 +127,207 @@ queries:
   - id: human-resources.clearance.get-by-offboarding-case
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.course.get
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.course.list
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.session.get
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.session.list
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.learning-assignment.get
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.learning-assignment.list
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.completion.get-by-assignment
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.completion.list
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.certification.get
+    moduleId: human-resources
+    permission: human-resources.certification.manage
+  - id: human-resources.certification.list
+    moduleId: human-resources
+    permission: human-resources.certification.manage
+  - id: human-resources.approved-compensation-handoff.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.leave-policy.get
+    moduleId: human-resources
+    permission: human-resources.leave-policy.read
+  - id: human-resources.leave-policy.list
+    moduleId: human-resources
+    permission: human-resources.leave-policy.read
+  - id: human-resources.leave-entitlement.get
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.read
+  - id: human-resources.leave-entitlement.list
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.read
+  - id: human-resources.leave-balance.get
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.read
+  - id: human-resources.leave-request.get
+    moduleId: human-resources
+    permission: human-resources.leave-request.own
+  - id: human-resources.leave-request.list
+    moduleId: human-resources
+    permission: human-resources.leave-request.own
+  - id: human-resources.leave-request.list-pending-approval
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.leave-request.team-calendar
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.approved-leave-handoff.get
+    moduleId: human-resources
+    permission: human-resources.leave-request.approve-team
+  - id: human-resources.headcount-plan.get
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.headcount-plan.list
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.headcount-plan.approved-get
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.headcount.availability.get
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.headcount-reservation.list
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.recruitment.headcount-handoff.get
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.workforce-plan.variance.get
+    moduleId: human-resources
+    permission: human-resources.workforce-plan.read
+  - id: human-resources.employee-case.get
+    moduleId: human-resources
+    permission: human-resources.employee-case.assigned.read
+  - id: human-resources.employee-case.list
+    moduleId: human-resources
+    permission: human-resources.employee-case.assigned.read
+  - id: human-resources.employee-case.list-assigned
+    moduleId: human-resources
+    permission: human-resources.employee-case.assigned.read
+  - id: human-resources.employee-case.list-open
+    moduleId: human-resources
+    permission: human-resources.employee-case.assigned.read
+  - id: human-resources.employee-relations.history-by-employee
+    moduleId: human-resources
+    permission: human-resources.employee-case.exceptional.admin
+  - id: human-resources.employee-case.timeline
+    moduleId: human-resources
+    permission: human-resources.employee-case.assigned.read
+  - id: human-resources.employee-case.outcome
+    moduleId: human-resources
+    permission: human-resources.employee-case.assigned.read
+  - id: human-resources.performance-cycle.get
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.list
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.list-participants
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-goal.get
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-goal.list-by-employee
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-review.get
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-review.list-by-employee
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-review.list-pending-manager-action
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.improvement-plan.get
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.list-active
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.employee-performance-history.get
+    moduleId: human-resources
+    permission: human-resources.performance.confidential.read
+  - id: human-resources.competency.get
+    moduleId: human-resources
+    permission: human-resources.competency.read
+  - id: human-resources.competency.list
+    moduleId: human-resources
+    permission: human-resources.competency.read
+  - id: human-resources.job-competency.list
+    moduleId: human-resources
+    permission: human-resources.competency.read
+  - id: human-resources.employee-competency-profile.get
+    moduleId: human-resources
+    permission: human-resources.competency.read
+  - id: human-resources.talent-profile.get-by-employee
+    moduleId: human-resources
+    permission: human-resources.talent.profile.sensitive.read
+  - id: human-resources.talent-pool-member.list
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.career-plan.get
+    moduleId: human-resources
+    permission: human-resources.career-plan.own.read
+  - id: human-resources.career-plan.list-by-employee
+    moduleId: human-resources
+    permission: human-resources.career-plan.own.read
+  - id: human-resources.succession-plan.get
+    moduleId: human-resources
+    permission: human-resources.succession.executive.read
+  - id: human-resources.succession-plan.list
+    moduleId: human-resources
+    permission: human-resources.succession.executive.read
+  - id: human-resources.succession-candidate.list
+    moduleId: human-resources
+    permission: human-resources.succession.executive.read
+  - id: human-resources.position-succession-coverage.get
+    moduleId: human-resources
+    permission: human-resources.succession.executive.read
+  - id: human-resources.employee-document.get
+    moduleId: human-resources
+    permission: human-resources.employee-document.own.read
+  - id: human-resources.employee-document.list
+    moduleId: human-resources
+    permission: human-resources.employee-document.own.read
+  - id: human-resources.employee-document.list-missing-required
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
+  - id: human-resources.employee-document.list-expiring
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
+  - id: human-resources.work-eligibility.get
+    moduleId: human-resources
+    permission: human-resources.employee-document.own.read
+  - id: human-resources.work-eligibility.list-risk
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
+  - id: human-resources.policy-acknowledgement.status.get
+    moduleId: human-resources
+    permission: human-resources.employee-document.own.read
+  - id: human-resources.policy-acknowledgement.list-outstanding
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
+  - id: human-resources.employee-compliance-summary.get
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read

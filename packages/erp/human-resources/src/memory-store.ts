@@ -9,12 +9,20 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
+	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT,
+	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT,
+	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 } from "@afenda/events/schemas";
 
 import {
@@ -30,7 +38,9 @@ import {
 	type HumanResourcesCompletionId,
 	type HumanResourcesCourseId,
 	type HumanResourcesDepartmentId,
+	type HumanResourcesDocumentRequirementId,
 	type HumanResourcesEmployeeCompensationId,
+	type HumanResourcesEmployeeDocumentId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentConfirmationId,
 	type HumanResourcesEmploymentContractId,
@@ -44,12 +54,14 @@ import {
 	type HumanResourcesOnboardingCaseId,
 	type HumanResourcesOnboardingTaskId,
 	type HumanResourcesPositionId,
+	type HumanResourcesPolicyAcknowledgementId,
 	type HumanResourcesProbationReviewId,
 	type HumanResourcesReportingLineId,
 	type HumanResourcesRequisitionId,
 	type HumanResourcesSalaryBandId,
 	type HumanResourcesSessionId,
 	type HumanResourcesTerminationId,
+	type HumanResourcesWorkEligibilityId,
 	parseHumanResourcesApplicationId,
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesBenefitEnrollmentId,
@@ -62,7 +74,9 @@ import {
 	parseHumanResourcesCompletionId,
 	parseHumanResourcesCourseId,
 	parseHumanResourcesDepartmentId,
+	parseHumanResourcesDocumentRequirementId,
 	parseHumanResourcesEmployeeCompensationId,
+	parseHumanResourcesEmployeeDocumentId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentConfirmationId,
 	parseHumanResourcesEmploymentContractId,
@@ -79,12 +93,14 @@ import {
 	parseHumanResourcesOnboardingCaseId,
 	parseHumanResourcesOnboardingTaskId,
 	parseHumanResourcesPositionId,
+	parseHumanResourcesPolicyAcknowledgementId,
 	parseHumanResourcesProbationReviewId,
 	parseHumanResourcesReportingLineId,
 	parseHumanResourcesRequisitionId,
 	parseHumanResourcesSalaryBandId,
 	parseHumanResourcesSessionId,
 	parseHumanResourcesTerminationId,
+	parseHumanResourcesWorkEligibilityId,
 } from "./brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -94,19 +110,52 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "./error-codes";
-import type { MutationPorts } from "./ports";
-import { assertExpectedVersion } from "./shared/concurrency";
 import {
+	attachMemoryPerformance,
+	createPerformanceMemoryState,
+	resetPerformanceMemoryState,
+	type PerformanceMemoryMethods,
+} from "./memory-performance";
+import {
+	attachMemoryEmployeeRelations,
+	resetEmployeeRelationsMemoryState,
+} from "./employee-relations/memory-store";
+import type { MutationPorts } from "./ports";
+import {
+	attachLeaveMemory,
+	createLeaveMemoryState,
+	leaveMemoryMethods,
+	type LeaveMemoryState,
+} from "./leave/leave-store-memory";
+import {
+	attachWorkforcePlanningMemoryMethods,
+	createWorkforcePlanningMemoryState,
+	type WorkforcePlanningMemoryState,
+} from "./workforce-planning/memory-store";
+import { compareMoneyOrder, rangesOverlap } from "./shared/compensation-money";
+import {
+	assertDocumentRequirementStatusTransition,
+	assertEmployeeDocumentVerificationTransition,
+	assertPolicyAcknowledgementStatusTransition,
+	assertRejectionReasonProvided,
+	assertValidDocumentDateRange,
+	assertWorkEligibilityStatusTransition,
+	isNearingExpiry,
+} from "./shared/compliance-guards";
+import {
+	isDocumentRequirementEditable,
+	isEmployeeDocumentVerified,
+	isPolicyAcknowledgementOutstanding,
+} from "./shared/compliance-status";
+import { toEmployeeDocumentListItem } from "./shared/compliance-privacy";
+import {
+	isBenefitEnrollmentActive,
 	isCompensationGradeActive,
+	isCompensationReviewFinalized,
 	isEmployeeCompensationActive,
 	isSalaryBandActive,
-	isCompensationReviewFinalized,
-	isBenefitEnrollmentActive,
 } from "./shared/compensation-status";
-import {
-	compareMoneyOrder,
-	rangesOverlap,
-} from "./shared/compensation-money";
+import { assertExpectedVersion } from "./shared/concurrency";
 import {
 	assertActivePosition,
 	conflict,
@@ -124,19 +173,27 @@ import {
 	positionStatusSchema,
 } from "./shared/employment-status";
 import { fingerprintTransfer } from "./shared/fingerprint";
+import {
+	assertAssignmentEnrollable,
+	assertAssignmentWaivable,
+	assertCertificationCanExpire,
+	assertCertificationCanRevoke,
+	assertCertificationIssuable,
+	assertCompletionRecordable,
+	assertCourseActive,
+	assertCourseCanArchive,
+	assertNoDuplicateCompletion,
+	assertSessionNotTerminal,
+	assertSessionSchedulable,
+} from "./shared/learning-guards";
 import type {
 	AssignmentStatus,
 	CertificationStatus,
+	CompletionOutcome,
 	CourseStatus,
 	SessionStatus,
 } from "./shared/learning-status";
-import {
-	isCourseActive,
-	isSessionActive,
-	isAssignmentActive,
-	isAssignmentTerminal,
-	isCertificationActive,
-} from "./shared/learning-status";
+import { isAssignmentActive, isSessionActive } from "./shared/learning-status";
 import {
 	assertClearanceStatusTransition,
 	assertEmploymentActiveForOnboarding,
@@ -151,22 +208,6 @@ import {
 	assertProbationOpen,
 	assertTerminationEffectiveDate,
 } from "./shared/lifecycle-guards";
-import {
-	assertCourseActive,
-	assertCourseCanArchive,
-	assertSessionSchedulable,
-	assertSessionNotTerminal,
-	assertSessionCapacityAvailable,
-	assertEmploymentActiveForAssignment,
-	assertAssignmentEnrollable,
-	assertAssignmentWaivable,
-	assertAssignmentNotTerminal,
-	assertCompletionRecordable,
-	assertNoDuplicateCompletion,
-	assertCertificationIssuable,
-	assertCertificationCanRevoke,
-	assertCertificationCanExpire,
-} from "./shared/learning-guards";
 import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
@@ -206,12 +247,10 @@ import {
 	isApplicationTerminal,
 	isOfferActive,
 } from "./shared/recruitment-status";
-import type { HumanResourcesStore } from "./store";
 import type {
 	ApplicationCreateRecord,
 	AssignmentCreateRecord,
 	CandidateCreateRecord,
-	CertificationCreateRecord,
 	CompletionCreateRecord,
 	CourseCreateRecord,
 	DepartmentCreateRecord,
@@ -219,6 +258,7 @@ import type {
 	EmploymentConfirmationCreateRecord,
 	EmploymentContractCreateRecord,
 	EmploymentCreateRecord,
+	HumanResourcesStore,
 	IdempotentCandidateRecord,
 	IdempotentCertificationRecord,
 	IdempotentCompletionRecord,
@@ -227,8 +267,8 @@ import type {
 	IdempotentEmploymentConfirmationRecord,
 	IdempotentEmploymentMovementRecord,
 	IdempotentLearningAssignmentRecord,
-	IdempotentOfferAcceptRecord,
 	IdempotentOffboardingCaseRecord,
+	IdempotentOfferAcceptRecord,
 	IdempotentOnboardingCaseRecord,
 	IdempotentProbationReviewRecord,
 	IdempotentRequisitionRecord,
@@ -238,9 +278,9 @@ import type {
 	InterviewScheduleRecord,
 	JobCreateRecord,
 	LearningAssignmentCreateRecord,
+	OffboardingCaseCreateRecord,
 	OfferCreateRecord,
 	OnboardingCaseCreateRecord,
-	OffboardingCaseCreateRecord,
 	PositionCreateRecord,
 	ProbationReviewCreateRecord,
 	ReportingLineCreateRecord,
@@ -259,6 +299,14 @@ import type {
 	CandidateApplication,
 	CandidateListPage,
 	CertificationListPage,
+	DocumentRequirement,
+	DocumentRequirementListPage,
+	EmployeeComplianceSummary,
+	EmployeeDocument,
+	EmployeeDocumentListPage,
+	IdempotentEmployeeDocumentRecord,
+	IdempotentPolicyAcknowledgementRecord,
+	IdempotentWorkEligibilityRecord,
 	Clearance,
 	CompensationGrade,
 	CompensationGradeListPage,
@@ -268,9 +316,9 @@ import type {
 	CourseListPage,
 	Department,
 	Employee,
+	EmployeeCertification,
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
-	EmployeeCertification,
 	EmployeeListPage,
 	Employment,
 	EmploymentConfirmation,
@@ -295,6 +343,8 @@ import type {
 	OnboardingCase,
 	OnboardingTask,
 	OrganizationTreePage,
+	PolicyAcknowledgement,
+	PolicyAcknowledgementListPage,
 	Position,
 	ProbationReview,
 	ReportingLine,
@@ -304,6 +354,8 @@ import type {
 	SessionListPage,
 	Termination,
 	WorkAssignment,
+	WorkEligibility,
+	WorkEligibilityRiskListPage,
 } from "./types";
 
 function cloneEmployee(employee: Employee): Employee {
@@ -420,7 +472,7 @@ function mapEmployee(
 }
 
 /** In-memory Human Resources store for Vitest domain tests. */
-export class MemoryHumanResourcesStore implements HumanResourcesStore {
+export class MemoryHumanResourcesStore {
 	private readonly employees = new Map<string, Employee>();
 	private readonly idempotencyByKey = new Map<
 		string,
@@ -503,10 +555,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		string,
 		EmployeeCompensation
 	>();
-	private readonly compensationReviews = new Map<
-		string,
-		CompensationReview
-	>();
+	private readonly compensationReviews = new Map<string, CompensationReview>();
 	private readonly reviewIdempotencyByKey = new Map<
 		string,
 		CompensationReview
@@ -545,6 +594,35 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		string,
 		IdempotentCertificationRecord
 	>();
+	private readonly documentRequirements = new Map<string, DocumentRequirement>();
+	private readonly employeeDocuments = new Map<string, EmployeeDocument>();
+	private readonly employeeDocumentIdempotencyByKey = new Map<
+		string,
+		IdempotentEmployeeDocumentRecord
+	>();
+	private readonly workEligibilities = new Map<string, WorkEligibility>();
+	private readonly workEligibilityIdempotencyByKey = new Map<
+		string,
+		IdempotentWorkEligibilityRecord
+	>();
+	private readonly policyAcknowledgements = new Map<string, PolicyAcknowledgement>();
+	private readonly policyAcknowledgementIdempotencyByKey = new Map<
+		string,
+		IdempotentPolicyAcknowledgementRecord
+	>();
+
+	readonly leave: LeaveMemoryState = createLeaveMemoryState();
+	readonly performanceState = createPerformanceMemoryState();
+	readonly wfp: WorkforcePlanningMemoryState = createWorkforcePlanningMemoryState();
+
+	/** Attached at runtime via attachWorkforcePlanningMemoryMethods; declared for the recruitment handoff hooks below. */
+	declare releaseActiveHeadcountReservationsForRequisition: HumanResourcesStore["releaseActiveHeadcountReservationsForRequisition"];
+	declare consumeActiveHeadcountReservationForRequisition: HumanResourcesStore["consumeActiveHeadcountReservationForRequisition"];
+
+	constructor() {
+		attachMemoryPerformance(this, this.performanceState);
+		attachMemoryEmployeeRelations(this);
+	}
 
 	private idempotencyMapKey(organizationId: string, idempotencyKey: string) {
 		return `${organizationId}:${idempotencyKey}`;
@@ -599,6 +677,29 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		this.completionIdempotencyByKey.clear();
 		this.certifications.clear();
 		this.certificationIdempotencyByKey.clear();
+		this.documentRequirements.clear();
+		this.employeeDocuments.clear();
+		this.employeeDocumentIdempotencyByKey.clear();
+		this.workEligibilities.clear();
+		this.workEligibilityIdempotencyByKey.clear();
+		this.policyAcknowledgements.clear();
+		this.policyAcknowledgementIdempotencyByKey.clear();
+		this.leave.leavePolicies.clear();
+		this.leave.leavePolicyEligibility.clear();
+		this.leave.leaveEntitlements.clear();
+		this.leave.leaveEntitlementIdempotency.clear();
+		this.leave.leaveAdjustments.clear();
+		this.leave.leaveRequests.clear();
+		this.leave.leaveRequestIdempotency.clear();
+		this.leave.leaveRequestSegments.clear();
+		this.leave.leaveApprovalDecisions.clear();
+		resetPerformanceMemoryState(this.performanceState);
+		resetEmployeeRelationsMemoryState(this);
+		this.wfp.headcountPlans.clear();
+		this.wfp.headcountPlanIdempotency.clear();
+		this.wfp.headcountPlanLines.clear();
+		this.wfp.headcountReservations.clear();
+		this.wfp.headcountReservationIdempotency.clear();
 	}
 
 	// Employee methods
@@ -3193,6 +3294,22 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			}
 		}
 
+		if (input.status === "cancelled" || input.status === "closed") {
+			const released = await this.releaseActiveHeadcountReservationsForRequisition(
+				{
+					organizationId: input.organizationId,
+					requisitionId: input.requisitionId,
+					actorUserId: input.actorUserId,
+				},
+				ports,
+				meta,
+			);
+			if (!released.ok) {
+				this.requisitions.set(input.requisitionId, requisition);
+				return released;
+			}
+		}
+
 		return ok(cloneRequisition(updated));
 	}
 
@@ -4519,6 +4636,21 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			this.offers.set(input.offerId, offer);
 			this.applications.set(application.id, application);
 			return outbox;
+		}
+
+		const consumed = await this.consumeActiveHeadcountReservationForRequisition(
+			{
+				organizationId: input.organizationId,
+				requisitionId: application.requisitionId,
+				actorUserId: input.actorUserId,
+			},
+			ports,
+			meta,
+		);
+		if (!consumed.ok) {
+			this.offers.set(input.offerId, offer);
+			this.applications.set(application.id, application);
+			return consumed;
 		}
 
 		this.offerAcceptIdempotencyByKey.set(
@@ -6361,9 +6493,15 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<CompensationGrade>> {
 		const grade = this.compensationGrades.get(input.gradeId);
 		if (!grade || grade.organizationId !== input.organizationId) {
-			return notFound("Compensation grade not found", HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE);
+			return notFound(
+				"Compensation grade not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
 		}
-		const versionCheck = assertExpectedVersion(grade.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			grade.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) {
 			return versionCheck;
 		}
@@ -6408,9 +6546,15 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<CompensationGrade>> {
 		const grade = this.compensationGrades.get(input.gradeId);
 		if (!grade || grade.organizationId !== input.organizationId) {
-			return notFound("Compensation grade not found", HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE);
+			return notFound(
+				"Compensation grade not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
 		}
-		const versionCheck = assertExpectedVersion(grade.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			grade.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) {
 			return versionCheck;
 		}
@@ -6712,9 +6856,15 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<SalaryBand>> {
 		const band = this.salaryBands.get(input.salaryBandId);
 		if (!band || band.organizationId !== input.organizationId) {
-			return notFound("Salary band not found", HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE);
+			return notFound(
+				"Salary band not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
 		}
-		const versionCheck = assertExpectedVersion(band.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			band.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) {
 			return versionCheck;
 		}
@@ -6756,12 +6906,16 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	}): Promise<Result<SalaryBandListPage>> {
 		const grade = this.compensationGrades.get(input.gradeId);
 		if (!grade || grade.organizationId !== input.organizationId) {
-			return notFound("Compensation grade not found", HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE);
+			return notFound(
+				"Compensation grade not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
 		}
 
 		let bands = Array.from(this.salaryBands.values()).filter(
 			(b) =>
-				b.organizationId === input.organizationId && b.gradeId === input.gradeId,
+				b.organizationId === input.organizationId &&
+				b.gradeId === input.gradeId,
 		);
 		if (input.status) {
 			bands = bands.filter((b) => b.status === input.status);
@@ -6794,7 +6948,10 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		organizationId: string;
 		idempotencyKey: string;
 	}): Promise<Result<EmployeeCompensation | null>> {
-		const key = this.idempotencyMapKey(input.organizationId, input.idempotencyKey);
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
 		const comp = this.compensationIdempotencyByKey.get(key);
 		return ok(comp === undefined ? null : { ...comp });
 	}
@@ -6842,7 +6999,9 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 				isEmployeeCompensationActive(c.status),
 		);
 		if (active) {
-			return conflict("An active compensation agreement already exists for this employment");
+			return conflict(
+				"An active compensation agreement already exists for this employment",
+			);
 		}
 
 		const idResult = parseHumanResourcesEmployeeCompensationId(randomUUID());
@@ -6928,9 +7087,15 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<EmployeeCompensation>> {
 		const comp = this.employeeCompensations.get(input.compensationId);
 		if (!comp || comp.organizationId !== input.organizationId) {
-			return notFound("Employee compensation not found", HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE);
+			return notFound(
+				"Employee compensation not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
 		}
-		const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			comp.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) {
 			return versionCheck;
 		}
@@ -6995,12 +7160,16 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		page: number;
 		pageSize: number;
 	}): Promise<Result<EmployeeCompensationListPage>> {
-		const compensations = Array.from(this.employeeCompensations.values()).filter(
+		const compensations = Array.from(
+			this.employeeCompensations.values(),
+		).filter(
 			(c) =>
 				c.organizationId === input.organizationId &&
 				c.employeeId === input.employeeId,
 		);
-		compensations.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+		compensations.sort((a, b) =>
+			b.effectiveFrom.localeCompare(a.effectiveFrom),
+		);
 		const totalCount = compensations.length;
 		const offset = (input.page - 1) * input.pageSize;
 		const paginated = compensations.slice(offset, offset + input.pageSize);
@@ -7151,7 +7320,10 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<CompensationReview>> {
 		const review = this.compensationReviews.get(input.reviewId);
 		if (!review) {
-			return notFound("Compensation review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Compensation review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (review.organizationId !== input.organizationId) {
 			return notFound(
@@ -7225,7 +7397,10 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<CompensationReview>> {
 		const review = this.compensationReviews.get(input.reviewId);
 		if (!review) {
-			return notFound("Compensation review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Compensation review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (review.organizationId !== input.organizationId) {
 			return notFound(
@@ -7296,7 +7471,10 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<EmployeeCompensation>> {
 		const review = this.compensationReviews.get(input.reviewId);
 		if (!review) {
-			return notFound("Compensation review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Compensation review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (review.organizationId !== input.organizationId) {
 			return notFound(
@@ -7742,10 +7920,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 	): Promise<Result<BenefitEnrollment>> {
 		const key = `${record.organizationId}:${record.createIdempotencyKey}`;
 		const existing = this.enrollmentIdempotencyByKey.get(key);
-		if (
-			existing &&
-			existing.fingerprint === record.createRequestFingerprint
-		) {
+		if (existing && existing.fingerprint === record.createRequestFingerprint) {
 			return ok({ ...existing });
 		}
 		if (existing) {
@@ -7784,7 +7959,9 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 				isBenefitEnrollmentActive(e.status),
 		);
 		if (activeEnrollment) {
-			return conflict("Employee already has an active enrollment for this plan");
+			return conflict(
+				"Employee already has an active enrollment for this plan",
+			);
 		}
 
 		const idResult = parseHumanResourcesBenefitEnrollmentId(randomUUID());
@@ -8158,7 +8335,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			return fail(
 				"CONFLICT",
 				"Course with this code already exists",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 			);
 		}
 
@@ -8187,10 +8364,11 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		const idempotencyKey = this.idempotencyMapKey(
 			record.organizationId,
-			record.createRequestFingerprint,
+			record.createIdempotencyKey,
 		);
 		this.courseIdempotencyByKey.set(idempotencyKey, {
 			course: { ...course },
+			createIdempotencyKey: record.createIdempotencyKey,
 			createRequestFingerprint: record.createRequestFingerprint,
 		});
 
@@ -8242,8 +8420,14 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		const updated: LearningCourse = {
 			...course,
 			title: input.title ?? course.title,
-			description: input.description !== undefined ? input.description : course.description,
-			durationHours: input.durationHours !== undefined ? input.durationHours : course.durationHours,
+			description:
+				input.description !== undefined
+					? input.description
+					: course.description,
+			durationHours:
+				input.durationHours !== undefined
+					? input.durationHours
+					: course.durationHours,
 			version: course.version + 1,
 			updatedBy: input.actorUserId,
 			updatedAt: now,
@@ -8412,7 +8596,12 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			.slice(start, start + input.pageSize)
 			.map((c) => ({ ...c }));
 
-		return ok({ courses, totalCount, page: input.page, pageSize: input.pageSize });
+		return ok({
+			courses,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
 	}
 
 	// Learning Session methods
@@ -8473,12 +8662,18 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		if (!activeGuard.ok) {
 			return activeGuard;
 		}
-
-		const scheduledEndsAt = record.scheduledEndsAt ?? record.scheduledStartsAt;
+		const existingSession = Array.from(this.sessions.values()).find(
+			(session) =>
+				session.organizationId === record.organizationId &&
+				session.code === record.code,
+		);
+		if (existingSession) {
+			return conflict("Session code already exists in organization");
+		}
 
 		const schedulableGuard = assertSessionSchedulable({
 			scheduledStartsAt: record.scheduledStartsAt,
-			scheduledEndsAt: scheduledEndsAt,
+			scheduledEndsAt: record.scheduledEndsAt,
 		});
 		if (!schedulableGuard.ok) {
 			return schedulableGuard;
@@ -8497,7 +8692,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			code: record.code,
 			title: record.title,
 			scheduledStartsAt: record.scheduledStartsAt,
-			scheduledEndsAt: scheduledEndsAt,
+			scheduledEndsAt: record.scheduledEndsAt,
 			actualStartsAt: null,
 			actualEndsAt: null,
 			capacity: record.capacity,
@@ -8513,10 +8708,11 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		const idempotencyKey = this.idempotencyMapKey(
 			record.organizationId,
-			record.createRequestFingerprint,
+			record.createIdempotencyKey,
 		);
 		this.sessionIdempotencyByKey.set(idempotencyKey, {
 			session: { ...session },
+			createIdempotencyKey: record.createIdempotencyKey,
 			createRequestFingerprint: record.createRequestFingerprint,
 		});
 
@@ -8542,6 +8738,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		input: {
 			organizationId: string;
 			sessionId: HumanResourcesSessionId;
+			actualStartsAt: Date;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -8574,6 +8771,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		const updated: LearningSession = {
 			...session,
 			status: "in_progress",
+			actualStartsAt: input.actualStartsAt,
 			version: session.version + 1,
 			updatedBy: input.actorUserId,
 			updatedAt: now,
@@ -8602,6 +8800,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		input: {
 			organizationId: string;
 			sessionId: HumanResourcesSessionId;
+			actualEndsAt: Date;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -8634,6 +8833,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		const updated: LearningSession = {
 			...session,
 			status: "completed",
+			actualEndsAt: input.actualEndsAt,
 			version: session.version + 1,
 			updatedBy: input.actorUserId,
 			updatedAt: now,
@@ -8736,7 +8936,9 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			filtered = filtered.filter((s) => s.courseId === input.courseId);
 		}
 
-		filtered.sort((a, b) => b.scheduledStartsAt.getTime() - a.scheduledStartsAt.getTime());
+		filtered.sort(
+			(a, b) => b.scheduledStartsAt.getTime() - a.scheduledStartsAt.getTime(),
+		);
 
 		const totalCount = filtered.length;
 		const start = (input.page - 1) * input.pageSize;
@@ -8744,7 +8946,12 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			.slice(start, start + input.pageSize)
 			.map((s) => ({ ...s }));
 
-		return ok({ sessions, totalCount, page: input.page, pageSize: input.pageSize });
+		return ok({
+			sessions,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
 	}
 
 	// Learning Assignment methods
@@ -8799,6 +9006,20 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		if (!activeGuard.ok) {
 			return activeGuard;
 		}
+		const existingActiveAssignment = Array.from(
+			this.learningAssignments.values(),
+		).find(
+			(assignment) =>
+				assignment.organizationId === record.organizationId &&
+				assignment.employeeId === record.employeeId &&
+				assignment.courseId === record.courseId &&
+				(assignment.status === "pending" || assignment.status === "in_progress"),
+		);
+		if (existingActiveAssignment) {
+			return conflict(
+				"Employee already has an active assignment for this course",
+			);
+		}
 
 		if (record.sessionId !== null) {
 			const session = this.sessions.get(record.sessionId);
@@ -8843,10 +9064,11 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		const idempotencyKey = this.idempotencyMapKey(
 			record.organizationId,
-			record.createRequestFingerprint,
+			record.createIdempotencyKey,
 		);
 		this.assignmentIdempotencyByKey.set(idempotencyKey, {
 			assignment: { ...assignment },
+			createIdempotencyKey: record.createIdempotencyKey,
 			createRequestFingerprint: record.createRequestFingerprint,
 		});
 
@@ -8865,6 +9087,25 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			return audit;
 		}
 
+		const outbox = await ports.outbox.append({
+			organizationId: assignment.organizationId,
+			actorUserId: assignment.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
+			payload: {
+				organizationId: assignment.organizationId,
+				entityType: "hr_learning_assignment",
+				entityId: assignment.id,
+				actorId: assignment.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.learningAssignments.delete(assignment.id);
+			this.assignmentIdempotencyByKey.delete(idempotencyKey);
+			return outbox;
+		}
+
 		return ok({ ...assignment });
 	}
 
@@ -8872,6 +9113,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		input: {
 			organizationId: string;
 			assignmentId: HumanResourcesLearningAssignmentId;
+			sessionId?: HumanResourcesSessionId;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -8896,20 +9138,24 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			return notFound("Course not found");
 		}
 
-		let sessionStatus: SessionStatus = "scheduled";
+		const sessionId = input.sessionId ?? assignment.sessionId;
+		let sessionStatus: SessionStatus | null = null;
 		let maxParticipants: number | null = null;
 		let enrolledCount = 0;
 
-		if (assignment.sessionId !== null) {
-			const session = this.sessions.get(assignment.sessionId);
+		if (sessionId !== null) {
+			const session = this.sessions.get(sessionId);
 			if (!session) {
 				return notFound("Session not found");
+			}
+			if (session.courseId !== assignment.courseId) {
+				return conflict("Session does not belong to the assignment course");
 			}
 			sessionStatus = session.status;
 			maxParticipants = session.capacity;
 			const countResult = await this.countEnrolledInSession({
 				organizationId: input.organizationId,
-				sessionId: assignment.sessionId,
+				sessionId,
 			});
 			if (!countResult.ok) {
 				return countResult;
@@ -8931,6 +9177,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		const now = new Date();
 		const updated: LearningAssignment = {
 			...assignment,
+			sessionId,
 			status: "in_progress",
 			version: assignment.version + 1,
 			updatedBy: input.actorUserId,
@@ -9042,7 +9289,12 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			.slice(start, start + input.pageSize)
 			.map((a) => ({ ...a }));
 
-		return ok({ assignments, totalCount, page: input.page, pageSize: input.pageSize });
+		return ok({
+			assignments,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
 	}
 
 	// Learning Completion methods
@@ -9099,8 +9351,19 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			);
 		}
+		if (
+			assignment.employeeId !== record.employeeId ||
+			assignment.courseId !== record.courseId
+		) {
+			return notFound(
+				"Completion references do not match the assignment",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
 
-		const existingCompletionId = this.completionByAssignmentId.get(record.assignmentId);
+		const existingCompletionId = this.completionByAssignmentId.get(
+			record.assignmentId,
+		);
 		const duplicateCheck = assertNoDuplicateCompletion({
 			hasExistingCompletion: existingCompletionId !== undefined,
 		});
@@ -9113,7 +9376,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			return notFound("Course not found");
 		}
 
-		let sessionStatus: SessionStatus = "scheduled";
+		let sessionStatus: SessionStatus | null = null;
 		if (assignment.sessionId !== null) {
 			const session = this.sessions.get(assignment.sessionId);
 			if (!session) {
@@ -9160,11 +9423,12 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		const idempotencyKey = this.idempotencyMapKey(
 			record.organizationId,
-			record.recordRequestFingerprint,
+			record.createIdempotencyKey,
 		);
 		this.completionIdempotencyByKey.set(idempotencyKey, {
 			completion: { ...completion },
-			recordRequestFingerprint: record.recordRequestFingerprint,
+			createIdempotencyKey: record.createIdempotencyKey,
+			createRequestFingerprint: record.createRequestFingerprint,
 		});
 
 		const audit = await ports.audit.record({
@@ -9181,6 +9445,36 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			this.completionByAssignmentId.delete(record.assignmentId);
 			this.completionIdempotencyByKey.delete(idempotencyKey);
 			return audit;
+		}
+
+		const completedAssignment: LearningAssignment = {
+			...assignment,
+			status: "completed",
+			version: assignment.version + 1,
+			updatedBy: record.createdBy,
+			updatedAt: now,
+		};
+		this.learningAssignments.set(assignment.id, completedAssignment);
+
+		const outbox = await ports.outbox.append({
+			organizationId: completion.organizationId,
+			actorUserId: completion.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
+			payload: {
+				organizationId: completion.organizationId,
+				entityType: "hr_learning_completion",
+				entityId: completion.id,
+				actorId: completion.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.completions.delete(completion.id);
+			this.completionByAssignmentId.delete(record.assignmentId);
+			this.completionIdempotencyByKey.delete(idempotencyKey);
+			this.learningAssignments.set(assignment.id, assignment);
+			return outbox;
 		}
 
 		return ok({ ...completion });
@@ -9212,10 +9506,2288 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			.slice(start, start + input.pageSize)
 			.map((c) => ({ ...c }));
 
-		return ok({ completions, totalCount, page: input.page, pageSize: input.pageSize });
+		return ok({
+			completions,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	// Employee Certification methods
+	async getCertificationById(input: {
+		organizationId: string;
+		certificationId: HumanResourcesCertificationId;
+	}): Promise<Result<EmployeeCertification | null>> {
+		const certification = this.certifications.get(input.certificationId);
+		if (
+			!certification ||
+			certification.organizationId !== input.organizationId
+		) {
+			return ok(null);
+		}
+		return ok({ ...certification });
+	}
+
+	async findCertificationByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentCertificationRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.certificationIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, certification: { ...record.certification } });
+	}
+
+	async issueCertification(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			courseId: HumanResourcesCourseId;
+			completionId: HumanResourcesCompletionId;
+			certificationCode: string;
+			issuedOn: string;
+			expiresOn: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCertification>> {
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		const existing = this.certificationIdempotencyByKey.get(idempotencyKey);
+		if (existing) {
+			if (
+				existing.createRequestFingerprint !== record.createRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok({ ...existing.certification });
+		}
+
+		const employee = this.employees.get(record.employeeId);
+		if (!employee || employee.organizationId !== record.organizationId) {
+			return notFound(
+				"Employee not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const course = this.courses.get(record.courseId);
+		if (!course || course.organizationId !== record.organizationId) {
+			return notFound(
+				"Course not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const completion = this.completions.get(record.completionId);
+		if (!completion || completion.organizationId !== record.organizationId) {
+			return notFound(
+				"Completion not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const todayDate = new Date().toISOString().split("T")[0]!;
+		const issuableGuard = assertCertificationIssuable({
+			hasRequiredCompletion: completion.courseId === record.courseId,
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+			todayDate,
+		});
+		if (!issuableGuard.ok) {
+			return issuableGuard;
+		}
+
+		const idResult = parseHumanResourcesCertificationId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const certification: EmployeeCertification = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+			courseId: record.courseId,
+			completionId: record.completionId,
+			certificationCode: record.certificationCode,
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+			status: "active",
+			revokedAt: null,
+			revokedBy: null,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.certifications.set(certification.id, certification);
+
+		this.certificationIdempotencyByKey.set(idempotencyKey, {
+			certification: { ...certification },
+			createIdempotencyKey: record.createIdempotencyKey,
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: certification.organizationId,
+			actorUserId: certification.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: certification.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.certifications.delete(certification.id);
+			this.certificationIdempotencyByKey.delete(idempotencyKey);
+			return audit;
+		}
+
+		return ok({ ...certification });
+	}
+
+	async revokeCertification(
+		input: {
+			organizationId: string;
+			certificationId: HumanResourcesCertificationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCertification>> {
+		const certification = this.certifications.get(input.certificationId);
+		if (
+			!certification ||
+			certification.organizationId !== input.organizationId
+		) {
+			return notFound("Certification not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			certification.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const revokeGuard = assertCertificationCanRevoke(certification.status);
+		if (!revokeGuard.ok) {
+			return revokeGuard;
+		}
+
+		const now = new Date();
+		const updated: EmployeeCertification = {
+			...certification,
+			status: "revoked",
+			revokedAt: now,
+			revokedBy: input.actorUserId,
+			version: certification.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.certifications.set(input.certificationId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.certifications.set(input.certificationId, certification);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async expireCertification(
+		input: {
+			organizationId: string;
+			certificationId: HumanResourcesCertificationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCertification>> {
+		const certification = this.certifications.get(input.certificationId);
+		if (
+			!certification ||
+			certification.organizationId !== input.organizationId
+		) {
+			return notFound("Certification not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			certification.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const expireGuard = assertCertificationCanExpire(certification.status);
+		if (!expireGuard.ok) {
+			return expireGuard;
+		}
+
+		const now = new Date();
+		const updated: EmployeeCertification = {
+			...certification,
+			status: "expired",
+			version: certification.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.certifications.set(input.certificationId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employee_certification",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.certifications.set(input.certificationId, certification);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async listCertifications(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: CertificationStatus;
+		employeeId?: HumanResourcesEmployeeId;
+		courseId?: HumanResourcesCourseId;
+	}): Promise<Result<CertificationListPage>> {
+		let filtered = Array.from(this.certifications.values()).filter(
+			(c) => c.organizationId === input.organizationId,
+		);
+
+		if (input.status !== undefined) {
+			filtered = filtered.filter((c) => c.status === input.status);
+		}
+		if (input.employeeId !== undefined) {
+			filtered = filtered.filter((c) => c.employeeId === input.employeeId);
+		}
+		if (input.courseId !== undefined) {
+			filtered = filtered.filter((c) => c.courseId === input.courseId);
+		}
+
+		filtered.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const certifications = filtered
+			.slice(start, start + input.pageSize)
+			.map((c) => ({ ...c }));
+
+		return ok({
+			certifications,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+	private complianceEntityPayload(input: {
+		organizationId: string;
+		entityType: string;
+		entityId: string;
+		actorUserId: string;
+		correlationId: string;
+	}) {
+		return {
+			organizationId: input.organizationId,
+			entityType: input.entityType,
+			entityId: input.entityId,
+			actorId: input.actorUserId,
+			correlationId: input.correlationId,
+		};
+	}
+
+	private employeeHasVerifiedDocumentForRequirement(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		requirementId: HumanResourcesDocumentRequirementId;
+	}): boolean {
+		return Array.from(this.employeeDocuments.values()).some(
+			(document) =>
+				document.organizationId === input.organizationId &&
+				document.employeeId === input.employeeId &&
+				document.requirementId === input.requirementId &&
+				isEmployeeDocumentVerified(document.verificationStatus),
+		);
+	}
+
+	private async recordComplianceAudit(
+		ports: MutationPorts,
+		meta: { correlationId: string },
+		input: {
+			organizationId: string;
+			actorUserId: string;
+			entity: string;
+			entityId: string;
+			action: "CREATE" | "UPDATE";
+		},
+	): Promise<Result<{ id: string }>> {
+		return ports.audit.record({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: input.entity,
+			entityId: input.entityId,
+			action: input.action,
+			changes: [],
+		});
+	}
+
+	private async appendComplianceOutbox(
+		ports: MutationPorts,
+		meta: { correlationId: string },
+		input: {
+			organizationId: string;
+			actorUserId: string;
+			type:
+				| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT
+				| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT
+				| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT
+				| typeof HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT
+				| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT
+				| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT;
+			entityType: string;
+			entityId: string;
+		},
+	): Promise<Result<{ id: string }>> {
+		return ports.outbox.append({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			type: input.type,
+			payload: this.complianceEntityPayload({
+				organizationId: input.organizationId,
+				entityType: input.entityType,
+				entityId: input.entityId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+			}),
+		});
+	}
+
+	private async transitionDocumentRequirementStatus(input: {
+		organizationId: string;
+		requirementId: HumanResourcesDocumentRequirementId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: DocumentRequirement["status"];
+		ports: MutationPorts;
+		meta: { correlationId: string };
+	}): Promise<Result<DocumentRequirement>> {
+		const requirement = this.documentRequirements.get(input.requirementId);
+		if (!requirement) {
+			return notFound("Document requirement not found");
+		}
+		if (requirement.organizationId !== input.organizationId) {
+			return notFound(
+				"Document requirement not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			requirement.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const transition = assertDocumentRequirementStatusTransition(
+			requirement.status,
+			input.nextStatus,
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const previous = { ...requirement };
+		const now = new Date();
+		const updated: DocumentRequirement = {
+			...requirement,
+			status: input.nextStatus,
+			version: requirement.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.documentRequirements.set(updated.id, updated);
+
+		const audit = await this.recordComplianceAudit(input.ports, input.meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_document_requirement",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			this.documentRequirements.set(updated.id, previous);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	private async transitionEmployeeDocumentStatus(input: {
+		organizationId: string;
+		documentId: HumanResourcesEmployeeDocumentId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: EmployeeDocument["verificationStatus"];
+		patch?: Partial<
+			Pick<
+				EmployeeDocument,
+				| "rejectionReason"
+				| "verifiedBy"
+				| "verifiedAt"
+				| "expiresOn"
+				| "issuingJurisdiction"
+				| "metadata"
+			>
+		>;
+		events?: Array<
+			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT
+			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT
+			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT
+		>;
+		ports: MutationPorts;
+		meta: { correlationId: string };
+	}): Promise<Result<EmployeeDocument>> {
+		const document = this.employeeDocuments.get(input.documentId);
+		if (!document) {
+			return notFound("Employee document not found");
+		}
+		if (document.organizationId !== input.organizationId) {
+			return notFound(
+				"Employee document not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			document.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const transition = assertEmployeeDocumentVerificationTransition(
+			document.verificationStatus,
+			input.nextStatus,
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const previous = { ...document };
+		const now = new Date();
+		const clearedVerification =
+			input.nextStatus === "expired"
+				? { verifiedBy: null, verifiedAt: null }
+				: {};
+		const updated: EmployeeDocument = {
+			...document,
+			...input.patch,
+			...clearedVerification,
+			verificationStatus: input.nextStatus,
+			version: document.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.employeeDocuments.set(updated.id, updated);
+
+		const rollback: Array<() => void> = [
+			() => this.employeeDocuments.set(updated.id, previous),
+		];
+
+		const audit = await this.recordComplianceAudit(input.ports, input.meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_employee_document",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		for (const eventType of input.events ?? []) {
+			const outbox = await this.appendComplianceOutbox(
+				input.ports,
+				input.meta,
+				{
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: eventType,
+					entityType: "hr_employee_document",
+					entityId: updated.id,
+				},
+			);
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+		}
+
+		return ok({ ...updated });
+	}
+
+	private async transitionWorkEligibilityStatus(input: {
+		organizationId: string;
+		eligibilityId: HumanResourcesWorkEligibilityId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: WorkEligibility["status"];
+		patch?: Partial<
+			Pick<
+				WorkEligibility,
+				| "issuedOn"
+				| "expiresOn"
+				| "documentRef"
+				| "verifiedBy"
+				| "verifiedAt"
+			>
+		>;
+		events?: Array<typeof HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT>;
+		ports: MutationPorts;
+		meta: { correlationId: string };
+	}): Promise<Result<WorkEligibility>> {
+		const eligibility = this.workEligibilities.get(input.eligibilityId);
+		if (!eligibility) {
+			return notFound("Work eligibility not found");
+		}
+		if (eligibility.organizationId !== input.organizationId) {
+			return notFound(
+				"Work eligibility not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			eligibility.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const transition = assertWorkEligibilityStatusTransition(
+			eligibility.status,
+			input.nextStatus,
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const previous = { ...eligibility };
+		const now = new Date();
+		const updated: WorkEligibility = {
+			...eligibility,
+			...input.patch,
+			status: input.nextStatus,
+			version: eligibility.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.workEligibilities.set(updated.id, updated);
+
+		const rollback: Array<() => void> = [
+			() => this.workEligibilities.set(updated.id, previous),
+		];
+
+		const audit = await this.recordComplianceAudit(input.ports, input.meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_work_eligibility",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		for (const eventType of input.events ?? []) {
+			const outbox = await this.appendComplianceOutbox(
+				input.ports,
+				input.meta,
+				{
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: eventType,
+					entityType: "hr_work_eligibility",
+					entityId: updated.id,
+				},
+			);
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+		}
+
+		return ok({ ...updated });
+	}
+
+	private async transitionPolicyAcknowledgementStatus(input: {
+		organizationId: string;
+		acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: PolicyAcknowledgement["requirementStatus"];
+		patch?: Partial<
+			Pick<
+				PolicyAcknowledgement,
+				"acknowledgedAt" | "acknowledgedBy" | "policyVersion"
+			>
+		>;
+		events?: Array<
+			| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT
+			| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT
+		>;
+		ports: MutationPorts;
+		meta: { correlationId: string };
+	}): Promise<Result<PolicyAcknowledgement>> {
+		const acknowledgement = this.policyAcknowledgements.get(
+			input.acknowledgementId,
+		);
+		if (!acknowledgement) {
+			return notFound("Policy acknowledgement not found");
+		}
+		if (acknowledgement.organizationId !== input.organizationId) {
+			return notFound(
+				"Policy acknowledgement not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			acknowledgement.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const transition = assertPolicyAcknowledgementStatusTransition(
+			acknowledgement.requirementStatus,
+			input.nextStatus,
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const previous = { ...acknowledgement };
+		const now = new Date();
+		const updated: PolicyAcknowledgement = {
+			...acknowledgement,
+			...input.patch,
+			requirementStatus: input.nextStatus,
+			version: acknowledgement.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.policyAcknowledgements.set(updated.id, updated);
+
+		const rollback: Array<() => void> = [
+			() => this.policyAcknowledgements.set(updated.id, previous),
+		];
+
+		const audit = await this.recordComplianceAudit(input.ports, input.meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_policy_acknowledgement",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		for (const eventType of input.events ?? []) {
+			const outbox = await this.appendComplianceOutbox(
+				input.ports,
+				input.meta,
+				{
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: eventType,
+					entityType: "hr_policy_acknowledgement",
+					entityId: updated.id,
+				},
+			);
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+		}
+
+		return ok({ ...updated });
+	}
+
+	// --- Document Requirement ---
+
+	async getDocumentRequirementById(input: {
+		organizationId: string;
+		requirementId: HumanResourcesDocumentRequirementId;
+	}): Promise<Result<DocumentRequirement | null>> {
+		const requirement = this.documentRequirements.get(input.requirementId);
+		if (
+			!requirement ||
+			requirement.organizationId !== input.organizationId
+		) {
+			return ok(null);
+		}
+		return ok({ ...requirement });
+	}
+
+	async findDocumentRequirementByCode(input: {
+		organizationId: string;
+		code: string;
+	}): Promise<Result<DocumentRequirement | null>> {
+		const requirement =
+			Array.from(this.documentRequirements.values()).find(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.code === input.code,
+			) ?? null;
+		return ok(requirement === null ? null : { ...requirement });
+	}
+
+	async createDocumentRequirement(
+		record: {
+			organizationId: string;
+			code: string;
+			name: string;
+			documentType: string;
+			issuingJurisdiction: string | null;
+			appliesToNote: string | null;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>> {
+		const existing = Array.from(this.documentRequirements.values()).find(
+			(row) =>
+				row.organizationId === record.organizationId &&
+				row.code === record.code,
+		);
+		if (existing) {
+			return conflict("Document requirement code already exists");
+		}
+
+		const idResult = parseHumanResourcesDocumentRequirementId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const requirement: DocumentRequirement = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			code: record.code,
+			name: record.name,
+			documentType: record.documentType,
+			issuingJurisdiction: record.issuingJurisdiction,
+			appliesToNote: record.appliesToNote,
+			status: "draft",
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+		this.documentRequirements.set(requirement.id, requirement);
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: requirement.organizationId,
+			actorUserId: record.createdBy,
+			entity: "hr_document_requirement",
+			entityId: requirement.id,
+			action: "CREATE",
+		});
+		if (!audit.ok) {
+			this.documentRequirements.delete(requirement.id);
+			return audit;
+		}
+
+		return ok({ ...requirement });
+	}
+
+	async updateDocumentRequirement(
+		input: {
+			organizationId: string;
+			requirementId: HumanResourcesDocumentRequirementId;
+			name?: string;
+			documentType?: string;
+			issuingJurisdiction?: string | null;
+			appliesToNote?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>> {
+		const requirement = this.documentRequirements.get(input.requirementId);
+		if (!requirement) {
+			return notFound("Document requirement not found");
+		}
+		if (requirement.organizationId !== input.organizationId) {
+			return notFound(
+				"Document requirement not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			requirement.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		if (!isDocumentRequirementEditable(requirement.status)) {
+			return invalidState("Document requirement is not editable");
+		}
+
+		const previous = { ...requirement };
+		const now = new Date();
+		const updated: DocumentRequirement = {
+			...requirement,
+			name: input.name ?? requirement.name,
+			documentType: input.documentType ?? requirement.documentType,
+			issuingJurisdiction:
+				input.issuingJurisdiction !== undefined
+					? input.issuingJurisdiction
+					: requirement.issuingJurisdiction,
+			appliesToNote:
+				input.appliesToNote !== undefined
+					? input.appliesToNote
+					: requirement.appliesToNote,
+			version: requirement.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.documentRequirements.set(updated.id, updated);
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_document_requirement",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			this.documentRequirements.set(updated.id, previous);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async publishDocumentRequirement(
+		input: {
+			organizationId: string;
+			requirementId: HumanResourcesDocumentRequirementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>> {
+		return this.transitionDocumentRequirementStatus({
+			organizationId: input.organizationId,
+			requirementId: input.requirementId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "published",
+			ports,
+			meta,
+		});
+	}
+
+	async retireDocumentRequirement(
+		input: {
+			organizationId: string;
+			requirementId: HumanResourcesDocumentRequirementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>> {
+		return this.transitionDocumentRequirementStatus({
+			organizationId: input.organizationId,
+			requirementId: input.requirementId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "retired",
+			ports,
+			meta,
+		});
+	}
+
+	async listPublishedDocumentRequirements(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<DocumentRequirementListPage>> {
+		const filtered = Array.from(this.documentRequirements.values())
+			.filter(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.status === "published",
+			)
+			.sort((a, b) => a.code.localeCompare(b.code));
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const requirements = filtered
+			.slice(start, start + input.pageSize)
+			.map((row) => ({ ...row }));
+
+		return ok({
+			requirements,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	// --- Employee Document ---
+
+	async getEmployeeDocumentById(input: {
+		organizationId: string;
+		documentId: HumanResourcesEmployeeDocumentId;
+	}): Promise<Result<EmployeeDocument | null>> {
+		const document = this.employeeDocuments.get(input.documentId);
+		if (!document || document.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...document });
+	}
+
+	async findEmployeeDocumentByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentEmployeeDocumentRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.employeeDocumentIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, document: { ...record.document } });
+	}
+
+	async registerEmployeeDocument(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			requirementId: HumanResourcesDocumentRequirementId | null;
+			documentType: string;
+			issuingJurisdiction: string | null;
+			issuedOn: string;
+			expiresOn: string | null;
+			documentRef: string;
+			identifierLast4: string | null;
+			identifierFingerprint: string | null;
+			metadata: Record<string, unknown> | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>> {
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		const existing = this.employeeDocumentIdempotencyByKey.get(idempotencyKey);
+		if (existing) {
+			if (
+				existing.createRequestFingerprint !== record.createRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok({ ...existing.document });
+		}
+
+		const employee = this.employees.get(record.employeeId);
+		if (!employee || employee.organizationId !== record.organizationId) {
+			return notFound(
+				"Employee not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		if (record.requirementId !== null) {
+			const requirement = this.documentRequirements.get(record.requirementId);
+			if (
+				!requirement ||
+				requirement.organizationId !== record.organizationId
+			) {
+				return notFound(
+					"Document requirement not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			if (requirement.status !== "published") {
+				return invalidState("Document requirement is not published");
+			}
+		}
+
+		const dateRange = assertValidDocumentDateRange({
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+		});
+		if (!dateRange.ok) {
+			return dateRange;
+		}
+
+		const idResult = parseHumanResourcesEmployeeDocumentId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const document: EmployeeDocument = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+			requirementId: record.requirementId,
+			documentType: record.documentType,
+			issuingJurisdiction: record.issuingJurisdiction,
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+			verificationStatus: "pending",
+			verifiedBy: null,
+			verifiedAt: null,
+			rejectionReason: null,
+			documentRef: record.documentRef,
+			identifierLast4: record.identifierLast4,
+			identifierFingerprint: record.identifierFingerprint,
+			metadata: record.metadata,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.employeeDocuments.set(document.id, document);
+		this.employeeDocumentIdempotencyByKey.set(idempotencyKey, {
+			document: { ...document },
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const rollback: Array<() => void> = [
+			() => {
+				this.employeeDocuments.delete(document.id);
+				this.employeeDocumentIdempotencyByKey.delete(idempotencyKey);
+			},
+		];
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: document.organizationId,
+			actorUserId: record.createdBy,
+			entity: "hr_employee_document",
+			entityId: document.id,
+			action: "CREATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		const events: Array<
+			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT
+			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT
+		> = [HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT];
+		if (
+			isNearingExpiry({
+				expiresOn: document.expiresOn,
+				asOf: record.issuedOn,
+			})
+		) {
+			events.push(HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT);
+		}
+
+		for (const eventType of events) {
+			const outbox = await this.appendComplianceOutbox(ports, meta, {
+				organizationId: document.organizationId,
+				actorUserId: record.createdBy,
+				type: eventType,
+				entityType: "hr_employee_document",
+				entityId: document.id,
+			});
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+		}
+
+		return ok({ ...document });
+	}
+
+	async updateEmployeeDocumentMetadata(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			issuingJurisdiction?: string | null;
+			expiresOn?: string | null;
+			metadata?: Record<string, unknown> | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>> {
+		const document = this.employeeDocuments.get(input.documentId);
+		if (!document) {
+			return notFound("Employee document not found");
+		}
+		if (document.organizationId !== input.organizationId) {
+			return notFound(
+				"Employee document not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			document.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const nextExpiresOn =
+			input.expiresOn !== undefined ? input.expiresOn : document.expiresOn;
+		const dateRange = assertValidDocumentDateRange({
+			issuedOn: document.issuedOn,
+			expiresOn: nextExpiresOn,
+		});
+		if (!dateRange.ok) {
+			return dateRange;
+		}
+
+		const previous = { ...document };
+		const now = new Date();
+		const updated: EmployeeDocument = {
+			...document,
+			issuingJurisdiction:
+				input.issuingJurisdiction !== undefined
+					? input.issuingJurisdiction
+					: document.issuingJurisdiction,
+			expiresOn: nextExpiresOn,
+			metadata:
+				input.metadata !== undefined ? input.metadata : document.metadata,
+			version: document.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.employeeDocuments.set(updated.id, updated);
+
+		const rollback: Array<() => void> = [
+			() => this.employeeDocuments.set(updated.id, previous),
+		];
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_employee_document",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		const asOf = now.toISOString().slice(0, 10);
+		if (
+			isNearingExpiry({
+				expiresOn: updated.expiresOn,
+				asOf,
+			})
+		) {
+			const outbox = await this.appendComplianceOutbox(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
+				entityType: "hr_employee_document",
+				entityId: updated.id,
+			});
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+		}
+
+		return ok({ ...updated });
+	}
+
+	async verifyEmployeeDocument(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			evidenceDate: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>> {
+		return this.transitionEmployeeDocumentStatus({
+			organizationId: input.organizationId,
+			documentId: input.documentId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "verified",
+			patch: {
+				verifiedBy: input.actorUserId,
+				verifiedAt: new Date(`${input.evidenceDate}T00:00:00.000Z`),
+				rejectionReason: null,
+			},
+			events: [HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT],
+			ports,
+			meta,
+		});
+	}
+
+	async rejectEmployeeDocument(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			rejectionReason: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>> {
+		const reasonCheck = assertRejectionReasonProvided(input.rejectionReason);
+		if (!reasonCheck.ok) {
+			return reasonCheck;
+		}
+
+		return this.transitionEmployeeDocumentStatus({
+			organizationId: input.organizationId,
+			documentId: input.documentId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "rejected",
+			patch: {
+				rejectionReason: input.rejectionReason.trim(),
+				verifiedBy: null,
+				verifiedAt: null,
+			},
+			ports,
+			meta,
+		});
+	}
+
+	async revokeEmployeeDocumentVerification(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>> {
+		return this.transitionEmployeeDocumentStatus({
+			organizationId: input.organizationId,
+			documentId: input.documentId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "revoked",
+			ports,
+			meta,
+		});
+	}
+
+	async markEmployeeDocumentExpired(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>> {
+		return this.transitionEmployeeDocumentStatus({
+			organizationId: input.organizationId,
+			documentId: input.documentId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "expired",
+			ports,
+			meta,
+		});
+	}
+
+	async listEmployeeDocuments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		verificationStatus?: EmployeeDocument["verificationStatus"];
+	}): Promise<Result<EmployeeDocumentListPage>> {
+		let filtered = Array.from(this.employeeDocuments.values()).filter(
+			(row) => row.organizationId === input.organizationId,
+		);
+
+		if (input.employeeId !== undefined) {
+			filtered = filtered.filter((row) => row.employeeId === input.employeeId);
+		}
+		if (input.verificationStatus !== undefined) {
+			filtered = filtered.filter(
+				(row) => row.verificationStatus === input.verificationStatus,
+			);
+		}
+
+		filtered.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const documents = filtered
+			.slice(start, start + input.pageSize)
+			.map((row) => toEmployeeDocumentListItem(row));
+
+		return ok({
+			documents,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	async listMissingRequiredDocuments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<DocumentRequirementListPage>> {
+		const published = Array.from(this.documentRequirements.values()).filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.status === "published",
+		);
+
+		let missing = published;
+		if (input.employeeId !== undefined) {
+			const employeeId = input.employeeId;
+			missing = published.filter(
+				(requirement) =>
+					!this.employeeHasVerifiedDocumentForRequirement({
+						organizationId: input.organizationId,
+						employeeId,
+						requirementId: requirement.id,
+					}),
+			);
+		} else {
+			const employeeIds = Array.from(this.employees.values())
+				.filter((employee) => employee.organizationId === input.organizationId)
+				.map((employee) => employee.id);
+			missing = published.filter((requirement) =>
+				employeeIds.some(
+					(employeeId) =>
+						!this.employeeHasVerifiedDocumentForRequirement({
+							organizationId: input.organizationId,
+							employeeId,
+							requirementId: requirement.id,
+						}),
+				),
+			);
+		}
+
+		missing.sort((a, b) => a.code.localeCompare(b.code));
+
+		const totalCount = missing.length;
+		const start = (input.page - 1) * input.pageSize;
+		const requirements = missing
+			.slice(start, start + input.pageSize)
+			.map((row) => ({ ...row }));
+
+		return ok({
+			requirements,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	async listExpiringEmployeeDocuments(input: {
+		organizationId: string;
+		asOf: string;
+		withinDays: number;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<EmployeeDocumentListPage>> {
+		const windowEndDate = new Date(`${input.asOf}T00:00:00.000Z`);
+		windowEndDate.setUTCDate(windowEndDate.getUTCDate() + input.withinDays);
+		const windowEnd = windowEndDate.toISOString().slice(0, 10);
+
+		let filtered = Array.from(this.employeeDocuments.values()).filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.verificationStatus !== "expired" &&
+				row.expiresOn !== null &&
+				row.expiresOn >= input.asOf &&
+				row.expiresOn <= windowEnd,
+		);
+
+		if (input.employeeId !== undefined) {
+			filtered = filtered.filter((row) => row.employeeId === input.employeeId);
+		}
+
+		filtered.sort((a, b) => {
+			const expiresCompare = (a.expiresOn ?? "").localeCompare(
+				b.expiresOn ?? "",
+			);
+			if (expiresCompare !== 0) {
+				return expiresCompare;
+			}
+			return b.issuedOn.localeCompare(a.issuedOn);
+		});
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const documents = filtered
+			.slice(start, start + input.pageSize)
+			.map((row) => toEmployeeDocumentListItem(row));
+
+		return ok({
+			documents,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	// --- Work Eligibility ---
+
+	async getWorkEligibilityById(input: {
+		organizationId: string;
+		eligibilityId: HumanResourcesWorkEligibilityId;
+	}): Promise<Result<WorkEligibility | null>> {
+		const eligibility = this.workEligibilities.get(input.eligibilityId);
+		if (!eligibility || eligibility.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...eligibility });
+	}
+
+	async getActiveWorkEligibilityForEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}): Promise<Result<WorkEligibility | null>> {
+		const active = Array.from(this.workEligibilities.values())
+			.filter(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.employeeId === input.employeeId &&
+					row.status === "active",
+			)
+			.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
+
+		const eligibility = active[0] ?? null;
+		return ok(eligibility === null ? null : { ...eligibility });
+	}
+
+	async findWorkEligibilityByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentWorkEligibilityRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.workEligibilityIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, eligibility: { ...record.eligibility } });
+	}
+
+	async recordWorkEligibility(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			countryCode: string;
+			jurisdiction: string | null;
+			issuedOn: string;
+			expiresOn: string | null;
+			documentRef: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>> {
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		const existing = this.workEligibilityIdempotencyByKey.get(idempotencyKey);
+		if (existing) {
+			if (
+				existing.createRequestFingerprint !== record.createRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok({ ...existing.eligibility });
+		}
+
+		const employee = this.employees.get(record.employeeId);
+		if (!employee || employee.organizationId !== record.organizationId) {
+			return notFound(
+				"Employee not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const dateRange = assertValidDocumentDateRange({
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+		});
+		if (!dateRange.ok) {
+			return dateRange;
+		}
+
+		const idResult = parseHumanResourcesWorkEligibilityId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const eligibility: WorkEligibility = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+			countryCode: record.countryCode,
+			jurisdiction: record.jurisdiction,
+			status: "pending",
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+			verifiedBy: null,
+			verifiedAt: null,
+			documentRef: record.documentRef,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.workEligibilities.set(eligibility.id, eligibility);
+		this.workEligibilityIdempotencyByKey.set(idempotencyKey, {
+			eligibility: { ...eligibility },
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const rollback: Array<() => void> = [
+			() => {
+				this.workEligibilities.delete(eligibility.id);
+				this.workEligibilityIdempotencyByKey.delete(idempotencyKey);
+			},
+		];
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: eligibility.organizationId,
+			actorUserId: record.createdBy,
+			entity: "hr_work_eligibility",
+			entityId: eligibility.id,
+			action: "CREATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		return ok({ ...eligibility });
+	}
+
+	async verifyWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			evidenceDate: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>> {
+		return this.transitionWorkEligibilityStatus({
+			organizationId: input.organizationId,
+			eligibilityId: input.eligibilityId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "active",
+			patch: {
+				verifiedBy: input.actorUserId,
+				verifiedAt: new Date(`${input.evidenceDate}T00:00:00.000Z`),
+			},
+			ports,
+			meta,
+		});
+	}
+
+	async suspendWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>> {
+		return this.transitionWorkEligibilityStatus({
+			organizationId: input.organizationId,
+			eligibilityId: input.eligibilityId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "suspended",
+			events: [HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT],
+			ports,
+			meta,
+		});
+	}
+
+	async renewWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			issuedOn: string;
+			expiresOn: string | null;
+			documentRef: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>> {
+		const eligibility = this.workEligibilities.get(input.eligibilityId);
+		if (!eligibility) {
+			return notFound("Work eligibility not found");
+		}
+		if (eligibility.organizationId !== input.organizationId) {
+			return notFound(
+				"Work eligibility not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const dateRange = assertValidDocumentDateRange({
+			issuedOn: input.issuedOn,
+			expiresOn: input.expiresOn,
+		});
+		if (!dateRange.ok) {
+			return dateRange;
+		}
+
+		if (
+			eligibility.status === "expired" ||
+			eligibility.status === "suspended"
+		) {
+			return this.transitionWorkEligibilityStatus({
+				organizationId: input.organizationId,
+				eligibilityId: input.eligibilityId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				nextStatus: "active",
+				patch: {
+					issuedOn: input.issuedOn,
+					expiresOn: input.expiresOn,
+					documentRef: input.documentRef,
+				},
+				ports,
+				meta,
+			});
+		}
+
+		if (eligibility.status !== "active") {
+			return invalidState("Work eligibility cannot be renewed");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			eligibility.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const previous = { ...eligibility };
+		const now = new Date();
+		const updated: WorkEligibility = {
+			...eligibility,
+			issuedOn: input.issuedOn,
+			expiresOn: input.expiresOn,
+			documentRef: input.documentRef,
+			version: eligibility.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.workEligibilities.set(updated.id, updated);
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_work_eligibility",
+			entityId: updated.id,
+			action: "UPDATE",
+		});
+		if (!audit.ok) {
+			this.workEligibilities.set(updated.id, previous);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async closeWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>> {
+		return this.transitionWorkEligibilityStatus({
+			organizationId: input.organizationId,
+			eligibilityId: input.eligibilityId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "closed",
+			ports,
+			meta,
+		});
+	}
+
+	async listEmployeesWithWorkEligibilityRisk(input: {
+		organizationId: string;
+		asOf: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<WorkEligibilityRiskListPage>> {
+		const filtered = Array.from(this.workEligibilities.values())
+			.filter(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					(row.status === "pending" ||
+						row.status === "suspended" ||
+						row.status === "expired" ||
+						(row.expiresOn !== null && row.expiresOn < input.asOf)),
+			)
+			.sort((a, b) => {
+				const expiresCompare = (a.expiresOn ?? "").localeCompare(
+					b.expiresOn ?? "",
+				);
+				if (expiresCompare !== 0) {
+					return expiresCompare;
+				}
+				return b.issuedOn.localeCompare(a.issuedOn);
+			});
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const eligibilities = filtered
+			.slice(start, start + input.pageSize)
+			.map((row) => ({ ...row }));
+
+		return ok({
+			eligibilities,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	// --- Policy Acknowledgement ---
+
+	async getPolicyAcknowledgementById(input: {
+		organizationId: string;
+		acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+	}): Promise<Result<PolicyAcknowledgement | null>> {
+		const acknowledgement = this.policyAcknowledgements.get(
+			input.acknowledgementId,
+		);
+		if (
+			!acknowledgement ||
+			acknowledgement.organizationId !== input.organizationId
+		) {
+			return ok(null);
+		}
+		return ok({ ...acknowledgement });
+	}
+
+	async findPolicyAcknowledgementByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentPolicyAcknowledgementRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.policyAcknowledgementIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({
+			...record,
+			acknowledgement: { ...record.acknowledgement },
+		});
+	}
+
+	async issuePolicyAcknowledgementRequirement(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			policyCode: string;
+			policyVersion: string;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>> {
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		const existing =
+			this.policyAcknowledgementIdempotencyByKey.get(idempotencyKey);
+		if (existing) {
+			if (
+				existing.createRequestFingerprint !== record.createRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok({ ...existing.acknowledgement });
+		}
+
+		const employee = this.employees.get(record.employeeId);
+		if (!employee || employee.organizationId !== record.organizationId) {
+			return notFound(
+				"Employee not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const idResult = parseHumanResourcesPolicyAcknowledgementId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const acknowledgement: PolicyAcknowledgement = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+			policyCode: record.policyCode,
+			policyVersion: record.policyVersion,
+			requirementStatus: "outstanding",
+			issuedAt: now,
+			acknowledgedAt: null,
+			acknowledgedBy: null,
+			supersedesAcknowledgementId: null,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.policyAcknowledgements.set(acknowledgement.id, acknowledgement);
+		this.policyAcknowledgementIdempotencyByKey.set(idempotencyKey, {
+			acknowledgement: { ...acknowledgement },
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const rollback: Array<() => void> = [
+			() => {
+				this.policyAcknowledgements.delete(acknowledgement.id);
+				this.policyAcknowledgementIdempotencyByKey.delete(idempotencyKey);
+			},
+		];
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: acknowledgement.organizationId,
+			actorUserId: record.createdBy,
+			entity: "hr_policy_acknowledgement",
+			entityId: acknowledgement.id,
+			action: "CREATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		const outbox = await this.appendComplianceOutbox(ports, meta, {
+			organizationId: acknowledgement.organizationId,
+			actorUserId: record.createdBy,
+			type: HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+			entityType: "hr_policy_acknowledgement",
+			entityId: acknowledgement.id,
+		});
+		if (!outbox.ok) {
+			for (const undo of rollback) undo();
+			return outbox;
+		}
+
+		return ok({ ...acknowledgement });
+	}
+
+	async acknowledgePolicy(
+		input: {
+			organizationId: string;
+			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>> {
+		const now = new Date();
+		return this.transitionPolicyAcknowledgementStatus({
+			organizationId: input.organizationId,
+			acknowledgementId: input.acknowledgementId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "acknowledged",
+			patch: {
+				acknowledgedAt: now,
+				acknowledgedBy: input.actorUserId,
+			},
+			events: [HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT],
+			ports,
+			meta,
+		});
+	}
+
+	async revokePolicyAcknowledgement(
+		input: {
+			organizationId: string;
+			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>> {
+		return this.transitionPolicyAcknowledgementStatus({
+			organizationId: input.organizationId,
+			acknowledgementId: input.acknowledgementId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			nextStatus: "revoked",
+			ports,
+			meta,
+		});
+	}
+
+	async supersedePolicyAcknowledgementRequirement(
+		input: {
+			organizationId: string;
+			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+			newPolicyVersion: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>> {
+		const existing = this.policyAcknowledgements.get(input.acknowledgementId);
+		if (!existing) {
+			return notFound("Policy acknowledgement not found");
+		}
+		if (existing.organizationId !== input.organizationId) {
+			return notFound(
+				"Policy acknowledgement not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			existing.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		if (isPolicyAcknowledgementOutstanding(existing.requirementStatus)) {
+			const superseded = await this.transitionPolicyAcknowledgementStatus({
+				organizationId: input.organizationId,
+				acknowledgementId: input.acknowledgementId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				nextStatus: "superseded",
+				ports,
+				meta,
+			});
+			if (!superseded.ok) {
+				return superseded;
+			}
+		}
+
+		const idResult = parseHumanResourcesPolicyAcknowledgementId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const replacement: PolicyAcknowledgement = {
+			id: idResult.data,
+			organizationId: existing.organizationId,
+			employeeId: existing.employeeId,
+			policyCode: existing.policyCode,
+			policyVersion: input.newPolicyVersion,
+			requirementStatus: "outstanding",
+			issuedAt: now,
+			acknowledgedAt: null,
+			acknowledgedBy: null,
+			supersedesAcknowledgementId: existing.id,
+			version: 1,
+			createdBy: input.actorUserId,
+			updatedBy: input.actorUserId,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.policyAcknowledgements.set(replacement.id, replacement);
+
+		const rollback: Array<() => void> = [
+			() => this.policyAcknowledgements.delete(replacement.id),
+		];
+
+		const audit = await this.recordComplianceAudit(ports, meta, {
+			organizationId: replacement.organizationId,
+			actorUserId: input.actorUserId,
+			entity: "hr_policy_acknowledgement",
+			entityId: replacement.id,
+			action: "CREATE",
+		});
+		if (!audit.ok) {
+			for (const undo of rollback) undo();
+			return audit;
+		}
+
+		const outbox = await this.appendComplianceOutbox(ports, meta, {
+			organizationId: replacement.organizationId,
+			actorUserId: input.actorUserId,
+			type: HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+			entityType: "hr_policy_acknowledgement",
+			entityId: replacement.id,
+		});
+		if (!outbox.ok) {
+			for (const undo of rollback) undo();
+			return outbox;
+		}
+
+		return ok({ ...replacement });
+	}
+
+	async getPolicyAcknowledgementStatus(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		policyCode: string;
+		policyVersion?: string;
+	}): Promise<Result<PolicyAcknowledgement | null>> {
+		let matches = Array.from(this.policyAcknowledgements.values()).filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.employeeId === input.employeeId &&
+				row.policyCode === input.policyCode,
+		);
+
+		if (input.policyVersion !== undefined) {
+			matches = matches.filter(
+				(row) => row.policyVersion === input.policyVersion,
+			);
+		}
+
+		if (matches.length === 0) {
+			return ok(null);
+		}
+
+		matches.sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime());
+		return ok({ ...matches[0]! });
+	}
+
+	async listOutstandingPolicyAcknowledgements(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<PolicyAcknowledgementListPage>> {
+		let filtered = Array.from(this.policyAcknowledgements.values()).filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				isPolicyAcknowledgementOutstanding(row.requirementStatus),
+		);
+
+		if (input.employeeId !== undefined) {
+			filtered = filtered.filter((row) => row.employeeId === input.employeeId);
+		}
+
+		filtered.sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime());
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const acknowledgements = filtered
+			.slice(start, start + input.pageSize)
+			.map((row) => ({ ...row }));
+
+		return ok({
+			acknowledgements,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	// --- Compliance Summary ---
+
+	async getEmployeeComplianceSummary(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf?: string;
+	}): Promise<Result<EmployeeComplianceSummary>> {
+		const employee = this.employees.get(input.employeeId);
+		if (!employee || employee.organizationId !== input.organizationId) {
+			return notFound(
+				"Employee not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
+		const windowEndDate = new Date(`${asOf}T00:00:00.000Z`);
+		windowEndDate.setUTCDate(windowEndDate.getUTCDate() + 30);
+		const windowEnd = windowEndDate.toISOString().slice(0, 10);
+
+		const missingRequiredDocumentCount = Array.from(
+			this.documentRequirements.values(),
+		).filter(
+			(requirement) =>
+				requirement.organizationId === input.organizationId &&
+				requirement.status === "published" &&
+				!this.employeeHasVerifiedDocumentForRequirement({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					requirementId: requirement.id,
+				}),
+		).length;
+
+		const expiringDocumentCount = Array.from(
+			this.employeeDocuments.values(),
+		).filter(
+			(document) =>
+				document.organizationId === input.organizationId &&
+				document.employeeId === input.employeeId &&
+				document.verificationStatus !== "expired" &&
+				document.expiresOn !== null &&
+				document.expiresOn >= asOf &&
+				document.expiresOn <= windowEnd,
+		).length;
+
+		const employeeEligibilities = Array.from(
+			this.workEligibilities.values(),
+		).filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.employeeId === input.employeeId,
+		);
+		const workEligibilityAtRisk =
+			employeeEligibilities.length === 0 ||
+			employeeEligibilities.some(
+				(row) =>
+					row.status === "pending" ||
+					row.status === "suspended" ||
+					row.status === "expired" ||
+					(row.expiresOn !== null && row.expiresOn < asOf),
+			);
+
+		const outstandingPolicyAcknowledgementCount = Array.from(
+			this.policyAcknowledgements.values(),
+		).filter(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.employeeId === input.employeeId &&
+				isPolicyAcknowledgementOutstanding(row.requirementStatus),
+		).length;
+
+		return ok({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			missingRequiredDocumentCount,
+			expiringDocumentCount,
+			workEligibilityAtRisk,
+			outstandingPolicyAcknowledgementCount,
+		});
 	}
 }
 
-export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
-	return new MemoryHumanResourcesStore();
+export function createMemoryHumanResourcesStore(): HumanResourcesStore {
+	const store = new MemoryHumanResourcesStore();
+	Object.assign(store, store.leave);
+	Object.assign(store, store.wfp);
+	attachLeaveMemory(store as MemoryHumanResourcesStore & LeaveMemoryState);
+	return attachWorkforcePlanningMemoryMethods(
+		store as MemoryHumanResourcesStore & WorkforcePlanningMemoryState,
+	) as unknown as HumanResourcesStore;
 }

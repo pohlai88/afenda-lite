@@ -205,7 +205,7 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 
 ---
 
-### HR7 — Compensation & benefits agreements
+### HR7 — Compensation & benefits agreements — **DONE** (2026-07-22)
 
 | | |
 | --- | --- |
@@ -213,8 +213,10 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 | **In scope** | DDL for C&B tables (grades through `hr_compensation_review`); agreement commands only — **no gross-to-net** |
 | **Out of scope** | Payroll calculation; payment execution |
 | **Reference** | Scratch §4 HR-owned terms vs payroll-owned outcomes |
-| **Verify** | `pnpm --filter @afenda/human-resources test` |
+| **Verify** | `pnpm --filter @afenda/human-resources check` |
 | **Done when** | `compensation.changed.v1` + `benefit-enrollment.changed.v1` on approved changes; amounts are agreement facts not calculated pay |
+
+**Next open:** HR8 (learning).
 
 ---
 
@@ -227,6 +229,18 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 | **Out of scope** | External LMS / SCORM (scratch §3 extraction criteria) |
 | **Verify** | `pnpm --filter @afenda/human-resources test` |
 | **Done when** | Learning completion recorded; certification expiry queryable |
+| **Mission alias** | Chat mission **HR-08** |
+
+---
+
+### HR-LEAVE-01 — Leave administration — **IN PROGRESS**
+
+| | |
+| --- | --- |
+| **Depends on** | HR8 (core + org + reporting-line); calendar via `WorkCalendarPort` |
+| **In scope** | Leave policy/entitlement/adjustment/request; derived balance; `leave.approved.v1` + sibling events; narrow permissions |
+| **Out of scope** | HR-TIME-01 DDL; payroll calculation; HR-PERF-01 |
+| **Verify** | `pnpm --filter @afenda/human-resources check` · `pnpm audit:tenancy-nulls` |
 
 ---
 

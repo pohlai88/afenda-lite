@@ -4,7 +4,7 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import { invalidInput, invalidState } from "./domain-guards";
+import { conflict, invalidInput, invalidState } from "./domain-guards";
 import type { EmploymentStatus } from "./employment-status";
 import {
 	type AssignmentStatus,
@@ -86,10 +86,6 @@ export function assertSessionSchedulable(input: {
 	scheduledStartsAt: Date;
 	scheduledEndsAt: Date;
 }): Result<true> {
-	const now = new Date();
-	if (input.scheduledStartsAt < now) {
-		return invalidInput("Session cannot be scheduled in the past");
-	}
 	if (input.scheduledEndsAt <= input.scheduledStartsAt) {
 		return invalidInput("Session end date must be after start date");
 	}
@@ -107,7 +103,10 @@ export function canTransitionSessionStatus(
 	) {
 		return true;
 	}
-	if (current === "in_progress" && (next === "completed" || next === "cancelled")) {
+	if (
+		current === "in_progress" &&
+		(next === "completed" || next === "cancelled")
+	) {
 		return true;
 	}
 	return false;
@@ -157,7 +156,9 @@ export function assertEmploymentActiveForAssignment(
 	return ok(undefined);
 }
 
-export function assertAssignmentWaivable(status: AssignmentStatus): Result<true> {
+export function assertAssignmentWaivable(
+	status: AssignmentStatus,
+): Result<true> {
 	if (isAssignmentTerminal(status)) {
 		return invalidState("Cannot waive a terminal assignment");
 	}
@@ -167,7 +168,7 @@ export function assertAssignmentWaivable(status: AssignmentStatus): Result<true>
 export function assertAssignmentEnrollable(input: {
 	assignmentStatus: AssignmentStatus;
 	courseStatus: CourseStatus;
-	sessionStatus: SessionStatus;
+	sessionStatus: SessionStatus | null;
 	maxParticipants: number | null;
 	enrolledCount: number;
 }): Result<void> {
@@ -177,6 +178,9 @@ export function assertAssignmentEnrollable(input: {
 	const courseActive = assertCourseActive(input.courseStatus);
 	if (!courseActive.ok) {
 		return courseActive;
+	}
+	if (input.sessionStatus === null) {
+		return ok(undefined);
 	}
 	const sessionNotTerminal = assertSessionNotTerminal(input.sessionStatus);
 	if (!sessionNotTerminal.ok) {
@@ -194,10 +198,16 @@ export function canTransitionAssignmentStatus(
 ): boolean {
 	if (current === next) return false;
 	if (isAssignmentTerminal(current)) return false;
-	if (current === "pending" && (next === "in_progress" || next === "withdrawn")) {
+	if (
+		current === "pending" &&
+		(next === "in_progress" || next === "withdrawn")
+	) {
 		return true;
 	}
-	if (current === "in_progress" && (next === "completed" || next === "withdrawn")) {
+	if (
+		current === "in_progress" &&
+		(next === "completed" || next === "withdrawn")
+	) {
 		return true;
 	}
 	return false;
@@ -229,13 +239,22 @@ export function assertAssignmentNotTerminal(
 
 export function assertCompletionRecordable(input: {
 	assignmentStatus: AssignmentStatus;
-	sessionStatus: SessionStatus;
+	sessionStatus: SessionStatus | null;
 	completedAt: Date;
 }): Result<void> {
-	if (input.assignmentStatus !== "in_progress") {
-		return invalidState("Assignment must be in progress to record completion");
+	if (
+		input.assignmentStatus !== "pending" &&
+		input.assignmentStatus !== "in_progress"
+	) {
+		return invalidState(
+			"Assignment must be pending or in progress to record completion",
+		);
 	}
-	if (input.sessionStatus !== "completed") {
+	if (
+		input.sessionStatus !== null &&
+		(input.sessionStatus !== "completed" ||
+			input.assignmentStatus !== "in_progress")
+	) {
 		return invalidState("Session must be completed to record completion");
 	}
 	return ok(undefined);
@@ -245,7 +264,7 @@ export function assertNoDuplicateCompletion(input: {
 	hasExistingCompletion: boolean;
 }): Result<void> {
 	if (input.hasExistingCompletion) {
-		return invalidState("Completion already recorded for this assignment");
+		return conflict("Completion already recorded for this assignment");
 	}
 	return ok(undefined);
 }

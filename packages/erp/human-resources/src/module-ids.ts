@@ -189,6 +189,262 @@ export const HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END =
 export const HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL =
 	"human-resources.benefit-enrollment.cancel" as const;
 
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN =
+	"human-resources.employee-case.open" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION =
+	"human-resources.employee-case.update-classification" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER =
+	"human-resources.employee-case.assign-owner" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT =
+	"human-resources.employee-case.add-participant" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT =
+	"human-resources.employee-case.record-event" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE =
+	"human-resources.employee-case.add-evidence-reference" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE =
+	"human-resources.employee-case.redact-evidence-reference" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE =
+	"human-resources.employee-case.issue-interim-measure" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING =
+	"human-resources.employee-case.record-finding" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION =
+	"human-resources.employee-case.recommend-action" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION =
+	"human-resources.employee-case.approve-action" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL =
+	"human-resources.employee-case.record-appeal" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL =
+	"human-resources.employee-case.resolve-appeal" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE =
+	"human-resources.employee-case.close" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN =
+	"human-resources.employee-case.reopen" as const;
+
+export const HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE =
+	"human-resources.leave-policy.create" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE =
+	"human-resources.leave-policy.update" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH =
+	"human-resources.leave-policy.publish" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE =
+	"human-resources.leave-policy.supersede" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE =
+	"human-resources.leave-policy.archive" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT =
+	"human-resources.leave-entitlement.grant" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD =
+	"human-resources.leave-entitlement.carry-forward" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE =
+	"human-resources.leave-entitlement.expire" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST =
+	"human-resources.leave-entitlement.adjust" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT =
+	"human-resources.leave-request.create-draft" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT =
+	"human-resources.leave-request.submit" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE =
+	"human-resources.leave-request.approve" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT =
+	"human-resources.leave-request.reject" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN =
+	"human-resources.leave-request.return" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW =
+	"human-resources.leave-request.withdraw" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED =
+	"human-resources.leave-request.cancel-approved" as const;
+export const HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND =
+	"human-resources.leave-request.amend" as const;
+
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE =
+	"human-resources.headcount-plan.create" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE =
+	"human-resources.headcount-plan.update" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD =
+	"human-resources.headcount-plan-line.add" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE =
+	"human-resources.headcount-plan-line.update" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE =
+	"human-resources.headcount-plan-line.remove" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUBMIT =
+	"human-resources.headcount-plan.submit" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_APPROVE =
+	"human-resources.headcount-plan.approve" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_REJECT =
+	"human-resources.headcount-plan.reject" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE =
+	"human-resources.headcount-plan.supersede" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CLOSE =
+	"human-resources.headcount-plan.close" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE =
+	"human-resources.headcount.reserve" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE =
+	"human-resources.headcount-reservation.release" as const;
+export const HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME =
+	"human-resources.headcount-reservation.consume" as const;
+
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE =
+	"human-resources.performance-cycle.create" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE =
+	"human-resources.performance-cycle.update" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN =
+	"human-resources.performance-cycle.open" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CLOSE =
+	"human-resources.performance-cycle.close" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL =
+	"human-resources.performance-cycle.cancel" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ADD_PARTICIPANT =
+	"human-resources.performance-cycle.add-participant" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_REMOVE_PARTICIPANT =
+	"human-resources.performance-cycle.remove-participant" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE =
+	"human-resources.performance-goal.create" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE =
+	"human-resources.performance-goal.update" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT =
+	"human-resources.performance-goal.submit" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE =
+	"human-resources.performance-goal.approve" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT =
+	"human-resources.performance-goal.reject" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS =
+	"human-resources.performance-goal.record-progress" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE =
+	"human-resources.performance-goal.close" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL =
+	"human-resources.performance-goal.cancel" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START =
+	"human-resources.performance-review.start" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT =
+	"human-resources.performance-review.submit-self-assessment" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT =
+	"human-resources.performance-review.submit-manager-assessment" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION =
+	"human-resources.performance-review.return-for-correction" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE =
+	"human-resources.performance-review.acknowledge" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE =
+	"human-resources.performance-review.finalize" as const;
+export const HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN =
+	"human-resources.performance-review.reopen" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE =
+	"human-resources.improvement-plan.create" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN =
+	"human-resources.improvement-plan.open" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE =
+	"human-resources.improvement-plan.acknowledge" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT =
+	"human-resources.improvement-plan.record-checkpoint" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND =
+	"human-resources.improvement-plan.amend" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE =
+	"human-resources.improvement-plan.complete" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL =
+	"human-resources.improvement-plan.close-unsuccessful" as const;
+export const HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL =
+	"human-resources.improvement-plan.cancel" as const;
+
+export const HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE =
+	"human-resources.competency.create" as const;
+export const HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE =
+	"human-resources.competency.update" as const;
+export const HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE =
+	"human-resources.competency.retire" as const;
+export const HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP =
+	"human-resources.job-competency.map" as const;
+export const HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE =
+	"human-resources.job-competency.remove" as const;
+export const HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD =
+	"human-resources.competency-assessment.record" as const;
+export const HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE =
+	"human-resources.competency-assessment.supersede" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE =
+	"human-resources.talent-profile.create" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE =
+	"human-resources.talent-profile.update" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD =
+	"human-resources.talent-profile-assessment.record" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM =
+	"human-resources.talent-profile-assessment.confirm" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE =
+	"human-resources.talent-profile.archive" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE =
+	"human-resources.talent-pool.create" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE =
+	"human-resources.talent-pool.update" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE =
+	"human-resources.talent-pool.close" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE =
+	"human-resources.talent-pool-member.nominate" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE =
+	"human-resources.talent-pool-member.approve" as const;
+export const HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE =
+	"human-resources.talent-pool-member.remove" as const;
+export const HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE =
+	"human-resources.career-plan.create" as const;
+export const HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE =
+	"human-resources.career-plan.update" as const;
+export const HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE =
+	"human-resources.career-plan.acknowledge" as const;
+export const HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD =
+	"human-resources.career-plan-action.add" as const;
+export const HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE =
+	"human-resources.career-plan-action.complete" as const;
+export const HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE =
+	"human-resources.career-plan.close" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE =
+	"human-resources.succession-plan.create" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE =
+	"human-resources.succession-plan.update" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE =
+	"human-resources.succession-candidate.nominate" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS =
+	"human-resources.succession-candidate.assess-readiness" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE =
+	"human-resources.succession-candidate.approve" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE =
+	"human-resources.succession-candidate.remove" as const;
+export const HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE =
+	"human-resources.succession-plan.close" as const;
+
+export const HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE =
+	"human-resources.document-requirement.create" as const;
+export const HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE =
+	"human-resources.document-requirement.update" as const;
+export const HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH =
+	"human-resources.document-requirement.publish" as const;
+export const HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE =
+	"human-resources.document-requirement.retire" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER =
+	"human-resources.employee-document.register" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA =
+	"human-resources.employee-document.update-metadata" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY =
+	"human-resources.employee-document.verify" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT =
+	"human-resources.employee-document.reject" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION =
+	"human-resources.employee-document.revoke-verification" as const;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED =
+	"human-resources.employee-document.mark-expired" as const;
+export const HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD =
+	"human-resources.work-eligibility.record" as const;
+export const HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY =
+	"human-resources.work-eligibility.verify" as const;
+export const HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND =
+	"human-resources.work-eligibility.suspend" as const;
+export const HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW =
+	"human-resources.work-eligibility.renew" as const;
+export const HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE =
+	"human-resources.work-eligibility.close" as const;
+export const HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE =
+	"human-resources.policy-acknowledgement.issue" as const;
+export const HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE =
+	"human-resources.policy-acknowledgement.acknowledge" as const;
+export const HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE =
+	"human-resources.policy-acknowledgement.revoke" as const;
+export const HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE =
+	"human-resources.policy-acknowledgement.supersede" as const;
+
 export const HUMAN_RESOURCES_COMMAND_IDS = [
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
@@ -285,6 +541,131 @@ export const HUMAN_RESOURCES_COMMAND_IDS = [
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH,
+	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUBMIT,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_APPROVE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_REJECT,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CLOSE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CLOSE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ADD_PARTICIPANT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_REMOVE_PARTICIPANT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
+	HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
+	HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
+	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
+	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
+	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
 ] as const;
 
 export type HumanResourcesCommandId =
@@ -377,6 +758,122 @@ export const HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST =
 	"human-resources.certification.list" as const;
 export const HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET =
 	"human-resources.approved-compensation-handoff.get" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_POLICY_GET =
+	"human-resources.leave-policy.get" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_POLICY_LIST =
+	"human-resources.leave-policy.list" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_GET =
+	"human-resources.leave-entitlement.get" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_LIST =
+	"human-resources.leave-entitlement.list" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_GET =
+	"human-resources.leave-balance.get" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET =
+	"human-resources.leave-request.get" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST =
+	"human-resources.leave-request.list" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST_PENDING_APPROVAL =
+	"human-resources.leave-request.list-pending-approval" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_TEAM_CALENDAR =
+	"human-resources.leave-request.team-calendar" as const;
+export const HUMAN_RESOURCES_QUERY_APPROVED_LEAVE_HANDOFF_GET =
+	"human-resources.approved-leave-handoff.get" as const;
+export const HUMAN_RESOURCES_QUERY_LEAVE_POLICY_RESOLVE_APPLICABLE =
+	"human-resources.leave-policy.resolve-applicable" as const;
+export const HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET =
+	"human-resources.headcount-plan.get" as const;
+export const HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_LIST =
+	"human-resources.headcount-plan.list" as const;
+export const HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_APPROVED_GET =
+	"human-resources.headcount-plan.approved-get" as const;
+export const HUMAN_RESOURCES_QUERY_HEADCOUNT_AVAILABILITY_GET =
+	"human-resources.headcount.availability.get" as const;
+export const HUMAN_RESOURCES_QUERY_HEADCOUNT_RESERVATION_LIST =
+	"human-resources.headcount-reservation.list" as const;
+export const HUMAN_RESOURCES_QUERY_RECRUITMENT_HEADCOUNT_HANDOFF_GET =
+	"human-resources.recruitment.headcount-handoff.get" as const;
+export const HUMAN_RESOURCES_QUERY_WORKFORCE_PLAN_VARIANCE_GET =
+	"human-resources.workforce-plan.variance.get" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET =
+	"human-resources.employee-case.get" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST =
+	"human-resources.employee-case.list" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED =
+	"human-resources.employee-case.list-assigned" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN =
+	"human-resources.employee-case.list-open" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE =
+	"human-resources.employee-relations.history-by-employee" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_TIMELINE =
+	"human-resources.employee-case.timeline" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_OUTCOME =
+	"human-resources.employee-case.outcome" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET =
+	"human-resources.performance-cycle.get" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST =
+	"human-resources.performance-cycle.list" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_PARTICIPANTS =
+	"human-resources.performance-cycle.list-participants" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_GET =
+	"human-resources.performance-goal.get" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_BY_EMPLOYEE =
+	"human-resources.performance-goal.list-by-employee" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET =
+	"human-resources.performance-review.get" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE =
+	"human-resources.performance-review.list-by-employee" as const;
+export const HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION =
+	"human-resources.performance-review.list-pending-manager-action" as const;
+export const HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_GET =
+	"human-resources.improvement-plan.get" as const;
+export const HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_ACTIVE =
+	"human-resources.improvement-plan.list-active" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET =
+	"human-resources.employee-performance-history.get" as const;
+
+export const HUMAN_RESOURCES_QUERY_COMPETENCY_GET =
+	"human-resources.competency.get" as const;
+export const HUMAN_RESOURCES_QUERY_COMPETENCY_LIST =
+	"human-resources.competency.list" as const;
+export const HUMAN_RESOURCES_QUERY_JOB_COMPETENCY_LIST =
+	"human-resources.job-competency.list" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET =
+	"human-resources.employee-competency-profile.get" as const;
+export const HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE =
+	"human-resources.talent-profile.get-by-employee" as const;
+export const HUMAN_RESOURCES_QUERY_TALENT_POOL_MEMBER_LIST =
+	"human-resources.talent-pool-member.list" as const;
+export const HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET =
+	"human-resources.career-plan.get" as const;
+export const HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE =
+	"human-resources.career-plan.list-by-employee" as const;
+export const HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_GET =
+	"human-resources.succession-plan.get" as const;
+export const HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_LIST =
+	"human-resources.succession-plan.list" as const;
+export const HUMAN_RESOURCES_QUERY_SUCCESSION_CANDIDATE_LIST =
+	"human-resources.succession-candidate.list" as const;
+export const HUMAN_RESOURCES_QUERY_POSITION_SUCCESSION_COVERAGE_GET =
+	"human-resources.position-succession-coverage.get" as const;
+
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET =
+	"human-resources.employee-document.get" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST =
+	"human-resources.employee-document.list" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_MISSING_REQUIRED =
+	"human-resources.employee-document.list-missing-required" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_EXPIRING =
+	"human-resources.employee-document.list-expiring" as const;
+export const HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET =
+	"human-resources.work-eligibility.get" as const;
+export const HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK =
+	"human-resources.work-eligibility.list-risk" as const;
+export const HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_STATUS_GET =
+	"human-resources.policy-acknowledgement.status.get" as const;
+export const HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OUTSTANDING =
+	"human-resources.policy-acknowledgement.list-outstanding" as const;
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPLIANCE_SUMMARY_GET =
+	"human-resources.employee-compliance-summary.get" as const;
 
 export const HUMAN_RESOURCES_QUERY_IDS = [
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
@@ -423,6 +920,63 @@ export const HUMAN_RESOURCES_QUERY_IDS = [
 	HUMAN_RESOURCES_QUERY_CERTIFICATION_GET,
 	HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST,
 	HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_POLICY_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_POLICY_LIST,
+	HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_LIST,
+	HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST,
+	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST_PENDING_APPROVAL,
+	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_TEAM_CALENDAR,
+	HUMAN_RESOURCES_QUERY_APPROVED_LEAVE_HANDOFF_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_POLICY_RESOLVE_APPLICABLE,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_LIST,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_APPROVED_GET,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_AVAILABILITY_GET,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_RESERVATION_LIST,
+	HUMAN_RESOURCES_QUERY_RECRUITMENT_HEADCOUNT_HANDOFF_GET,
+	HUMAN_RESOURCES_QUERY_WORKFORCE_PLAN_VARIANCE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_TIMELINE,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_OUTCOME,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_PARTICIPANTS,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION,
+	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_GET,
+	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_ACTIVE,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
+	HUMAN_RESOURCES_QUERY_COMPETENCY_GET,
+	HUMAN_RESOURCES_QUERY_COMPETENCY_LIST,
+	HUMAN_RESOURCES_QUERY_JOB_COMPETENCY_LIST,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET,
+	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_TALENT_POOL_MEMBER_LIST,
+	HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET,
+	HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_GET,
+	HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_LIST,
+	HUMAN_RESOURCES_QUERY_SUCCESSION_CANDIDATE_LIST,
+	HUMAN_RESOURCES_QUERY_POSITION_SUCCESSION_COVERAGE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_MISSING_REQUIRED,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_EXPIRING,
+	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET,
+	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK,
+	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_STATUS_GET,
+	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OUTSTANDING,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPLIANCE_SUMMARY_GET,
 ] as const;
 
 export type HumanResourcesQueryId = (typeof HUMAN_RESOURCES_QUERY_IDS)[number];

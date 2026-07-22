@@ -74,10 +74,97 @@ events:
     id: human-resources.leave.approved.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.leave.requested.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.leave.rejected.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.leave.cancelled.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.leave.entitlement-adjusted.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.timesheet.approved.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.certification.expiring.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.learning-assignment.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.learning-completion.recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.improvement-plan.completed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.improvement-plan.started.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.performance-cycle.opened.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.performance-goal.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.performance-review.finalized.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.performance-review.reopened.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.opened.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.interim-measure-issued.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.finding-recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.action-approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.appeal-resolved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.closed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-document.registered.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-document.verified.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-document.nearing-expiry.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.work-eligibility.suspended.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.policy-acknowledgement.outstanding.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.policy-acknowledgement.acknowledged.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.competency.assessed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.talent-pool.membership-approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.career-plan.acknowledged.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.succession-candidate.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.succession.readiness-changed.v1
     moduleId: human-resources
   - direction: emits
     id: inventory.movement.created.v1

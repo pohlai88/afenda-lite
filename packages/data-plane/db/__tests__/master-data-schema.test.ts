@@ -114,7 +114,7 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_tax_registration");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_change_request");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_import_batch");
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(116);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(154);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payment_account");
 	});
 

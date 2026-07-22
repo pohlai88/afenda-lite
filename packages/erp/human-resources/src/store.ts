@@ -6,41 +6,77 @@ import type {
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
+	HumanResourcesCareerPlanActionId,
+	HumanResourcesCareerPlanId,
 	HumanResourcesCertificationId,
 	HumanResourcesClearanceId,
 	HumanResourcesCompensationGradeId,
 	HumanResourcesCompensationReviewId,
+	HumanResourcesCompetencyAssessmentId,
+	HumanResourcesCompetencyId,
 	HumanResourcesCompletionId,
 	HumanResourcesCourseId,
 	HumanResourcesDepartmentId,
+	HumanResourcesDocumentRequirementId,
+	HumanResourcesEmployeeCaseActionId,
+	HumanResourcesEmployeeCaseAppealId,
+	HumanResourcesEmployeeCaseEventId,
+	HumanResourcesEmployeeCaseId,
 	HumanResourcesEmployeeCompensationId,
+	HumanResourcesEmployeeDocumentId,
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
+	HumanResourcesHeadcountPlanId,
+	HumanResourcesHeadcountPlanLineId,
+	HumanResourcesHeadcountReservationId,
 	HumanResourcesInterviewId,
+	HumanResourcesJobCompetencyId,
 	HumanResourcesJobId,
 	HumanResourcesLearningAssignmentId,
+	HumanResourcesLeaveAdjustmentId,
+	HumanResourcesLeaveEntitlementId,
+	HumanResourcesLeavePolicyId,
+	HumanResourcesLeaveRequestId,
 	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingTaskId,
+	HumanResourcesGoalId,
+	HumanResourcesImprovementPlanId,
 	HumanResourcesOfferId,
 	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingTaskId,
+	HumanResourcesPerformanceCycleId,
+	HumanResourcesPerformanceCycleParticipantId,
+	HumanResourcesPolicyAcknowledgementId,
 	HumanResourcesPositionId,
 	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
+	HumanResourcesReviewId,
 	HumanResourcesSalaryBandId,
 	HumanResourcesSessionId,
+	HumanResourcesSuccessionCandidateId,
+	HumanResourcesSuccessionPlanId,
+	HumanResourcesTalentPoolId,
+	HumanResourcesTalentPoolMemberId,
+	HumanResourcesTalentProfileAssessmentId,
+	HumanResourcesTalentProfileId,
 	HumanResourcesTerminationId,
+	HumanResourcesWorkEligibilityId,
 } from "./brands";
 import type { MutationPorts } from "./ports";
 import type {
-	BenefitEnrollmentStatus,
 	BenefitPlanStatus,
 	CompensationGradeStatus,
 	SalaryBandStatus,
 } from "./shared/compensation-status";
+import type {
+	DocumentRequirementStatus,
+	EmployeeDocumentVerificationStatus,
+	PolicyAcknowledgementStatus,
+	WorkEligibilityStatus,
+} from "./shared/compliance-status";
 import type {
 	DepartmentStatus,
 	EmploymentStatus,
@@ -50,13 +86,51 @@ import type {
 import type {
 	AssignmentStatus,
 	CertificationStatus,
+	CompletionOutcome,
 	CourseStatus,
 	SessionStatus,
 } from "./shared/learning-status";
 import type {
+	ApprovalDecision,
+	DayPortion,
+	LeaveAdjustmentKind,
+	LeavePolicyStatus,
+	LeaveRequestStatus,
+	LeaveType,
+	LeaveUnit,
+} from "./shared/leave-status";
+import type { PerformanceRatingScale } from "./shared/performance-rating";
+import type {
+	PerformanceCycleStatus,
+	PerformanceGoalStatus,
+	PerformanceWeightingModel,
+} from "./shared/performance-status";
+import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
 } from "./shared/lifecycle-status";
+import type {
+	HeadcountEmploymentType,
+	HeadcountPlanStatus,
+	HeadcountReservationStatus,
+} from "./shared/workforce-planning-status";
+import type {
+	EmployeeCaseActionType,
+	EmployeeCaseEventKind,
+	EmployeeCaseParticipantRole,
+	EmployeeCaseSeverity,
+	EmployeeCaseStatus,
+	EmployeeCaseType,
+} from "./shared/employee-relations-status";
+import type {
+	EmployeeCase,
+	EmployeeCaseAction,
+	EmployeeCaseAppeal,
+	EmployeeCaseEvent,
+	EmployeeCaseListPage,
+	EmployeeCaseOutcome,
+	EmployeeCaseTimeline,
+} from "./employee-relations/types";
 import type {
 	ApplicationStatus,
 	CandidateStatus,
@@ -83,16 +157,27 @@ import type {
 	CompletionListPage,
 	CourseListPage,
 	Department,
+	DocumentRequirement,
+	DocumentRequirementListPage,
 	Employee,
+	EmployeeCertification,
+	EmployeeComplianceSummary,
+	EmployeeDocument,
+	EmployeeDocumentListPage,
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
-	EmployeeCertification,
 	EmployeeListPage,
 	Employment,
 	EmploymentConfirmation,
 	EmploymentContract,
 	EmploymentMovement,
 	EmploymentOffer,
+	HeadcountAvailability,
+	HeadcountPlan,
+	HeadcountPlanLine,
+	HeadcountPlanListPage,
+	HeadcountReservation,
+	HeadcountReservationListPage,
 	Interview,
 	InterviewEvaluation,
 	InterviewListPage,
@@ -103,6 +188,20 @@ import type {
 	LearningCompletion,
 	LearningCourse,
 	LearningSession,
+	LeaveAdjustment,
+	LeaveBalance,
+	LeaveEntitlement,
+	LeaveEntitlementListPage,
+	LeavePolicy,
+	LeavePolicyEligibility,
+	LeavePolicyListPage,
+	LeaveRequest,
+	LeaveRequestListPage,
+	LeaveRequestSegment,
+	ApprovedLeaveHandoff,
+	ResolvedLeavePolicy,
+	TeamCalendarLeavePage,
+	EmployeePerformanceHistory,
 	OffboardingCase,
 	OffboardingTask,
 	OfferAcceptanceHandoff,
@@ -110,8 +209,23 @@ import type {
 	OnboardingCase,
 	OnboardingTask,
 	OrganizationTreePage,
+	PerformanceCycle,
+	PerformanceCycleListPage,
+	PerformanceCycleParticipant,
+	PerformanceGoal,
+	PerformanceGoalListPage,
+	PerformanceGoalProgress,
+	PerformanceImprovementCheckpoint,
+	PerformanceImprovementPlan,
+	PerformanceImprovementPlanListPage,
+	PerformanceReview,
+	PerformanceReviewDetail,
+	PerformanceReviewListPage,
 	Position,
+	PolicyAcknowledgement,
+	PolicyAcknowledgementListPage,
 	ProbationReview,
+	RecruitmentHeadcountHandoff,
 	ReportingLine,
 	RequisitionListPage,
 	SalaryBand,
@@ -119,6 +233,12 @@ import type {
 	SessionListPage,
 	Termination,
 	WorkAssignment,
+	WorkEligibility,
+	WorkEligibilityRiskListPage,
+	WorkforcePlanVariance,
+	IdempotentEmployeeDocumentRecord,
+	IdempotentPolicyAcknowledgementRecord,
+	IdempotentWorkEligibilityRecord,
 } from "./types";
 
 export type EmployeeCreateRecord = {
@@ -377,12 +497,14 @@ export type CourseCreateRecord = {
 	title: string;
 	description: string | null;
 	durationHours: string | null;
-	createdBy: string;
+	createIdempotencyKey: string;
 	createRequestFingerprint: string;
+	createdBy: string;
 };
 
 export type IdempotentCourseRecord = {
 	course: LearningCourse;
+	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 };
 
@@ -392,14 +514,16 @@ export type SessionCreateRecord = {
 	code: string;
 	title: string;
 	scheduledStartsAt: Date;
-	scheduledEndsAt: Date | null;
+	scheduledEndsAt: Date;
 	capacity: number | null;
-	createdBy: string;
+	createIdempotencyKey: string;
 	createRequestFingerprint: string;
+	createdBy: string;
 };
 
 export type IdempotentSessionRecord = {
 	session: LearningSession;
+	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 };
 
@@ -411,12 +535,14 @@ export type LearningAssignmentCreateRecord = {
 	assignedBy: string;
 	assignedAt: Date;
 	dueOn: string | null;
-	createdBy: string;
+	createIdempotencyKey: string;
 	createRequestFingerprint: string;
+	createdBy: string;
 };
 
 export type IdempotentLearningAssignmentRecord = {
 	assignment: LearningAssignment;
+	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 };
 
@@ -430,30 +556,174 @@ export type CompletionCreateRecord = {
 	outcome: string;
 	assessorUserId: string | null;
 	notes: string | null;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	createdBy: string;
-	recordRequestFingerprint: string;
 };
 
 export type IdempotentCompletionRecord = {
 	completion: LearningCompletion;
-	recordRequestFingerprint: string;
-};
-
-export type CertificationCreateRecord = {
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	courseId: HumanResourcesCourseId;
-	completionId: HumanResourcesCompletionId;
-	issuedOn: string;
-	expiresOn: string | null;
-	certificateEvidence: string | null;
-	createdBy: string;
-	issueRequestFingerprint: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 };
 
 export type IdempotentCertificationRecord = {
 	certification: EmployeeCertification;
-	issueRequestFingerprint: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+};
+
+export type LeavePolicyCreateRecord = {
+	organizationId: string;
+	code: string;
+	name: string;
+	leaveType: LeaveType;
+	unit: LeaveUnit;
+	paid: boolean;
+	sensitive: boolean;
+	allowsNegativeBalance: boolean;
+	allowSelfApproval: boolean;
+	allowsPartialDay: boolean;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	minTenureDays: number | null;
+	allowedEmploymentStatuses: EmploymentStatus[];
+	createdBy: string;
+};
+
+export type LeaveEntitlementGrantRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	policyId: HumanResourcesLeavePolicyId;
+	periodStart: string;
+	periodEnd: string;
+	openingQuantity: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentLeaveEntitlementRecord = {
+	entitlement: LeaveEntitlement;
+	createRequestFingerprint: string;
+};
+
+export type LeaveAdjustmentCreateRecord = {
+	organizationId: string;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	sourceRequestId: HumanResourcesLeaveRequestId | null;
+	kind: LeaveAdjustmentKind;
+	delta: string;
+	reason: string;
+	source: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type LeaveRequestCreateRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	policyId: HumanResourcesLeavePolicyId;
+	startDate: string;
+	endDate: string;
+	requestedQuantity: string;
+	unit: LeaveUnit;
+	isBackdated: boolean;
+	backdateJustification: string | null;
+	segments: Array<{
+		segmentDate: string;
+		quantity: string;
+		dayPortion: DayPortion;
+	}>;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type LeaveRequestAmendRecord = {
+	organizationId: string;
+	requestId: HumanResourcesLeaveRequestId;
+	startDate: string;
+	endDate: string;
+	requestedQuantity: string;
+	isBackdated: boolean;
+	backdateJustification: string | null;
+	segments: Array<{
+		segmentDate: string;
+		quantity: string;
+		dayPortion: DayPortion;
+	}>;
+	expectedVersion: number;
+	actorUserId: string;
+};
+
+export type IdempotentLeaveRequestRecord = {
+	request: LeaveRequest;
+	createRequestFingerprint: string;
+};
+
+export type PerformanceCycleCreateRecord = {
+	organizationId: string;
+	code: string;
+	name: string;
+	periodStart: string;
+	periodEnd: string;
+	ratingScale: PerformanceRatingScale;
+	weightingModel: PerformanceWeightingModel;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentPerformanceCycleRecord = {
+	cycle: PerformanceCycle;
+	createRequestFingerprint: string;
+};
+
+export type PerformanceGoalCreateRecord = {
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	title: string;
+	description: string | null;
+	weight: string | null;
+	periodStart: string;
+	periodEnd: string;
+	exceptionOutsideCycle: boolean;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentPerformanceGoalRecord = {
+	goal: PerformanceGoal;
+	createRequestFingerprint: string;
+};
+
+export type ImprovementPlanCreateRecord = {
+	organizationId: string;
+	reviewId: HumanResourcesReviewId;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	performanceGap: string;
+	expectedOutcome: string;
+	measurableActions: string;
+	supportResources: string;
+	dueDate: string;
+	accountableManagerEmployeeId: HumanResourcesEmployeeId;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentImprovementPlanRecord = {
+	plan: PerformanceImprovementPlan;
+	createRequestFingerprint: string;
 };
 
 /**
@@ -1641,4 +1911,1932 @@ export type HumanResourcesStore = {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 	}): Promise<Result<ApprovedCompensationHandoff | null>>;
+
+	// Learning Course
+	getCourseById(input: {
+		organizationId: string;
+		courseId: HumanResourcesCourseId;
+	}): Promise<Result<LearningCourse | null>>;
+
+	findCourseByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentCourseRecord | null>>;
+
+	createCourse(
+		record: CourseCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>>;
+
+	updateCourse(
+		input: {
+			organizationId: string;
+			courseId: HumanResourcesCourseId;
+			title?: string;
+			description?: string | null;
+			durationHours?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>>;
+
+	activateCourse(
+		input: {
+			organizationId: string;
+			courseId: HumanResourcesCourseId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>>;
+
+	archiveCourse(
+		input: {
+			organizationId: string;
+			courseId: HumanResourcesCourseId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>>;
+
+	listCourses(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: CourseStatus;
+	}): Promise<Result<CourseListPage>>;
+
+	countActiveAssignmentsForCourse(input: {
+		organizationId: string;
+		courseId: HumanResourcesCourseId;
+	}): Promise<Result<number>>;
+
+	// Learning Session
+	getSessionById(input: {
+		organizationId: string;
+		sessionId: HumanResourcesSessionId;
+	}): Promise<Result<LearningSession | null>>;
+
+	findSessionByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentSessionRecord | null>>;
+
+	createSession(
+		record: SessionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>>;
+
+	startSession(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			actualStartsAt: Date;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>>;
+
+	completeSession(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			actualEndsAt: Date;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>>;
+
+	cancelSession(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>>;
+
+	listSessions(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		courseId?: HumanResourcesCourseId;
+		status?: SessionStatus;
+	}): Promise<Result<SessionListPage>>;
+
+	countEnrolledInSession(input: {
+		organizationId: string;
+		sessionId: HumanResourcesSessionId;
+	}): Promise<Result<number>>;
+
+	// Learning Assignment
+	getLearningAssignmentById(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesLearningAssignmentId;
+	}): Promise<Result<LearningAssignment | null>>;
+
+	findLearningAssignmentByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentLearningAssignmentRecord | null>>;
+
+	createLearningAssignment(
+		record: LearningAssignmentCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningAssignment>>;
+
+	enrollLearningAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesLearningAssignmentId;
+			sessionId?: HumanResourcesSessionId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningAssignment>>;
+
+	waiveLearningAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesLearningAssignmentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningAssignment>>;
+
+	listLearningAssignments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		courseId?: HumanResourcesCourseId;
+		status?: AssignmentStatus;
+	}): Promise<Result<LearningAssignmentListPage>>;
+
+	// Learning Completion
+	getCompletionById(input: {
+		organizationId: string;
+		completionId: HumanResourcesCompletionId;
+	}): Promise<Result<LearningCompletion | null>>;
+
+	findCompletionByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentCompletionRecord | null>>;
+
+	findCompletionByAssignmentId(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesLearningAssignmentId;
+	}): Promise<Result<LearningCompletion | null>>;
+
+	recordCompletion(
+		record: CompletionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCompletion>>;
+
+	listCompletions(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		courseId?: HumanResourcesCourseId;
+	}): Promise<Result<CompletionListPage>>;
+
+	// Employee Certification
+	getCertificationById(input: {
+		organizationId: string;
+		certificationId: HumanResourcesCertificationId;
+	}): Promise<Result<EmployeeCertification | null>>;
+
+	findCertificationByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentCertificationRecord | null>>;
+
+	issueCertification(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			courseId: HumanResourcesCourseId;
+			completionId: HumanResourcesCompletionId;
+			certificationCode: string;
+			issuedOn: string;
+			expiresOn: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCertification>>;
+
+	revokeCertification(
+		input: {
+			organizationId: string;
+			certificationId: HumanResourcesCertificationId;
+			revokedBy: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCertification>>;
+
+	expireCertification(
+		input: {
+			organizationId: string;
+			certificationId: HumanResourcesCertificationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCertification>>;
+
+	listCertifications(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		courseId?: HumanResourcesCourseId;
+		status?: CertificationStatus;
+	}): Promise<Result<CertificationListPage>>;
+
+	// Leave Policy
+	getLeavePolicyById(input: {
+		organizationId: string;
+		policyId: HumanResourcesLeavePolicyId;
+	}): Promise<Result<LeavePolicy | null>>;
+
+	getLeavePolicyEligibility(input: {
+		organizationId: string;
+		policyId: HumanResourcesLeavePolicyId;
+	}): Promise<Result<LeavePolicyEligibility | null>>;
+
+	resolveApplicableLeavePolicy(input: {
+		organizationId: string;
+		policyCode: string;
+		employeeId: HumanResourcesEmployeeId;
+		employmentId: HumanResourcesEmploymentId;
+		asOfDate: string;
+	}): Promise<Result<ResolvedLeavePolicy | null>>;
+
+	getPrimaryManagerForEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf: string;
+	}): Promise<Result<HumanResourcesEmployeeId | null>>;
+
+	findLeavePolicyByCode(input: {
+		organizationId: string;
+		code: string;
+		effectiveFrom: string;
+	}): Promise<Result<LeavePolicy | null>>;
+
+	createLeavePolicy(
+		record: LeavePolicyCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeavePolicy>>;
+
+	updateLeavePolicy(
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+			name?: string;
+			paid?: boolean;
+			sensitive?: boolean;
+			allowsNegativeBalance?: boolean;
+			allowSelfApproval?: boolean;
+			allowsPartialDay?: boolean;
+			effectiveTo?: string | null;
+			minTenureDays?: number | null;
+			allowedEmploymentStatuses?: EmploymentStatus[];
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeavePolicy>>;
+
+	publishLeavePolicy(
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeavePolicy>>;
+
+	supersedeLeavePolicy(
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+			code: string;
+			name: string;
+			leaveType: LeaveType;
+			unit: LeaveUnit;
+			paid: boolean;
+			sensitive: boolean;
+			allowsNegativeBalance: boolean;
+			allowSelfApproval: boolean;
+			allowsPartialDay: boolean;
+			effectiveFrom: string;
+			effectiveTo: string | null;
+			minTenureDays: number | null;
+			allowedEmploymentStatuses: EmploymentStatus[];
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeavePolicy>>;
+
+	archiveLeavePolicy(
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeavePolicy>>;
+
+	listLeavePolicies(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: LeavePolicyStatus;
+	}): Promise<Result<LeavePolicyListPage>>;
+
+	// Leave Entitlement
+	getLeaveEntitlementById(input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+	}): Promise<Result<LeaveEntitlement | null>>;
+
+	findLeaveEntitlementByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentLeaveEntitlementRecord | null>>;
+
+	grantLeaveEntitlement(
+		record: LeaveEntitlementGrantRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveEntitlement>>;
+
+	carryForwardLeaveEntitlement(
+		input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+			newPeriodStart: string;
+			newPeriodEnd: string;
+			carriedQuantity: string;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveEntitlement>>;
+
+	expireLeaveEntitlement(
+		input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveEntitlement>>;
+
+	adjustLeaveEntitlement(
+		record: LeaveAdjustmentCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveAdjustment>>;
+
+	listLeaveEntitlements(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		employmentId?: HumanResourcesEmploymentId;
+		policyId?: HumanResourcesLeavePolicyId;
+	}): Promise<Result<LeaveEntitlementListPage>>;
+
+	listPostedLeaveAdjustments(input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+	}): Promise<Result<LeaveAdjustment[]>>;
+
+	getLeaveBalance(input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+	}): Promise<Result<LeaveBalance | null>>;
+
+	// Leave Request
+	getLeaveRequestById(input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+	}): Promise<Result<LeaveRequest | null>>;
+
+	findLeaveRequestByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentLeaveRequestRecord | null>>;
+
+	listLeaveRequestSegments(input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+	}): Promise<Result<LeaveRequestSegment[]>>;
+
+	listOverlappingLeaveSegments(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		excludeRequestId?: HumanResourcesLeaveRequestId;
+	}): Promise<Result<LeaveRequestSegment[]>>;
+
+	createDraftLeaveRequest(
+		record: LeaveRequestCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	amendLeaveRequest(
+		record: LeaveRequestAmendRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	submitLeaveRequest(
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	approveLeaveRequest(
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	rejectLeaveRequest(
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	returnLeaveRequest(
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	withdrawLeaveRequest(
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	cancelApprovedLeaveRequest(
+		input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			note: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LeaveRequest>>;
+
+	listLeaveRequests(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		status?: LeaveRequestStatus;
+	}): Promise<Result<LeaveRequestListPage>>;
+
+	listPendingApprovalLeaveRequests(input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<LeaveRequestListPage>>;
+
+	listTeamCalendarLeaveRequests(input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		rangeStart: string;
+		rangeEnd: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<TeamCalendarLeavePage>>;
+
+	getApprovedLeaveHandoff(input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+		correlationId: string;
+	}): Promise<Result<ApprovedLeaveHandoff | null>>;
+
+	// Document Requirement
+	getDocumentRequirementById(input: {
+		organizationId: string;
+		requirementId: HumanResourcesDocumentRequirementId;
+	}): Promise<Result<DocumentRequirement | null>>;
+
+	findDocumentRequirementByCode(input: {
+		organizationId: string;
+		code: string;
+	}): Promise<Result<DocumentRequirement | null>>;
+
+	createDocumentRequirement(
+		record: {
+			organizationId: string;
+			code: string;
+			name: string;
+			documentType: string;
+			issuingJurisdiction: string | null;
+			appliesToNote: string | null;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>>;
+
+	updateDocumentRequirement(
+		input: {
+			organizationId: string;
+			requirementId: HumanResourcesDocumentRequirementId;
+			name?: string;
+			documentType?: string;
+			issuingJurisdiction?: string | null;
+			appliesToNote?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>>;
+
+	publishDocumentRequirement(
+		input: {
+			organizationId: string;
+			requirementId: HumanResourcesDocumentRequirementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>>;
+
+	retireDocumentRequirement(
+		input: {
+			organizationId: string;
+			requirementId: HumanResourcesDocumentRequirementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<DocumentRequirement>>;
+
+	listPublishedDocumentRequirements(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<DocumentRequirementListPage>>;
+
+	// Employee Document
+	getEmployeeDocumentById(input: {
+		organizationId: string;
+		documentId: HumanResourcesEmployeeDocumentId;
+	}): Promise<Result<EmployeeDocument | null>>;
+
+	findEmployeeDocumentByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentEmployeeDocumentRecord | null>>;
+
+	registerEmployeeDocument(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			requirementId: HumanResourcesDocumentRequirementId | null;
+			documentType: string;
+			issuingJurisdiction: string | null;
+			issuedOn: string;
+			expiresOn: string | null;
+			documentRef: string;
+			identifierLast4: string | null;
+			identifierFingerprint: string | null;
+			metadata: Record<string, unknown> | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>>;
+
+	updateEmployeeDocumentMetadata(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			issuingJurisdiction?: string | null;
+			expiresOn?: string | null;
+			metadata?: Record<string, unknown> | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>>;
+
+	verifyEmployeeDocument(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			evidenceDate: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>>;
+
+	rejectEmployeeDocument(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			rejectionReason: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>>;
+
+	revokeEmployeeDocumentVerification(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>>;
+
+	markEmployeeDocumentExpired(
+		input: {
+			organizationId: string;
+			documentId: HumanResourcesEmployeeDocumentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeDocument>>;
+
+	listEmployeeDocuments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		verificationStatus?: EmployeeDocumentVerificationStatus;
+	}): Promise<Result<EmployeeDocumentListPage>>;
+
+	listMissingRequiredDocuments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<DocumentRequirementListPage>>;
+
+	listExpiringEmployeeDocuments(input: {
+		organizationId: string;
+		asOf: string;
+		withinDays: number;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<EmployeeDocumentListPage>>;
+
+	// Work Eligibility
+	getWorkEligibilityById(input: {
+		organizationId: string;
+		eligibilityId: HumanResourcesWorkEligibilityId;
+	}): Promise<Result<WorkEligibility | null>>;
+
+	getActiveWorkEligibilityForEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}): Promise<Result<WorkEligibility | null>>;
+
+	findWorkEligibilityByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentWorkEligibilityRecord | null>>;
+
+	recordWorkEligibility(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			countryCode: string;
+			jurisdiction: string | null;
+			issuedOn: string;
+			expiresOn: string | null;
+			documentRef: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>>;
+
+	verifyWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			evidenceDate: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>>;
+
+	suspendWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>>;
+
+	renewWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			issuedOn: string;
+			expiresOn: string | null;
+			documentRef: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>>;
+
+	closeWorkEligibility(
+		input: {
+			organizationId: string;
+			eligibilityId: HumanResourcesWorkEligibilityId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkEligibility>>;
+
+	listEmployeesWithWorkEligibilityRisk(input: {
+		organizationId: string;
+		asOf: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<WorkEligibilityRiskListPage>>;
+
+	// Policy Acknowledgement
+	getPolicyAcknowledgementById(input: {
+		organizationId: string;
+		acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+	}): Promise<Result<PolicyAcknowledgement | null>>;
+
+	findPolicyAcknowledgementByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentPolicyAcknowledgementRecord | null>>;
+
+	issuePolicyAcknowledgementRequirement(
+		record: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			policyCode: string;
+			policyVersion: string;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>>;
+
+	acknowledgePolicy(
+		input: {
+			organizationId: string;
+			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>>;
+
+	revokePolicyAcknowledgement(
+		input: {
+			organizationId: string;
+			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>>;
+
+	supersedePolicyAcknowledgementRequirement(
+		input: {
+			organizationId: string;
+			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
+			newPolicyVersion: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PolicyAcknowledgement>>;
+
+	getPolicyAcknowledgementStatus(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		policyCode: string;
+		policyVersion?: string;
+	}): Promise<Result<PolicyAcknowledgement | null>>;
+
+	listOutstandingPolicyAcknowledgements(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<PolicyAcknowledgementListPage>>;
+
+	getEmployeeComplianceSummary(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf?: string;
+	}): Promise<Result<EmployeeComplianceSummary>>;
+
+	// Performance Cycle
+	getPerformanceCycleById(input: {
+		organizationId: string;
+		cycleId: HumanResourcesPerformanceCycleId;
+	}): Promise<Result<PerformanceCycle | null>>;
+
+	findPerformanceCycleByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentPerformanceCycleRecord | null>>;
+
+	createPerformanceCycle(
+		record: PerformanceCycleCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycle>>;
+
+	updatePerformanceCycle(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			name?: string;
+			periodStart?: string;
+			periodEnd?: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycle>>;
+
+	openPerformanceCycle(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycle>>;
+
+	closePerformanceCycle(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycle>>;
+
+	cancelPerformanceCycle(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycle>>;
+
+	addCycleParticipant(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			employeeId: HumanResourcesEmployeeId;
+			employmentId: HumanResourcesEmploymentId;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycleParticipant>>;
+
+	removeCycleParticipant(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			participantId: HumanResourcesPerformanceCycleParticipantId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceCycleParticipant>>;
+
+	listPerformanceCycles(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: PerformanceCycleStatus;
+	}): Promise<Result<PerformanceCycleListPage>>;
+
+	listCycleParticipants(input: {
+		organizationId: string;
+		cycleId: HumanResourcesPerformanceCycleId;
+	}): Promise<Result<PerformanceCycleParticipant[]>>;
+
+	// Performance Goal
+	getPerformanceGoalById(input: {
+		organizationId: string;
+		goalId: HumanResourcesGoalId;
+	}): Promise<Result<PerformanceGoal | null>>;
+
+	findPerformanceGoalByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentPerformanceGoalRecord | null>>;
+
+	createPerformanceGoal(
+		record: PerformanceGoalCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	updatePerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			title?: string;
+			description?: string | null;
+			weight?: string | null;
+			periodStart?: string;
+			periodEnd?: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	submitPerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	approvePerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	rejectPerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	recordGoalProgress(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			progressNote: string;
+			progressValue: string | null;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoalProgress>>;
+
+	closePerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	cancelPerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceGoal>>;
+
+	listEmployeeGoals(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+		status?: PerformanceGoalStatus;
+	}): Promise<Result<PerformanceGoalListPage>>;
+
+	// Performance Review
+	startPerformanceReview(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			employeeId: HumanResourcesEmployeeId;
+			employmentId: HumanResourcesEmploymentId;
+			managerEmployeeId: HumanResourcesEmployeeId;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	submitSelfAssessment(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			rating: string;
+			commentsSensitive: string | null;
+			actorUserId: string;
+			actorEmployeeId: HumanResourcesEmployeeId;
+			expectedVersion: number;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	submitManagerAssessment(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			rating: string;
+			commentsSensitive: string | null;
+			actorUserId: string;
+			managerEmployeeId: HumanResourcesEmployeeId;
+			expectedVersion: number;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	returnPerformanceReviewForCorrection(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	acknowledgePerformanceReview(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			acknowledgementNote: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	finalizePerformanceReview(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			overallRating: string;
+			finalizeIdempotencyKey: string;
+			finalizeRequestFingerprint: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	reopenPerformanceReview(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			reason: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceReview>>;
+
+	getPerformanceReviewById(input: {
+		organizationId: string;
+		reviewId: HumanResourcesReviewId;
+		includeConfidential: boolean;
+	}): Promise<Result<PerformanceReviewDetail | null>>;
+
+	listEmployeePerformanceReviews(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+		includeConfidential: boolean;
+	}): Promise<Result<PerformanceReviewListPage>>;
+
+	listReviewsPendingManagerAction(input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<PerformanceReviewListPage>>;
+
+	// Performance Improvement Plan
+	getImprovementPlanById(input: {
+		organizationId: string;
+		planId: HumanResourcesImprovementPlanId;
+	}): Promise<Result<PerformanceImprovementPlan | null>>;
+
+	findImprovementPlanByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentImprovementPlanRecord | null>>;
+
+	createImprovementPlan(
+		record: ImprovementPlanCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	openImprovementPlan(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	acknowledgeImprovementPlan(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	recordImprovementCheckpoint(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			sequenceNumber: number;
+			outcome: "met" | "missed";
+			notes: string | null;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementCheckpoint>>;
+
+	amendImprovementPlan(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			measurableActions?: string;
+			supportResources?: string;
+			dueDate?: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	completeImprovementPlan(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	closeImprovementPlanUnsuccessful(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	cancelImprovementPlan(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PerformanceImprovementPlan>>;
+
+	listActiveImprovementPlans(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<PerformanceImprovementPlanListPage>>;
+
+	getEmployeePerformanceHistory(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		includeConfidential: boolean;
+	}): Promise<Result<EmployeePerformanceHistory>>;
+
+	// Employee relations
+	findEmployeeCaseByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<
+		Result<
+			| (IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase })
+			| null
+		>
+	>;
+
+	openEmployeeCase(
+		record: EmployeeCaseCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	getEmployeeCaseById(input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+		actorUserId: string;
+	}): Promise<Result<EmployeeCase>>;
+
+	listEmployeeCases(input: {
+		organizationId: string;
+		actorUserId: string;
+		page?: number;
+		pageSize?: number;
+		status?: EmployeeCaseStatus;
+	}): Promise<Result<EmployeeCaseListPage>>;
+
+	listCasesAssignedToActor(input: {
+		organizationId: string;
+		actorUserId: string;
+		page?: number;
+		pageSize?: number;
+	}): Promise<Result<EmployeeCaseListPage>>;
+
+	listOpenEmployeeRelationsCases(input: {
+		organizationId: string;
+		actorUserId: string;
+		page?: number;
+		pageSize?: number;
+	}): Promise<Result<EmployeeCaseListPage>>;
+
+	getEmployeeRelationsHistoryByEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		page?: number;
+		pageSize?: number;
+	}): Promise<Result<EmployeeCaseListPage>>;
+
+	updateEmployeeCaseClassification(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			classificationCode: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	assignEmployeeCaseOwner(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			ownerActorUserId: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	addEmployeeCaseParticipant(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			participantActorUserId: string;
+			role: EmployeeCaseParticipantRole;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	recordEmployeeCaseEvent(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			eventKind: EmployeeCaseEventKind;
+			payloadJson?: Record<string, unknown> | null;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseEvent>>;
+
+	addEmployeeCaseEvidenceReference(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			documentRef: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseEvent>>;
+
+	redactEmployeeCaseEvidenceReference(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			eventId: HumanResourcesEmployeeCaseEventId;
+			reasonCode: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseEvent>>;
+
+	issueInterimEmployeeMeasure(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			interimAuthority: string;
+			interimReason: string;
+			interimStartsOn: string;
+			interimReviewOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	recordEmployeeCaseFinding(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			findingCode: string;
+			findingSummary: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	findEmployeeCaseActionByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<
+		Result<
+			| (IdempotentEmployeeCaseActionOpenRecord & { action: EmployeeCaseAction })
+			| null
+		>
+	>;
+
+	recommendEmployeeCaseAction(
+		record: EmployeeCaseActionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseAction>>;
+
+	approveEmployeeCaseAction(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			actionId: HumanResourcesEmployeeCaseActionId;
+			policyValidationRecorded: boolean;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseAction>>;
+
+	findEmployeeCaseAppealByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<
+		Result<
+			| (IdempotentEmployeeCaseAppealOpenRecord & { appeal: EmployeeCaseAppeal })
+			| null
+		>
+	>;
+
+	recordEmployeeCaseAppeal(
+		record: EmployeeCaseAppealCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseAppeal>>;
+
+	resolveEmployeeCaseAppeal(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			appealId: HumanResourcesEmployeeCaseAppealId;
+			appealOutcomeCode: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCaseAppeal>>;
+
+	closeEmployeeCase(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			outcomeCode: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	reopenEmployeeCase(
+		input: {
+			organizationId: string;
+			caseId: HumanResourcesEmployeeCaseId;
+			reasonCode: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmployeeCase>>;
+
+	getEmployeeCaseTimeline(input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+		actorUserId: string;
+	}): Promise<Result<EmployeeCaseTimeline>>;
+
+	getEmployeeCaseOutcome(input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+		actorUserId: string;
+	}): Promise<Result<EmployeeCaseOutcome>>;
+
+	// Workforce planning — headcount plan
+	findHeadcountPlanByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentHeadcountPlanRecord | null>>;
+
+	getHeadcountPlanById(input: {
+		organizationId: string;
+		planId: HumanResourcesHeadcountPlanId;
+	}): Promise<Result<HeadcountPlan | null>>;
+
+	findApprovedHeadcountPlanForScope(input: {
+		organizationId: string;
+		planningScopeKey: string;
+		periodStart: string;
+		periodEnd: string;
+	}): Promise<Result<HeadcountPlan | null>>;
+
+	createHeadcountPlan(
+		record: HeadcountPlanCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountPlan>>;
+
+	updateHeadcountPlan(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesHeadcountPlanId;
+			title?: string;
+			costEnvelopeAmount?: string | null;
+			costEnvelopeCurrencyCode?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountPlan>>;
+
+	transitionHeadcountPlanStatus(
+		input: {
+			organizationId: string;
+			planId: HumanResourcesHeadcountPlanId;
+			status: HeadcountPlanStatus;
+			expectedVersion: number;
+			actorUserId: string;
+			rejectionReason?: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountPlan>>;
+
+	supersedeHeadcountPlan(
+		record: HeadcountPlanSupersedeRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountPlan>>;
+
+	listHeadcountPlans(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: HeadcountPlanStatus;
+		planningScopeKey?: string;
+	}): Promise<Result<HeadcountPlanListPage>>;
+
+	// Workforce planning — headcount plan line
+	getHeadcountPlanLineById(input: {
+		organizationId: string;
+		planLineId: HumanResourcesHeadcountPlanLineId;
+	}): Promise<Result<HeadcountPlanLine | null>>;
+
+	listHeadcountPlanLinesByPlanId(input: {
+		organizationId: string;
+		planId: HumanResourcesHeadcountPlanId;
+	}): Promise<Result<HeadcountPlanLine[]>>;
+
+	addHeadcountPlanLine(
+		record: HeadcountPlanLineCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountPlanLine>>;
+
+	updateHeadcountPlanLine(
+		input: {
+			organizationId: string;
+			planLineId: HumanResourcesHeadcountPlanLineId;
+			departmentId?: HumanResourcesDepartmentId | null;
+			jobId?: HumanResourcesJobId | null;
+			positionId?: HumanResourcesPositionId | null;
+			locationCode?: string | null;
+			employmentType?: HeadcountEmploymentType | null;
+			plannedFte?: string;
+			plannedHeadcount?: number;
+			costEnvelopeAmount?: string | null;
+			costEnvelopeCurrencyCode?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountPlanLine>>;
+
+	removeHeadcountPlanLine(
+		input: {
+			organizationId: string;
+			planLineId: HumanResourcesHeadcountPlanLineId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<void>>;
+
+	// Workforce planning — headcount reservation
+	findHeadcountReservationByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentHeadcountReservationRecord | null>>;
+
+	getHeadcountReservationById(input: {
+		organizationId: string;
+		reservationId: HumanResourcesHeadcountReservationId;
+	}): Promise<Result<HeadcountReservation | null>>;
+
+	findActiveHeadcountReservationForRequisition(input: {
+		organizationId: string;
+		requisitionId: HumanResourcesRequisitionId;
+	}): Promise<Result<HeadcountReservation | null>>;
+
+	reserveHeadcount(
+		record: HeadcountReservationCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountReservation>>;
+
+	releaseHeadcountReservation(
+		input: {
+			organizationId: string;
+			reservationId: HumanResourcesHeadcountReservationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountReservation>>;
+
+	consumeHeadcountReservation(
+		input: {
+			organizationId: string;
+			reservationId: HumanResourcesHeadcountReservationId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<HeadcountReservation>>;
+
+	releaseActiveHeadcountReservationsForRequisition(
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<void>>;
+
+	consumeActiveHeadcountReservationForRequisition(
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<void>>;
+
+	listHeadcountReservations(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		planId?: HumanResourcesHeadcountPlanId;
+		requisitionId?: HumanResourcesRequisitionId;
+	}): Promise<Result<HeadcountReservationListPage>>;
+
+	listHeadcountReservationsByPlanLineId(input: {
+		organizationId: string;
+		planLineId: HumanResourcesHeadcountPlanLineId;
+	}): Promise<Result<HeadcountReservation[]>>;
+
+	getHeadcountAvailability(input: {
+		organizationId: string;
+		planLineId: HumanResourcesHeadcountPlanLineId;
+	}): Promise<Result<HeadcountAvailability | null>>;
+
+	getRecruitmentHeadcountHandoff(input: {
+		organizationId: string;
+		requisitionId: HumanResourcesRequisitionId;
+	}): Promise<Result<RecruitmentHeadcountHandoff>>;
+
+	getWorkforcePlanVariance(input: {
+		organizationId: string;
+		planId: HumanResourcesHeadcountPlanId;
+	}): Promise<Result<WorkforcePlanVariance>>;
+};
+
+export type HeadcountPlanCreateRecord = {
+	organizationId: string;
+	code: string;
+	title: string;
+	planningScopeKey: string;
+	periodStart: string;
+	periodEnd: string;
+	costEnvelopeAmount: string | null;
+	costEnvelopeCurrencyCode: string | null;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentHeadcountPlanRecord = {
+	plan: HeadcountPlan;
+	createRequestFingerprint: string;
+};
+
+export type HeadcountPlanSupersedeRecord = {
+	organizationId: string;
+	sourcePlanId: HumanResourcesHeadcountPlanId;
+	code: string;
+	title: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	expectedVersion: number;
+	createdBy: string;
+};
+
+export type HeadcountPlanLineCreateRecord = {
+	organizationId: string;
+	planId: HumanResourcesHeadcountPlanId;
+	departmentId: HumanResourcesDepartmentId | null;
+	jobId: HumanResourcesJobId | null;
+	positionId: HumanResourcesPositionId | null;
+	locationCode: string | null;
+	employmentType: HeadcountEmploymentType | null;
+	plannedFte: string;
+	plannedHeadcount: number;
+	costEnvelopeAmount: string | null;
+	costEnvelopeCurrencyCode: string | null;
+	createdBy: string;
+};
+
+export type HeadcountReservationCreateRecord = {
+	organizationId: string;
+	planLineId: HumanResourcesHeadcountPlanLineId;
+	requisitionId: HumanResourcesRequisitionId;
+	reservedFte: string;
+	reservedHeadcount: number;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentHeadcountReservationRecord = {
+	reservation: HeadcountReservation;
+	createRequestFingerprint: string;
+};
+
+export type EmployeeCaseCreateRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	caseType: EmployeeCaseType;
+	severity: EmployeeCaseSeverity;
+	allegationSummary: string;
+	classificationCode: string;
+	ownerActorUserId: string;
+	subjectActorUserId: string | null;
+	conflictedActorUserIds: string[];
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentEmployeeCaseOpenRecord = {
+	caseId: HumanResourcesEmployeeCaseId;
+	createRequestFingerprint: string;
+};
+
+export type EmployeeCaseActionCreateRecord = {
+	organizationId: string;
+	caseId: HumanResourcesEmployeeCaseId;
+	actionType: EmployeeCaseActionType;
+	recommendationNote: string | null;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	expectedVersion: number;
+	recommendedBy: string;
+};
+
+export type IdempotentEmployeeCaseActionOpenRecord = {
+	actionId: HumanResourcesEmployeeCaseActionId;
+	createRequestFingerprint: string;
+};
+
+export type EmployeeCaseAppealCreateRecord = {
+	organizationId: string;
+	caseId: HumanResourcesEmployeeCaseId;
+	appealGroundsSummary: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	expectedVersion: number;
+	createdBy: string;
+};
+
+export type IdempotentEmployeeCaseAppealOpenRecord = {
+	appealId: HumanResourcesEmployeeCaseAppealId;
+	createRequestFingerprint: string;
 };

@@ -125,7 +125,8 @@ export async function applyApprovedCompensationResult(
 				{
 					organizationId: data.organizationId,
 					reviewId: data.reviewId,
-					expectedVersion: data.expectedVersion,
+					reason: data.reason,
+					createIdempotencyKey: data.idempotencyKey,
 					actorUserId: data.actorUserId,
 				},
 				ports,

@@ -27,10 +27,14 @@ export const ASSIGNMENT_TERMINAL_STATUSES = [
 export const CERTIFICATION_STATUSES = ["active", "expired", "revoked"] as const;
 export type CertificationStatus = (typeof CERTIFICATION_STATUSES)[number];
 
+export const COMPLETION_OUTCOMES = ["passed", "failed", "attended"] as const;
+export type CompletionOutcome = (typeof COMPLETION_OUTCOMES)[number];
+
 export const courseStatusSchema = z.enum(COURSE_STATUSES);
 export const sessionStatusSchema = z.enum(SESSION_STATUSES);
 export const assignmentStatusSchema = z.enum(ASSIGNMENT_STATUSES);
 export const certificationStatusSchema = z.enum(CERTIFICATION_STATUSES);
+export const completionOutcomeSchema = z.enum(COMPLETION_OUTCOMES);
 
 export function isCourseActive(status: CourseStatus): boolean {
 	return status === "active";

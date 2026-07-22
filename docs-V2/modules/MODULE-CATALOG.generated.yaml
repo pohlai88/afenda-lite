@@ -74,6 +74,17 @@ modules:
       - benefit_plan
       - benefit_enrollment
       - compensation_review
+      - headcount_plan
+      - headcount_plan_line
+      - headcount_reservation
+      - employee_case
+      - case_event
+      - case_action
+      - case_appeal
+      - document_requirement
+      - employee_document
+      - work_eligibility
+      - policy_acknowledgement
     band: R1-F
     category: erp
     id: human-resources

@@ -376,6 +376,120 @@ tables:
   - table: hr_compensation_review
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_leave_policy
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_leave_policy_eligibility
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_leave_entitlement
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_leave_adjustment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_leave_request
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_leave_request_segment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_leave_approval_decision
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_cycle
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_cycle_participant
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_goal
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_goal_progress
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_review
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_review_participant
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_assessment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_improvement_plan
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_performance_improvement_checkpoint
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_competency
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_job_competency
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_competency_assessment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_talent_profile
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_talent_profile_assessment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_talent_pool
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_talent_pool_member
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_career_plan
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_career_plan_action
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_succession_plan
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_succession_candidate
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_headcount_plan
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_headcount_plan_line
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_headcount_reservation
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_case
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_case_event
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_case_action
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_case_appeal
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_document_requirement
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_document
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_work_eligibility
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_policy_acknowledgement
+    writeOwner: "@afenda/human-resources"
+    kind: erp
 
   - table: payroll_calendar
     writeOwner: "@afenda/payroll"

@@ -35,6 +35,12 @@ export type MutationPorts = {
 	outbox: OutboxPort;
 };
 
+export type DocumentReferencePort = {
+	assertAcceptableRef(ref: string): Promise<Result<void>>;
+};
+
 export type CurrencyLookupPort = {
 	exists(currencyCode: string): Promise<Result<boolean>>;
 };
+
+export type { WorkCalendarPort } from "./work-calendar";

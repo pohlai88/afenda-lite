@@ -13,6 +13,11 @@
         "command": "node .cursor/hooks/agent-authority-preflight.mjs",
         "failClosed": false,
         "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/no-drizzle-baseline-migrate.mjs",
+        "failClosed": true,
+        "timeout": 20
       }
     ],
     "postToolUse": [
@@ -32,7 +37,7 @@
       },
       {
         "command": "node .cursor/hooks/no-drizzle-baseline-migrate.mjs",
-        "matcher": "\\bdb:migrate\\b|drizzle-kit\\s+migrate",
+        "matcher": "\\bdb:(migrate|push|pull)\\b|drizzle-kit|apply-[\\w-]+\\.mjs|prepare_database_migration|run_sql",
         "failClosed": true,
         "timeout": 20
       }

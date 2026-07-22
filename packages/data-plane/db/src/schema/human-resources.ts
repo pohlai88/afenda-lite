@@ -6,6 +6,7 @@ import {
 	date,
 	index,
 	integer,
+	jsonb,
 	numeric,
 	pgTable,
 	text,
@@ -943,6 +944,8 @@ export const hrLearningCourse = pgTable(
 		durationHours: numeric("duration_hours", { precision: 10, scale: 2 }),
 		/** active | archived */
 		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -959,6 +962,9 @@ export const hrLearningCourse = pgTable(
 			t.organizationId,
 			t.code,
 		),
+		uniqueIndex("hr_learning_course_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
 		index("hr_learning_course_org_status_idx").on(t.organizationId, t.status),
 		check(
 			"hr_learning_course_status_check",
@@ -988,6 +994,8 @@ export const hrLearningSession = pgTable(
 		/** scheduled | in_progress | completed | cancelled */
 		status: text("status").notNull(),
 		capacity: integer("capacity"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -1008,6 +1016,9 @@ export const hrLearningSession = pgTable(
 			t.organizationId,
 			t.code,
 		),
+		uniqueIndex("hr_learning_session_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
 		index("hr_learning_session_org_status_idx").on(t.organizationId, t.status),
 		check(
 			"hr_learning_session_status_check",
@@ -1041,6 +1052,8 @@ export const hrLearningAssignment = pgTable(
 		dueOn: date("due_on"),
 		/** pending | in_progress | completed | withdrawn */
 		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -1070,6 +1083,9 @@ export const hrLearningAssignment = pgTable(
 			t.employeeId,
 			t.courseId,
 		).where(sql`${t.status} IN ('pending', 'in_progress')`),
+		uniqueIndex("hr_learning_assignment_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
 		check(
 			"hr_learning_assignment_status_check",
 			sql`${t.status} IN ('pending', 'in_progress', 'completed', 'withdrawn')`,
@@ -1097,6 +1113,8 @@ export const hrLearningCompletion = pgTable(
 		outcome: text("outcome").notNull(),
 		assessorUserId: text("assessor_user_id"),
 		notes: text("notes"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -1121,6 +1139,9 @@ export const hrLearningCompletion = pgTable(
 			t.organizationId,
 			t.assignmentId,
 		),
+		uniqueIndex("hr_learning_completion_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
 		check(
 			"hr_learning_completion_outcome_check",
 			sql`${t.outcome} IN ('passed', 'failed', 'attended')`,
@@ -1149,6 +1170,8 @@ export const hrEmployeeCertification = pgTable(
 		status: text("status").notNull(),
 		revokedAt: timestamp("revoked_at", { withTimezone: true }),
 		revokedBy: text("revoked_by"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -1173,6 +1196,9 @@ export const hrEmployeeCertification = pgTable(
 			t.organizationId,
 			t.completionId,
 		),
+		uniqueIndex("hr_employee_certification_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
 		index("hr_employee_certification_org_status_idx").on(
 			t.organizationId,
 			t.status,
@@ -1456,6 +1482,1867 @@ export const hrCompensationReview = pgTable(
 		uniqueIndex("hr_compensation_review_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrLeavePolicy = pgTable(
+	"hr_leave_policy",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		leaveType: text("leave_type").notNull(),
+		unit: text("unit").notNull(),
+		paid: boolean("paid").notNull(),
+		sensitive: boolean("sensitive").notNull().default(false),
+		allowsNegativeBalance: boolean("allows_negative_balance")
+			.notNull()
+			.default(false),
+		allowSelfApproval: boolean("allow_self_approval").notNull().default(false),
+		allowsPartialDay: boolean("allows_partial_day").notNull().default(false),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		status: text("status").notNull(),
+		supersedesPolicyId: uuid("supersedes_policy_id").references(
+			(): AnyPgColumn => hrLeavePolicy.id,
+		),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_policy_org_id_idx").on(t.organizationId, t.id),
+		index("hr_leave_policy_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_leave_policy_org_code_effective_uidx").on(
+			t.organizationId,
+			t.code,
+			t.effectiveFrom,
+		),
+		check(
+			"hr_leave_policy_status_check",
+			sql`${t.status} IN ('draft', 'published', 'superseded', 'archived')`,
+		),
+		check(
+			"hr_leave_policy_unit_check",
+			sql`${t.unit} IN ('days', 'hours')`,
+		),
+		check(
+			"hr_leave_policy_leave_type_check",
+			sql`${t.leaveType} IN ('annual', 'sick', 'unpaid', 'other')`,
+		),
+		check(
+			"hr_leave_policy_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+export const hrLeavePolicyEligibility = pgTable(
+	"hr_leave_policy_eligibility",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		policyId: uuid("policy_id")
+			.notNull()
+			.references(() => hrLeavePolicy.id),
+		minTenureDays: integer("min_tenure_days"),
+		allowedEmploymentStatuses: text("allowed_employment_statuses").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_policy_eligibility_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_leave_policy_eligibility_org_policy_idx").on(
+			t.organizationId,
+			t.policyId,
+		),
+	],
+);
+
+export const hrLeaveEntitlement = pgTable(
+	"hr_leave_entitlement",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		policyId: uuid("policy_id")
+			.notNull()
+			.references(() => hrLeavePolicy.id),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		openingQuantity: text("opening_quantity").notNull(),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_entitlement_org_id_idx").on(t.organizationId, t.id),
+		index("hr_leave_entitlement_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_leave_entitlement_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		index("hr_leave_entitlement_org_policy_idx").on(
+			t.organizationId,
+			t.policyId,
+		),
+		uniqueIndex("hr_leave_entitlement_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex(
+			"hr_leave_entitlement_org_employment_policy_period_active_uidx",
+		)
+			.on(t.organizationId, t.employmentId, t.policyId, t.periodStart)
+			.where(sql`${t.status} = 'active'`),
+		check(
+			"hr_leave_entitlement_status_check",
+			sql`${t.status} IN ('active', 'expired', 'carried_forward', 'closed')`,
+		),
+		check(
+			"hr_leave_entitlement_period_range_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+		check(
+			"hr_leave_entitlement_opening_nonneg_check",
+			sql`${t.openingQuantity}::numeric >= 0`,
+		),
+	],
+);
+
+export const hrLeaveRequest = pgTable(
+	"hr_leave_request",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		entitlementId: uuid("entitlement_id")
+			.notNull()
+			.references(() => hrLeaveEntitlement.id),
+		policyId: uuid("policy_id")
+			.notNull()
+			.references(() => hrLeavePolicy.id),
+		startDate: date("start_date").notNull(),
+		endDate: date("end_date").notNull(),
+		requestedQuantity: text("requested_quantity").notNull(),
+		unit: text("unit").notNull(),
+		status: text("status").notNull(),
+		isBackdated: boolean("is_backdated").notNull().default(false),
+		backdateJustification: text("backdate_justification"),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_request_org_id_idx").on(t.organizationId, t.id),
+		index("hr_leave_request_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_leave_request_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		index("hr_leave_request_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_leave_request_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_leave_request_status_check",
+			sql`${t.status} IN ('draft', 'submitted', 'returned', 'approved', 'rejected', 'withdrawn', 'cancelled')`,
+		),
+		check(
+			"hr_leave_request_unit_check",
+			sql`${t.unit} IN ('days', 'hours')`,
+		),
+		check(
+			"hr_leave_request_date_range_check",
+			sql`${t.endDate} >= ${t.startDate}`,
+		),
+		check(
+			"hr_leave_request_quantity_pos_check",
+			sql`${t.requestedQuantity}::numeric > 0`,
+		),
+	],
+);
+
+export const hrLeaveAdjustment = pgTable(
+	"hr_leave_adjustment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		entitlementId: uuid("entitlement_id")
+			.notNull()
+			.references(() => hrLeaveEntitlement.id),
+		sourceRequestId: uuid("source_request_id").references(
+			() => hrLeaveRequest.id,
+		),
+		kind: text("kind").notNull(),
+		delta: text("delta").notNull(),
+		reason: text("reason").notNull(),
+		source: text("source").notNull(),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_adjustment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_leave_adjustment_org_entitlement_idx").on(
+			t.organizationId,
+			t.entitlementId,
+		),
+		uniqueIndex("hr_leave_adjustment_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_leave_adjustment_kind_check",
+			sql`${t.kind} IN ('manual', 'carry_forward', 'expiry', 'consumption', 'cancellation_reversal')`,
+		),
+		check(
+			"hr_leave_adjustment_status_check",
+			sql`${t.status} IN ('posted')`,
+		),
+		check(
+			"hr_leave_adjustment_delta_nonzero_check",
+			sql`${t.delta}::numeric <> 0`,
+		),
+	],
+);
+
+export const hrLeaveRequestSegment = pgTable(
+	"hr_leave_request_segment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		requestId: uuid("request_id")
+			.notNull()
+			.references(() => hrLeaveRequest.id),
+		segmentDate: date("segment_date").notNull(),
+		quantity: text("quantity").notNull(),
+		dayPortion: text("day_portion").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_request_segment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_leave_request_segment_org_request_idx").on(
+			t.organizationId,
+			t.requestId,
+		),
+		check(
+			"hr_leave_request_segment_day_portion_check",
+			sql`${t.dayPortion} IN ('morning', 'afternoon', 'full')`,
+		),
+	],
+);
+
+export const hrLeaveApprovalDecision = pgTable(
+	"hr_leave_approval_decision",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		requestId: uuid("request_id")
+			.notNull()
+			.references(() => hrLeaveRequest.id),
+		decision: text("decision").notNull(),
+		decidedBy: text("decided_by").notNull(),
+		decidedAt: timestamp("decided_at", { withTimezone: true }).notNull(),
+		note: text("note"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_leave_approval_decision_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_leave_approval_decision_org_request_idx").on(
+			t.organizationId,
+			t.requestId,
+		),
+		check(
+			"hr_leave_approval_decision_decision_check",
+			sql`${t.decision} IN ('approved', 'rejected', 'returned', 'cancelled')`,
+		),
+	],
+);
+
+export const hrPerformanceCycle = pgTable(
+	"hr_performance_cycle",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		ratingScale: jsonb("rating_scale").notNull(),
+		weightingModel: text("weighting_model").notNull(),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_cycle_org_id_idx").on(t.organizationId, t.id),
+		index("hr_performance_cycle_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		uniqueIndex("hr_performance_cycle_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		uniqueIndex("hr_performance_cycle_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_performance_cycle_status_check",
+			sql`${t.status} IN ('draft', 'open', 'closed', 'cancelled')`,
+		),
+		check(
+			"hr_performance_cycle_weighting_model_check",
+			sql`${t.weightingModel} IN ('none', 'percent100')`,
+		),
+		check(
+			"hr_performance_cycle_period_range_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+	],
+);
+
+export const hrPerformanceCycleParticipant = pgTable(
+	"hr_performance_cycle_participant",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		cycleId: uuid("cycle_id")
+			.notNull()
+			.references(() => hrPerformanceCycle.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_cycle_participant_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_performance_cycle_participant_org_cycle_idx").on(
+			t.organizationId,
+			t.cycleId,
+		),
+		uniqueIndex(
+			"hr_performance_cycle_participant_org_cycle_employment_active_uidx",
+		)
+			.on(t.organizationId, t.cycleId, t.employmentId)
+			.where(sql`${t.status} = 'active'`),
+		check(
+			"hr_performance_cycle_participant_status_check",
+			sql`${t.status} IN ('active', 'removed')`,
+		),
+	],
+);
+
+export const hrPerformanceGoal = pgTable(
+	"hr_performance_goal",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		cycleId: uuid("cycle_id")
+			.notNull()
+			.references(() => hrPerformanceCycle.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		title: text("title").notNull(),
+		description: text("description"),
+		weight: text("weight"),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		exceptionOutsideCycle: boolean("exception_outside_cycle")
+			.notNull()
+			.default(false),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_goal_org_id_idx").on(t.organizationId, t.id),
+		index("hr_performance_goal_org_cycle_idx").on(t.organizationId, t.cycleId),
+		index("hr_performance_goal_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_performance_goal_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_performance_goal_status_check",
+			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'active', 'closed', 'cancelled')`,
+		),
+		check(
+			"hr_performance_goal_period_range_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+	],
+);
+
+export const hrPerformanceGoalProgress = pgTable(
+	"hr_performance_goal_progress",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		goalId: uuid("goal_id")
+			.notNull()
+			.references(() => hrPerformanceGoal.id),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+		progressNote: text("progress_note").notNull(),
+		progressValue: text("progress_value"),
+		recordedBy: text("recorded_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_goal_progress_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_performance_goal_progress_org_goal_idx").on(
+			t.organizationId,
+			t.goalId,
+		),
+	],
+);
+
+export const hrPerformanceReview = pgTable(
+	"hr_performance_review",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		cycleId: uuid("cycle_id")
+			.notNull()
+			.references(() => hrPerformanceCycle.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		overallRating: text("overall_rating"),
+		acknowledgementNote: text("acknowledgement_note"),
+		status: text("status").notNull(),
+		finalizeIdempotencyKey: text("finalize_idempotency_key"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_review_org_id_idx").on(t.organizationId, t.id),
+		index("hr_performance_review_org_cycle_idx").on(
+			t.organizationId,
+			t.cycleId,
+		),
+		index("hr_performance_review_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_performance_review_org_finalize_idempotency_uidx")
+			.on(t.organizationId, t.finalizeIdempotencyKey)
+			.where(sql`${t.finalizeIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_performance_review_status_check",
+			sql`${t.status} IN ('draft', 'self_submitted', 'manager_submitted', 'returned', 'acknowledged', 'finalized', 'reopened')`,
+		),
+	],
+);
+
+export const hrPerformanceReviewParticipant = pgTable(
+	"hr_performance_review_participant",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		reviewId: uuid("review_id")
+			.notNull()
+			.references(() => hrPerformanceReview.id),
+		role: text("role").notNull(),
+		employeeId: uuid("employee_id").references(() => hrEmployee.id),
+		userId: text("user_id"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_review_participant_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_performance_review_participant_org_review_idx").on(
+			t.organizationId,
+			t.reviewId,
+		),
+		check(
+			"hr_performance_review_participant_role_check",
+			sql`${t.role} IN ('self', 'manager', 'delegated')`,
+		),
+	],
+);
+
+export const hrPerformanceAssessment = pgTable(
+	"hr_performance_assessment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		reviewId: uuid("review_id")
+			.notNull()
+			.references(() => hrPerformanceReview.id),
+		kind: text("kind").notNull(),
+		rating: text("rating"),
+		commentsSensitive: text("comments_sensitive"),
+		submittedAt: timestamp("submitted_at", { withTimezone: true }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_assessment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_performance_assessment_org_review_idx").on(
+			t.organizationId,
+			t.reviewId,
+		),
+		uniqueIndex("hr_performance_assessment_org_review_kind_uidx").on(
+			t.organizationId,
+			t.reviewId,
+			t.kind,
+		),
+		check(
+			"hr_performance_assessment_kind_check",
+			sql`${t.kind} IN ('self', 'manager')`,
+		),
+	],
+);
+
+export const hrPerformanceImprovementPlan = pgTable(
+	"hr_performance_improvement_plan",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		reviewId: uuid("review_id")
+			.notNull()
+			.references(() => hrPerformanceReview.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		performanceGap: text("performance_gap").notNull(),
+		expectedOutcome: text("expected_outcome").notNull(),
+		measurableActions: text("measurable_actions").notNull(),
+		supportResources: text("support_resources").notNull(),
+		dueDate: date("due_date").notNull(),
+		accountableManagerEmployeeId: uuid(
+			"accountable_manager_employee_id",
+		)
+			.notNull()
+			.references(() => hrEmployee.id),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_improvement_plan_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_performance_improvement_plan_org_review_idx").on(
+			t.organizationId,
+			t.reviewId,
+		),
+		uniqueIndex("hr_performance_improvement_plan_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_performance_improvement_plan_status_check",
+			sql`${t.status} IN ('draft', 'open', 'acknowledged', 'completed', 'unsuccessful', 'cancelled')`,
+		),
+	],
+);
+
+export const hrPerformanceImprovementCheckpoint = pgTable(
+	"hr_performance_improvement_checkpoint",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => hrPerformanceImprovementPlan.id),
+		sequenceNumber: integer("sequence_number").notNull(),
+		dueDate: date("due_date").notNull(),
+		outcome: text("outcome").notNull(),
+		notes: text("notes"),
+		recordedBy: text("recorded_by"),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_improvement_checkpoint_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_performance_improvement_checkpoint_org_plan_idx").on(
+			t.organizationId,
+			t.planId,
+		),
+		uniqueIndex(
+			"hr_performance_improvement_checkpoint_org_plan_sequence_uidx",
+		).on(t.organizationId, t.planId, t.sequenceNumber),
+		check(
+			"hr_performance_improvement_checkpoint_outcome_check",
+			sql`${t.outcome} IN ('pending', 'met', 'missed')`,
+		),
+	],
+);
+
+export const hrHeadcountPlan = pgTable(
+	"hr_headcount_plan",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		planningScopeKey: text("planning_scope_key").notNull(),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		/** draft | submitted | approved | rejected | superseded | closed */
+		status: text("status").notNull(),
+		planVersion: integer("plan_version").notNull().default(1),
+		supersedesPlanId: uuid("supersedes_plan_id").references(
+			(): AnyPgColumn => hrHeadcountPlan.id,
+		),
+		approvedBy: text("approved_by"),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		rejectedBy: text("rejected_by"),
+		rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+		rejectionReason: text("rejection_reason"),
+		costEnvelopeAmount: text("cost_envelope_amount"),
+		costEnvelopeCurrencyCode: text("cost_envelope_currency_code"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_headcount_plan_org_id_idx").on(t.organizationId, t.id),
+		index("hr_headcount_plan_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_headcount_plan_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		uniqueIndex("hr_headcount_plan_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_headcount_plan_org_scope_period_approved_uidx")
+			.on(
+				t.organizationId,
+				t.planningScopeKey,
+				t.periodStart,
+				t.periodEnd,
+			)
+			.where(sql`${t.status} = 'approved'`),
+		check(
+			"hr_headcount_plan_status_check",
+			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'superseded', 'closed')`,
+		),
+		check(
+			"hr_headcount_plan_period_range_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+	],
+);
+
+export const hrHeadcountPlanLine = pgTable(
+	"hr_headcount_plan_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => hrHeadcountPlan.id),
+		departmentId: uuid("department_id").references(() => hrDepartment.id),
+		jobId: uuid("job_id").references(() => hrJob.id),
+		positionId: uuid("position_id").references(() => hrPosition.id),
+		locationCode: text("location_code"),
+		/** full_time | part_time | contract | temporary | intern */
+		employmentType: text("employment_type"),
+		plannedFte: numeric("planned_fte", { precision: 10, scale: 4 }).notNull(),
+		plannedHeadcount: integer("planned_headcount").notNull(),
+		costEnvelopeAmount: text("cost_envelope_amount"),
+		costEnvelopeCurrencyCode: text("cost_envelope_currency_code"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_headcount_plan_line_org_id_idx").on(t.organizationId, t.id),
+		index("hr_headcount_plan_line_org_plan_idx").on(
+			t.organizationId,
+			t.planId,
+		),
+		check(
+			"hr_headcount_plan_line_employment_type_check",
+			sql`${t.employmentType} IS NULL OR ${t.employmentType} IN ('full_time', 'part_time', 'contract', 'temporary', 'intern')`,
+		),
+		check(
+			"hr_headcount_plan_line_planned_fte_nonneg_check",
+			sql`${t.plannedFte} >= 0`,
+		),
+		check(
+			"hr_headcount_plan_line_planned_headcount_nonneg_check",
+			sql`${t.plannedHeadcount} >= 0`,
+		),
+		check(
+			"hr_headcount_plan_line_capacity_positive_check",
+			sql`${t.plannedFte} > 0 OR ${t.plannedHeadcount} > 0`,
+		),
+	],
+);
+
+export const hrHeadcountReservation = pgTable(
+	"hr_headcount_reservation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => hrHeadcountPlan.id),
+		planLineId: uuid("plan_line_id")
+			.notNull()
+			.references(() => hrHeadcountPlanLine.id),
+		requisitionId: uuid("requisition_id")
+			.notNull()
+			.references(() => hrJobRequisition.id),
+		reservedFte: numeric("reserved_fte", { precision: 10, scale: 4 }).notNull(),
+		reservedHeadcount: integer("reserved_headcount").notNull(),
+		/** active | released | consumed */
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_headcount_reservation_org_id_idx").on(t.organizationId, t.id),
+		index("hr_headcount_reservation_org_plan_idx").on(
+			t.organizationId,
+			t.planId,
+		),
+		index("hr_headcount_reservation_org_plan_line_idx").on(
+			t.organizationId,
+			t.planLineId,
+		),
+		index("hr_headcount_reservation_org_requisition_idx").on(
+			t.organizationId,
+			t.requisitionId,
+		),
+		index("hr_headcount_reservation_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		uniqueIndex("hr_headcount_reservation_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_headcount_reservation_org_requisition_active_uidx")
+			.on(t.organizationId, t.requisitionId)
+			.where(sql`${t.status} = 'active'`),
+		check(
+			"hr_headcount_reservation_status_check",
+			sql`${t.status} IN ('active', 'released', 'consumed')`,
+		),
+		check(
+			"hr_headcount_reservation_reserved_fte_nonneg_check",
+			sql`${t.reservedFte} >= 0`,
+		),
+		check(
+			"hr_headcount_reservation_reserved_headcount_nonneg_check",
+			sql`${t.reservedHeadcount} >= 0`,
+		),
+		check(
+			"hr_headcount_reservation_capacity_positive_check",
+			sql`${t.reservedFte} > 0 OR ${t.reservedHeadcount} > 0`,
+		),
+	],
+);
+
+export const hrCompetency = pgTable(
+	"hr_competency",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		description: text("description"),
+		category: text("category"),
+		scaleCode: text("scale_code").notNull(),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_competency_org_id_idx").on(t.organizationId, t.id),
+		index("hr_competency_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_competency_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_competency_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_competency_status_check",
+			sql`${t.status} IN ('active', 'retired')`,
+		),
+		check(
+			"hr_competency_scale_code_check",
+			sql`${t.scaleCode} IN ('five_point', 'behavioral_anchor')`,
+		),
+	],
+);
+
+export const hrJobCompetency = pgTable(
+	"hr_job_competency",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id")
+			.notNull()
+			.references(() => hrJob.id),
+		competencyId: uuid("competency_id")
+			.notNull()
+			.references(() => hrCompetency.id),
+		requiredLevel: integer("required_level").notNull(),
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_job_competency_org_id_idx").on(t.organizationId, t.id),
+		index("hr_job_competency_org_job_idx").on(t.organizationId, t.jobId),
+		uniqueIndex("hr_job_competency_org_job_competency_active_uidx")
+			.on(t.organizationId, t.jobId, t.competencyId)
+			.where(sql`${t.status} = 'active'`),
+		check(
+			"hr_job_competency_status_check",
+			sql`${t.status} IN ('active', 'removed')`,
+		),
+		check(
+			"hr_job_competency_required_level_check",
+			sql`${t.requiredLevel} >= 1 AND ${t.requiredLevel} <= 5`,
+		),
+	],
+);
+
+export const hrCompetencyAssessment = pgTable(
+	"hr_competency_assessment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		competencyId: uuid("competency_id")
+			.notNull()
+			.references(() => hrCompetency.id),
+		assessorUserId: text("assessor_user_id").notNull(),
+		evidenceSource: text("evidence_source").notNull(),
+		scaleCode: text("scale_code").notNull(),
+		level: integer("level").notNull(),
+		effectiveOn: date("effective_on").notNull(),
+		status: text("status").notNull(),
+		supersedesAssessmentId: uuid("supersedes_assessment_id").references(
+			(): AnyPgColumn => hrCompetencyAssessment.id,
+		),
+		supersededByAssessmentId: uuid("superseded_by_assessment_id").references(
+			(): AnyPgColumn => hrCompetencyAssessment.id,
+		),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_competency_assessment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_competency_assessment_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_competency_assessment_org_competency_idx").on(
+			t.organizationId,
+			t.competencyId,
+		),
+		uniqueIndex("hr_competency_assessment_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_competency_assessment_status_check",
+			sql`${t.status} IN ('current', 'superseded')`,
+		),
+		check(
+			"hr_competency_assessment_scale_code_check",
+			sql`${t.scaleCode} IN ('five_point', 'behavioral_anchor')`,
+		),
+		check(
+			"hr_competency_assessment_level_check",
+			sql`${t.level} >= 1 AND ${t.level} <= 5`,
+		),
+	],
+);
+
+export const hrTalentProfile = pgTable(
+	"hr_talent_profile",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		summary: text("summary"),
+		currentClassification: text("current_classification"),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_talent_profile_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_talent_profile_org_employee_uidx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_talent_profile_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_talent_profile_status_check",
+			sql`${t.status} IN ('active', 'archived')`,
+		),
+	],
+);
+
+export const hrTalentProfileAssessment = pgTable(
+	"hr_talent_profile_assessment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		talentProfileId: uuid("talent_profile_id")
+			.notNull()
+			.references(() => hrTalentProfile.id),
+		methodCode: text("method_code").notNull(),
+		classification: text("classification").notNull(),
+		evidenceSummary: text("evidence_summary").notNull(),
+		assessorUserId: text("assessor_user_id").notNull(),
+		status: text("status").notNull(),
+		confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_talent_profile_assessment_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_talent_profile_assessment_org_profile_idx").on(
+			t.organizationId,
+			t.talentProfileId,
+		),
+		check(
+			"hr_talent_profile_assessment_status_check",
+			sql`${t.status} IN ('draft', 'confirmed', 'superseded')`,
+		),
+		check(
+			"hr_talent_profile_assessment_method_code_check",
+			sql`${t.methodCode} IN ('calibration_panel', 'assessment_center', 'manager_evidence_review')`,
+		),
+	],
+);
+
+export const hrTalentPool = pgTable(
+	"hr_talent_pool",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		description: text("description"),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_talent_pool_org_id_idx").on(t.organizationId, t.id),
+		index("hr_talent_pool_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_talent_pool_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_talent_pool_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_talent_pool_status_check",
+			sql`${t.status} IN ('open', 'closed')`,
+		),
+	],
+);
+
+export const hrTalentPoolMember = pgTable(
+	"hr_talent_pool_member",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		poolId: uuid("pool_id")
+			.notNull()
+			.references(() => hrTalentPool.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		nominatorUserId: text("nominator_user_id").notNull(),
+		status: text("status").notNull(),
+		nominatedAt: timestamp("nominated_at", { withTimezone: true }).notNull(),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		removedAt: timestamp("removed_at", { withTimezone: true }),
+		approverUserId: text("approver_user_id"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_talent_pool_member_org_id_idx").on(t.organizationId, t.id),
+		index("hr_talent_pool_member_org_pool_idx").on(
+			t.organizationId,
+			t.poolId,
+		),
+		uniqueIndex("hr_talent_pool_member_org_pool_employee_active_uidx")
+			.on(t.organizationId, t.poolId, t.employeeId)
+			.where(sql`${t.status} IN ('nominated', 'approved')`),
+		uniqueIndex("hr_talent_pool_member_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_talent_pool_member_status_check",
+			sql`${t.status} IN ('nominated', 'approved', 'removed')`,
+		),
+	],
+);
+
+export const hrCareerPlan = pgTable(
+	"hr_career_plan",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		ownerUserId: text("owner_user_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		status: text("status").notNull(),
+		acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_career_plan_org_id_idx").on(t.organizationId, t.id),
+		index("hr_career_plan_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_career_plan_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_career_plan_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_career_plan_status_check",
+			sql`${t.status} IN ('draft', 'acknowledged', 'active', 'closed')`,
+		),
+	],
+);
+
+export const hrCareerPlanAction = pgTable(
+	"hr_career_plan_action",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		careerPlanId: uuid("career_plan_id")
+			.notNull()
+			.references(() => hrCareerPlan.id),
+		title: text("title").notNull(),
+		dueOn: date("due_on"),
+		status: text("status").notNull(),
+		learningAssignmentId: uuid("learning_assignment_id").references(
+			() => hrLearningAssignment.id,
+		),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_career_plan_action_org_id_idx").on(t.organizationId, t.id),
+		index("hr_career_plan_action_org_plan_idx").on(
+			t.organizationId,
+			t.careerPlanId,
+		),
+		check(
+			"hr_career_plan_action_status_check",
+			sql`${t.status} IN ('open', 'done', 'cancelled')`,
+		),
+	],
+);
+
+export const hrSuccessionPlan = pgTable(
+	"hr_succession_plan",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		positionId: uuid("position_id")
+			.notNull()
+			.references(() => hrPosition.id),
+		status: text("status").notNull(),
+		allowsExternalCandidates: boolean("allows_external_candidates")
+			.notNull()
+			.default(false),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_succession_plan_org_id_idx").on(t.organizationId, t.id),
+		index("hr_succession_plan_org_position_idx").on(
+			t.organizationId,
+			t.positionId,
+		),
+		uniqueIndex("hr_succession_plan_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		uniqueIndex("hr_succession_plan_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_succession_plan_status_check",
+			sql`${t.status} IN ('draft', 'active', 'closed')`,
+		),
+	],
+);
+
+export const hrSuccessionCandidate = pgTable(
+	"hr_succession_candidate",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		successionPlanId: uuid("succession_plan_id")
+			.notNull()
+			.references(() => hrSuccessionPlan.id),
+		employeeId: uuid("employee_id").references(() => hrEmployee.id),
+		externalCandidateRef: text("external_candidate_ref"),
+		nominatorUserId: text("nominator_user_id").notNull(),
+		readiness: text("readiness").notNull(),
+		readinessEffectiveOn: date("readiness_effective_on").notNull(),
+		evidenceSummary: text("evidence_summary").notNull(),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_succession_candidate_org_id_idx").on(t.organizationId, t.id),
+		index("hr_succession_candidate_org_plan_idx").on(
+			t.organizationId,
+			t.successionPlanId,
+		),
+		index("hr_succession_candidate_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_succession_candidate_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_succession_candidate_status_check",
+			sql`${t.status} IN ('nominated', 'approved', 'removed')`,
+		),
+		check(
+			"hr_succession_candidate_readiness_check",
+			sql`${t.readiness} IN ('not_ready', 'ready_soon', 'ready_now', 'emerging')`,
+		),
+	],
+);
+
+export const hrEmployeeCase = pgTable(
+	"hr_employee_case",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		caseType: text("case_type").notNull(),
+		status: text("status").notNull(),
+		severity: text("severity").notNull(),
+		allegationSummary: text("allegation_summary").notNull(),
+		classificationCode: text("classification_code").notNull(),
+		ownerActorUserId: text("owner_actor_user_id").notNull(),
+		subjectActorUserId: text("subject_actor_user_id"),
+		participants: jsonb("participants").notNull().default([]),
+		conflictedActorUserIds: jsonb("conflicted_actor_user_ids")
+			.notNull()
+			.default([]),
+		interimAuthority: text("interim_authority"),
+		interimReason: text("interim_reason"),
+		interimStartsOn: date("interim_starts_on"),
+		interimReviewOn: date("interim_review_on"),
+		interimStatus: text("interim_status"),
+		findingCode: text("finding_code"),
+		findingSummary: text("finding_summary"),
+		findingRecordedBy: text("finding_recorded_by"),
+		findingRecordedAt: timestamp("finding_recorded_at", { withTimezone: true }),
+		outcomeCode: text("outcome_code"),
+		closedAt: timestamp("closed_at", { withTimezone: true }),
+		closedBy: text("closed_by"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_case_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_case_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_employee_case_org_status_idx").on(t.organizationId, t.status),
+		index("hr_employee_case_org_owner_idx").on(
+			t.organizationId,
+			t.ownerActorUserId,
+		),
+		uniqueIndex("hr_employee_case_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_employee_case_case_type_check",
+			sql`${t.caseType} IN ('grievance', 'conduct', 'attendance_misconduct', 'workplace_conflict', 'harassment', 'policy_breach', 'disciplinary_review')`,
+		),
+		check(
+			"hr_employee_case_status_check",
+			sql`${t.status} IN ('open', 'investigating', 'finding_recorded', 'action_pending', 'action_approved', 'under_appeal', 'closed')`,
+		),
+		check(
+			"hr_employee_case_severity_check",
+			sql`${t.severity} IN ('low', 'medium', 'high', 'critical')`,
+		),
+		check(
+			"hr_employee_case_interim_status_check",
+			sql`${t.interimStatus} IS NULL OR ${t.interimStatus} IN ('active', 'expired', 'lifted')`,
+		),
+	],
+);
+
+export const hrEmployeeCaseEvent = pgTable(
+	"hr_employee_case_event",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		caseId: uuid("case_id")
+			.notNull()
+			.references(() => hrEmployeeCase.id),
+		eventKind: text("event_kind").notNull(),
+		sequenceNo: integer("sequence_no").notNull(),
+		documentRef: text("document_ref"),
+		payloadJson: jsonb("payload_json"),
+		redactsEventId: uuid("redacts_event_id"),
+		recordedBy: text("recorded_by").notNull(),
+		recordedAt: timestamp("recorded_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_case_event_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_case_event_org_case_idx").on(
+			t.organizationId,
+			t.caseId,
+		),
+		uniqueIndex("hr_employee_case_event_org_case_sequence_uidx").on(
+			t.organizationId,
+			t.caseId,
+			t.sequenceNo,
+		),
+	],
+);
+
+export const hrEmployeeCaseAction = pgTable(
+	"hr_employee_case_action",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		caseId: uuid("case_id")
+			.notNull()
+			.references(() => hrEmployeeCase.id),
+		actionType: text("action_type").notNull(),
+		status: text("status").notNull(),
+		recommendedBy: text("recommended_by").notNull(),
+		approvedBy: text("approved_by"),
+		policyValidationRecorded: boolean("policy_validation_recorded")
+			.notNull()
+			.default(false),
+		recommendationNote: text("recommendation_note"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_case_action_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_case_action_org_case_idx").on(
+			t.organizationId,
+			t.caseId,
+		),
+		uniqueIndex("hr_employee_case_action_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_employee_case_action_action_type_check",
+			sql`${t.actionType} IN ('warning', 'training', 'suspension_recommendation', 'termination_recommendation', 'other_policy_action')`,
+		),
+		check(
+			"hr_employee_case_action_status_check",
+			sql`${t.status} IN ('recommended', 'approved', 'rejected')`,
+		),
+	],
+);
+
+export const hrEmployeeCaseAppeal = pgTable(
+	"hr_employee_case_appeal",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		caseId: uuid("case_id")
+			.notNull()
+			.references(() => hrEmployeeCase.id),
+		originalFindingCode: text("original_finding_code").notNull(),
+		originalFindingRecordedAt: timestamp("original_finding_recorded_at", {
+			withTimezone: true,
+		}).notNull(),
+		appealGroundsSummary: text("appeal_grounds_summary").notNull(),
+		status: text("status").notNull(),
+		appealOutcomeCode: text("appeal_outcome_code"),
+		resolvedBy: text("resolved_by"),
+		resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_case_appeal_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_case_appeal_org_case_idx").on(
+			t.organizationId,
+			t.caseId,
+		),
+		uniqueIndex("hr_employee_case_appeal_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_employee_case_appeal_status_check",
+			sql`${t.status} IN ('open', 'resolved')`,
+		),
+	],
+);
+
+export const hrDocumentRequirement = pgTable(
+	"hr_document_requirement",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		documentType: text("document_type").notNull(),
+		issuingJurisdiction: text("issuing_jurisdiction"),
+		appliesToNote: text("applies_to_note"),
+		/** draft | published | retired */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_document_requirement_org_id_idx").on(t.organizationId, t.id),
+		index("hr_document_requirement_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		uniqueIndex("hr_document_requirement_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		check(
+			"hr_document_requirement_status_check",
+			sql`${t.status} IN ('draft', 'published', 'retired')`,
+		),
+	],
+);
+
+export const hrEmployeeDocument = pgTable(
+	"hr_employee_document",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		requirementId: uuid("requirement_id").references(
+			() => hrDocumentRequirement.id,
+		),
+		documentType: text("document_type").notNull(),
+		issuingJurisdiction: text("issuing_jurisdiction"),
+		issuedOn: date("issued_on").notNull(),
+		expiresOn: date("expires_on"),
+		/** pending | verified | rejected | revoked | expired */
+		verificationStatus: text("verification_status").notNull(),
+		verifiedBy: text("verified_by"),
+		verifiedAt: timestamp("verified_at", { withTimezone: true }),
+		rejectionReason: text("rejection_reason"),
+		documentRef: text("document_ref").notNull(),
+		identifierLast4: text("identifier_last4"),
+		identifierFingerprint: text("identifier_fingerprint"),
+		metadataJson: jsonb("metadata_json"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_document_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_document_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_employee_document_org_requirement_idx").on(
+			t.organizationId,
+			t.requirementId,
+		),
+		index("hr_employee_document_org_status_idx").on(
+			t.organizationId,
+			t.verificationStatus,
+		),
+		index("hr_employee_document_org_expires_idx").on(
+			t.organizationId,
+			t.expiresOn,
+		),
+		uniqueIndex("hr_employee_document_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_employee_document_verification_status_check",
+			sql`${t.verificationStatus} IN ('pending', 'verified', 'rejected', 'revoked', 'expired')`,
+		),
+		check(
+			"hr_employee_document_expiry_check",
+			sql`${t.expiresOn} IS NULL OR ${t.expiresOn} >= ${t.issuedOn}`,
+		),
+	],
+);
+
+export const hrWorkEligibility = pgTable(
+	"hr_work_eligibility",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		countryCode: text("country_code").notNull(),
+		jurisdiction: text("jurisdiction"),
+		/** pending | active | suspended | expired | closed */
+		status: text("status").notNull(),
+		issuedOn: date("issued_on").notNull(),
+		expiresOn: date("expires_on"),
+		verifiedBy: text("verified_by"),
+		verifiedAt: timestamp("verified_at", { withTimezone: true }),
+		documentRef: text("document_ref"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_work_eligibility_org_id_idx").on(t.organizationId, t.id),
+		index("hr_work_eligibility_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_work_eligibility_org_status_idx").on(t.organizationId, t.status),
+		index("hr_work_eligibility_org_country_idx").on(
+			t.organizationId,
+			t.countryCode,
+		),
+		uniqueIndex("hr_work_eligibility_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_work_eligibility_status_check",
+			sql`${t.status} IN ('pending', 'active', 'suspended', 'expired', 'closed')`,
+		),
+		check(
+			"hr_work_eligibility_expiry_check",
+			sql`${t.expiresOn} IS NULL OR ${t.expiresOn} >= ${t.issuedOn}`,
+		),
+	],
+);
+
+export const hrPolicyAcknowledgement = pgTable(
+	"hr_policy_acknowledgement",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		policyCode: text("policy_code").notNull(),
+		policyVersion: text("policy_version").notNull(),
+		/** outstanding | acknowledged | revoked | superseded */
+		requirementStatus: text("requirement_status").notNull(),
+		issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
+		acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+		acknowledgedBy: text("acknowledged_by"),
+		supersedesAcknowledgementId: uuid("supersedes_acknowledgement_id").references(
+			(): AnyPgColumn => hrPolicyAcknowledgement.id,
+		),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_policy_acknowledgement_org_id_idx").on(t.organizationId, t.id),
+		index("hr_policy_acknowledgement_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_policy_acknowledgement_org_policy_idx").on(
+			t.organizationId,
+			t.policyCode,
+			t.policyVersion,
+		),
+		index("hr_policy_acknowledgement_org_status_idx").on(
+			t.organizationId,
+			t.requirementStatus,
+		),
+		uniqueIndex("hr_policy_acknowledgement_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_policy_acknowledgement_status_check",
+			sql`${t.requirementStatus} IN ('outstanding', 'acknowledged', 'revoked', 'superseded')`,
 		),
 	],
 );

@@ -6,10 +6,14 @@ import {
 	humanResourcesBenefitEnrollmentIdSchema,
 	humanResourcesBenefitPlanIdSchema,
 	humanResourcesCandidateIdSchema,
+	humanResourcesCareerPlanActionIdSchema,
+	humanResourcesCareerPlanIdSchema,
 	humanResourcesCertificationIdSchema,
 	humanResourcesClearanceIdSchema,
 	humanResourcesCompensationGradeIdSchema,
 	humanResourcesCompensationReviewIdSchema,
+	humanResourcesCompetencyAssessmentIdSchema,
+	humanResourcesCompetencyIdSchema,
 	humanResourcesCompletionIdSchema,
 	humanResourcesCourseIdSchema,
 	humanResourcesDepartmentIdSchema,
@@ -18,9 +22,17 @@ import {
 	humanResourcesEmploymentConfirmationIdSchema,
 	humanResourcesEmploymentContractIdSchema,
 	humanResourcesEmploymentIdSchema,
+	humanResourcesHeadcountPlanIdSchema,
+	humanResourcesHeadcountPlanLineIdSchema,
+	humanResourcesHeadcountReservationIdSchema,
 	humanResourcesInterviewIdSchema,
+	humanResourcesJobCompetencyIdSchema,
 	humanResourcesJobIdSchema,
 	humanResourcesLearningAssignmentIdSchema,
+	humanResourcesLeaveAdjustmentIdSchema,
+	humanResourcesLeaveEntitlementIdSchema,
+	humanResourcesLeavePolicyIdSchema,
+	humanResourcesLeaveRequestIdSchema,
 	humanResourcesOffboardingCaseIdSchema,
 	humanResourcesOffboardingTaskIdSchema,
 	humanResourcesOfferIdSchema,
@@ -32,7 +44,18 @@ import {
 	humanResourcesRequisitionIdSchema,
 	humanResourcesSalaryBandIdSchema,
 	humanResourcesSessionIdSchema,
+	humanResourcesSuccessionCandidateIdSchema,
+	humanResourcesSuccessionPlanIdSchema,
+	humanResourcesTalentPoolIdSchema,
+	humanResourcesTalentPoolMemberIdSchema,
+	humanResourcesTalentProfileAssessmentIdSchema,
+	humanResourcesTalentProfileIdSchema,
 	humanResourcesTerminationIdSchema,
+	humanResourcesGoalIdSchema,
+	humanResourcesImprovementPlanIdSchema,
+	humanResourcesPerformanceCycleIdSchema,
+	humanResourcesPerformanceCycleParticipantIdSchema,
+	humanResourcesReviewIdSchema,
 } from "./brands";
 import {
 	departmentStatusSchema,
@@ -43,6 +66,7 @@ import {
 import {
 	assignmentStatusSchema,
 	certificationStatusSchema,
+	completionOutcomeSchema,
 	courseStatusSchema,
 	sessionStatusSchema,
 } from "./shared/learning-status";
@@ -57,12 +81,41 @@ import {
 	ORGANIZATION_TREE_HARD_MAX_NODES,
 } from "./shared/organization-guards";
 import {
+	performanceCycleStatusSchema,
+	performanceGoalStatusSchema,
+	performanceImprovementPlanStatusSchema,
+	performanceReviewStatusSchema,
+	performanceWeightingModelSchema,
+} from "./shared/performance-status";
+import { performanceRatingScaleSchema } from "./shared/performance-rating";
+import {
 	applicationStatusSchema,
 	candidateStatusSchema,
 	interviewEvaluationResultSchema,
 	offerStatusSchema,
 	requisitionStatusSchema,
 } from "./shared/recruitment-status";
+import {
+	dayPortionSchema,
+	leavePolicyStatusSchema,
+	leaveRequestStatusSchema,
+	leaveTypeSchema,
+	leaveUnitSchema,
+} from "./shared/leave-status";
+import {
+	headcountEmploymentTypeSchema,
+	headcountPlanStatusSchema,
+} from "./shared/workforce-planning-status";
+import {
+	careerPlanStatusSchema,
+	competencyScaleCodeSchema,
+	competencyStatusSchema,
+	successionCandidateStatusSchema,
+	successionPlanStatusSchema,
+	successionReadinessCodeSchema,
+	talentPoolMemberStatusSchema,
+	talentProfileAssessmentMethodCodeSchema,
+} from "./shared/talent-status";
 
 export const humanResourcesOrganizationIdSchema = z.string().trim().min(1);
 export const humanResourcesActorUserIdSchema = z.string().trim().min(1);
@@ -1082,12 +1135,11 @@ export const createSessionInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		idempotencyKey: humanResourcesIdempotencyKeySchema,
 		courseId: humanResourcesCourseIdSchema,
-		sessionCode: z.string().trim().min(1).max(64),
-		instructorActorId: humanResourcesActorUserIdSchema.nullable().optional(),
-		location: z.string().trim().max(200).nullable().optional(),
-		maxParticipants: z.number().int().positive().nullable().optional(),
-		startsOn: isoDateSchema,
-		endsOn: isoDateSchema,
+		code: z.string().trim().min(1).max(64),
+		title: z.string().trim().min(1).max(200),
+		scheduledStartsAt: isoDateTimeSchema,
+		scheduledEndsAt: isoDateTimeSchema,
+		capacity: z.number().int().positive().nullable().optional(),
 	})
 	.strict();
 
@@ -1098,6 +1150,8 @@ export const sessionStatusTransitionInputSchema =
 		.extend({
 			sessionId: humanResourcesSessionIdSchema,
 			expectedVersion: humanResourcesExpectedVersionSchema,
+			actualStartsAt: isoDateTimeSchema.optional(),
+			actualEndsAt: isoDateTimeSchema.optional(),
 		})
 		.strict();
 
@@ -1128,13 +1182,11 @@ export type ListSessionsInput = z.infer<typeof listSessionsInputSchema>;
 export const createLearningAssignmentInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
-			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			idempotencyKey: humanResourcesIdempotencyKeySchema.optional(),
 			employeeId: humanResourcesEmployeeIdSchema,
-			employmentId: humanResourcesEmploymentIdSchema,
 			courseId: humanResourcesCourseIdSchema,
-			assignedOn: isoDateSchema,
+			sessionId: humanResourcesSessionIdSchema.nullable().optional(),
 			dueOn: isoDateSchema.nullable().optional(),
-			assigneeNote: z.string().trim().max(2000).nullable().optional(),
 		})
 		.strict();
 
@@ -1146,7 +1198,7 @@ export const enrolLearningAssignmentInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			assignmentId: humanResourcesLearningAssignmentIdSchema,
-			sessionId: humanResourcesSessionIdSchema,
+			sessionId: humanResourcesSessionIdSchema.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
@@ -1196,10 +1248,15 @@ export type ListLearningAssignmentsInput = z.infer<
 // Learning Completion schemas
 export const recordCompletionInputSchema = humanResourcesMutationContextSchema
 	.extend({
-		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		idempotencyKey: humanResourcesIdempotencyKeySchema.optional(),
 		assignmentId: humanResourcesLearningAssignmentIdSchema,
-		completedOn: isoDateSchema,
-		evidenceNote: z.string().trim().max(2000).nullable().optional(),
+		employeeId: humanResourcesEmployeeIdSchema.optional(),
+		courseId: humanResourcesCourseIdSchema.optional(),
+		sessionId: humanResourcesSessionIdSchema.nullable().optional(),
+		completedAt: isoDateTimeSchema,
+		outcome: completionOutcomeSchema,
+		assessorUserId: humanResourcesActorUserIdSchema.nullable().optional(),
+		notes: z.string().trim().max(2000).nullable().optional(),
 	})
 	.strict();
 
@@ -1233,6 +1290,7 @@ export const issueCertificationInputSchema = humanResourcesMutationContextSchema
 		idempotencyKey: humanResourcesIdempotencyKeySchema,
 		employeeId: humanResourcesEmployeeIdSchema,
 		courseId: humanResourcesCourseIdSchema,
+		completionId: humanResourcesCompletionIdSchema,
 		certificationCode: z.string().trim().min(1).max(64),
 		issuedOn: isoDateSchema,
 		expiresOn: isoDateSchema.nullable().optional(),
@@ -1335,17 +1393,18 @@ export const createSalaryBandInputSchema = humanResourcesMutationContextSchema
 
 export type CreateSalaryBandInput = z.infer<typeof createSalaryBandInputSchema>;
 
-export const supersedeSalaryBandInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		gradeId: humanResourcesCompensationGradeIdSchema,
-		currencyCode: currencyCodeSchema,
-		minAmount: moneyAmountSchema,
-		midAmount: moneyAmountSchema,
-		maxAmount: moneyAmountSchema,
-		effectiveFrom: isoDateSchema,
-		effectiveTo: isoDateSchema.nullable().optional(),
-	})
-	.strict();
+export const supersedeSalaryBandInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			gradeId: humanResourcesCompensationGradeIdSchema,
+			currencyCode: currencyCodeSchema,
+			minAmount: moneyAmountSchema,
+			midAmount: moneyAmountSchema,
+			maxAmount: moneyAmountSchema,
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+		})
+		.strict();
 
 export type SupersedeSalaryBandInput = z.infer<
 	typeof supersedeSalaryBandInputSchema
@@ -1374,8 +1433,9 @@ export const createEmployeeCompensationInputSchema =
 			currencyCode: currencyCodeSchema,
 			effectiveFrom: isoDateSchema,
 			reason: z.string().trim().min(1).max(500),
-			sourceReviewId:
-				humanResourcesCompensationReviewIdSchema.nullable().optional(),
+			sourceReviewId: humanResourcesCompensationReviewIdSchema
+				.nullable()
+				.optional(),
 		})
 		.strict();
 
@@ -1415,9 +1475,12 @@ export const recordCompensationRecommendationInputSchema =
 			reviewId: humanResourcesCompensationReviewIdSchema,
 			proposedBaseAmount: moneyAmountSchema,
 			proposedCurrencyCode: currencyCodeSchema,
-			proposedGradeId:
-				humanResourcesCompensationGradeIdSchema.nullable().optional(),
-			proposedSalaryBandId: humanResourcesSalaryBandIdSchema.nullable().optional(),
+			proposedGradeId: humanResourcesCompensationGradeIdSchema
+				.nullable()
+				.optional(),
+			proposedSalaryBandId: humanResourcesSalaryBandIdSchema
+				.nullable()
+				.optional(),
 			effectiveFrom: isoDateSchema,
 			recommendationNote: z.string().trim().max(2000).nullable().optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
@@ -1535,4 +1598,1317 @@ export const getApprovedCompensationHandoffInputSchema =
 
 export type GetApprovedCompensationHandoffInput = z.infer<
 	typeof getApprovedCompensationHandoffInputSchema
+>;
+
+const headcountFteSchema = z
+	.string()
+	.regex(/^\d+(\.\d{1,4})?$/)
+	.refine((value) => Number(value) >= 0, "FTE cannot be negative");
+
+export const createHeadcountPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			code: z.string().trim().min(1).max(64),
+			title: z.string().trim().min(1).max(200),
+			planningScopeKey: z.string().trim().min(1).max(128),
+			periodStart: isoDateSchema,
+			periodEnd: isoDateSchema,
+			costEnvelopeAmount: z.string().trim().optional(),
+			costEnvelopeCurrencyCode: z.string().trim().length(3).optional(),
+		})
+		.strict();
+
+export const updateHeadcountPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesHeadcountPlanIdSchema,
+			title: z.string().trim().min(1).max(200).optional(),
+			costEnvelopeAmount: z.string().trim().nullable().optional(),
+			costEnvelopeCurrencyCode: z.string().trim().length(3).nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const addHeadcountPlanLineInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesHeadcountPlanIdSchema,
+			departmentId: humanResourcesDepartmentIdSchema.optional(),
+			jobId: humanResourcesJobIdSchema.optional(),
+			positionId: humanResourcesPositionIdSchema.optional(),
+			locationCode: z.string().trim().max(64).optional(),
+			employmentType: headcountEmploymentTypeSchema.optional(),
+			plannedFte: headcountFteSchema,
+			plannedHeadcount: z.number().int().nonnegative(),
+			costEnvelopeAmount: z.string().trim().optional(),
+			costEnvelopeCurrencyCode: z.string().trim().length(3).optional(),
+		})
+		.strict();
+
+export const updateHeadcountPlanLineInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planLineId: humanResourcesHeadcountPlanLineIdSchema,
+			departmentId: humanResourcesDepartmentIdSchema.nullable().optional(),
+			jobId: humanResourcesJobIdSchema.nullable().optional(),
+			positionId: humanResourcesPositionIdSchema.nullable().optional(),
+			locationCode: z.string().trim().max(64).nullable().optional(),
+			employmentType: headcountEmploymentTypeSchema.nullable().optional(),
+			plannedFte: headcountFteSchema.optional(),
+			plannedHeadcount: z.number().int().nonnegative().optional(),
+			costEnvelopeAmount: z.string().trim().nullable().optional(),
+			costEnvelopeCurrencyCode: z.string().trim().length(3).nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const removeHeadcountPlanLineInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planLineId: humanResourcesHeadcountPlanLineIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const headcountPlanStatusTransitionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesHeadcountPlanIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+			rejectionReason: z.string().trim().max(500).optional(),
+		})
+		.strict();
+
+export const supersedeHeadcountPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesHeadcountPlanIdSchema,
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			code: z.string().trim().min(1).max(64),
+			title: z.string().trim().min(1).max(200),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const reserveHeadcountInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		planLineId: humanResourcesHeadcountPlanLineIdSchema,
+		requisitionId: humanResourcesRequisitionIdSchema,
+		reservedFte: headcountFteSchema,
+		reservedHeadcount: z.number().int().nonnegative(),
+	})
+	.strict();
+
+export const releaseHeadcountReservationInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reservationId: humanResourcesHeadcountReservationIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const consumeHeadcountReservationInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reservationId: humanResourcesHeadcountReservationIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const getHeadcountPlanByIdInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesHeadcountPlanIdSchema,
+		})
+		.strict();
+
+export const listHeadcountPlansInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			status: headcountPlanStatusSchema.optional(),
+			planningScopeKey: z.string().trim().optional(),
+		})
+		.strict();
+
+export const getApprovedHeadcountPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planningScopeKey: z.string().trim().min(1).max(128),
+			periodStart: isoDateSchema,
+			periodEnd: isoDateSchema,
+		})
+		.strict();
+
+export const getHeadcountAvailabilityInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planLineId: humanResourcesHeadcountPlanLineIdSchema,
+		})
+		.strict();
+
+export const listHeadcountReservationsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			planId: humanResourcesHeadcountPlanIdSchema.optional(),
+			requisitionId: humanResourcesRequisitionIdSchema.optional(),
+		})
+		.strict();
+
+export const getRecruitmentHeadcountHandoffInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			requisitionId: humanResourcesRequisitionIdSchema,
+		})
+		.strict();
+
+export const getWorkforcePlanVarianceInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesHeadcountPlanIdSchema,
+		})
+		.strict();
+
+const leaveQuantitySchema = z
+	.string()
+	.trim()
+	.regex(/^\d+(\.\d+)?$/);
+
+export const createLeavePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		code: z.string().trim().min(1).max(50),
+		name: z.string().trim().min(1).max(200),
+		leaveType: leaveTypeSchema,
+		unit: leaveUnitSchema,
+		paid: z.boolean(),
+		sensitive: z.boolean().optional(),
+		allowsNegativeBalance: z.boolean().optional(),
+		allowSelfApproval: z.boolean().optional(),
+		allowsPartialDay: z.boolean().optional(),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		minTenureDays: z.number().int().nonnegative().nullable().optional(),
+		allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1),
+	})
+	.strict();
+
+export const updateLeavePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesLeavePolicyIdSchema,
+		name: z.string().trim().min(1).max(200).optional(),
+		paid: z.boolean().optional(),
+		sensitive: z.boolean().optional(),
+		allowsNegativeBalance: z.boolean().optional(),
+		allowSelfApproval: z.boolean().optional(),
+		allowsPartialDay: z.boolean().optional(),
+		effectiveTo: isoDateSchema.nullable().optional(),
+		minTenureDays: z.number().int().nonnegative().nullable().optional(),
+		allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1).optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const publishLeavePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesLeavePolicyIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const supersedeLeavePolicyInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			policyId: humanResourcesLeavePolicyIdSchema,
+			code: z.string().trim().min(1).max(50),
+			name: z.string().trim().min(1).max(200),
+			leaveType: leaveTypeSchema,
+			unit: leaveUnitSchema,
+			paid: z.boolean(),
+			sensitive: z.boolean().optional(),
+			allowsNegativeBalance: z.boolean().optional(),
+			allowSelfApproval: z.boolean().optional(),
+			allowsPartialDay: z.boolean().optional(),
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+			minTenureDays: z.number().int().nonnegative().nullable().optional(),
+			allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const archiveLeavePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesLeavePolicyIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const getLeavePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesLeavePolicyIdSchema,
+	})
+	.strict();
+
+export const listLeavePoliciesInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+		status: leavePolicyStatusSchema.optional(),
+	})
+	.strict();
+
+export const grantLeaveEntitlementInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+			policyId: humanResourcesLeavePolicyIdSchema,
+			periodStart: isoDateSchema,
+			periodEnd: isoDateSchema,
+			openingQuantity: leaveQuantitySchema,
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+		})
+		.strict();
+
+export const carryForwardLeaveEntitlementInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			entitlementId: humanResourcesLeaveEntitlementIdSchema,
+			newPeriodStart: isoDateSchema,
+			newPeriodEnd: isoDateSchema,
+			carriedQuantity: leaveQuantitySchema,
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const expireLeaveEntitlementInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			entitlementId: humanResourcesLeaveEntitlementIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const adjustLeaveEntitlementInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			entitlementId: humanResourcesLeaveEntitlementIdSchema,
+			delta: leaveQuantitySchema,
+			reason: z.string().trim().min(1).max(500),
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+		})
+		.strict();
+
+export const getLeaveEntitlementInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		entitlementId: humanResourcesLeaveEntitlementIdSchema,
+	})
+	.strict();
+
+export const listLeaveEntitlementsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			employeeId: humanResourcesEmployeeIdSchema.optional(),
+			employmentId: humanResourcesEmploymentIdSchema.optional(),
+			policyId: humanResourcesLeavePolicyIdSchema.optional(),
+		})
+		.strict();
+
+export const getLeaveBalanceInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		entitlementId: humanResourcesLeaveEntitlementIdSchema,
+	})
+	.strict();
+
+export const createDraftLeaveRequestInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			entitlementId: humanResourcesLeaveEntitlementIdSchema,
+			startDate: isoDateSchema,
+			endDate: isoDateSchema,
+			requestedQuantity: leaveQuantitySchema,
+			dayPortion: dayPortionSchema.optional(),
+			isBackdated: z.boolean().optional(),
+			backdateJustification: z.string().trim().max(2000).nullable().optional(),
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+		})
+		.strict();
+
+export const submitLeaveRequestInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requestId: humanResourcesLeaveRequestIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const approveLeaveRequestInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requestId: humanResourcesLeaveRequestIdSchema,
+		managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
+		note: z.string().trim().max(2000).nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const rejectLeaveRequestInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requestId: humanResourcesLeaveRequestIdSchema,
+		managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
+		note: z.string().trim().max(2000).nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const returnLeaveRequestInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requestId: humanResourcesLeaveRequestIdSchema,
+		managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
+		note: z.string().trim().max(2000).nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const withdrawLeaveRequestInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			requestId: humanResourcesLeaveRequestIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const cancelApprovedLeaveRequestInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			requestId: humanResourcesLeaveRequestIdSchema,
+			note: z.string().trim().max(2000).nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const amendLeaveRequestInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requestId: humanResourcesLeaveRequestIdSchema,
+		startDate: isoDateSchema,
+		endDate: isoDateSchema,
+		requestedQuantity: leaveQuantitySchema,
+		dayPortion: dayPortionSchema.optional(),
+		isBackdated: z.boolean().optional(),
+		backdateJustification: z.string().trim().max(2000).nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const getLeaveRequestInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requestId: humanResourcesLeaveRequestIdSchema,
+	})
+	.strict();
+
+export const listLeaveRequestsInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+		employeeId: humanResourcesEmployeeIdSchema.optional(),
+		status: leaveRequestStatusSchema.optional(),
+	})
+	.strict();
+
+export const listPendingApprovalLeaveRequestsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			managerEmployeeId: humanResourcesEmployeeIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+		})
+		.strict();
+
+export const listTeamCalendarLeaveRequestsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			managerEmployeeId: humanResourcesEmployeeIdSchema,
+			rangeStart: isoDateSchema,
+			rangeEnd: isoDateSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+		})
+		.strict();
+
+export const getApprovedLeaveHandoffInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			requestId: humanResourcesLeaveRequestIdSchema,
+		})
+		.strict();
+
+export const resolveApplicableLeavePolicyInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			policyCode: z.string().trim().min(1).max(50),
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+			asOfDate: isoDateSchema,
+		})
+		.strict();
+
+const performanceWeightSchema = z
+	.string()
+	.trim()
+	.regex(/^\d+(\.\d+)?$/)
+	.nullable();
+
+const performanceCheckpointRecordOutcomeSchema = z.enum(["met", "missed"]);
+
+export const createPerformanceCycleInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			code: z.string().trim().min(1).max(64),
+			name: z.string().trim().min(1).max(200),
+			periodStart: isoDateSchema,
+			periodEnd: isoDateSchema,
+			ratingScale: performanceRatingScaleSchema,
+			weightingModel: performanceWeightingModelSchema,
+		})
+		.strict();
+
+export const updatePerformanceCycleInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			name: z.string().trim().min(1).max(200).optional(),
+			periodStart: isoDateSchema.optional(),
+			periodEnd: isoDateSchema.optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const performanceCycleStatusTransitionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const addCycleParticipantInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+		})
+		.strict();
+
+export const removeCycleParticipantInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			participantId: humanResourcesPerformanceCycleParticipantIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const getPerformanceCycleByIdInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+		})
+		.strict();
+
+export const listPerformanceCyclesInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			status: performanceCycleStatusSchema.optional(),
+		})
+		.strict();
+
+export const listCycleParticipantsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+		})
+		.strict();
+
+export const createPerformanceGoalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+			title: z.string().trim().min(1).max(200),
+			description: z.string().trim().max(2000).nullable().optional(),
+			weight: performanceWeightSchema.optional(),
+			periodStart: isoDateSchema,
+			periodEnd: isoDateSchema,
+			exceptionOutsideCycle: z.boolean().optional(),
+		})
+		.strict();
+
+export const updatePerformanceGoalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			goalId: humanResourcesGoalIdSchema,
+			title: z.string().trim().min(1).max(200).optional(),
+			description: z.string().trim().max(2000).nullable().optional(),
+			weight: performanceWeightSchema.optional(),
+			periodStart: isoDateSchema.optional(),
+			periodEnd: isoDateSchema.optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const performanceGoalStatusTransitionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			goalId: humanResourcesGoalIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const recordGoalProgressInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			goalId: humanResourcesGoalIdSchema,
+			progressNote: z.string().trim().min(1).max(2000),
+			progressValue: performanceWeightSchema.optional(),
+		})
+		.strict();
+
+export const getPerformanceGoalByIdInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			goalId: humanResourcesGoalIdSchema,
+		})
+		.strict();
+
+export const listEmployeeGoalsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			status: performanceGoalStatusSchema.optional(),
+		})
+		.strict();
+
+export const startPerformanceReviewInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+			managerEmployeeId: humanResourcesEmployeeIdSchema,
+		})
+		.strict();
+
+export const submitSelfAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			rating: z.string().trim().min(1).max(64),
+			commentsSensitive: z.string().trim().max(4000).nullable().optional(),
+			actorEmployeeId: humanResourcesEmployeeIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const submitManagerAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			rating: z.string().trim().min(1).max(64),
+			commentsSensitive: z.string().trim().max(4000).nullable().optional(),
+			managerEmployeeId: humanResourcesEmployeeIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const performanceReviewStatusTransitionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const acknowledgePerformanceReviewInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			acknowledgementNote: z.string().trim().max(2000).nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const finalizePerformanceReviewInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			overallRating: z.string().trim().min(1).max(64),
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const reopenPerformanceReviewInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			reason: z.string().trim().min(1).max(500),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const getPerformanceReviewByIdInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			includeConfidential: z.boolean(),
+		})
+		.strict();
+
+export const listEmployeePerformanceReviewsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			includeConfidential: z.boolean(),
+		})
+		.strict();
+
+export const listReviewsPendingManagerActionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			managerEmployeeId: humanResourcesEmployeeIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+		})
+		.strict();
+
+export const createImprovementPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			reviewId: humanResourcesReviewIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+			performanceGap: z.string().trim().min(1).max(2000),
+			expectedOutcome: z.string().trim().min(1).max(2000),
+			measurableActions: z.string().trim().min(1).max(4000),
+			supportResources: z.string().trim().min(1).max(4000),
+			dueDate: isoDateSchema,
+			accountableManagerEmployeeId: humanResourcesEmployeeIdSchema,
+		})
+		.strict();
+
+export const improvementPlanStatusTransitionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesImprovementPlanIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const recordImprovementCheckpointInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesImprovementPlanIdSchema,
+			sequenceNumber: z.number().int().positive(),
+			outcome: performanceCheckpointRecordOutcomeSchema,
+			notes: z.string().trim().max(2000).nullable().optional(),
+		})
+		.strict();
+
+export const amendImprovementPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesImprovementPlanIdSchema,
+			measurableActions: z.string().trim().min(1).max(4000).optional(),
+			supportResources: z.string().trim().min(1).max(4000).optional(),
+			dueDate: isoDateSchema.optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const getImprovementPlanByIdInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesImprovementPlanIdSchema,
+		})
+		.strict();
+
+export const listActiveImprovementPlansInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+		})
+		.strict();
+
+export const getEmployeePerformanceHistoryInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			includeConfidential: z.boolean(),
+		})
+		.strict();
+
+// Competency schemas
+export const createCompetencyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		code: z.string().trim().min(1).max(64),
+		name: z.string().trim().min(1).max(200),
+		description: z.string().trim().max(2000).nullable().optional(),
+		category: z.string().trim().max(100).nullable().optional(),
+		scaleCode: competencyScaleCodeSchema,
+	})
+	.strict();
+
+export type CreateCompetencyInput = z.infer<typeof createCompetencyInputSchema>;
+
+export const updateCompetencyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		competencyId: humanResourcesCompetencyIdSchema,
+		name: z.string().trim().min(1).max(200).optional(),
+		description: z.string().trim().max(2000).nullable().optional(),
+		category: z.string().trim().max(100).nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type UpdateCompetencyInput = z.infer<typeof updateCompetencyInputSchema>;
+
+export const retireCompetencyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		competencyId: humanResourcesCompetencyIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type RetireCompetencyInput = z.infer<typeof retireCompetencyInputSchema>;
+
+export const mapCompetencyToJobInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		jobId: humanResourcesJobIdSchema,
+		competencyId: humanResourcesCompetencyIdSchema,
+		requiredLevel: z.number().int().min(1).max(5),
+	})
+	.strict();
+
+export type MapCompetencyToJobInput = z.infer<
+	typeof mapCompetencyToJobInputSchema
+>;
+
+export const removeCompetencyFromJobInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			jobCompetencyId: humanResourcesJobCompetencyIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type RemoveCompetencyFromJobInput = z.infer<
+	typeof removeCompetencyFromJobInputSchema
+>;
+
+export const assessEmployeeCompetencyInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			competencyId: humanResourcesCompetencyIdSchema,
+			assessorUserId: z.string().trim().min(1),
+			evidenceSource: z.string().trim().min(1).max(2000),
+			scaleCode: competencyScaleCodeSchema,
+			level: z.number().int().min(1).max(5),
+			effectiveOn: isoDateSchema,
+		})
+		.strict();
+
+export type AssessEmployeeCompetencyInput = z.infer<
+	typeof assessEmployeeCompetencyInputSchema
+>;
+
+export const supersedeCompetencyAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			assessmentId: humanResourcesCompetencyAssessmentIdSchema,
+			assessorUserId: z.string().trim().min(1),
+			evidenceSource: z.string().trim().min(1).max(2000),
+			level: z.number().int().min(1).max(5),
+			effectiveOn: isoDateSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type SupersedeCompetencyAssessmentInput = z.infer<
+	typeof supersedeCompetencyAssessmentInputSchema
+>;
+
+export const getCompetencyByIdInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		competencyId: humanResourcesCompetencyIdSchema,
+	})
+	.strict();
+
+export type GetCompetencyByIdInput = z.infer<
+	typeof getCompetencyByIdInputSchema
+>;
+
+export const listCompetenciesInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+		status: competencyStatusSchema.optional(),
+	})
+	.strict();
+
+export type ListCompetenciesInput = z.infer<typeof listCompetenciesInputSchema>;
+
+export const listJobCompetenciesInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			jobId: humanResourcesJobIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+		})
+		.strict();
+
+export type ListJobCompetenciesInput = z.infer<
+	typeof listJobCompetenciesInputSchema
+>;
+
+export const getEmployeeCompetencyProfileInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+		})
+		.strict();
+
+export type GetEmployeeCompetencyProfileInput = z.infer<
+	typeof getEmployeeCompetencyProfileInputSchema
+>;
+
+// Talent profile schemas
+export const createTalentProfileInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			summary: z.string().trim().max(4000).nullable().optional(),
+		})
+		.strict();
+
+export type CreateTalentProfileInput = z.infer<
+	typeof createTalentProfileInputSchema
+>;
+
+export const updateTalentProfileInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			talentProfileId: humanResourcesTalentProfileIdSchema,
+			summary: z.string().trim().max(4000).nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type UpdateTalentProfileInput = z.infer<
+	typeof updateTalentProfileInputSchema
+>;
+
+export const recordTalentProfileAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			talentProfileId: humanResourcesTalentProfileIdSchema,
+			methodCode: talentProfileAssessmentMethodCodeSchema,
+			classification: z.string().trim().min(1).max(100),
+			evidenceSummary: z.string().trim().min(1).max(4000),
+			assessorUserId: z.string().trim().min(1),
+		})
+		.strict();
+
+export type RecordTalentProfileAssessmentInput = z.infer<
+	typeof recordTalentProfileAssessmentInputSchema
+>;
+
+export const confirmTalentProfileAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			assessmentId: humanResourcesTalentProfileAssessmentIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ConfirmTalentProfileAssessmentInput = z.infer<
+	typeof confirmTalentProfileAssessmentInputSchema
+>;
+
+export const archiveTalentProfileInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			talentProfileId: humanResourcesTalentProfileIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ArchiveTalentProfileInput = z.infer<
+	typeof archiveTalentProfileInputSchema
+>;
+
+export const getTalentProfileByEmployeeInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			includeSensitive: z.boolean(),
+		})
+		.strict();
+
+export type GetTalentProfileByEmployeeInput = z.infer<
+	typeof getTalentProfileByEmployeeInputSchema
+>;
+
+// Talent pool schemas
+export const createTalentPoolInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		code: z.string().trim().min(1).max(64),
+		name: z.string().trim().min(1).max(200),
+		description: z.string().trim().max(2000).nullable().optional(),
+	})
+	.strict();
+
+export type CreateTalentPoolInput = z.infer<typeof createTalentPoolInputSchema>;
+
+export const updateTalentPoolInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		poolId: humanResourcesTalentPoolIdSchema,
+		name: z.string().trim().min(1).max(200).optional(),
+		description: z.string().trim().max(2000).nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type UpdateTalentPoolInput = z.infer<typeof updateTalentPoolInputSchema>;
+
+export const closeTalentPoolInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		poolId: humanResourcesTalentPoolIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type CloseTalentPoolInput = z.infer<typeof closeTalentPoolInputSchema>;
+
+export const nominateTalentPoolMemberInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			poolId: humanResourcesTalentPoolIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema,
+			nominatorUserId: z.string().trim().min(1),
+		})
+		.strict();
+
+export type NominateTalentPoolMemberInput = z.infer<
+	typeof nominateTalentPoolMemberInputSchema
+>;
+
+export const approveTalentPoolMemberInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			memberId: humanResourcesTalentPoolMemberIdSchema,
+			approverUserId: z.string().trim().min(1),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ApproveTalentPoolMemberInput = z.infer<
+	typeof approveTalentPoolMemberInputSchema
+>;
+
+export const removeTalentPoolMemberInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			memberId: humanResourcesTalentPoolMemberIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type RemoveTalentPoolMemberInput = z.infer<
+	typeof removeTalentPoolMemberInputSchema
+>;
+
+export const listTalentPoolMembersInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			poolId: humanResourcesTalentPoolIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			status: talentPoolMemberStatusSchema.optional(),
+		})
+		.strict();
+
+export type ListTalentPoolMembersInput = z.infer<
+	typeof listTalentPoolMembersInputSchema
+>;
+
+// Career plan schemas
+export const createCareerPlanInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		employeeId: humanResourcesEmployeeIdSchema,
+		ownerUserId: z.string().trim().min(1),
+		code: z.string().trim().min(1).max(64),
+		title: z.string().trim().min(1).max(200),
+	})
+	.strict();
+
+export type CreateCareerPlanInput = z.infer<typeof createCareerPlanInputSchema>;
+
+export const updateCareerPlanInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		careerPlanId: humanResourcesCareerPlanIdSchema,
+		title: z.string().trim().min(1).max(200).optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type UpdateCareerPlanInput = z.infer<typeof updateCareerPlanInputSchema>;
+
+export const acknowledgeCareerPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			careerPlanId: humanResourcesCareerPlanIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type AcknowledgeCareerPlanInput = z.infer<
+	typeof acknowledgeCareerPlanInputSchema
+>;
+
+export const addCareerPlanActionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			careerPlanId: humanResourcesCareerPlanIdSchema,
+			title: z.string().trim().min(1).max(200),
+			dueOn: isoDateSchema.nullable().optional(),
+			learningAssignmentId: humanResourcesLearningAssignmentIdSchema
+				.nullable()
+				.optional(),
+		})
+		.strict();
+
+export type AddCareerPlanActionInput = z.infer<
+	typeof addCareerPlanActionInputSchema
+>;
+
+export const completeCareerPlanActionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			actionId: humanResourcesCareerPlanActionIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type CompleteCareerPlanActionInput = z.infer<
+	typeof completeCareerPlanActionInputSchema
+>;
+
+export const closeCareerPlanInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		careerPlanId: humanResourcesCareerPlanIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type CloseCareerPlanInput = z.infer<typeof closeCareerPlanInputSchema>;
+
+export const getCareerPlanByIdInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		careerPlanId: humanResourcesCareerPlanIdSchema,
+	})
+	.strict();
+
+export type GetCareerPlanByIdInput = z.infer<
+	typeof getCareerPlanByIdInputSchema
+>;
+
+export const listEmployeeCareerPlansInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			status: careerPlanStatusSchema.optional(),
+		})
+		.strict();
+
+export type ListEmployeeCareerPlansInput = z.infer<
+	typeof listEmployeeCareerPlansInputSchema
+>;
+
+// Succession schemas
+export const createSuccessionPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			code: z.string().trim().min(1).max(64),
+			title: z.string().trim().min(1).max(200),
+			positionId: humanResourcesPositionIdSchema,
+			allowsExternalCandidates: z.boolean().optional(),
+		})
+		.strict();
+
+export type CreateSuccessionPlanInput = z.infer<
+	typeof createSuccessionPlanInputSchema
+>;
+
+export const updateSuccessionPlanInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			successionPlanId: humanResourcesSuccessionPlanIdSchema,
+			title: z.string().trim().min(1).max(200).optional(),
+			allowsExternalCandidates: z.boolean().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type UpdateSuccessionPlanInput = z.infer<
+	typeof updateSuccessionPlanInputSchema
+>;
+
+export const successionPlanStatusTransitionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			successionPlanId: humanResourcesSuccessionPlanIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type SuccessionPlanStatusTransitionInput = z.infer<
+	typeof successionPlanStatusTransitionInputSchema
+>;
+
+export const nominateSuccessionCandidateInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			successionPlanId: humanResourcesSuccessionPlanIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema.nullable().optional(),
+			externalCandidateRef: z.string().trim().min(1).max(200).nullable().optional(),
+			nominatorUserId: z.string().trim().min(1),
+			readiness: successionReadinessCodeSchema,
+			readinessEffectiveOn: isoDateSchema,
+			evidenceSummary: z.string().trim().min(1).max(4000),
+		})
+		.strict();
+
+export type NominateSuccessionCandidateInput = z.infer<
+	typeof nominateSuccessionCandidateInputSchema
+>;
+
+export const assessSuccessionReadinessInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			candidateId: humanResourcesSuccessionCandidateIdSchema,
+			readiness: successionReadinessCodeSchema,
+			readinessEffectiveOn: isoDateSchema,
+			evidenceSummary: z.string().trim().min(1).max(4000),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type AssessSuccessionReadinessInput = z.infer<
+	typeof assessSuccessionReadinessInputSchema
+>;
+
+export const approveSuccessionCandidateInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			candidateId: humanResourcesSuccessionCandidateIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ApproveSuccessionCandidateInput = z.infer<
+	typeof approveSuccessionCandidateInputSchema
+>;
+
+export const removeSuccessionCandidateInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			candidateId: humanResourcesSuccessionCandidateIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type RemoveSuccessionCandidateInput = z.infer<
+	typeof removeSuccessionCandidateInputSchema
+>;
+
+export const getSuccessionPlanByIdInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			successionPlanId: humanResourcesSuccessionPlanIdSchema,
+		})
+		.strict();
+
+export type GetSuccessionPlanByIdInput = z.infer<
+	typeof getSuccessionPlanByIdInputSchema
+>;
+
+export const listSuccessionPlansInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			positionId: humanResourcesPositionIdSchema.optional(),
+			status: successionPlanStatusSchema.optional(),
+		})
+		.strict();
+
+export type ListSuccessionPlansInput = z.infer<
+	typeof listSuccessionPlansInputSchema
+>;
+
+export const listSuccessionCandidatesInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			successionPlanId: humanResourcesSuccessionPlanIdSchema,
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			status: successionCandidateStatusSchema.optional(),
+		})
+		.strict();
+
+export type ListSuccessionCandidatesInput = z.infer<
+	typeof listSuccessionCandidatesInputSchema
+>;
+
+export const getPositionSuccessionCoverageInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			positionId: humanResourcesPositionIdSchema,
+		})
+		.strict();
+
+export type GetPositionSuccessionCoverageInput = z.infer<
+	typeof getPositionSuccessionCoverageInputSchema
 >;

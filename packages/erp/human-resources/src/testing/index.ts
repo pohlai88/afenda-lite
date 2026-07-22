@@ -1,4 +1,4 @@
-export { createDrizzleHumanResourcesStore } from "../drizzle-store";
+export { createDrizzleHumanResourcesStore } from "../adapters/drizzle";
 export {
 	createMemoryHumanResourcesStore,
 	MemoryHumanResourcesStore,
@@ -9,3 +9,4 @@ export type {
 	HumanResourcesStore,
 	IdempotentEmployeeRecord,
 } from "../store";
+export { createMemoryWorkCalendar } from "../work-calendar";
