@@ -83,17 +83,17 @@ export function assertCourseCanArchive(input: {
 // Session Guards
 
 export function assertSessionSchedulable(input: {
-	startsOn: string;
-	endsOn: string;
-	todayDate: string;
-}): Result<void> {
-	if (input.startsOn < input.todayDate) {
+	scheduledStartsAt: Date;
+	scheduledEndsAt: Date;
+}): Result<true> {
+	const now = new Date();
+	if (input.scheduledStartsAt < now) {
 		return invalidInput("Session cannot be scheduled in the past");
 	}
-	if (input.endsOn <= input.startsOn) {
+	if (input.scheduledEndsAt <= input.scheduledStartsAt) {
 		return invalidInput("Session end date must be after start date");
 	}
-	return ok(undefined);
+	return ok(true);
 }
 
 export function canTransitionSessionStatus(
