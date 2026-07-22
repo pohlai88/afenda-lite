@@ -1615,6 +1615,13 @@ export type JobCompetency = {
 	updatedAt: Date;
 };
 
+export type JobCompetencyListPage = {
+	jobCompetencies: JobCompetency[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
 export type CompetencyAssessment = {
 	id: HumanResourcesCompetencyAssessmentId;
 	organizationId: string;

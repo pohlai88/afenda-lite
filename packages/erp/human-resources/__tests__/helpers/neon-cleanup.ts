@@ -5,22 +5,34 @@ import {
 	hrCandidateApplication,
 	hrClearance,
 	hrDepartment,
+	hrDocumentRequirement,
 	hrEmployee,
 	hrEmployeeCase,
 	hrEmployeeCaseAction,
 	hrEmployeeCaseAppeal,
 	hrEmployeeCaseEvent,
 	hrEmployeeCertification,
+	hrEmployeeDocument,
 	hrEmployment,
 	hrEmploymentConfirmation,
 	hrEmploymentContract,
 	hrEmploymentMovement,
 	hrEmploymentOffer,
 	hrExitInterview,
+	hrHeadcountPlan,
+	hrHeadcountPlanLine,
+	hrHeadcountReservation,
 	hrInterview,
 	hrInterviewEvaluation,
 	hrJob,
 	hrJobRequisition,
+	hrLeaveAdjustment,
+	hrLeaveApprovalDecision,
+	hrLeaveEntitlement,
+	hrLeavePolicy,
+	hrLeavePolicyEligibility,
+	hrLeaveRequest,
+	hrLeaveRequestSegment,
 	hrLearningAssignment,
 	hrLearningCompletion,
 	hrLearningCourse,
@@ -39,10 +51,12 @@ import {
 	hrPerformanceReview,
 	hrPerformanceReviewParticipant,
 	hrPosition,
+	hrPolicyAcknowledgement,
 	hrProbationReview,
 	hrReportingLine,
 	hrTermination,
 	hrWorkAssignment,
+	hrWorkEligibility,
 	platformAuditLog,
 	platformDomainEvent,
 } from "@afenda/db";
@@ -67,6 +81,15 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrCandidate)
 			.where(eq(hrCandidate.organizationId, organizationId));
+		await db
+			.delete(hrHeadcountReservation)
+			.where(eq(hrHeadcountReservation.organizationId, organizationId));
+		await db
+			.delete(hrHeadcountPlanLine)
+			.where(eq(hrHeadcountPlanLine.organizationId, organizationId));
+		await db
+			.delete(hrHeadcountPlan)
+			.where(eq(hrHeadcountPlan.organizationId, organizationId));
 		await db
 			.delete(hrJobRequisition)
 			.where(eq(hrJobRequisition.organizationId, organizationId));
@@ -137,6 +160,27 @@ export async function cleanupHumanResourcesNeonOrgs(
 			.delete(hrPerformanceCycle)
 			.where(eq(hrPerformanceCycle.organizationId, organizationId));
 		await db
+			.delete(hrLeaveApprovalDecision)
+			.where(eq(hrLeaveApprovalDecision.organizationId, organizationId));
+		await db
+			.delete(hrLeaveRequestSegment)
+			.where(eq(hrLeaveRequestSegment.organizationId, organizationId));
+		await db
+			.delete(hrLeaveAdjustment)
+			.where(eq(hrLeaveAdjustment.organizationId, organizationId));
+		await db
+			.delete(hrLeaveRequest)
+			.where(eq(hrLeaveRequest.organizationId, organizationId));
+		await db
+			.delete(hrLeaveEntitlement)
+			.where(eq(hrLeaveEntitlement.organizationId, organizationId));
+		await db
+			.delete(hrLeavePolicyEligibility)
+			.where(eq(hrLeavePolicyEligibility.organizationId, organizationId));
+		await db
+			.delete(hrLeavePolicy)
+			.where(eq(hrLeavePolicy.organizationId, organizationId));
+		await db
 			.delete(hrEmployeeCaseEvent)
 			.where(eq(hrEmployeeCaseEvent.organizationId, organizationId));
 		await db
@@ -177,6 +221,18 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrLearningCourse)
 			.where(eq(hrLearningCourse.organizationId, organizationId));
+		await db
+			.delete(hrPolicyAcknowledgement)
+			.where(eq(hrPolicyAcknowledgement.organizationId, organizationId));
+		await db
+			.delete(hrWorkEligibility)
+			.where(eq(hrWorkEligibility.organizationId, organizationId));
+		await db
+			.delete(hrEmployeeDocument)
+			.where(eq(hrEmployeeDocument.organizationId, organizationId));
+		await db
+			.delete(hrDocumentRequirement)
+			.where(eq(hrDocumentRequirement.organizationId, organizationId));
 		await db
 			.delete(hrEmployee)
 			.where(eq(hrEmployee.organizationId, organizationId));

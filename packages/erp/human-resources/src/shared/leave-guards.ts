@@ -2,6 +2,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
@@ -194,14 +195,14 @@ export function assertApproverIsPrimaryManager(input: {
 		return fail(
 			"FORBIDDEN",
 			"No primary manager is assigned for this employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 		);
 	}
 	if (input.approverEmployeeId !== input.primaryManagerEmployeeId) {
 		return fail(
 			"FORBIDDEN",
 			"Approver is not the employee's primary manager",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 		);
 	}
 	return ok(undefined);

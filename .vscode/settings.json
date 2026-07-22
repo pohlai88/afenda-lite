@@ -69,6 +69,7 @@
 		"**/out": true,
 		"**/.artifacts": true,
 		"**/_reference": true,
+		"**/.source": true,
 		"**/.tmp": true,
 		"**/.vercel": true
 	},
@@ -87,6 +88,7 @@
 		"**/.artifacts": true,
 		"**/.git": true,
 		"**/_reference": true,
+		"**/.source": true,
 		"**/.tmp": true,
 		"**/.vercel": true,
 		"docs/architecture/backend": true,
@@ -112,6 +114,7 @@
 		"**/.artifacts/**": true,
 		"**/.git/**": true,
 		"**/_reference/**": true,
+		"**/.source/**": true,
 		"**/.tmp/**": true,
 		"**/.vercel/**": true,
 		"**/pnpm-lock.yaml": true
@@ -125,5 +128,32 @@
 
 	"yaml.maxItemsComputed": 5000,
 
-	"git.openRepositoryInParentFolders": "never"
+	"git.openRepositoryInParentFolders": "never",
+
+	"python.languageServer": "None",
+	"python.analysis.indexing": false,
+	"python.analysis.autoSearchPaths": false,
+	"python.analysis.diagnosticMode": "openFilesOnly",
+	"python.analysis.include": [],
+	"python.analysis.exclude": [
+		"**",
+		"**/node_modules",
+		"**/__pycache__",
+		"**/.git",
+		"**/_reference",
+		"**/.next",
+		"**/.turbo",
+		"**/dist",
+		"**/build",
+		"**/coverage",
+		"**/out",
+		"**/.source",
+		"**/.tmp",
+		"**/.vercel",
+		"**/apps",
+		"**/packages",
+		"**/docs-V2",
+		"**/.cursor",
+		"**/.agents"
+	]
 }

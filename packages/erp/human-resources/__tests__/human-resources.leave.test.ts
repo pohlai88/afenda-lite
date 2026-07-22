@@ -16,6 +16,7 @@ import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import {
 	adjustLeaveEntitlement,
@@ -28,12 +29,19 @@ import {
 	publishLeavePolicy,
 	updateLeavePolicy,
 } from "../src/leave/leave-policy";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
+	amendLeaveRequest,
 	approveLeaveRequest,
 	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
+	getApprovedLeaveHandoff,
+	getLeaveRequest,
+	returnLeaveRequest,
 	submitLeaveRequest,
+	withdrawLeaveRequest,
 } from "../src/leave/leave-request";
+import { resolveApplicableLeavePolicy } from "../src/leave/leave-policy";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
@@ -44,7 +52,10 @@ import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -54,6 +65,19 @@ import { humanResourcesCodeFromResult } from "./helpers/result-details";
 const ORG = "org-leave-a";
 const ACTOR = "user-leave-employee";
 const MANAGER = "user-leave-manager";
+const OTHER = "user-leave-other";
+
+const LEAVE_REQUEST_WORKFLOW_PERMISSIONS = [
+	HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_READ,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+] as const;
 
 function harness(
 	permissions: readonly HumanResourcesPermission[] = HUMAN_RESOURCES_PERMISSION_CODES,
@@ -139,6 +163,28 @@ async function seedPublishedPolicy(ready: ReturnType<typeof harness>) {
 		policyReady,
 	);
 	return published;
+}
+
+async function seedManagerEmployee(ready: ReturnType<typeof harness>) {
+	const seedReady = {
+		...ready,
+		authorization: createGrantingHumanResourcesAuthorization([
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+		]),
+	};
+	const manager = await createEmployee(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: "corr-mgr-emp",
+			idempotencyKey: "idem-mgr-emp",
+			employeeNumber: "E-MGR-1",
+			legalName: "Leave Manager",
+		},
+		seedReady,
+	);
+	return manager;
 }
 
 describe("Leave policy lifecycle", () => {
@@ -816,5 +862,813 @@ describe("Leave request workflow", () => {
 			"2025-06-06",
 			"2025-06-09",
 		]);
+	});
+});
+
+describe("Leave plan matrix (HR-LEAVE-01)", () => {
+	it("resolves applicable published policy for employee", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const resolved = await resolveApplicableLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-resolve-policy",
+				policyCode: "ANNUAL",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				asOfDate: "2025-06-01",
+			},
+			ready,
+		);
+		expect(resolved.ok).toBe(true);
+		if (!resolved.ok) return;
+		expect(resolved.data?.policy.id).toBe(policy.data.id);
+		expect(resolved.data?.policy.status).toBe("published");
+	});
+
+	it("amends returned request and re-expands segments", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const manager = await seedManagerEmployee(ready);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const assigned = await assignPrimaryReportingLine(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-reporting-line",
+				employeeId: seeded.employee.id,
+				managerEmployeeId: manager.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(assigned.ok).toBe(true);
+		if (!assigned.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-amend",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-amend",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-amend-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-09-01",
+				endDate: "2025-09-03",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-amend-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-amend-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const returned = await returnLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-amend-return",
+				requestId: submitted.data.id,
+				managerEmployeeId: manager.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(returned.ok).toBe(true);
+		if (!returned.ok) return;
+		expect(returned.data.status).toBe("returned");
+
+		const amended = await amendLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-amend",
+				requestId: returned.data.id,
+				startDate: "2025-09-08",
+				endDate: "2025-09-09",
+				requestedQuantity: "2",
+				expectedVersion: returned.data.version,
+			},
+			ready,
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+		expect(amended.data.startDate).toBe("2025-09-08");
+		expect(amended.data.requestedQuantity).toBe("2");
+
+		const segments = await ready.store.listLeaveRequestSegments({
+			organizationId: ORG,
+			requestId: amended.data.id,
+		});
+		expect(segments.ok).toBe(true);
+		if (!segments.ok) return;
+		expect(segments.data).toHaveLength(2);
+	});
+
+	it("requires primary manager on approve when reporting line exists", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const manager = await seedManagerEmployee(ready);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const assigned = await assignPrimaryReportingLine(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-mgr-line",
+				employeeId: seeded.employee.id,
+				managerEmployeeId: manager.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(assigned.ok).toBe(true);
+		if (!assigned.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-mgr",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-mgr",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-mgr-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-10-06",
+				endDate: "2025-10-08",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-mgr-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-mgr-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const missingManager = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-mgr-missing",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(missingManager.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(missingManager)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+
+		const wrongManager = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-mgr-wrong",
+				requestId: submitted.data.id,
+				managerEmployeeId: seeded.employee.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(wrongManager.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(wrongManager)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-mgr-approve",
+				requestId: submitted.data.id,
+				managerEmployeeId: manager.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+		expect(approved.data.status).toBe("approved");
+	});
+
+	it("returns approved leave handoff with plan shape", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-handoff",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-handoff",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-handoff-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-11-03",
+				endDate: "2025-11-05",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-handoff-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-handoff-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-handoff-approve",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const handoff = await getApprovedLeaveHandoff(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-handoff-get",
+				requestId: approved.data.id,
+			},
+			ready,
+		);
+		expect(handoff.ok).toBe(true);
+		if (!handoff.ok) return;
+		expect(handoff.data).not.toBeNull();
+		if (!handoff.data) return;
+		expect(handoff.data.employmentId).toBe(seeded.employment.id);
+		expect(handoff.data.policyVersion).toBe(policy.data.version);
+		expect(handoff.data.paid).toBe(true);
+		expect(handoff.data.correlationId).toBe("corr-handoff-get");
+		expect(handoff.data.segments.length).toBeGreaterThan(0);
+		expect(handoff.data.segments[0]).toHaveProperty("date");
+	});
+
+	it("denies sensitive leave read without permission", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policyReady = {
+			...ready,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+			]),
+		};
+		const created = await createLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-sensitive-create",
+				code: "SENSITIVE",
+				name: "Sensitive Leave",
+				leaveType: "other",
+				unit: "days",
+				paid: true,
+				sensitive: true,
+				effectiveFrom: "2025-01-01",
+				allowedEmploymentStatuses: ["active"],
+			},
+			policyReady,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+		const published = await publishLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-sensitive-pub",
+				policyId: created.data.id,
+				expectedVersion: created.data.version,
+			},
+			policyReady,
+		);
+		expect(published.ok).toBe(true);
+		if (!published.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-sensitive",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: published.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "5",
+				idempotencyKey: "idem-ent-sensitive",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-sensitive-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-12-01",
+				endDate: "2025-12-02",
+				requestedQuantity: "2",
+				idempotencyKey: "idem-sensitive-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const denied = await getLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: OTHER,
+				correlationId: "corr-sensitive-deny",
+				requestId: draft.data.id,
+			},
+			{
+				...ready,
+				authorization: createGrantingHumanResourcesAuthorization([
+					HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+				]),
+			},
+		);
+		expect(denied.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(denied)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+
+		const allowed = await getLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: OTHER,
+				correlationId: "corr-sensitive-allow",
+				requestId: draft.data.id,
+			},
+			{
+				...ready,
+				authorization: createGrantingHumanResourcesAuthorization([
+					HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+					HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+				]),
+			},
+		);
+		expect(allowed.ok).toBe(true);
+	});
+
+	it("requires backdate permission for backdated create", async () => {
+		const ready = harness([
+			...LEAVE_REQUEST_WORKFLOW_PERMISSIONS,
+		]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-backdate",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "5",
+				idempotencyKey: "idem-ent-backdate",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const denied = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-backdate-deny",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-05-01",
+				endDate: "2025-05-02",
+				requestedQuantity: "2",
+				isBackdated: true,
+				idempotencyKey: "idem-backdate-deny",
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(denied)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+
+		const allowed = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-backdate-allow",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-05-01",
+				endDate: "2025-05-02",
+				requestedQuantity: "2",
+				isBackdated: true,
+				idempotencyKey: "idem-backdate-allow",
+			},
+			{
+				...ready,
+				authorization: createGrantingHumanResourcesAuthorization([
+					...LEAVE_REQUEST_WORKFLOW_PERMISSIONS,
+					HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
+				]),
+			},
+		);
+		expect(allowed.ok).toBe(true);
+		if (!allowed.ok) return;
+		expect(allowed.data.isBackdated).toBe(true);
+	});
+
+	it("rejects stale expectedVersion on approve", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-stale",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "5",
+				idempotencyKey: "idem-ent-stale",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-stale-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-04-07",
+				endDate: "2025-04-09",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-stale-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-stale-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const stale = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-stale-approve",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version - 1,
+			},
+			ready,
+		);
+		expect(stale.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(stale)).toBe(
+			HUMAN_RESOURCES_ERROR_STALE_VERSION,
+		);
+	});
+
+	it("returns same draft for idempotent create", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-idem",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "5",
+				idempotencyKey: "idem-ent-idem",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const payload = {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: "corr-idem-draft",
+			employeeId: seeded.employee.id,
+			entitlementId: granted.data.id,
+			startDate: "2025-03-03",
+			endDate: "2025-03-05",
+			requestedQuantity: "3",
+			idempotencyKey: "idem-create-req",
+		};
+		const first = await createDraftLeaveRequest(payload, ready);
+		const second = await createDraftLeaveRequest(
+			{ ...payload, correlationId: "corr-idem-draft-2" },
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		expect(second.ok).toBe(true);
+		if (!first.ok || !second.ok) return;
+		expect(second.data.id).toBe(first.data.id);
+	});
+
+	it("creates half-day segment for morning portion", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-half",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "5",
+				idempotencyKey: "idem-ent-half",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-half-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-02-03",
+				endDate: "2025-02-03",
+				requestedQuantity: "0.5",
+				dayPortion: "morning",
+				idempotencyKey: "idem-half-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const segments = await ready.store.listLeaveRequestSegments({
+			organizationId: ORG,
+			requestId: draft.data.id,
+		});
+		expect(segments.ok).toBe(true);
+		if (!segments.ok) return;
+		expect(segments.data).toHaveLength(1);
+		expect(segments.data[0]?.dayPortion).toBe("morning");
+		expect(segments.data[0]?.quantity).toBe("0.5");
+	});
+
+	it("withdraws submitted request", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-withdraw",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "5",
+				idempotencyKey: "idem-ent-withdraw",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-withdraw-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-14",
+				endDate: "2025-07-16",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-withdraw-req",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-withdraw-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const withdrawn = await withdrawLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-withdraw",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+		expect(withdrawn.data.status).toBe("withdrawn");
 	});
 });

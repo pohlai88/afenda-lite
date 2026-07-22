@@ -190,6 +190,9 @@ queries:
   - id: human-resources.approved-leave-handoff.get
     moduleId: human-resources
     permission: human-resources.leave-request.approve-team
+  - id: human-resources.leave-policy.resolve-applicable
+    moduleId: human-resources
+    permission: human-resources.leave-policy.read
   - id: human-resources.headcount-plan.get
     moduleId: human-resources
     permission: human-resources.workforce-plan.read

@@ -227,6 +227,6 @@ describe("@afenda/human-resources kernel", () => {
 		expect(barrel).not.toMatch(/from ["']\.\/resolve-store["']/);
 		expect(barrel).not.toMatch(/@afenda\/db/);
 		expect(barrel).not.toMatch(/next\//);
-		expect(barrel).not.toMatch(/NextResponse|Request|Response/);
+		expect(barrel).not.toMatch(/\bNextRequest\b|\bNextResponse\b/);
 	});
 });

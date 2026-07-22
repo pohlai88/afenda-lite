@@ -1,8 +1,11 @@
 import type { Result } from "@afenda/errors/result";
+import { ok } from "@afenda/errors/result";
 import type { z } from "zod";
 
 import {
+	type HumanResourcesAuthorizationPort,
 	requireHumanResourcesCommandPermission,
+	requireHumanResourcesPermission,
 	requireHumanResourcesQueryPermission,
 } from "../authorization";
 import {
@@ -15,6 +18,7 @@ import type {
 } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
 import type { MutationPorts } from "../ports";
+import { HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ } from "../permissions";
 import type { HumanResourcesStore } from "../store";
 
 type ActorScoped = {
@@ -29,6 +33,7 @@ type CommandDeps = {
 
 type QueryDeps = {
 	store: HumanResourcesStore;
+	authorization: HumanResourcesAuthorizationPort | undefined;
 };
 
 /**
@@ -108,5 +113,24 @@ export async function runTalentQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store });
+	return config.execute(parsed.data, { store, authorization });
+}
+
+/** Gate the talent profile's sensitive classification fields when includeSensitive is true. */
+export async function requireTalentProfileSensitiveRead(
+	authorization: HumanResourcesAuthorizationPort | undefined,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		includeSensitive: boolean;
+	},
+): Promise<Result<void>> {
+	if (!input.includeSensitive) {
+		return ok(undefined);
+	}
+	return requireHumanResourcesPermission(authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		permission: HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
+	});
 }

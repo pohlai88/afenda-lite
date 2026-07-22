@@ -1,7 +1,4 @@
-/**
- * Memory vs Drizzle parity for compliance (HR-COMPLIANCE-01).
- * Drizzle adapter parity resumes once `attachDrizzleEmployeeRelations` ships.
- */
+/** Memory vs Drizzle parity for compliance (HR-COMPLIANCE-01). */
 
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
@@ -57,7 +54,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 		await cleanupHumanResourcesNeonOrgs(parityOrgs);
 	});
 
-	for (const adapter of ["memory"] as const) {
+	for (const adapter of ["memory", "drizzle"] as const) {
 		it(`${adapter}: document register + verify + policy + eligibility`, async () => {
 			const suffix = uniqueSuffix(adapter);
 			const organizationId = `org-compliance-parity-${suffix}`;

@@ -454,6 +454,9 @@ commands:
   - id: human-resources.leave-request.cancel-approved
     moduleId: human-resources
     permission: human-resources.leave-request.approve-team
+  - id: human-resources.leave-request.amend
+    moduleId: human-resources
+    permission: human-resources.leave-request.own
   - id: human-resources.headcount-plan.create
     moduleId: human-resources
     permission: human-resources.workforce-plan.prepare
