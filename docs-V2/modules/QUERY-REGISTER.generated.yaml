@@ -70,6 +70,39 @@ queries:
   - id: human-resources.organization.tree
     moduleId: human-resources
     permission: human-resources.organization.read
+  - id: human-resources.requisition.get
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.list
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.candidate.get
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.candidate.list
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.get
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.list
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.interview.get
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.interview.list
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.interview-evaluation.get
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.offer.get
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.list
+    moduleId: human-resources
+    permission: human-resources.offer.approve
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read

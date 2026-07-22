@@ -289,7 +289,7 @@ Label: **SCHEMA_UNCONFIRMED** unless a column exists on disk. No guessed state m
 | ------ | ---------------- | ------------- | ---------- |
 | Employee create idempotency | `hr_employee` unique indexes + store conflict handling | **Confirmed** | Yes (shipped) |
 | Employee optimistic concurrency | `hr_employee.version` | Column present; no update command yet | Update path later |
-| Recruitment funnel (requisition → offer accepted) | [human-resource.md](./human-resource.md) §2 diagram | Conceptual — no `status` columns | **BLOCKED** — HR5 DDL |
+| Recruitment funnel (requisition → offer accepted) | [human-resource.md](./human-resource.md) §2 diagram + `0038` CHECKs | **Confirmed** — statuses on six recruitment tables | **DONE** — HR5 / HR-04 |
 | Lifecycle (onboard → terminate → offboard) | Scratch §2 + event names | No status enums in DDL | **BLOCKED** — HR6 DDL |
 | Employment status for payroll (`active` \| `notice` \| `terminated`) | Scratch §7 `PayrollEmployeeQueryPort` DTO | **Not a column** — design in HR2 `hr_employment` | **BLOCKED** — open question |
 | Leave / timesheet approval | Event + permission catalog | No tables | **BLOCKED** — GATE-TL |
@@ -413,7 +413,8 @@ Q3 remains open for leave/time work.
 | **HR3** (employee/employment/contract commands) | **DONE** |
 | **HR4** (position/assignment commands) | **DONE** for position/assignment |
 | **HR-03** (dept/job/reporting-line + position FKs) | **DONE** — `0037_hr_organization_structure_ddl` |
-| **Next** | Recruitment HR5 (chat mission HR-04) |
+| **HR5 / HR-04** (recruitment funnel) | **DONE** — `0038_hr_recruitment_ddl` + requisition→offer accept handoff |
+| **Next** | Lifecycle HR6 (chat mission HR-05) — onboarding/offboarding; consume `OfferAcceptanceHandoff` |
 
 ---
 

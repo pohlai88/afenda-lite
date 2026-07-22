@@ -175,16 +175,18 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 
 ---
 
-### HR5 — Recruitment slice
+### HR5 / mission HR-04 — Recruitment slice — **DONE** (2026-07-22)
 
 | | |
 | --- | --- |
 | **Depends on** | HR4 |
-| **In scope** | DDL columns for `hr_job_requisition` … `hr_employment_offer`; pipeline commands through offer accept; emit `requisition.approved.v1`, `offer.accepted.v1` |
+| **In scope** | DDL `0038_hr_recruitment_ddl` for `hr_job_requisition` … `hr_employment_offer`; pipeline commands through offer accept; emit `requisition.approved.v1`, `offer.accepted.v1`; typed `OfferAcceptanceHandoff` |
 | **Out of scope** | Auto-create employee (hand off to HR6) |
 | **Reference** | Scratch §2 recruitment lifecycle diagram |
-| **Verify** | `pnpm --filter @afenda/human-resources test` |
+| **Verify** | `pnpm --filter @afenda/human-resources check` · `pnpm validate:modules` · `pnpm governance:packages` |
 | **Done when** | Offer accept is idempotent; interview/evaluation tables writable |
+| **Evidence** | Domain statuses + FKs/uniques on six recruitment tables; memory + drizzle stores; recruitment test matrix; lifecycle stays `scaffolded` |
+| **Mission alias** | Chat mission **HR-04** |
 
 ---
 

@@ -267,6 +267,13 @@
 			"when": 1784587000000,
 			"tag": "0037_hr_organization_structure_ddl",
 			"breakpoints": true
+		},
+		{
+			"idx": 38,
+			"version": "7",
+			"when": 1784588000000,
+			"tag": "0038_hr_recruitment_ddl",
+			"breakpoints": true
 		}
 	]
 }

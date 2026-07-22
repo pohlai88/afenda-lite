@@ -68,6 +68,52 @@ export type HumanResourcesReportingLineId = z.infer<
 	typeof humanResourcesReportingLineIdSchema
 >;
 
+export const humanResourcesRequisitionIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesRequisitionId">();
+export type HumanResourcesRequisitionId = z.infer<
+	typeof humanResourcesRequisitionIdSchema
+>;
+
+export const humanResourcesCandidateIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCandidateId">();
+export type HumanResourcesCandidateId = z.infer<
+	typeof humanResourcesCandidateIdSchema
+>;
+
+export const humanResourcesApplicationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesApplicationId">();
+export type HumanResourcesApplicationId = z.infer<
+	typeof humanResourcesApplicationIdSchema
+>;
+
+export const humanResourcesInterviewIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesInterviewId">();
+export type HumanResourcesInterviewId = z.infer<
+	typeof humanResourcesInterviewIdSchema
+>;
+
+export const humanResourcesInterviewEvaluationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesInterviewEvaluationId">();
+export type HumanResourcesInterviewEvaluationId = z.infer<
+	typeof humanResourcesInterviewEvaluationIdSchema
+>;
+
+export const humanResourcesOfferIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesOfferId">();
+export type HumanResourcesOfferId = z.infer<typeof humanResourcesOfferIdSchema>;
+
 /** Brand after UUID generation or trusted DB load — never cast without parse. */
 export function parseHumanResourcesEmployeeId(
 	id: string,
@@ -175,6 +221,90 @@ export function parseHumanResourcesReportingLineId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid reporting line identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesRequisitionId(
+	id: string,
+): Result<HumanResourcesRequisitionId> {
+	const parsed = humanResourcesRequisitionIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid requisition identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesCandidateId(
+	id: string,
+): Result<HumanResourcesCandidateId> {
+	const parsed = humanResourcesCandidateIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid candidate identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesApplicationId(
+	id: string,
+): Result<HumanResourcesApplicationId> {
+	const parsed = humanResourcesApplicationIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid application identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesInterviewId(
+	id: string,
+): Result<HumanResourcesInterviewId> {
+	const parsed = humanResourcesInterviewIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid interview identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesInterviewEvaluationId(
+	id: string,
+): Result<HumanResourcesInterviewEvaluationId> {
+	const parsed = humanResourcesInterviewEvaluationIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid interview evaluation identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesOfferId(
+	id: string,
+): Result<HumanResourcesOfferId> {
+	const parsed = humanResourcesOfferIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid offer identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

@@ -17,7 +17,6 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";

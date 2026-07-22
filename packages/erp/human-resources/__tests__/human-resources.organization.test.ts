@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-
+import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -16,7 +16,7 @@ import {
 	getOrganizationTree,
 	updateDepartment,
 } from "../src/organization/department";
-import { archiveJob, createJob } from "../src/organization/job";
+import { archiveJob } from "../src/organization/job";
 import {
 	closePosition,
 	createPosition,
@@ -28,7 +28,6 @@ import {
 	replacePrimaryReportingLine,
 	resolvePrimaryManager,
 } from "../src/organization/reporting-line";
-import type { HumanResourcesPermission } from "../src/authorization";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,

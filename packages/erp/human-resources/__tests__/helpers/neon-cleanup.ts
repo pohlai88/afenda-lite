@@ -1,11 +1,17 @@
 import {
 	db,
 	eq,
+	hrCandidate,
+	hrCandidateApplication,
 	hrDepartment,
 	hrEmployee,
 	hrEmployment,
 	hrEmploymentContract,
+	hrEmploymentOffer,
+	hrInterview,
+	hrInterviewEvaluation,
 	hrJob,
+	hrJobRequisition,
 	hrPosition,
 	hrReportingLine,
 	hrWorkAssignment,
@@ -18,6 +24,24 @@ export async function cleanupHumanResourcesNeonOrgs(
 	organizationIds: readonly string[],
 ): Promise<void> {
 	for (const organizationId of organizationIds) {
+		await db
+			.delete(hrInterviewEvaluation)
+			.where(eq(hrInterviewEvaluation.organizationId, organizationId));
+		await db
+			.delete(hrInterview)
+			.where(eq(hrInterview.organizationId, organizationId));
+		await db
+			.delete(hrEmploymentOffer)
+			.where(eq(hrEmploymentOffer.organizationId, organizationId));
+		await db
+			.delete(hrCandidateApplication)
+			.where(eq(hrCandidateApplication.organizationId, organizationId));
+		await db
+			.delete(hrCandidate)
+			.where(eq(hrCandidate.organizationId, organizationId));
+		await db
+			.delete(hrJobRequisition)
+			.where(eq(hrJobRequisition.organizationId, organizationId));
 		await db
 			.delete(hrWorkAssignment)
 			.where(eq(hrWorkAssignment.organizationId, organizationId));

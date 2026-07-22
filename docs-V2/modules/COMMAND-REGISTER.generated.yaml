@@ -145,6 +145,81 @@ commands:
   - id: human-resources.reporting-line.replace-primary
     moduleId: human-resources
     permission: human-resources.organization.manage
+  - id: human-resources.requisition.create-draft
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.amend
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.submit
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.approve
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.open
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.place-on-hold
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.close
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.requisition.cancel
+    moduleId: human-resources
+    permission: human-resources.requisition.create
+  - id: human-resources.candidate.create
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.candidate.update-profile
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.create
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.move-to-in-review
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.move-to-interviewing
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.reject
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.application.withdraw
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.interview.schedule
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.interview.cancel
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.interview.record-evaluation
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.offer.create
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.amend-draft
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.issue
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.accept
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.decline
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.expire
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.offer.withdraw
+    moduleId: human-resources
+    permission: human-resources.offer.approve
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

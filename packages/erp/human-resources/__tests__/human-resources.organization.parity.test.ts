@@ -24,8 +24,8 @@ import {
 	replacePrimaryReportingLine,
 	resolvePrimaryManager,
 } from "../src/organization/reporting-line";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
 	createWorkforceHarness,

@@ -303,16 +303,227 @@ export const hrEmploymentMovement = createErpScaffoldTable(
 	"hr_employment_movement",
 );
 
-export const hrJobRequisition = createErpScaffoldTable("hr_job_requisition");
-export const hrCandidate = createErpScaffoldTable("hr_candidate");
-export const hrCandidateApplication = createErpScaffoldTable(
+export const hrJobRequisition = pgTable(
+	"hr_job_requisition",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		/** draft | submitted | approved | open | on_hold | closed | cancelled */
+		status: text("status").notNull(),
+		jobId: uuid("job_id").references(() => hrJob.id),
+		positionId: uuid("position_id").references(() => hrPosition.id),
+		departmentId: uuid("department_id").references(() => hrDepartment.id),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_job_requisition_org_id_idx").on(t.organizationId, t.id),
+		index("hr_job_requisition_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_job_requisition_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		uniqueIndex("hr_job_requisition_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrCandidate = pgTable(
+	"hr_candidate",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		displayName: text("display_name").notNull(),
+		email: text("email").notNull(),
+		normalizedEmail: text("normalized_email").notNull(),
+		phone: text("phone"),
+		/** active | archived */
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_candidate_org_id_idx").on(t.organizationId, t.id),
+		index("hr_candidate_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_candidate_org_normalized_email_uidx").on(
+			t.organizationId,
+			t.normalizedEmail,
+		),
+		uniqueIndex("hr_candidate_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const hrCandidateApplication = pgTable(
 	"hr_candidate_application",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		candidateId: uuid("candidate_id")
+			.notNull()
+			.references(() => hrCandidate.id),
+		requisitionId: uuid("requisition_id")
+			.notNull()
+			.references(() => hrJobRequisition.id),
+		/** submitted | in_review | interviewing | offered | accepted | rejected | withdrawn */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_candidate_application_org_id_idx").on(t.organizationId, t.id),
+		index("hr_candidate_application_org_candidate_idx").on(
+			t.organizationId,
+			t.candidateId,
+		),
+		index("hr_candidate_application_org_requisition_idx").on(
+			t.organizationId,
+			t.requisitionId,
+		),
+		index("hr_candidate_application_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		uniqueIndex("hr_candidate_application_org_candidate_requisition_open_uidx")
+			.on(t.organizationId, t.candidateId, t.requisitionId)
+			.where(
+				sql`${t.status} NOT IN ('accepted', 'rejected', 'withdrawn')`,
+			),
+	],
 );
-export const hrInterview = createErpScaffoldTable("hr_interview");
-export const hrInterviewEvaluation = createErpScaffoldTable(
+
+export const hrInterview = pgTable(
+	"hr_interview",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		applicationId: uuid("application_id")
+			.notNull()
+			.references(() => hrCandidateApplication.id),
+		scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+		/** scheduled | completed | cancelled */
+		status: text("status").notNull(),
+		interviewerActorId: text("interviewer_actor_id").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_interview_org_id_idx").on(t.organizationId, t.id),
+		index("hr_interview_org_application_idx").on(
+			t.organizationId,
+			t.applicationId,
+		),
+		index("hr_interview_org_status_idx").on(t.organizationId, t.status),
+	],
+);
+
+export const hrInterviewEvaluation = pgTable(
 	"hr_interview_evaluation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		interviewId: uuid("interview_id")
+			.notNull()
+			.references(() => hrInterview.id),
+		/** advance | hold | reject */
+		result: text("result").notNull(),
+		privateNotes: text("private_notes"),
+		evaluatorActorId: text("evaluator_actor_id").notNull(),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_interview_evaluation_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_interview_evaluation_org_interview_uidx").on(
+			t.organizationId,
+			t.interviewId,
+		),
+	],
 );
-export const hrEmploymentOffer = createErpScaffoldTable("hr_employment_offer");
+
+export const hrEmploymentOffer = pgTable(
+	"hr_employment_offer",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		applicationId: uuid("application_id")
+			.notNull()
+			.references(() => hrCandidateApplication.id),
+		/** draft | issued | accepted | declined | expired | withdrawn */
+		status: text("status").notNull(),
+		termsSummary: text("terms_summary").notNull(),
+		expiresOn: date("expires_on", { mode: "string" }).notNull(),
+		issuedAt: timestamp("issued_at", { withTimezone: true }),
+		respondedAt: timestamp("responded_at", { withTimezone: true }),
+		acceptIdempotencyKey: text("accept_idempotency_key"),
+		acceptRequestFingerprint: text("accept_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_offer_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employment_offer_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_employment_offer_org_application_draft_issued_uidx")
+			.on(t.organizationId, t.applicationId)
+			.where(sql`${t.status} IN ('draft', 'issued')`),
+		uniqueIndex("hr_employment_offer_org_accept_idempotency_uidx")
+			.on(t.organizationId, t.acceptIdempotencyKey)
+			.where(sql`${t.acceptIdempotencyKey} IS NOT NULL`),
+	],
+);
 
 export const hrOnboardingCase = createErpScaffoldTable("hr_onboarding_case");
 export const hrOnboardingTask = createErpScaffoldTable("hr_onboarding_task");

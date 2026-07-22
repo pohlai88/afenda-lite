@@ -28,9 +28,9 @@ import {
 } from "@afenda/human-resources";
 ```
 
-Also shipped on the same barrel (schema-backed): organization structure (department / job / position / reporting-line), plus employment / contract / assignment helpers. Naming follows ERP `create*` / verb conventions — not `startEmployment` / `recordEmploymentContract`.
+Also shipped on the same barrel (schema-backed): organization structure (department / job / position / reporting-line), employment / contract / assignment helpers, and recruitment (requisition → offer accept). Naming follows ERP `create*` / verb conventions — not `startEmployment` / `recordEmploymentContract`.
 
-**Shipped public API (missions HR-02 + HR-03):**
+**Shipped public API (missions HR-02 + HR-03 + HR-04):**
 
 | Id | Kind | Permission | Slice |
 | -- | ---- | ---------- | ----- |
@@ -49,10 +49,16 @@ Also shipped on the same barrel (schema-backed): organization structure (departm
 | `human-resources.reporting-line.*` / `organization.tree` | command/query | `organization.manage` / `organization.read` | HR-03 |
 | `human-resources.assignment.create` / `.end` | command | `employment.manage` | HR4 |
 | `human-resources.assignment.get` | query | `employee.read` | HR4 |
+| `human-resources.requisition.*` | command/query | `requisition.create` | HR-04 |
+| `human-resources.candidate.*` / `application.*` | command/query | `candidate.manage` | HR-04 |
+| `human-resources.interview.*` / `interview-evaluation.get` | command/query | `interview.record` | HR-04 |
+| `human-resources.offer.*` | command/query | `offer.approve` | HR-04 |
 
 **Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position status: `active` \| `frozen` \| `closed` — assignment create requires `active`. Department/job status: `active` \| `archived`. Position create requires active department + job. No headcount authority — not enforced. `employee.read` is **not** sufficient for organization-structure mutation.
 
-`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, department, job, position, assignment, and reporting line. Remaining folders under recruitment/lifecycle/time/leave/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
+**Recruitment (HR-04):** Requisition `draft` → `submitted` → `approved` → `open` ↔ `on_hold` → `closed` \| `cancelled`. Application `submitted` → `in_review` → `interviewing` → `offered` → `accepted` (or reject/withdraw). Offer `draft` → `issued` → `accepted` \| `declined` \| `expired` \| `withdrawn`. `acceptOffer` returns `OfferAcceptanceHandoff` and emits `offer.accepted.v1` — it does **not** create an employee. Evaluation `private_notes` are omitted from interview lists; `interview-evaluation.get` requires `interview.record`.
+
+`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, department, job, position, assignment, reporting line, and recruitment aggregates. Remaining folders under lifecycle/time/leave/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
 
 **Authorization:** permission checks go through an injected `HumanResourcesAuthorizationPort` at the composition root — never import `@afenda/admin` here. Route-level checks in `apps/web` are not sufficient.
 
@@ -77,7 +83,7 @@ Command schemas are `.strict()` and keep tenant fields only at the top level (no
 | Mutation roots | All **43** `hr_*` tables are `HARD_TENANT_ROOT` in `@afenda/db` (`hard-tenant-roots.ts`) and `pnpm audit:tenancy-nulls` |
 | Lookup contract | Store methods require `organizationId`; bare-ID cross-org get is prohibited |
 | Stamp last | Composition root stamps `organizationId` after client payload; DB `NOT NULL` is the final integrity boundary |
-| Domain DDL (HR2 + HR-03) | Core workforce columns via `0036`; organization structure via `0037` (`hr_department`, `hr_job`, `hr_reporting_line` + position FKs/status); other `hr_*` remain scaffold |
+| Domain DDL (HR2 + HR-03 + HR-04) | Core workforce via `0036`; organization structure via `0037`; recruitment via `0038` (`hr_job_requisition` … `hr_employment_offer`); lifecycle/`hr_*` remain scaffold |
 | Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position; reporting → same-org employees — enforced in memory + Drizzle |
 | Terminate closes open | Status → `terminated` always sets `ends_on` (caller value or startsOn) so open unique index releases; emits `employee.terminated.v1` |
 
