@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -32,6 +30,7 @@ import {
 	updateHeadcountPlanInputSchema,
 } from "../schemas/workforce-planning";
 import { fingerprintHeadcountPlanCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runWorkforcePlanningCommand,
 	runWorkforcePlanningQuery,
@@ -100,7 +99,10 @@ export async function createHeadcountPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
+				}),
 			);
 		},
 	});
@@ -126,7 +128,10 @@ export async function updateHeadcountPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
+				}),
 			),
 	});
 }
@@ -155,7 +160,10 @@ async function transitionHeadcountPlan(
 					rejectionReason: data.rejectionReason,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
+				}),
 			),
 	});
 }
@@ -268,7 +276,10 @@ export async function supersedeHeadcountPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE,
+				}),
 			);
 		},
 	});

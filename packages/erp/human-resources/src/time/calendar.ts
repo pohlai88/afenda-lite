@@ -1,8 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
+import type { HumanResourcesWorkCalendarId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { resolveAssignmentContext } from "../command-options";
-import type { HumanResourcesWorkCalendarId } from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	humanResourcesErrorDetails,
@@ -40,8 +39,8 @@ import {
 	listWorkCalendarsInputSchema,
 	removeCalendarDateOverrideInputSchema,
 	removeWorkCalendarHolidayInputSchema,
-	resolveEmploymentCalendarInputSchema,
 	resolveEmployeeWorkCalendarInputSchema,
+	resolveEmploymentCalendarInputSchema,
 	supersedeWorkCalendarInputSchema,
 	updateWorkCalendarInputSchema,
 } from "../schemas/time";

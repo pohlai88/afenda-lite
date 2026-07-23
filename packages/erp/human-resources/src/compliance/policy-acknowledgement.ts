@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -25,6 +23,7 @@ import {
 	runComplianceEmployeeScopedQuery,
 } from "../shared/compliance-command";
 import { fingerprintPolicyAcknowledgementIssue } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	PolicyAcknowledgement,
 	PolicyAcknowledgementListPage,
@@ -85,7 +84,10 @@ export async function issuePolicyAcknowledgementRequirement(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
+				}),
 			);
 		},
 	});
@@ -108,7 +110,10 @@ export async function acknowledgePolicy(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
+				}),
 			),
 	});
 }
@@ -156,7 +161,10 @@ export async function supersedePolicyAcknowledgementRequirement(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
+				}),
 			),
 	});
 }

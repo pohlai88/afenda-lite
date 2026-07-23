@@ -14,6 +14,23 @@ export function fingerprintEmployeeCreate(input: {
 	});
 }
 
+export function fingerprintPersonCreate(input: { legalName: string }): string {
+	return sha256Fingerprint({
+		legalName: input.legalName.trim(),
+	});
+}
+
+export function fingerprintWorkerCreate(input: {
+	personId: string;
+	workerType: string;
+	employeeId: string | null;
+	status: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+}): string {
+	return sha256Fingerprint(input);
+}
+
 export function fingerprintRequisitionCreate(input: {
 	code: string;
 	title: string;

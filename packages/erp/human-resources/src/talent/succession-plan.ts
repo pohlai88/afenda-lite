@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -36,6 +34,7 @@ import {
 	fingerprintSuccessionCandidateCreate,
 	fingerprintSuccessionPlanCreate,
 } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	PositionSuccessionCoverage,
@@ -97,7 +96,10 @@ export async function createSuccessionPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
+				}),
 			);
 		},
 	});
@@ -122,7 +124,10 @@ export async function updateSuccessionPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
+				}),
 			);
 		},
 	});
@@ -183,7 +188,10 @@ export async function nominateSuccessionCandidate(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
+				}),
 			);
 		},
 	});
@@ -209,7 +217,11 @@ export async function assessSuccessionReadiness(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
+				}),
 			);
 		},
 	});
@@ -232,7 +244,10 @@ export async function approveSuccessionCandidate(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
+				}),
 			);
 		},
 	});
@@ -255,7 +270,10 @@ export async function removeSuccessionCandidate(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
+				}),
 			);
 		},
 	});
@@ -278,7 +296,10 @@ export async function closeSuccessionPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
+				}),
 			);
 		},
 	});

@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import {
 	and,
 	db,
@@ -26,7 +24,6 @@ import {
 	HUMAN_RESOURCES_PERFORMANCE_REVIEW_FINALIZED_EVENT,
 	HUMAN_RESOURCES_PERFORMANCE_REVIEW_REOPENED_EVENT,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
@@ -65,6 +62,7 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertCheckpointOutcomeTransition,
 	assertCycleStatusTransition,

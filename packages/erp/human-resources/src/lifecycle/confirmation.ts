@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
@@ -15,6 +13,7 @@ import {
 	runLifecycleCommand,
 	runLifecycleQuery,
 } from "../shared/lifecycle-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentConfirmation } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_CONFIRMATION = "confirmation" as const;
@@ -45,7 +44,10 @@ export async function confirmEmployment(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+				}),
 			);
 		},
 	});

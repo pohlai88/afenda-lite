@@ -7,8 +7,8 @@ import type {
 	HumanResourcesWorkEligibilityId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { EmployeeDocumentVerificationStatus } from "../shared/compliance-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	DocumentRequirement,
 	DocumentRequirementListPage,

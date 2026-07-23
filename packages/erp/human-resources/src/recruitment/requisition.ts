@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -28,6 +26,7 @@ import {
 	requisitionStatusTransitionInputSchema,
 } from "../schemas/recruitment";
 import { fingerprintRequisitionCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
@@ -92,7 +91,10 @@ export async function createDraftRequisition(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT,
+				}),
 			);
 		},
 	});
@@ -119,7 +121,10 @@ export async function amendRequisition(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
+				}),
 			),
 	});
 }
@@ -149,7 +154,10 @@ async function transitionRequisition(
 					emitApprovedEvent: config.emitApprovedEvent,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
+				}),
 			),
 	});
 }

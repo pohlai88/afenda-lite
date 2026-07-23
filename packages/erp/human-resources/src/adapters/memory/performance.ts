@@ -1,4 +1,3 @@
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 /**
  * In-memory performance domain state and methods for composed HumanResourcesStore hosts.
  */
@@ -14,7 +13,6 @@ import {
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
 import type { z } from "zod";
-
 import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
@@ -47,6 +45,7 @@ import {
 	invalidState,
 	notFound,
 } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertCheckpointOutcomeTransition,
 	assertCycleStatusTransition,

@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -21,6 +19,7 @@ import {
 	getApplicationInputSchema,
 	listApplicationsInputSchema,
 } from "../schemas/recruitment";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
@@ -48,7 +47,10 @@ export async function createApplication(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
+				}),
 			),
 	});
 }
@@ -80,7 +82,10 @@ async function transitionApplication(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
+				}),
 			),
 	});
 }

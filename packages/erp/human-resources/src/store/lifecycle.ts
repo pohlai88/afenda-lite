@@ -14,11 +14,11 @@ import type {
 	HumanResourcesTerminationId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
 } from "../shared/lifecycle-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	Clearance,
 	EmploymentConfirmation,

@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
@@ -10,7 +8,6 @@ import {
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesClearanceId,
 	type HumanResourcesEmploymentConfirmationId,
@@ -66,6 +63,7 @@ import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
 } from "../../shared/lifecycle-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
 	EmploymentConfirmationCreateRecord,
 	HumanResourcesStore,

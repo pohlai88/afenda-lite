@@ -23,12 +23,12 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
-import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 

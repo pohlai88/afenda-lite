@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
@@ -19,6 +17,7 @@ import {
 	runCompensationQuery,
 } from "../shared/compensation-command";
 import { fingerprintBenefitEnrollment } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ApprovedCompensationHandoff, BenefitEnrollment } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT =
@@ -53,7 +52,10 @@ export async function enrolBenefit(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+				}),
 			);
 		},
 	});
@@ -77,7 +79,10 @@ export async function endBenefitEnrollment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+				}),
 			),
 	});
 }
@@ -99,7 +104,10 @@ export async function cancelBenefitEnrollment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+				}),
 			),
 	});
 }

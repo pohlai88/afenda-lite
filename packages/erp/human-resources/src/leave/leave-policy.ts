@@ -1,6 +1,4 @@
 import { fail, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -28,6 +26,7 @@ import {
 } from "../schemas/leave";
 import { fingerprintLeavePolicyCreate } from "../shared/fingerprint";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	LeavePolicy,
 	LeavePolicyListPage,
@@ -87,7 +86,10 @@ export async function createLeavePolicy(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
+				}),
 			);
 		},
 	});
@@ -119,7 +121,10 @@ export async function updateLeavePolicy(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE,
+				}),
 			),
 	});
 }
@@ -141,7 +146,10 @@ export async function publishLeavePolicy(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH,
+				}),
 			),
 	});
 }
@@ -176,7 +184,10 @@ export async function supersedeLeavePolicy(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE,
+				}),
 			),
 	});
 }
@@ -198,7 +209,10 @@ export async function archiveLeavePolicy(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE,
+				}),
 			),
 	});
 }

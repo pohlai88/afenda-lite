@@ -10,10 +10,12 @@ export * from "./employee-relations";
 export * from "./learning";
 export * from "./leave";
 export * from "./lifecycle";
+export * from "./org-context";
 export * from "./organization";
 export * from "./performance";
 export * from "./recruitment";
 // Talent schemas (subdirectory)
 export * from "./talent";
 export * from "./time";
+export * from "./workforce-foundation";
 export * from "./workforce-planning";

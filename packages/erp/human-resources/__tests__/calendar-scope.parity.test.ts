@@ -5,13 +5,12 @@
 import { ok } from "@afenda/errors/result";
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
+import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createAssignment } from "../src/core/assignment";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
-import type { HumanResourcesCommandOptions } from "../src/command-options";
 import {
 	assignEmploymentCalendar,
 	assignWorkCalendarScope,
@@ -21,14 +20,14 @@ import {
 } from "../src/time/calendar";
 import type { EmployeeAssignmentContext } from "../src/time/handoff/ports";
 import type { WorkCalendar, WorkCalendarScopeType } from "../src/types";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 const runDrizzleParity =
@@ -103,7 +102,7 @@ async function seedCalendar(
 			actorUserId: actor,
 			correlationId: `corr-cal-${suffix}-${code}`,
 			idempotencyKey: `idem-cal-${suffix}-${code}`,
-			code: `CAL-${code}-${suffix}`.slice(0, 32),
+			code: `CAL-${code}-${suffix}`.slice(0, 64),
 			name: `Calendar ${code}`,
 			timezone: "Asia/Singapore",
 			calendarVersion: "v1",
@@ -132,7 +131,7 @@ async function seedEmployeeEmployment(
 			actorUserId: actor,
 			correlationId: `corr-emp-${suffix}`,
 			idempotencyKey: `idem-emp-${suffix}`,
-			employeeNumber: `E-${suffix}`.slice(0, 32),
+			employeeNumber: `E-${suffix}`.slice(0, 64),
 			legalName: `Worker ${suffix}`,
 		},
 		ready,
@@ -254,7 +253,7 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: `corr-pos-${suffix}`,
-				code: `P-${suffix}`.slice(0, 32),
+				code: `P-${suffix}`.slice(0, 64),
 				title: "Scope parity role",
 				departmentId: orgSeed.departmentId,
 				jobId: orgSeed.jobId,
@@ -492,7 +491,7 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: `corr-pos-dept-${suffix}`,
-				code: `PD-${suffix}`.slice(0, 32),
+				code: `PD-${suffix}`.slice(0, 64),
 				title: "Department scope role",
 				departmentId: orgSeed.departmentId,
 				jobId: orgSeed.jobId,

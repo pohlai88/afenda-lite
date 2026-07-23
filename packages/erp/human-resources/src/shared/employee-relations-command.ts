@@ -110,7 +110,8 @@ export async function runEmployeeRelationsQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,

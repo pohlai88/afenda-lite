@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -23,7 +21,11 @@ import {
 	organizationTreeInputSchema,
 	updateDepartmentInputSchema,
 } from "../schemas/organization";
-import { runOrganizationCommand, runOrganizationQuery } from "../shared/organization-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
+import {
+	runOrganizationCommand,
+	runOrganizationQuery,
+} from "../shared/organization-command";
 import type { Department, OrganizationTreePage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_DEPARTMENT = "department" as const;
@@ -49,7 +51,10 @@ export async function createDepartment(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+				}),
 			);
 		},
 	});
@@ -74,7 +79,10 @@ export async function updateDepartment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
+				}),
 			);
 		},
 	});
@@ -98,7 +106,10 @@ export async function activateDepartment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
+				}),
 			);
 		},
 	});
@@ -122,7 +133,10 @@ export async function archiveDepartment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
+				}),
 			);
 		},
 	});

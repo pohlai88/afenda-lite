@@ -1,24 +1,29 @@
+import { ok } from "@afenda/errors/result";
 import { beforeEach, describe, expect, it } from "vitest";
-
-import { fail, ok } from "@afenda/errors/result";
+import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import type { HumanResourcesEmployeeId } from "../src/brands";
 import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
-import { requireComplianceEmployeeReadScope } from "../src/shared/compliance-command";
-import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import { listEmployeeGoals } from "../src/performance/goal";
-import { requireOwnResourceAccess, requireManagerResourceAccess } from "../src/shared/subject-aware-authorization";
-import { 
-	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
+import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 } from "../src/permissions";
+import { requireComplianceEmployeeReadScope } from "../src/shared/compliance-command";
+import {
+	requireManagerResourceAccess,
+	requireOwnResourceAccess,
+} from "../src/shared/subject-aware-authorization";
+import type { HumanResourcesStore } from "../src/store";
 
 describe("Security Boundary Tests", () => {
 	const organizationId = "org-123";
 	const validActorUserId = "user-valid";
 	const invalidActorUserId = "user-invalid";
-	const validEmployeeId = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
-	const invalidEmployeeId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
+	const validEmployeeId =
+		"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+	const invalidEmployeeId =
+		"6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
 
 	let store: ReturnType<typeof createMemoryHumanResourcesStore>;
 	let authPort: HumanResourcesAuthorizationPort;
@@ -44,24 +49,27 @@ describe("Security Boundary Tests", () => {
 			},
 		};
 
-	// Mock identity resolver that maps valid user to valid employee
-	identityResolver = {
-		async resolveEmployeeForActor(input) {
-			// Only resolve for the correct organization and valid user
-			if (input.organizationId === organizationId && input.actorUserId === validActorUserId) {
-				return ok({
-					employeeId: validEmployeeId,
-					relationshipType: "self" as const,
-					effectiveFrom: "2024-01-01",
-					effectiveUntil: null,
-				});
-			}
-			return ok(null);
-		},
-		async resolveManagerEmployeesForActor() {
-			return ok([]);
-		},
-	};
+		// Mock identity resolver that maps valid user to valid employee
+		identityResolver = {
+			async resolveEmployeeForActor(input) {
+				// Only resolve for the correct organization and valid user
+				if (
+					input.organizationId === organizationId &&
+					input.actorUserId === validActorUserId
+				) {
+					return ok({
+						employeeId: validEmployeeId,
+						relationshipType: "self" as const,
+						effectiveFrom: "2024-01-01",
+						effectiveUntil: null,
+					});
+				}
+				return ok(null);
+			},
+			async resolveManagerEmployeesForActor() {
+				return ok([]);
+			},
+		};
 	});
 
 	describe("Compliance Document IDOR Prevention", () => {
@@ -91,7 +99,9 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 
 		it("should deny access when user has no employee identity", async () => {
@@ -128,12 +138,15 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 
 		it("should deny access when identity resolver is missing", async () => {
 			// Create a null identity resolver to test error handling
-			const nullIdentityResolver = null as any;
+			const nullIdentityResolver =
+				null as unknown as HumanResourcesIdentityResolverPort;
 
 			try {
 				const result = await requireComplianceEmployeeReadScope(
@@ -148,7 +161,9 @@ describe("Security Boundary Tests", () => {
 
 				// If we reach here, it should be a failed result
 				expect(result.ok).toBe(false);
-				expect(result.message).toContain("Missing required human resources permission");
+				expect(result.message).toContain(
+					"Missing required human resources permission",
+				);
 			} catch (error) {
 				// Should catch the error when trying to call methods on null
 				expect(error).toBeDefined();
@@ -179,7 +194,7 @@ describe("Security Boundary Tests", () => {
 			const temporalIdentityResolver: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					const asOf = input.asOf || new Date().toISOString().split("T")[0];
-					
+
 					// Identity is only effective from 2024-01-01 to 2024-12-31
 					if (
 						input.actorUserId === validActorUserId &&
@@ -253,12 +268,15 @@ describe("Security Boundary Tests", () => {
 				{
 					organizationId,
 					actorUserId: validActorUserId,
-					employeeId: "'; DROP TABLE hr_employee; --" as HumanResourcesEmployeeId,
+					employeeId:
+						"'; DROP TABLE hr_employee; --" as HumanResourcesEmployeeId,
 				},
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 
 		it("should handle malformed organization IDs", async () => {
@@ -294,8 +312,8 @@ describe("Security Boundary Tests", () => {
 
 	describe("Authorization Bypass Attempts", () => {
 		it("should prevent permission bypass through case sensitivity", async () => {
-			const caseBypassAuthPort = {
-				async can(input: any) {
+			const caseBypassAuthPort: HumanResourcesAuthorizationPort = {
+				async can(input) {
 					// Try to bypass with different case
 					if (input.permission === "EMPLOYEE-DOCUMENT.OWN.READ") {
 						return true;
@@ -315,12 +333,14 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 
 		it("should prevent bypass through permission name manipulation", async () => {
-			const manipulatedAuthPort = {
-				async can(input: any) {
+			const manipulatedAuthPort: HumanResourcesAuthorizationPort = {
+				async can(input) {
 					// Try to bypass with similar but different permission
 					if (input.permission === "employee-document.own.write") {
 						return true;
@@ -340,22 +360,27 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 	});
 
 	describe("Real Identity Resolver Integration", () => {
 		it("should prevent IDOR attacks through actual performance query paths", async () => {
 			const correlationId = "test-correlation-123";
-			const employeeId1 = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
-			const employeeId2 = "6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId; 
+			const employeeId1 =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const employeeId2 =
+				"6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
 			const actorUserId = "user-actor-123";
 
 			// Set up authorization that grants own.read permission
 			const authPort: HumanResourcesAuthorizationPort = {
 				async can(input) {
 					if (
-						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ &&
+						input.permission ===
+							HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ &&
 						input.actorUserId === actorUserId
 					) {
 						return true;
@@ -413,20 +438,26 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(idorResult.ok).toBe(false);
-			expect(idorResult.message).toContain("Missing required human resources permission");
+			expect(idorResult.message).toContain(
+				"Missing required human resources permission",
+			);
 		});
 
 		it("should validate manager relationships through actual store queries", async () => {
-			const managerEmployeeId = "f47ac10b-58cc-4372-a567-0e02b2c3d475" as HumanResourcesEmployeeId;
-			const employeeId1 = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
-			const employeeId2 = "6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
+			const managerEmployeeId =
+				"f47ac10b-58cc-4372-a567-0e02b2c3d475" as HumanResourcesEmployeeId;
+			const employeeId1 =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const employeeId2 =
+				"6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
 			const actorUserId = "manager-user-123";
 
 			// Set up authorization that grants manager.manage permission
 			const authPort: HumanResourcesAuthorizationPort = {
 				async can(input) {
 					if (
-						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE &&
+						input.permission ===
+							HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE &&
 						input.actorUserId === actorUserId
 					) {
 						return true;
@@ -457,7 +488,11 @@ describe("Security Boundary Tests", () => {
 			const testStore = {
 				...store,
 				// Mock that manager manages employeeId1 but not employeeId2
-				async getPrimaryManagerForEmployee({ employeeId }: { employeeId: string }) {
+				async getPrimaryManagerForEmployee({
+					employeeId,
+				}: {
+					employeeId: string;
+				}) {
 					if (employeeId === employeeId1) {
 						return ok(managerEmployeeId);
 					}
@@ -468,7 +503,7 @@ describe("Security Boundary Tests", () => {
 			// Should allow manager access to direct report (employeeId1)
 			const managerAccessResult = await requireManagerResourceAccess(
 				identityResolver,
-				testStore as any,
+				testStore as HumanResourcesStore,
 				authPort,
 				{
 					organizationId,
@@ -482,7 +517,7 @@ describe("Security Boundary Tests", () => {
 			// Should deny manager access to non-report (employeeId2)
 			const managerDeniedResult = await requireManagerResourceAccess(
 				identityResolver,
-				testStore as any,
+				testStore as HumanResourcesStore,
 				authPort,
 				{
 					organizationId,
@@ -492,18 +527,24 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(managerDeniedResult.ok).toBe(false);
-			expect(managerDeniedResult.message).toContain("Actor is not the manager of the target employee");
+			expect(managerDeniedResult.message).toContain(
+				"Actor is not the manager of the target employee",
+			);
 		});
 
 		it("should prevent identity spoofing attacks", async () => {
-			const legitEmployeeId = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
-			const spoofedEmployeeId = "f47ac10b-58cc-4372-a567-0e02b2c3d479" as HumanResourcesEmployeeId;
+			const legitEmployeeId =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const spoofedEmployeeId =
+				"f47ac10b-58cc-4372-a567-0e02b2c3d479" as HumanResourcesEmployeeId;
 			const actorUserId = "attacker-user";
 
 			// Set up authorization that would grant permission if identity was spoofed
 			const authPort: HumanResourcesAuthorizationPort = {
 				async can(input) {
-					if (input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ) {
+					if (
+						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ
+					) {
 						return true;
 					}
 					return false;
@@ -553,22 +594,30 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(spoofResult.ok).toBe(false);
-			expect(spoofResult.message).toContain("Cannot access other employee's resources");
+			expect(spoofResult.message).toContain(
+				"Cannot access other employee's resources",
+			);
 		});
 
 		it("should validate organization boundaries in identity resolution", async () => {
-			const employeeId = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const employeeId =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const actorUserId = "cross-org-user";
 
 			const authPort: HumanResourcesAuthorizationPort = {
-				async can() { return true; },
+				async can() {
+					return true;
+				},
 			};
 
 			// Identity resolver only works for specific organization
 			const identityResolver: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					// Only resolve identity for the correct organization
-					if (input.organizationId === organizationId && input.actorUserId === actorUserId) {
+					if (
+						input.organizationId === organizationId &&
+						input.actorUserId === actorUserId
+					) {
 						return ok({
 							employeeId,
 							relationshipType: "self" as const,
@@ -612,18 +661,21 @@ describe("Security Boundary Tests", () => {
 		});
 
 		it("should handle temporal identity attacks", async () => {
-			const employeeId = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const employeeId =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const actorUserId = "temporal-user";
 
 			const authPort: HumanResourcesAuthorizationPort = {
-				async can() { return true; },
+				async can() {
+					return true;
+				},
 			};
 
 			// Identity resolver with temporal boundaries
 			const identityResolver: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					const asOf = input.asOf || new Date().toISOString().split("T")[0];
-					
+
 					// Identity was only valid from 2024-01-01 to 2024-06-30
 					if (
 						input.actorUserId === actorUserId &&
@@ -678,13 +730,17 @@ describe("Security Boundary Tests", () => {
 	describe("Comprehensive IDOR Attack Scenarios", () => {
 		it("should prevent parameter manipulation across all attack vectors", async () => {
 			const correlationId = "test-correlation-123";
-			const legitimateEmployeeId = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
-			const targetEmployeeId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
+			const legitimateEmployeeId =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const targetEmployeeId =
+				"6ba7b810-9dad-11d1-80b4-00c04fd430c8" as HumanResourcesEmployeeId;
 			const actorUserId = "attacker-user";
 
 			const authPort: HumanResourcesAuthorizationPort = {
 				async can(input) {
-					if (input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ) {
+					if (
+						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ
+					) {
 						return true;
 					}
 					return false;
@@ -710,11 +766,30 @@ describe("Security Boundary Tests", () => {
 
 			// Test common IDOR attack patterns with valid UUID shapes
 			const attackVectors = [
-				{ employeeId: targetEmployeeId, description: "Direct employee ID manipulation" },
-				{ employeeId: "550e8400-e29b-41d4-a716-446655440001" as HumanResourcesEmployeeId, description: "Sequential ID guessing" },
-				{ employeeId: "00000000-0000-4000-8000-000000000001" as HumanResourcesEmployeeId, description: "System account targeting" },
-				{ employeeId: "ffffffff-ffff-4fff-bfff-ffffffffffff" as HumanResourcesEmployeeId, description: "Max value targeting" },
-				{ employeeId: "12345678-1234-4234-8234-123456789012" as HumanResourcesEmployeeId, description: "Sample ID targeting" },
+				{
+					employeeId: targetEmployeeId,
+					description: "Direct employee ID manipulation",
+				},
+				{
+					employeeId:
+						"550e8400-e29b-41d4-a716-446655440001" as HumanResourcesEmployeeId,
+					description: "Sequential ID guessing",
+				},
+				{
+					employeeId:
+						"00000000-0000-4000-8000-000000000001" as HumanResourcesEmployeeId,
+					description: "System account targeting",
+				},
+				{
+					employeeId:
+						"ffffffff-ffff-4fff-bfff-ffffffffffff" as HumanResourcesEmployeeId,
+					description: "Max value targeting",
+				},
+				{
+					employeeId:
+						"12345678-1234-4234-8234-123456789012" as HumanResourcesEmployeeId,
+					description: "Sample ID targeting",
+				},
 			];
 
 			for (const vector of attackVectors) {
@@ -732,22 +807,30 @@ describe("Security Boundary Tests", () => {
 					},
 				);
 
-				expect(result.ok, `Attack vector '${vector.description}' should fail`).toBe(false);
+				expect(
+					result.ok,
+					`Attack vector '${vector.description}' should fail`,
+				).toBe(false);
 				expect(
 					result.message,
 					`Attack vector '${vector.description}' should return authorization error`,
-				).toMatch(/Missing required human resources permission|Cannot access other employee's resources/);
+				).toMatch(
+					/Missing required human resources permission|Cannot access other employee's resources/,
+				);
 			}
 		});
 
 		it("should prevent organization boundary violations", async () => {
 			const correlationId = "test-correlation-123";
-			const employeeId = "550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
+			const employeeId =
+				"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
 			const actorUserId = "boundary-attacker";
 
 			const authPort: HumanResourcesAuthorizationPort = {
 				async can(input) {
-					return input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ;
+					return (
+						input.permission === HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ
+					);
 				},
 			};
 
@@ -792,11 +875,16 @@ describe("Security Boundary Tests", () => {
 					},
 				);
 
-				expect(result.ok, `Organization attack '${attackOrg}' should fail`).toBe(false);
+				expect(
+					result.ok,
+					`Organization attack '${attackOrg}' should fail`,
+				).toBe(false);
 				expect(
 					result.message,
 					`Organization attack '${attackOrg}' should return authorization error`,
-				).toMatch(/Missing required human resources permission|Actor is not an employee/);
+				).toMatch(
+					/Missing required human resources permission|Actor is not an employee/,
+				);
 			}
 		});
 	});

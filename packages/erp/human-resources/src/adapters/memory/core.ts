@@ -101,6 +101,7 @@ export type MemoryCoreMethods = Pick<
 	| "countOpenAssignmentsForPosition"
 	| "getAssignmentById"
 	| "findOpenAssignmentByEmployment"
+	| "findAssignmentByEmploymentAsOf"
 	| "createAssignment"
 	| "endAssignment"
 >;
@@ -793,6 +794,30 @@ export function createMemoryCoreMethods(
 				}
 			}
 			return ok(null);
+		},
+
+		async findAssignmentByEmploymentAsOf(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			asOf: string;
+		}): Promise<Result<WorkAssignment | null>> {
+			const matches = [...state.assignments.values()]
+				.filter(
+					(assignment) =>
+						assignment.organizationId === input.organizationId &&
+						assignment.employmentId === input.employmentId &&
+						assignment.startsOn <= input.asOf &&
+						(assignment.endsOn === null || assignment.endsOn >= input.asOf),
+				)
+				.sort((left, right) => right.startsOn.localeCompare(left.startsOn));
+			if (matches.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple assignments are effective on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			return ok(matches[0] ? { ...matches[0] } : null);
 		},
 
 		async createAssignment(

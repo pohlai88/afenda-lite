@@ -75,6 +75,12 @@ import {
 	type TimeMemoryState,
 } from "./time";
 import {
+	createMemoryWorkforceFoundationMethods,
+	createWorkforceFoundationMemoryState,
+	resetWorkforceFoundationMemoryState,
+	type WorkforceFoundationMemoryState,
+} from "./workforce-foundation";
+import {
 	createMemoryWorkforcePlanningMethods,
 	createWorkforcePlanningMemoryState,
 	resetWorkforcePlanningMemoryState,
@@ -95,6 +101,7 @@ export type MemoryHumanResourcesStoreState = {
 	workforcePlanning: WorkforcePlanningMemoryState;
 	compliance: ComplianceMemoryState;
 	employeeRelations: EmployeeRelationsMemoryState;
+	workforceFoundation: WorkforceFoundationMemoryState;
 };
 
 export type MemoryHumanResourcesStore = HumanResourcesStore & {
@@ -117,6 +124,7 @@ function createMemoryHumanResourcesStoreState(): MemoryHumanResourcesStoreState 
 		workforcePlanning: createWorkforcePlanningMemoryState(),
 		compliance: createComplianceMemoryState(),
 		employeeRelations: createEmployeeRelationsMemoryState(),
+		workforceFoundation: createWorkforceFoundationMemoryState(),
 	};
 }
 
@@ -136,6 +144,7 @@ function resetMemoryHumanResourcesStoreState(
 	resetWorkforcePlanningMemoryState(state.workforcePlanning);
 	resetComplianceMemoryState(state.compliance);
 	resetEmployeeRelationsMemoryState(state.employeeRelations);
+	resetWorkforceFoundationMemoryState(state.workforceFoundation);
 }
 
 /** Composition root for Vitest and local harnesses. */
@@ -164,6 +173,10 @@ export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
 		createMemoryWorkforcePlanningMethods(state.workforcePlanning),
 		createMemoryComplianceMethods(state.compliance, state.core),
 		createMemoryEmployeeRelationsMethods(state.employeeRelations),
+		createMemoryWorkforceFoundationMethods({
+			state: state.workforceFoundation,
+			core: state.core,
+		}),
 		createMemoryHumanResourcesIdentityStore(state.organization),
 	) as MemoryHumanResourcesStore;
 

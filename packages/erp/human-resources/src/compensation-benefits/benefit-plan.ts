@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,
@@ -13,6 +11,7 @@ import {
 	updateBenefitPlanInputSchema,
 } from "../schemas/compensation";
 import { runCompensationCommand } from "../shared/compensation-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { BenefitPlan } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN = "benefit_plan" as const;
@@ -37,7 +36,10 @@ export async function createBenefitPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE,
+				}),
 			),
 	});
 }
@@ -61,7 +63,10 @@ export async function updateBenefitPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE,
+				}),
 			),
 	});
 }
@@ -83,7 +88,10 @@ export async function archiveBenefitPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,
+				}),
 			),
 	});
 }

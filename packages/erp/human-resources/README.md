@@ -49,9 +49,28 @@ import {
 | `time` | Work calendars, shifts, attendance, timesheets, overtime, payroll handoff ports |
 | `workforce-planning` | Headcount plans, reservations, availability |
 
+## Worker identity model
+
+The workforce foundation separates the human being from workforce participation
+and employee-specific identity:
+
+```text
+Person → Worker → Employee specialization
+```
+
+- `Person` remains stable before hiring and after employment ends.
+- `Worker` records organization-scoped participation and an explicit worker type:
+  `employee`, `contractor`, `contingent_worker`, or `intern`.
+- `Employee` is an optional specialization of an employee-type worker. Contractors,
+  contingent workers, and interns cannot carry an employee identifier.
+- Worker status is explicit (`active`, `inactive`, or `former`); ending an
+  employment does not delete the person or worker.
+- Existing employee-oriented APIs remain available while callers migrate to the
+  worker-aware contracts.
+
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **104** `hr_*` hard-tenant roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
+**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **104** `hr_*` hard-tenant roots of **177** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
 ## Public surfaces
 
@@ -63,6 +82,8 @@ import {
 | `@afenda/human-resources/brands` | Branded ID types for HR entities |
 | `@afenda/human-resources/identity-resolver` | Actor / subject identity resolution port |
 | `@afenda/human-resources/resolve-store` | Store resolver for composition roots |
+| `@afenda/human-resources/schemas` | Domain-specific strict Zod schemas |
+| `@afenda/human-resources/store` | Domain-specific store contracts |
 | `@afenda/human-resources/testing` | Memory store factories and test harness ports (Vitest; Neon suites skip when `DATABASE_URL` is absent) |
 | `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
 

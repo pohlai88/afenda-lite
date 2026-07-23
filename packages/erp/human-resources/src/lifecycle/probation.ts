@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
@@ -19,6 +17,7 @@ import {
 	runLifecycleCommand,
 	runLifecycleQuery,
 } from "../shared/lifecycle-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ProbationReview } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_PROBATION = "probation" as const;
@@ -50,7 +49,10 @@ export async function openProbation(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+				}),
 			);
 		},
 	});
@@ -74,7 +76,10 @@ export async function extendProbation(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+				}),
 			),
 	});
 }
@@ -98,7 +103,10 @@ export async function recordProbationOutcome(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+				}),
 			),
 	});
 }

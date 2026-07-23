@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
@@ -15,6 +13,7 @@ import {
 	runLifecycleCommand,
 	runLifecycleQuery,
 } from "../shared/lifecycle-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Termination } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_TERMINATION = "termination" as const;
@@ -46,7 +45,10 @@ export async function finalizeTermination(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+				}),
 			);
 		},
 	});

@@ -1,6 +1,6 @@
 import { fail, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
-
+import type { HumanResourcesPermission } from "../authorization";
 import {
 	type HumanResourcesResourceAwareAuthorizationPort,
 	requireHumanResourcesCommandPermission,
@@ -24,7 +24,6 @@ import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../permissions";
 import type { CurrencyLookupPort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
 import { applySensitivityProjection } from "./field-projection";
-import type { HumanResourcesPermission } from "../authorization";
 
 type ActorScoped = {
 	organizationId: string;
@@ -39,11 +38,15 @@ type CommandDeps = {
 
 type QueryDeps = {
 	store: HumanResourcesStore;
-	resourceAwareAuthorization: HumanResourcesResourceAwareAuthorizationPort | undefined;
+	resourceAwareAuthorization:
+		| HumanResourcesResourceAwareAuthorizationPort
+		| undefined;
 };
 
 /** Apply highly_restricted compensation projection when resource-aware port is wired. */
-export async function projectCompensationRecord<T extends Record<string, unknown>>(
+export async function projectCompensationRecord<
+	T extends Record<string, unknown>,
+>(
 	record: T,
 	input: {
 		organizationId: string;

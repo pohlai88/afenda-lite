@@ -1,12 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import {
 	and,
 	db,
 	eq,
 	hrLeaveAdjustment,
-	hrLeaveApprovalDecision,
 	hrLeaveEntitlement,
 	hrLeavePolicy,
 	hrLeavePolicyEligibility,
@@ -15,43 +12,16 @@ import {
 	inArray,
 	sql,
 } from "@afenda/db";
-import {
-	runLeaveTransaction,
-	validateTransactionInput,
-	resolveIdempotentCreateReplay,
-	type LeaveRequestSqlRow,
-	type LeaveEntitlementSqlRow,
-	type LeaveAdjustmentSqlRow,
-	type LeavePolicySqlRow,
-} from "./leave-transactions";
-import {
-	buildCreateLeaveRequestSql,
-	buildAmendLeaveRequestSql,
-	buildApproveLeaveRequestSql,
-	buildCancelApprovedLeaveRequestSql,
-	buildStatusTransitionSql,
-	buildCreateLeaveEntitlementSql,
-	buildCreateLeaveAdjustmentSql,
-	buildEntitlementStatusTransitionSql,
-	buildCarryForwardEntitlementSql,
-	buildCreateLeavePolicySql,
-	buildPolicyStatusTransitionSql,
-} from "./leave-sql-builders";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
-	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
-	HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
 	HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
 	HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
 	HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
-	type HumanResourcesLeaveEntitlementId,
 	type HumanResourcesLeavePolicyId,
-	type HumanResourcesLeaveRequestId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 	parseHumanResourcesLeaveAdjustmentId,
@@ -61,7 +31,8 @@ import {
 	parseHumanResourcesLeaveRequestId,
 	parseHumanResourcesLeaveRequestSegmentId,
 } from "../../brands";
-import type { MutationPorts, OutboxFactInput } from "../../ports";
+import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../../leave/leave-policy-lineage";
+import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import {
@@ -76,12 +47,9 @@ import {
 	assertLeaveEntitlementActive,
 	assertLeaveEntitlementStatusTransition,
 	assertLeavePolicyEditable,
-	assertLeavePolicyStatusTransition,
 	assertLeaveRequestAmendable,
-	assertLeaveRequestStatusTransition,
 } from "../../shared/leave-guards";
 import {
-	approvalDecisionSchema,
 	dayPortionSchema,
 	type LeavePolicyStatus,
 	type LeaveRequestStatus,
@@ -93,6 +61,7 @@ import {
 	leaveTypeSchema,
 	leaveUnitSchema,
 } from "../../shared/leave-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,
@@ -116,6 +85,28 @@ import type {
 	ResolvedLeavePolicy,
 	TeamCalendarLeavePage,
 } from "../../types";
+import {
+	buildAmendLeaveRequestSql,
+	buildApproveLeaveRequestSql,
+	buildCancelApprovedLeaveRequestSql,
+	buildCarryForwardEntitlementSql,
+	buildCreateLeaveAdjustmentSql,
+	buildCreateLeaveEntitlementSql,
+	buildCreateLeavePolicySql,
+	buildCreateLeaveRequestSql,
+	buildEntitlementStatusTransitionSql,
+	buildPolicyStatusTransitionSql,
+	buildStatusTransitionSql,
+} from "./leave-sql-builders";
+import {
+	type LeaveAdjustmentSqlRow,
+	type LeaveEntitlementSqlRow,
+	type LeavePolicySqlRow,
+	type LeaveRequestSqlRow,
+	resolveIdempotentCreateReplay,
+	runLeaveTransaction,
+	validateTransactionInput,
+} from "./leave-transactions";
 
 // Simple status transition helper function
 async function transitionLeavePolicyStatus(input: {
@@ -170,7 +161,10 @@ async function transitionLeavePolicyStatus(input: {
 			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
 		}
 
-		const policy = result[0]!;
+		const policy = result.at(0);
+		if (!policy) {
+			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
+		}
 
 		// Record audit
 		await input.ports.audit.record({
@@ -180,7 +174,9 @@ async function transitionLeavePolicyStatus(input: {
 			entity: "hr_leave_policy",
 			entityId: input.policyId,
 			action: "UPDATE",
-			changes: [{ field: "status", oldValue: "active", newValue: input.nextStatus }],
+			changes: [
+				{ field: "status", oldValue: "active", newValue: input.nextStatus },
+			],
 		});
 
 		return ok({
@@ -207,7 +203,10 @@ async function transitionLeavePolicyStatus(input: {
 			updatedAt: policy.updatedAt,
 		});
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to transition leave policy status");
+		return mapPersistenceFailure(
+			error,
+			"Failed to transition leave policy status",
+		);
 	}
 }
 
@@ -500,7 +499,6 @@ function activeOverlapStatuses(): LeaveRequestStatus[] {
 	return ["draft", "submitted", "returned", "approved"];
 }
 
-
 export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	async getLeavePolicyById(input) {
 		try {
@@ -570,21 +568,18 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 						eq(hrLeavePolicy.status, "published"),
 					),
 				);
-			const candidates: LeavePolicy[] = [];
+			const policies: LeavePolicy[] = [];
 			for (const row of rows) {
 				const mapped = mapLeavePolicy(row);
 				if (!mapped.ok) return mapped;
-				if (
-					mapped.data.effectiveFrom <= input.asOfDate &&
-					(mapped.data.effectiveTo === null ||
-						mapped.data.effectiveTo >= input.asOfDate)
-				) {
-					candidates.push(mapped.data);
-				}
+				policies.push(mapped.data);
 			}
-			candidates.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
-			const policy = candidates[0];
-			if (policy === undefined) {
+			const policy = resolvePublishedLeavePolicyByCodeLineageAsOf({
+				policies,
+				code: input.policyCode,
+				asOf: input.asOfDate,
+			});
+			if (policy === null) {
 				return ok(null);
 			}
 
@@ -710,9 +705,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				allowedEmploymentStatuses: record.allowedEmploymentStatuses,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -869,9 +864,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				nextStatus: "published",
 			});
 
-			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -924,9 +919,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				nextStatus: "archived",
 			});
 
-			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1148,9 +1143,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				correlationId: meta.correlationId,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1218,7 +1213,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			"carried_forward",
 		);
 		if (!transition.ok) return transition;
-		
+
 		const versionCheck = assertExpectedVersion(
 			source.data.version,
 			input.expectedVersion,
@@ -1226,10 +1221,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!versionCheck.ok) return versionCheck;
 
 		// Generate IDs for transaction components
-		const newEntitlementId = parseHumanResourcesLeaveEntitlementId(randomUUID());
+		const newEntitlementId = parseHumanResourcesLeaveEntitlementId(
+			randomUUID(),
+		);
 		if (!newEntitlementId.ok) return newEntitlementId;
 
-		const carryAdjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+		const carryAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
+			randomUUID(),
+		);
 		if (!carryAdjustmentId.ok) return carryAdjustmentId;
 
 		try {
@@ -1248,9 +1247,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				carryAdjustmentId: carryAdjustmentId.data,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1276,7 +1275,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				updatedAt: row.updated_at,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to carry forward leave entitlement");
+			return mapPersistenceFailure(
+				error,
+				"Failed to carry forward leave entitlement",
+			);
 		}
 	},
 
@@ -1299,9 +1301,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				nextStatus: "expired",
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1369,7 +1371,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 		if (!validation.ok) return validation;
 
-		// Pre-transaction validation 
+		// Pre-transaction validation
 		const entitlement = await this.getLeaveEntitlementById({
 			organizationId: record.organizationId,
 			entitlementId: record.entitlementId,
@@ -1384,8 +1386,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!adjustmentId.ok) return adjustmentId;
 
 		// Determine if this adjustment type should emit an outbox event
-		const shouldEmitEvent = record.kind === "manual" || 
-			record.kind === "carry_forward" || 
+		const shouldEmitEvent =
+			record.kind === "manual" ||
+			record.kind === "carry_forward" ||
 			record.kind === "expiry";
 
 		try {
@@ -1402,12 +1405,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				createRequestFingerprint: record.createRequestFingerprint,
 				createdBy: record.createdBy,
 				correlationId: meta.correlationId,
-				eventType: shouldEmitEvent ? HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT : undefined,
+				eventType: shouldEmitEvent
+					? HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT
+					: undefined,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1694,9 +1699,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				segments,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1764,13 +1769,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) return notFound("Leave request not found");
-		
+
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			record.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		
+
 		const amendable = assertLeaveRequestAmendable(existing.data.status);
 		if (!amendable.ok) return amendable;
 
@@ -1802,9 +1807,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				segments,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1859,9 +1864,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -1914,7 +1919,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (request.data === null) return notFound("Leave request not found");
 
 		// Generate IDs for transaction components
-		const consumptionAdjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+		const consumptionAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
+			randomUUID(),
+		);
 		if (!consumptionAdjustmentId.ok) return consumptionAdjustmentId;
 
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
@@ -1940,7 +1947,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 
 			const row = rows[0];
 			if (row === undefined) {
-				return notFound("Leave request approval failed - insufficient balance or stale version");
+				return notFound(
+					"Leave request approval failed - insufficient balance or stale version",
+				);
 			}
 
 			return mapLeaveRequest({
@@ -1998,9 +2007,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -2062,9 +2071,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				// Note: return does not emit outbox event per original code
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -2119,9 +2128,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				// Note: withdraw does not emit outbox event per original code
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
@@ -2174,7 +2183,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (request.data === null) return notFound("Leave request not found");
 
 		// Generate IDs for transaction components
-		const reversalAdjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+		const reversalAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
+			randomUUID(),
+		);
 		if (!reversalAdjustmentId.ok) return reversalAdjustmentId;
 
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
@@ -2193,13 +2204,15 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				createRequestFingerprint: request.data.fingerprint,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
-				sqlClient.query(sql),
-			]);
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+			);
 
 			const row = rows[0];
 			if (row === undefined) {
-				return notFound("Leave request cancellation failed - request not in approved status or stale version");
+				return notFound(
+					"Leave request cancellation failed - request not in approved status or stale version",
+				);
 			}
 
 			return mapLeaveRequest({
@@ -2226,7 +2239,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				updatedAt: row.updated_at,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to cancel approved leave request");
+			return mapPersistenceFailure(
+				error,
+				"Failed to cancel approved leave request",
+			);
 		}
 	},
 

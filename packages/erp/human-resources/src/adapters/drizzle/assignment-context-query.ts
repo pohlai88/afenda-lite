@@ -2,21 +2,16 @@ import {
 	and,
 	db,
 	eq,
+	gte,
 	hrEmployment,
 	hrEmploymentCalendarAssignment,
 	hrPosition,
 	hrWorkAssignment,
-	gte,
 	isNull,
 	lte,
 	or,
 } from "@afenda/db";
 import { ok, type Result } from "@afenda/errors/result";
-
-import {
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	humanResourcesErrorDetails,
-} from "../../error-codes";
 import type {
 	AssignmentContextQueryPort,
 	EmployeeAssignmentContext,

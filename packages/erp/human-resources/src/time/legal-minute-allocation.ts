@@ -23,7 +23,10 @@ function isWithinBreakInterval(
 ): boolean {
 	const time = instant.getTime();
 	for (const interval of intervals) {
-		if (time >= interval.startedAt.getTime() && time < interval.endedAt.getTime()) {
+		if (
+			time >= interval.startedAt.getTime() &&
+			time < interval.endedAt.getTime()
+		) {
 			return true;
 		}
 	}
@@ -48,11 +51,7 @@ export function allocateWorkedMinutesByCivilDate(input: {
 		return minutesByDate;
 	}
 
-	for (
-		let cursor = rangeStart;
-		cursor < rangeEnd;
-		cursor += 60_000
-	) {
+	for (let cursor = rangeStart; cursor < rangeEnd; cursor += 60_000) {
 		const instant = new Date(cursor);
 		if (isWithinBreakInterval(instant, input.breakIntervals)) {
 			continue;

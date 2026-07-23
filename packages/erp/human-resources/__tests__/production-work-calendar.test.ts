@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
-import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
 import { createMemoryWorkCalendarLookup } from "../src/testing";
+import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
 
 describe("createProductionWorkCalendar", () => {
 	it("skips weekends for day-based leave using timezone weekday", async () => {
@@ -23,8 +23,9 @@ describe("createProductionWorkCalendar", () => {
 			"2025-01-03",
 			"2025-01-06",
 		]);
-		expect(expanded.data.every((s) => s.calendarVersion === "memory-lookup-v1"))
-			.toBe(true);
+		expect(
+			expanded.data.every((s) => s.calendarVersion === "memory-lookup-v1"),
+		).toBe(true);
 	});
 
 	it("skips configured holidays", async () => {

@@ -161,7 +161,7 @@ describe("humanResourcesModuleManifest", () => {
 	});
 
 	it("keeps the kernel error catalog complete", () => {
-		expect(HUMAN_RESOURCES_ERROR_CODE_LIST).toHaveLength(11);
+		expect(HUMAN_RESOURCES_ERROR_CODE_LIST).toHaveLength(29);
 		expect(HUMAN_RESOURCES_ERROR_CODES.INVALID_INPUT).toBe(
 			"human_resources.invalid_input",
 		);
@@ -170,6 +170,12 @@ describe("humanResourcesModuleManifest", () => {
 		);
 		expect(HUMAN_RESOURCES_ERROR_CODES.DEPENDENCY_UNAVAILABLE).toBe(
 			"human_resources.dependency_unavailable",
+		);
+		expect(HUMAN_RESOURCES_ERROR_CODES.MULTIPLE_PRIMARY_ASSIGNMENTS).toBe(
+			"human_resources.multiple_primary_assignments",
+		);
+		expect(HUMAN_RESOURCES_ERROR_CODES.SENSITIVE_FIELD_ACCESS_DENIED).toBe(
+			"human_resources.sensitive_field_access_denied",
 		);
 	});
 

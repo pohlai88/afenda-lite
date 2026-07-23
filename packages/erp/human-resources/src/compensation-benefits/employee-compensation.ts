@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
@@ -15,6 +13,7 @@ import {
 	runCompensationCommand,
 } from "../shared/compensation-command";
 import { fingerprintEmployeeCompensationCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmployeeCompensation } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_COMPENSATION =
@@ -62,7 +61,10 @@ export async function createEmployeeCompensation(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
+				}),
 			);
 		},
 	});
@@ -86,7 +88,10 @@ export async function endEmployeeCompensation(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
+				}),
 			),
 	});
 }

@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
@@ -13,6 +11,7 @@ import {
 	updateCompensationGradeInputSchema,
 } from "../schemas/compensation";
 import { runCompensationCommand } from "../shared/compensation-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CompensationGrade } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE =
@@ -37,7 +36,10 @@ export async function createCompensationGrade(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
+				}),
 			),
 	});
 }
@@ -60,7 +62,10 @@ export async function updateCompensationGrade(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
+				}),
 			),
 	});
 }
@@ -82,7 +87,10 @@ export async function archiveCompensationGrade(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
+				}),
 			),
 	});
 }

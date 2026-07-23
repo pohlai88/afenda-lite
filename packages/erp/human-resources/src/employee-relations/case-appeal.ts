@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -10,12 +8,13 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
 } from "../module-ids";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
-import { fingerprintEmployeeCaseAppeal } from "../shared/fingerprint";
 import {
 	recordEmployeeCaseAppealInputSchema,
 	resolveEmployeeCaseAppealInputSchema,
 } from "../schemas/employee-relations";
+import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
+import { fingerprintEmployeeCaseAppeal } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmployeeCaseAppeal } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_APPEAL =
@@ -79,7 +78,10 @@ export async function recordEmployeeCaseAppeal(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+				}),
 			);
 		},
 	});
@@ -104,7 +106,10 @@ export async function resolveEmployeeCaseAppeal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
+				}),
 			),
 	});
 }

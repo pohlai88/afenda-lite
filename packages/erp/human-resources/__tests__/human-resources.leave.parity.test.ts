@@ -19,12 +19,12 @@ import {
 	submitLeaveRequest,
 } from "../src/leave/leave-request";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-import { mapActorToEmployee } from "./helpers/identity-resolver";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { mapActorToEmployee } from "./helpers/identity-resolver";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -233,7 +233,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(handoff.data.policyVersion).toBe(published.data.version);
 		expect(handoff.data.quantity).toBe("3");
 		expect(handoff.data.segments.length).toBeGreaterThan(0);
-	});
+	}, 120_000);
 }
 
 describe("Leave parity (memory)", () => {

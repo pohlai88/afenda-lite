@@ -1,12 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesBenefitEnrollmentId,
 	type HumanResourcesBenefitPlanId,
@@ -41,6 +38,8 @@ import {
 } from "../../shared/compensation-status";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
+import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type { HumanResourcesStore } from "../../store";
 import type {
 	ApprovedCompensationHandoff,
@@ -97,6 +96,7 @@ export type MemoryCompensationBenefitsMethods = Pick<
 	| "endEmployeeCompensation"
 	| "listEmployeeCompensationsByEmployee"
 	| "findActiveEmployeeCompensationByEmployment"
+	| "findEmployeeCompensationByEmploymentAsOf"
 	| "getCompensationReview"
 	| "findCompensationReviewByIdempotencyKey"
 	| "createCompensationReviewDraft"
@@ -940,6 +940,24 @@ export function createMemoryCompensationBenefitsMethods(
 						isEmployeeCompensationActive(c.status),
 				) ?? null;
 			return ok(comp === null ? null : { ...comp });
+		},
+
+		async findEmployeeCompensationByEmploymentAsOf(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			asOf: string;
+		}): Promise<Result<EmployeeCompensation | null>> {
+			const records = Array.from(state.employeeCompensations.values()).filter(
+				(compensation) =>
+					compensation.organizationId === input.organizationId &&
+					compensation.employmentId === input.employmentId &&
+					isEmployeeCompensationActive(compensation.status),
+			);
+			const selected = selectUniqueEffectiveRangeRecord({
+				records,
+				asOf: input.asOf,
+			});
+			return ok(selected === null ? null : { ...selected });
 		},
 
 		// --- Compensation Review ---

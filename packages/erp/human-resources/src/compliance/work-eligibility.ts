@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -29,6 +27,7 @@ import {
 } from "../shared/compliance-command";
 import { assertValidDocumentDateRange } from "../shared/compliance-guards";
 import { fingerprintWorkEligibilityRecord } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { WorkEligibility, WorkEligibilityRiskListPage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_WORK_ELIGIBILITY =
@@ -143,7 +142,10 @@ export async function verifyWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+				}),
 			),
 	});
 }
@@ -165,7 +167,10 @@ export async function suspendWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+				}),
 			),
 	});
 }
@@ -214,7 +219,10 @@ export async function renewWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+				}),
 			);
 		},
 	});
@@ -237,7 +245,10 @@ export async function closeWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+				}),
 			),
 	});
 }

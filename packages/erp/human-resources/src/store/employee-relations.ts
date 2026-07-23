@@ -17,7 +17,6 @@ import type {
 	EmployeeCaseTimeline,
 } from "../employee-relations/types";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	EmployeeCaseActionType,
 	EmployeeCaseEventKind,
@@ -26,6 +25,7 @@ import type {
 	EmployeeCaseStatus,
 	EmployeeCaseType,
 } from "../shared/employee-relations-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 
 /**
  * Persistence contract for Employee relations.

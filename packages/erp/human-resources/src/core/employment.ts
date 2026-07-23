@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -19,6 +17,7 @@ import {
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { resolveAmendEndsOn } from "../shared/domain-guards";
 import { assertEmploymentStatusTransition } from "../shared/employment-status";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Employment } from "../types";
 
 export async function createEmployment(
@@ -39,7 +38,10 @@ export async function createEmployment(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+				}),
 			);
 		},
 	});
@@ -101,7 +103,10 @@ export async function amendEmployment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+				}),
 			);
 		},
 	});

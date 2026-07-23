@@ -20,6 +20,7 @@ export * from "./core/assignment";
 export * from "./core/employee";
 export * from "./core/employment";
 export * from "./core/employment-contract";
+export * from "./core/org-context";
 export * from "./currency-lookup";
 export * from "./employee-relations/case-action";
 export * from "./employee-relations/case-appeal";
@@ -50,6 +51,7 @@ export * from "./performance/goal";
 export * from "./performance/improvement-plan";
 export * from "./performance/performance-cycle";
 export * from "./performance/review";
+export * from "./permissions";
 // Ports and options
 export type * from "./ports";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
@@ -61,6 +63,8 @@ export * from "./recruitment/candidate";
 export * from "./recruitment/interview";
 export * from "./recruitment/offer";
 export * from "./recruitment/requisition";
+export * from "./schemas";
+export type * from "./store";
 // Store resolver removed - internal only
 export * from "./talent/career-plan";
 export * from "./talent/competency";
@@ -82,6 +86,10 @@ export type {
 	WorkCalendarShiftWindow,
 	WorkWeekDayPattern,
 } from "./work-calendar";
+export * from "./workforce-foundation/classification";
+export * from "./workforce-foundation/person";
+export type * from "./workforce-foundation/types";
+export * from "./workforce-foundation/worker";
 export * from "./workforce-planning/availability";
 export * from "./workforce-planning/headcount-plan";
 export * from "./workforce-planning/headcount-plan-line";

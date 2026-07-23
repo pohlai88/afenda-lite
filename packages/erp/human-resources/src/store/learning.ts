@@ -8,13 +8,13 @@ import type {
 	HumanResourcesSessionId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	AssignmentStatus,
 	CertificationStatus,
 	CourseStatus,
 	SessionStatus,
 } from "../shared/learning-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	CertificationListPage,
 	CompletionListPage,

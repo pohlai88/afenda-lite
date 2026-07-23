@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -24,6 +22,7 @@ import {
 	reserveHeadcountInputSchema,
 } from "../schemas/workforce-planning";
 import { fingerprintHeadcountReservation } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runWorkforcePlanningCommand,
 	runWorkforcePlanningQuery,
@@ -158,7 +157,10 @@ export async function reserveHeadcount(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
+				}),
 			);
 		},
 	});
@@ -181,7 +183,10 @@ export async function releaseHeadcountReservation(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
+				}),
 			),
 	});
 }
@@ -203,7 +208,10 @@ export async function consumeHeadcountReservation(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
+				}),
 			),
 	});
 }

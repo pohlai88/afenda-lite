@@ -6,16 +6,16 @@
  */
 
 import {
-	hrAttendanceAdjustment,
-	hrAttendanceEvent,
-	hrShift,
-	hrShiftAssignment,
-	hrTimeApprovalAuthorityAssignment,
-	hrTimePolicy,
-	hrTimePolicyAssignment,
-	hrTimesheet,
-	hrTimesheetApprovalDecision,
-	hrWorkCalendar,
+	type hrAttendanceAdjustment,
+	type hrAttendanceEvent,
+	type hrShift,
+	type hrShiftAssignment,
+	type hrTimeApprovalAuthorityAssignment,
+	type hrTimePolicy,
+	type hrTimePolicyAssignment,
+	type hrTimesheet,
+	type hrTimesheetApprovalDecision,
+	type hrWorkCalendar,
 	runNeonHttpTransaction,
 } from "@afenda/db";
 

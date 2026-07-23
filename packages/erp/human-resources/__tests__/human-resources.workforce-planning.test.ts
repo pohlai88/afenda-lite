@@ -42,11 +42,11 @@ import {
 	listHeadcountReservations,
 	reserveHeadcount,
 } from "../src/workforce-planning/headcount-reservation";
+import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
-import { createHrParityHarness } from "./helpers/hr-parity-harness";
 
 const ORG = "org-wfp-test";
 const ORG_B = "org-wfp-test-b";
@@ -72,7 +72,7 @@ async function createDraftPlanWithLine(
 			actorUserId: input.actorUserId,
 			correlationId: `corr-plan-${input.tag}`,
 			idempotencyKey: `idem-plan-${input.tag}`,
-			code: `WFP-${input.tag}`.slice(0, 32),
+			code: `WFP-${input.tag}`.slice(0, 64),
 			title: "FY headcount",
 			planningScopeKey: "org",
 			periodStart: "2026-01-01",
@@ -174,7 +174,7 @@ async function openRequisitionPipeline(
 			actorUserId: input.actorUserId,
 			correlationId: `corr-req-${input.tag}`,
 			idempotencyKey: `idem-req-${input.tag}`,
-			code: `REQ-${input.tag}`.slice(0, 32),
+			code: `REQ-${input.tag}`.slice(0, 64),
 			title: "Hire",
 		},
 		ready,
@@ -230,7 +230,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 				actorUserId: ACTOR,
 				correlationId: `corr-bad-period-${tag}`,
 				idempotencyKey: `idem-bad-period-${tag}`,
-				code: `BAD-${tag}`.slice(0, 32),
+				code: `BAD-${tag}`.slice(0, 64),
 				title: "Bad period",
 				planningScopeKey: "org",
 				periodStart: "2026-12-31",
@@ -269,7 +269,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 				actorUserId: ACTOR,
 				correlationId: `corr-neg-${tag}`,
 				idempotencyKey: `idem-neg-${tag}`,
-				code: `NEG-${tag}`.slice(0, 32),
+				code: `NEG-${tag}`.slice(0, 64),
 				title: "Negative",
 				planningScopeKey: `scope-${tag}`,
 				periodStart: "2027-01-01",
@@ -777,7 +777,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 				actorUserId: ACTOR,
 				correlationId: `corr-rb-${tag}`,
 				idempotencyKey: `idem-rb-${tag}`,
-				code: `RB-${tag}`.slice(0, 32),
+				code: `RB-${tag}`.slice(0, 64),
 				title: "Rollback",
 				planningScopeKey: `rb-${tag}`,
 				periodStart: "2028-01-01",
@@ -793,7 +793,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 				actorUserId: ACTOR,
 				correlationId: `corr-rb-2-${tag}`,
 				idempotencyKey: `idem-rb-${tag}`,
-				code: `RB-${tag}`.slice(0, 32),
+				code: `RB-${tag}`.slice(0, 64),
 				title: "Rollback",
 				planningScopeKey: `rb-${tag}`,
 				periodStart: "2028-01-01",

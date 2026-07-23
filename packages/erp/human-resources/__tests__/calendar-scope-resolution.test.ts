@@ -7,7 +7,10 @@ import {
 
 function candidate(
 	overrides: Partial<ScopedCalendarAssignmentCandidate> &
-		Pick<ScopedCalendarAssignmentCandidate, "scopeType" | "scopeKey" | "calendarId">,
+		Pick<
+			ScopedCalendarAssignmentCandidate,
+			"scopeType" | "scopeKey" | "calendarId"
+		>,
 ): ScopedCalendarAssignmentCandidate {
 	return {
 		effectiveFrom: "2025-01-01",

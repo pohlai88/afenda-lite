@@ -2,20 +2,24 @@ import { randomUUID } from "node:crypto";
 
 import { createDrizzleHumanResourcesStore } from "../../src/adapters/drizzle";
 import { createDrizzleAssignmentContextQuery } from "../../src/adapters/drizzle/assignment-context-query";
+import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { grantLeaveEntitlement } from "../../src/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
 } from "../../src/leave/leave-policy";
 import { createDraftLeaveRequest } from "../../src/leave/leave-request";
-import {
-	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
-} from "../../src/module-ids";
+import { HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE } from "../../src/module-ids";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../../src/permissions";
+import type { MutationPorts } from "../../src/ports";
+import type { HumanResourcesMutationMeta } from "../../src/shared/mutation-meta";
 import { buildMutationMeta } from "../../src/shared/mutation-meta";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../../src/testing";
 import type {
 	Employee,
 	Employment,
@@ -23,12 +27,6 @@ import type {
 	LeavePolicy,
 	LeaveRequest,
 } from "../../src/types";
-import {
-	createMemoryHumanResourcesStore,
-	createStoreAssignmentContextQuery,
-} from "../../src/testing";
-import type { HumanResourcesMutationMeta } from "../../src/shared/mutation-meta";
-import type { MutationPorts } from "../../src/ports";
 import { createTestHumanResourcesCommandOptions } from "./command-options";
 import { createStoreBackedIdentityResolver } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
@@ -62,7 +60,9 @@ export type WorkforceTestHarness = {
 		legalName?: string;
 	}) => Promise<TestEmployee>;
 	createEmployment: (employee: TestEmployee) => Promise<TestEmployment>;
-	createLeavePolicy: (options?: { status?: "draft" | "published" }) => Promise<TestLeavePolicy>;
+	createLeavePolicy: (options?: {
+		status?: "draft" | "published";
+	}) => Promise<TestLeavePolicy>;
 	createLeaveEntitlement: (
 		employee: TestEmployee,
 		employment: TestEmployment,
@@ -74,7 +74,11 @@ export type WorkforceTestHarness = {
 		employment: TestEmployment,
 		entitlement: TestLeaveEntitlement,
 		policy: TestLeavePolicy,
-		options?: { requestedQuantity?: string; startDate?: string; endDate?: string },
+		options?: {
+			requestedQuantity?: string;
+			startDate?: string;
+			endDate?: string;
+		},
 	) => Promise<TestLeaveRequest>;
 };
 
@@ -124,7 +128,8 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 		employeeNumber?: string;
 		legalName?: string;
 	}): Promise<TestEmployee> {
-		const employeeNumber = options?.employeeNumber ?? `E-${randomUUID().slice(0, 8)}`;
+		const employeeNumber =
+			options?.employeeNumber ?? `E-${randomUUID().slice(0, 8)}`;
 		const legalName = options?.legalName ?? "Test Employee";
 		const created = await createEmployee(
 			{
@@ -138,12 +143,16 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 			commandOptions,
 		);
 		if (!created.ok) {
-			throw new Error(`createEmployee failed: ${created.code} ${created.message}`);
+			throw new Error(
+				`createEmployee failed: ${created.code} ${created.message}`,
+			);
 		}
 		return created.data;
 	}
 
-	async function createHarnessEmployment(employee: TestEmployee): Promise<TestEmployment> {
+	async function createHarnessEmployment(
+		employee: TestEmployee,
+	): Promise<TestEmployment> {
 		const created = await createEmployment(
 			{
 				organizationId,
@@ -155,7 +164,9 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 			commandOptions,
 		);
 		if (!created.ok) {
-			throw new Error(`createEmployment failed: ${created.code} ${created.message}`);
+			throw new Error(
+				`createEmployment failed: ${created.code} ${created.message}`,
+			);
 		}
 		return created.data;
 	}
@@ -181,7 +192,9 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 			commandOptions,
 		);
 		if (!created.ok) {
-			throw new Error(`createLeavePolicy failed: ${created.code} ${created.message}`);
+			throw new Error(
+				`createLeavePolicy failed: ${created.code} ${created.message}`,
+			);
 		}
 		if (options?.status === "draft") {
 			return created.data;
@@ -197,7 +210,9 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 			commandOptions,
 		);
 		if (!published.ok) {
-			throw new Error(`publishLeavePolicy failed: ${published.code} ${published.message}`);
+			throw new Error(
+				`publishLeavePolicy failed: ${published.code} ${published.message}`,
+			);
 		}
 		return published.data;
 	}
@@ -229,17 +244,23 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 			commandOptions,
 		);
 		if (!granted.ok) {
-			throw new Error(`grantLeaveEntitlement failed: ${granted.code} ${granted.message}`);
+			throw new Error(
+				`grantLeaveEntitlement failed: ${granted.code} ${granted.message}`,
+			);
 		}
 		return granted.data;
 	}
 
 	async function createHarnessLeaveRequest(
 		employee: TestEmployee,
-		employment: TestEmployment,
+		_employment: TestEmployment,
 		entitlement: TestLeaveEntitlement,
-		policy: TestLeavePolicy,
-		options?: { requestedQuantity?: string; startDate?: string; endDate?: string },
+		_policy: TestLeavePolicy,
+		options?: {
+			requestedQuantity?: string;
+			startDate?: string;
+			endDate?: string;
+		},
 	): Promise<TestLeaveRequest> {
 		const requestedQuantity = options?.requestedQuantity ?? "5";
 		const startDate = options?.startDate ?? "2024-01-15";
@@ -273,7 +294,9 @@ export async function createTestHarness(): Promise<WorkforceTestHarness> {
 		actorUserId,
 		ports: commandOptions.ports,
 		meta,
-		store: commandOptions.store as ReturnType<typeof createDrizzleHumanResourcesStore>,
+		store: commandOptions.store as ReturnType<
+			typeof createDrizzleHumanResourcesStore
+		>,
 		commandOptions,
 		createEmployee: createHarnessEmployee,
 		createEmployment: createHarnessEmployment,

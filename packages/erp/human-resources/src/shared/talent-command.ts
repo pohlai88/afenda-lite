@@ -119,7 +119,8 @@ export async function runTalentQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -129,7 +130,11 @@ export async function runTalentQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization, identityResolver });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
 }
 
 /** Employee-scoped career/talent reads: admin/manage OR own with server-side identity proof. */
@@ -154,7 +159,8 @@ export async function runTalentEmployeeScopedQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	if (!identityResolver) {
 		return fail(
 			"UNAUTHORIZED",

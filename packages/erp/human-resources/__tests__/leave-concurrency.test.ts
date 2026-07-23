@@ -8,21 +8,22 @@
  * - Lost updates in version conflicts
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
-import { describe, expect, it, beforeEach } from "vitest";
 import { randomUUID } from "node:crypto";
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
-import { createTestHarness } from "./helpers/hr-parity-harness";
-import type { 
-	WorkforceTestHarness,
+import type {
 	TestEmployee,
 	TestEmployment,
-	TestLeavePolicy,
 	TestLeaveEntitlement,
-	TestLeaveRequest,
+	TestLeavePolicy,
+	WorkforceTestHarness,
 } from "./helpers/hr-parity-harness";
+import { createTestHarness } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
+const neonOrgs: string[] = [];
 
 describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 	let harness: WorkforceTestHarness;
@@ -30,26 +31,35 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 	let employment: TestEmployment;
 	let policy: TestLeavePolicy;
 	let entitlement: TestLeaveEntitlement;
-	
+
+	afterAll(async () => {
+		await cleanupHumanResourcesNeonOrgs(neonOrgs);
+	});
+
 	beforeEach(async () => {
 		harness = await createTestHarness();
-		
+		neonOrgs.push(harness.organizationId);
+
 		// Create test data
 		employee = await harness.createEmployee();
 		employment = await harness.createEmployment(employee);
 		policy = await harness.createLeavePolicy();
-		entitlement = await harness.createLeaveEntitlement(employee, employment, policy);
+		entitlement = await harness.createLeaveEntitlement(
+			employee,
+			employment,
+			policy,
+		);
 	});
 
 	describe("Concurrent Leave Approval", () => {
 		it("prevents double spending when approving same request concurrently", async () => {
 			// Create a leave request that consumes the entire balance
 			const request = await harness.createLeaveRequest(
-				employee, 
-				employment, 
-				entitlement, 
+				employee,
+				employment,
+				entitlement,
 				policy,
-				{ requestedQuantity: entitlement.openingQuantity }
+				{ requestedQuantity: entitlement.openingQuantity },
 			);
 
 			// Submit the request
@@ -98,11 +108,11 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 			// Exactly one should succeed, one should fail
 			const successCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && result.value.ok
+				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
 			const failureCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && !result.value.ok
+				(result) => result.status === "fulfilled" && !result.value.ok,
 			).length;
 
 			expect(successCount).toBe(1);
@@ -113,29 +123,35 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 				organizationId: harness.organizationId,
 				entitlementId: entitlement.id,
 			});
-			expect(balance.ok).toBe(true);
+			if (!balance.ok) {
+				throw new Error(
+					`getLeaveBalance failed: ${balance.code} ${balance.message}`,
+				);
+			}
 			expect(balance.data?.balance).toBe("0"); // All consumed by single approval
 		});
 
 		it("prevents approval when insufficient balance due to concurrent consumption", async () => {
 			// Create two requests that would individually fit, but together exceed balance
 			const halfBalance = String(Number(entitlement.openingQuantity) / 2);
-			const moreThanHalf = String(Math.floor(Number(entitlement.openingQuantity) * 0.7));
-			
+			const moreThanHalf = String(
+				Math.floor(Number(entitlement.openingQuantity) * 0.7),
+			);
+
 			const request1 = await harness.createLeaveRequest(
 				employee,
 				employment,
 				entitlement,
 				policy,
-				{ requestedQuantity: moreThanHalf }
+				{ requestedQuantity: moreThanHalf },
 			);
 
 			const request2 = await harness.createLeaveRequest(
 				employee,
-				employment, 
+				employment,
 				entitlement,
 				policy,
-				{ requestedQuantity: halfBalance }
+				{ requestedQuantity: halfBalance },
 			);
 
 			// Submit both requests
@@ -192,7 +208,7 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 			// Only one approval should succeed (the first to acquire the lock)
 			const successCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && result.value.ok
+				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
 			expect(successCount).toBe(1);
@@ -205,14 +221,20 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 			expect(balance.ok).toBe(true);
 
 			// Exactly one request quantity should have been consumed
-			const consumed = Number(entitlement.openingQuantity) - Number(balance.data?.balance);
+			const consumed =
+				Number(entitlement.openingQuantity) - Number(balance.data?.balance);
 			expect([Number(moreThanHalf), Number(halfBalance)]).toContain(consumed);
 		});
 	});
 
 	describe("Concurrent Request Amendment", () => {
 		it("prevents conflicting amendments to same request", async () => {
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
 
 			// Two users try to amend the same request concurrently
 			const amendment1Promise = drizzleLeave.amendLeaveRequest(
@@ -266,11 +288,11 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 			// Exactly one should succeed due to version conflict
 			const successCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && result.value.ok
+				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
 			const failureCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && !result.value.ok
+				(result) => result.status === "fulfilled" && !result.value.ok,
 			).length;
 
 			expect(successCount).toBe(1);
@@ -328,7 +350,7 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 			// Only one should succeed
 			const successCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && result.value.ok
+				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
 			expect(successCount).toBe(1);
@@ -378,11 +400,11 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 			// Only one should succeed
 			const successCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && result.value.ok
+				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
 			const failureCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && !result.value.ok
+				(result) => result.status === "fulfilled" && !result.value.ok,
 			).length;
 
 			expect(successCount).toBe(1);
@@ -402,8 +424,13 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 	describe("Mixed Concurrent Operations", () => {
 		it("handles concurrent approval and cancellation attempts", async () => {
 			// Create and submit a request
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
-			
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
+
 			const submitted = await drizzleLeave.submitLeaveRequest(
 				{
 					organizationId: harness.organizationId,
@@ -446,7 +473,7 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 			// Only one should succeed
 			const successCount = [result1, result2].filter(
-				result => result.status === "fulfilled" && result.value.ok
+				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
 			expect(successCount).toBe(1);
@@ -463,8 +490,13 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 
 		it("prevents race condition between approval and adjustment operations", async () => {
 			// Create approved request
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
-			
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
+
 			// Submit and approve the request
 			await drizzleLeave.submitLeaveRequest(
 				{
@@ -528,7 +560,7 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 			// Both should succeed since they operate on different entities with proper locking
 			expect(result1.status).toBe("fulfilled");
 			expect(result2.status).toBe("fulfilled");
-			
+
 			if (result1.status === "fulfilled" && result2.status === "fulfilled") {
 				expect(result1.value.ok).toBe(true);
 				expect(result2.value.ok).toBe(true);
@@ -606,11 +638,11 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 			// One should create, one should return the existing record
 			expect(result1.status).toBe("fulfilled");
 			expect(result2.status).toBe("fulfilled");
-			
+
 			if (result1.status === "fulfilled" && result2.status === "fulfilled") {
 				expect(result1.value.ok).toBe(true);
 				expect(result2.value.ok).toBe(true);
-				
+
 				// Both should return the same request ID
 				expect(result1.value.data.id).toBe(result2.value.data.id);
 			}

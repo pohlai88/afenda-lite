@@ -1,5 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
+import {
+	requireHumanResourcesPermission,
+	requireHumanResourcesResourceAwarePermission,
+} from "../authorization";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
@@ -24,6 +27,10 @@ import {
 	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_TEAM_CALENDAR,
 } from "../module-ids";
 import {
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+} from "../permissions";
+import {
 	amendLeaveRequestInputSchema,
 	approveLeaveRequestInputSchema,
 	cancelApprovedLeaveRequestInputSchema,
@@ -47,15 +54,6 @@ import {
 	runLeaveQuery,
 } from "../shared/leave-command";
 import {
-	requireHumanResourcesPermission,
-	requireHumanResourcesResourceAwarePermission,
-} from "../authorization";
-import {
-	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
-	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
-} from "../permissions";
-import { resolveActorEmployeeIdentity } from "../shared/subject-aware-authorization";
-import {
 	assertApprovalDecisionMatchesRequestTransition,
 	assertApproverIsPrimaryManager,
 	assertEmploymentActiveForLeave,
@@ -66,6 +64,8 @@ import {
 	assertNoSelfApproval,
 	assertSufficientLeaveBalance,
 } from "../shared/leave-guards";
+import { buildMutationMeta } from "../shared/mutation-meta";
+import { resolveActorEmployeeIdentity } from "../shared/subject-aware-authorization";
 import type { HumanResourcesStore } from "../store";
 import type {
 	ApprovedLeaveHandoff,
@@ -232,7 +232,10 @@ export async function createDraftLeaveRequest(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+				}),
 			);
 		},
 	});
@@ -311,7 +314,10 @@ export async function amendLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
+				}),
 			);
 		},
 	});
@@ -387,7 +393,10 @@ export async function submitLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+				}),
 			);
 		},
 	});
@@ -493,7 +502,10 @@ export async function approveLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+				}),
 			);
 		},
 	});
@@ -555,7 +567,10 @@ export async function rejectLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+				}),
 			);
 		},
 	});
@@ -617,7 +632,10 @@ export async function returnLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
+				}),
 			);
 		},
 	});
@@ -640,7 +658,10 @@ export async function withdrawLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW,
+				}),
 			),
 	});
 }
@@ -668,7 +689,10 @@ export async function cancelApprovedLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+				}),
 			),
 	});
 }
@@ -691,10 +715,13 @@ export async function getLeaveRequest(
 				return ok(null);
 			}
 
-			const actorIdentity = await resolveActorEmployeeIdentity(identityResolver, {
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-			});
+			const actorIdentity = await resolveActorEmployeeIdentity(
+				identityResolver,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+				},
+			);
 			const isOwner =
 				actorIdentity.ok &&
 				actorIdentity.data.employeeId === request.data.employeeId;
@@ -739,20 +766,21 @@ export async function getLeaveRequest(
 			if (!sensitive.ok) return sensitive;
 
 			if (policy.data.sensitive && options.resourceAwareAuthorization) {
-				const resourceAware = await requireHumanResourcesResourceAwarePermission(
-					options.resourceAwareAuthorization,
-					{
-						organizationId: data.organizationId,
-						actorUserId: data.actorUserId,
-						permission: isOwner
-							? HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN
-							: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
-						resourceType: "leave",
-						resourceId: request.data.id,
-						subjectEmployeeId: request.data.employeeId,
-						sensitivity: "sensitive",
-					},
-				);
+				const resourceAware =
+					await requireHumanResourcesResourceAwarePermission(
+						options.resourceAwareAuthorization,
+						{
+							organizationId: data.organizationId,
+							actorUserId: data.actorUserId,
+							permission: isOwner
+								? HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN
+								: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+							resourceType: "leave",
+							resourceId: request.data.id,
+							subjectEmployeeId: request.data.employeeId,
+							sensitivity: "sensitive",
+						},
+					);
 				if (!resourceAware.ok) return resourceAware;
 			}
 
@@ -770,10 +798,13 @@ export async function listLeaveRequests(
 		invalidMessage: "Invalid leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST,
 		execute: async (data, { store, authorization, identityResolver }) => {
-			const actorIdentity = await resolveActorEmployeeIdentity(identityResolver, {
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-			});
+			const actorIdentity = await resolveActorEmployeeIdentity(
+				identityResolver,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+				},
+			);
 			if (!actorIdentity.ok) return actorIdentity;
 
 			// Own-scoped list: always derive subject from actor; never trust client employeeId alone.

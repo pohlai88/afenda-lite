@@ -69,14 +69,10 @@ export async function requireOwnResourceAccess(
 		permission: input.permission,
 	});
 	if (!hasPermission) {
-		return fail(
-			"FORBIDDEN",
-			"Missing required human resources permission",
-			{
-				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				permission: input.permission,
-			},
-		);
+		return fail("FORBIDDEN", "Missing required human resources permission", {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+			permission: input.permission,
+		});
 	}
 
 	// Resolve actor's employee identity
@@ -132,14 +128,10 @@ export async function requireManagerResourceAccess(
 		permission: input.permission,
 	});
 	if (!hasPermission) {
-		return fail(
-			"FORBIDDEN",
-			"Missing required human resources permission",
-			{
-				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				permission: input.permission,
-			},
-		);
+		return fail("FORBIDDEN", "Missing required human resources permission", {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+			permission: input.permission,
+		});
 	}
 
 	// Resolve actor's employee identity
@@ -197,14 +189,10 @@ export async function requireAdminResourceAccess(
 
 	const hasPermission = await authorization.can(input);
 	if (!hasPermission) {
-		return fail(
-			"FORBIDDEN",
-			"Missing required human resources permission",
-			{
-				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				permission: input.permission,
-			},
-		);
+		return fail("FORBIDDEN", "Missing required human resources permission", {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+			permission: input.permission,
+		});
 	}
 
 	return ok(undefined);

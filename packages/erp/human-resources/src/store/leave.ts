@@ -7,7 +7,6 @@ import type {
 	HumanResourcesLeaveRequestId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentStatus } from "../shared/employment-status";
 import type {
 	DayPortion,
@@ -17,6 +16,7 @@ import type {
 	LeaveType,
 	LeaveUnit,
 } from "../shared/leave-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	ApprovedLeaveHandoff,
 	LeaveAdjustment,

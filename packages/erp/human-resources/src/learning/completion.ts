@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -22,6 +20,7 @@ import {
 	runLearningCommand,
 	runLearningQuery,
 } from "../shared/learning-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CompletionListPage, LearningCompletion } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPLETION = "completion" as const;
@@ -109,7 +108,10 @@ export async function recordCompletion(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
+				}),
 			);
 		},
 	});

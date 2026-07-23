@@ -31,7 +31,6 @@ import {
 } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, notFound } from "../../shared/domain-guards";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertAssignmentEnrollable,
 	assertAssignmentWaivable,
@@ -55,6 +54,7 @@ import {
 	isAssignmentActive,
 	isSessionActive,
 } from "../../shared/learning-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
 	CompletionCreateRecord,
 	CourseCreateRecord,
@@ -1602,7 +1602,10 @@ export function createMemoryLearningMethods(
 					},
 					oldStatus: certification.status,
 					newStatus: updated.status,
-					oldValue: { status: certification.status, version: certification.version },
+					oldValue: {
+						status: certification.status,
+						version: certification.version,
+					},
 					newValue: { status: updated.status, version: updated.version },
 				}),
 			);
@@ -1667,7 +1670,10 @@ export function createMemoryLearningMethods(
 					},
 					oldStatus: certification.status,
 					newStatus: updated.status,
-					oldValue: { status: certification.status, version: certification.version },
+					oldValue: {
+						status: certification.status,
+						version: certification.version,
+					},
 					newValue: { status: updated.status, version: updated.version },
 				}),
 			);

@@ -59,11 +59,17 @@ export function selectScopedWorkCalendarAssignment(input: {
 		if (scoped.length === 0) {
 			continue;
 		}
-		const calendarIds = new Set(scoped.map((candidate) => candidate.calendarId));
+		const calendarIds = new Set(
+			scoped.map((candidate) => candidate.calendarId),
+		);
 		if (calendarIds.size > 1) {
 			return { conflict: "tie" };
 		}
-		return { calendarId: scoped[0]!.calendarId };
+		const [winner] = scoped;
+		if (!winner) {
+			continue;
+		}
+		return { calendarId: winner.calendarId };
 	}
 
 	return null;

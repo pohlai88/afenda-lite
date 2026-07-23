@@ -245,6 +245,7 @@ export type DrizzleCoreMethods = Pick<
 	| "countOpenAssignmentsForPosition"
 	| "getAssignmentById"
 	| "findOpenAssignmentByEmployment"
+	| "findAssignmentByEmploymentAsOf"
 	| "createAssignment"
 	| "endAssignment"
 >;
@@ -947,8 +948,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapEmploymentContract(result[0]!);
+			const [contract] = result;
+			if (!contract) return ok(null);
+			return mapEmploymentContract(contract);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load employment contract");
 		}
@@ -971,8 +973,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapEmploymentContract(result[0]!);
+			const [contract] = result;
+			if (!contract) return ok(null);
+			return mapEmploymentContract(contract);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find employment contract");
 		}
@@ -1138,8 +1141,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapAssignment(result[0]!);
+			const [assignment] = result;
+			if (!assignment) return ok(null);
+			return mapAssignment(assignment);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load assignment");
 		}
@@ -1161,10 +1165,49 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapAssignment(result[0]!);
+			const [assignment] = result;
+			if (!assignment) return ok(null);
+			return mapAssignment(assignment);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find open assignment");
+		}
+	},
+
+	async findAssignmentByEmploymentAsOf(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}): Promise<Result<WorkAssignment | null>> {
+		try {
+			const result = await db
+				.select()
+				.from(hrWorkAssignment)
+				.where(
+					and(
+						eq(hrWorkAssignment.organizationId, input.organizationId),
+						eq(hrWorkAssignment.employmentId, input.employmentId),
+						lte(hrWorkAssignment.startsOn, input.asOf),
+						or(
+							isNull(hrWorkAssignment.endsOn),
+							gte(hrWorkAssignment.endsOn, input.asOf),
+						),
+					),
+				);
+			if (result.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple assignments are effective on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			const [assignment] = result;
+			if (!assignment) return ok(null);
+			return mapAssignment(assignment);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find assignment effective on date",
+			);
 		}
 	},
 

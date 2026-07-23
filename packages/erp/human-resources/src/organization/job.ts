@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import {
 	requireHumanResourcesCommandPermission,
 	requireHumanResourcesQueryPermission,
@@ -29,6 +27,7 @@ import {
 	listJobsInputSchema,
 	updateJobInputSchema,
 } from "../schemas/organization";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Job } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_JOB = "job" as const;
@@ -69,7 +68,10 @@ export async function createJob(
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_JOB_CREATE }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+		}),
 	);
 }
 
@@ -108,7 +110,10 @@ export async function updateJob(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_JOB_UPDATE }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+		}),
 	);
 }
 
@@ -147,7 +152,10 @@ export async function activateJob(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+		}),
 	);
 }
 
@@ -186,7 +194,10 @@ export async function archiveJob(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+		}),
 	);
 }
 

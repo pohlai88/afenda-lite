@@ -30,6 +30,7 @@ import {
 	parseHumanResourcesReportingLineId,
 } from "../../brands";
 import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -51,6 +52,7 @@ import {
 	positionStatusSchema,
 	reportingRelationshipKindSchema,
 } from "../../shared/employment-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertActiveDepartment,
 	assertActiveJob,
@@ -80,7 +82,6 @@ import type {
 	Position,
 	ReportingLine,
 } from "../../types";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 function mapNullableDepartmentId(
 	value: string | null,
@@ -437,12 +438,13 @@ async function assertReportingLineAssignable(
 	let current: HumanResourcesEmployeeId | null = input.managerEmployeeId;
 	while (current !== null) {
 		if (managerCache.has(current)) break;
-		const openPrimary = await host.findOpenPrimaryReportingLine({
-			organizationId: input.organizationId,
-			employeeId: current,
-		});
+		const openPrimary: Result<ReportingLine | null> =
+			await host.findOpenPrimaryReportingLine({
+				organizationId: input.organizationId,
+				employeeId: current,
+			});
 		if (!openPrimary.ok) return openPrimary;
-		const next =
+		const next: HumanResourcesEmployeeId | null =
 			openPrimary.data === null ? null : openPrimary.data.managerEmployeeId;
 		managerCache.set(current, next);
 		current = next;
@@ -495,8 +497,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapDepartment(result[0]!);
+			const [department] = result;
+			if (!department) return ok(null);
+			return mapDepartment(department);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load department");
 		}
@@ -517,8 +520,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapDepartment(result[0]!);
+			const [department] = result;
+			if (!department) return ok(null);
+			return mapDepartment(department);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find department by code");
 		}
@@ -697,10 +701,11 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					if (parentCache.has(current)) {
 						break;
 					}
-					const loaded = await this.getDepartmentById({
-						organizationId: input.organizationId,
-						departmentId: current,
-					});
+					const loaded: Result<Department | null> =
+						await this.getDepartmentById({
+							organizationId: input.organizationId,
+							departmentId: current,
+						});
 					if (!loaded.ok) return loaded;
 					if (loaded.data === null) {
 						parentCache.set(current, undefined);
@@ -963,8 +968,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapJob(result[0]!);
+			const [job] = result;
+			if (!job) return ok(null);
+			return mapJob(job);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load job");
 		}
@@ -985,8 +991,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapJob(result[0]!);
+			const [job] = result;
+			if (!job) return ok(null);
+			return mapJob(job);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find job by code");
 		}
@@ -1256,8 +1263,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapPosition(result[0]!);
+			const [position] = result;
+			if (!position) return ok(null);
+			return mapPosition(position);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load position");
 		}
@@ -1278,8 +1286,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapPosition(result[0]!);
+			const [position] = result;
+			if (!position) return ok(null);
+			return mapPosition(position);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find position by code");
 		}
@@ -1720,8 +1729,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapReportingLine(result[0]!);
+			const [reportingLine] = result;
+			if (!reportingLine) return ok(null);
+			return mapReportingLine(reportingLine);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load reporting line");
 		}
@@ -1774,8 +1784,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					),
 				)
 				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapReportingLine(result[0]!);
+			const [reportingLine] = result;
+			if (!reportingLine) return ok(null);
+			return mapReportingLine(reportingLine);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1804,11 +1815,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							gte(hrReportingLine.endsOn, input.asOf),
 						),
 					),
-				)
-				.orderBy(desc(hrReportingLine.startsOn))
-				.limit(1);
-			if (result.length === 0) return ok(null);
-			return mapReportingLine(result[0]!);
+				);
+			if (result.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple primary reporting lines are effective on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			const [reportingLine] = result;
+			if (!reportingLine) return ok(null);
+			return mapReportingLine(reportingLine);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to resolve primary manager");
 		}

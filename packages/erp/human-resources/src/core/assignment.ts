@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -17,6 +15,7 @@ import {
 	getAssignmentInputSchema,
 } from "../schemas/organization";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { WorkAssignment } from "../types";
 
 export async function createAssignment(
@@ -54,7 +53,10 @@ export async function createAssignment(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+				}),
 			);
 		},
 	});
@@ -78,7 +80,10 @@ export async function endAssignment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
+				}),
 			);
 		},
 	});

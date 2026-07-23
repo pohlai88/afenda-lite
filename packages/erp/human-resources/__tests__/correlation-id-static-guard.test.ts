@@ -9,8 +9,7 @@ const srcRoot = path.resolve(
 	"../src",
 );
 
-const FORBIDDEN =
-	/correlationId:\s*HUMAN_RESOURCES_COMMAND_[A-Z0-9_]+/;
+const FORBIDDEN = /correlationId:\s*HUMAN_RESOURCES_COMMAND_[A-Z0-9_]+/;
 
 function walkTsFiles(dir: string, out: string[] = []): string[] {
 	for (const name of readdirSync(dir)) {

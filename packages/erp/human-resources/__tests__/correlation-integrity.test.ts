@@ -74,6 +74,8 @@ import {
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY,
+	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+	HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
@@ -113,6 +115,9 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
+	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
+	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
 } from "../src/module-ids";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
@@ -184,6 +189,15 @@ import {
 	supersedeTimesheet,
 	updateTimesheetEntry,
 } from "../src/time/timesheet";
+import {
+	createPerson,
+	updatePersonName,
+} from "../src/workforce-foundation/person";
+import {
+	changeWorkerStatus,
+	changeWorkerType,
+	createWorker,
+} from "../src/workforce-foundation/worker";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -273,6 +287,11 @@ describe("correlation integrity", () => {
 	it("covers every emission-registry command with a fixture", () => {
 		const covered = new Set([
 			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+			HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+			HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+			HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
+			HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
+			HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 			HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
 			HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
 			HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
@@ -322,6 +341,111 @@ describe("correlation integrity", () => {
 		assertCorrelationPropagated(ready, correlationId, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+		});
+	});
+
+	it("propagates correlationId across workforce foundation mutations", async () => {
+		const ready = harness();
+
+		const personCorr = "trace-person-create";
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: personCorr,
+				idempotencyKey: "idem-person-corr",
+				legalName: "Workforce Corr",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+		assertCorrelationPropagated(ready, personCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+		});
+
+		clearPorts(ready);
+		const nameCorr = "trace-person-update";
+		const renamed = await updatePersonName(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: nameCorr,
+				personId: person.data.id,
+				legalName: "Workforce Corr Updated",
+				expectedVersion: person.data.version,
+			},
+			ready,
+		);
+		expect(renamed.ok).toBe(true);
+		if (!renamed.ok) return;
+		assertCorrelationPropagated(ready, nameCorr, {
+			expectOutbox: false,
+			operation: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+		});
+
+		clearPorts(ready);
+		const workerCorr = "trace-worker-create";
+		const worker = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: workerCorr,
+				idempotencyKey: "idem-worker-corr",
+				personId: person.data.id,
+				workerType: "contractor",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(worker.ok).toBe(true);
+		if (!worker.ok) return;
+		assertCorrelationPropagated(ready, workerCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
+		});
+
+		clearPorts(ready);
+		const typeCorr = "trace-worker-change-type";
+		const retyped = await changeWorkerType(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: typeCorr,
+				workerId: worker.data.id,
+				workerType: "intern",
+				effectiveOn: "2026-02-01",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(retyped.ok).toBe(true);
+		if (!retyped.ok) return;
+		assertCorrelationPropagated(ready, typeCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
+		});
+
+		clearPorts(ready);
+		const statusCorr = "trace-worker-change-status";
+		const statusChanged = await changeWorkerStatus(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: statusCorr,
+				workerId: retyped.data.id,
+				status: "inactive",
+				effectiveOn: "2026-03-01",
+				expectedVersion: retyped.data.version,
+			},
+			ready,
+		);
+		expect(statusChanged.ok).toBe(true);
+		if (!statusChanged.ok) return;
+		assertCorrelationPropagated(ready, statusCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 		});
 	});
 

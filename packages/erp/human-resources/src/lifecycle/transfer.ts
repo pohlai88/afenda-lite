@@ -1,10 +1,9 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER } from "../module-ids";
 import { transferAssignmentInputSchema } from "../schemas/lifecycle";
 import { runLifecycleCommand } from "../shared/lifecycle-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentMovement } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_TRANSFER = "transfer" as const;
@@ -31,7 +30,10 @@ export async function transferAssignment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+				}),
 			),
 	});
 }

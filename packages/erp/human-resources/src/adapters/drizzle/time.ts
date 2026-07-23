@@ -40,11 +40,7 @@ import {
 	or,
 	sql,
 } from "@afenda/db";
-import {
-	fail,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import type { HumanResourcesEventType } from "@afenda/events";
 import {
 	HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
@@ -139,27 +135,6 @@ import {
 	resolveExpectedWorkMinutes,
 	TIMESHEET_GENERATION_ABSENCE_SOURCE,
 } from "../../time/timesheet-generation";
-import {
-	attendanceEventFromSql,
-	runTimeTransaction,
-	shiftAssignmentFromSql,
-	shiftFromSql,
-	timeApprovalAuthorityAssignmentFromSql,
-	timePolicyAssignmentFromSql,
-	timePolicyFromSql,
-	type AttendanceEventSqlRow,
-	type ShiftAssignmentSqlRow,
-	type ShiftSqlRow,
-	type TimeApprovalAuthorityAssignmentSqlRow,
-	type TimePolicyAssignmentSqlRow,
-	type TimePolicySqlRow,
-	type TimesheetApprovalDecisionSqlRow,
-	type TimesheetSqlRow,
-	type WorkCalendarSqlRow,
-	timesheetApprovalDecisionFromSql,
-	timesheetFromSql,
-	workCalendarFromSql,
-} from "./time-transactions";
 import type {
 	ApprovedTimeHandoff,
 	AttendanceAdjustment,
@@ -192,7 +167,27 @@ import type {
 	WorkCalendarScopeType,
 	WorkWeekDayPatternJson,
 } from "../../types";
-
+import {
+	type AttendanceEventSqlRow,
+	attendanceEventFromSql,
+	runTimeTransaction,
+	type ShiftAssignmentSqlRow,
+	type ShiftSqlRow,
+	shiftAssignmentFromSql,
+	shiftFromSql,
+	type TimeApprovalAuthorityAssignmentSqlRow,
+	type TimePolicyAssignmentSqlRow,
+	type TimePolicySqlRow,
+	type TimesheetApprovalDecisionSqlRow,
+	type TimesheetSqlRow,
+	timeApprovalAuthorityAssignmentFromSql,
+	timePolicyAssignmentFromSql,
+	timePolicyFromSql,
+	timesheetApprovalDecisionFromSql,
+	timesheetFromSql,
+	type WorkCalendarSqlRow,
+	workCalendarFromSql,
+} from "./time-transactions";
 
 function resolveImportBatchStatus(input: {
 	accepted: number;
@@ -1915,7 +1910,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			return ok(mapped);
 		} catch (error) {
-			if (isPostgresUndefinedTable(error, "hr_work_calendar_scope_assignment")) {
+			if (
+				isPostgresUndefinedTable(error, "hr_work_calendar_scope_assignment")
+			) {
 				return ok([]);
 			}
 			return mapPersistenceFailure(
@@ -2050,10 +2047,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							input.organizationId,
 						),
 						eq(hrWorkCalendarScopeAssignment.id, input.assignmentId),
-						eq(
-							hrWorkCalendarScopeAssignment.version,
-							input.expectedVersion,
-						),
+						eq(hrWorkCalendarScopeAssignment.version, input.expectedVersion),
 					),
 				)
 				.returning();
@@ -3365,12 +3359,15 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const id = randomUUID();
 			const now = new Date();
-			const segmentOrders = input.segments.map((segment) => segment.segmentOrder);
+			const segmentOrders = input.segments.map(
+				(segment) => segment.segmentOrder,
+			);
 			const segmentStarts = input.segments.map((segment) => segment.startsAt);
 			const segmentEnds = input.segments.map((segment) => segment.endsAt);
-			const [assignmentRows] = await runTimeTransaction<[ShiftAssignmentSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [assignmentRows] = await runTimeTransaction<
+				[ShiftAssignmentSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH created AS (
 							INSERT INTO hr_shift_assignment (
 								id, organization_id, employee_id, employment_id, shift_id,
@@ -3413,15 +3410,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						)
 						SELECT created.* FROM created
 					`,
-				],
-			);
+			]);
 			const assignmentRow = assignmentRows[0];
 			if (assignmentRow === undefined) {
 				throw new Error("Shift assignment insert returned no row");
 			}
-			const mapped = mapAssignment(
-				shiftAssignmentFromSql(assignmentRow),
-			);
+			const mapped = mapAssignment(shiftAssignmentFromSql(assignmentRow));
 			if (!mapped.ok) return mapped;
 			const recorded = await audit(ports, {
 				organizationId: input.organizationId,
@@ -4912,10 +4906,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							input.organizationId,
 						),
 						eq(hrAttendanceBreakWaiverDecision.sessionId, input.sessionId),
-						eq(
-							hrAttendanceBreakWaiverDecision.sessionVersion,
-							session.version,
-						),
+						eq(hrAttendanceBreakWaiverDecision.sessionVersion, session.version),
 					),
 				)
 				.limit(1);

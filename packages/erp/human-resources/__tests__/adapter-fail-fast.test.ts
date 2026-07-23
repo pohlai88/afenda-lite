@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { registerEmployeeDocument } from "../src/compliance/employee-document";
-import {
-	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
-} from "../src/error-codes";
+import { HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE } from "../src/error-codes";
 import { createDraftLeaveRequest } from "../src/leave/leave-request";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 
 describe("P0-04 fail-fast missing adapters", () => {
 	it("rejects leave commands without a work calendar adapter", async () => {

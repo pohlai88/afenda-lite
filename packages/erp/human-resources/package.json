@@ -28,6 +28,14 @@
 			"types": "./src/resolve-store.ts",
 			"default": "./src/resolve-store.ts"
 		},
+		"./schemas": {
+			"types": "./src/schemas.ts",
+			"default": "./src/schemas.ts"
+		},
+		"./store": {
+			"types": "./src/store.ts",
+			"default": "./src/store.ts"
+		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
 			"default": "./src/testing/index.ts"
@@ -40,7 +48,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project human-resources",
+		"test": "vitest run --config ../../../testing/vitest.config.ts --project human-resources-unit --project human-resources-parity",
 		"check": "pnpm typecheck && pnpm test"
 	},
 	"dependencies": {

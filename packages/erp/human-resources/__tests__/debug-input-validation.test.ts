@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { describe, it, expect } from "vitest";
-import { listEmployeeGoalsInputSchema } from "../src/schemas/performance";
+import { describe, expect, it } from "vitest";
 import type { HumanResourcesEmployeeId } from "../src/brands";
 import { parseHumanResourcesEmployeeId } from "../src/brands";
+import { listEmployeeGoalsInputSchema } from "../src/schemas/performance";
 
 describe("Debug Input Validation", () => {
 	it("should validate the input schema correctly", () => {
@@ -25,13 +25,13 @@ describe("Debug Input Validation", () => {
 		};
 
 		console.log("Testing input:", input);
-		
+
 		const result = listEmployeeGoalsInputSchema.safeParse(input);
-		
+
 		if (!result.success) {
 			console.log("Validation errors:", result.error.flatten());
 		}
-		
+
 		expect(result.success).toBe(true);
 	});
 });

@@ -57,8 +57,7 @@ function maskHrSnapshot(
 
 function maskHrChanges(changes: Change[]): Change[] {
 	return changes.map((change) => {
-		const sensitive =
-			isHrPiiField(change.field) || change.field === "*";
+		const sensitive = isHrPiiField(change.field) || change.field === "*";
 		if (!sensitive && change.field !== "*") {
 			return change;
 		}

@@ -506,11 +506,7 @@ export function createMemoryEmployeeRelationsMethods(
 
 		async findEmployeeCaseInOrganization(input) {
 			const state = erState;
-			const loaded = getCaseInOrg(
-				state,
-				input.organizationId,
-				input.caseId,
-			);
+			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
 				return ok(null);
 			}

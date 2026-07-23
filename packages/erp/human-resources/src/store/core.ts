@@ -388,6 +388,12 @@ export type HumanResourcesCoreStore = {
 		employmentId: HumanResourcesEmploymentId;
 	}): Promise<Result<WorkAssignment | null>>;
 
+	findAssignmentByEmploymentAsOf(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}): Promise<Result<WorkAssignment | null>>;
+
 	createAssignment(
 		record: AssignmentCreateRecord,
 		ports: MutationPorts,

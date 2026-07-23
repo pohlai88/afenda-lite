@@ -1,6 +1,6 @@
+import { ok, type Result } from "@afenda/errors/result";
 import { beforeEach, describe, expect, it } from "vitest";
-
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import type {
 	HumanResourcesAuthorizationPort,
 	HumanResourcesPermission,
@@ -15,7 +15,6 @@ import {
 	requireManagerResourceAccess,
 	requireOwnResourceAccess,
 } from "../src/shared/subject-aware-authorization";
-import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 
 function createTestAuthorizationPort(
 	grantedPermissions: Set<HumanResourcesPermission>,
@@ -45,7 +44,7 @@ function createTestIdentityResolverPort(
 			return ok(result);
 		},
 
-		async resolveManagerEmployeesForActor(input: {
+		async resolveManagerEmployeesForActor(_input: {
 			organizationId: string;
 			actorUserId: string;
 			asOf?: string;
@@ -187,7 +186,9 @@ describe("Subject-Aware Authorization", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 	});
 
@@ -337,7 +338,9 @@ describe("Subject-Aware Authorization", () => {
 			});
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Missing required human resources permission");
+			expect(result.message).toBe(
+				"Missing required human resources permission",
+			);
 		});
 
 		it("should fail when authorization port is not provided", async () => {

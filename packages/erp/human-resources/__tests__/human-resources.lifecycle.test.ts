@@ -131,7 +131,7 @@ async function seedEmploymentWithAssignment(
 			organizationId: input.organizationId,
 			actorUserId: ACTOR,
 			correlationId: `corr-pos-a-${input.suffix}`,
-			code: `PA-${input.suffix}`.slice(0, 32),
+			code: `PA-${input.suffix}`.slice(0, 64),
 			title: "Role A",
 			departmentId: orgSeed.departmentId,
 			jobId: orgSeed.jobId,
@@ -145,7 +145,7 @@ async function seedEmploymentWithAssignment(
 			organizationId: input.organizationId,
 			actorUserId: ACTOR,
 			correlationId: `corr-pos-b-${input.suffix}`,
-			code: `PB-${input.suffix}`.slice(0, 32),
+			code: `PB-${input.suffix}`.slice(0, 64),
 			title: "Role B",
 			departmentId: orgSeed.departmentId,
 			jobId: orgSeed.jobId,
@@ -1095,7 +1095,13 @@ describe("human-resources lifecycle", () => {
 	it("does not import auth or payroll packages from lifecycle modules", async () => {
 		const fs = await import("node:fs/promises");
 		const path = await import("node:path");
-		const lifecycleDir = path.join(process.cwd(), "src", "lifecycle");
+		const { fileURLToPath } = await import("node:url");
+		const lifecycleDir = path.join(
+			path.dirname(fileURLToPath(import.meta.url)),
+			"..",
+			"src",
+			"lifecycle",
+		);
 		const files = await fs.readdir(lifecycleDir);
 		for (const file of files) {
 			if (!file.endsWith(".ts")) continue;

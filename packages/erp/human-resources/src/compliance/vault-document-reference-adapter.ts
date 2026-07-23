@@ -32,7 +32,8 @@ function parseQuery(query: string | undefined): {
 	const version = params.get("version");
 	const checksum = params.get("checksum");
 	return {
-		version: version !== null && version.trim().length > 0 ? version.trim() : null,
+		version:
+			version !== null && version.trim().length > 0 ? version.trim() : null,
 		checksum:
 			checksum !== null && checksum.trim().length > 0 ? checksum.trim() : null,
 	};
@@ -57,9 +58,7 @@ function normalizeCanonicalReference(input: {
 	return query.length > 0 ? `${base}?${query}` : base;
 }
 
-function parseVaultReference(
-	reference: string,
-): Result<{
+function parseVaultReference(reference: string): Result<{
 	organizationId: string;
 	documentKind: DocumentKind;
 	documentId: string;
@@ -172,7 +171,9 @@ export function createVaultDocumentReferenceAdapter(
 	const resolver = deps.resolver;
 
 	return {
-		async validateReference(input): Promise<Result<ValidatedDocumentReference>> {
+		async validateReference(
+			input,
+		): Promise<Result<ValidatedDocumentReference>> {
 			const parsed = parseVaultReference(input.reference);
 			if (!parsed.ok) {
 				return parsed;

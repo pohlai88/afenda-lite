@@ -8,16 +8,19 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_ERROR_CONFLICT, HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE } from "../src/error-codes";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+} from "../src/error-codes";
 import {
 	activateTimePolicy,
 	assignTimeApprovalAuthority,
 	assignTimePolicy,
 	createTimePolicy,
 } from "../src/time/policy";
+import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-import { createHrParityHarness } from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 const runConcurrency =
@@ -68,7 +71,9 @@ describe.skipIf(!runConcurrency)("Time policy concurrency (Drizzle)", () => {
 		return { ready, employmentId: employment.data.id };
 	}
 
-	async function seedActivePolicy(ready: ReturnType<typeof createHrParityHarness>) {
+	async function seedActivePolicy(
+		ready: ReturnType<typeof createHrParityHarness>,
+	) {
 		const policyKey = randomUUID();
 		const created = await createTimePolicy(
 			{
@@ -142,7 +147,9 @@ describe.skipIf(!runConcurrency)("Time policy concurrency (Drizzle)", () => {
 
 		expect(successes).toHaveLength(1);
 		expect(failures).toHaveLength(1);
-		expect(humanResourcesCodeFromResult(failures[0]!)).toBe(
+		const failure = failures[0];
+		expect(failure).toBeDefined();
+		expect(humanResourcesCodeFromResult(failure)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
 	});
@@ -181,7 +188,9 @@ describe.skipIf(!runConcurrency)("Time policy concurrency (Drizzle)", () => {
 
 		expect(successes).toHaveLength(1);
 		expect(failures).toHaveLength(1);
-		const failureCode = humanResourcesCodeFromResult(failures[0]!);
+		const failure = failures[0];
+		expect(failure).toBeDefined();
+		const failureCode = humanResourcesCodeFromResult(failure);
 		expect(
 			failureCode === HUMAN_RESOURCES_ERROR_CONFLICT ||
 				failureCode === HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,

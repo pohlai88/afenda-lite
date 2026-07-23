@@ -5,6 +5,7 @@ import {
 	db,
 	desc,
 	eq,
+	gte,
 	hrBenefitEnrollment,
 	hrBenefitPlan,
 	hrCompensationGrade,
@@ -12,6 +13,9 @@ import {
 	hrEmployeeCompensation,
 	hrEmployment,
 	hrSalaryBand,
+	isNull,
+	lte,
+	or,
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
@@ -45,6 +49,7 @@ import {
 	salaryBandStatusSchema,
 } from "../../shared/compensation-status";
 import { assertExpectedVersion } from "../../shared/concurrency";
+import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
 
 // Helper: check if a review is in draft status
 function isCompensationReviewDraft(status: CompensationReviewStatus): boolean {
@@ -101,6 +106,7 @@ export type DrizzleCompensationBenefitsMethods = Pick<
 	| "endEmployeeCompensation"
 	| "listEmployeeCompensationsByEmployee"
 	| "findActiveEmployeeCompensationByEmployment"
+	| "findEmployeeCompensationByEmploymentAsOf"
 	| "getCompensationReview"
 	| "findCompensationReviewByIdempotencyKey"
 	| "createCompensationReviewDraft"
@@ -1495,6 +1501,42 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return mapPersistenceFailure(
 				error,
 				"Failed to find active employee compensation",
+			);
+		}
+	},
+
+	async findEmployeeCompensationByEmploymentAsOf(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrEmployeeCompensation)
+				.where(
+					and(
+						eq(hrEmployeeCompensation.organizationId, input.organizationId),
+						eq(hrEmployeeCompensation.employmentId, input.employmentId),
+						eq(hrEmployeeCompensation.status, "active"),
+						lte(hrEmployeeCompensation.effectiveFrom, input.asOf),
+						or(
+							isNull(hrEmployeeCompensation.effectiveTo),
+							gte(hrEmployeeCompensation.effectiveTo, input.asOf),
+						),
+					),
+				);
+			const records: EmployeeCompensation[] = [];
+			for (const row of rows) {
+				const mapped = mapEmployeeCompensation(row);
+				if (!mapped.ok) return mapped;
+				records.push(mapped.data);
+			}
+			const selected = selectUniqueEffectiveRangeRecord({
+				records,
+				asOf: input.asOf,
+			});
+			return ok(selected);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find employee compensation effective on date",
 			);
 		}
 	},

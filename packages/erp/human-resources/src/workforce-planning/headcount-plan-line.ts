@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
@@ -12,6 +10,7 @@ import {
 	removeHeadcountPlanLineInputSchema,
 	updateHeadcountPlanLineInputSchema,
 } from "../schemas/workforce-planning";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import { runWorkforcePlanningCommand } from "../shared/workforce-planning-command";
 import type { HeadcountPlanLine } from "../types";
 
@@ -45,7 +44,10 @@ export async function addHeadcountPlanLine(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+				}),
 			),
 	});
 }
@@ -76,7 +78,10 @@ export async function updateHeadcountPlanLine(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+				}),
 			),
 	});
 }
@@ -98,7 +103,10 @@ export async function removeHeadcountPlanLine(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+				}),
 			),
 	});
 }
