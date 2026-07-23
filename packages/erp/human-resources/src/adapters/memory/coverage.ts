@@ -1,4 +1,6 @@
 import type { HumanResourcesStore } from "../../store";
+import type { HumanResourcesIdentityStore } from "../../store/identity";
+import type { HumanResourcesTimeStore } from "../../store/time";
 
 import type { MemoryCompensationBenefitsMethods } from "./compensation-benefits";
 import type { MemoryComplianceMethods } from "./compliance";
@@ -13,6 +15,12 @@ import type { MemoryRecruitmentMethods } from "./recruitment";
 import type { MemoryTalentMethods } from "./talent";
 import type { MemoryWorkforcePlanningMethods } from "./workforce-planning";
 
+/** Every method supplied by the composed in-memory time adapter. */
+export type MemoryTimeMethods = HumanResourcesTimeStore;
+
+/** Every method supplied by the composed in-memory identity adapter. */
+export type MemoryIdentityMethods = HumanResourcesIdentityStore;
+
 /** Every method currently supplied by the composed in-memory adapter. */
 export type MemoryImplementedHumanResourcesMethods = MemoryCoreMethods &
 	MemoryOrganizationMethods &
@@ -23,9 +31,11 @@ export type MemoryImplementedHumanResourcesMethods = MemoryCoreMethods &
 	PerformanceMemoryMethods &
 	MemoryLearningMethods &
 	MemoryTalentMethods &
+	MemoryTimeMethods &
 	MemoryWorkforcePlanningMethods &
 	MemoryComplianceMethods &
-	MemoryEmployeeRelationsMethods;
+	MemoryEmployeeRelationsMethods &
+	MemoryIdentityMethods;
 
 /**
  * Compile-time inventory of HumanResourcesStore methods without a memory owner.

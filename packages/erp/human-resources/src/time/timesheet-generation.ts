@@ -31,6 +31,12 @@ import type {
 } from "../work-calendar";
 import { resolveWorkCalendarCivilDay } from "./calendar-resolution";
 import type { ApprovedLeaveFact } from "./handoff/ports";
+import {
+	allocateWorkedMinutesByCivilDate,
+	attendanceEntrySourceReference,
+	sessionBreakIntervals,
+	workedMinutesForSessionCivilDate,
+} from "./legal-minute-allocation";
 
 export const TIMESHEET_GENERATION_ABSENCE_SOURCE = "timesheet_generation";
 
@@ -94,11 +100,8 @@ export function qualifyingWorkedMinutesForDate(
 ): number {
 	let total = 0;
 	for (const session of sessions) {
-		if (
-			session.localWorkDate === workDate &&
-			session.resolutionStatus === "resolved"
-		) {
-			total += session.workedMinutes;
+		if (session.resolutionStatus === "resolved") {
+			total += workedMinutesForSessionCivilDate(session, workDate);
 		}
 	}
 	for (const entry of entries) {
@@ -115,6 +118,68 @@ export function qualifyingWorkedMinutesForDate(
 		}
 	}
 	return total;
+}
+
+export type AttendanceTimesheetEntryPlan = {
+	workDate: string;
+	sourceReference: string;
+	recordedMinutes: number;
+	approvedMinutes: number;
+};
+
+export function buildAttendanceTimesheetEntryPlans(
+	session: AttendanceSession,
+): AttendanceTimesheetEntryPlan[] {
+	if (
+		session.resolutionStatus !== "resolved" ||
+		session.firstClockInAt === null ||
+		session.finalClockOutAt === null ||
+		session.workedMinutes <= 0
+	) {
+		return [];
+	}
+
+	const intervals = sessionBreakIntervals(session);
+	if (intervals.length === 0) {
+		return [
+			{
+				workDate: session.localWorkDate,
+				sourceReference: session.id,
+				recordedMinutes: session.workedMinutes,
+				approvedMinutes: session.workedMinutes,
+			},
+		];
+	}
+
+	const allocated = allocateWorkedMinutesByCivilDate({
+		firstClockInAt: session.firstClockInAt,
+		finalClockOutAt: session.finalClockOutAt,
+		breakIntervals: intervals,
+		timeZone: session.timezone,
+	});
+	const plans: AttendanceTimesheetEntryPlan[] = [];
+	for (const [workDate, minutes] of allocated) {
+		if (minutes <= 0) {
+			continue;
+		}
+		plans.push({
+			workDate,
+			sourceReference: attendanceEntrySourceReference(session.id, workDate),
+			recordedMinutes: minutes,
+			approvedMinutes: minutes,
+		});
+	}
+	if (plans.length === 0) {
+		return [
+			{
+				workDate: session.localWorkDate,
+				sourceReference: session.id,
+				recordedMinutes: session.workedMinutes,
+				approvedMinutes: session.workedMinutes,
+			},
+		];
+	}
+	return plans;
 }
 
 export function isBasicFullDayAbsence(
@@ -167,6 +232,12 @@ export function mapApprovedLeaveFactToEntryInput(input: {
 		endedAt: null,
 		recordedMinutes: fact.approvedMinutes,
 		approvedMinutes: fact.approvedMinutes,
+		costCenterId: null,
+		projectId: null,
+		locationId: null,
+		departmentId: null,
+		approvalReference: null,
+		evidenceReference: null,
 		createdBy: actorUserId,
 		correlationId,
 	};

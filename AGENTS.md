@@ -325,6 +325,8 @@ pnpm --filter @afenda/web dev   # :3000
 
 **UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` (ADR-010 flat-barrel — Living ADR body dormant; farm `shadcn-ui` + `afenda-elite-ui-compose`). Owned shadcn `new-york` / Radix source in `packages/surfaces/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
 
+**Editor (VS Code / Cursor):** product JS/TS/JSON/CSS → Biome only. SSOT: [`scripts/lib/editor-posture.mjs`](scripts/lib/editor-posture.mjs) · gate: `pnpm check:editor-biome`. Native `biome.lsp.bin` platform map + `biome.lsp.watcher.kind: none` + tsserver caps (`disableAutomaticTypeAcquisition`, `watchOptions.excludeDirectories` incl. `docs-V2`). Per-package *Initializing …/tsconfig.json* is normal once per package per session (37 package tsconfigs). Explorer: `excludeGitIgnore: false`; watcher excludes per SSOT (`docs-V2` watcher-only — still visible in explorer). User settings must not override workspace (global Biome paths, `excludeGitIgnore: true`). Hook: [`.cursor/hooks/no-editor-biome-drift.mjs`](.cursor/hooks/no-editor-biome-drift.mjs) · rule: [`.cursor/rules/editor-workspace-posture.mdc`](.cursor/rules/editor-workspace-posture.mdc) · Scratch: [docs-V2/lint](docs-V2/lint/README.md).
+
 **Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
 
 **GitHub CLI:** Cursor may inject `GITHUB_TOKEN` without write scopes → `gh` 403. Prefer `pnpm gh -- …` (wrapper drops it) or `Remove-Item Env:GITHUB_TOKEN` then keyring `gh`. Do **not** put `GITHUB_TOKEN` in `.env.local` as app config.
@@ -364,6 +366,7 @@ Authority: [`testing/README.md`](testing/README.md).
 |---------|---------|
 | `pnpm test` / `pnpm test:unit` | Turbo/Vitest package contracts |
 | `pnpm lint` / `pnpm typecheck` | Biome · `tsc` |
+| `pnpm check:editor-biome` | Biome VS Code/Cursor formatter wiring + explorer latency guards |
 | `pnpm exec turbo run lint typecheck test` | CI parity (S8.1) |
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |

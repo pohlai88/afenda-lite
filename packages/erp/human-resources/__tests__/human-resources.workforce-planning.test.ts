@@ -46,7 +46,7 @@ import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-auth
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
-import { createWorkforceHarness } from "./helpers/workforce-harness";
+import { createHrParityHarness } from "./helpers/hr-parity-harness";
 
 const ORG = "org-wfp-test";
 const ORG_B = "org-wfp-test-b";
@@ -57,7 +57,7 @@ function suffix(): string {
 }
 
 async function createDraftPlanWithLine(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -114,7 +114,7 @@ async function createDraftPlanWithLine(
 }
 
 async function approvePlanPipeline(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -165,7 +165,7 @@ async function approvePlanPipeline(
 }
 
 async function openRequisitionPipeline(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; tag: string },
 ) {
 	const draft = await createDraftRequisition(
@@ -208,7 +208,7 @@ async function openRequisitionPipeline(
 
 describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	it("creates a draft headcount plan with a line", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const created = await createDraftPlanWithLine(ready, {
 			organizationId: ORG,
@@ -222,7 +222,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects invalid plan period", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const plan = await createHeadcountPlan(
 			{
@@ -242,7 +242,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects duplicate approved scope", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const first = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -261,7 +261,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects negative planned FTE", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const plan = await createHeadcountPlan(
 			{
@@ -295,7 +295,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects over-reservation against approved capacity", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -337,7 +337,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("retries reservation idempotently and conflicts on payload mismatch", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -398,7 +398,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("releases reservation when requisition is cancelled", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -474,7 +474,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("consumes reservation on offer acceptance", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -605,7 +605,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects stale approval version", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const draft = await createDraftPlanWithLine(ready, {
 			organizationId: ORG,
@@ -642,7 +642,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects cross-org reservation references", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -682,7 +682,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rejects unauthorized approval", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 
 		const draft = await createDraftPlanWithLine(ready, {
@@ -724,7 +724,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("blocks edits to approved plan lines", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,
@@ -762,7 +762,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("rolls back plan create when audit fails", async () => {
-		const store = createWorkforceHarness("memory").store;
+		const store = createHrParityHarness("memory").store;
 		const portsFail = createMemoryMutationPorts({ auditFailAfter: 0 });
 		const portsOk = createMemoryMutationPorts();
 		const authorization = createGrantingHumanResourcesAuthorization([
@@ -805,7 +805,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	});
 
 	it("exposes recruitment headcount handoff read model", async () => {
-		const ready = createWorkforceHarness("memory");
+		const ready = createHrParityHarness("memory");
 		const tag = suffix();
 		const approved = await approvePlanPipeline(ready, {
 			organizationId: ORG,

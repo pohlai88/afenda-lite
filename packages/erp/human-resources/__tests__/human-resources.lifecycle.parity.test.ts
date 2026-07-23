@@ -18,10 +18,10 @@ import { transferAssignment } from "../src/lifecycle/transfer";
 import { createPosition } from "../src/organization/position";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -38,7 +38,7 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 
 	for (const adapter of ["memory", "drizzle"] as const) {
 		it(`${adapter}: transfer then finalizeTermination emit workforce events`, async () => {
-			const ready = createWorkforceHarness(adapter);
+			const ready = createHrParityHarness(adapter);
 			const suffix = uniqueSuffix(adapter);
 			const organizationId = `org-life-parity-${suffix}`;
 			neonOrgs.push(organizationId);

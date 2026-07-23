@@ -180,8 +180,7 @@ export function resolveWorkCalendarCivilDay(
 	const fromStandard = standardMinutesFromContext(context);
 	return {
 		isWorkingDay: true,
-		expectedMinutes:
-			fromPattern ?? (fromStandard > 0 ? fromStandard : null),
+		expectedMinutes: fromPattern ?? (fromStandard > 0 ? fromStandard : null),
 		overrideKind: null,
 	};
 }

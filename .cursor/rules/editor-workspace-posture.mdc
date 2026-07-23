@@ -1,0 +1,64 @@
+---
+description: Workspace editor posture — Biome LSP, tsserver caps, explorer latency, extension scan scope
+globs: ".vscode/settings.json"
+alwaysApply: false
+---
+
+# Editor workspace posture
+
+**NOT ALLOWED** to regress [`.vscode/settings.json`](../../.vscode/settings.json) in ways that break formatting, stall the file explorer, or re-scan the whole monorepo.
+
+SSOT: [`scripts/lib/editor-posture.mjs`](../../scripts/lib/editor-posture.mjs) · gate: `pnpm check:editor-biome` · hook: [`.cursor/hooks/no-editor-biome-drift.mjs`](../hooks/no-editor-biome-drift.mjs)
+
+## Biome (format + LSP)
+
+| Setting | Value |
+|---------|-------|
+| `biome.lsp.bin` | Platform map → native `@biomejs/cli-*` (not node wrapper) |
+| `biome.configurationPath` | `"./biome.jsonc"` |
+| `biome.lsp.watcher.kind` | `"none"` |
+| Product JS/TS/JSON/CSS | `"editor.defaultFormatter": "biomejs.biome"` |
+| Markdown/MDX | Prettier only |
+
+Requires [`.npmrc`](../../.npmrc) `public-hoist-pattern[]=@biomejs/cli-*` + `pnpm install`.
+
+## TypeScript (tsserver)
+
+Per-package `Initializing …/tsconfig.json` is **normal once per package per session** (37 package tsconfigs). Reduce repeat cost:
+
+| Setting | Value |
+|---------|-------|
+| `typescript.disableAutomaticTypeAcquisition` | `true` |
+| `typescript.tsserver.maxTsServerMemory` | `8192` |
+| `typescript.tsserver.experimental.enableProjectDiagnostics` | `false` |
+| `typescript.preferences.includePackageJsonAutoImports` | `"off"` |
+| `typescript.tsserver.useSyntaxServer` | `"auto"` |
+| `typescript.tsserver.watchOptions.excludeDirectories` | includes `docs-V2`, build trees |
+
+## Explorer / watchers
+
+| Rule | Detail |
+|------|--------|
+| `explorer.excludeGitIgnore` | **false** — use explicit excludes |
+| `files.exclude` | Build artifacts + `.cursor` / `.agents` (not `docs-V2`) |
+| `files.watcherExclude` | SSOT list incl. `docs-V2/**` watcher-only, drizzle, shadcn-studio, `.pnpm` |
+
+## Tailwind extension
+
+| Setting | Value |
+|---------|-------|
+| `tailwindCSS.experimental.configFile` | `apps/web/postcss.config.mjs` |
+| `tailwindCSS.files.exclude` | Heavy trees (docs-V2, drizzle, e2e, agent trees) |
+
+## User settings
+
+User-level Cursor/VS Code settings must **not** override workspace: `explorer.excludeGitIgnore: true`, global Biome node-wrapper paths, ESLint as TS formatter.
+
+## Verify
+
+```bash
+pnpm check:editor-biome
+node --test scripts/check-editor-biome-hook.test.mjs
+```
+
+Scratch: [docs-V2/lint/README.md](../../docs-V2/lint/README.md#editor)

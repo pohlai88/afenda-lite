@@ -18,8 +18,10 @@ import type {
 	MutationPorts,
 } from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
+import { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 import { resolveHumanResourcesStore } from "./resolve-store";
 import type { HumanResourcesStore } from "./store";
+import type { AssignmentContextQueryPort } from "./time/handoff/ports";
 import type { WorkCalendarPort } from "./work-calendar";
 
 export type HumanResourcesCommandOptions = {
@@ -29,6 +31,7 @@ export type HumanResourcesCommandOptions = {
 	documentReference?: DocumentReferencePort;
 	workCalendar?: WorkCalendarPort;
 	approvedLeave?: ApprovedLeaveQueryPort;
+	assignmentContext?: AssignmentContextQueryPort;
 	attendanceSource?: AttendanceSourcePort;
 	authorization?: HumanResourcesAuthorizationPort;
 	resourceAwareAuthorization?: HumanResourcesResourceAwareAuthorizationPort;
@@ -73,6 +76,14 @@ export function requireApprovedLeaveQuery(
 		);
 	}
 	return ok(options.approvedLeave);
+}
+
+export function resolveAssignmentContext(
+	options: HumanResourcesCommandOptions = {},
+): AssignmentContextQueryPort {
+	return (
+		options.assignmentContext ?? createProductionAssignmentContextQuery()
+	);
 }
 
 export function requireAttendanceSource(

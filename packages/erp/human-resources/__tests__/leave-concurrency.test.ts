@@ -12,7 +12,7 @@ import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for
 import { describe, expect, it, beforeEach } from "vitest";
 import { randomUUID } from "node:crypto";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
-import { createTestHarness } from "./helpers/workforce-harness";
+import { createTestHarness } from "./helpers/hr-parity-harness";
 import type { 
 	WorkforceTestHarness,
 	TestEmployee,
@@ -20,7 +20,7 @@ import type {
 	TestLeavePolicy,
 	TestLeaveEntitlement,
 	TestLeaveRequest,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 

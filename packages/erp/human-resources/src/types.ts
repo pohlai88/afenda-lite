@@ -2,6 +2,11 @@ import type {
 	HumanResourcesApplicationId,
 	HumanResourcesAssessmentId,
 	HumanResourcesAssignmentId,
+	HumanResourcesAttendanceAdjustmentId,
+	HumanResourcesAttendanceBreakWaiverDecisionId,
+	HumanResourcesAttendanceEventId,
+	HumanResourcesAttendanceExceptionId,
+	HumanResourcesAttendanceSessionId,
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
@@ -20,6 +25,7 @@ import type {
 	HumanResourcesEmployeeCompensationId,
 	HumanResourcesEmployeeDocumentId,
 	HumanResourcesEmployeeId,
+	HumanResourcesEmploymentCalendarAssignmentId,
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
@@ -48,6 +54,7 @@ import type {
 	HumanResourcesOfferId,
 	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingTaskId,
+	HumanResourcesOvertimeRequestId,
 	HumanResourcesPerformanceCycleId,
 	HumanResourcesPerformanceCycleParticipantId,
 	HumanResourcesPolicyAcknowledgementId,
@@ -59,6 +66,10 @@ import type {
 	HumanResourcesReviewParticipantId,
 	HumanResourcesSalaryBandId,
 	HumanResourcesSessionId,
+	HumanResourcesShiftAssignmentId,
+	HumanResourcesShiftAssignmentSegmentId,
+	HumanResourcesShiftBreakId,
+	HumanResourcesShiftId,
 	HumanResourcesSuccessionCandidateId,
 	HumanResourcesSuccessionPlanId,
 	HumanResourcesTalentPoolId,
@@ -66,20 +77,16 @@ import type {
 	HumanResourcesTalentProfileAssessmentId,
 	HumanResourcesTalentProfileId,
 	HumanResourcesTerminationId,
-	HumanResourcesWorkEligibilityId,
-	HumanResourcesWorkCalendarId,
-	HumanResourcesWorkCalendarHolidayId,
-	HumanResourcesEmploymentCalendarAssignmentId,
-	HumanResourcesShiftId,
-	HumanResourcesShiftBreakId,
-	HumanResourcesShiftAssignmentId,
-	HumanResourcesAttendanceSessionId,
-	HumanResourcesAttendanceExceptionId,
+	HumanResourcesTimeApprovalAuthorityAssignmentId,
+	HumanResourcesTimePolicyAssignmentId,
+	HumanResourcesTimePolicyId,
+	HumanResourcesTimesheetApprovalDecisionId,
 	HumanResourcesTimesheetEntryId,
-	HumanResourcesOvertimeRequestId,
-	HumanResourcesAttendanceEventId,
-	HumanResourcesAttendanceRecordId,
 	HumanResourcesTimesheetId,
+	HumanResourcesWorkCalendarHolidayId,
+	HumanResourcesWorkCalendarId,
+	HumanResourcesWorkCalendarScopeAssignmentId,
+	HumanResourcesWorkEligibilityId,
 } from "./brands";
 import type {
 	BenefitEnrollmentStatus,
@@ -1894,9 +1901,10 @@ export type WorkCalendar = {
 	calendarVersion: string;
 	workWeek: readonly WorkWeekDayPatternJson[];
 	standardHoursPerDay: string;
-	status: "active" | "archived";
+	status: "active" | "superseded" | "archived";
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	supersedesCalendarId: HumanResourcesWorkCalendarId | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -1938,13 +1946,92 @@ export type EmploymentCalendarAssignment = {
 	updatedAt: Date;
 };
 
+export type WorkCalendarScopeType =
+	| "employment"
+	| "employee"
+	| "location"
+	| "department"
+	| "legal_entity"
+	| "organization";
+
+export type WorkCalendarScopeAssignment = {
+	id: HumanResourcesWorkCalendarScopeAssignmentId;
+	organizationId: string;
+	scopeType: WorkCalendarScopeType;
+	scopeKey: string;
+	calendarId: HumanResourcesWorkCalendarId;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type ShiftKind =
 	| "fixed"
 	| "flexible"
 	| "split"
 	| "rest_day"
 	| "public_holiday";
-export type ShiftStatus = "draft" | "active" | "inactive";
+
+export type TimeApprovalAuthority =
+	| "line_manager"
+	| "department"
+	| "hr"
+	| "payroll";
+export type TimePolicyStatus = "draft" | "active" | "superseded" | "archived";
+
+export type TimePolicy = {
+	id: HumanResourcesTimePolicyId;
+	organizationId: string;
+	code: string;
+	name: string;
+	status: TimePolicyStatus;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	minimumRestMinutes: number;
+	automaticBreakAfterMinutes: number | null;
+	automaticBreakMinutes: number;
+	approvalSteps: readonly TimeApprovalAuthority[];
+	supersedesPolicyId: HumanResourcesTimePolicyId | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TimePolicyAssignment = {
+	id: HumanResourcesTimePolicyAssignmentId;
+	organizationId: string;
+	policyId: HumanResourcesTimePolicyId;
+	employmentId: HumanResourcesEmploymentId;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TimeApprovalAuthorityAssignment = {
+	id: HumanResourcesTimeApprovalAuthorityAssignmentId;
+	organizationId: string;
+	actorUserId: string;
+	authority: TimeApprovalAuthority;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ShiftStatus = "draft" | "active" | "superseded" | "inactive";
 
 export type Shift = {
 	id: HumanResourcesShiftId;
@@ -1968,6 +2055,7 @@ export type Shift = {
 	status: ShiftStatus;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	supersedesShiftId: HumanResourcesShiftId | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -2015,6 +2103,17 @@ export type ShiftAssignment = {
 	updatedAt: Date;
 };
 
+export type ShiftAssignmentSegment = {
+	id: HumanResourcesShiftAssignmentSegmentId;
+	organizationId: string;
+	assignmentId: HumanResourcesShiftAssignmentId;
+	segmentOrder: number;
+	startsAt: Date;
+	endsAt: Date;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type AttendanceEventType =
 	| "clock_in"
 	| "clock_out"
@@ -2036,6 +2135,7 @@ export type AttendanceEvent = {
 	employmentId: HumanResourcesEmploymentId | null;
 	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
 	eventType: AttendanceEventType;
+	capturedOccurredAt: Date | null;
 	occurredAt: Date;
 	sourceTimezone: string;
 	localWorkDate: string;
@@ -2044,6 +2144,7 @@ export type AttendanceEvent = {
 	locationKey: string | null;
 	deviceMetadata: Record<string, unknown> | null;
 	payloadChecksum: string | null;
+	capturedNotes: string | null;
 	notes: string | null;
 	voidedAt: Date | null;
 	voidReason: string | null;
@@ -2054,10 +2155,25 @@ export type AttendanceEvent = {
 	updatedAt: Date;
 };
 
-export type AttendanceImportBatchStatus =
-	| "completed"
-	| "partial"
-	| "failed";
+export type AttendanceAdjustment = {
+	id: HumanResourcesAttendanceAdjustmentId;
+	organizationId: string;
+	eventId: HumanResourcesAttendanceEventId;
+	sequence: number | null;
+	eventVersionBefore: number | null;
+	eventVersionAfter: number | null;
+	previousOccurredAt: Date;
+	newOccurredAt: Date;
+	previousNotes: string | null;
+	newNotes: string | null;
+	adjustmentReason: string;
+	evidenceReference: string | null;
+	actorUserId: string;
+	correlationId: string | null;
+	createdAt: Date;
+};
+
+export type AttendanceImportBatchStatus = "completed" | "partial" | "failed";
 
 export type AttendanceImportAcceptedRow = {
 	rowIndex: number;
@@ -2119,6 +2235,17 @@ export type AttendanceSession = {
 	breakMinutes: number;
 	workedMinutes: number;
 	grossMinutes: number;
+	provenance: {
+		automaticBreak: {
+			policyId: HumanResourcesTimePolicyId;
+			minutes: number;
+			applied: boolean;
+		} | null;
+		breakIntervals?: readonly {
+			startedAt: string;
+			endedAt: string;
+		}[];
+	};
 	resolutionStatus: AttendanceSessionResolutionStatus;
 	requiresReview: boolean;
 	version: number;
@@ -2126,6 +2253,24 @@ export type AttendanceSession = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type AttendanceBreakWaiverDecision = {
+	id: HumanResourcesAttendanceBreakWaiverDecisionId;
+	organizationId: string;
+	sessionId: HumanResourcesAttendanceSessionId;
+	policyId: HumanResourcesTimePolicyId;
+	authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+	authority: TimeApprovalAuthority;
+	actorUserId: string;
+	reason: string;
+	evidenceReference: string;
+	automaticBreakMinutes: number;
+	recordedBreakMinutes: number;
+	sessionVersion: number;
+	correlationId: string;
+	decidedAt: Date;
+	createdAt: Date;
 };
 
 export type AttendanceRecord = AttendanceSession;
@@ -2205,6 +2350,10 @@ export type Timesheet = {
 	totalRecordedMinutes: number;
 	totalApprovedMinutes: number;
 	submittedAt: Date | null;
+	submissionReference: string | null;
+	approvalPolicyId: HumanResourcesTimePolicyId | null;
+	requiredApprovalSteps: readonly TimeApprovalAuthority[];
+	completedApprovalSteps: number;
 	approvedAt: Date | null;
 	approvedBy: string | null;
 	approverNotes: string | null;
@@ -2215,6 +2364,23 @@ export type Timesheet = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type TimesheetApprovalDecision = {
+	id: HumanResourcesTimesheetApprovalDecisionId;
+	organizationId: string;
+	timesheetId: HumanResourcesTimesheetId;
+	submissionReference: string;
+	policyId: HumanResourcesTimePolicyId | null;
+	authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+	stepIndex: number;
+	authority: TimeApprovalAuthority;
+	actorUserId: string;
+	comment: string | null;
+	versionApproved: number;
+	correlationId: string;
+	decidedAt: Date;
+	createdAt: Date;
 };
 
 export type TimesheetEntrySourceType =
@@ -2250,6 +2416,12 @@ export type TimesheetEntry = {
 	endedAt: Date | null;
 	recordedMinutes: number;
 	approvedMinutes: number;
+	costCenterId: string | null;
+	projectId: string | null;
+	locationId: string | null;
+	departmentId: string | null;
+	approvalReference: string | null;
+	evidenceReference: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -2330,7 +2502,8 @@ export type IdempotentAttendanceSessionRecord = {
 	createRequestFingerprint: string;
 };
 
-export type IdempotentAttendanceRecordRecord = IdempotentAttendanceSessionRecord;
+export type IdempotentAttendanceRecordRecord =
+	IdempotentAttendanceSessionRecord;
 
 export type IdempotentTimesheetRecord = {
 	timesheet: Timesheet;
@@ -2429,8 +2602,14 @@ export type AttendanceImportBatchInput = {
 export type AttendanceSessionResolveInput = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
 	localWorkDate: string;
 	timezone: string;
+	automaticBreakPolicy: {
+		policyId: HumanResourcesTimePolicyId;
+		afterMinutes: number;
+		deductionMinutes: number;
+	} | null;
 	idempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;

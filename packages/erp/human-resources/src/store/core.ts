@@ -10,13 +10,13 @@ import type {
 	HumanResourcesReportingLineId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	DepartmentStatus,
 	EmploymentStatus,
 	JobStatus,
 	PositionStatus,
 } from "../shared/employment-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	Department,
 	Employee,
@@ -162,6 +162,12 @@ export type HumanResourcesCoreStore = {
 	findOpenEmploymentByEmployee(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
+	}): Promise<Result<Employment | null>>;
+
+	findEmploymentByEmployeeAsOf(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf: string;
 	}): Promise<Result<Employment | null>>;
 
 	createEmployment(

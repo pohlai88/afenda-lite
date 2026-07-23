@@ -11,11 +11,15 @@ import {
 	humanResourcesShiftAssignmentIdSchema,
 	humanResourcesShiftBreakIdSchema,
 	humanResourcesShiftIdSchema,
+	humanResourcesTimeApprovalAuthorityAssignmentIdSchema,
+	humanResourcesTimePolicyIdSchema,
 	humanResourcesTimesheetEntryIdSchema,
 	humanResourcesTimesheetIdSchema,
 	humanResourcesWorkCalendarHolidayIdSchema,
 	humanResourcesWorkCalendarIdSchema,
+	humanResourcesWorkCalendarScopeAssignmentIdSchema,
 } from "../brands";
+import { isValidIanaTimeZone } from "../time/iana-timezone";
 import {
 	humanResourcesExpectedVersionSchema,
 	humanResourcesIdempotencyKeySchema,
@@ -25,9 +29,36 @@ import {
 } from "./common";
 
 const timeOfDaySchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
-const timezoneSchema = z.string().trim().min(1).max(64);
+const workCalendarScopeTypeSchema = z.enum([
+	"employment",
+	"employee",
+	"location",
+	"department",
+	"legal_entity",
+	"organization",
+]);
+const timezoneSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(64)
+	.refine(isValidIanaTimeZone, "Must be a valid IANA timezone");
+const unverifiedTimezoneSchema = z.string().trim().min(1).max(64);
 const minutesSchema = z.number().int().nonnegative().max(1440);
 const positiveMinutesSchema = z.number().int().positive().max(1440);
+const timeApprovalAuthoritySchema = z.enum([
+	"line_manager",
+	"department",
+	"hr",
+	"payroll",
+]);
+const nullableReferenceSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(200)
+	.nullable()
+	.optional();
 
 const workWeekDayPatternSchema = z
 	.object({
@@ -134,9 +165,7 @@ export const createWorkCalendarInputSchema = humanResourcesMutationContextSchema
 		timezone: timezoneSchema,
 		calendarVersion: z.string().trim().min(1).max(64),
 		workWeek: z.array(workWeekDayPatternSchema).length(7),
-		standardHoursPerDay: z
-			.string()
-			.regex(/^\d+(\.\d{1,2})?$/),
+		standardHoursPerDay: z.string().regex(/^\d+(\.\d{1,2})?$/),
 		effectiveFrom: isoDateSchema,
 		effectiveTo: isoDateSchema.nullable().optional(),
 		idempotencyKey: humanResourcesIdempotencyKeySchema,
@@ -159,12 +188,32 @@ export const updateWorkCalendarInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
-export const archiveWorkCalendarInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		calendarId: humanResourcesWorkCalendarIdSchema,
-		expectedVersion: humanResourcesExpectedVersionSchema,
-	})
-	.strict();
+export const supersedeWorkCalendarInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			calendarId: humanResourcesWorkCalendarIdSchema,
+			name: z.string().trim().min(1).max(200).optional(),
+			timezone: timezoneSchema.optional(),
+			calendarVersion: z.string().trim().min(1).max(64),
+			workWeek: z.array(workWeekDayPatternSchema).length(7).optional(),
+			standardHoursPerDay: z
+				.string()
+				.regex(/^\d+(\.\d{1,2})?$/)
+				.optional(),
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+		})
+		.strict();
+
+export const archiveWorkCalendarInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			calendarId: humanResourcesWorkCalendarIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
 
 export const getWorkCalendarInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -174,7 +223,7 @@ export const getWorkCalendarInputSchema = humanResourcesMutationContextSchema
 
 export const listWorkCalendarsInputSchema = humanResourcesMutationContextSchema
 	.extend({
-		status: z.enum(["active", "archived"]).optional(),
+		status: z.enum(["active", "superseded", "archived"]).optional(),
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 	})
@@ -194,7 +243,9 @@ function applyWorkCalendarOverrideDefaults<
 		isWorkingDay?: boolean;
 		expectedMinutes?: number | null;
 	},
->(data: T): T & {
+>(
+	data: T,
+): T & {
 	overrideKind: z.infer<typeof workCalendarDateOverrideKindSchema>;
 	isWorkingDay: boolean;
 	expectedMinutes: number | null;
@@ -328,6 +379,112 @@ export const resolveEmploymentCalendarInputSchema =
 		})
 		.strict();
 
+export const assignWorkCalendarScopeInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			scopeType: workCalendarScopeTypeSchema,
+			scopeKey: z.string().trim().min(1).max(128),
+			calendarId: humanResourcesWorkCalendarIdSchema,
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+		})
+		.strict();
+
+export const endWorkCalendarScopeAssignmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			assignmentId: humanResourcesWorkCalendarScopeAssignmentIdSchema,
+			effectiveTo: isoDateSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const resolveEmployeeWorkCalendarInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			employmentId: humanResourcesEmploymentIdSchema,
+			asOf: isoDateSchema,
+		})
+		.strict();
+
+export const createTimePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		code: z.string().trim().min(1).max(64),
+		name: z.string().trim().min(1).max(200),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		minimumRestMinutes: z.number().int().nonnegative().max(2880),
+		automaticBreakAfterMinutes: positiveMinutesSchema.nullable().optional(),
+		automaticBreakMinutes: minutesSchema.optional(),
+		approvalSteps: z
+			.array(timeApprovalAuthoritySchema)
+			.min(1)
+			.max(4)
+			.refine(
+				(steps) => new Set(steps).size === steps.length,
+				"Approval steps must be unique",
+			),
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+	})
+	.strict();
+
+export const activateTimePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesTimePolicyIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const supersedeTimePolicyInputSchema = createTimePolicyInputSchema
+	.omit({ code: true })
+	.extend({
+		policyId: humanResourcesTimePolicyIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export const assignTimePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesTimePolicyIdSchema,
+		employmentId: humanResourcesEmploymentIdSchema,
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+	})
+	.strict();
+
+export const getTimePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		policyId: humanResourcesTimePolicyIdSchema,
+	})
+	.strict();
+
+export const resolveTimePolicyInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		employmentId: humanResourcesEmploymentIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export const assignTimeApprovalAuthorityInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			targetActorUserId: z.string().trim().min(1).max(200),
+			authority: timeApprovalAuthoritySchema,
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+		})
+		.strict();
+
+export const endTimeApprovalAuthorityAssignmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			assignmentId: humanResourcesTimeApprovalAuthorityAssignmentIdSchema,
+			effectiveTo: isoDateSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
 // Shift definition
 export const createShiftInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -376,6 +533,31 @@ export const updateShiftInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
+export const supersedeShiftInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		shiftId: humanResourcesShiftIdSchema,
+		name: z.string().trim().min(1).max(200).optional(),
+		shiftKind: shiftKindSchema.optional(),
+		startLocal: timeOfDaySchema.optional(),
+		endLocal: timeOfDaySchema.optional(),
+		isOvernight: z.boolean().optional(),
+		expectedMinutes: positiveMinutesSchema.optional(),
+		graceEarlyMinutes: minutesSchema.optional(),
+		graceLateMinutes: minutesSchema.optional(),
+		minDurationMinutes: minutesSchema.nullable().optional(),
+		maxDurationMinutes: minutesSchema.nullable().optional(),
+		earliestClockInLocal: timeOfDaySchema.nullable().optional(),
+		latestClockOutLocal: timeOfDaySchema.nullable().optional(),
+		overtimeEligible: z.boolean().optional(),
+		timezone: timezoneSchema.nullable().optional(),
+		locationKey: z.string().trim().min(1).max(128).nullable().optional(),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+	})
+	.strict();
+
 export const activateShiftInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		shiftId: humanResourcesShiftIdSchema,
@@ -398,7 +580,7 @@ export const getShiftInputSchema = humanResourcesMutationContextSchema
 
 export const listShiftsInputSchema = humanResourcesMutationContextSchema
 	.extend({
-		status: z.enum(["draft", "active", "inactive"]).optional(),
+		status: z.enum(["draft", "active", "superseded", "inactive"]).optional(),
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 	})
@@ -439,6 +621,19 @@ export const assignShiftInputSchema = humanResourcesMutationContextSchema
 		locationKey: z.string().trim().min(1).max(128).nullable().optional(),
 		timezone: timezoneSchema,
 		assignmentSource: z.string().trim().min(1).max(64).optional(),
+		segments: z
+			.array(
+				z
+					.object({
+						segmentOrder: z.number().int().positive().max(20),
+						startsAt: isoDateTimeSchema,
+						endsAt: isoDateTimeSchema,
+					})
+					.strict(),
+			)
+			.min(1)
+			.max(20)
+			.optional(),
 		idempotencyKey: humanResourcesIdempotencyKeySchema,
 	})
 	.strict();
@@ -599,7 +794,7 @@ export const attendanceImportEventRowSchema = z
 		eventType: attendanceEventTypeSchema,
 		occurredAt: isoDateTimeSchema,
 		// IANA validity checked per-row in import (partial failure), not batch Zod.
-		sourceTimezone: timezoneSchema,
+		sourceTimezone: unverifiedTimezoneSchema,
 		localWorkDate: isoDateSchema,
 		sourceReference: z.string().trim().min(1).max(200),
 		locationKey: z.string().trim().min(1).max(128).nullable().optional(),
@@ -636,23 +831,38 @@ export const correctAttendanceEventInputSchema =
 			occurredAt: isoDateTimeSchema,
 			notes: z.string().trim().max(500).nullable().optional(),
 			adjustmentReason: z.string().trim().min(1).max(500),
+			evidenceReference: z
+				.string()
+				.trim()
+				.min(1)
+				.max(500)
+				.nullable()
+				.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
 
-export const voidAttendanceEventInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		eventId: humanResourcesAttendanceEventIdSchema,
-		voidReason: z.string().trim().min(1).max(500),
-		expectedVersion: humanResourcesExpectedVersionSchema,
-	})
-	.strict();
+export const voidAttendanceEventInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			eventId: humanResourcesAttendanceEventIdSchema,
+			voidReason: z.string().trim().min(1).max(500),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
 
 export const getAttendanceEventInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		eventId: humanResourcesAttendanceEventIdSchema,
 	})
 	.strict();
+
+export const listAttendanceAdjustmentsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			eventId: humanResourcesAttendanceEventIdSchema,
+		})
+		.strict();
 
 export const listAttendanceEventsInputSchema =
 	humanResourcesMutationContextSchema
@@ -695,6 +905,24 @@ export const listAttendanceSessionsInputSchema =
 		})
 		.strict();
 
+export const approveAttendanceBreakWaiverInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			sessionId: humanResourcesAttendanceSessionIdSchema,
+			authority: timeApprovalAuthoritySchema,
+			reason: z.string().trim().min(1).max(1000),
+			evidenceReference: z.string().trim().min(1).max(500),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const listAttendanceBreakWaiverDecisionsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			sessionId: humanResourcesAttendanceSessionIdSchema,
+		})
+		.strict();
+
 // Attendance exceptions
 export const createAttendanceExceptionInputSchema =
 	humanResourcesMutationContextSchema
@@ -724,7 +952,13 @@ export const excuseAttendanceExceptionInputSchema =
 		.extend({
 			exceptionId: humanResourcesAttendanceExceptionIdSchema,
 			resolution: z.string().trim().min(1).max(1000),
-			evidenceReference: z.string().trim().min(1).max(200).nullable().optional(),
+			evidenceReference: z
+				.string()
+				.trim()
+				.min(1)
+				.max(200)
+				.nullable()
+				.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
@@ -816,6 +1050,12 @@ export const addTimesheetEntryInputSchema = humanResourcesMutationContextSchema
 		endedAt: isoDateTimeSchema.nullable().optional(),
 		recordedMinutes: minutesSchema,
 		approvedMinutes: minutesSchema.optional(),
+		costCenterId: nullableReferenceSchema,
+		projectId: nullableReferenceSchema,
+		locationId: nullableReferenceSchema,
+		departmentId: nullableReferenceSchema,
+		approvalReference: nullableReferenceSchema,
+		evidenceReference: nullableReferenceSchema,
 	})
 	.strict();
 
@@ -829,6 +1069,12 @@ export const updateTimesheetEntryInputSchema =
 			endedAt: isoDateTimeSchema.nullable().optional(),
 			recordedMinutes: minutesSchema.optional(),
 			approvedMinutes: minutesSchema.optional(),
+			costCenterId: nullableReferenceSchema,
+			projectId: nullableReferenceSchema,
+			locationId: nullableReferenceSchema,
+			departmentId: nullableReferenceSchema,
+			approvalReference: nullableReferenceSchema,
+			evidenceReference: nullableReferenceSchema,
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
@@ -859,10 +1105,19 @@ export const returnTimesheetInputSchema = humanResourcesMutationContextSchema
 export const approveTimesheetInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		timesheetId: humanResourcesTimesheetIdSchema,
+		authority: timeApprovalAuthoritySchema,
 		approverNotes: z.string().trim().max(1000).nullable().optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
+
+export const listTimesheetApprovalDecisionsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			timesheetId: humanResourcesTimesheetIdSchema,
+			submissionReference: z.string().uuid().optional(),
+		})
+		.strict();
 
 export const rejectTimesheetInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -950,7 +1205,13 @@ export const createOvertimeRequestInputSchema =
 			requestedEndsAt: isoDateTimeSchema,
 			requestedMinutes: positiveMinutesSchema,
 			reason: z.string().trim().min(1).max(1000),
-			evidenceReference: z.string().trim().min(1).max(200).nullable().optional(),
+			evidenceReference: z
+				.string()
+				.trim()
+				.min(1)
+				.max(200)
+				.nullable()
+				.optional(),
 			idempotencyKey: humanResourcesIdempotencyKeySchema,
 		})
 		.strict();

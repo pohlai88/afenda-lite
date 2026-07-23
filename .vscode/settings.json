@@ -1,6 +1,17 @@
 {
 	"biome.enabled": true,
 	"biome.requireConfiguration": true,
+	"biome.configurationPath": "./biome.jsonc",
+	"biome.lsp.bin": {
+		"win32-x64": "./node_modules/@biomejs/cli-win32-x64/biome.exe",
+		"win32-arm64": "./node_modules/@biomejs/cli-win32-arm64/biome.exe",
+		"darwin-x64": "./node_modules/@biomejs/cli-darwin-x64/biome",
+		"darwin-arm64": "./node_modules/@biomejs/cli-darwin-arm64/biome",
+		"linux-x64": "./node_modules/@biomejs/cli-linux-x64/biome",
+		"linux-arm64": "./node_modules/@biomejs/cli-linux-arm64/biome"
+	},
+	"biome.runFromTemporaryLocation": true,
+	"biome.lsp.watcher.kind": "none",
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
 		"source.fixAll.biome": "explicit",
@@ -41,10 +52,40 @@
 	},
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"typescript.disableAutomaticTypeAcquisition": true,
+	"typescript.tsserver.maxTsServerMemory": 8192,
+	"typescript.tsserver.experimental.enableProjectDiagnostics": false,
+	"typescript.preferences.includePackageJsonAutoImports": "off",
+	"typescript.tsserver.useSyntaxServer": "auto",
+	"typescript.tsserver.watchOptions": {
+		"watchFile": "useFsEvents",
+		"watchDirectory": "useFsEvents",
+		"fallbackPolling": "dynamicPriority",
+		"synchronousWatchDirectory": false,
+		"excludeDirectories": [
+			"**/node_modules",
+			"**/.git",
+			"**/.turbo",
+			"**/.next",
+			"**/dist",
+			"**/docs-V2"
+		]
+	},
+	"tailwindCSS.experimental.configFile": "apps/web/postcss.config.mjs",
+	"tailwindCSS.files.exclude": [
+		"**/.git/**",
+		"**/node_modules/**",
+		"**/.cursor/**",
+		"**/.agents/**",
+		"**/docs-V2/**",
+		"**/packages/data-plane/db/drizzle/**",
+		"**/apps/web/shadcn-studio/**",
+		"**/e2e/**"
+	],
 	"files.eol": "\n",
 	"files.insertFinalNewline": true,
 	"files.trimTrailingWhitespace": true,
-	"explorer.excludeGitIgnore": true,
+	"explorer.excludeGitIgnore": false,
 	"explorer.autoReveal": false,
 	"explorer.decorations.badges": false,
 	"explorer.decorations.colors": false,
@@ -71,7 +112,10 @@
 		"**/_reference": true,
 		"**/.source": true,
 		"**/.tmp": true,
-		"**/.vercel": true
+		"**/.vercel": true,
+		"**/.cursor": true,
+		"**/.agents": true,
+		"**/*.tsbuildinfo": true
 	},
 	"search.exclude": {
 		"**/node_modules": true,
@@ -91,6 +135,14 @@
 		"**/.source": true,
 		"**/.tmp": true,
 		"**/.vercel": true,
+		"**/.cursor": true,
+		"**/.agents": true,
+		"**/*.tsbuildinfo": true,
+		"**/docs-V2": true,
+		"**/e2e": true,
+		"**/packages/data-plane/db/drizzle": true,
+		"**/apps/web/shadcn-studio": true,
+		"**/.pnpm": true,
 		"docs/architecture/backend": true,
 		"docs/architecture/frontend": true,
 		"docs/architecture/system": true,
@@ -117,7 +169,15 @@
 		"**/.source/**": true,
 		"**/.tmp/**": true,
 		"**/.vercel/**": true,
-		"**/pnpm-lock.yaml": true
+		"**/.cursor/**": true,
+		"**/.agents/**": true,
+		"**/*.tsbuildinfo": true,
+		"**/pnpm-lock.yaml": true,
+		"**/docs-V2/**": true,
+		"**/e2e/**": true,
+		"**/packages/data-plane/db/drizzle/**": true,
+		"**/apps/web/shadcn-studio/**": true,
+		"**/.pnpm/**": true
 	},
 
 	"files.associations": {

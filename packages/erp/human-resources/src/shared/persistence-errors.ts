@@ -33,6 +33,61 @@ export function isPostgresForeignKeyViolation(error: unknown): boolean {
 	return isRecord(error) && error.code === "23503";
 }
 
+function postgresErrorCode(error: unknown): string | null {
+	let current: unknown = error;
+	for (let depth = 0; depth < 6 && current != null; depth += 1) {
+		if (isRecord(current) && typeof current.code === "string") {
+			return current.code;
+		}
+		current =
+			current instanceof Error
+				? current.cause
+				: isRecord(current) && "cause" in current
+					? current.cause
+					: null;
+	}
+	return null;
+}
+
+function postgresErrorMessage(error: unknown): string {
+	let current: unknown = error;
+	const parts: string[] = [];
+	for (let depth = 0; depth < 6 && current != null; depth += 1) {
+		if (current instanceof Error && current.message.length > 0) {
+			parts.push(current.message);
+		} else if (isRecord(current) && typeof current.message === "string") {
+			parts.push(current.message);
+		}
+		current =
+			current instanceof Error
+				? current.cause
+				: isRecord(current) && "cause" in current
+					? current.cause
+					: null;
+	}
+	if (parts.length > 0) {
+		return parts.join(" | ");
+	}
+	return error instanceof Error ? error.message : String(error);
+}
+
+export function isPostgresUndefinedTable(
+	error: unknown,
+	table?: string,
+): boolean {
+	const code = postgresErrorCode(error);
+	const message = postgresErrorMessage(error);
+	const undefinedTable =
+		code === "42P01" || /relation .* does not exist/i.test(message);
+	if (!undefinedTable) {
+		return false;
+	}
+	if (table === undefined) {
+		return true;
+	}
+	return message.includes(table);
+}
+
 export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;

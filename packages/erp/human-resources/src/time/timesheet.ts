@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
@@ -7,6 +9,7 @@ import {
 } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -22,6 +25,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_RETURN,
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_SUPERSEDE,
+	HUMAN_RESOURCES_QUERY_TIMESHEET_APPROVAL_DECISION_LIST,
 	HUMAN_RESOURCES_QUERY_TIMESHEET_ENTRY_LIST,
 	HUMAN_RESOURCES_QUERY_TIMESHEET_FOR_EMPLOYEE_PERIOD_GET,
 	HUMAN_RESOURCES_QUERY_TIMESHEET_GET,
@@ -36,6 +40,7 @@ import {
 	getTimesheetForEmployeePeriodInputSchema,
 	getTimesheetInputSchema,
 	getTimesheetTotalsInputSchema,
+	listTimesheetApprovalDecisionsInputSchema,
 	listTimesheetEntriesInputSchema,
 	listTimesheetsInputSchema,
 	lockTimesheetInputSchema,
@@ -48,7 +53,12 @@ import {
 	updateTimesheetEntryInputSchema,
 } from "../schemas/time";
 import { runTimeCommand, runTimeQuery } from "../shared/time-command";
-import type { Timesheet, TimesheetEntry, TimesheetTotals } from "../types";
+import type {
+	Timesheet,
+	TimesheetApprovalDecision,
+	TimesheetEntry,
+	TimesheetTotals,
+} from "../types";
 
 export async function createTimesheet(
 	input: unknown,
@@ -148,6 +158,12 @@ export async function addTimesheetEntry(
 							: null,
 					recordedMinutes: data.recordedMinutes,
 					approvedMinutes: data.approvedMinutes ?? data.recordedMinutes,
+					costCenterId: data.costCenterId ?? null,
+					projectId: data.projectId ?? null,
+					locationId: data.locationId ?? null,
+					departmentId: data.departmentId ?? null,
+					approvalReference: data.approvalReference ?? null,
+					evidenceReference: data.evidenceReference ?? null,
 					createdBy: data.actorUserId,
 					correlationId: data.correlationId,
 				},
@@ -185,6 +201,12 @@ export async function updateTimesheetEntry(
 								: new Date(data.endedAt),
 					recordedMinutes: data.recordedMinutes,
 					approvedMinutes: data.approvedMinutes,
+					costCenterId: data.costCenterId,
+					projectId: data.projectId,
+					locationId: data.locationId,
+					departmentId: data.departmentId,
+					approvalReference: data.approvalReference,
+					evidenceReference: data.evidenceReference,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 					correlationId: data.correlationId,
@@ -215,8 +237,34 @@ export async function submitTimesheet(
 		schema: submitTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet submit input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
-		execute: async (data, { store, ports }) =>
-			store.submitTimesheet(data, ports),
+		execute: async (data, { store, ports }) => {
+			const timesheet = await store.getTimesheet({
+				organizationId: data.organizationId,
+				timesheetId: data.timesheetId,
+			});
+			if (!timesheet.ok) return timesheet;
+			if (timesheet.data === null) {
+				return fail("NOT_FOUND", "Timesheet not found");
+			}
+			const policy =
+				timesheet.data.employmentId === null
+					? ok(null)
+					: await store.resolveTimePolicy({
+							organizationId: data.organizationId,
+							employmentId: timesheet.data.employmentId,
+							asOf: timesheet.data.periodEnd,
+						});
+			if (!policy.ok) return policy;
+			return store.submitTimesheet(
+				{
+					...data,
+					submissionReference: randomUUID(),
+					approvalPolicyId: policy.data?.id ?? null,
+					requiredApprovalSteps: policy.data?.approvalSteps ?? ["line_manager"],
+				},
+				ports,
+			);
+		},
 	});
 }
 
@@ -241,18 +289,52 @@ export async function approveTimesheet(
 		schema: approveTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet approve input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
-		execute: async (data, { store, ports }) =>
-			store.approveTimesheet(
+		execute: async (data, { store, ports }) => {
+			const authority = await store.resolveTimeApprovalAuthority({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				authority: data.authority,
+				asOf: new Date().toISOString().slice(0, 10),
+			});
+			if (!authority.ok) return authority;
+			if (authority.data === null) {
+				return fail(
+					"FORBIDDEN",
+					"Actor does not hold the required approval authority",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+			return store.approveTimesheet(
 				{
 					organizationId: data.organizationId,
 					timesheetId: data.timesheetId,
+					authority: data.authority,
+					authorityAssignmentId: authority.data.id,
 					approverNotes: data.approverNotes,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 					correlationId: data.correlationId,
 				},
 				ports,
-			),
+			);
+		},
+	});
+}
+
+export async function listTimesheetApprovalDecisions(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<TimesheetApprovalDecision[]>> {
+	return runTimeQuery(input, options, {
+		schema: listTimesheetApprovalDecisionsInputSchema,
+		invalidMessage: "Invalid timesheet approval decision list input",
+		query: HUMAN_RESOURCES_QUERY_TIMESHEET_APPROVAL_DECISION_LIST,
+		execute: async (data, { store }) =>
+			store.listTimesheetApprovalDecisions({
+				organizationId: data.organizationId,
+				timesheetId: data.timesheetId,
+				submissionReference: data.submissionReference,
+			}),
 	});
 }
 

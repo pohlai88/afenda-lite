@@ -28,7 +28,25 @@ CREATE TABLE IF NOT EXISTS "hr_attendance_import_error" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "hr_attendance_import_error" ADD CONSTRAINT "hr_attendance_import_error_import_batch_id_hr_attendance_import_batch_id_fk" FOREIGN KEY ("import_batch_id") REFERENCES "public"."hr_attendance_import_batch"("id") ON DELETE no action ON UPDATE no action;
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1
+		FROM pg_constraint
+		WHERE conrelid = 'public.hr_attendance_import_error'::regclass
+			AND conname = LEFT(
+				'hr_attendance_import_error_import_batch_id_hr_attendance_import_batch_id_fk',
+				current_setting('max_identifier_length')::integer
+			)
+	) THEN
+		ALTER TABLE "hr_attendance_import_error"
+			ADD CONSTRAINT "hr_attendance_import_error_import_batch_id_hr_attendance_import_batch_id_fk"
+			FOREIGN KEY ("import_batch_id")
+			REFERENCES "public"."hr_attendance_import_batch"("id")
+			ON DELETE no action
+			ON UPDATE no action;
+	END IF;
+END $$;
 --> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "hr_attendance_import_batch_org_create_idempotency_uidx" ON "hr_attendance_import_batch" USING btree ("organization_id","create_idempotency_key");
 --> statement-breakpoint

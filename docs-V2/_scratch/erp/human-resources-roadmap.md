@@ -8,7 +8,7 @@
 | Architecture authority | [human-resource.md](./human-resource.md) |
 | Scaffold authority | [SCAFFOLDING.md](../../packages/erp/SCAFFOLDING.md) |
 | Reference implementation | `packages/erp/sales/src/` |
-| Baseline snapshot | 2026-07-21 — `lifecycle: scaffolded` |
+| Baseline snapshot | 2026-07-23 — `lifecycle: scaffolded`; multiple domains implemented; Time closure still in progress |
 
 **Why a separate file:** [human-resource.md](./human-resource.md) is bounded-context architecture (what/why). This document is **how/when** — phased slices, verify commands, and Path to 100%. Do not duplicate the architecture body here.
 
@@ -16,7 +16,9 @@
 
 ## Executive summary
 
-`@afenda/human-resources` is **governance-complete at scaffold** (43 mutation tables, 16 events, 20 permissions, folder markers) but **behavior-empty** (zero commands/queries, empty store, empty authorization map, minimal DDL columns). Payroll remains a **downstream consumer** via events and app-injected ports — never peer-imported from HR.
+`@afenda/human-resources` remains catalogued as **`lifecycle: scaffolded`**, but it is no longer behavior-empty. Core workforce, organization, recruitment, lifecycle, compensation/benefits, learning, Time, leave, performance, talent, workforce planning and employee-relations command/query surfaces now exist with memory/Drizzle stores and authorization maps. Payroll remains a **downstream consumer** via events and app-injected ports — never peer-imported from HR.
+
+For the current Time control state, use [time-remaining.md](./time-remaining.md): governance/model gaps and effective-dated calendar, shift and policy successor records are implemented; policy/approval/exception/successor Drizzle evidence is production-schema-blocked; calendar-scope precedence, cross-midnight allocation and broader adapter parity remain open.
 
 Phases **HR0–HR16** walk scaffolded → enterprise production compliance. Phases **HR9 (GATE-TL)** and **HR12–HR13** resolve the deliberate gap: `src/time/`, `leave/`, `performance/`, `talent/` exist on disk and aggregates are listed in `mutation-tables.ts`, but **no `hr_*` DDL** for those domains appears in scratch §2–§5 or the 43-table manifest.
 
@@ -46,12 +48,12 @@ Phases **HR0–HR16** walk scaffolded → enterprise production compliance. Phas
 | **Mutation tables** | 43 `hr_*` (core → C&B) | Same 43 in scratch §2–§5 | Parity with SCHEMA-OWNERSHIP-MANIFEST | ✅ Registered |
 | **Time / leave / perf / talent DDL** | Folder markers only; aggregates in manifest list | Folders in §1 structure; **no table list in §2–§5** | Sole-mutator tables in manifest + DDL | ⚠️ **GATE-TL** — design before implement |
 | **DDL columns** | `createErpScaffoldTable` (id, org, timestamps) | Full domain columns per aggregate | Real columns before production commands | ❌ All 43 tables |
-| **Store** | Empty `HumanResourcesStore` | `store.ts` + memory + drizzle | Persistence abstraction | ❌ |
-| **Commands / queries** | `module-ids.ts` → `[]` | Full capability per domain | `Result<T>` public API | ❌ |
+| **Store** | Domain stores with memory and Drizzle adapters | `store.ts` + memory + drizzle | Persistence abstraction | ✅ Implemented; parity depth varies by domain |
+| **Commands / queries** | Populated `module-ids.ts` and manifest authorization maps | Full capability per domain | `Result<T>` public API | ✅ Implemented; lifecycle remains scaffolded pending readiness gates |
 | **Events** | 16 ids in `@afenda/events` + manifest | §9 event list | Append on mutation TX | ✅ Catalog; ❌ emitters |
 | **Permissions** | 20 codes in package + PERMISSION-REGISTER | §10 permission list | Manifest auth map per cmd/qry | ✅ Codes; ❌ maps |
 | **Tenancy audit** | 43 roots in ownership manifest | Hard `organization_id` | `hard-tenant-roots.ts` + `audit:tenancy-nulls` | ✅ HR1 DONE — 43/43 registered |
-| **App wiring** | `human-resources-authorization-port.ts` only | Actions + features per domain | `*-command-options.ts` + Actions | ❌ No command-options / Actions / features |
+| **App wiring** | HR command options, authorization and multiple Server Action surfaces exist | Actions + features per domain | `*-command-options.ts` + Actions | ⚠️ Implemented for current surfaces; full product-flow coverage remains a readiness gate |
 | **Payroll consumer** | `optionalIntegratesWith: payroll (events)` | `PayrollEmployeeQueryPort` owned by payroll | App adapter from HR queries | ❌ Port + adapter (payroll package) |
 | **Module readiness** | No Living `*-MOD-009/010` | Enterprise evidence | `afenda-elite-module-readiness` | **BLOCKED** — Docs-lane dormant |
 

@@ -1,0 +1,9 @@
+---
+description: (Superseded) Use editor-workspace-posture.mdc
+globs: ".vscode/settings.json"
+alwaysApply: false
+---
+
+# Superseded
+
+Use [`.cursor/rules/editor-workspace-posture.mdc`](editor-workspace-posture.mdc) — Biome formatter + tsserver + explorer + extension scan scope.

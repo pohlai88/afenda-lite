@@ -14,9 +14,9 @@ import { createEmployment } from "../src/core/employment";
 import { createMemoryCurrencyLookup } from "../src/currency-lookup";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -39,7 +39,7 @@ function defineCompensationBenefitsParitySuite(
 
 	it("grade, salary band, employee compensation, benefit plan", async () => {
 		const ready = {
-			...createWorkforceHarness(adapter),
+			...createHrParityHarness(adapter),
 			currency: createMemoryCurrencyLookup(),
 		};
 

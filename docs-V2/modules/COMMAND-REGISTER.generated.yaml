@@ -739,6 +739,9 @@ commands:
   - id: human-resources.work-calendar.create
     moduleId: human-resources
     permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.supersede
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
   - id: human-resources.work-calendar.update
     moduleId: human-resources
     permission: human-resources.time.calendar.manage
@@ -763,7 +766,34 @@ commands:
   - id: human-resources.employment-calendar.end
     moduleId: human-resources
     permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.scope.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.scope.end
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.create
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.activate
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.supersede
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-approval-authority.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-approval-authority.end
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
   - id: human-resources.shift.create
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift.supersede
     moduleId: human-resources
     permission: human-resources.time.shift.manage
   - id: human-resources.shift.update
@@ -799,6 +829,9 @@ commands:
   - id: human-resources.attendance-event.record
     moduleId: human-resources
     permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-events.import
+    moduleId: human-resources
+    permission: human-resources.time.attendance.correct
   - id: human-resources.attendance-event.correct
     moduleId: human-resources
     permission: human-resources.time.attendance.correct
@@ -806,6 +839,9 @@ commands:
     moduleId: human-resources
     permission: human-resources.time.attendance.correct
   - id: human-resources.attendance-session.resolve
+    moduleId: human-resources
+    permission: human-resources.time.attendance.correct
+  - id: human-resources.attendance-break-waiver.approve
     moduleId: human-resources
     permission: human-resources.time.attendance.correct
   - id: human-resources.attendance-exception.create

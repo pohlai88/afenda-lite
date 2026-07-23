@@ -39,7 +39,7 @@ function harness() {
 	return { store, ports, authorization };
 }
 
-describe("@afenda/human-resources workforce operations", () => {
+describe("@afenda/human-resources core operations", () => {
 	describe("updateEmployee", () => {
 		it("updates an employee successfully", async () => {
 			const ready = harness();

@@ -36,10 +36,10 @@ import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -47,7 +47,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
+function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
 	const ORG_A = `org-hr-parity-a-${suffix}`;
 	const ORG_B = `org-hr-parity-b-${suffix}`;
@@ -61,7 +61,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects cross-org employment parent", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -97,7 +97,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects closed position on assignment create", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -169,7 +169,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("terminate closes ends_on and allows a new open employment", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -229,7 +229,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("distinguishes stale version from not-found on employee update", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -282,7 +282,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects open employment unique conflict", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -330,7 +330,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects open assignment unique conflict", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -430,7 +430,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects invalid employment date range", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -465,7 +465,7 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects duplicate employment-contract referenceCode", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG_A,
@@ -531,10 +531,10 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 
 	it("keeps mutation + audit + outbox in one TX", async () => {
 		const correlationId = `corr-tx-${suffix}`;
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 
 		if (adapter === "memory") {
-			const failing = createWorkforceHarness("memory");
+			const failing = createHrParityHarness("memory");
 			failing.ports = createMemoryMutationPorts({ outboxFailAfter: 0 });
 			const rolledBack = await createEmployee(
 				{
@@ -644,13 +644,13 @@ function defineWorkforceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 }
 
-describe("@afenda/human-resources workforce Memory parity", () => {
-	defineWorkforceParitySuite("memory");
+describe("@afenda/human-resources core Memory parity", () => {
+	defineCoreParitySuite("memory");
 });
 
 describe.skipIf(!hasDatabase)(
-	"@afenda/human-resources workforce Drizzle Neon parity",
+	"@afenda/human-resources core Drizzle Neon parity",
 	() => {
-		defineWorkforceParitySuite("drizzle");
+		defineCoreParitySuite("drizzle");
 	},
 );

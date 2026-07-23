@@ -42,9 +42,9 @@ import {
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -53,7 +53,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function seedEmployee(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const employee = await createEmployee(
@@ -74,7 +74,7 @@ async function seedEmployee(
 }
 
 async function seedCourse(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -112,7 +112,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("course CRUD with status transitions", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const created = await createCourse(
 			{
 				organizationId: ORG,
@@ -176,7 +176,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("session lifecycle with time tracking", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const course = await seedCourse(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -247,7 +247,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("assignment with duplicate prevention", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -334,7 +334,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("completion recording with session link", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -414,7 +414,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("certification issuance and revocation", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -506,7 +506,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("lists courses with pagination", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		for (let i = 1; i <= 3; i++) {
 			await createCourse(
 				{
@@ -537,7 +537,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("lists sessions for a course", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const course = await seedCourse(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -577,7 +577,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("lists assignments for an employee", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -632,7 +632,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("lists completions for an employee", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -689,7 +689,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("lists certifications for an employee", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,

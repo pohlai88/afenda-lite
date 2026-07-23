@@ -15,9 +15,9 @@ import { recordWorkEligibility } from "../src/compliance/work-eligibility";
 import { createEmployee } from "../src/core/employee";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -26,7 +26,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function seedEmployee(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const employee = await createEmployee(
@@ -59,7 +59,7 @@ describe.runIf(hasDatabase)("human-resources compliance parity", () => {
 			const organizationId = `org-compliance-parity-${suffix}`;
 			parityOrgs.push(organizationId);
 			const actorUserId = `actor-${suffix}`;
-			const ready = createWorkforceHarness(adapter);
+			const ready = createHrParityHarness(adapter);
 
 			const employee = await seedEmployee(ready, {
 				organizationId,

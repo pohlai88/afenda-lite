@@ -4,6 +4,7 @@ import { ok } from "@afenda/errors/result";
 import type {
 	HumanResourcesAttendanceSessionId,
 	HumanResourcesEmployeeId,
+	HumanResourcesEmploymentId,
 	HumanResourcesShiftAssignmentId,
 	HumanResourcesShiftId,
 } from "../../brands";
@@ -16,6 +17,8 @@ import type {
 	AttendanceSession,
 	Shift,
 	ShiftAssignment,
+	ShiftBreak,
+	TimePolicy,
 } from "../../types";
 
 export const ATTENDANCE_SESSION_DETECTION_SOURCE =
@@ -50,6 +53,21 @@ export type ExceptionDetectionHost = {
 		organizationId: string;
 		shiftId: HumanResourcesShiftId;
 	}): Promise<Result<Shift | null>>;
+	listShiftBreaks(input: {
+		organizationId: string;
+		shiftId: HumanResourcesShiftId;
+	}): Promise<Result<ShiftBreak[]>>;
+	getPreviousCompletedAttendanceSession(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		before: Date;
+		excludeSessionId: HumanResourcesAttendanceSessionId;
+	}): Promise<Result<AttendanceSession | null>>;
+	resolveTimePolicy(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}): Promise<Result<TimePolicy | null>>;
 	listUnresolvedAttendanceExceptions(input: {
 		organizationId: string;
 		employeeId?: HumanResourcesEmployeeId;
@@ -89,8 +107,19 @@ export function detectAttendanceExceptionsForSession(input: {
 	events: readonly AttendanceEvent[];
 	scheduledAssignment: ShiftAssignment | null;
 	shift: Shift | null;
+	shiftBreaks: readonly ShiftBreak[];
+	previousSession: AttendanceSession | null;
+	minimumRestMinutes: number | null;
 }): DetectedExceptionCandidate[] {
-	const { session, events, scheduledAssignment, shift } = input;
+	const {
+		session,
+		events,
+		scheduledAssignment,
+		shift,
+		shiftBreaks,
+		previousSession,
+		minimumRestMinutes,
+	} = input;
 	const candidates: DetectedExceptionCandidate[] = [];
 	const hasActiveEvents = events.some((event) => event.voidedAt === null);
 	const hasAttendanceActivity =
@@ -100,6 +129,46 @@ export function detectAttendanceExceptionsForSession(input: {
 	const scheduled = isPublishedOrChanged(scheduledAssignment)
 		? scheduledAssignment
 		: null;
+	const activeEvents = events
+		.filter((event) => event.voidedAt === null)
+		.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+	let clockedIn = false;
+	let overlappingAttendance = false;
+	for (const event of activeEvents) {
+		if (event.eventType === "clock_in") {
+			if (clockedIn) overlappingAttendance = true;
+			clockedIn = true;
+		}
+		if (event.eventType === "clock_out") {
+			clockedIn = false;
+		}
+	}
+	if (overlappingAttendance) {
+		candidates.push({
+			exceptionType: "overlapping_attendance",
+			severity: "critical",
+			shiftAssignmentId: scheduled?.id ?? session.shiftAssignmentId,
+		});
+	}
+	if (
+		minimumRestMinutes !== null &&
+		previousSession?.finalClockOutAt !== null &&
+		previousSession?.finalClockOutAt !== undefined &&
+		session.firstClockInAt !== null
+	) {
+		const restMinutes = Math.floor(
+			(session.firstClockInAt.getTime() -
+				previousSession.finalClockOutAt.getTime()) /
+				60_000,
+		);
+		if (restMinutes >= 0 && restMinutes < minimumRestMinutes) {
+			candidates.push({
+				exceptionType: "insufficient_rest",
+				severity: "critical",
+				shiftAssignmentId: scheduled?.id ?? session.shiftAssignmentId,
+			});
+		}
+	}
 
 	if (session.finalClockOutAt !== null && session.firstClockInAt === null) {
 		candidates.push({
@@ -135,6 +204,44 @@ export function detectAttendanceExceptionsForSession(input: {
 		candidates.push({
 			exceptionType: "schedule_mismatch",
 			severity: "warning",
+			shiftAssignmentId: scheduled.id,
+		});
+	}
+
+	const scheduledBreakMinutes = shiftBreaks.reduce(
+		(total, shiftBreak) => total + shiftBreak.durationMinutes,
+		0,
+	);
+	if (session.breakMinutes > scheduledBreakMinutes) {
+		candidates.push({
+			exceptionType: "excessive_break",
+			severity: "warning",
+			shiftAssignmentId: scheduled.id,
+		});
+	}
+
+	if (
+		scheduled.locationKey !== null &&
+		activeEvents.some(
+			(event) =>
+				event.locationKey !== null &&
+				event.locationKey !== scheduled.locationKey,
+		)
+	) {
+		candidates.push({
+			exceptionType: "location_mismatch",
+			severity: "warning",
+			shiftAssignmentId: scheduled.id,
+		});
+	}
+
+	if (
+		shift?.overtimeEligible === true &&
+		session.workedMinutes > shift.expectedMinutes
+	) {
+		candidates.push({
+			exceptionType: "overtime_candidate",
+			severity: "info",
 			shiftAssignmentId: scheduled.id,
 		});
 	}
@@ -273,6 +380,9 @@ export async function runAttendanceExceptionDetection(
 	if (!scheduled.ok) return scheduled;
 
 	let shift: Shift | null = null;
+	let shiftBreaks: ShiftBreak[] = [];
+	let minimumRestMinutes: number | null = null;
+	let previousSession: AttendanceSession | null = null;
 	if (
 		scheduled.data !== null &&
 		(scheduled.data.publicationStatus === "published" ||
@@ -284,6 +394,32 @@ export async function runAttendanceExceptionDetection(
 		});
 		if (!shiftResult.ok) return shiftResult;
 		shift = shiftResult.data;
+		const breaksResult = await host.listShiftBreaks({
+			organizationId: input.organizationId,
+			shiftId: scheduled.data.shiftId,
+		});
+		if (!breaksResult.ok) return breaksResult;
+		shiftBreaks = breaksResult.data;
+	}
+	if (input.session.employmentId !== null) {
+		const policy = await host.resolveTimePolicy({
+			organizationId: input.organizationId,
+			employmentId: input.session.employmentId,
+			asOf: input.session.localWorkDate,
+		});
+		if (!policy.ok) return policy;
+		minimumRestMinutes = policy.data?.minimumRestMinutes ?? null;
+	}
+	const currentClockIn = input.session.firstClockInAt;
+	if (minimumRestMinutes !== null && currentClockIn !== null) {
+		const preceding = await host.getPreviousCompletedAttendanceSession({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			before: currentClockIn,
+			excludeSessionId: input.session.id,
+		});
+		if (!preceding.ok) return preceding;
+		previousSession = preceding.data;
 	}
 
 	const existing = await host.listUnresolvedAttendanceExceptions({
@@ -299,6 +435,9 @@ export async function runAttendanceExceptionDetection(
 		events: input.events,
 		scheduledAssignment: scheduled.data,
 		shift,
+		shiftBreaks,
+		previousSession,
+		minimumRestMinutes,
 	});
 
 	const known = [...existing.data];

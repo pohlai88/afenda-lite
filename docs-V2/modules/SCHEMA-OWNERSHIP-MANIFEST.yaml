@@ -499,6 +499,9 @@ tables:
   - table: hr_employment_calendar_assignment
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_work_calendar_scope_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_shift
     writeOwner: "@afenda/human-resources"
     kind: erp
@@ -517,6 +520,9 @@ tables:
   - table: hr_attendance_session
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_attendance_break_waiver_decision
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_attendance_exception
     writeOwner: "@afenda/human-resources"
     kind: erp
@@ -529,7 +535,19 @@ tables:
   - table: hr_attendance_import_error
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_time_policy
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_time_policy_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_time_approval_authority_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_timesheet
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_timesheet_approval_decision
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_timesheet_entry

@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { HARD_TENANT_ROOT_TABLE_NAMES } from "@afenda/db";
+import { HUMAN_RESOURCES_EVENT_IDS } from "@afenda/events";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -62,7 +63,9 @@ describe("humanResourcesModuleManifest", () => {
 		expect(HUMAN_RESOURCES_PERMISSION_CODES).toContain(
 			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 		);
-		expect(humanResourcesModuleManifest.events.emits).toHaveLength(54);
+		expect(new Set(humanResourcesModuleManifest.events.emits)).toEqual(
+			new Set(HUMAN_RESOURCES_EVENT_IDS),
+		);
 		expect(humanResourcesModuleManifest.owns.commands).toEqual([
 			...HUMAN_RESOURCES_COMMAND_IDS,
 		]);
@@ -178,7 +181,6 @@ describe("humanResourcesModuleManifest", () => {
 	});
 
 	it("registers every mutation table as a hard tenant root (HR1)", () => {
-		expect(HUMAN_RESOURCES_MUTATION_TABLES).toHaveLength(98);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);

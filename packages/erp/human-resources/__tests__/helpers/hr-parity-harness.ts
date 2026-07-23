@@ -74,8 +74,8 @@ export type WorkforceTestHarness = {
 	) => Promise<TestLeaveRequest>;
 };
 
-/** Shared Memory / Drizzle harness for workforce semantic parity suites. */
-export function createWorkforceHarness(
+/** Shared Memory / Drizzle harness for HR domain semantic parity suites. */
+export function createHrParityHarness(
 	adapter: WorkforceStoreAdapter,
 ): WorkforceHarness {
 	const store =
@@ -101,7 +101,7 @@ export function createWorkforceHarness(
 
 /** Drizzle-only harness for leave concurrency and failure-injection tests. */
 export async function createTestHarness(): Promise<WorkforceTestHarness> {
-	const commandOptions = createWorkforceHarness("drizzle");
+	const commandOptions = createHrParityHarness("drizzle");
 	const organizationId = `org-hr-leave-test-${Date.now()}-${randomUUID().slice(0, 8)}`;
 	const actorUserId = `user-hr-leave-test-${randomUUID().slice(0, 8)}`;
 	const correlationId = randomUUID();

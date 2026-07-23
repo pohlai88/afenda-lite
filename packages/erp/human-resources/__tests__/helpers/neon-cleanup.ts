@@ -1,6 +1,11 @@
 import {
 	db,
 	eq,
+	hrAttendanceAdjustment,
+	hrAttendanceBreakWaiverDecision,
+	hrAttendanceEvent,
+	hrAttendanceException,
+	hrAttendanceSession,
 	hrBenefitEligibility,
 	hrBenefitEnrollment,
 	hrBenefitPlan,
@@ -24,8 +29,8 @@ import {
 	hrEmployeeCertification,
 	hrEmployeeCompensation,
 	hrEmployeeDocument,
-	hrUserEmployee,
 	hrEmployment,
+	hrEmploymentCalendarAssignment,
 	hrEmploymentConfirmation,
 	hrEmploymentContract,
 	hrEmploymentMovement,
@@ -54,6 +59,8 @@ import {
 	hrOffboardingTask,
 	hrOnboardingCase,
 	hrOnboardingTask,
+	hrOvertimeApproval,
+	hrOvertimeRequest,
 	hrPerformanceAssessment,
 	hrPerformanceCycle,
 	hrPerformanceCycleParticipant,
@@ -68,6 +75,10 @@ import {
 	hrProbationReview,
 	hrReportingLine,
 	hrSalaryBand,
+	hrShift,
+	hrShiftAssignment,
+	hrShiftAssignmentSegment,
+	hrShiftBreak,
 	hrSuccessionCandidate,
 	hrSuccessionPlan,
 	hrTalentPool,
@@ -75,23 +86,17 @@ import {
 	hrTalentProfile,
 	hrTalentProfileAssessment,
 	hrTermination,
+	hrTimeApprovalAuthorityAssignment,
+	hrTimePolicy,
+	hrTimePolicyAssignment,
+	hrTimesheet,
+	hrTimesheetApprovalDecision,
+	hrTimesheetEntry,
+	hrUserEmployee,
 	hrWorkAssignment,
 	hrWorkCalendar,
 	hrWorkCalendarHoliday,
 	hrWorkEligibility,
-	hrAttendanceAdjustment,
-	hrAttendanceEvent,
-	hrAttendanceException,
-	hrAttendanceSession,
-	hrEmploymentCalendarAssignment,
-	hrOvertimeApproval,
-	hrOvertimeRequest,
-	hrShift,
-	hrShiftAssignment,
-	hrShiftAssignmentSegment,
-	hrShiftBreak,
-	hrTimesheet,
-	hrTimesheetEntry,
 	inArray,
 	platformAuditLog,
 	platformDomainEvent,
@@ -207,9 +212,7 @@ function isUndefinedTable(error: unknown): boolean {
 	return false;
 }
 
-async function deleteOrgRows(
-	deleteFn: () => Promise<unknown>,
-): Promise<void> {
+async function deleteOrgRows(deleteFn: () => Promise<unknown>): Promise<void> {
 	try {
 		await deleteFn();
 	} catch (error) {
@@ -239,8 +242,37 @@ async function deleteTimeGraphForOrganization(
 	);
 	await deleteOrgRows(() =>
 		db
+			.delete(hrTimesheetApprovalDecision)
+			.where(eq(hrTimesheetApprovalDecision.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
 			.delete(hrTimesheet)
 			.where(eq(hrTimesheet.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrAttendanceBreakWaiverDecision)
+			.where(
+				eq(hrAttendanceBreakWaiverDecision.organizationId, organizationId),
+			),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrTimeApprovalAuthorityAssignment)
+			.where(
+				eq(hrTimeApprovalAuthorityAssignment.organizationId, organizationId),
+			),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrTimePolicyAssignment)
+			.where(eq(hrTimePolicyAssignment.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrTimePolicy)
+			.where(eq(hrTimePolicy.organizationId, organizationId)),
 	);
 	await deleteOrgRows(() =>
 		db

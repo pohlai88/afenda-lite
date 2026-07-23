@@ -4,11 +4,14 @@ import {
 	db,
 	desc,
 	eq,
+	gte,
 	hrEmployee,
 	hrEmployment,
 	hrEmploymentContract,
 	hrWorkAssignment,
 	isNull,
+	lte,
+	or,
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
@@ -233,6 +236,7 @@ export type DrizzleCoreMethods = Pick<
 	| "listEmployees"
 	| "getEmploymentById"
 	| "findOpenEmploymentByEmployee"
+	| "findEmploymentByEmployeeAsOf"
 	| "createEmployment"
 	| "amendEmployment"
 	| "getEmploymentContractById"
@@ -596,6 +600,45 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			return mapEmployment(record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find open employment");
+		}
+	},
+
+	async findEmploymentByEmployeeAsOf(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf: string;
+	}): Promise<Result<Employment | null>> {
+		try {
+			const result = await db
+				.select()
+				.from(hrEmployment)
+				.where(
+					and(
+						eq(hrEmployment.organizationId, input.organizationId),
+						eq(hrEmployment.employeeId, input.employeeId),
+						lte(hrEmployment.startsOn, input.asOf),
+						or(
+							isNull(hrEmployment.endsOn),
+							gte(hrEmployment.endsOn, input.asOf),
+						),
+					),
+				)
+				.orderBy(desc(hrEmployment.startsOn))
+				.limit(2);
+			if (result.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple employments are effective for the Time work date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			const record = result[0];
+			return record === undefined ? ok(null) : mapEmployment(record);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find employment for Time work date",
+			);
 		}
 	},
 

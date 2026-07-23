@@ -15,7 +15,8 @@ import { invalidState } from "./domain-guards";
 
 const SHIFT_STATUS: Record<ShiftStatus, readonly ShiftStatus[]> = {
 	draft: ["active", "inactive"],
-	active: ["inactive"],
+	active: ["superseded", "inactive"],
+	superseded: [],
 	inactive: ["active"],
 };
 
@@ -90,18 +91,18 @@ export function assertAssignmentStatusTransition(
 	current: ShiftAssignmentPublicationStatus,
 	next: ShiftAssignmentPublicationStatus,
 ): Result<void> {
-	return assertTransition(
-		current,
-		next,
-		ASSIGNMENT_STATUS,
-		"shift assignment",
-	);
+	return assertTransition(current, next, ASSIGNMENT_STATUS, "shift assignment");
 }
 
 export function assertTimesheetStatusTransition(
 	current: TimesheetStatus,
 	next: TimesheetStatus,
 ): Result<void> {
+	if (current === next && (current === "locked" || current === "superseded")) {
+		return invalidState(
+			`Cannot transition timesheet from ${current} to ${next}`,
+		);
+	}
 	return assertTransition(current, next, TIMESHEET_STATUS, "timesheet");
 }
 
@@ -140,7 +141,10 @@ export function assertNoSelfApprove(input: {
 	return ok(undefined);
 }
 
-export function computeIsOvernight(startLocal: string, endLocal: string): boolean {
+export function computeIsOvernight(
+	startLocal: string,
+	endLocal: string,
+): boolean {
 	return endLocal <= startLocal;
 }
 

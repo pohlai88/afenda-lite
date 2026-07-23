@@ -71,6 +71,7 @@ describe("@afenda/events schemas", () => {
 			"human-resources.time.overtime.approved.v1",
 			"human-resources.time.payroll_handoff.ready.v1",
 			"human-resources.time.schedule.published.v1",
+			"human-resources.time.timesheet.approval-step-recorded.v1",
 			"human-resources.time.timesheet.locked.v1",
 			"human-resources.time.timesheet.reopened.v1",
 			"human-resources.time.timesheet.submitted.v1",

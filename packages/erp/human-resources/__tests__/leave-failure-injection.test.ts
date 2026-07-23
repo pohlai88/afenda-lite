@@ -13,7 +13,7 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
 import * as leaveTransactions from "../src/adapters/drizzle/leave-transactions";
-import { createTestHarness } from "./helpers/workforce-harness";
+import { createTestHarness } from "./helpers/hr-parity-harness";
 import {
 	and,
 	db,
@@ -28,7 +28,7 @@ import type {
 	TestEmployment,
 	TestLeavePolicy,
 	TestLeaveEntitlement,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 

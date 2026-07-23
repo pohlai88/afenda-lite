@@ -17,5 +17,6 @@ export * from "./recruitment";
 // Store composition and main entry
 export * from "./store";
 export * from "./talent";
+export * from "./assignment-context-query";
 export * from "./work-calendar-lookup";
 export * from "./workforce-planning";

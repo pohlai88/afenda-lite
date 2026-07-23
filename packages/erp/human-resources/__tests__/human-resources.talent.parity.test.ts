@@ -22,9 +22,9 @@ import {
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -33,7 +33,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function seedEmployee(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const employee = await createEmployee(
@@ -78,7 +78,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("competency create, list, retire", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const code = `COMP-${suffix}`;
 
 		const created = await createCompetency(
@@ -141,7 +141,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects duplicate competency code", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const code = `DUP-${suffix}`;
 
 		const first = await createCompetency(
@@ -178,7 +178,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("talent profile per employee and talent pool", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await seedEmployee(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,

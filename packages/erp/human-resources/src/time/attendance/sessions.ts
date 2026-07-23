@@ -16,6 +16,7 @@ import {
 	resolveAttendanceSessionInputSchema,
 } from "../../schemas/time";
 import { runTimeCommand, runTimeQuery } from "../../shared/time-command";
+import { resolveActiveTimeEmployment } from "../../shared/time-employment";
 import type { AttendanceSession } from "../../types";
 
 export async function resolveAttendanceSession(
@@ -27,6 +28,19 @@ export async function resolveAttendanceSession(
 		invalidMessage: "Invalid attendance session resolve input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
 		execute: async (data, { store, ports }) => {
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: null,
+				workDate: data.localWorkDate,
+			});
+			if (!employment.ok) return employment;
+			const policy = await store.resolveTimePolicy({
+				organizationId: data.organizationId,
+				employmentId: employment.data.id,
+				asOf: data.localWorkDate,
+			});
+			if (!policy.ok) return policy;
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
 				localWorkDate: data.localWorkDate,
@@ -51,8 +65,19 @@ export async function resolveAttendanceSession(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
+					employmentId: employment.data.id,
 					localWorkDate: data.localWorkDate,
 					timezone: data.timezone,
+					automaticBreakPolicy:
+						policy.data?.automaticBreakAfterMinutes !== null &&
+						policy.data?.automaticBreakAfterMinutes !== undefined &&
+						policy.data.automaticBreakMinutes > 0
+							? {
+									policyId: policy.data.id,
+									afterMinutes: policy.data.automaticBreakAfterMinutes,
+									deductionMinutes: policy.data.automaticBreakMinutes,
+								}
+							: null,
 					idempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: fingerprint,
 					createdBy: data.actorUserId,

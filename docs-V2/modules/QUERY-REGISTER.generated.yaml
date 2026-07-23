@@ -343,6 +343,15 @@ queries:
   - id: human-resources.employment-calendar.resolve
     moduleId: human-resources
     permission: human-resources.time.calendar.read
+  - id: human-resources.employee-work-calendar.resolve
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.time-policy.get
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.time-policy.resolve
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
   - id: human-resources.shift.get
     moduleId: human-resources
     permission: human-resources.time.shift.read
@@ -370,10 +379,16 @@ queries:
   - id: human-resources.attendance-event.list
     moduleId: human-resources
     permission: human-resources.time.attendance.read
+  - id: human-resources.attendance-adjustment.list
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
   - id: human-resources.attendance-session.get
     moduleId: human-resources
     permission: human-resources.time.attendance.read
   - id: human-resources.attendance-session.list
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
+  - id: human-resources.attendance-break-waiver-decision.list
     moduleId: human-resources
     permission: human-resources.time.attendance.read
   - id: human-resources.attendance-exception.get
@@ -401,6 +416,9 @@ queries:
     moduleId: human-resources
     permission: human-resources.time.timesheet.read
   - id: human-resources.timesheet.totals.get
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.read
+  - id: human-resources.timesheet-approval-decision.list
     moduleId: human-resources
     permission: human-resources.time.timesheet.read
   - id: human-resources.approved-time-handoff.get

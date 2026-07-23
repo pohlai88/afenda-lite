@@ -89,6 +89,36 @@ events:
     id: human-resources.timesheet.approved.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.time.timesheet.approval-step-recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.schedule.published.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.attendance.recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.attendance.corrected.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.exception.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.timesheet.submitted.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.timesheet.reopened.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.timesheet.locked.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.overtime.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.time.payroll_handoff.ready.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.certification.expiring.v1
     moduleId: human-resources
   - direction: emits

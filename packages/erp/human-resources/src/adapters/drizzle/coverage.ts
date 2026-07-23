@@ -1,4 +1,6 @@
 import type { HumanResourcesStore } from "../../store";
+import type { HumanResourcesIdentityStore } from "../../store/identity";
+import type { HumanResourcesTimeStore } from "../../store/time";
 
 import type { DrizzleCompensationBenefitsMethods } from "./compensation-benefits";
 import type { DrizzleComplianceMethods } from "./compliance";
@@ -13,6 +15,12 @@ import type { DrizzleRecruitmentMethods } from "./recruitment";
 import type { DrizzleTalentMethods } from "./talent";
 import type { DrizzleWorkforcePlanningMethods } from "./workforce-planning";
 
+/** Every method supplied by the composed Drizzle time adapter. */
+export type DrizzleTimeMethods = HumanResourcesTimeStore;
+
+/** Every method supplied by the composed Drizzle identity adapter. */
+export type DrizzleIdentityMethods = HumanResourcesIdentityStore;
+
 /** Every method currently supplied by the composed Drizzle adapter. */
 export type DrizzleImplementedHumanResourcesMethods = DrizzleCoreMethods &
 	DrizzleOrganizationMethods &
@@ -23,13 +31,14 @@ export type DrizzleImplementedHumanResourcesMethods = DrizzleCoreMethods &
 	DrizzlePerformanceMethods &
 	DrizzleLearningMethods &
 	DrizzleTalentMethods &
+	DrizzleTimeMethods &
 	DrizzleWorkforcePlanningMethods &
 	DrizzleComplianceMethods &
-	DrizzleEmployeeRelationsMethods;
+	DrizzleEmployeeRelationsMethods &
+	DrizzleIdentityMethods;
 
 /**
  * Compile-time inventory of HumanResourcesStore methods without a Drizzle owner.
- * Time persistence remains blocked until store methods and DDL exist.
  */
 export type MissingDrizzleHumanResourcesMethods = Exclude<
 	keyof HumanResourcesStore,

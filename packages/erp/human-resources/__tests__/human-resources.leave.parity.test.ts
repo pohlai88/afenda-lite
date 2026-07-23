@@ -22,9 +22,9 @@ import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { mapActorToEmployee } from "./helpers/identity-resolver";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -45,7 +45,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("approve + handoff parity", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 
 		const employee = await createEmployee(
 			{

@@ -116,7 +116,7 @@ export const hrDepartment = pgTable(
 		parentDepartmentId: uuid("parent_department_id").references(
 			(): AnyPgColumn => hrDepartment.id,
 		),
-		/** active | archived */
+		/** active | superseded | archived */
 		status: text("status").notNull(),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
@@ -346,9 +346,7 @@ export const hrReportingLine = pgTable(
 		),
 		uniqueIndex("hr_reporting_line_org_employee_open_primary_uidx")
 			.on(t.organizationId, t.employeeId)
-			.where(
-				sql`${t.endsOn} IS NULL AND ${t.relationshipKind} = 'primary'`,
-			),
+			.where(sql`${t.endsOn} IS NULL AND ${t.relationshipKind} = 'primary'`),
 	],
 );
 
@@ -518,9 +516,7 @@ export const hrCandidateApplication = pgTable(
 		),
 		uniqueIndex("hr_candidate_application_org_candidate_requisition_open_uidx")
 			.on(t.organizationId, t.candidateId, t.requisitionId)
-			.where(
-				sql`${t.status} NOT IN ('accepted', 'rejected', 'withdrawn')`,
-			),
+			.where(sql`${t.status} NOT IN ('accepted', 'rejected', 'withdrawn')`),
 	],
 );
 
@@ -1017,7 +1013,7 @@ export const hrLearningCourse = pgTable(
 		index("hr_learning_course_org_status_idx").on(t.organizationId, t.status),
 		check(
 			"hr_learning_course_status_check",
-			sql`${t.status} IN ('active', 'archived')`,
+			sql`${t.status} IN ('active', 'superseded', 'archived')`,
 		),
 	],
 );
@@ -1127,11 +1123,9 @@ export const hrLearningAssignment = pgTable(
 			t.organizationId,
 			t.sessionId,
 		),
-		uniqueIndex("hr_learning_assignment_org_employee_course_active_uidx").on(
-			t.organizationId,
-			t.employeeId,
-			t.courseId,
-		).where(sql`${t.status} IN ('pending', 'in_progress')`),
+		uniqueIndex("hr_learning_assignment_org_employee_course_active_uidx")
+			.on(t.organizationId, t.employeeId, t.courseId)
+			.where(sql`${t.status} IN ('pending', 'in_progress')`),
 		uniqueIndex("hr_learning_assignment_org_create_idempotency_uidx")
 			.on(t.organizationId, t.createIdempotencyKey)
 			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
@@ -1579,10 +1573,7 @@ export const hrLeavePolicy = pgTable(
 			"hr_leave_policy_status_check",
 			sql`${t.status} IN ('draft', 'published', 'superseded', 'archived')`,
 		),
-		check(
-			"hr_leave_policy_unit_check",
-			sql`${t.unit} IN ('days', 'hours')`,
-		),
+		check("hr_leave_policy_unit_check", sql`${t.unit} IN ('days', 'hours')`),
 		check(
 			"hr_leave_policy_leave_type_check",
 			sql`${t.leaveType} IN ('annual', 'sick', 'unpaid', 'other')`,
@@ -1614,10 +1605,7 @@ export const hrLeavePolicyEligibility = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_leave_policy_eligibility_org_id_idx").on(
-			t.organizationId,
-			t.id,
-		),
+		index("hr_leave_policy_eligibility_org_id_idx").on(t.organizationId, t.id),
 		index("hr_leave_policy_eligibility_org_policy_idx").on(
 			t.organizationId,
 			t.policyId,
@@ -1673,9 +1661,7 @@ export const hrLeaveEntitlement = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
-		uniqueIndex(
-			"hr_leave_entitlement_org_employment_policy_period_active_uidx",
-		)
+		uniqueIndex("hr_leave_entitlement_org_employment_policy_period_active_uidx")
 			.on(t.organizationId, t.employmentId, t.policyId, t.periodStart)
 			.where(sql`${t.status} = 'active'`),
 		check(
@@ -1749,10 +1735,7 @@ export const hrLeaveRequest = pgTable(
 			"hr_leave_request_status_check",
 			sql`${t.status} IN ('draft', 'submitted', 'returned', 'approved', 'rejected', 'withdrawn', 'cancelled')`,
 		),
-		check(
-			"hr_leave_request_unit_check",
-			sql`${t.unit} IN ('days', 'hours')`,
-		),
+		check("hr_leave_request_unit_check", sql`${t.unit} IN ('days', 'hours')`),
 		check(
 			"hr_leave_request_date_range_check",
 			sql`${t.endDate} >= ${t.startDate}`,
@@ -1806,10 +1789,7 @@ export const hrLeaveAdjustment = pgTable(
 			"hr_leave_adjustment_kind_check",
 			sql`${t.kind} IN ('manual', 'carry_forward', 'expiry', 'consumption', 'cancellation_reversal')`,
 		),
-		check(
-			"hr_leave_adjustment_status_check",
-			sql`${t.status} IN ('posted')`,
-		),
+		check("hr_leave_adjustment_status_check", sql`${t.status} IN ('posted')`),
 		check(
 			"hr_leave_adjustment_delta_nonzero_check",
 			sql`${t.delta}::numeric <> 0`,
@@ -1868,10 +1848,7 @@ export const hrLeaveApprovalDecision = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_leave_approval_decision_org_id_idx").on(
-			t.organizationId,
-			t.id,
-		),
+		index("hr_leave_approval_decision_org_id_idx").on(t.organizationId, t.id),
 		index("hr_leave_approval_decision_org_request_idx").on(
 			t.organizationId,
 			t.requestId,
@@ -1909,10 +1886,7 @@ export const hrPerformanceCycle = pgTable(
 	},
 	(t) => [
 		index("hr_performance_cycle_org_id_idx").on(t.organizationId, t.id),
-		index("hr_performance_cycle_org_status_idx").on(
-			t.organizationId,
-			t.status,
-		),
+		index("hr_performance_cycle_org_status_idx").on(t.organizationId, t.status),
 		uniqueIndex("hr_performance_cycle_org_code_uidx").on(
 			t.organizationId,
 			t.code,
@@ -2059,10 +2033,7 @@ export const hrPerformanceGoalProgress = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_performance_goal_progress_org_id_idx").on(
-			t.organizationId,
-			t.id,
-		),
+		index("hr_performance_goal_progress_org_id_idx").on(t.organizationId, t.id),
 		index("hr_performance_goal_progress_org_goal_idx").on(
 			t.organizationId,
 			t.goalId,
@@ -2214,9 +2185,7 @@ export const hrPerformanceImprovementPlan = pgTable(
 		measurableActions: text("measurable_actions").notNull(),
 		supportResources: text("support_resources").notNull(),
 		dueDate: date("due_date").notNull(),
-		accountableManagerEmployeeId: uuid(
-			"accountable_manager_employee_id",
-		)
+		accountableManagerEmployeeId: uuid("accountable_manager_employee_id")
 			.notNull()
 			.references(() => hrEmployee.id),
 		status: text("status").notNull(),
@@ -2241,10 +2210,9 @@ export const hrPerformanceImprovementPlan = pgTable(
 			t.organizationId,
 			t.reviewId,
 		),
-		uniqueIndex("hr_performance_improvement_plan_org_create_idempotency_uidx").on(
-			t.organizationId,
-			t.createIdempotencyKey,
-		),
+		uniqueIndex(
+			"hr_performance_improvement_plan_org_create_idempotency_uidx",
+		).on(t.organizationId, t.createIdempotencyKey),
 		check(
 			"hr_performance_improvement_plan_status_check",
 			sql`${t.status} IN ('draft', 'open', 'acknowledged', 'completed', 'unsuccessful', 'cancelled')`,
@@ -2330,21 +2298,13 @@ export const hrHeadcountPlan = pgTable(
 	(t) => [
 		index("hr_headcount_plan_org_id_idx").on(t.organizationId, t.id),
 		index("hr_headcount_plan_org_status_idx").on(t.organizationId, t.status),
-		uniqueIndex("hr_headcount_plan_org_code_uidx").on(
-			t.organizationId,
-			t.code,
-		),
+		uniqueIndex("hr_headcount_plan_org_code_uidx").on(t.organizationId, t.code),
 		uniqueIndex("hr_headcount_plan_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
 		uniqueIndex("hr_headcount_plan_org_scope_period_approved_uidx")
-			.on(
-				t.organizationId,
-				t.planningScopeKey,
-				t.periodStart,
-				t.periodEnd,
-			)
+			.on(t.organizationId, t.planningScopeKey, t.periodStart, t.periodEnd)
 			.where(sql`${t.status} = 'approved'`),
 		check(
 			"hr_headcount_plan_status_check",
@@ -2387,10 +2347,7 @@ export const hrHeadcountPlanLine = pgTable(
 	},
 	(t) => [
 		index("hr_headcount_plan_line_org_id_idx").on(t.organizationId, t.id),
-		index("hr_headcount_plan_line_org_plan_idx").on(
-			t.organizationId,
-			t.planId,
-		),
+		index("hr_headcount_plan_line_org_plan_idx").on(t.organizationId, t.planId),
 		check(
 			"hr_headcount_plan_line_employment_type_check",
 			sql`${t.employmentType} IS NULL OR ${t.employmentType} IN ('full_time', 'part_time', 'contract', 'temporary', 'intern')`,
@@ -2692,10 +2649,7 @@ export const hrTalentProfileAssessment = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_talent_profile_assessment_org_id_idx").on(
-			t.organizationId,
-			t.id,
-		),
+		index("hr_talent_profile_assessment_org_id_idx").on(t.organizationId, t.id),
 		index("hr_talent_profile_assessment_org_profile_idx").on(
 			t.organizationId,
 			t.talentProfileId,
@@ -2777,10 +2731,7 @@ export const hrTalentPoolMember = pgTable(
 	},
 	(t) => [
 		index("hr_talent_pool_member_org_id_idx").on(t.organizationId, t.id),
-		index("hr_talent_pool_member_org_pool_idx").on(
-			t.organizationId,
-			t.poolId,
-		),
+		index("hr_talent_pool_member_org_pool_idx").on(t.organizationId, t.poolId),
 		uniqueIndex("hr_talent_pool_member_org_pool_employee_active_uidx")
 			.on(t.organizationId, t.poolId, t.employeeId)
 			.where(sql`${t.status} IN ('nominated', 'approved')`),
@@ -2821,10 +2772,7 @@ export const hrCareerPlan = pgTable(
 	},
 	(t) => [
 		index("hr_career_plan_org_id_idx").on(t.organizationId, t.id),
-		index("hr_career_plan_org_employee_idx").on(
-			t.organizationId,
-			t.employeeId,
-		),
+		index("hr_career_plan_org_employee_idx").on(t.organizationId, t.employeeId),
 		uniqueIndex("hr_career_plan_org_code_uidx").on(t.organizationId, t.code),
 		uniqueIndex("hr_career_plan_org_create_idempotency_uidx")
 			.on(t.organizationId, t.createIdempotencyKey)
@@ -3073,10 +3021,7 @@ export const hrEmployeeCaseEvent = pgTable(
 	},
 	(t) => [
 		index("hr_employee_case_event_org_id_idx").on(t.organizationId, t.id),
-		index("hr_employee_case_event_org_case_idx").on(
-			t.organizationId,
-			t.caseId,
-		),
+		index("hr_employee_case_event_org_case_idx").on(t.organizationId, t.caseId),
 		uniqueIndex("hr_employee_case_event_org_case_sequence_uidx").on(
 			t.organizationId,
 			t.caseId,
@@ -3356,9 +3301,9 @@ export const hrPolicyAcknowledgement = pgTable(
 		issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
 		acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
 		acknowledgedBy: text("acknowledged_by"),
-		supersedesAcknowledgementId: uuid("supersedes_acknowledgement_id").references(
-			(): AnyPgColumn => hrPolicyAcknowledgement.id,
-		),
+		supersedesAcknowledgementId: uuid(
+			"supersedes_acknowledgement_id",
+		).references((): AnyPgColumn => hrPolicyAcknowledgement.id),
 		createIdempotencyKey: text("create_idempotency_key"),
 		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
@@ -3420,6 +3365,9 @@ export const hrWorkCalendar = pgTable(
 		status: text("status").notNull(),
 		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
 		effectiveTo: date("effective_to", { mode: "string" }),
+		supersedesCalendarId: uuid("supersedes_calendar_id").references(
+			(): AnyPgColumn => hrWorkCalendar.id,
+		),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
@@ -3435,14 +3383,18 @@ export const hrWorkCalendar = pgTable(
 	(t) => [
 		index("hr_work_calendar_org_id_idx").on(t.organizationId, t.id),
 		index("hr_work_calendar_org_status_idx").on(t.organizationId, t.status),
-		uniqueIndex("hr_work_calendar_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_work_calendar_org_code_from_uidx").on(
+			t.organizationId,
+			t.code,
+			t.effectiveFrom,
+		),
 		uniqueIndex("hr_work_calendar_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
 		check(
 			"hr_work_calendar_status_check",
-			sql`${t.status} IN ('active', 'archived')`,
+			sql`${t.status} IN ('active', 'superseded', 'archived')`,
 		),
 		check(
 			"hr_work_calendar_hours_pos_check",
@@ -3558,13 +3510,242 @@ export const hrEmploymentCalendarAssignment = pgTable(
 			t.organizationId,
 			t.employeeId,
 		),
-		uniqueIndex("hr_employment_calendar_assignment_org_employment_from_uidx").on(
+		uniqueIndex(
+			"hr_employment_calendar_assignment_org_employment_from_uidx",
+		).on(t.organizationId, t.employmentId, t.effectiveFrom),
+		check(
+			"hr_employment_calendar_assignment_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+export const hrWorkCalendarScopeAssignment = pgTable(
+	"hr_work_calendar_scope_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		scopeType: text("scope_type").notNull(),
+		scopeKey: text("scope_key").notNull(),
+		calendarId: uuid("calendar_id")
+			.notNull()
+			.references(() => hrWorkCalendar.id),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_work_calendar_scope_assignment_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_work_calendar_scope_assignment_org_scope_idx").on(
+			t.organizationId,
+			t.scopeType,
+			t.scopeKey,
+		),
+		uniqueIndex(
+			"hr_work_calendar_scope_assignment_org_scope_from_uidx",
+		).on(t.organizationId, t.scopeType, t.scopeKey, t.effectiveFrom),
+		check(
+			"hr_work_calendar_scope_assignment_scope_type_check",
+			sql`${t.scopeType} IN ('employment', 'employee', 'location', 'department', 'legal_entity', 'organization')`,
+		),
+		check(
+			"hr_work_calendar_scope_assignment_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+export const hrTimePolicy = pgTable(
+	"hr_time_policy",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		status: text("status").notNull().default("draft"),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		minimumRestMinutes: integer("minimum_rest_minutes").notNull(),
+		automaticBreakAfterMinutes: integer("automatic_break_after_minutes"),
+		automaticBreakMinutes: integer("automatic_break_minutes")
+			.notNull()
+			.default(0),
+		approvalSteps: jsonb("approval_steps").notNull().default(["line_manager"]),
+		supersedesPolicyId: uuid("supersedes_policy_id").references(
+			(): AnyPgColumn => hrTimePolicy.id,
+		),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_time_policy_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_time_policy_org_code_from_uidx").on(
+			t.organizationId,
+			t.code,
+			t.effectiveFrom,
+		),
+		uniqueIndex("hr_time_policy_org_create_idem_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_time_policy_status_check",
+			sql`${t.status} IN ('draft', 'active', 'superseded', 'archived')`,
+		),
+		check(
+			"hr_time_policy_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		check(
+			"hr_time_policy_minimum_rest_check",
+			sql`${t.minimumRestMinutes} >= 0 AND ${t.minimumRestMinutes} <= 2880`,
+		),
+		check(
+			"hr_time_policy_break_check",
+			sql`
+				${t.automaticBreakMinutes} >= 0
+				AND ${t.automaticBreakMinutes} <= 1440
+				AND (
+					(${t.automaticBreakAfterMinutes} IS NULL AND ${t.automaticBreakMinutes} = 0)
+					OR (
+						${t.automaticBreakAfterMinutes} > 0
+						AND ${t.automaticBreakAfterMinutes} <= 1440
+						AND ${t.automaticBreakMinutes} <= ${t.automaticBreakAfterMinutes}
+					)
+				)
+			`,
+		),
+		check(
+			"hr_time_policy_approval_steps_check",
+			sql`
+				jsonb_typeof(${t.approvalSteps}) = 'array'
+				AND jsonb_array_length(${t.approvalSteps}) BETWEEN 1 AND 4
+				AND ${t.approvalSteps} <@ '["line_manager", "department", "hr", "payroll"]'::jsonb
+				AND (
+					jsonb_array_length(${t.approvalSteps}) = 1
+					OR (
+						jsonb_array_length(${t.approvalSteps}) = 2
+						AND ${t.approvalSteps}->>0 <> ${t.approvalSteps}->>1
+					)
+					OR (
+						jsonb_array_length(${t.approvalSteps}) = 3
+						AND ${t.approvalSteps}->>0 <> ${t.approvalSteps}->>1
+						AND ${t.approvalSteps}->>0 <> ${t.approvalSteps}->>2
+						AND ${t.approvalSteps}->>1 <> ${t.approvalSteps}->>2
+					)
+					OR (
+						jsonb_array_length(${t.approvalSteps}) = 4
+						AND ${t.approvalSteps}->>0 <> ${t.approvalSteps}->>1
+						AND ${t.approvalSteps}->>0 <> ${t.approvalSteps}->>2
+						AND ${t.approvalSteps}->>0 <> ${t.approvalSteps}->>3
+						AND ${t.approvalSteps}->>1 <> ${t.approvalSteps}->>2
+						AND ${t.approvalSteps}->>1 <> ${t.approvalSteps}->>3
+						AND ${t.approvalSteps}->>2 <> ${t.approvalSteps}->>3
+					)
+				)
+			`,
+		),
+	],
+);
+
+export const hrTimePolicyAssignment = pgTable(
+	"hr_time_policy_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		policyId: uuid("policy_id")
+			.notNull()
+			.references(() => hrTimePolicy.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_time_policy_assignment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_time_policy_assignment_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_time_policy_assignment_org_employment_from_uidx").on(
 			t.organizationId,
 			t.employmentId,
 			t.effectiveFrom,
 		),
 		check(
-			"hr_employment_calendar_assignment_effective_range_check",
+			"hr_time_policy_assignment_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+export const hrTimeApprovalAuthorityAssignment = pgTable(
+	"hr_time_approval_authority_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		authority: text("authority").notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_time_approval_authority_assignment_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_time_approval_authority_assignment_org_actor_idx").on(
+			t.organizationId,
+			t.actorUserId,
+		),
+		uniqueIndex(
+			"hr_time_approval_authority_assignment_org_actor_authority_from_uidx",
+		).on(t.organizationId, t.actorUserId, t.authority, t.effectiveFrom),
+		check(
+			"hr_time_approval_authority_assignment_authority_check",
+			sql`${t.authority} IN ('line_manager', 'department', 'hr', 'payroll')`,
+		),
+		check(
+			"hr_time_approval_authority_assignment_effective_range_check",
 			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
 		),
 	],
@@ -3595,6 +3776,9 @@ export const hrShift = pgTable(
 		status: text("status").notNull(),
 		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
 		effectiveTo: date("effective_to", { mode: "string" }),
+		supersedesShiftId: uuid("supersedes_shift_id").references(
+			(): AnyPgColumn => hrShift.id,
+		),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
@@ -3625,7 +3809,7 @@ export const hrShift = pgTable(
 		),
 		check(
 			"hr_shift_status_check",
-			sql`${t.status} IN ('draft', 'active', 'inactive')`,
+			sql`${t.status} IN ('draft', 'active', 'superseded', 'inactive')`,
 		),
 		check(
 			"hr_shift_expected_minutes_check",
@@ -3714,10 +3898,7 @@ export const hrShiftAssignment = pgTable(
 			"hr_shift_assignment_status_check",
 			sql`${t.publicationStatus} IN ('planned', 'published', 'changed', 'cancelled', 'completed')`,
 		),
-		check(
-			"hr_shift_assignment_range_check",
-			sql`${t.endsAt} > ${t.startsAt}`,
-		),
+		check("hr_shift_assignment_range_check", sql`${t.endsAt} > ${t.startsAt}`),
 	],
 );
 
@@ -3765,6 +3946,9 @@ export const hrAttendanceEvent = pgTable(
 			() => hrShiftAssignment.id,
 		),
 		eventType: text("event_type").notNull(),
+		capturedOccurredAt: timestamp("captured_occurred_at", {
+			withTimezone: true,
+		}),
 		occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
 		sourceTimezone: text("source_timezone").notNull(),
 		localWorkDate: date("local_work_date", { mode: "string" }).notNull(),
@@ -3772,6 +3956,7 @@ export const hrAttendanceEvent = pgTable(
 		sourceReference: text("source_reference"),
 		deviceMetadata: jsonb("device_metadata"),
 		locationKey: text("location_key"),
+		capturedNotes: text("captured_notes"),
 		notes: text("notes"),
 		payloadChecksum: text("payload_checksum"),
 		voidedAt: timestamp("voided_at", { withTimezone: true }),
@@ -3869,6 +4054,60 @@ export const hrAttendanceSession = pgTable(
 	],
 );
 
+export const hrAttendanceBreakWaiverDecision = pgTable(
+	"hr_attendance_break_waiver_decision",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		sessionId: uuid("session_id")
+			.notNull()
+			.references(() => hrAttendanceSession.id),
+		policyId: uuid("policy_id")
+			.notNull()
+			.references(() => hrTimePolicy.id),
+		authorityAssignmentId: uuid("authority_assignment_id")
+			.notNull()
+			.references(() => hrTimeApprovalAuthorityAssignment.id),
+		authority: text("authority").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		reason: text("reason").notNull(),
+		evidenceReference: text("evidence_reference").notNull(),
+		automaticBreakMinutes: integer("automatic_break_minutes").notNull(),
+		recordedBreakMinutes: integer("recorded_break_minutes").notNull(),
+		sessionVersion: integer("session_version").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		decidedAt: timestamp("decided_at", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_attendance_break_waiver_decision_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_attendance_break_waiver_decision_org_session_idx").on(
+			t.organizationId,
+			t.sessionId,
+		),
+		uniqueIndex(
+			"hr_attendance_break_waiver_decision_org_session_version_uidx",
+		).on(t.organizationId, t.sessionId, t.sessionVersion),
+		check(
+			"hr_attendance_break_waiver_decision_authority_check",
+			sql`${t.authority} IN ('line_manager', 'department', 'hr', 'payroll')`,
+		),
+		check(
+			"hr_attendance_break_waiver_decision_minutes_check",
+			sql`${t.automaticBreakMinutes} > 0 AND ${t.recordedBreakMinutes} >= 0 AND ${t.recordedBreakMinutes} < ${t.automaticBreakMinutes}`,
+		),
+		check(
+			"hr_attendance_break_waiver_decision_version_check",
+			sql`${t.sessionVersion} > 0`,
+		),
+	],
+);
+
 export const hrAttendanceException = pgTable(
 	"hr_attendance_exception",
 	{
@@ -3933,14 +4172,21 @@ export const hrAttendanceAdjustment = pgTable(
 		eventId: uuid("event_id")
 			.notNull()
 			.references(() => hrAttendanceEvent.id),
+		sequence: integer("sequence"),
+		eventVersionBefore: integer("event_version_before"),
+		eventVersionAfter: integer("event_version_after"),
 		previousOccurredAt: timestamp("previous_occurred_at", {
 			withTimezone: true,
 		}).notNull(),
 		newOccurredAt: timestamp("new_occurred_at", {
 			withTimezone: true,
 		}).notNull(),
+		previousNotes: text("previous_notes"),
+		newNotes: text("new_notes"),
 		adjustmentReason: text("adjustment_reason").notNull(),
+		evidenceReference: text("evidence_reference"),
 		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -3951,6 +4197,9 @@ export const hrAttendanceAdjustment = pgTable(
 			t.organizationId,
 			t.eventId,
 		),
+		uniqueIndex("hr_attendance_adjustment_org_event_sequence_uq")
+			.on(t.organizationId, t.eventId, t.sequence)
+			.where(sql`${t.sequence} IS NOT NULL`),
 	],
 );
 
@@ -3966,9 +4215,23 @@ export const hrTimesheet = pgTable(
 		periodStart: date("period_start", { mode: "string" }).notNull(),
 		periodEnd: date("period_end", { mode: "string" }).notNull(),
 		status: text("status").notNull(),
-		totalRecordedMinutes: integer("total_recorded_minutes").notNull().default(0),
-		totalApprovedMinutes: integer("total_approved_minutes").notNull().default(0),
+		totalRecordedMinutes: integer("total_recorded_minutes")
+			.notNull()
+			.default(0),
+		totalApprovedMinutes: integer("total_approved_minutes")
+			.notNull()
+			.default(0),
 		submittedAt: timestamp("submitted_at", { withTimezone: true }),
+		submissionReference: uuid("submission_reference"),
+		approvalPolicyId: uuid("approval_policy_id").references(
+			() => hrTimePolicy.id,
+		),
+		requiredApprovalSteps: jsonb("required_approval_steps")
+			.notNull()
+			.default([]),
+		completedApprovalSteps: integer("completed_approval_steps")
+			.notNull()
+			.default(0),
 		approvedAt: timestamp("approved_at", { withTimezone: true }),
 		approvedBy: text("approved_by"),
 		returnedAt: timestamp("returned_at", { withTimezone: true }),
@@ -3999,6 +4262,9 @@ export const hrTimesheet = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
+		uniqueIndex("hr_timesheet_org_submission_reference_uidx")
+			.on(t.organizationId, t.submissionReference)
+			.where(sql`${t.submissionReference} IS NOT NULL`),
 		uniqueIndex("hr_timesheet_org_employee_period_active_uidx")
 			.on(t.organizationId, t.employeeId, t.periodStart, t.periodEnd)
 			.where(sql`${t.status} NOT IN ('superseded', 'rejected')`),
@@ -4006,13 +4272,95 @@ export const hrTimesheet = pgTable(
 			"hr_timesheet_status_check",
 			sql`${t.status} IN ('draft', 'submitted', 'returned', 'approved', 'rejected', 'locked', 'superseded')`,
 		),
-		check(
-			"hr_timesheet_period_check",
-			sql`${t.periodEnd} >= ${t.periodStart}`,
-		),
+		check("hr_timesheet_period_check", sql`${t.periodEnd} >= ${t.periodStart}`),
 		check(
 			"hr_timesheet_minutes_check",
 			sql`${t.totalRecordedMinutes} >= 0 AND ${t.totalApprovedMinutes} >= 0`,
+		),
+		check(
+			"hr_timesheet_approval_progress_check",
+			sql`
+				jsonb_typeof(${t.requiredApprovalSteps}) = 'array'
+				AND jsonb_array_length(${t.requiredApprovalSteps}) <= 4
+				AND ${t.requiredApprovalSteps} <@ '["line_manager", "department", "hr", "payroll"]'::jsonb
+				AND (
+					${t.status} <> 'submitted'
+					OR jsonb_array_length(${t.requiredApprovalSteps}) >= 1
+				)
+				AND (
+					jsonb_array_length(${t.requiredApprovalSteps}) <= 1
+					OR (
+						jsonb_array_length(${t.requiredApprovalSteps}) = 2
+						AND ${t.requiredApprovalSteps}->>0 <> ${t.requiredApprovalSteps}->>1
+					)
+					OR (
+						jsonb_array_length(${t.requiredApprovalSteps}) = 3
+						AND ${t.requiredApprovalSteps}->>0 <> ${t.requiredApprovalSteps}->>1
+						AND ${t.requiredApprovalSteps}->>0 <> ${t.requiredApprovalSteps}->>2
+						AND ${t.requiredApprovalSteps}->>1 <> ${t.requiredApprovalSteps}->>2
+					)
+					OR (
+						jsonb_array_length(${t.requiredApprovalSteps}) = 4
+						AND ${t.requiredApprovalSteps}->>0 <> ${t.requiredApprovalSteps}->>1
+						AND ${t.requiredApprovalSteps}->>0 <> ${t.requiredApprovalSteps}->>2
+						AND ${t.requiredApprovalSteps}->>0 <> ${t.requiredApprovalSteps}->>3
+						AND ${t.requiredApprovalSteps}->>1 <> ${t.requiredApprovalSteps}->>2
+						AND ${t.requiredApprovalSteps}->>1 <> ${t.requiredApprovalSteps}->>3
+						AND ${t.requiredApprovalSteps}->>2 <> ${t.requiredApprovalSteps}->>3
+					)
+				)
+				AND ${t.completedApprovalSteps} >= 0
+				AND ${t.completedApprovalSteps} <= jsonb_array_length(${t.requiredApprovalSteps})
+			`,
+		),
+	],
+);
+
+export const hrTimesheetApprovalDecision = pgTable(
+	"hr_timesheet_approval_decision",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		timesheetId: uuid("timesheet_id")
+			.notNull()
+			.references(() => hrTimesheet.id),
+		submissionReference: uuid("submission_reference").notNull(),
+		policyId: uuid("policy_id").references(() => hrTimePolicy.id),
+		authorityAssignmentId: uuid("authority_assignment_id")
+			.notNull()
+			.references(() => hrTimeApprovalAuthorityAssignment.id),
+		stepIndex: integer("step_index").notNull(),
+		authority: text("authority").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		comment: text("comment"),
+		versionApproved: integer("version_approved").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		decidedAt: timestamp("decided_at", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_timesheet_approval_decision_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_timesheet_approval_decision_org_timesheet_idx").on(
+			t.organizationId,
+			t.timesheetId,
+		),
+		uniqueIndex("hr_timesheet_approval_decision_org_submission_step_uidx").on(
+			t.organizationId,
+			t.submissionReference,
+			t.stepIndex,
+		),
+		check(
+			"hr_timesheet_approval_decision_step_check",
+			sql`${t.stepIndex} >= 0`,
+		),
+		check(
+			"hr_timesheet_approval_decision_authority_check",
+			sql`${t.authority} IN ('line_manager', 'department', 'hr', 'payroll')`,
 		),
 	],
 );
@@ -4137,10 +4485,7 @@ export const hrOvertimeRequest = pgTable(
 			"hr_overtime_request_range_check",
 			sql`${t.requestedEndsAt} > ${t.requestedStartsAt}`,
 		),
-		check(
-			"hr_overtime_request_minutes_check",
-			sql`${t.requestedMinutes} > 0`,
-		),
+		check("hr_overtime_request_minutes_check", sql`${t.requestedMinutes} > 0`),
 	],
 );
 

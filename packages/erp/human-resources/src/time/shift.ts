@@ -11,6 +11,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_CREATE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE,
+	HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
 	HUMAN_RESOURCES_QUERY_SHIFT_BREAK_LIST,
 	HUMAN_RESOURCES_QUERY_SHIFT_GET,
@@ -25,8 +26,11 @@ import {
 	listShiftBreaksInputSchema,
 	listShiftsInputSchema,
 	removeShiftBreakInputSchema,
+	supersedeShiftInputSchema,
 	updateShiftInputSchema,
 } from "../schemas/time";
+import { invalidInput } from "../shared/domain-guards";
+import { previousIsoDate } from "../shared/effective-dates";
 import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import { computeIsOvernight } from "../shared/time-guards";
 import type { Shift, ShiftBreak } from "../types";
@@ -109,6 +113,133 @@ export async function updateShift(
 		invalidMessage: "Invalid shift update input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
 		execute: async (data, { store, ports }) => store.updateShift(data, ports),
+	});
+}
+
+export async function supersedeShift(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<{ superseded: Shift; successor: Shift }>> {
+	return runTimeCommand(input, options, {
+		schema: supersedeShiftInputSchema,
+		invalidMessage: "Invalid shift supersede input",
+		command: HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE,
+		execute: async (data, { store, ports }) => {
+			const predecessor = await store.getShift({
+				organizationId: data.organizationId,
+				shiftId: data.shiftId,
+			});
+			if (!predecessor.ok) return predecessor;
+			if (predecessor.data === null) return invalidInput("Shift was not found");
+			if (predecessor.data.status !== "active") {
+				return invalidInput("Only active shifts can be superseded");
+			}
+			if (data.effectiveFrom <= predecessor.data.effectiveFrom) {
+				return invalidInput(
+					"Successor effectiveFrom must be after the predecessor",
+				);
+			}
+			if (
+				data.effectiveTo !== undefined &&
+				data.effectiveTo !== null &&
+				data.effectiveTo < data.effectiveFrom
+			) {
+				return invalidInput("effectiveTo must be on or after effectiveFrom");
+			}
+			const startLocal = data.startLocal ?? predecessor.data.startLocal;
+			const endLocal = data.endLocal ?? predecessor.data.endLocal;
+			const values = {
+				code: predecessor.data.code,
+				name: data.name ?? predecessor.data.name,
+				shiftKind: data.shiftKind ?? predecessor.data.shiftKind,
+				startLocal,
+				endLocal,
+				isOvernight:
+					data.isOvernight ?? computeIsOvernight(startLocal, endLocal),
+				expectedMinutes:
+					data.expectedMinutes ?? predecessor.data.expectedMinutes,
+				graceEarlyMinutes:
+					data.graceEarlyMinutes ?? predecessor.data.graceEarlyMinutes,
+				graceLateMinutes:
+					data.graceLateMinutes ?? predecessor.data.graceLateMinutes,
+				minDurationMinutes:
+					data.minDurationMinutes !== undefined
+						? data.minDurationMinutes
+						: predecessor.data.minDurationMinutes,
+				maxDurationMinutes:
+					data.maxDurationMinutes !== undefined
+						? data.maxDurationMinutes
+						: predecessor.data.maxDurationMinutes,
+				earliestClockInLocal:
+					data.earliestClockInLocal !== undefined
+						? data.earliestClockInLocal
+						: predecessor.data.earliestClockInLocal,
+				latestClockOutLocal:
+					data.latestClockOutLocal !== undefined
+						? data.latestClockOutLocal
+						: predecessor.data.latestClockOutLocal,
+				overtimeEligible:
+					data.overtimeEligible ?? predecessor.data.overtimeEligible,
+				timezone:
+					data.timezone !== undefined
+						? data.timezone
+						: predecessor.data.timezone,
+				locationKey:
+					data.locationKey !== undefined
+						? data.locationKey
+						: predecessor.data.locationKey,
+				effectiveFrom: data.effectiveFrom,
+				effectiveTo: data.effectiveTo ?? null,
+			};
+			const fingerprint = JSON.stringify({
+				shiftId: data.shiftId,
+				expectedVersion: data.expectedVersion,
+				...values,
+			});
+			const replay = await store.findShiftByIdempotencyKey({
+				organizationId: data.organizationId,
+				idempotencyKey: data.idempotencyKey,
+			});
+			if (!replay.ok) return replay;
+			if (replay.data !== null) {
+				if (replay.data.createRequestFingerprint !== fingerprint) {
+					return fail(
+						"CONFLICT",
+						"Idempotency key reused with different payload",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+					);
+				}
+				if (replay.data.shift.supersedesShiftId !== data.shiftId) {
+					return invalidInput("Stored successor has no matching predecessor");
+				}
+				const superseded = await store.getShift({
+					organizationId: data.organizationId,
+					shiftId: data.shiftId,
+				});
+				if (!superseded.ok) return superseded;
+				if (superseded.data === null) {
+					return invalidInput("Stored predecessor was not found");
+				}
+				return ok({
+					superseded: superseded.data,
+					successor: replay.data.shift,
+				});
+			}
+			return store.supersedeShift(
+				{
+					organizationId: data.organizationId,
+					shiftId: data.shiftId,
+					expectedVersion: data.expectedVersion,
+					predecessorEffectiveTo: previousIsoDate(data.effectiveFrom),
+					...values,
+					idempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: fingerprint,
+					createdBy: data.actorUserId,
+					correlationId: data.correlationId,
+				},
+				ports,
+			);
+		},
 	});
 }
 

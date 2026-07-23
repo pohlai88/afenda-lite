@@ -11,14 +11,19 @@ import type {
 	HumanResourcesShiftAssignmentId,
 	HumanResourcesShiftBreakId,
 	HumanResourcesShiftId,
+	HumanResourcesTimeApprovalAuthorityAssignmentId,
+	HumanResourcesTimePolicyId,
 	HumanResourcesTimesheetEntryId,
 	HumanResourcesTimesheetId,
 	HumanResourcesWorkCalendarHolidayId,
 	HumanResourcesWorkCalendarId,
+	HumanResourcesWorkCalendarScopeAssignmentId,
 } from "../brands";
 import type { ApprovedLeaveQueryPort, MutationPorts } from "../ports";
 import type {
 	ApprovedTimeHandoff,
+	AttendanceAdjustment,
+	AttendanceBreakWaiverDecision,
 	AttendanceEvent,
 	AttendanceEventRecordInput,
 	AttendanceEventSource,
@@ -43,10 +48,16 @@ import type {
 	OvertimeType,
 	Shift,
 	ShiftAssignment,
+	ShiftAssignmentSegment,
 	ShiftBreak,
 	ShiftCreateRecord,
 	ShiftKind,
+	TimeApprovalAuthority,
+	TimeApprovalAuthorityAssignment,
+	TimePolicy,
+	TimePolicyAssignment,
 	Timesheet,
+	TimesheetApprovalDecision,
 	TimesheetCreateRecord,
 	TimesheetEntry,
 	TimesheetEntrySourceType,
@@ -56,6 +67,7 @@ import type {
 	WorkCalendar,
 	WorkCalendarDateOverrideKind,
 	WorkCalendarHolidayRecord,
+	WorkCalendarScopeAssignment,
 	WorkWeekDayPatternJson,
 } from "../types";
 import type { WorkCalendarPort } from "../work-calendar";
@@ -70,6 +82,22 @@ import type { WorkCalendarPort } from "../work-calendar";
 export type TimesheetGenerationDeps = {
 	approvedLeave: ApprovedLeaveQueryPort;
 	workCalendar: WorkCalendarPort;
+};
+
+export type TimePolicyCreateRecord = {
+	organizationId: string;
+	code: string;
+	name: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	minimumRestMinutes: number;
+	automaticBreakAfterMinutes: number | null;
+	automaticBreakMinutes: number;
+	approvalSteps: readonly TimeApprovalAuthority[];
+	idempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+	correlationId: string;
 };
 
 export type {
@@ -132,6 +160,17 @@ export type EmploymentCalendarAssignRecord = {
 	correlationId: string;
 };
 
+export type WorkCalendarScopeAssignRecord = {
+	organizationId: string;
+	scopeType: import("../types").WorkCalendarScopeType;
+	scopeKey: string;
+	calendarId: HumanResourcesWorkCalendarId;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	createdBy: string;
+	correlationId: string;
+};
+
 export type ShiftBreakCreateRecord = {
 	organizationId: string;
 	shiftId: HumanResourcesShiftId;
@@ -154,6 +193,11 @@ export type ShiftAssignmentCreateRecord = {
 	locationKey: string | null;
 	timezone: string;
 	assignmentSource: string;
+	segments: readonly {
+		segmentOrder: number;
+		startsAt: Date;
+		endsAt: Date;
+	}[];
 	idempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -186,6 +230,12 @@ export type TimesheetEntryCreateRecord = {
 	endedAt: Date | null;
 	recordedMinutes: number;
 	approvedMinutes: number;
+	costCenterId: string | null;
+	projectId: string | null;
+	locationId: string | null;
+	departmentId: string | null;
+	approvalReference: string | null;
+	evidenceReference: string | null;
 	createdBy: string;
 	correlationId: string;
 };
@@ -217,6 +267,15 @@ export type HumanResourcesTimeStore = {
 		input: WorkCalendarCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<WorkCalendar>>;
+
+	supersedeWorkCalendar(
+		input: WorkCalendarCreateRecord & {
+			calendarId: HumanResourcesWorkCalendarId;
+			expectedVersion: number;
+			predecessorEffectiveTo: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<{ superseded: WorkCalendar; successor: WorkCalendar }>>;
 
 	updateWorkCalendar(
 		input: {
@@ -253,7 +312,7 @@ export type HumanResourcesTimeStore = {
 
 	listWorkCalendars(input: {
 		organizationId: string;
-		status?: "active" | "archived";
+		status?: "active" | "superseded" | "archived";
 		page?: number;
 		pageSize?: number;
 	}): Promise<Result<WorkCalendar[]>>;
@@ -304,6 +363,119 @@ export type HumanResourcesTimeStore = {
 		asOf: string;
 	}): Promise<Result<EmploymentCalendarAssignment | null>>;
 
+	listWorkCalendarScopeAssignments(input: {
+		organizationId: string;
+		asOf: string;
+	}): Promise<Result<WorkCalendarScopeAssignment[]>>;
+
+	assignWorkCalendarScope(
+		input: WorkCalendarScopeAssignRecord,
+		ports: MutationPorts,
+	): Promise<Result<WorkCalendarScopeAssignment>>;
+
+	endWorkCalendarScopeAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesWorkCalendarScopeAssignmentId;
+			effectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<WorkCalendarScopeAssignment>>;
+
+	findTimePolicyByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<
+		Result<{
+			policy: TimePolicy;
+			createRequestFingerprint: string;
+		} | null>
+	>;
+
+	createTimePolicy(
+		input: TimePolicyCreateRecord,
+		ports: MutationPorts,
+	): Promise<Result<TimePolicy>>;
+
+	supersedeTimePolicy(
+		input: TimePolicyCreateRecord & {
+			policyId: HumanResourcesTimePolicyId;
+			expectedVersion: number;
+			predecessorEffectiveTo: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<{ superseded: TimePolicy; successor: TimePolicy }>>;
+
+	activateTimePolicy(
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesTimePolicyId;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<TimePolicy>>;
+
+	assignTimePolicy(
+		input: {
+			organizationId: string;
+			policyId: HumanResourcesTimePolicyId;
+			employmentId: HumanResourcesEmploymentId;
+			effectiveFrom: string;
+			effectiveTo: string | null;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<TimePolicyAssignment>>;
+
+	getTimePolicy(input: {
+		organizationId: string;
+		policyId: HumanResourcesTimePolicyId;
+	}): Promise<Result<TimePolicy | null>>;
+
+	resolveTimePolicy(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}): Promise<Result<TimePolicy | null>>;
+
+	assignTimeApprovalAuthority(
+		input: {
+			organizationId: string;
+			targetActorUserId: string;
+			authority: TimeApprovalAuthority;
+			effectiveFrom: string;
+			effectiveTo: string | null;
+			createdBy: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<TimeApprovalAuthorityAssignment>>;
+
+	endTimeApprovalAuthorityAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+			effectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<TimeApprovalAuthorityAssignment>>;
+
+	resolveTimeApprovalAuthority(input: {
+		organizationId: string;
+		actorUserId: string;
+		authority: TimeApprovalAuthority;
+		asOf: string;
+	}): Promise<Result<TimeApprovalAuthorityAssignment | null>>;
+
 	// Shift definition
 	findShiftByIdempotencyKey(input: {
 		organizationId: string;
@@ -314,6 +486,15 @@ export type HumanResourcesTimeStore = {
 		input: ShiftCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<Shift>>;
+
+	supersedeShift(
+		input: ShiftCreateRecord & {
+			shiftId: HumanResourcesShiftId;
+			expectedVersion: number;
+			predecessorEffectiveTo: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<{ superseded: Shift; successor: Shift }>>;
 
 	updateShift(
 		input: {
@@ -371,7 +552,7 @@ export type HumanResourcesTimeStore = {
 
 	listShifts(input: {
 		organizationId: string;
-		status?: "draft" | "active" | "inactive";
+		status?: "draft" | "active" | "superseded" | "inactive";
 		page?: number;
 		pageSize?: number;
 	}): Promise<Result<Shift[]>>;
@@ -474,6 +655,11 @@ export type HumanResourcesTimeStore = {
 		pageSize?: number;
 	}): Promise<Result<ShiftAssignment[]>>;
 
+	listShiftAssignmentSegments(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesShiftAssignmentId;
+	}): Promise<Result<ShiftAssignmentSegment[]>>;
+
 	getScheduledShiftForEmployeeDate(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
@@ -532,6 +718,7 @@ export type HumanResourcesTimeStore = {
 			occurredAt: Date;
 			notes?: string | null;
 			adjustmentReason: string;
+			evidenceReference?: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -555,6 +742,11 @@ export type HumanResourcesTimeStore = {
 		organizationId: string;
 		eventId: HumanResourcesAttendanceEventId;
 	}): Promise<Result<AttendanceEvent | null>>;
+
+	listAttendanceAdjustments(input: {
+		organizationId: string;
+		eventId: HumanResourcesAttendanceEventId;
+	}): Promise<Result<AttendanceAdjustment[]>>;
 
 	listAttendanceEvents(input: {
 		organizationId: string;
@@ -582,6 +774,27 @@ export type HumanResourcesTimeStore = {
 		sessionId: HumanResourcesAttendanceSessionId;
 	}): Promise<Result<AttendanceSession | null>>;
 
+	approveAttendanceBreakWaiver(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesAttendanceSessionId;
+			policyId: HumanResourcesTimePolicyId;
+			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
+			authority: TimeApprovalAuthority;
+			reason: string;
+			evidenceReference: string;
+			expectedVersion: number;
+			actorUserId: string;
+			correlationId: string;
+		},
+		ports: MutationPorts,
+	): Promise<Result<AttendanceBreakWaiverDecision>>;
+
+	listAttendanceBreakWaiverDecisions(input: {
+		organizationId: string;
+		sessionId: HumanResourcesAttendanceSessionId;
+	}): Promise<Result<AttendanceBreakWaiverDecision[]>>;
+
 	listAttendanceSessions(input: {
 		organizationId: string;
 		employeeId?: HumanResourcesEmployeeId;
@@ -590,6 +803,13 @@ export type HumanResourcesTimeStore = {
 		page?: number;
 		pageSize?: number;
 	}): Promise<Result<AttendanceSession[]>>;
+
+	getPreviousCompletedAttendanceSession(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		before: Date;
+		excludeSessionId: HumanResourcesAttendanceSessionId;
+	}): Promise<Result<AttendanceSession | null>>;
 
 	// Attendance exceptions
 	createAttendanceException(
@@ -710,6 +930,12 @@ export type HumanResourcesTimeStore = {
 			endedAt?: Date | null;
 			recordedMinutes?: number;
 			approvedMinutes?: number;
+			costCenterId?: string | null;
+			projectId?: string | null;
+			locationId?: string | null;
+			departmentId?: string | null;
+			approvalReference?: string | null;
+			evidenceReference?: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -732,6 +958,9 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			timesheetId: HumanResourcesTimesheetId;
+			submissionReference: string;
+			approvalPolicyId: HumanResourcesTimePolicyId | null;
+			requiredApprovalSteps: readonly TimeApprovalAuthority[];
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -756,12 +985,20 @@ export type HumanResourcesTimeStore = {
 			organizationId: string;
 			timesheetId: HumanResourcesTimesheetId;
 			approverNotes?: string | null;
+			authority: TimeApprovalAuthority;
+			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
 		},
 		ports: MutationPorts,
 	): Promise<Result<Timesheet>>;
+
+	listTimesheetApprovalDecisions(input: {
+		organizationId: string;
+		timesheetId: HumanResourcesTimesheetId;
+		submissionReference?: string;
+	}): Promise<Result<TimesheetApprovalDecision[]>>;
 
 	rejectTimesheet(
 		input: {

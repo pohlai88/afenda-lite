@@ -83,6 +83,9 @@ pnpm governance:packages
 | Topic | Link |
 |-------|------|
 | HR-00 implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) |
+| Drizzle adapter audit (Scratch) | [human-resources-drizzle-adapter-audit.md](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-audit.md) |
+| Drizzle adapter migration (Scratch) | [human-resources-drizzle-adapter-migration.md](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-migration.md) |
+| Drizzle adapter validation (Scratch) | [human-resources-drizzle-adapter-validation.md](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-validation.md) |
 | Bounded-context architecture (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
 | Phase sequencing (Scratch) | [human-resources-roadmap.md](../../../docs-V2/_scratch/erp/human-resources-roadmap.md) |
 | ERP scaffold rules | [SCAFFOLDING.md](../SCAFFOLDING.md) |

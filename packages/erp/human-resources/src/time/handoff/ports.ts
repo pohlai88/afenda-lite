@@ -69,3 +69,20 @@ export type AttendanceSourcePort = {
 		cursor?: string;
 	}): Promise<Result<AttendanceSourceBatch>>;
 };
+
+export type EmployeeAssignmentContext = {
+	employmentId: string;
+	employeeId: string;
+	departmentId: string | null;
+	locationKey: string | null;
+	legalEntityKey: string | null;
+};
+
+export type AssignmentContextQueryPort = {
+	resolveAsOf(input: {
+		organizationId: string;
+		employeeId: string;
+		employmentId: string;
+		asOf: string;
+	}): Promise<Result<EmployeeAssignmentContext>>;
+};

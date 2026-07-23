@@ -28,6 +28,7 @@ import {
 	verifyOvertimeRequestInputSchema,
 } from "../schemas/time";
 import { runTimeCommand, runTimeQuery } from "../shared/time-command";
+import { resolveActiveTimeEmployment } from "../shared/time-employment";
 import type { OvertimeRequest } from "../types";
 
 export async function createOvertimeRequest(
@@ -39,11 +40,18 @@ export async function createOvertimeRequest(
 		invalidMessage: "Invalid overtime request create input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE,
 		execute: async (data, { store, ports }) => {
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: data.employmentId ?? null,
+				workDate: data.requestedStartsAt.slice(0, 10),
+			});
+			if (!employment.ok) return employment;
 			const requestedStartsAt = new Date(data.requestedStartsAt);
 			const requestedEndsAt = new Date(data.requestedEndsAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
-				employmentId: data.employmentId ?? null,
+				employmentId: employment.data.id,
 				overtimeType: data.overtimeType,
 				requestedStartsAt: requestedStartsAt.toISOString(),
 				requestedEndsAt: requestedEndsAt.toISOString(),
@@ -69,7 +77,7 @@ export async function createOvertimeRequest(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
-					employmentId: data.employmentId ?? null,
+					employmentId: employment.data.id,
 					overtimeType: data.overtimeType,
 					requestedStartsAt,
 					requestedEndsAt,

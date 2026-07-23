@@ -46,6 +46,8 @@ Chain: root → `@afenda/config/biome.json` → `ultracite/biome/{core,react,nex
 | Exceptions via narrow `overrides` | Global rule `off` for one file |
 | Exclude with `!` (skip processing) / `!!` (skip project index) — docs, DNA, `public/`, drizzle dumps | Lint `.next`, markdown, agent trees as product |
 | Editor: Biome for JS/TS/JSON/CSS + organize-imports on save | Dual formatters fighting on product TS |
+| `biome.lsp.bin` platform map + `public-hoist-pattern[]=@biomejs/cli-*` in `.npmrc` | Node wrapper path (Windows LSP “couldn't create connection to server”) |
+| `pnpm check:editor-biome` in `pnpm checks` | Drifting `.vscode/settings.json` without gate |
 | `$schema` matches installed Biome; presets use `ultracite/biome/*` | Ultracite v6 paths (`ultracite/core`) or leftover `.eslintrc*` / `.prettierrc*` |
 | Suppress: `biome-ignore lint/…: reason` | `eslint-disable` for Biome findings |
 
@@ -53,13 +55,36 @@ Disk override shape to copy: `@afenda/ui-system` UI/hooks (shadcn regen) · land
 
 ---
 
+## Editor (VS Code / Cursor)
+
+SSOT: [`scripts/lib/editor-posture.mjs`](../../scripts/lib/editor-posture.mjs) · gate: `pnpm check:editor-biome` · hook: [`.cursor/hooks/no-editor-biome-drift.mjs`](../../.cursor/hooks/no-editor-biome-drift.mjs) · rule: [`.cursor/rules/editor-workspace-posture.mdc`](../../.cursor/rules/editor-workspace-posture.mdc)
+
+| Area | Required posture |
+|------|------------------|
+| Biome LSP | Native `@biomejs/cli-*` platform map; `biome.lsp.watcher.kind: none`; `.npmrc` hoist + `pnpm install` |
+| Formatters | `biomejs.biome` for JS/TS/JSON/CSS; Prettier for md/mdx only |
+| tsserver | `disableAutomaticTypeAcquisition: true`; capped memory; `watchOptions.excludeDirectories` incl. `docs-V2` |
+| Explorer | `excludeGitIgnore: false`; `files.watcherExclude` SSOT (incl. `docs-V2/**` watcher-only) |
+| Tailwind ext | `experimental.configFile` → `apps/web/postcss.config.mjs`; scoped `files.exclude` |
+
+**Symptom:** `Initializing …/tsconfig.json` — **normal once per package per session** (37 package tsconfigs). Not a failure unless it repeats on every keystroke.
+
+**Symptom:** `couldn't create connection to server` — node-wrapper `biome.lsp.bin`, or stale extension cache. Delete `%APPDATA%\\Cursor\\User\\globalStorage\\biomejs.biome\\tmp-bin`, run `pnpm install`, `pnpm check:editor-biome`, reload window.
+
+**Symptom:** Explorer stalls — re-enabling `excludeGitIgnore` or dropping watcher excludes. Run `pnpm check:editor-biome`.
+
+**User settings:** must not override workspace (`excludeGitIgnore`, global Biome paths, ESLint/Prettier as TS formatter).
+
+---
+
 ## Verify
 
 ```text
-1. pnpm exec ultracite doctor
-2. pnpm lint:root
-3. pnpm exec biome check --write <path>
-4. pnpm lint:ci
+1. pnpm check:editor-biome
+2. pnpm exec ultracite doctor
+3. pnpm lint:root
+4. pnpm exec biome check --write <path>
+5. pnpm lint:ci
 ```
 
 Smell: schema 2.x · assist (not legacy top-level `organizeImports`) · no ESLint/Prettier residue for product JS/TS.

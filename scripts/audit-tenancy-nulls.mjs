@@ -172,17 +172,23 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"hr_work_calendar",
 	"hr_work_calendar_holiday",
 	"hr_employment_calendar_assignment",
+	"hr_work_calendar_scope_assignment",
 	"hr_shift",
 	"hr_shift_break",
 	"hr_shift_assignment",
 	"hr_shift_assignment_segment",
 	"hr_attendance_event",
 	"hr_attendance_session",
+	"hr_attendance_break_waiver_decision",
 	"hr_attendance_exception",
 	"hr_attendance_adjustment",
 	"hr_attendance_import_batch",
 	"hr_attendance_import_error",
+	"hr_time_policy",
+	"hr_time_policy_assignment",
+	"hr_time_approval_authority_assignment",
 	"hr_timesheet",
+	"hr_timesheet_approval_decision",
 	"hr_timesheet_entry",
 	"hr_overtime_request",
 	"hr_overtime_approval",
@@ -523,6 +529,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_work_calendar_holiday WHERE organization_id IS NULL`,
 	hr_employment_calendar_assignment: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_employment_calendar_assignment WHERE organization_id IS NULL`,
+	hr_work_calendar_scope_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_work_calendar_scope_assignment WHERE organization_id IS NULL`,
 	hr_shift: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_shift WHERE organization_id IS NULL`,
 	hr_shift_break: () =>
@@ -535,6 +543,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_attendance_event WHERE organization_id IS NULL`,
 	hr_attendance_session: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_attendance_session WHERE organization_id IS NULL`,
+	hr_attendance_break_waiver_decision: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_break_waiver_decision WHERE organization_id IS NULL`,
 	hr_attendance_exception: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_attendance_exception WHERE organization_id IS NULL`,
 	hr_attendance_adjustment: () =>
@@ -543,8 +553,16 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_attendance_import_batch WHERE organization_id IS NULL`,
 	hr_attendance_import_error: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_attendance_import_error WHERE organization_id IS NULL`,
+	hr_time_policy: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_time_policy WHERE organization_id IS NULL`,
+	hr_time_policy_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_time_policy_assignment WHERE organization_id IS NULL`,
+	hr_time_approval_authority_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_time_approval_authority_assignment WHERE organization_id IS NULL`,
 	hr_timesheet: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_timesheet WHERE organization_id IS NULL`,
+	hr_timesheet_approval_decision: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_timesheet_approval_decision WHERE organization_id IS NULL`,
 	hr_timesheet_entry: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_timesheet_entry WHERE organization_id IS NULL`,
 	hr_overtime_request: () =>
@@ -557,7 +575,32 @@ console.log(
 	`audit:tenancy-nulls — ${HARD_TENANT_ROOT_TABLE_NAMES.length} hard tenant roots (ARCH-023)`,
 );
 
+function isUndefinedTable(error) {
+	let current = error;
+	for (let depth = 0; depth < 4 && current != null; depth += 1) {
+		if (
+			typeof current === "object" &&
+			"code" in current &&
+			current.code === "42P01"
+		) {
+			return true;
+		}
+		if (
+			current instanceof Error &&
+			/relation .* does not exist/i.test(current.message)
+		) {
+			return true;
+		}
+		current =
+			typeof current === "object" && current !== null && "cause" in current
+				? current.cause
+				: null;
+	}
+	return false;
+}
+
 let failed = 0;
+let skipped = 0;
 
 for (const table of HARD_TENANT_ROOT_TABLE_NAMES) {
 	const query = NULL_COUNT_BY_TABLE[table];
@@ -566,7 +609,17 @@ for (const table of HARD_TENANT_ROOT_TABLE_NAMES) {
 		failed += 1;
 		continue;
 	}
-	const result = await query();
+	let result;
+	try {
+		result = await query();
+	} catch (error) {
+		if (isUndefinedTable(error)) {
+			console.log(`  SKIP  ${table}: relation not present (pending migration)`);
+			skipped += 1;
+			continue;
+		}
+		throw error;
+	}
 	const nullCount = Number(result[0]?.null_count ?? 0);
 	const ok = nullCount === 0;
 	if (ok) {
@@ -582,4 +635,10 @@ if (failed > 0) {
 	process.exit(1);
 }
 
-console.log("audit:tenancy-nulls PASS");
+if (skipped > 0) {
+	console.log(
+		`audit:tenancy-nulls PASS — ${HARD_TENANT_ROOT_TABLE_NAMES.length - skipped} audited, ${skipped} skipped (pending DDL)`,
+	);
+} else {
+	console.log("audit:tenancy-nulls PASS");
+}

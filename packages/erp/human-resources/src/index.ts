@@ -53,6 +53,8 @@ export * from "./performance/review";
 // Ports and options
 export type * from "./ports";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
+export { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
+export { createProductionAttendanceSource } from "./production-attendance-source";
 export { createProductionWorkCalendar } from "./production-work-calendar";
 export * from "./recruitment/application";
 export * from "./recruitment/candidate";

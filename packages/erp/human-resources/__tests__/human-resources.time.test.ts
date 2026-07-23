@@ -9,6 +9,7 @@ import { createEmployment } from "../src/core/employment";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import { grantLeaveEntitlement } from "../src/leave/entitlement";
@@ -25,6 +26,10 @@ import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import {
+	approveAttendanceBreakWaiver,
+	listAttendanceBreakWaiverDecisions,
+} from "../src/time/attendance/break-waivers";
 import {
 	correctAttendanceEvent,
 	getAttendanceEvent,
@@ -51,19 +56,20 @@ import { importAttendanceEvents } from "../src/time/attendance/import";
 import { namespacedImportSourceReference } from "../src/time/attendance/import-keys";
 import { resolveAttendanceSession } from "../src/time/attendance/sessions";
 import { getDailyAttendanceSummary } from "../src/time/attendance/summary";
-import type { AttendanceSourcePort } from "../src/time/handoff/ports";
-import type { AttendanceExceptionType } from "../src/types";
 import {
 	addCalendarDateOverride,
 	assignEmploymentCalendar,
 	createWorkCalendar,
 	endWorkCalendarAssignment,
+	getWorkCalendar,
 	listWorkCalendarHolidays,
 	removeCalendarDateOverride,
 	resolveEmploymentCalendar,
+	supersedeWorkCalendar,
 } from "../src/time/calendar";
 import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
 import { getApprovedTimeHandoff } from "../src/time/handoff/approved-time-handoff";
+import type { AttendanceSourcePort } from "../src/time/handoff/ports";
 import {
 	approveOvertimeRequest,
 	createOvertimeRequest,
@@ -72,17 +78,30 @@ import {
 	verifyOvertimeRequest,
 } from "../src/time/overtime";
 import {
+	activateTimePolicy,
+	assignTimeApprovalAuthority,
+	assignTimePolicy,
+	createTimePolicy,
+	endTimeApprovalAuthorityAssignment,
+	resolveTimePolicy,
+	supersedeTimePolicy,
+} from "../src/time/policy";
+import {
 	assignShift,
 	changeShiftAssignment,
 	getScheduledShiftForEmployeeDate,
 	listLocationSchedule,
+	listShiftAssignmentSegments,
 	publishShiftAssignment,
 } from "../src/time/scheduling";
 import {
 	activateShift,
 	addShiftBreak,
 	createShift,
+	getShift,
 	listShiftBreaks,
+	supersedeShift,
+	updateShift,
 } from "../src/time/shift";
 import {
 	addTimesheetEntry,
@@ -92,6 +111,7 @@ import {
 	getTimesheet,
 	getTimesheetForEmployeePeriod,
 	getTimesheetTotals,
+	listTimesheetApprovalDecisions,
 	listTimesheetEntries,
 	reopenTimesheet,
 	returnTimesheet,
@@ -102,6 +122,7 @@ import {
 	parseAbsenceDetectionRemarks,
 	TIMESHEET_GENERATION_ABSENCE_SOURCE,
 } from "../src/time/timesheet-generation";
+import type { AttendanceExceptionType } from "../src/types";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createStoreBackedIdentityResolver,
@@ -142,6 +163,31 @@ function harness() {
 		store,
 		ports,
 	};
+}
+
+async function grantTimeApprovalAuthority(
+	ready: ReturnType<typeof harness>,
+	input: {
+		organizationId: string;
+		targetActorUserId: string;
+		authority: "line_manager" | "department" | "hr" | "payroll";
+		suffix: string;
+	},
+) {
+	const assigned = await assignTimeApprovalAuthority(
+		{
+			organizationId: input.organizationId,
+			actorUserId: ACTOR,
+			correlationId: `corr-authority-${input.suffix}`,
+			targetActorUserId: input.targetActorUserId,
+			authority: input.authority,
+			effectiveFrom: "2020-01-01",
+		},
+		ready,
+	);
+	expect(assigned.ok).toBe(true);
+	if (!assigned.ok) throw new Error("approval authority seed failed");
+	return assigned.data;
 }
 
 async function seedEmployeeEmployment(
@@ -623,12 +669,25 @@ describe("human-resources.time (memory)", () => {
 		);
 		expect(submitted.ok).toBe(true);
 		if (!submitted.ok) return;
+		await grantTimeApprovalAuthority(ready, {
+			organizationId: ORG,
+			targetActorUserId: ACTOR,
+			authority: "line_manager",
+			suffix: "timesheet-self",
+		});
+		await grantTimeApprovalAuthority(ready, {
+			organizationId: ORG,
+			targetActorUserId: MANAGER,
+			authority: "line_manager",
+			suffix: "timesheet-manager",
+		});
 
 		const selfApprove = await approveTimesheet(
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: "corr-ts-self",
+				authority: "line_manager",
 				timesheetId: submitted.data.id,
 				expectedVersion: submitted.data.version,
 			},
@@ -645,6 +704,7 @@ describe("human-resources.time (memory)", () => {
 				organizationId: ORG,
 				actorUserId: MANAGER,
 				correlationId: "corr-ts-approve",
+				authority: "line_manager",
 				timesheetId: submitted.data.id,
 				expectedVersion: submitted.data.version,
 			},
@@ -759,6 +819,876 @@ describe("human-resources.time (memory)", () => {
 
 		void seededA;
 		void seededB;
+	});
+
+	it("rejects non-IANA timezones at every Time command boundary", async () => {
+		const result = await createWorkCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-cal-invalid-timezone",
+				idempotencyKey: "idem-cal-invalid-timezone",
+				code: "INVALID-TZ",
+				name: "Invalid timezone",
+				timezone: "Mars/Olympus_Mons",
+				calendarVersion: "v1",
+				workWeek: STANDARD_WEEK,
+				standardHoursPerDay: "8",
+				effectiveFrom: "2025-01-01",
+			},
+			harness(),
+		);
+
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(humanResourcesCodeFromResult(result)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		);
+	});
+
+	it("links Time facts to the employee's active employment", async () => {
+		const ready = harness();
+		const first = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: "time-employment-first",
+		});
+		const second = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: "time-employment-second",
+		});
+
+		const mismatched = await recordClockIn(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-employment-mismatch",
+				idempotencyKey: "idem-time-employment-mismatch",
+				employeeId: first.employee.id,
+				employmentId: second.employment.id,
+				occurredAt: "2025-07-21T01:00:00.000Z",
+				sourceTimezone: "Asia/Singapore",
+				localWorkDate: "2025-07-21",
+			},
+			ready,
+		);
+		expect(mismatched.ok).toBe(false);
+		if (mismatched.ok) return;
+		expect(humanResourcesCodeFromResult(mismatched)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		);
+
+		const resolved = await recordClockIn(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-employment-resolved",
+				idempotencyKey: "idem-time-employment-resolved",
+				employeeId: first.employee.id,
+				occurredAt: "2025-07-21T01:00:00.000Z",
+				sourceTimezone: "Asia/Singapore",
+				localWorkDate: "2025-07-21",
+			},
+			ready,
+		);
+		expect(resolved.ok).toBe(true);
+		if (!resolved.ok) return;
+		expect(resolved.data.employmentId).toBe(first.employment.id);
+	});
+
+	it("creates, activates, assigns, and resolves an effective Time policy", async () => {
+		const ready = harness();
+		const { employee, employment } = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: "time-policy",
+		});
+		const created = await createTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-create",
+				idempotencyKey: "idem-time-policy-create",
+				code: "STANDARD-MY",
+				name: "Standard Malaysia Time",
+				effectiveFrom: "2025-01-01",
+				minimumRestMinutes: 660,
+				automaticBreakAfterMinutes: 360,
+				automaticBreakMinutes: 60,
+				approvalSteps: ["line_manager", "payroll"],
+			},
+			ready,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+		expect(created.data.status).toBe("draft");
+
+		const activated = await activateTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-activate",
+				policyId: created.data.id,
+				expectedVersion: created.data.version,
+			},
+			ready,
+		);
+		expect(activated.ok).toBe(true);
+		if (!activated.ok) return;
+		expect(activated.data.status).toBe("active");
+
+		const assignment = await assignTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-assign",
+				policyId: activated.data.id,
+				employmentId: employment.id,
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+
+		const resolved = await resolveTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-resolve",
+				employmentId: employment.id,
+				asOf: "2025-07-01",
+			},
+			ready,
+		);
+		expect(resolved.ok).toBe(true);
+		if (!resolved.ok || resolved.data === null) return;
+		expect(resolved.data).toMatchObject({
+			minimumRestMinutes: 660,
+			automaticBreakAfterMinutes: 360,
+			automaticBreakMinutes: 60,
+			approvalSteps: ["line_manager", "payroll"],
+		});
+
+		const policyTimesheet = await createTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-timesheet-create",
+				idempotencyKey: "idem-time-policy-timesheet-create",
+				employeeId: employee.id,
+				employmentId: employment.id,
+				periodStart: "2025-07-01",
+				periodEnd: "2025-07-31",
+			},
+			ready,
+		);
+		expect(policyTimesheet.ok).toBe(true);
+		if (!policyTimesheet.ok) return;
+		const submittedTimesheet = await submitTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-timesheet-submit",
+				timesheetId: policyTimesheet.data.id,
+				expectedVersion: policyTimesheet.data.version,
+			},
+			ready,
+		);
+		expect(submittedTimesheet.ok).toBe(true);
+		if (!submittedTimesheet.ok) return;
+		expect(submittedTimesheet.data).toMatchObject({
+			approvalPolicyId: activated.data.id,
+			requiredApprovalSteps: ["line_manager", "payroll"],
+			completedApprovalSteps: 0,
+		});
+		await grantTimeApprovalAuthority(ready, {
+			organizationId: ORG,
+			targetActorUserId: MANAGER,
+			authority: "line_manager",
+			suffix: "policy-manager",
+		});
+		await grantTimeApprovalAuthority(ready, {
+			organizationId: ORG,
+			targetActorUserId: "user-hr-time-payroll",
+			authority: "payroll",
+			suffix: "policy-payroll",
+		});
+
+		const wrongAuthority = await approveTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-time-policy-timesheet-wrong-authority",
+				timesheetId: submittedTimesheet.data.id,
+				authority: "payroll",
+				expectedVersion: submittedTimesheet.data.version,
+			},
+			ready,
+		);
+		expect(wrongAuthority.ok).toBe(false);
+
+		const managerApproval = await approveTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-time-policy-timesheet-manager",
+				timesheetId: submittedTimesheet.data.id,
+				authority: "line_manager",
+				expectedVersion: submittedTimesheet.data.version,
+			},
+			ready,
+		);
+		expect(managerApproval.ok).toBe(true);
+		if (!managerApproval.ok) return;
+		expect(managerApproval.data).toMatchObject({
+			status: "submitted",
+			completedApprovalSteps: 1,
+		});
+
+		const payrollApproval = await approveTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: "user-hr-time-payroll",
+				correlationId: "corr-time-policy-timesheet-payroll",
+				timesheetId: managerApproval.data.id,
+				authority: "payroll",
+				expectedVersion: managerApproval.data.version,
+			},
+			ready,
+		);
+		expect(payrollApproval.ok).toBe(true);
+		if (!payrollApproval.ok) return;
+		expect(payrollApproval.data).toMatchObject({
+			status: "approved",
+			completedApprovalSteps: 2,
+		});
+		expect(payrollApproval.data.submissionReference).not.toBeNull();
+		if (payrollApproval.data.submissionReference === null) return;
+
+		const decisions = await listTimesheetApprovalDecisions(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-timesheet-decisions",
+				timesheetId: payrollApproval.data.id,
+				submissionReference: payrollApproval.data.submissionReference,
+			},
+			ready,
+		);
+		expect(decisions.ok).toBe(true);
+		if (!decisions.ok) return;
+		expect(
+			decisions.data.map(({ stepIndex, authority }) => ({
+				stepIndex,
+				authority,
+			})),
+		).toEqual([
+			{ stepIndex: 0, authority: "line_manager" },
+			{ stepIndex: 1, authority: "payroll" },
+		]);
+
+		for (const [workDate, suffix] of [
+			["2025-07-01", "deducted"],
+			["2025-07-02", "repeated"],
+		] as const) {
+			await recordClockIn(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-time-policy-${suffix}-in`,
+					idempotencyKey: `idem-time-policy-${suffix}-in`,
+					employeeId: employee.id,
+					employmentId: employment.id,
+					occurredAt: `${workDate}T01:00:00.000Z`,
+					sourceTimezone: "UTC",
+					localWorkDate: workDate,
+				},
+				ready,
+			);
+			await recordClockOut(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-time-policy-${suffix}-out`,
+					idempotencyKey: `idem-time-policy-${suffix}-out`,
+					employeeId: employee.id,
+					employmentId: employment.id,
+					occurredAt: `${workDate}T09:00:00.000Z`,
+					sourceTimezone: "UTC",
+					localWorkDate: workDate,
+				},
+				ready,
+			);
+			const session = await resolveAttendanceSession(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-time-policy-${suffix}-session`,
+					idempotencyKey: `idem-time-policy-${suffix}-session`,
+					employeeId: employee.id,
+					localWorkDate: workDate,
+					timezone: "UTC",
+				},
+				ready,
+			);
+			expect(session.ok).toBe(true);
+			if (!session.ok) return;
+			expect(session.data.grossMinutes).toBe(480);
+			expect(session.data.breakMinutes).toBe(60);
+			expect(session.data.workedMinutes).toBe(420);
+			expect(session.data.provenance.automaticBreak).toMatchObject({
+				policyId: activated.data.id,
+				minutes: 60,
+				applied: true,
+			});
+			if (suffix === "deducted") {
+				const waiver = await approveAttendanceBreakWaiver(
+					{
+						organizationId: ORG,
+						actorUserId: MANAGER,
+						correlationId: "corr-time-policy-break-waiver",
+						sessionId: session.data.id,
+						authority: "line_manager",
+						reason: "Approved operational break waiver",
+						evidenceReference: "evidence://break-waiver/2025-07-01",
+						expectedVersion: session.data.version,
+					},
+					ready,
+				);
+				expect(waiver.ok).toBe(true);
+				if (!waiver.ok) return;
+				expect(waiver.data).toMatchObject({
+					policyId: activated.data.id,
+					authority: "line_manager",
+					automaticBreakMinutes: 60,
+					recordedBreakMinutes: 0,
+					sessionVersion: session.data.version,
+				});
+				const duplicate = await approveAttendanceBreakWaiver(
+					{
+						organizationId: ORG,
+						actorUserId: MANAGER,
+						correlationId: "corr-time-policy-break-waiver-duplicate",
+						sessionId: session.data.id,
+						authority: "line_manager",
+						reason: "Duplicate",
+						evidenceReference: "evidence://break-waiver/duplicate",
+						expectedVersion: session.data.version,
+					},
+					ready,
+				);
+				expect(duplicate.ok).toBe(false);
+				if (!duplicate.ok) {
+					expect(humanResourcesCodeFromResult(duplicate)).toBe(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					);
+				}
+				const decisions = await listAttendanceBreakWaiverDecisions(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: "corr-time-policy-break-waiver-list",
+						sessionId: session.data.id,
+					},
+					ready,
+				);
+				expect(decisions.ok).toBe(true);
+				if (!decisions.ok) return;
+				expect(decisions.data).toHaveLength(1);
+				expect(decisions.data[0]?.evidenceReference).toBe(
+					"evidence://break-waiver/2025-07-01",
+				);
+			}
+		}
+
+		const supersession = await supersedeTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-supersede",
+				idempotencyKey: "idem-time-policy-supersede",
+				policyId: activated.data.id,
+				expectedVersion: activated.data.version,
+				name: "Standard Malaysia Time v2",
+				effectiveFrom: "2025-08-01",
+				minimumRestMinutes: 720,
+				automaticBreakAfterMinutes: 300,
+				automaticBreakMinutes: 45,
+				approvalSteps: ["line_manager", "hr", "payroll"],
+			},
+			ready,
+		);
+		expect(supersession.ok).toBe(true);
+		if (!supersession.ok) return;
+		expect(supersession.data.superseded).toMatchObject({
+			id: activated.data.id,
+			status: "superseded",
+			effectiveTo: "2025-07-31",
+		});
+		expect(supersession.data.successor).toMatchObject({
+			code: activated.data.code,
+			status: "active",
+			effectiveFrom: "2025-08-01",
+			supersedesPolicyId: activated.data.id,
+		});
+
+		const historical = await resolveTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-historical",
+				employmentId: employment.id,
+				asOf: "2025-07-31",
+			},
+			ready,
+		);
+		expect(historical.ok).toBe(true);
+		if (!historical.ok || historical.data === null) return;
+		expect(historical.data.id).toBe(activated.data.id);
+
+		const future = await resolveTimePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-time-policy-future",
+				employmentId: employment.id,
+				asOf: "2025-08-01",
+			},
+			ready,
+		);
+		expect(future.ok).toBe(true);
+		if (!future.ok || future.data === null) return;
+		expect(future.data.id).toBe(supersession.data.successor.id);
+	});
+
+	it("rejects overlapping and expired approval authority assignments", async () => {
+		const ready = harness();
+		const { employee } = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: "authority-expiry",
+		});
+		const authority = await grantTimeApprovalAuthority(ready, {
+			organizationId: ORG,
+			targetActorUserId: MANAGER,
+			authority: "line_manager",
+			suffix: "authority-expiry",
+		});
+		const overlap = await assignTimeApprovalAuthority(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-authority-overlap",
+				targetActorUserId: MANAGER,
+				authority: "line_manager",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(overlap.ok).toBe(false);
+		if (!overlap.ok) {
+			expect(humanResourcesCodeFromResult(overlap)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+		const ended = await endTimeApprovalAuthorityAssignment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-authority-end",
+				assignmentId: authority.id,
+				effectiveTo: "2025-12-31",
+				expectedVersion: authority.version,
+			},
+			ready,
+		);
+		expect(ended.ok).toBe(true);
+		if (!ended.ok) return;
+
+		const timesheet = await createTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-authority-timesheet-create",
+				idempotencyKey: "idem-authority-timesheet-create",
+				employeeId: employee.id,
+				periodStart: "2026-01-01",
+				periodEnd: "2026-01-31",
+			},
+			ready,
+		);
+		expect(timesheet.ok).toBe(true);
+		if (!timesheet.ok) return;
+		const submitted = await submitTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-authority-timesheet-submit",
+				timesheetId: timesheet.data.id,
+				expectedVersion: timesheet.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+		const denied = await approveTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-authority-timesheet-denied",
+				timesheetId: submitted.data.id,
+				authority: "line_manager",
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			expect(humanResourcesCodeFromResult(denied)).toBe(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			);
+		}
+	});
+
+	it("supersedes effective-dated calendars and shifts without rewriting history", async () => {
+		const ready = harness();
+		const { employee, employment } = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: "definition-successors",
+		});
+		const calendar = await createWorkCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-create",
+				idempotencyKey: "idem-calendar-successor-create",
+				code: "CAL-SUCCESSOR",
+				name: "Calendar v1",
+				timezone: "Asia/Kuala_Lumpur",
+				calendarVersion: "v1",
+				workWeek: STANDARD_WEEK,
+				standardHoursPerDay: "8.00",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(calendar.ok).toBe(true);
+		if (!calendar.ok) return;
+		const holiday = await addCalendarDateOverride(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-holiday",
+				calendarId: calendar.data.id,
+				holidayDate: "2025-12-24",
+				overrideKind: "shortened_day",
+				isWorkingDay: true,
+				expectedMinutes: 240,
+				label: "Christmas Eve",
+			},
+			ready,
+		);
+		expect(holiday.ok).toBe(true);
+		const assignment = await assignEmploymentCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-assign",
+				employeeId: employee.id,
+				employmentId: employment.id,
+				calendarId: calendar.data.id,
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		const calendarSuccessor = await supersedeWorkCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor",
+				idempotencyKey: "idem-calendar-successor",
+				calendarId: calendar.data.id,
+				expectedVersion: calendar.data.version,
+				name: "Calendar v2",
+				calendarVersion: "v2",
+				effectiveFrom: "2025-08-01",
+				standardHoursPerDay: "7.50",
+			},
+			ready,
+		);
+		expect(calendarSuccessor.ok).toBe(true);
+		if (!calendarSuccessor.ok) return;
+		expect(calendarSuccessor.data.superseded).toMatchObject({
+			id: calendar.data.id,
+			status: "superseded",
+			effectiveTo: "2025-07-31",
+		});
+		expect(calendarSuccessor.data.successor).toMatchObject({
+			status: "active",
+			effectiveFrom: "2025-08-01",
+			supersedesCalendarId: calendar.data.id,
+		});
+		const historicalCalendar = await resolveEmploymentCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-historical",
+				employeeId: employee.id,
+				employmentId: employment.id,
+				asOf: "2025-07-31",
+			},
+			ready,
+		);
+		expect(historicalCalendar.ok).toBe(true);
+		if (!historicalCalendar.ok || historicalCalendar.data === null) return;
+		expect(historicalCalendar.data.calendarId).toBe(calendar.data.id);
+		const futureCalendar = await resolveEmploymentCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-future",
+				employeeId: employee.id,
+				employmentId: employment.id,
+				asOf: "2025-08-01",
+			},
+			ready,
+		);
+		expect(futureCalendar.ok).toBe(true);
+		if (!futureCalendar.ok || futureCalendar.data === null) return;
+		expect(futureCalendar.data.calendarId).toBe(
+			calendarSuccessor.data.successor.id,
+		);
+		const successorHolidays = await listWorkCalendarHolidays(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-holidays",
+				calendarId: calendarSuccessor.data.successor.id,
+			},
+			ready,
+		);
+		expect(successorHolidays.ok).toBe(true);
+		if (!successorHolidays.ok) return;
+		expect(successorHolidays.data).toHaveLength(1);
+		expect(successorHolidays.data[0]?.holidayDate).toBe("2025-12-24");
+
+		const shift = await createShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-create",
+				idempotencyKey: "idem-shift-successor-create",
+				code: "SHIFT-SUCCESSOR",
+				name: "Day Shift v1",
+				shiftKind: "fixed",
+				startLocal: "09:00",
+				endLocal: "17:00",
+				expectedMinutes: 480,
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(shift.ok).toBe(true);
+		if (!shift.ok) return;
+		const shiftBreak = await addShiftBreak(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-break",
+				shiftId: shift.data.id,
+				durationMinutes: 60,
+				startOffsetMinutes: 240,
+				label: "Meal",
+			},
+			ready,
+		);
+		expect(shiftBreak.ok).toBe(true);
+		const activated = await activateShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-activate",
+				shiftId: shift.data.id,
+				expectedVersion: shift.data.version,
+			},
+			ready,
+		);
+		expect(activated.ok).toBe(true);
+		if (!activated.ok) return;
+		const activeUpdate = await updateShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-active-update",
+				shiftId: activated.data.id,
+				expectedVersion: activated.data.version,
+				expectedMinutes: 450,
+			},
+			ready,
+		);
+		expect(activeUpdate.ok).toBe(false);
+		const shiftSuccessor = await supersedeShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor",
+				idempotencyKey: "idem-shift-successor",
+				shiftId: activated.data.id,
+				expectedVersion: activated.data.version,
+				name: "Day Shift v2",
+				effectiveFrom: "2025-08-01",
+				endLocal: "16:30",
+				expectedMinutes: 450,
+			},
+			ready,
+		);
+		expect(shiftSuccessor.ok).toBe(true);
+		if (!shiftSuccessor.ok) return;
+		expect(shiftSuccessor.data.superseded).toMatchObject({
+			id: activated.data.id,
+			status: "superseded",
+			effectiveTo: "2025-07-31",
+		});
+		expect(shiftSuccessor.data.successor).toMatchObject({
+			status: "active",
+			supersedesShiftId: activated.data.id,
+			effectiveFrom: "2025-08-01",
+		});
+		const successorBreaks = await listShiftBreaks(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-breaks",
+				shiftId: shiftSuccessor.data.successor.id,
+			},
+			ready,
+		);
+		expect(successorBreaks.ok).toBe(true);
+		if (!successorBreaks.ok) return;
+		expect(successorBreaks.data).toHaveLength(1);
+		expect(successorBreaks.data[0]?.durationMinutes).toBe(60);
+	});
+
+	it("rolls back definition successors when audit persistence fails", async () => {
+		const ready = harness();
+		const calendar = await createWorkCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-rollback-create",
+				idempotencyKey: "idem-calendar-successor-rollback-create",
+				code: "CAL-ROLLBACK",
+				name: "Calendar rollback v1",
+				timezone: "UTC",
+				calendarVersion: "v1",
+				workWeek: STANDARD_WEEK,
+				standardHoursPerDay: "8.00",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(calendar.ok).toBe(true);
+		if (!calendar.ok) return;
+		const calendarFailure = await supersedeWorkCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-rollback",
+				idempotencyKey: "idem-calendar-successor-rollback",
+				calendarId: calendar.data.id,
+				expectedVersion: calendar.data.version,
+				calendarVersion: "v2",
+				effectiveFrom: "2025-08-01",
+			},
+			{
+				...ready,
+				ports: createMemoryMutationPorts({ auditFailAfter: 0 }),
+			},
+		);
+		expect(calendarFailure.ok).toBe(false);
+		const restoredCalendar = await getWorkCalendar(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-calendar-successor-rollback-get",
+				calendarId: calendar.data.id,
+			},
+			ready,
+		);
+		expect(restoredCalendar.ok).toBe(true);
+		if (!restoredCalendar.ok || restoredCalendar.data === null) return;
+		expect(restoredCalendar.data).toMatchObject({
+			status: "active",
+			effectiveTo: null,
+			version: calendar.data.version,
+		});
+
+		const shift = await createShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-rollback-create",
+				idempotencyKey: "idem-shift-successor-rollback-create",
+				code: "SHIFT-ROLLBACK",
+				name: "Shift rollback v1",
+				shiftKind: "fixed",
+				startLocal: "09:00",
+				endLocal: "17:00",
+				expectedMinutes: 480,
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(shift.ok).toBe(true);
+		if (!shift.ok) return;
+		const activeShift = await activateShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-rollback-activate",
+				shiftId: shift.data.id,
+				expectedVersion: shift.data.version,
+			},
+			ready,
+		);
+		expect(activeShift.ok).toBe(true);
+		if (!activeShift.ok) return;
+		const shiftFailure = await supersedeShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-rollback",
+				idempotencyKey: "idem-shift-successor-rollback",
+				shiftId: activeShift.data.id,
+				expectedVersion: activeShift.data.version,
+				effectiveFrom: "2025-08-01",
+				expectedMinutes: 450,
+			},
+			{
+				...ready,
+				ports: createMemoryMutationPorts({ auditFailAfter: 0 }),
+			},
+		);
+		expect(shiftFailure.ok).toBe(false);
+		const restoredShift = await getShift(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-shift-successor-rollback-get",
+				shiftId: activeShift.data.id,
+			},
+			ready,
+		);
+		expect(restoredShift.ok).toBe(true);
+		if (!restoredShift.ok || restoredShift.data === null) return;
+		expect(restoredShift.data).toMatchObject({
+			status: "active",
+			effectiveTo: null,
+			version: activeShift.data.version,
+		});
 	});
 
 	describe("calendar date overrides", () => {
@@ -1853,7 +2783,7 @@ describe("human-resources.time (memory)", () => {
 						remarks !== null &&
 						remarks.detectionSource === TIMESHEET_GENERATION_ABSENCE_SOURCE,
 				)
-				.map((remarks) => remarks!.workDate);
+				.flatMap((remarks) => (remarks === null ? [] : [remarks.workDate]));
 
 			expect(absenceDates).toContain("2025-07-03");
 			expect(absenceDates).not.toContain("2025-07-02");
@@ -1882,12 +2812,19 @@ describe("human-resources.time (memory)", () => {
 			);
 			expect(submitted.ok).toBe(true);
 			if (!submitted.ok) return;
+			await grantTimeApprovalAuthority(ready, {
+				organizationId: ORG,
+				targetActorUserId: MANAGER,
+				authority: "line_manager",
+				suffix: "p03-manager",
+			});
 
 			const approved = await approveTimesheet(
 				{
 					organizationId: ORG,
 					actorUserId: MANAGER,
 					correlationId: "corr-p03-approve",
+					authority: "line_manager",
 					timesheetId: submitted.data.id,
 					expectedVersion: submitted.data.version,
 				},
@@ -2060,9 +2997,9 @@ describe("human-resources.time (memory)", () => {
 			expect(idempotentRows.data.totals.skipped).toBe(1);
 			expect(idempotentRows.data.totals.accepted).toBe(1);
 			expect(idempotentRows.data.totals.rejected).toBe(2);
-			expect(
-				idempotentRows.data.skipped[0]?.sourceReference,
-			).toBe(namespacedImportSourceReference("terminal-a", "ext-cin-1"));
+			expect(idempotentRows.data.skipped[0]?.sourceReference).toBe(
+				namespacedImportSourceReference("terminal-a", "ext-cin-1"),
+			);
 			expect(
 				idempotentRows.data.rejected.map((row) => row.errorCode).toSorted(),
 			).toEqual(["INVALID_TIMEZONE", "UNKNOWN_EMPLOYEE"]);
@@ -2237,10 +3174,7 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("late_arrival");
 		});
 
@@ -2318,10 +3252,7 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("early_departure");
 		});
 
@@ -2385,10 +3316,7 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("missing_clock_out");
 		});
 
@@ -2451,10 +3379,7 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("missing_clock_in");
 		});
 
@@ -2522,10 +3447,7 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("unplanned_attendance");
 		});
 
@@ -2654,11 +3576,306 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("schedule_mismatch");
+		});
+
+		it("detects policy-driven insufficient rest between sessions", async () => {
+			const ready = harness();
+			const { employee, employment } = await seedEmployeeEmployment(ready, {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				suffix: "p06-rest-policy",
+			});
+			const policy = await createTimePolicy(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-policy-create",
+					idempotencyKey: "idem-p06-rest-policy-create",
+					code: "REST-P06",
+					name: "Rest policy",
+					effectiveFrom: "2025-01-01",
+					minimumRestMinutes: 660,
+					approvalSteps: ["line_manager"],
+				},
+				ready,
+			);
+			expect(policy.ok).toBe(true);
+			if (!policy.ok) return;
+			const activated = await activateTimePolicy(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-policy-activate",
+					policyId: policy.data.id,
+					expectedVersion: policy.data.version,
+				},
+				ready,
+			);
+			expect(activated.ok).toBe(true);
+			if (!activated.ok) return;
+			const assigned = await assignTimePolicy(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-policy-assign",
+					policyId: activated.data.id,
+					employmentId: employment.id,
+					effectiveFrom: "2025-01-01",
+				},
+				ready,
+			);
+			expect(assigned.ok).toBe(true);
+
+			await recordClockIn(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-day1-in",
+					idempotencyKey: "idem-p06-rest-day1-in",
+					employeeId: employee.id,
+					employmentId: employment.id,
+					occurredAt: "2025-07-23T01:00:00.000Z",
+					sourceTimezone: "Asia/Singapore",
+					localWorkDate: "2025-07-23",
+				},
+				ready,
+			);
+			await recordClockOut(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-day1-out",
+					idempotencyKey: "idem-p06-rest-day1-out",
+					employeeId: employee.id,
+					employmentId: employment.id,
+					occurredAt: "2025-07-23T09:00:00.000Z",
+					sourceTimezone: "Asia/Singapore",
+					localWorkDate: "2025-07-23",
+				},
+				ready,
+			);
+			await resolveAttendanceSession(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-day1-session",
+					idempotencyKey: "idem-p06-rest-day1-session",
+					employeeId: employee.id,
+					localWorkDate: "2025-07-23",
+					timezone: "Asia/Singapore",
+				},
+				ready,
+			);
+			await recordClockIn(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-day2-in",
+					idempotencyKey: "idem-p06-rest-day2-in",
+					employeeId: employee.id,
+					employmentId: employment.id,
+					occurredAt: "2025-07-23T15:00:00.000Z",
+					sourceTimezone: "Asia/Singapore",
+					localWorkDate: "2025-07-24",
+				},
+				ready,
+			);
+			const current = await resolveAttendanceSession(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-rest-day2-session",
+					idempotencyKey: "idem-p06-rest-day2-session",
+					employeeId: employee.id,
+					localWorkDate: "2025-07-24",
+					timezone: "Asia/Singapore",
+				},
+				ready,
+			);
+			expect(current.ok).toBe(true);
+			if (!current.ok) return;
+			const unresolved = await listUnresolvedAttendanceExceptions(
+				{
+					organizationId: ORG,
+					actorUserId: MANAGER,
+					correlationId: "corr-p06-rest-list",
+					employeeId: employee.id,
+				},
+				ready,
+			);
+			expect(unresolved.ok).toBe(true);
+			if (!unresolved.ok) return;
+			expect(
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
+			).toContain("insufficient_rest");
+		});
+
+		it("detects overlap, excessive break, location mismatch, and overtime candidates", async () => {
+			const ready = harness();
+			const { employee, employment } = await seedEmployeeEmployment(ready, {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				suffix: "p06-complete-types",
+			});
+			const shift = await createShift(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-types-shift",
+					idempotencyKey: "idem-p06-types-shift",
+					code: "P06-TYPES",
+					name: "Exception type coverage",
+					shiftKind: "fixed",
+					startLocal: "09:00",
+					endLocal: "17:00",
+					expectedMinutes: 480,
+					overtimeEligible: true,
+					locationKey: "hq",
+					effectiveFrom: "2025-01-01",
+				},
+				ready,
+			);
+			expect(shift.ok).toBe(true);
+			if (!shift.ok) return;
+			const activated = await activateShift(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-types-activate",
+					shiftId: shift.data.id,
+					expectedVersion: shift.data.version,
+				},
+				ready,
+			);
+			expect(activated.ok).toBe(true);
+			if (!activated.ok) return;
+			const assignment = await assignShift(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-types-assignment",
+					idempotencyKey: "idem-p06-types-assignment",
+					employeeId: employee.id,
+					employmentId: employment.id,
+					shiftId: activated.data.id,
+					scheduledDate: "2025-07-23",
+					startsAt: "2025-07-23T01:00:00.000Z",
+					endsAt: "2025-07-23T09:00:00.000Z",
+					locationKey: "hq",
+					timezone: "Asia/Singapore",
+				},
+				ready,
+			);
+			expect(assignment.ok).toBe(true);
+			if (!assignment.ok) return;
+			const published = await publishShiftAssignment(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-types-publish",
+					assignmentId: assignment.data.id,
+					expectedVersion: assignment.data.version,
+				},
+				ready,
+			);
+			expect(published.ok).toBe(true);
+			if (!published.ok) return;
+
+			const baseEvent = {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				employeeId: employee.id,
+				employmentId: employment.id,
+				shiftAssignmentId: assignment.data.id,
+				sourceTimezone: "Asia/Singapore",
+				localWorkDate: "2025-07-23",
+				locationKey: "field-site",
+			};
+			await recordClockIn(
+				{
+					...baseEvent,
+					correlationId: "corr-p06-types-clock-in",
+					idempotencyKey: "idem-p06-types-clock-in",
+					occurredAt: "2025-07-23T01:00:00.000Z",
+				},
+				ready,
+			);
+			await recordClockIn(
+				{
+					...baseEvent,
+					correlationId: "corr-p06-types-clock-in-duplicate",
+					idempotencyKey: "idem-p06-types-clock-in-duplicate",
+					occurredAt: "2025-07-23T01:05:00.000Z",
+				},
+				ready,
+			);
+			await recordBreakStart(
+				{
+					...baseEvent,
+					correlationId: "corr-p06-types-break-start",
+					idempotencyKey: "idem-p06-types-break-start",
+					occurredAt: "2025-07-23T05:00:00.000Z",
+				},
+				ready,
+			);
+			await recordBreakEnd(
+				{
+					...baseEvent,
+					correlationId: "corr-p06-types-break-end",
+					idempotencyKey: "idem-p06-types-break-end",
+					occurredAt: "2025-07-23T06:00:00.000Z",
+				},
+				ready,
+			);
+			await recordClockOut(
+				{
+					...baseEvent,
+					correlationId: "corr-p06-types-clock-out",
+					idempotencyKey: "idem-p06-types-clock-out",
+					occurredAt: "2025-07-23T11:00:00.000Z",
+				},
+				ready,
+			);
+
+			const session = await resolveAttendanceSession(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p06-types-session",
+					idempotencyKey: "idem-p06-types-session",
+					employeeId: employee.id,
+					localWorkDate: "2025-07-23",
+					timezone: "Asia/Singapore",
+				},
+				ready,
+			);
+			expect(session.ok).toBe(true);
+			if (!session.ok) return;
+			const unresolved = await listUnresolvedAttendanceExceptions(
+				{
+					organizationId: ORG,
+					actorUserId: MANAGER,
+					correlationId: "corr-p06-types-list",
+					employeeId: employee.id,
+				},
+				ready,
+			);
+			expect(unresolved.ok).toBe(true);
+			if (!unresolved.ok) return;
+			const detected = autoDetectedTypes(
+				unresolved.data,
+				ATTENDANCE_SESSION_DETECTION_SOURCE,
+			);
+			expect(detected).toEqual(
+				expect.arrayContaining([
+					"overlapping_attendance",
+					"excessive_break",
+					"location_mismatch",
+					"overtime_candidate",
+				]),
+			);
 		});
 
 		it("re-detects on schedule publish after pre-schedule attendance; re-resolve is idempotent", async () => {
@@ -2811,8 +4028,8 @@ describe("human-resources.time (memory)", () => {
 			const lateCountBefore = afterPublish.data.filter(
 				(exception) =>
 					exception.exceptionType === "late_arrival" &&
-					parseExceptionDetectionRemarks(exception.remarks)
-						?.detectionSource === SCHEDULE_PUBLISH_DETECTION_SOURCE,
+					parseExceptionDetectionRemarks(exception.remarks)?.detectionSource ===
+						SCHEDULE_PUBLISH_DETECTION_SOURCE,
 			).length;
 
 			const reresolve = await resolveAttendanceSession(
@@ -2844,16 +4061,16 @@ describe("human-resources.time (memory)", () => {
 			const lateCountAfter = afterReresolve.data.filter(
 				(exception) =>
 					exception.exceptionType === "late_arrival" &&
-					parseExceptionDetectionRemarks(exception.remarks)
-						?.detectionSource === SCHEDULE_PUBLISH_DETECTION_SOURCE,
+					parseExceptionDetectionRemarks(exception.remarks)?.detectionSource ===
+						SCHEDULE_PUBLISH_DETECTION_SOURCE,
 			).length;
 			expect(lateCountAfter).toBe(lateCountBefore);
 
 			const sessionLateCount = afterReresolve.data.filter(
 				(exception) =>
 					exception.exceptionType === "late_arrival" &&
-					parseExceptionDetectionRemarks(exception.remarks)
-						?.detectionSource === ATTENDANCE_SESSION_DETECTION_SOURCE,
+					parseExceptionDetectionRemarks(exception.remarks)?.detectionSource ===
+						ATTENDANCE_SESSION_DETECTION_SOURCE,
 			).length;
 			expect(sessionLateCount).toBe(1);
 		});
@@ -3083,10 +4300,7 @@ describe("human-resources.time (memory)", () => {
 			expect(unresolved.ok).toBe(true);
 			if (!unresolved.ok) return;
 			expect(
-				autoDetectedTypes(
-					unresolved.data,
-					ATTENDANCE_SESSION_DETECTION_SOURCE,
-				),
+				autoDetectedTypes(unresolved.data, ATTENDANCE_SESSION_DETECTION_SOURCE),
 			).toContain("late_arrival");
 		});
 	});
@@ -3237,6 +4451,77 @@ describe("human-resources.time (memory)", () => {
 			expect(listed.data).toHaveLength(2);
 			expect(listed.data.map((row) => row.breakOrder)).toEqual([1, 2]);
 			expect(listed.data.map((row) => row.durationMinutes)).toEqual([30, 60]);
+
+			const activated = await activateShift(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p07-split-activate",
+					shiftId: shift.data.id,
+					expectedVersion: shift.data.version,
+				},
+				ready,
+			);
+			expect(activated.ok).toBe(true);
+			if (!activated.ok) return;
+			const { employee, employment } = await seedEmployeeEmployment(ready, {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				suffix: "p07-split-segments",
+			});
+			const assignment = await assignShift(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p07-split-assignment",
+					idempotencyKey: "idem-p07-split-assignment",
+					employeeId: employee.id,
+					employmentId: employment.id,
+					shiftId: activated.data.id,
+					scheduledDate: "2025-07-14",
+					startsAt: "2025-07-14T06:00:00.000Z",
+					endsAt: "2025-07-14T18:00:00.000Z",
+					timezone: "UTC",
+					segments: [
+						{
+							segmentOrder: 1,
+							startsAt: "2025-07-14T06:00:00.000Z",
+							endsAt: "2025-07-14T10:00:00.000Z",
+						},
+						{
+							segmentOrder: 2,
+							startsAt: "2025-07-14T14:00:00.000Z",
+							endsAt: "2025-07-14T18:00:00.000Z",
+						},
+					],
+				},
+				ready,
+			);
+			expect(assignment.ok).toBe(true);
+			if (!assignment.ok) return;
+			const segments = await listShiftAssignmentSegments(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p07-split-segment-list",
+					assignmentId: assignment.data.id,
+				},
+				ready,
+			);
+			expect(segments.ok).toBe(true);
+			if (!segments.ok) return;
+			expect(segments.data.map((segment) => segment.segmentOrder)).toEqual([
+				1, 2,
+			]);
+			expect(
+				segments.data.map((segment) => [
+					segment.startsAt.toISOString(),
+					segment.endsAt.toISOString(),
+				]),
+			).toEqual([
+				["2025-07-14T06:00:00.000Z", "2025-07-14T10:00:00.000Z"],
+				["2025-07-14T14:00:00.000Z", "2025-07-14T18:00:00.000Z"],
+			]);
 		});
 
 		it("rejects overlapping shift assignment", async () => {
@@ -3314,6 +4599,57 @@ describe("human-resources.time (memory)", () => {
 			);
 			expect(changed.data.endsAt.toISOString()).toBe(
 				"2025-07-16T10:00:00.000Z",
+			);
+		});
+
+		it("preserves a published assignment once attendance exists", async () => {
+			const ready = harness();
+			const { employee, employment } = await seedEmployeeEmployment(ready, {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				suffix: "p07-attendance-lock",
+			});
+			const { assignment } = await seedPublishedDayShift(ready, {
+				suffix: "p07-attendance-lock",
+				employeeId: employee.id,
+				employmentId: employment.id,
+				scheduledDate: "2025-07-18",
+				startsAt: "2025-07-18T01:00:00.000Z",
+				endsAt: "2025-07-18T09:00:00.000Z",
+			});
+			const attendance = await recordClockIn(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p07-attendance-lock-record",
+					idempotencyKey: "idem-p07-attendance-lock-record",
+					employeeId: employee.id,
+					employmentId: employment.id,
+					shiftAssignmentId: assignment.id,
+					occurredAt: "2025-07-18T01:00:00.000Z",
+					sourceTimezone: "Asia/Singapore",
+					localWorkDate: "2025-07-18",
+				},
+				ready,
+			);
+			expect(attendance.ok).toBe(true);
+
+			const changed = await changeShiftAssignment(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: "corr-p07-attendance-lock-change",
+					assignmentId: assignment.id,
+					startsAt: "2025-07-18T02:00:00.000Z",
+					endsAt: "2025-07-18T10:00:00.000Z",
+					expectedVersion: assignment.version,
+				},
+				ready,
+			);
+			expect(changed.ok).toBe(false);
+			if (changed.ok) return;
+			expect(humanResourcesCodeFromResult(changed)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
 		});
 
@@ -3574,7 +4910,8 @@ describe("human-resources.time (memory)", () => {
 			expect(generated.ok).toBe(true);
 			if (!generated.ok) return;
 			expect(generated.data.entries.length).toBeGreaterThanOrEqual(1);
-			const entry = generated.data.entries[0]!;
+			const [entry] = generated.data.entries;
+			if (!entry) throw new Error("Expected a generated timesheet entry");
 
 			const edited = await updateTimesheetEntry(
 				{
@@ -3584,12 +4921,26 @@ describe("human-resources.time (memory)", () => {
 					entryId: entry.id,
 					recordedMinutes: 450,
 					approvedMinutes: 450,
+					costCenterId: "cost-center-ops",
+					projectId: "project-erp",
+					locationId: "location-kl",
+					departmentId: "department-people",
+					approvalReference: "approval-manager-2025-07-21",
+					evidenceReference: "evidence-timesheet-2025-07-21",
 					expectedVersion: entry.version,
 				},
 				ready,
 			);
 			expect(edited.ok).toBe(true);
 			if (!edited.ok) return;
+			expect(edited.data).toMatchObject({
+				costCenterId: "cost-center-ops",
+				projectId: "project-erp",
+				locationId: "location-kl",
+				departmentId: "department-people",
+				approvalReference: "approval-manager-2025-07-21",
+				evidenceReference: "evidence-timesheet-2025-07-21",
+			});
 
 			const submitted = await submitTimesheet(
 				{
@@ -3661,12 +5012,19 @@ describe("human-resources.time (memory)", () => {
 			);
 			expect(resubmitted.ok).toBe(true);
 			if (!resubmitted.ok) return;
+			await grantTimeApprovalAuthority(ready, {
+				organizationId: ORG,
+				targetActorUserId: MANAGER,
+				authority: "line_manager",
+				suffix: "p07-manager",
+			});
 
 			const approved = await approveTimesheet(
 				{
 					organizationId: ORG,
 					actorUserId: MANAGER,
 					correlationId: "corr-p07-ts-approve",
+					authority: "line_manager",
 					timesheetId: resubmitted.data.id,
 					expectedVersion: resubmitted.data.version,
 				},
@@ -4032,12 +5390,19 @@ describe("human-resources.time (memory)", () => {
 			);
 			expect(resubmitted.ok).toBe(true);
 			if (!resubmitted.ok) return;
+			await grantTimeApprovalAuthority(ready, {
+				organizationId: ORG,
+				targetActorUserId: MANAGER,
+				authority: "line_manager",
+				suffix: "p07-pay-manager",
+			});
 
 			const approved = await approveTimesheet(
 				{
 					organizationId: ORG,
 					actorUserId: MANAGER,
 					correlationId: "corr-p07-pay-approve",
+					authority: "line_manager",
 					timesheetId: resubmitted.data.id,
 					expectedVersion: resubmitted.data.version,
 				},

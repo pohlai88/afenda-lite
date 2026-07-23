@@ -26,9 +26,9 @@ import {
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -40,7 +40,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function seedEmployeeEmployment(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	suffix: string,
 ) {
 	const seedReady = {
@@ -99,7 +99,7 @@ describe.skipIf(!hasDatabase)(
 		for (const adapter of ["memory", "drizzle"] as const) {
 			it(`${adapter}: open → finding → approve action`, async () => {
 				const suffix = uniqueSuffix(adapter);
-				const ready = createWorkforceHarness(adapter);
+				const ready = createHrParityHarness(adapter);
 				const authReady = {
 					...ready,
 					authorization: createGrantingHumanResourcesAuthorization([

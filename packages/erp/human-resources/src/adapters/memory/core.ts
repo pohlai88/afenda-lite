@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
@@ -8,7 +6,6 @@ import {
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesAssignmentId,
 	type HumanResourcesEmployeeId,
@@ -36,6 +33,7 @@ import {
 	type EmploymentStatus,
 	employmentStatusSchema,
 } from "../../shared/employment-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import { mapEmployeeNumberDuplicate } from "../../shared/persistence-errors";
 import type {
 	AssignmentCreateRecord,
@@ -94,6 +92,7 @@ export type MemoryCoreMethods = Pick<
 	| "listEmployees"
 	| "getEmploymentById"
 	| "findOpenEmploymentByEmployee"
+	| "findEmploymentByEmployeeAsOf"
 	| "createEmployment"
 	| "amendEmployment"
 	| "getEmploymentContractById"
@@ -379,6 +378,30 @@ export function createMemoryCoreMethods(
 				}
 			}
 			return ok(null);
+		},
+
+		async findEmploymentByEmployeeAsOf(input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			asOf: string;
+		}): Promise<Result<Employment | null>> {
+			const matches = [...state.employments.values()]
+				.filter(
+					(employment) =>
+						employment.organizationId === input.organizationId &&
+						employment.employeeId === input.employeeId &&
+						employment.startsOn <= input.asOf &&
+						(employment.endsOn === null || employment.endsOn >= input.asOf),
+				)
+				.sort((left, right) => right.startsOn.localeCompare(left.startsOn));
+			if (matches.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple employments are effective for the Time work date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			return ok(matches[0] ? { ...matches[0] } : null);
 		},
 
 		async createEmployment(

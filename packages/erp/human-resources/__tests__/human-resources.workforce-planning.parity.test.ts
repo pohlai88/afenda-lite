@@ -28,9 +28,9 @@ import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -39,7 +39,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function approvePlanWithLine(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const plan = await createHeadcountPlan(
@@ -120,7 +120,7 @@ async function approvePlanWithLine(
 }
 
 async function openRequisitionPipeline(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const draft = await createDraftRequisition(
@@ -176,7 +176,7 @@ function defineWorkforcePlanningParitySuite(
 	});
 
 	it("reserves headcount against approved plan and releases on cancel", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const approved = await approvePlanWithLine(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -269,7 +269,7 @@ function defineWorkforcePlanningParitySuite(
 	});
 
 	it("rejects over-reservation consistently", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const approved = await approvePlanWithLine(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,

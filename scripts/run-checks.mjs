@@ -10,6 +10,7 @@ const preferred = [
 	"check:docs-naming",
 	"check:docs-trunk-ban",
 	"check:tsconfig-no-baseurl",
+	"check:editor-biome",
 	"check:module-quality",
 	"check:doc-integrity",
 	"check:openapi",

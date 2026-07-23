@@ -816,6 +816,7 @@ listLocationSchedule
 getScheduledShiftForEmployeeDate
 
 listAttendanceEvents
+listAttendanceAdjustments
 getAttendanceSession
 listAttendanceSessions
 listAttendanceExceptions

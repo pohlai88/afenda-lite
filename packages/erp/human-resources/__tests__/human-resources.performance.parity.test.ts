@@ -39,9 +39,9 @@ import { ensurePerformanceSchemaForTests } from "./helpers/ensure-performance-sc
 import { mapActorToEmployee } from "./helpers/identity-resolver";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -52,7 +52,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function seedEmployeeEmployment(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const employee = await createEmployee(
@@ -107,7 +107,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("cycle lifecycle with participant enrollment", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const worker = await seedEmployeeEmployment(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -204,7 +204,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("goal submit and approve workflow", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const worker = await seedEmployeeEmployment(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -326,7 +326,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("review workflow through finalize and PIP checkpoint", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const worker = await seedEmployeeEmployment(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,

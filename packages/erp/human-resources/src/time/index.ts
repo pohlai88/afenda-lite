@@ -1,16 +1,17 @@
+export * from "./attendance/break-waivers";
 export * from "./attendance/events";
 export * from "./attendance/exception-detection";
 export * from "./attendance/exceptions";
 export * from "./attendance/import";
-export * from "./attendance/session-resolution";
-export * from "./attendance/sessions";
-export * from "./attendance/summary";
 export {
 	buildImportEventFingerprint,
 	importEventIdempotencyKey,
 	isValidIanaTimeZone,
 	namespacedImportSourceReference,
 } from "./attendance/import-keys";
+export * from "./attendance/session-resolution";
+export * from "./attendance/sessions";
+export * from "./attendance/summary";
 export * from "./calendar";
 export {
 	isWorkingCivilDate,
@@ -26,6 +27,7 @@ export type {
 	AttendanceSourcePort,
 } from "./handoff/ports";
 export * from "./overtime";
+export * from "./policy";
 export * from "./scheduling";
 export * from "./shift";
 export * from "./timesheet";
@@ -41,5 +43,12 @@ export {
 	parseAbsenceDetectionRemarks,
 	qualifyingWorkedMinutesForDate,
 	segmentMinutesFromQuantity,
+	buildAttendanceTimesheetEntryPlans,
 	TIMESHEET_GENERATION_ABSENCE_SOURCE,
 } from "./timesheet-generation";
+export {
+	allocateWorkedMinutesByCivilDate,
+	attendanceEntrySourceReference,
+	civilDateInTimeZone,
+	workedMinutesForSessionCivilDate,
+} from "./legal-minute-allocation";

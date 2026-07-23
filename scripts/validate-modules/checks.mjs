@@ -269,17 +269,23 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrWorkCalendar: "hr_work_calendar",
 	hrWorkCalendarHoliday: "hr_work_calendar_holiday",
 	hrEmploymentCalendarAssignment: "hr_employment_calendar_assignment",
+	hrWorkCalendarScopeAssignment: "hr_work_calendar_scope_assignment",
 	hrShift: "hr_shift",
 	hrShiftBreak: "hr_shift_break",
 	hrShiftAssignment: "hr_shift_assignment",
 	hrShiftAssignmentSegment: "hr_shift_assignment_segment",
 	hrAttendanceEvent: "hr_attendance_event",
 	hrAttendanceSession: "hr_attendance_session",
+	hrAttendanceBreakWaiverDecision: "hr_attendance_break_waiver_decision",
 	hrAttendanceException: "hr_attendance_exception",
 	hrAttendanceAdjustment: "hr_attendance_adjustment",
 	hrAttendanceImportBatch: "hr_attendance_import_batch",
 	hrAttendanceImportError: "hr_attendance_import_error",
+	hrTimePolicy: "hr_time_policy",
+	hrTimePolicyAssignment: "hr_time_policy_assignment",
+	hrTimeApprovalAuthorityAssignment: "hr_time_approval_authority_assignment",
 	hrTimesheet: "hr_timesheet",
+	hrTimesheetApprovalDecision: "hr_timesheet_approval_decision",
 	hrTimesheetEntry: "hr_timesheet_entry",
 	hrOvertimeRequest: "hr_overtime_request",
 	hrOvertimeApproval: "hr_overtime_approval",
@@ -529,7 +535,9 @@ export function validateDependencyDag(manifests) {
 	function visit(id, stack) {
 		const state = visiting.get(id) ?? 0;
 		if (state === 1) {
-			errors.push(`DAG cycle involving moduleId: ${[...stack, id].join(" → ")}`);
+			errors.push(
+				`DAG cycle involving moduleId: ${[...stack, id].join(" → ")}`,
+			);
 			return;
 		}
 		if (state === 2) {
@@ -558,8 +566,6 @@ export function validateDependencyDag(manifests) {
  * @param {string} edgeRegisterPath
  */
 export function validateWorkspaceEdges(root, edgeRegisterPath) {
-	/** @type {string[]} */
-	const errors = [];
 	const raw = readFileSync(edgeRegisterPath, "utf8");
 	const doc = parseYaml(raw);
 	const edges = Array.isArray(doc?.edges) ? doc.edges : [];
@@ -642,10 +648,7 @@ export function validateDeepImports(root) {
 	/** @type {string[]} */
 	const errors = [];
 	const deep = /from\s+["']@afenda\/[^"']+\/src\//;
-	const scanRoots = [
-		join(root, "packages"),
-		join(root, "apps", "web"),
-	];
+	const scanRoots = [join(root, "packages"), join(root, "apps", "web")];
 	for (const scanRoot of scanRoots) {
 		if (!existsSync(scanRoot)) {
 			continue;
@@ -671,10 +674,7 @@ export function validateMetricsImports(root) {
 	const errors = [];
 	const bareMetrics = /from\s+["']@afenda\/metrics["']/;
 	const deepMetrics = /from\s+["']@afenda\/metrics\/src\//;
-	const scanRoots = [
-		join(root, "packages"),
-		join(root, "apps", "web"),
-	];
+	const scanRoots = [join(root, "packages"), join(root, "apps", "web")];
 	for (const scanRoot of scanRoots) {
 		if (!existsSync(scanRoot)) {
 			continue;
@@ -740,9 +740,7 @@ export function validateForeignSchemaImports(root, manifests) {
 			tableOwner.set(table, m.id);
 		}
 	}
-	const pkgByDir = new Map(
-		LIVING_ERP_MANIFEST_PACKAGES.map((p) => [p.dir, p]),
-	);
+	const pkgByDir = new Map(LIVING_ERP_MANIFEST_PACKAGES.map((p) => [p.dir, p]));
 
 	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
 		const srcDir = join(root, meta.dir, "src");
@@ -762,7 +760,12 @@ export function validateForeignSchemaImports(root, manifests) {
 			for (const match of importMatch) {
 				const names = match[1]
 					.split(",")
-					.map((s) => s.trim().split(/\s+as\s+/)[0]?.trim())
+					.map((s) =>
+						s
+							.trim()
+							.split(/\s+as\s+/)[0]
+							?.trim(),
+					)
 					.filter(Boolean);
 				for (const name of names) {
 					if (!Object.hasOwn(SCHEMA_SYMBOL_TO_TABLE, name)) {
@@ -856,9 +859,10 @@ export function reconcileWorkspaceEdges(input) {
 	const errors = [];
 	const approved = new Set(input.approved);
 	const erpPackages = new Set(input.erpPackages);
-	const governedFrom = input.governedOnly === false
-		? new Set([...input.realized.keys()])
-		: new Set([...approved].map((key) => key.split("→")[0]).filter(Boolean));
+	const governedFrom =
+		input.governedOnly === false
+			? new Set([...input.realized.keys()])
+			: new Set([...approved].map((key) => key.split("→")[0]).filter(Boolean));
 
 	for (const [from, targets] of input.realized) {
 		if (!governedFrom.has(from)) {
@@ -875,7 +879,7 @@ export function reconcileWorkspaceEdges(input) {
 	for (const key of approved) {
 		const [from, to] = key.split("→");
 		const targets = input.realized.get(from);
-		if (!targets || !targets.has(to)) {
+		if (!targets?.has(to)) {
 			errors.push(`approved edge missing from package.json: ${key}`);
 		}
 	}
@@ -968,9 +972,7 @@ export function validateCatalogDiskParity(root) {
 
 	for (const dir of onDisk) {
 		if (!expectedPaths.has(dir)) {
-			errors.push(
-				`on-disk package not in catalog: packages/${dir}`,
-			);
+			errors.push(`on-disk package not in catalog: packages/${dir}`);
 		}
 	}
 
@@ -1004,9 +1006,7 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 			continue;
 		}
 		if (writeOwnerByTable.has(row.table)) {
-			errors.push(
-				`duplicate schema writeOwner for table: ${row.table}`,
-			);
+			errors.push(`duplicate schema writeOwner for table: ${row.table}`);
 			continue;
 		}
 		writeOwnerByTable.set(row.table, row.writeOwner);
@@ -1039,7 +1039,7 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 			continue;
 		}
 		const owned = erpOwned.get(owner);
-		if (!owned || !owned.has(table)) {
+		if (!owned?.has(table)) {
 			errors.push(
 				`SCHEMA-OWNERSHIP-MANIFEST erp table not in owner mutationTables: ${table} (${owner})`,
 			);
@@ -1080,7 +1080,10 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 			}
 			const srcDir = join(root, "packages", dir, "src");
 			for (const file of walkTsFiles(srcDir)) {
-				if (file.includes(`${sep}__tests__${sep}`) || file.includes("/__tests__/")) {
+				if (
+					file.includes(`${sep}__tests__${sep}`) ||
+					file.includes("/__tests__/")
+				) {
 					continue;
 				}
 				const text = readFileSync(file, "utf8");
@@ -1090,7 +1093,12 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 				for (const match of importMatch) {
 					const names = match[1]
 						.split(",")
-						.map((s) => s.trim().split(/\s+as\s+/)[0]?.trim())
+						.map((s) =>
+							s
+								.trim()
+								.split(/\s+as\s+/)[0]
+								?.trim(),
+						)
 						.filter(Boolean);
 					if (names.includes(symbol)) {
 						errors.push(
@@ -1120,7 +1128,10 @@ export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
 				continue;
 			}
 			for (const file of walkTsFiles(scanRoot)) {
-				if (file.includes(`${sep}__tests__${sep}`) || file.includes("/__tests__/")) {
+				if (
+					file.includes(`${sep}__tests__${sep}`) ||
+					file.includes("/__tests__/")
+				) {
 					continue;
 				}
 				const text = readFileSync(file, "utf8");
@@ -1156,7 +1167,10 @@ export function validateCandidatePackagesAbsent(root, roadmapModules) {
 	 * @param {string} name
 	 */
 	function flagCandidate(name) {
-		if (packageLeafNames.has(name) || existsSync(join(root, "packages", name))) {
+		if (
+			packageLeafNames.has(name) ||
+			existsSync(join(root, "packages", name))
+		) {
 			errors.add(
 				`candidate module represented as an on-disk package: packages/${name}`,
 			);

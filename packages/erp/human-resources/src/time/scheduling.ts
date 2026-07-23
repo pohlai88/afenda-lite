@@ -27,8 +27,10 @@ import {
 	listShiftAssignmentsInputSchema,
 	publishShiftAssignmentInputSchema,
 } from "../schemas/time";
+import { invalidInput } from "../shared/domain-guards";
 import { runTimeCommand, runTimeQuery } from "../shared/time-command";
-import type { ShiftAssignment } from "../types";
+import { resolveActiveTimeEmployment } from "../shared/time-employment";
+import type { ShiftAssignment, ShiftAssignmentSegment } from "../types";
 
 export async function assignShift(
 	input: unknown,
@@ -39,16 +41,60 @@ export async function assignShift(
 		invalidMessage: "Invalid shift assign input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN,
 		execute: async (data, { store, ports }) => {
-			const startsAt = new Date(data.startsAt);
-			const endsAt = new Date(data.endsAt);
-			const fingerprint = JSON.stringify({
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				employmentId: data.employmentId ?? null,
+				workDate: data.scheduledDate,
+			});
+			if (!employment.ok) return employment;
+			const startsAt = new Date(data.startsAt);
+			const endsAt = new Date(data.endsAt);
+			const segments = (
+				data.segments ?? [
+					{ segmentOrder: 1, startsAt: data.startsAt, endsAt: data.endsAt },
+				]
+			)
+				.map((segment) => ({
+					segmentOrder: segment.segmentOrder,
+					startsAt: new Date(segment.startsAt),
+					endsAt: new Date(segment.endsAt),
+				}))
+				.sort((a, b) => a.segmentOrder - b.segmentOrder);
+			const segmentOrders = new Set(
+				segments.map((segment) => segment.segmentOrder),
+			);
+			if (segmentOrders.size !== segments.length) {
+				return invalidInput("Shift assignment segment orders must be unique");
+			}
+			for (const [index, segment] of segments.entries()) {
+				if (
+					segment.endsAt <= segment.startsAt ||
+					segment.startsAt < startsAt ||
+					segment.endsAt > endsAt
+				) {
+					return invalidInput(
+						"Shift assignment segments must be valid and within the assignment",
+					);
+				}
+				const previous = segments[index - 1];
+				if (previous !== undefined && segment.startsAt < previous.endsAt) {
+					return invalidInput("Shift assignment segments must not overlap");
+				}
+			}
+			const fingerprint = JSON.stringify({
+				employeeId: data.employeeId,
+				employmentId: employment.data.id,
 				shiftId: data.shiftId,
 				scheduledDate: data.scheduledDate,
 				startsAt: startsAt.toISOString(),
 				endsAt: endsAt.toISOString(),
 				timezone: data.timezone,
+				segments: segments.map((segment) => ({
+					segmentOrder: segment.segmentOrder,
+					startsAt: segment.startsAt.toISOString(),
+					endsAt: segment.endsAt.toISOString(),
+				})),
 			});
 			const existing = await store.findShiftAssignmentByIdempotencyKey({
 				organizationId: data.organizationId,
@@ -85,7 +131,7 @@ export async function assignShift(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
-					employmentId: data.employmentId ?? null,
+					employmentId: employment.data.id,
 					shiftId: data.shiftId,
 					scheduledDate: data.scheduledDate,
 					startsAt,
@@ -93,6 +139,7 @@ export async function assignShift(
 					locationKey: data.locationKey ?? null,
 					timezone: data.timezone,
 					assignmentSource: data.assignmentSource ?? "manual",
+					segments,
 					idempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: fingerprint,
 					createdBy: data.actorUserId,
@@ -182,6 +229,22 @@ export async function getShiftAssignment(
 		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_GET,
 		execute: async (data, { store }) =>
 			store.getShiftAssignment({
+				organizationId: data.organizationId,
+				assignmentId: data.assignmentId,
+			}),
+	});
+}
+
+export async function listShiftAssignmentSegments(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<ShiftAssignmentSegment[]>> {
+	return runTimeQuery(input, options, {
+		schema: getShiftAssignmentInputSchema,
+		invalidMessage: "Invalid shift assignment segment list input",
+		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_GET,
+		execute: async (data, { store }) =>
+			store.listShiftAssignmentSegments({
 				organizationId: data.organizationId,
 				assignmentId: data.assignmentId,
 			}),

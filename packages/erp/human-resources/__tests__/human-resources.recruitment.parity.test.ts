@@ -29,9 +29,9 @@ import {
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -40,7 +40,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 }
 
 async function openRequisitionPipeline(
-	ready: ReturnType<typeof createWorkforceHarness>,
+	ready: ReturnType<typeof createHrParityHarness>,
 	input: { organizationId: string; actorUserId: string; suffix: string },
 ) {
 	const draft = await createDraftRequisition(
@@ -95,7 +95,7 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("runs requisition → offer accept with approved/accepted events", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const opened = await openRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
@@ -225,7 +225,7 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects open application duplicate for same candidate+requisition", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const opened = await openRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,

@@ -7,8 +7,8 @@
 | Audience | Engineers implementing `@afenda/human-resources` Time |
 | Authority | [time.md](./time.md) §22 P0 · §11–§12 · §18 · §23 · final boundary (§1254) |
 | Parent roadmap | [human-resources-roadmap.md](./human-resources-roadmap.md) — HR9 / HR10 |
-| Baseline snapshot | 2026-07-23 — gap audit vs disk (7/7 time tests green; P0 spine present, boundary incomplete) |
-| Lifecycle | **HR10 in progress** — do not claim Time MOD-ready until HR-TIME-P0-07 closes |
+| Baseline snapshot | 2026-07-23 — 52 focused memory scenarios green; 20/20 shared memory contracts green, including every §23 row: fixed/overnight/flexible/split shifts, controlled schedule amendment and attendance lock, manual capture, mixed import failure/replay convergence, DST elapsed-time resolution, representative foreign mutation isolation, the complete 12-type exception matrix, calendar override matrix, overnight multi-break and differing-timezone session, append-only attendance-correction provenance with failure compensation and serialized rollback/concurrent retry, approved-leave absence suppression/control-day detection and paid-leave handoff, complete draft edit/remove → return → reopen → approve → lock timesheet lifecycle with immutable locked entries and versioned post-lock handoff, controlled approved-timesheet supersession into a distinct correction draft, security/stale-version/idempotency boundaries and the overtime minute lifecycle; the same 20 explicitly gated Drizzle contracts await the authorized production migration |
+| Lifecycle | **HR10 in progress** — authoritative open-gap ledger: [time-remaining.md](./time-remaining.md) |
 
 **Why this file:** [time.md](./time.md) is **what** (requirements). [human-resources-roadmap.md](./human-resources-roadmap.md) HR10 is the **phase**. This document is **how/when** to close the verified P0 gaps without tables-only drift.
 
@@ -49,12 +49,23 @@ Verified on disk (do not re-implement):
 | Package API | `packages/erp/human-resources/src/time/**` exported from `src/index.ts` |
 | Store contract | `packages/erp/human-resources/src/store/time.ts` (`HumanResourcesTimeStore`) |
 | Adapters | `adapters/memory/time.ts`, `adapters/drizzle/time.ts` (composed in `adapters/drizzle/store.ts`) |
-| DDL | `0001_hr_work_calendar.sql`, `0002_hr_time.sql`; Drizzle schema `human-resources.ts` |
+| DDL | `0001_hr_work_calendar.sql`, `0002_hr_time.sql`; pending governed expansion in `0006_hr_time_policy.sql`; Drizzle schema `human-resources.ts` |
 | Commands (core) | Calendar, shift, scheduling, attendance, sessions, exceptions (review), timesheet lifecycle, overtime, handoff query |
 | Permissions | `platform-permission-catalog.ts` — `human-resources.time.*` (+ legacy `human-resources.timesheet.approve`) |
-| Tests | `human-resources.time.test.ts`, `human-resources.time.parity.test.ts` — **7/7 pass** |
-| Web (minimal) | `apps/web/app/actions/hr-time.ts` — 7 actions |
+| Tests | `human-resources.time.test.ts` — **52/52 memory pass**; `human-resources.time.parity.test.ts` — **20/20 shared memory contracts pass**, including every §23 row: fixed/overnight/flexible/split shifts with ordered breaks/segments, controlled schedule amendment and post-attendance immutability, manual capture, mixed import failure/replay convergence, DST elapsed-time resolution, representative foreign assignment/timesheet-entry/overtime mutation isolation, every declared attendance exception, normal/holiday/half-day/replacement calendars, overnight multi-break and differing-timezone session resolution, append-only attendance-correction provenance with immutable capture facts, exact version/reason/evidence/correlation history, failure compensation and serialized rollback/concurrent retry, approved-leave absence suppression with a no-leave control day, idempotent leave generation and paid-leave handoff, complete timesheet draft edit/remove → return → reopen → approve → lock behavior with locked mutation denial and incremented handoff version, controlled approved-timesheet supersession into a distinct correction draft with immutable original facts, create replay/fingerprint conflict, stale-version rejection, self-approval denial and requested/approved/actual/payroll overtime-minute separation, with the same 20 Drizzle counterparts guarded by `REQUIRE_DATABASE_TESTS=1` and blocked until `0006_hr_time_policy.sql` is explicitly authorized/applied; `effective-lineage.test.ts` — **6/6 fail-closed lineage contracts pass**; `hr-time-migration.test.ts` — **4/4 static migration contracts pass**; `hr-time-actions.test.ts` — **16/16 permission/session/validation contracts pass** |
+| Web (minimal) | `apps/web/app/actions/hr-time.ts` — 26 permission-gated actions |
 | Single outbox event | `human-resources.timesheet.approved.v1` on approve path |
+
+## Current reconciliation
+
+The original P0-01…P0-08 plan is no longer the complete gap view. The post-implementation audit and closure status live in [time-remaining.md](./time-remaining.md):
+
+- closed: governance/hygiene, timesheet-field parity, split-shift segments;
+- implemented but production-schema-blocked: full exception detection and Time policy lookup;
+- closed since the original audit: effective-dated Time-policy/calendar/shift successor lineage with unrelated same-code isolation and fail-closed malformed-lineage handling; effective-dated actor approval authority; configurable ordered timesheet approvals with exact authority-grant provenance, resubmission isolation, event sequencing and compensation evidence; immutable evidence-only break-waiver decisions; safe legacy-submission conversion in the pending migration; and complete policy/authority/waiver Action adapters.
+- still open: multi-scope calendar precedence, cross-midnight break/legal-date allocation, and production-backed execution of the 20 shared Drizzle contracts plus the tenancy audit.
+
+Do not interpret the historical slice sequence below as a completion claim.
 
 **Accepted divergences (unless HR-TIME-P0-01 reopens):**
 

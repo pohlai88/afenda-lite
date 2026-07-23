@@ -32,7 +32,6 @@ import {
 	verifyWorkEligibility,
 } from "../src/compliance/work-eligibility";
 import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	expireCertification,
 	issueCertification,
@@ -41,70 +40,6 @@ import {
 import { recordCompletion } from "../src/learning/completion";
 import { createCourse } from "../src/learning/course";
 import { assignLearning } from "../src/learning/learning-assignment";
-import {
-	correctAttendanceEvent,
-	recordClockIn,
-	recordClockOut,
-	voidAttendanceEvent,
-} from "../src/time/attendance/events";
-import { importAttendanceEvents } from "../src/time/attendance/import";
-import {
-	createAttendanceException,
-	excuseAttendanceException,
-	rejectAttendanceException,
-	resolveAttendanceException,
-	reviewAttendanceException,
-} from "../src/time/attendance/exceptions";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
-import {
-	addCalendarDateOverride,
-	addWorkCalendarHoliday,
-	archiveWorkCalendar,
-	assignEmploymentCalendar,
-	createWorkCalendar,
-	endWorkCalendarAssignment,
-	removeCalendarDateOverride,
-	removeWorkCalendarHoliday,
-	updateWorkCalendar,
-} from "../src/time/calendar";
-import {
-	approveOvertimeRequest,
-	cancelOvertimeRequest,
-	createOvertimeRequest,
-	recordOvertimeActual,
-	rejectOvertimeRequest,
-	verifyOvertimeRequest,
-} from "../src/time/overtime";
-import {
-	assignShift,
-	cancelShiftAssignment,
-	changeShiftAssignment,
-	completeShiftAssignment,
-	publishShiftAssignment,
-} from "../src/time/scheduling";
-import {
-	activateShift,
-	addShiftBreak,
-	createShift,
-	deactivateShift,
-	removeShiftBreak,
-	updateShift,
-} from "../src/time/shift";
-import {
-	addTimesheetEntry,
-	approveTimesheet,
-	createTimesheet,
-	generateTimesheetEntries,
-	getTimesheet,
-	lockTimesheet,
-	rejectTimesheet,
-	reopenTimesheet,
-	removeTimesheetEntry,
-	returnTimesheet,
-	submitTimesheet,
-	supersedeTimesheet,
-	updateTimesheetEntry,
-} from "../src/time/timesheet";
 import {
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
@@ -131,10 +66,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
-	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
-	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
-	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
-	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
@@ -143,6 +74,10 @@ import {
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
+	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN,
 	HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL,
@@ -184,6 +119,71 @@ import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emis
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import {
+	correctAttendanceEvent,
+	recordClockIn,
+	recordClockOut,
+	voidAttendanceEvent,
+} from "../src/time/attendance/events";
+import {
+	createAttendanceException,
+	excuseAttendanceException,
+	rejectAttendanceException,
+	resolveAttendanceException,
+	reviewAttendanceException,
+} from "../src/time/attendance/exceptions";
+import { importAttendanceEvents } from "../src/time/attendance/import";
+import { resolveAttendanceSession } from "../src/time/attendance/sessions";
+import {
+	addCalendarDateOverride,
+	addWorkCalendarHoliday,
+	archiveWorkCalendar,
+	assignEmploymentCalendar,
+	createWorkCalendar,
+	endWorkCalendarAssignment,
+	removeCalendarDateOverride,
+	removeWorkCalendarHoliday,
+	updateWorkCalendar,
+} from "../src/time/calendar";
+import {
+	approveOvertimeRequest,
+	cancelOvertimeRequest,
+	createOvertimeRequest,
+	recordOvertimeActual,
+	rejectOvertimeRequest,
+	verifyOvertimeRequest,
+} from "../src/time/overtime";
+import { assignTimeApprovalAuthority } from "../src/time/policy";
+import {
+	assignShift,
+	cancelShiftAssignment,
+	changeShiftAssignment,
+	completeShiftAssignment,
+	publishShiftAssignment,
+} from "../src/time/scheduling";
+import {
+	activateShift,
+	addShiftBreak,
+	createShift,
+	deactivateShift,
+	removeShiftBreak,
+	updateShift,
+} from "../src/time/shift";
+import {
+	addTimesheetEntry,
+	approveTimesheet,
+	createTimesheet,
+	generateTimesheetEntries,
+	getTimesheet,
+	lockTimesheet,
+	rejectTimesheet,
+	removeTimesheetEntry,
+	reopenTimesheet,
+	returnTimesheet,
+	submitTimesheet,
+	supersedeTimesheet,
+	updateTimesheetEntry,
+} from "../src/time/timesheet";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -226,6 +226,24 @@ function memoryPorts(ready: ReturnType<typeof harness>) {
 function clearPorts(ready: ReturnType<typeof harness>) {
 	memoryPorts(ready).audit.calls.length = 0;
 	memoryPorts(ready).outbox.calls.length = 0;
+}
+
+async function grantManagerTimeApprovalAuthority(
+	ready: ReturnType<typeof harness>,
+	suffix: string,
+) {
+	const assigned = await assignTimeApprovalAuthority(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `seed-authority-${suffix}`,
+			targetActorUserId: MANAGER,
+			authority: "line_manager",
+			effectiveFrom: "2020-01-01",
+		},
+		ready,
+	);
+	expect(assigned.ok).toBe(true);
 }
 
 function assertCorrelationPropagated(
@@ -921,7 +939,9 @@ describe("correlation integrity", () => {
 			expectOutbox: false,
 			operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
 		});
-		expect(memoryPorts(ready).audit.calls[0]?.changes.length).toBeGreaterThan(0);
+		expect(memoryPorts(ready).audit.calls[0]?.changes.length).toBeGreaterThan(
+			0,
+		);
 
 		memoryPorts(ready).audit.calls.length = 0;
 		const expireCorr = "trace-cert-expire";
@@ -1056,14 +1076,12 @@ describe("correlation integrity", () => {
 
 	it("propagates correlationId for timesheet approve (domain_event)", async () => {
 		const ready = harness();
-		const { employee, employment } = await seedTimeCorrelationEmployeeEmployment(
-			ready,
-			{
+		const { employee, employment } =
+			await seedTimeCorrelationEmployeeEmployment(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				suffix: "ts-legacy",
-			},
-		);
+			});
 
 		const timesheet = await createTimesheet(
 			{
@@ -1094,6 +1112,7 @@ describe("correlation integrity", () => {
 		expect(submitted.ok).toBe(true);
 		if (!submitted.ok) return;
 
+		await grantManagerTimeApprovalAuthority(ready, "legacy");
 		clearPorts(ready);
 		const approveCorr = "trace-timesheet-approve";
 		const approved = await approveTimesheet(
@@ -1101,6 +1120,7 @@ describe("correlation integrity", () => {
 				organizationId: ORG,
 				actorUserId: MANAGER,
 				correlationId: approveCorr,
+				authority: "line_manager",
 				timesheetId: submitted.data.id,
 				expectedVersion: submitted.data.version,
 			},
@@ -1116,14 +1136,12 @@ describe("correlation integrity", () => {
 
 	it("propagates correlationId across time domain_event mutations", async () => {
 		const ready = harness();
-		const { employee, employment } = await seedTimeCorrelationEmployeeEmployment(
-			ready,
-			{
+		const { employee, employment } =
+			await seedTimeCorrelationEmployeeEmployment(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				suffix: "time-domain",
-			},
-		);
+			});
 
 		const calendar = await createWorkCalendar(
 			{
@@ -1380,6 +1398,7 @@ describe("correlation integrity", () => {
 			operation: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
 		});
 
+		await grantManagerTimeApprovalAuthority(ready, "domain");
 		clearPorts(ready);
 		const approveCorr = "trace-time-approve";
 		const approved = await approveTimesheet(
@@ -1387,6 +1406,7 @@ describe("correlation integrity", () => {
 				organizationId: ORG,
 				actorUserId: MANAGER,
 				correlationId: approveCorr,
+				authority: "line_manager",
 				timesheetId: resubmitted.data.id,
 				expectedVersion: resubmitted.data.version,
 			},
@@ -1471,14 +1491,12 @@ describe("correlation integrity", () => {
 
 	it("propagates correlationId across time audit_only mutations", async () => {
 		const ready = harness();
-		const { employee, employment } = await seedTimeCorrelationEmployeeEmployment(
-			ready,
-			{
+		const { employee, employment } =
+			await seedTimeCorrelationEmployeeEmployment(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				suffix: "time-audit",
-			},
-		);
+			});
 
 		clearPorts(ready);
 		const calCreateCorr = "trace-time-cal-create";
@@ -2459,11 +2477,13 @@ describe("correlation integrity", () => {
 		expect(submittedForSupersede.ok).toBe(true);
 		if (!submittedForSupersede.ok) return;
 
+		await grantManagerTimeApprovalAuthority(ready, "supersede");
 		const approvedForSupersede = await approveTimesheet(
 			{
 				organizationId: ORG,
 				actorUserId: MANAGER,
 				correlationId: "seed-time-ts-supersede-approve",
+				authority: "line_manager",
 				timesheetId: submittedForSupersede.data.id,
 				expectedVersion: submittedForSupersede.data.version,
 			},

@@ -28,9 +28,9 @@ import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
-	createWorkforceHarness,
+	createHrParityHarness,
 	type WorkforceStoreAdapter,
-} from "./helpers/workforce-harness";
+} from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -51,7 +51,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects department hierarchy cycles", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const root = await createDepartment(
 			{
 				organizationId: ORG,
@@ -99,7 +99,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects archived parent department", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const parent = await createDepartment(
 			{
 				organizationId: ORG,
@@ -145,7 +145,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("blocks archive when active child references department", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const parent = await createDepartment(
 			{
 				organizationId: ORG,
@@ -191,7 +191,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects self-report, reporting cycles, and second open primary; replace then resolve", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG,
@@ -326,7 +326,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("rejects overlapping primary date ranges", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const employee = await createEmployee(
 			{
 				organizationId: ORG,
@@ -398,7 +398,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("isolates cross-organization reporting", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const empA = await createEmployee(
 			{
 				organizationId: ORG,
@@ -444,7 +444,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	});
 
 	it("maps stale expectedVersion on department update", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const department = await createDepartment(
 			{
 				organizationId: ORG,
@@ -481,7 +481,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	it.runIf(adapter === "memory")(
 		"rolls back department create when audit port fails",
 		async () => {
-			const base = createWorkforceHarness(adapter);
+			const base = createHrParityHarness(adapter);
 			const ports = createMemoryMutationPorts({ auditFailAfter: 0 });
 			const ready = { ...base, ports };
 			const department = await createDepartment(
@@ -508,7 +508,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	);
 
 	it("returns bounded organization tree without unbounded recursion", async () => {
-		const ready = createWorkforceHarness(adapter);
+		const ready = createHrParityHarness(adapter);
 		const root = await createDepartment(
 			{
 				organizationId: ORG,

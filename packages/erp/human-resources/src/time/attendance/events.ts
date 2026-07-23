@@ -9,12 +9,14 @@ import {
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
+	HUMAN_RESOURCES_QUERY_ATTENDANCE_ADJUSTMENT_LIST,
 	HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_GET,
 	HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_LIST,
 } from "../../module-ids";
 import {
 	correctAttendanceEventInputSchema,
 	getAttendanceEventInputSchema,
+	listAttendanceAdjustmentsInputSchema,
 	listAttendanceEventsInputSchema,
 	recordAttendanceEventInputSchema,
 	recordBreakEndInputSchema,
@@ -25,7 +27,12 @@ import {
 	voidAttendanceEventInputSchema,
 } from "../../schemas/time";
 import { runTimeCommand, runTimeQuery } from "../../shared/time-command";
-import type { AttendanceEvent, AttendanceEventType } from "../../types";
+import { resolveActiveTimeEmployment } from "../../shared/time-employment";
+import type {
+	AttendanceAdjustment,
+	AttendanceEvent,
+	AttendanceEventType,
+} from "../../types";
 
 async function recordTypedAttendanceEvent(
 	input: unknown,
@@ -45,11 +52,18 @@ async function recordTypedAttendanceEvent(
 		invalidMessage: config.invalidMessage,
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 		execute: async (data, { store, ports }) => {
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: data.employmentId ?? null,
+				workDate: data.localWorkDate,
+			});
+			if (!employment.ok) return employment;
 			const occurredAt = new Date(data.occurredAt);
 			const source = data.source ?? "self";
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
-				employmentId: data.employmentId ?? null,
+				employmentId: employment.data.id,
 				shiftAssignmentId: data.shiftAssignmentId ?? null,
 				eventType: config.eventType,
 				occurredAt: occurredAt.toISOString(),
@@ -76,7 +90,7 @@ async function recordTypedAttendanceEvent(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
-					employmentId: data.employmentId ?? null,
+					employmentId: employment.data.id,
 					shiftAssignmentId: data.shiftAssignmentId ?? null,
 					eventType: config.eventType,
 					occurredAt,
@@ -106,10 +120,17 @@ export async function recordAttendanceEvent(
 		invalidMessage: "Invalid attendance event record input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 		execute: async (data, { store, ports }) => {
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: data.employmentId ?? null,
+				workDate: data.localWorkDate,
+			});
+			if (!employment.ok) return employment;
 			const occurredAt = new Date(data.occurredAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
-				employmentId: data.employmentId ?? null,
+				employmentId: employment.data.id,
 				shiftAssignmentId: data.shiftAssignmentId ?? null,
 				eventType: data.eventType,
 				occurredAt: occurredAt.toISOString(),
@@ -136,7 +157,7 @@ export async function recordAttendanceEvent(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
-					employmentId: data.employmentId ?? null,
+					employmentId: employment.data.id,
 					shiftAssignmentId: data.shiftAssignmentId ?? null,
 					eventType: data.eventType,
 					occurredAt,
@@ -215,10 +236,17 @@ export async function recordManualAttendance(
 		invalidMessage: "Invalid manual attendance input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 		execute: async (data, { store, ports }) => {
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: data.employmentId ?? null,
+				workDate: data.localWorkDate,
+			});
+			if (!employment.ok) return employment;
 			const occurredAt = new Date(data.occurredAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
-				employmentId: data.employmentId ?? null,
+				employmentId: employment.data.id,
 				shiftAssignmentId: data.shiftAssignmentId ?? null,
 				eventType: data.eventType,
 				occurredAt: occurredAt.toISOString(),
@@ -245,7 +273,7 @@ export async function recordManualAttendance(
 				{
 					organizationId: data.organizationId,
 					employeeId: data.employeeId,
-					employmentId: data.employmentId ?? null,
+					employmentId: employment.data.id,
 					shiftAssignmentId: data.shiftAssignmentId ?? null,
 					eventType: data.eventType,
 					occurredAt,
@@ -282,6 +310,7 @@ export async function correctAttendanceEvent(
 					occurredAt: new Date(data.occurredAt),
 					notes: data.notes,
 					adjustmentReason: data.adjustmentReason,
+					evidenceReference: data.evidenceReference,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 					correlationId: data.correlationId,
@@ -329,5 +358,21 @@ export async function listAttendanceEvents(
 		invalidMessage: "Invalid attendance event list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_LIST,
 		execute: async (data, { store }) => store.listAttendanceEvents(data),
+	});
+}
+
+export async function listAttendanceAdjustments(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<AttendanceAdjustment[]>> {
+	return runTimeQuery(input, options, {
+		schema: listAttendanceAdjustmentsInputSchema,
+		invalidMessage: "Invalid attendance adjustment list input",
+		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_ADJUSTMENT_LIST,
+		execute: async (data, { store }) =>
+			store.listAttendanceAdjustments({
+				organizationId: data.organizationId,
+				eventId: data.eventId,
+			}),
 	});
 }

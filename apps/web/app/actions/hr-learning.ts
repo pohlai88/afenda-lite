@@ -29,6 +29,10 @@ import {
 } from "@afenda/human-resources";
 import { z } from "zod";
 
+import {
+	hrMutationContextSchema as mutationContextSchema,
+	withHrSessionContext as withSessionContext,
+} from "@/app/actions/hr-mutation-context";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
@@ -37,23 +41,6 @@ import {
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
-
-const mutationContextSchema = z.object({
-	correlationId: z.string().trim().min(1).max(128).optional(),
-});
-
-function withSessionContext<T extends Record<string, unknown>>(
-	session: { orgId: string; userId: string },
-	correlationId: string,
-	data: T,
-) {
-	return {
-		organizationId: session.orgId,
-		actorUserId: session.userId,
-		correlationId: data.correlationId ?? correlationId,
-		...data,
-	};
-}
 
 export async function createCourseAction(input: {
 	correlationId?: string;

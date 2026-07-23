@@ -57,6 +57,7 @@
 		"check:docs-trunk-ban": "node scripts/check-docs-trunk-ban.mjs",
 		"check:readme": "node scripts/check-readme.mjs",
 		"check:tsconfig-no-baseurl": "node scripts/check-tsconfig-no-baseurl.mjs",
+		"check:editor-biome": "node scripts/check-editor-biome.mjs",
 		"check:ui-system": "turbo run typecheck test --filter=@afenda/ui-system... --filter=@afenda/web",
 		"check:doc-integrity": "node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope docs/api --format markdown",
 		"check:module-quality": "node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope docs/modules --format markdown",
