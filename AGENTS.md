@@ -371,7 +371,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**116** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting · **43 `hr_*`**) — inventory mirrored in `scripts/audit-tenancy-nulls.mjs` |
+| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**177** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting · **104 `hr_*`**) — inventory mirrored in `scripts/audit-tenancy-nulls.mjs` |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 

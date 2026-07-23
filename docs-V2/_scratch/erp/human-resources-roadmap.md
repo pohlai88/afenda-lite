@@ -8,6 +8,7 @@
 | Architecture authority | [human-resource.md](./human-resource.md) |
 | Scaffold authority | [SCAFFOLDING.md](../../packages/erp/SCAFFOLDING.md) |
 | Reference implementation | `packages/erp/sales/src/` |
+| Enterprise readiness index | [final.md](../slice/final.md) — `HR-ENTERPRISE-READINESS-00` waves + capability ledger |
 | Baseline snapshot | 2026-07-23 — `lifecycle: scaffolded`; multiple domains implemented; Time closure still in progress |
 
 **Why a separate file:** [human-resource.md](./human-resource.md) is bounded-context architecture (what/why). This document is **how/when** — phased slices, verify commands, and Path to 100%. Do not duplicate the architecture body here.
@@ -17,6 +18,8 @@
 ## Executive summary
 
 `@afenda/human-resources` remains catalogued as **`lifecycle: scaffolded`**, but it is no longer behavior-empty. Core workforce, organization, recruitment, lifecycle, compensation/benefits, learning, Time, leave, performance, talent, workforce planning and employee-relations command/query surfaces now exist with memory/Drizzle stores and authorization maps. Payroll remains a **downstream consumer** via events and app-injected ports — never peer-imported from HR.
+
+For enterprise readiness waves, capability gaps, and Waves 0–4 control, use [final.md](../slice/final.md) as the sole readiness index (inline Wave 1A/1B phases).
 
 For the current Time control state, use [time-remaining.md](./time-remaining.md): governance/model gaps and effective-dated calendar, shift and policy successor records are implemented; policy/approval/exception/successor Drizzle evidence is production-schema-blocked; calendar-scope precedence, cross-midnight allocation and broader adapter parity remain open.
 

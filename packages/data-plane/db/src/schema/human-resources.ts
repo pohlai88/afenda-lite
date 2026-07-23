@@ -4,6 +4,7 @@ import {
 	boolean,
 	check,
 	date,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -53,6 +54,104 @@ export const hrEmployee = pgTable(
 		uniqueIndex("hr_employee_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_employee_org_id_uidx").on(t.organizationId, t.id),
+	],
+);
+
+export const hrPerson = pgTable(
+	"hr_person",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalName: text("legal_name").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_person_org_id_idx").on(t.organizationId, t.id),
+		index("hr_person_org_legal_name_idx").on(t.organizationId, t.legalName),
+		uniqueIndex("hr_person_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_person_org_id_uidx").on(t.organizationId, t.id),
+	],
+);
+
+export const hrWorker = pgTable(
+	"hr_worker",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		personId: uuid("person_id").notNull(),
+		workerType: text("worker_type").notNull(),
+		employeeId: uuid("employee_id"),
+		status: text("status").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_worker_org_id_idx").on(t.organizationId, t.id),
+		index("hr_worker_org_person_idx").on(t.organizationId, t.personId),
+		index("hr_worker_org_employee_idx").on(t.organizationId, t.employeeId),
+		uniqueIndex("hr_worker_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_worker_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("hr_worker_org_person_uidx").on(
+			t.organizationId,
+			t.personId,
+		),
+		uniqueIndex("hr_worker_org_employee_uidx")
+			.on(t.organizationId, t.employeeId)
+			.where(sql`${t.employeeId} IS NOT NULL`),
+		foreignKey({
+			columns: [t.organizationId, t.personId],
+			foreignColumns: [hrPerson.organizationId, hrPerson.id],
+			name: "hr_worker_org_person_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.employeeId],
+			foreignColumns: [hrEmployee.organizationId, hrEmployee.id],
+			name: "hr_worker_org_employee_fk",
+		}),
+		check(
+			"hr_worker_type_check",
+			sql`${t.workerType} IN ('employee', 'contractor', 'contingent_worker', 'intern')`,
+		),
+		check(
+			"hr_worker_status_check",
+			sql`${t.status} IN ('active', 'inactive', 'former')`,
+		),
+		check(
+			"hr_worker_effective_dates_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		check(
+			"hr_worker_employee_id_check",
+			sql`(${t.workerType} = 'employee') OR (${t.employeeId} IS NULL)`,
 		),
 	],
 );
