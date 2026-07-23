@@ -18,6 +18,14 @@ export type HumanResourcesEntityPayload = z.infer<
 	typeof humanResourcesEntityPayloadSchema
 >;
 
+export const HUMAN_RESOURCES_PERSON_CREATED_EVENT =
+	"human-resources.person.created.v1" as const;
+export const HUMAN_RESOURCES_PERSON_CHANGED_EVENT =
+	"human-resources.person.changed.v1" as const;
+export const HUMAN_RESOURCES_WORKER_CREATED_EVENT =
+	"human-resources.worker.created.v1" as const;
+export const HUMAN_RESOURCES_WORKER_CHANGED_EVENT =
+	"human-resources.worker.changed.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT =
 	"human-resources.employee.created.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT =
@@ -130,6 +138,10 @@ export const HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT =
 	"human-resources.succession.readiness-changed.v1" as const;
 
 export const HumanResourcesEventSchemas = {
+	[HUMAN_RESOURCES_PERSON_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_WORKER_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_WORKER_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
@@ -235,6 +247,10 @@ export const HumanResourcesEventSchemas = {
 export type HumanResourcesEventType = keyof typeof HumanResourcesEventSchemas;
 
 export const HUMAN_RESOURCES_EVENT_IDS = [
+	HUMAN_RESOURCES_PERSON_CREATED_EVENT,
+	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
+	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
+	HUMAN_RESOURCES_WORKER_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,

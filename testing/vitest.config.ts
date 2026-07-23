@@ -32,9 +32,25 @@ const nodeProject = (name: string, root: string) => ({
 });
 
 const authProject = nodeProject("auth", path.join(repoRoot, "packages/control-plane/auth"));
-const humanResourcesProject = nodeProject(
-	"human-resources",
-	path.join(repoRoot, "packages/erp/human-resources"),
+const humanResourcesRoot = path.join(repoRoot, "packages/erp/human-resources");
+/** Neon / shared-branch suites — serial only; keep out of the unit inner loop. */
+const humanResourcesParityIncludes = [
+	`${TESTS_DIR}/**/*.parity.test.ts`,
+	`${TESTS_DIR}/**/leave-concurrency.test.ts`,
+	`${TESTS_DIR}/**/time-policy-concurrency.test.ts`,
+	`${TESTS_DIR}/**/leave-failure-injection.test.ts`,
+];
+const humanResourcesServerOnlyAlias = {
+	...testingAlias,
+	"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+};
+const humanResourcesUnitProject = nodeProject(
+	"human-resources-unit",
+	humanResourcesRoot,
+);
+const humanResourcesParityProject = nodeProject(
+	"human-resources-parity",
+	humanResourcesRoot,
 );
 
 export default defineConfig({
@@ -163,15 +179,24 @@ export default defineConfig({
 				},
 			},
 			{
-				...humanResourcesProject,
+				...humanResourcesUnitProject,
 				resolve: {
-					alias: {
-						...testingAlias,
-						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
-					},
+					alias: humanResourcesServerOnlyAlias,
 				},
 				test: {
-					...humanResourcesProject.test,
+					...humanResourcesUnitProject.test,
+					exclude: humanResourcesParityIncludes,
+					fileParallelism: true,
+				},
+			},
+			{
+				...humanResourcesParityProject,
+				resolve: {
+					alias: humanResourcesServerOnlyAlias,
+				},
+				test: {
+					...humanResourcesParityProject.test,
+					include: humanResourcesParityIncludes,
 					// Neon parity suites: cold import + multi-round-trip workflows exceed 5s.
 					testTimeout: 30_000,
 					// Org cleanup is many sequential deletes; parallel files amplify hook cost.

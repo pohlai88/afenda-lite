@@ -57,6 +57,13 @@
       "when": 1784799600000,
       "tag": "0007_hr_work_calendar_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784803200000,
+      "tag": "0008_hr_workforce_foundation",
+      "breakpoints": true
     }
   ]
 }

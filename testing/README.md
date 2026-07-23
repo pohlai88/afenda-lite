@@ -12,6 +12,33 @@ Authority for Vitest / Playwright runners, helpers, and gate commands. Product p
 
 Reject Cypress and Jest as new runners. Prefer the **lowest** layer that captures the claim.
 
+## HR inner loop vs outer loop
+
+`@afenda/human-resources` is the fastest-growing verify surface. Use scoped commands during edits; reserve full monorepo turbo for CI / pre-push.
+
+| Loop | When | Commands |
+|------|------|----------|
+| **Inner** | After every HR/time edit | `pnpm check:hr` (= `lint:hr` + `typecheck:hr` + `test:hr:unit`) |
+| **Outer** | Before merge / CI parity | `pnpm --filter @afenda/human-resources test` or `pnpm test:hr:parity` (requires `DATABASE_URL`; serial Neon) |
+| **Monorepo** | CI / cross-package | `pnpm test` · `pnpm lint` · `pnpm typecheck` · `pnpm check` |
+
+Root scripts (see root `package.json`):
+
+| Script | Runs |
+|--------|------|
+| `pnpm test:hr:unit` | Vitest `human-resources-unit` — memory/unit tests **in parallel** (excludes `*.parity.test.ts` and Neon concurrency suites) |
+| `pnpm test:hr:parity` | Vitest `human-resources-parity` — Drizzle/memory parity + Neon concurrency (**serial**, 30s test / 90s hook timeout) |
+| `pnpm test:hr` | Both HR vitest projects |
+| `pnpm lint:hr` / `pnpm typecheck:hr` | Single-package Biome + `tsc` |
+| `pnpm exec biome check --write <path>` | Touch-only lint/format |
+| `pnpm exec vitest run --config testing/vitest.config.ts --project human-resources-unit -- <one.test.ts>` | Single spec |
+
+**Baseline timings (Windows dev, 2026-07-24):** `pnpm --filter @afenda/human-resources typecheck` ≈ **5.2s**; `pnpm check:hr` ≈ **39s** (lint + typecheck + 400 unit tests in parallel). Re-measure after adapter splits with `Measure-Command { pnpm check:hr }`.
+
+Time parity is sharded under `packages/erp/human-resources/__tests__/human-resources.time.*.parity.test.ts` (calendar, policy, attendance, timesheet, scheduling, exceptions) so a domain edit can target one file.
+
+Adapter megafile roadmap: [`docs-V2/_scratch/erp/hr-time-adapter-split-roadmap.md`](../docs-V2/_scratch/erp/hr-time-adapter-split-roadmap.md).
+
 ## I4 adverse / recovery matrix
 
 Machine inventory: [`testing/e2e/adverse-matrix.ts`](e2e/adverse-matrix.ts). Cases at the **right layer** (unit and/or browser):

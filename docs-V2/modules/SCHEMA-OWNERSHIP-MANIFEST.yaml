@@ -247,7 +247,13 @@ tables:
     writeOwner: "@afenda/accounting"
     kind: erp
 
+  - table: hr_person
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_employee
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_worker
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_employment

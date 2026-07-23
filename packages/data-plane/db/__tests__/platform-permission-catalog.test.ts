@@ -40,6 +40,12 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(PLATFORM_PERMISSION_CODES_V1).toContain(
 			"human-resources.employee.create",
 		);
+		expect(PLATFORM_PERMISSION_CODES_V1).toContain(
+			"human-resources.worker.manage",
+		);
+		expect(PLATFORM_PERMISSION_CODES_V1).toContain(
+			"human-resources.organization-context.read",
+		);
 		expect(PLATFORM_PERMISSION_CODES_V1).toContain("accounting.journal.read");
 		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain("accounting.read");
 		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain("accounting.manage");
@@ -73,6 +79,9 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(isPlatformPermissionCodeV1("human-resources.employee.read")).toBe(
 			true,
 		);
+		expect(
+			isPlatformPermissionCodeV1("human-resources.sensitive-identifiers.read"),
+		).toBe(true);
 		expect(isPlatformPermissionCodeV1("fft.orders.manage")).toBe(false);
 		expect(isPlatformPermissionCodeV1("declarations.read")).toBe(false);
 		expect(isPlatformPermissionCodeV1("")).toBe(false);
@@ -161,5 +170,5 @@ describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 			)
 			.limit(1);
 		expect(roleRow?.templateKey).toBe("org_admin");
-	}, 15_000);
+	}, 60_000);
 });

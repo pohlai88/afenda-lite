@@ -45,15 +45,9 @@
 			"cache": false,
 			"persistent": true
 		},
-		"lint": {
-			"dependsOn": ["^build"]
-		},
-		"typecheck": {
-			"dependsOn": ["^build"]
-		},
-		"test": {
-			"dependsOn": ["^build"]
-		},
+		"lint": {},
+		"typecheck": {},
+		"test": {},
 		"start": {
 			"cache": false,
 			"persistent": true

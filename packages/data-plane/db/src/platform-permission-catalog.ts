@@ -532,6 +532,78 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
+		code: "human-resources.person.read",
+		module: "human_resources",
+		description: "Read person identity records",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.person.manage",
+		module: "human_resources",
+		description: "Manage person identity records and names",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.worker.read",
+		module: "human_resources",
+		description: "Read workforce participation records",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.worker.manage",
+		module: "human_resources",
+		description: "Manage worker classification and lifecycle status",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.personal-details.read",
+		module: "human_resources",
+		description: "Read authorized worker personal details",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.personal-details.manage",
+		module: "human_resources",
+		description: "Manage worker contact, address, and personal facts",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.sensitive-identifiers.read",
+		module: "human_resources",
+		description: "Read restricted statutory identifier projections",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.sensitive-identifiers.manage",
+		module: "human_resources",
+		description: "Record, replace, and end statutory identifiers",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.assignment.read",
+		module: "human_resources",
+		description: "Read employment assignment records",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.assignment.manage",
+		module: "human_resources",
+		description: "Manage effective-dated employment assignments",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.organization-context.read",
+		module: "human_resources",
+		description: "Resolve historical worker organization context",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.reporting-line.manage",
+		module: "human_resources",
+		description: "Manage effective-dated assignment reporting relationships",
+		sensitive: true,
+	},
+	{
 		code: "human-resources.employment.manage",
 		module: "human_resources",
 		description: "Manage employment relationships and contracts",
@@ -540,13 +612,15 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "human-resources.organization.read",
 		module: "human_resources",
-		description: "Read organization structure (departments, jobs, positions, reporting lines)",
+		description:
+			"Read organization structure (departments, jobs, positions, reporting lines)",
 		sensitive: false,
 	},
 	{
 		code: "human-resources.organization.manage",
 		module: "human_resources",
-		description: "Manage organization structure (departments, jobs, positions, reporting lines)",
+		description:
+			"Manage organization structure (departments, jobs, positions, reporting lines)",
 		sensitive: true,
 	},
 	{
@@ -708,8 +782,7 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "human-resources.time.attendance.manage",
 		module: "human_resources",
-		description:
-			"Record supervisor-entered attendance on behalf of employees",
+		description: "Record supervisor-entered attendance on behalf of employees",
 		sensitive: true,
 	},
 	{
@@ -751,8 +824,7 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "human-resources.time.timesheet.approve",
 		module: "human_resources",
-		description:
-			"Approve, return, or reject employee timesheets (manager/HR)",
+		description: "Approve, return, or reject employee timesheets (manager/HR)",
 		sensitive: true,
 	},
 	{
@@ -800,7 +872,8 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "human-resources.performance.own.read",
 		module: "human_resources",
-		description: "Read own performance goals and reviews without confidential fields",
+		description:
+			"Read own performance goals and reviews without confidential fields",
 		sensitive: true,
 	},
 	{
@@ -962,7 +1035,8 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "human-resources.compliance.administer",
 		module: "human_resources",
-		description: "Administer compliance summaries and org-wide compliance reads",
+		description:
+			"Administer compliance summaries and org-wide compliance reads",
 		sensitive: true,
 	},
 	{

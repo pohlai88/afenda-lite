@@ -5,7 +5,7 @@
 **Scope:** Close every P0 gap identified by the audit; retain the explicitly classified P1 workforce-management capabilities as observations, not false P0 claims.  
 **Completion rule:** This plan closes only when every `TIME-G*` row is `Closed`, its evidence command is green, and the Scratch roadmaps match disk.
 
-The Time P0 spine is substantially implemented, but it is not ready to be declared complete. The original audit found two failing repository gates and nine material implementation/evidence gaps. This file now records closure progress as of 2026-07-23; `Implemented` is not treated as `Verified` when the production-backed Drizzle schema has not received the required migration.
+The Time P0 spine is substantially implemented, but it is not ready to be declared complete. The original audit found two failing repository gates and nine material implementation/evidence gaps. This file now records closure progress as of 2026-07-24; `Implemented` is not treated as `Verified` without the evidence commands recorded under **Authorization M01** and **Authorization C01-A**.
 
 ## Gap matrix
 
@@ -13,17 +13,17 @@ The Time P0 spine is substantially implemented, but it is not ready to be declar
 |---|---|---:|---:|---|---|---|---|
 | PASS-01 | P0 calendars → payroll handoff | Yes | Yes | Memory Time suite — **52 passed** on 2026-07-23; the production-backed parity run remains blocked by absent Time policy/approval and successor-lineage schema | Core Time spine exists; database verification is migration-blocked | Pass | Apply the reviewed migration only with explicit production-branch authorization, then rerun parity |
 | PASS-02 | Audit/outbox/event contracts | Yes | Yes | Emission/correlation **14 passed**; `@afenda/events` **26 passed** | Event schemas and mutation registry are operational | Pass | None |
-| PASS-03 | Tenant isolation | Yes | Partial post-M01 | **M01 (2026-07-24):** `pnpm audit:tenancy-nulls` **PASS** on **176** hard-tenant roots after `0006_hr_time_policy` applied through configured branch. **0007** adds `hr_work_calendar_scope_assignment` locally only — **177-root** audit awaits separate prod authorization | Ownership inventories include scoped-calendar root; live 177-root evidence is migration-blocked for 0007 | **Major** | After explicit **0007** authorization, rerun audit for 177 roots |
+| PASS-03 | Tenant isolation | Yes | **Closed post-C01-A** | **M01 (2026-07-24):** `pnpm audit:tenancy-nulls` **PASS** on **176** roots after `0006`. **C01-A (2026-07-24):** **177** roots **PASS** after `0007_hr_work_calendar_scope` applied (`hr_work_calendar_scope_assignment` live on configured branch) | Hard-tenant inventory and null-org audit align at 177 roots | Pass | Retain in exit gate |
 | PASS-04 | Web permission adapters | Yes | Yes | HR web tests **16 passed**; web and HR typechecks pass | All 26 exported Actions are permission-gated and session-stamped. Policy create/activate/supersede/assign, approval-authority assign/end and break-waiver approval are now exposed; their denial and representative validation boundaries are proven | Pass | Expand only with later product flows |
 | TIME-G01 | Generated governance registers match manifest | Yes | **Closed** | `pnpm validate:modules --write` — **PASS** on 2026-07-23; 7 registers written and all 21 negative fixtures proven | Command/event/schema-ownership governance matches the implementation | Pass | Retain non-write validation in the exit gate |
 | TIME-G02 | Time code passes coding-quality gate | Yes | **Closed for Time scope** | Targeted Biome check — **30 Time files clean**; forbidden non-null assertions removed; HR typecheck passes | The audited Time surface is clean; unrelated package-wide legacy findings are outside this gap | Pass | Full package lint remains an exit-gate observation |
 | TIME-G03 | Timesheet-entry DDL and public model agree | Yes | **Closed** | Six dimensions now flow through type, Zod schema, store, memory, Drizzle and parity assertions | DDL/runtime drift removed | Pass | Rerun Drizzle parity after migration |
 | TIME-G04 | Split-shift assignment segments are operational | Yes | **Closed** | Branded segment identity, validation, default normalization, persistence, list query and memory/Drizzle assertions implemented | Split shifts retain their segment facts | Pass | Rerun Drizzle parity after migration |
-| TIME-G05 | Validate active employment and assignment facts | Yes | Partial | **C01-A (2026-07-24):** `0007_hr_work_calendar_scope` DDL + Drizzle schema + static migration tests (local only); `AssignmentContextQueryPort`, scoped store commands, `resolveEmployeeWorkCalendar`, work-calendar lookup wiring, and `calendar-scope-assignment.test.ts` memory contracts landed. Employment validity enforced elsewhere | Full G05 close awaits **0007** prod apply + Drizzle scoped-resolution parity | **Major** | Separate **0007** prod authorization; extend shared parity for scoped resolution |
+| TIME-G05 | Validate active employment and assignment facts | Yes | **Closed post-C01-A** | **C01-A (2026-07-24):** `0007_hr_work_calendar_scope` applied; `AssignmentContextQueryPort`, scoped store commands, `resolveEmployeeWorkCalendar`, work-calendar lookup; `calendar-scope-resolution.test.ts` **6/6**, `calendar-scope-assignment.test.ts` **3/3**, `calendar-scope.parity.test.ts` **18/18** (9 memory + 9 Drizzle under `REQUIRE_DATABASE_TESTS=1`). Employment validity enforced elsewhere | Scoped precedence and assignment-context resolution verified memory/Drizzle | Pass | Retain in exit gate |
 | TIME-G06 | Preserve published schedules and effective-dated calendars | Yes | Implemented; DB verification blocked | Assignment mutation conflicts once attendance exists. Calendar and active-shift rule changes create effective-dated successors with optimistic concurrency, explicit predecessor lineage, historical resolution, inherited future holidays/breaks, audit compensation and permission-gated server actions. Shared negative contracts prove unrelated same-code records cannot enter an assigned lineage; six pure contracts fail closed for cycles, dangling predecessors, branches, effective-date gaps and overlaps. Memory success/failure tests pass; both adapters typecheck | Historical facts remain stable and active definitions no longer mutate in place; production-backed execution awaits migration | **Major** | Apply `0006_hr_time_policy.sql` with explicit authorization, then run the shared Drizzle successor scenario |
 | TIME-G07 | Detect the complete exception set | Partial | Implemented; DB verification blocked | Detector covers all 12 declared types, including policy-driven insufficient rest. One shared public-workflow contract proves the complete set through calendar, scheduling, attendance, policy and timesheet generation, with compile-time inventory exhaustiveness, per-scenario causality, severity, linkage and repeat-detection idempotence | The shared memory contract passes. Its Drizzle counterpart is registered behind the explicit `REQUIRE_DATABASE_TESTS=1` gate; an attempted run against the configured unmigrated branch reached the expected missing Time-policy schema boundary | **Major** | Apply `0006_hr_time_policy.sql` with explicit authorization, then rerun shared parity |
 | TIME-G08 | Timezone and cross-midnight legal classification | Yes | Partial | **C02-A:** break intervals in session provenance; `legal-minute-allocation.ts` splits worked minutes by IANA civil date; timesheet generation emits per-date attendance entry plans; travelling rule unit-tested | Legal-minute allocator memory-green; **M01:** shared Drizzle parity **20/20 PASS** (2026-07-24) | **Major** | Retain in exit gate |
-| TIME-G09 | Identical memory/Drizzle contract suite | Yes | **Verified post-M01** | **M01 (2026-07-24):** `REQUIRE_DATABASE_TESTS=1` shared parity **40/40 PASS** (20 memory + 20 Drizzle) on configured branch with `0006` applied | Full §23 matrix row still tracks calendar-scope Drizzle after **0007** prod | **Major** | Add scoped-calendar Drizzle contracts after **0007** prod |
+| TIME-G09 | Identical memory/Drizzle contract suite | Yes | **Verified post-M01 + C01-A** | **M01 (2026-07-24):** `human-resources.time.parity.test.ts` **40/40 PASS** (20 memory + 20 Drizzle) with `0006` applied. **C01-A (2026-07-24):** scoped suite **`calendar-scope.parity.test.ts` 18/18 PASS** (9 memory + 9 Drizzle) with `0007` applied | Core + scoped shared contracts green on configured branch | Pass | Retain in exit gate |
 | TIME-G10 | Break, policy and approval depth | Complete-boundary requirement | **Verified post-M01** | Policy/authority/waiver depth implemented; **M01:** shared Drizzle parity **20/20 PASS** (2026-07-24) | HR10 / MOD readiness **not claimable** | **Major** | Retain in exit gate |
 | TIME-G11 | Scratch roadmap reflects disk | Yes | **Closed** | Time roadmap reports 52 focused memory passes, 20/20 memory shared contracts and 20 explicitly gated Drizzle counterparts; HR roadmap links this ledger and no longer lists successor records as open | Scratch planning evidence matches the current disk/control state | Pass | Keep counts synchronized with later closure runs |
 | TIME-G12 | Production `AttendanceSourcePort` wired | Yes | **Closed (composition)** | `createProductionAttendanceSource()` fail-closed when connector absent; `createHumanResourcesAttendanceSourcePort()` wired in command options; inline import still supported | Port exists at composition root; connector swap is a later integration slice | Pass | Replace fail-closed body when external connector lands |
@@ -40,14 +40,14 @@ The Time P0 spine is substantially implemented, but it is not ready to be declar
 ## Check coverage
 
 ```text
-Closed:                         G01, G02, G03, G04, G11, G12, G14, G15, G17
-Verified post-M01 (0006):      G09, G10, PASS-03 (176 roots)
-Partially closed:              G05 (C01-A local 0007 + resolver), G08 (C02 allocator)
-Implemented / local 0007:      G05 scoped DDL (not prod-applied)
+Closed:                         G01, G02, G03, G04, G05, G11, G12, G14, G15, G17
+Verified post-M01 (0006):      G09 core (40/40), G10, PASS-03 (176 roots at M01)
+Verified post-C01-A (0007):    G09 scoped (18/18), PASS-03 (177 roots)
+Partially closed:              G08 (C02 allocator)
 Documentation / OBS:           G13, G16, OBS-01, OBS-02, OBS-03, OBS-04
-Pending separate auth:         0007 production apply; PASS-03 at 177 roots
+Still open (implementation):   G06, G07 Drizzle successor/exception parity on configured branch
 
-Coverage Status: Incomplete — HR10 and Time remain not claimable until T-C01–T-C07 are green; 0007 not prod-applied
+Coverage Status: Incomplete — HR10 and Time remain not claimable until T-C01–T-C07 are green
 ```
 
 ## `time.md` §23 shared-contract convergence
@@ -55,6 +55,7 @@ Coverage Status: Incomplete — HR10 and Time remain not claimable until T-C01�
 | Acceptance area | Shared evidence | Remaining shared gap |
 |---|---|---|
 | Calendar | Assigned calendar; normal, holiday, half-day and replacement-workday resolution; calendar successor history | Drizzle execution after migration |
+| Scoped calendar precedence | employment > employee > location > department > legal entity > organization default; same-scope tie rejection; effective dating; cross-organization isolation | None — **`calendar-scope.parity.test.ts`** (9 memory + 9 Drizzle under `REQUIRE_DATABASE_TESTS=1` post-**0007**) |
 | Shift | Fixed day, fixed overnight, flexible clock windows, split-shift ordered breaks and persisted assignment segments, shift successor history | Drizzle execution after migration |
 | Schedule | Assignment, publish, overlap rejection, controlled published-assignment amendment and post-attendance immutability | Drizzle execution after migration |
 | Attendance | Clock-in/out, breaks, missing events, canonical manual provenance, external replay idempotency and mixed partial-import failure equivalence | Drizzle execution after migration |
@@ -70,12 +71,12 @@ Coverage Status: Incomplete — HR10 and Time remain not claimable until T-C01�
 | Isolation | Cross-organization calendar/timesheet reads return no fact; attendance-correction mutation returns canonical not-found and adjustment-history query returns no fact; representative foreign assignment, timesheet-entry and overtime mutations return canonical not-found and preserve the owning aggregate | Drizzle execution after migration |
 | Concurrency | Stale timesheet submission rejected; a deferred failed attendance correction remains invisible and a competing same-version correction succeeds only after rollback | Drizzle transaction races for overlapping policy/authority assignments |
 | Idempotency | Calendar replay/fingerprint conflict, external attendance replay, mixed import-batch replay and source-reference conflict without extra persistence | Drizzle execution after migration |
-| Persistence | Same 20 contracts registered for memory and Drizzle | Authorized migration, 20 Drizzle passes and 176-root null audit |
+| Persistence | Same 20 core contracts registered for memory and Drizzle; scoped calendar suite adds 9 memory + 9 Drizzle counterparts | Authorized **0006**/**0007** migrations, core + scoped Drizzle passes and **177-root** null audit |
 
 ## Decisions and external authorization required
 
-1. **Production-backed migration:** the configured local database is the production Neon branch. `packages/data-plane/db/drizzle/0006_hr_time_policy.sql` now contains calendar/shift/policy successor lineage, effective-dated approval-authority assignments, immutable break-waiver decisions, timesheet approval snapshots, append-only approval decisions with exact authority provenance, immutable attendance-capture projections, versioned attendance-adjustment provenance, and a safe conversion of legacy submitted rows to `returned` for governed resubmission. Its four static migration contracts pass, but it has not been applied. Explicit authorization is required before mutation.
-2. **Calendar-scope precedence:** `time.md` requires employee, location, department and legal-entity scopes but does not define precedence when several are effective. Implementation must not silently select an architecture.
+1. **Production-backed migration:** the configured local database is the production Neon branch. **`0006_hr_time_policy.sql`** and **`0007_hr_work_calendar_scope.sql`** are applied on the configured branch (see **Authorization M01** and **Authorization C01-A**). Further schema changes still require explicit authorization before mutation.
+2. **Calendar-scope precedence:** resolved under **Decision C01 Option A** and closed by **C01-A** (`calendar-scope.parity.test.ts`).
 3. **Cross-midnight breaks:** accurate legal-date classification needs timestamped break intervals. The current session aggregate retains only total break minutes, so allocation across midnight would be fabricated without a model change.
 
 ### Decision C01 — calendar scope
@@ -102,13 +103,28 @@ No location/department/legal-entity implementation should start until one option
 
 Option A is the narrowest choice that satisfies `time.md` §15 without inventing a broader legal rules engine.
 
-### Authorization M01 — production schema
+### Authorization M01 — production schema (`0006`)
 
-**Status (2026-07-24):** `0006_hr_time_policy.sql` applied through configured branch (`0006_hr_time_policy`, pending forward **0**). Post-migrate evidence: `db:check` PASS; shared Drizzle parity **20/20** under `REQUIRE_DATABASE_TESTS=1`; `pnpm audit:tenancy-nulls` **176 roots PASS**; `time-policy-concurrency.test.ts` PASS.
+**Status (2026-07-24):** `0006_hr_time_policy.sql` applied through configured branch (`0006_hr_time_policy`, pending forward **0**). Applying `0006` mutated the configured production-backed Neon branch. The migration intentionally returns any pre-migration submitted timesheet without a policy snapshot so it can be resubmitted through the governed approval path; it does not fabricate approval provenance.
 
-Applying `0006` mutated the configured production-backed Neon branch. The migration intentionally returns any pre-migration submitted timesheet without a policy snapshot so it can be resubmitted through the governed approval path; it does not fabricate approval provenance.
+| Date | Command | Result |
+|---|---|---|
+| 2026-07-24 | `pnpm --filter @afenda/db db:check` | PASS |
+| 2026-07-24 | `REQUIRE_DATABASE_TESTS=1 pnpm --filter @afenda/human-resources test -- human-resources.time.parity` | **40/40 PASS** (20 memory + 20 Drizzle) |
+| 2026-07-24 | `pnpm audit:tenancy-nulls` | **176** hard-tenant roots PASS |
+| 2026-07-24 | `REQUIRE_DATABASE_TESTS=1 pnpm --filter @afenda/human-resources test -- time-policy-concurrency` | PASS |
 
-**0007 (`hr_work_calendar_scope_assignment`) is implemented locally only — not authorized for production apply in this mission.**
+### Authorization C01-A — calendar scope (`0007`)
+
+**Status (2026-07-24):** `0007_hr_work_calendar_scope.sql` applied through configured branch (`hr_work_calendar_scope_assignment` live). Closes **G05**, scoped **G09**, and **PASS-03** at **177** roots.
+
+| Date | Command | Result |
+|---|---|---|
+| 2026-07-24 | `pnpm --filter @afenda/db test -- hr-work-calendar-scope-migration` | **3/3 PASS** |
+| 2026-07-24 | `pnpm --filter @afenda/human-resources test -- calendar-scope-resolution` | **6/6 PASS** |
+| 2026-07-24 | `pnpm --filter @afenda/human-resources test -- calendar-scope-assignment` | **3/3 PASS** |
+| 2026-07-24 | `REQUIRE_DATABASE_TESTS=1 pnpm --filter @afenda/human-resources test -- calendar-scope.parity` | **18/18 PASS** (9 memory + 9 Drizzle) |
+| 2026-07-24 | `pnpm audit:tenancy-nulls` | **177** hard-tenant roots PASS |
 
 ## Implementation slices
 
@@ -116,7 +132,7 @@ Applying `0006` mutated the configured production-backed Neon branch. The migrat
 |---|---|---|---|
 | T-C01 — governance and hygiene | G01, G02 | Regenerated command/event registers; Time-scoped imports/formatting clean; all forbidden non-null assertions removed without weakening invariants | `pnpm validate:modules`; Time-scoped `pnpm exec biome check ...`; HR lint/typecheck |
 | T-C02 — model parity | G03, G04 | Six timesheet dimensions flow through schema → type → store → memory/Drizzle; assignment segments gain branded identity, schemas, store operations, public commands/queries, exports, and tests | schema/type contract tests; adapter parity; HR typecheck |
-| T-C03 — assignment validity and history | G05, G06 | Scheduling, attendance, and overtime validate active employment/effective assignment; published facts become immutable once attendance exists; definition amendments create effective-dated successors. Remaining: calendar scope resolution across employment/location/department/legal entity after C01 | negative validity tests; post-attendance mutation conflict tests; successor success/rollback tests; shared adapter contract; remaining precedence tests |
+| T-C03 — assignment validity and history | G05, G06 | Scheduling, attendance, and overtime validate active employment/effective assignment; published facts become immutable once attendance exists; definition amendments create effective-dated successors. **G05 closed (C01-A):** calendar scope resolution across employment/location/department/legal entity | negative validity tests; post-attendance mutation conflict tests; successor success/rollback tests; scoped calendar parity (`calendar-scope.parity.test.ts`) |
 | T-C04 — legal time calculation | G07, G08 | Central IANA timezone validator; complete exception detection; deterministic cross-midnight allocation across work date, holiday/rest-day, break, and overtime boundaries | invalid-zone tests; DST/overnight tests; one test per exception type; adapter parity |
 | T-C05 — policy and approval | G10 | Effective-dated time-policy and assignment aggregates; break deduction and waiver evidence; approval-chain resolution and authorization for submit/reopen/approve/lock | policy-version tests; break evidence tests; multi-step approval tests; memory/Drizzle parity |
 | T-C06 — contract convergence | G09 | One parameterized acceptance contract runs the same behavioral matrix against memory and Drizzle stores; dialect-only mechanics remain in adapter-specific tests | shared suite green for both adapters |
