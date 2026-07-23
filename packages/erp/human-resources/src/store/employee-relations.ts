@@ -17,6 +17,7 @@ import type {
 	EmployeeCaseTimeline,
 } from "../employee-relations/types";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	EmployeeCaseActionType,
 	EmployeeCaseEventKind,
@@ -96,7 +97,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 	openEmployeeCase(
 		record: EmployeeCaseCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	getEmployeeCaseById(input: {
@@ -104,6 +105,12 @@ export type HumanResourcesEmployeeRelationsStore = {
 		caseId: HumanResourcesEmployeeCaseId;
 		actorUserId: string;
 	}): Promise<Result<EmployeeCase>>;
+
+	/** Org-scoped case load for authorization decisions (no actor ACL). */
+	findEmployeeCaseInOrganization(input: {
+		organizationId: string;
+		caseId: HumanResourcesEmployeeCaseId;
+	}): Promise<Result<EmployeeCase | null>>;
 
 	listEmployeeCases(input: {
 		organizationId: string;
@@ -143,7 +150,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	assignEmployeeCaseOwner(
@@ -155,7 +162,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	addEmployeeCaseParticipant(
@@ -168,7 +175,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	recordEmployeeCaseEvent(
@@ -180,7 +187,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseEvent>>;
 
 	addEmployeeCaseEvidenceReference(
@@ -191,7 +198,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseEvent>>;
 
 	redactEmployeeCaseEvidenceReference(
@@ -203,7 +210,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseEvent>>;
 
 	issueInterimEmployeeMeasure(
@@ -218,7 +225,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	recordEmployeeCaseFinding(
@@ -231,7 +238,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	findEmployeeCaseActionByIdempotencyKey(input: {
@@ -249,7 +256,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 	recommendEmployeeCaseAction(
 		record: EmployeeCaseActionCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseAction>>;
 
 	approveEmployeeCaseAction(
@@ -262,7 +269,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseAction>>;
 
 	findEmployeeCaseAppealByIdempotencyKey(input: {
@@ -280,7 +287,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 	recordEmployeeCaseAppeal(
 		record: EmployeeCaseAppealCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseAppeal>>;
 
 	resolveEmployeeCaseAppeal(
@@ -293,7 +300,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCaseAppeal>>;
 
 	closeEmployeeCase(
@@ -305,7 +312,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	reopenEmployeeCase(
@@ -317,7 +324,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCase>>;
 
 	getEmployeeCaseTimeline(input: {

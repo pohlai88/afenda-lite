@@ -1,13 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
-import {
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
-import {
-	type HumanResourcesCommandOptions,
-	resolveCommandDeps,
-} from "../command-options";
+import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -17,12 +11,12 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_GET,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import {
 	amendEmploymentInputSchema,
 	createEmploymentInputSchema,
 	getEmploymentInputSchema,
 } from "../schemas/core";
+import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { resolveAmendEndsOn } from "../shared/domain-guards";
 import { assertEmploymentStatusTransition } from "../shared/employment-status";
 import type { Employment } from "../types";
@@ -31,154 +25,112 @@ export async function createEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	const parsed = parseHumanResourcesInput(
-		createEmploymentInputSchema,
-		input,
-		"Invalid employment create input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+	return runCoreCommand(input, options, {
+		schema: createEmploymentInputSchema,
+		invalidMessage: "Invalid employment create input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+		execute: async (data, { store, ports }) => {
+			return store.createEmployment(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+					startsOn: data.startsOn,
+					endsOn: data.endsOn ?? null,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE }),
+			);
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.createEmployment(
-		{
-			organizationId: parsed.data.organizationId,
-			employeeId: parsed.data.employeeId,
-			startsOn: parsed.data.startsOn,
-			endsOn: parsed.data.endsOn ?? null,
-			createdBy: parsed.data.actorUserId,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
-	);
+	});
 }
 
 export async function amendEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	const parsed = parseHumanResourcesInput(
-		amendEmploymentInputSchema,
-		input,
-		"Invalid employment amend input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
+	return runCoreCommand(input, options, {
+		schema: amendEmploymentInputSchema,
+		invalidMessage: "Invalid employment amend input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+		execute: async (data, { store, ports }) => {
+			const existing = await store.getEmploymentById({
+				organizationId: data.organizationId,
+				employmentId: data.employmentId,
+			});
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employment not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
 
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+			if (data.status !== undefined) {
+				const transitionCheck = assertEmploymentStatusTransition(
+					existing.data.status,
+					data.status,
+				);
+				if (!transitionCheck.ok) {
+					return transitionCheck;
+				}
+			}
+
+			const startsOn = data.startsOn ?? existing.data.startsOn;
+			const endsOnResolved = resolveAmendEndsOn({
+				nextStatus: data.status,
+				startsOn,
+				endsOn: data.endsOn,
+				previousEndsOn: existing.data.endsOn,
+			});
+			if (!endsOnResolved.ok) {
+				return endsOnResolved;
+			}
+
+			return store.amendEmployment(
+				{
+					organizationId: data.organizationId,
+					employmentId: data.employmentId,
+					status: data.status,
+					startsOn: data.startsOn,
+					endsOn: endsOnResolved.data,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND }),
+			);
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const existing = await store.getEmploymentById({
-		organizationId: parsed.data.organizationId,
-		employmentId: parsed.data.employmentId,
 	});
-	if (!existing.ok) {
-		return existing;
-	}
-	if (existing.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-
-	if (parsed.data.status !== undefined) {
-		const transitionCheck = assertEmploymentStatusTransition(
-			existing.data.status,
-			parsed.data.status,
-		);
-		if (!transitionCheck.ok) {
-			return transitionCheck;
-		}
-	}
-
-	const startsOn = parsed.data.startsOn ?? existing.data.startsOn;
-	const endsOnResolved = resolveAmendEndsOn({
-		nextStatus: parsed.data.status,
-		startsOn,
-		endsOn: parsed.data.endsOn,
-		previousEndsOn: existing.data.endsOn,
-	});
-	if (!endsOnResolved.ok) {
-		return endsOnResolved;
-	}
-
-	return store.amendEmployment(
-		{
-			organizationId: parsed.data.organizationId,
-			employmentId: parsed.data.employmentId,
-			status: parsed.data.status,
-			startsOn: parsed.data.startsOn,
-			endsOn: endsOnResolved.data,
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
-	);
 }
 
 export async function getEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	const parsed = parseHumanResourcesInput(
-		getEmploymentInputSchema,
-		input,
-		"Invalid employment get input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runCoreQuery(input, options, {
+		schema: getEmploymentInputSchema,
+		invalidMessage: "Invalid employment get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_GET,
+		execute: async (data, { store }) => {
+			const employment = await store.getEmploymentById({
+				organizationId: data.organizationId,
+				employmentId: data.employmentId,
+			});
+			if (!employment.ok) {
+				return employment;
+			}
+			if (employment.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employment not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(employment.data);
+		},
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const employment = await store.getEmploymentById({
-		organizationId: parsed.data.organizationId,
-		employmentId: parsed.data.employmentId,
-	});
-	if (!employment.ok) {
-		return employment;
-	}
-	if (employment.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-	return ok(employment.data);
 }

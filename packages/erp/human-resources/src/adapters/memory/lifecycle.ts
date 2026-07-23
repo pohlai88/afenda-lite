@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { ok, type Result } from "@afenda/errors/result";
 import {
@@ -302,7 +303,7 @@ export function createMemoryLifecycleMethods(
 		async startOnboarding(
 			record: OnboardingCaseCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OnboardingCase>> {
 			const existingByKey = await this.findOnboardingByStartIdempotencyKey({
 				organizationId: record.organizationId,
@@ -467,7 +468,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OnboardingCase>> {
 			const task = state.onboardingTasks.get(input.taskId);
 			if (!task || task.organizationId !== input.organizationId) {
@@ -536,7 +537,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OnboardingCase>> {
 			const onboardingCase = state.onboardingCases.get(input.onboardingCaseId);
 			if (
@@ -651,7 +652,7 @@ export function createMemoryLifecycleMethods(
 		async openProbation(
 			record: ProbationReviewCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<ProbationReview>> {
 			const existingByKey = await this.findProbationByOpenIdempotencyKey({
 				organizationId: record.organizationId,
@@ -758,7 +759,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<ProbationReview>> {
 			const probation = state.probationReviews.get(input.probationReviewId);
 			if (!probation || probation.organizationId !== input.organizationId) {
@@ -821,7 +822,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<ProbationReview>> {
 			const probation = state.probationReviews.get(input.probationReviewId);
 			if (!probation || probation.organizationId !== input.organizationId) {
@@ -906,7 +907,7 @@ export function createMemoryLifecycleMethods(
 		async confirmEmployment(
 			record: EmploymentConfirmationCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentConfirmation>> {
 			const existingByKey = await this.findConfirmationByIdempotencyKey({
 				organizationId: record.organizationId,
@@ -1043,7 +1044,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentMovement>> {
 			const openAssignment = await this.findOpenAssignmentByEmployment({
 				organizationId: input.organizationId,
@@ -1250,7 +1251,7 @@ export function createMemoryLifecycleMethods(
 		async finalizeTermination(
 			record: TerminationCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Termination>> {
 			const existingByKey = await this.findTerminationByIdempotencyKey({
 				organizationId: record.organizationId,
@@ -1407,7 +1408,7 @@ export function createMemoryLifecycleMethods(
 		async startOffboarding(
 			record: OffboardingCaseCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OffboardingCase>> {
 			const existingByKey = await this.findOffboardingByStartIdempotencyKey({
 				organizationId: record.organizationId,
@@ -1611,7 +1612,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OffboardingCase>> {
 			const task = state.offboardingTasks.get(input.taskId);
 			if (!task || task.organizationId !== input.organizationId) {
@@ -1683,7 +1684,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OffboardingCase>> {
 			const offboardingCase = state.offboardingCases.get(
 				input.offboardingCaseId,
@@ -1758,7 +1759,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OffboardingCase>> {
 			const clearance = state.clearances.get(input.clearanceId);
 			if (!clearance || clearance.organizationId !== input.organizationId) {
@@ -1831,7 +1832,7 @@ export function createMemoryLifecycleMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OffboardingCase>> {
 			const offboardingCase = state.offboardingCases.get(
 				input.offboardingCaseId,

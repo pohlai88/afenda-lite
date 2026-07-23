@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -53,7 +54,7 @@ export async function scheduleInterview(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE }),
 			),
 	});
 }
@@ -75,7 +76,7 @@ export async function cancelInterview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_CANCEL }),
 			),
 	});
 }
@@ -100,7 +101,7 @@ export async function recordInterviewEvaluation(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION }),
 			),
 	});
 }

@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -49,7 +50,7 @@ export async function openProbation(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN }),
 			);
 		},
 	});
@@ -73,7 +74,7 @@ export async function extendProbation(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND }),
 			),
 	});
 }
@@ -97,7 +98,7 @@ export async function recordProbationOutcome(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME }),
 			),
 	});
 }

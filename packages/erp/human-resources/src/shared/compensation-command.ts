@@ -2,8 +2,10 @@ import { fail, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 
 import {
+	type HumanResourcesResourceAwareAuthorizationPort,
 	requireHumanResourcesCommandPermission,
 	requireHumanResourcesQueryPermission,
+	requireHumanResourcesResourceAwarePermission,
 } from "../authorization";
 import {
 	type HumanResourcesCommandOptions,
@@ -18,8 +20,11 @@ import type {
 	HumanResourcesQueryId,
 } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
+import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../permissions";
 import type { CurrencyLookupPort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import { applySensitivityProjection } from "./field-projection";
+import type { HumanResourcesPermission } from "../authorization";
 
 type ActorScoped = {
 	organizationId: string;
@@ -34,7 +39,53 @@ type CommandDeps = {
 
 type QueryDeps = {
 	store: HumanResourcesStore;
+	resourceAwareAuthorization: HumanResourcesResourceAwareAuthorizationPort | undefined;
 };
+
+/** Apply highly_restricted compensation projection when resource-aware port is wired. */
+export async function projectCompensationRecord<T extends Record<string, unknown>>(
+	record: T,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		resourceId?: string;
+		resourceAwareAuthorization?: HumanResourcesResourceAwareAuthorizationPort;
+		actorPermissions: Set<HumanResourcesPermission>;
+	},
+): Promise<Result<Partial<T>>> {
+	if (!input.resourceAwareAuthorization) {
+		const projected = applySensitivityProjection(
+			record,
+			"highly_restricted",
+			input.actorPermissions,
+		);
+		return { ok: true, data: projected.data };
+	}
+
+	const decision = await requireHumanResourcesResourceAwarePermission(
+		input.resourceAwareAuthorization,
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			permission: HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+			resourceType: "compensation",
+			resourceId: input.resourceId,
+			sensitivity: "highly_restricted",
+		},
+	);
+	if (!decision.ok) return decision;
+
+	if (!decision.data.projectedFields?.length) {
+		return { ok: true, data: record };
+	}
+
+	const projected = applySensitivityProjection(
+		record,
+		"highly_restricted",
+		input.actorPermissions,
+	);
+	return { ok: true, data: projected.data };
+}
 
 export async function assertCurrencyExists(
 	currency: CurrencyLookupPort,
@@ -117,7 +168,8 @@ export async function runCompensationQuery<
 		return parsed;
 	}
 
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, authorization, resourceAwareAuthorization } =
+		resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -127,5 +179,5 @@ export async function runCompensationQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store });
+	return config.execute(parsed.data, { store, resourceAwareAuthorization });
 }

@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import {
 	requireHumanResourcesCommandPermission,
@@ -68,7 +69,7 @@ export async function createPosition(
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POSITION_CREATE }),
 	);
 }
 
@@ -109,7 +110,7 @@ export async function updatePosition(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE }),
 	);
 }
 
@@ -148,7 +149,7 @@ export async function activatePosition(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE }),
 	);
 }
 
@@ -187,7 +188,7 @@ export async function freezePosition(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE }),
 	);
 }
 
@@ -226,7 +227,7 @@ export async function closePosition(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE }),
 	);
 }
 

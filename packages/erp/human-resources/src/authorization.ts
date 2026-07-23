@@ -11,6 +11,7 @@ import type {
 	HumanResourcesQueryId,
 } from "./module-ids";
 import type { HUMAN_RESOURCES_PERMISSION_CODES } from "./permissions";
+import type { HumanResourcesEmployeeId } from "./brands";
 
 export type HumanResourcesPermission =
 	(typeof HUMAN_RESOURCES_PERMISSION_CODES)[number];
@@ -21,6 +22,32 @@ export type HumanResourcesAuthorizationPort = {
 		actorUserId: string;
 		permission: HumanResourcesPermission;
 	}): Promise<boolean>;
+};
+
+export type HumanResourcesAuthorizationDecisionInput = {
+	organizationId: string;
+	actorUserId: string;
+	permission: HumanResourcesPermission;
+
+	// Resource context
+	resourceType?: string;
+	resourceId?: string;
+	subjectEmployeeId?: HumanResourcesEmployeeId;
+	ownerEmployeeId?: HumanResourcesEmployeeId;
+
+	// Sensitivity and temporal context
+	sensitivity?: "standard" | "sensitive" | "highly_restricted";
+	asOf?: string;
+};
+
+export type HumanResourcesResourceAwareAuthorizationPort = {
+	canWithContext(input: HumanResourcesAuthorizationDecisionInput): Promise<
+		Result<{
+			allowed: boolean;
+			projectedFields?: string[];
+			reason?: string;
+		}>
+	>;
 };
 
 export async function requireHumanResourcesCommandPermission(
@@ -83,4 +110,38 @@ export async function requireHumanResourcesPermission(
 		});
 	}
 	return ok(undefined);
+}
+
+export async function requireHumanResourcesResourceAwarePermission(
+	resourceAwareAuthorization: HumanResourcesResourceAwareAuthorizationPort | undefined,
+	input: HumanResourcesAuthorizationDecisionInput,
+): Promise<Result<{
+	allowed: boolean;
+	projectedFields?: string[];
+	reason?: string;
+}>> {
+	if (!resourceAwareAuthorization) {
+		return fail(
+			"UNAUTHORIZED",
+			"Human Resources resource-aware authorization port is required",
+			{
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+				permission: input.permission,
+			},
+		);
+	}
+	
+	const result = await resourceAwareAuthorization.canWithContext(input);
+	if (!result.ok) {
+		return result;
+	}
+	
+	if (!result.data.allowed) {
+		return fail("FORBIDDEN", result.data.reason || "Access denied", {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+			permission: input.permission,
+		});
+	}
+	
+	return ok(result.data);
 }

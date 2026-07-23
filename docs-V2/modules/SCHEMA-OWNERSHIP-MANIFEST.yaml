@@ -490,6 +490,57 @@ tables:
   - table: hr_policy_acknowledgement
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_work_calendar
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_work_calendar_holiday
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment_calendar_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_shift
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_shift_break
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_shift_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_shift_assignment_segment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_attendance_event
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_attendance_session
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_attendance_exception
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_attendance_adjustment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_attendance_import_batch
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_attendance_import_error
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_timesheet
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_timesheet_entry
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_overtime_request
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_overtime_approval
+    writeOwner: "@afenda/human-resources"
+    kind: erp
 
   - table: payroll_calendar
     writeOwner: "@afenda/payroll"

@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -99,7 +100,7 @@ export async function createHeadcountPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE }),
 			);
 		},
 	});
@@ -125,7 +126,7 @@ export async function updateHeadcountPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE }),
 			),
 	});
 }
@@ -154,7 +155,7 @@ async function transitionHeadcountPlan(
 					rejectionReason: data.rejectionReason,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE }),
 			),
 	});
 }
@@ -267,7 +268,7 @@ export async function supersedeHeadcountPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE }),
 			);
 		},
 	});

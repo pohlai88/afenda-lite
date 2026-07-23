@@ -7,6 +7,7 @@ import type {
 	HumanResourcesLeaveRequestId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentStatus } from "../shared/employment-status";
 import type {
 	DayPortion,
@@ -166,7 +167,7 @@ export type HumanResourcesLeaveStore = {
 	createLeavePolicy(
 		record: LeavePolicyCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeavePolicy>>;
 
 	updateLeavePolicy(
@@ -186,7 +187,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeavePolicy>>;
 
 	publishLeavePolicy(
@@ -197,7 +198,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeavePolicy>>;
 
 	supersedeLeavePolicy(
@@ -221,7 +222,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeavePolicy>>;
 
 	archiveLeavePolicy(
@@ -232,7 +233,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeavePolicy>>;
 
 	listLeavePolicies(input: {
@@ -255,7 +256,7 @@ export type HumanResourcesLeaveStore = {
 	grantLeaveEntitlement(
 		record: LeaveEntitlementGrantRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveEntitlement>>;
 
 	carryForwardLeaveEntitlement(
@@ -271,7 +272,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveEntitlement>>;
 
 	expireLeaveEntitlement(
@@ -282,13 +283,13 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveEntitlement>>;
 
 	adjustLeaveEntitlement(
 		record: LeaveAdjustmentCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveAdjustment>>;
 
 	listLeaveEntitlements(input: {
@@ -334,13 +335,13 @@ export type HumanResourcesLeaveStore = {
 	createDraftLeaveRequest(
 		record: LeaveRequestCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	amendLeaveRequest(
 		record: LeaveRequestAmendRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	submitLeaveRequest(
@@ -351,7 +352,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	approveLeaveRequest(
@@ -363,7 +364,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	rejectLeaveRequest(
@@ -375,7 +376,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	returnLeaveRequest(
@@ -387,7 +388,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	withdrawLeaveRequest(
@@ -398,7 +399,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	cancelApprovedLeaveRequest(
@@ -410,7 +411,7 @@ export type HumanResourcesLeaveStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveRequest>>;
 
 	listLeaveRequests(input: {

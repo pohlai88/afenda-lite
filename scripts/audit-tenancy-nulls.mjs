@@ -169,6 +169,23 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"hr_employee_document",
 	"hr_work_eligibility",
 	"hr_policy_acknowledgement",
+	"hr_work_calendar",
+	"hr_work_calendar_holiday",
+	"hr_employment_calendar_assignment",
+	"hr_shift",
+	"hr_shift_break",
+	"hr_shift_assignment",
+	"hr_shift_assignment_segment",
+	"hr_attendance_event",
+	"hr_attendance_session",
+	"hr_attendance_exception",
+	"hr_attendance_adjustment",
+	"hr_attendance_import_batch",
+	"hr_attendance_import_error",
+	"hr_timesheet",
+	"hr_timesheet_entry",
+	"hr_overtime_request",
+	"hr_overtime_approval",
 ];
 
 const fileEnv = loadLocalEnv();
@@ -500,6 +517,40 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_work_eligibility WHERE organization_id IS NULL`,
 	hr_policy_acknowledgement: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_policy_acknowledgement WHERE organization_id IS NULL`,
+	hr_work_calendar: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_work_calendar WHERE organization_id IS NULL`,
+	hr_work_calendar_holiday: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_work_calendar_holiday WHERE organization_id IS NULL`,
+	hr_employment_calendar_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employment_calendar_assignment WHERE organization_id IS NULL`,
+	hr_shift: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_shift WHERE organization_id IS NULL`,
+	hr_shift_break: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_shift_break WHERE organization_id IS NULL`,
+	hr_shift_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_shift_assignment WHERE organization_id IS NULL`,
+	hr_shift_assignment_segment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_shift_assignment_segment WHERE organization_id IS NULL`,
+	hr_attendance_event: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_event WHERE organization_id IS NULL`,
+	hr_attendance_session: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_session WHERE organization_id IS NULL`,
+	hr_attendance_exception: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_exception WHERE organization_id IS NULL`,
+	hr_attendance_adjustment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_adjustment WHERE organization_id IS NULL`,
+	hr_attendance_import_batch: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_import_batch WHERE organization_id IS NULL`,
+	hr_attendance_import_error: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_attendance_import_error WHERE organization_id IS NULL`,
+	hr_timesheet: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_timesheet WHERE organization_id IS NULL`,
+	hr_timesheet_entry: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_timesheet_entry WHERE organization_id IS NULL`,
+	hr_overtime_request: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_overtime_request WHERE organization_id IS NULL`,
+	hr_overtime_approval: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_overtime_approval WHERE organization_id IS NULL`,
 };
 
 console.log(

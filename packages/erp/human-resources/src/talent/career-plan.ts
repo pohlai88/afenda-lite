@@ -1,8 +1,11 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -16,6 +19,11 @@ import {
 	HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
 } from "../module-ids";
 import {
+	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_OWN_READ,
+	HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
+} from "../permissions";
+import {
 	acknowledgeCareerPlanInputSchema,
 	addCareerPlanActionInputSchema,
 	closeCareerPlanInputSchema,
@@ -26,7 +34,15 @@ import {
 	updateCareerPlanInputSchema,
 } from "../schemas/talent";
 import { fingerprintCareerPlanCreate } from "../shared/fingerprint";
-import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
+import {
+	requireAdminResourceAccess,
+	requireOwnResourceAccess,
+} from "../shared/subject-aware-authorization";
+import {
+	runTalentCommand,
+	runTalentEmployeeScopedQuery,
+	runTalentQuery,
+} from "../shared/talent-command";
 import type {
 	CareerPlan,
 	CareerPlanAction,
@@ -85,7 +101,7 @@ export async function createCareerPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE }),
 			);
 		},
 	});
@@ -109,7 +125,7 @@ export async function updateCareerPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE }),
 			);
 		},
 	});
@@ -132,7 +148,7 @@ export async function acknowledgeCareerPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE }),
 			);
 		},
 	});
@@ -157,7 +173,7 @@ export async function addCareerPlanAction(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD }),
 			);
 		},
 	});
@@ -180,7 +196,7 @@ export async function completeCareerPlanAction(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE }),
 			);
 		},
 	});
@@ -203,7 +219,7 @@ export async function closeCareerPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE }),
 			);
 		},
 	});
@@ -217,11 +233,61 @@ export async function getCareerPlanById(
 		schema: getCareerPlanByIdInputSchema,
 		invalidMessage: "Invalid career plan get input",
 		query: HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET,
-		execute: async (data, { store }) => {
-			return await store.getCareerPlanById({
+		execute: async (data, { store, authorization, identityResolver }) => {
+			const loaded = await store.getCareerPlanById({
 				organizationId: data.organizationId,
 				careerPlanId: data.careerPlanId,
 			});
+			if (!loaded.ok) return loaded;
+			if (loaded.data === null) {
+				return ok(null);
+			}
+
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+				);
+			}
+
+			const adminCheck = await requireAdminResourceAccess(authorization, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				permission: HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
+			});
+			if (adminCheck.ok) {
+				return ok(loaded.data);
+			}
+
+			const manageCheck = await requireAdminResourceAccess(authorization, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				permission: HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_MANAGE,
+			});
+			if (manageCheck.ok) {
+				return ok(loaded.data);
+			}
+
+			const ownCheck = await requireOwnResourceAccess(
+				identityResolver,
+				authorization,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					targetEmployeeId: loaded.data.employeeId,
+					permission: HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_OWN_READ,
+				},
+			);
+			if (!ownCheck.ok) {
+				return fail(
+					"FORBIDDEN",
+					"Cannot access other employee's career plan",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+
+			return ok(loaded.data);
 		},
 	});
 }
@@ -230,10 +296,9 @@ export async function listEmployeeCareerPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanListPage>> {
-	return runTalentQuery(input, options, {
+	return runTalentEmployeeScopedQuery(input, options, {
 		schema: listEmployeeCareerPlansInputSchema,
 		invalidMessage: "Invalid employee career plan list input",
-		query: HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
 		execute: async (data, { store }) => {
 			return await store.listEmployeeCareerPlans({
 				organizationId: data.organizationId,

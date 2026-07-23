@@ -10,6 +10,7 @@ import type {
 	HumanResourcesSalaryBandId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	BenefitPlanStatus,
 	CompensationGradeStatus,
@@ -57,7 +58,7 @@ export type HumanResourcesCompensationStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationGrade>>;
 
 	updateCompensationGrade(
@@ -69,7 +70,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationGrade>>;
 
 	archiveCompensationGrade(
@@ -80,7 +81,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationGrade>>;
 
 	listCompensationGrades(input: {
@@ -108,7 +109,7 @@ export type HumanResourcesCompensationStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SalaryBand>>;
 
 	supersedeSalaryBand(
@@ -124,7 +125,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SalaryBand>>;
 
 	archiveSalaryBand(
@@ -135,7 +136,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SalaryBand>>;
 
 	listSalaryBandsByGrade(input: {
@@ -173,7 +174,7 @@ export type HumanResourcesCompensationStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCompensation>>;
 
 	endEmployeeCompensation(
@@ -185,7 +186,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCompensation>>;
 
 	listEmployeeCompensationsByEmployee(input: {
@@ -220,7 +221,7 @@ export type HumanResourcesCompensationStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationReview>>;
 
 	recordCompensationRecommendation(
@@ -237,7 +238,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationReview>>;
 
 	finalizeCompensationReview(
@@ -248,7 +249,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompensationReview>>;
 
 	applyApprovedCompensationResult(
@@ -260,7 +261,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCompensation>>;
 
 	listCompensationReviewsByEmployee(input: {
@@ -289,7 +290,7 @@ export type HumanResourcesCompensationStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<BenefitPlan>>;
 
 	updateBenefitPlan(
@@ -302,7 +303,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<BenefitPlan>>;
 
 	archiveBenefitPlan(
@@ -313,7 +314,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<BenefitPlan>>;
 
 	listBenefitPlans(input: {
@@ -345,7 +346,7 @@ export type HumanResourcesCompensationStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<BenefitEnrollment>>;
 
 	endBenefitEnrollment(
@@ -357,7 +358,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<BenefitEnrollment>>;
 
 	cancelBenefitEnrollment(
@@ -368,7 +369,7 @@ export type HumanResourcesCompensationStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<BenefitEnrollment>>;
 
 	listBenefitEnrollmentsByEmployee(input: {

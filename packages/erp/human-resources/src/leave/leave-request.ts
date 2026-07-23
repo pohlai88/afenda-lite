@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
@@ -46,6 +47,15 @@ import {
 	runLeaveQuery,
 } from "../shared/leave-command";
 import {
+	requireHumanResourcesPermission,
+	requireHumanResourcesResourceAwarePermission,
+} from "../authorization";
+import {
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+} from "../permissions";
+import { resolveActorEmployeeIdentity } from "../shared/subject-aware-authorization";
+import {
 	assertApprovalDecisionMatchesRequestTransition,
 	assertApproverIsPrimaryManager,
 	assertEmploymentActiveForLeave,
@@ -68,12 +78,13 @@ export const HUMAN_RESOURCES_AGGREGATE_LEAVE_REQUEST = "leave_request" as const;
 export type HumanResourcesLeaveRequestAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_LEAVE_REQUEST;
 
-async function assertPrimaryManagerWhenAssigned(
+/** Manager scope: actor-derived employee must be the effective primary manager at asOf. */
+async function assertActorIsPrimaryManager(
 	store: HumanResourcesStore,
 	input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
-		managerEmployeeId?: HumanResourcesEmployeeId;
+		managerEmployeeId: HumanResourcesEmployeeId;
 		asOf: string;
 	},
 ): Promise<Result<void>> {
@@ -84,12 +95,9 @@ async function assertPrimaryManagerWhenAssigned(
 	});
 	if (!primary.ok) return primary;
 	if (primary.data === null) {
-		return ok(undefined);
-	}
-	if (input.managerEmployeeId === undefined) {
 		return fail(
 			"FORBIDDEN",
-			"Primary manager employee id is required",
+			"Employee has no primary manager for the approval date",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 		);
 	}
@@ -192,6 +200,8 @@ export async function createDraftLeaveRequest(
 
 			const expanded = await workCalendar.expandLeaveSegments({
 				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: entitlement.data.employmentId,
 				startDate: data.startDate,
 				endDate: data.endDate,
 				unit: policy.data.unit,
@@ -222,7 +232,7 @@ export async function createDraftLeaveRequest(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT }),
 			);
 		},
 	});
@@ -271,6 +281,8 @@ export async function amendLeaveRequest(
 
 			const expanded = await workCalendar.expandLeaveSegments({
 				organizationId: data.organizationId,
+				employeeId: request.data.employeeId,
+				employmentId: request.data.employmentId,
 				startDate: data.startDate,
 				endDate: data.endDate,
 				unit: policy.data.unit,
@@ -299,7 +311,7 @@ export async function amendLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND }),
 			);
 		},
 	});
@@ -375,7 +387,7 @@ export async function submitLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT }),
 			);
 		},
 	});
@@ -389,7 +401,13 @@ export async function approveLeaveRequest(
 		schema: approveLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request approve input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
-		execute: async (data, { store, ports }) => {
+		execute: async (data, { store, ports, identityResolver }) => {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+				);
+			}
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
 				requestId: data.requestId,
@@ -399,10 +417,25 @@ export async function approveLeaveRequest(
 				return fail("NOT_FOUND", "Leave request not found");
 			}
 
-			const managerCheck = await assertPrimaryManagerWhenAssigned(store, {
+			// Resolve the manager identity from the actor user ID
+			const managerIdentity = await identityResolver.resolveEmployeeForActor({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				asOf: request.data.startDate,
+			});
+			if (!managerIdentity.ok) return managerIdentity;
+			if (!managerIdentity.data) {
+				return fail(
+					"FORBIDDEN",
+					"Actor is not an employee",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+
+			const managerCheck = await assertActorIsPrimaryManager(store, {
 				organizationId: data.organizationId,
 				employeeId: request.data.employeeId,
-				managerEmployeeId: data.managerEmployeeId,
+				managerEmployeeId: managerIdentity.data.employeeId,
 				asOf: request.data.startDate,
 			});
 			if (!managerCheck.ok) return managerCheck;
@@ -460,7 +493,7 @@ export async function approveLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE }),
 			);
 		},
 	});
@@ -474,7 +507,13 @@ export async function rejectLeaveRequest(
 		schema: rejectLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request reject input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
-		execute: async (data, { store, ports }) => {
+		execute: async (data, { store, ports, identityResolver }) => {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+				);
+			}
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
 				requestId: data.requestId,
@@ -484,10 +523,25 @@ export async function rejectLeaveRequest(
 				return fail("NOT_FOUND", "Leave request not found");
 			}
 
-			const managerCheck = await assertPrimaryManagerWhenAssigned(store, {
+			// Resolve the manager identity from the actor user ID
+			const managerIdentity = await identityResolver.resolveEmployeeForActor({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				asOf: request.data.startDate,
+			});
+			if (!managerIdentity.ok) return managerIdentity;
+			if (!managerIdentity.data) {
+				return fail(
+					"FORBIDDEN",
+					"Actor is not an employee",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+
+			const managerCheck = await assertActorIsPrimaryManager(store, {
 				organizationId: data.organizationId,
 				employeeId: request.data.employeeId,
-				managerEmployeeId: data.managerEmployeeId,
+				managerEmployeeId: managerIdentity.data.employeeId,
 				asOf: request.data.startDate,
 			});
 			if (!managerCheck.ok) return managerCheck;
@@ -501,7 +555,7 @@ export async function rejectLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT }),
 			);
 		},
 	});
@@ -515,7 +569,13 @@ export async function returnLeaveRequest(
 		schema: returnLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request return input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
-		execute: async (data, { store, ports }) => {
+		execute: async (data, { store, ports, identityResolver }) => {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+				);
+			}
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
 				requestId: data.requestId,
@@ -525,10 +585,25 @@ export async function returnLeaveRequest(
 				return fail("NOT_FOUND", "Leave request not found");
 			}
 
-			const managerCheck = await assertPrimaryManagerWhenAssigned(store, {
+			// Resolve the manager identity from the actor user ID
+			const managerIdentity = await identityResolver.resolveEmployeeForActor({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				asOf: request.data.startDate,
+			});
+			if (!managerIdentity.ok) return managerIdentity;
+			if (!managerIdentity.data) {
+				return fail(
+					"FORBIDDEN",
+					"Actor is not an employee",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+
+			const managerCheck = await assertActorIsPrimaryManager(store, {
 				organizationId: data.organizationId,
 				employeeId: request.data.employeeId,
-				managerEmployeeId: data.managerEmployeeId,
+				managerEmployeeId: managerIdentity.data.employeeId,
 				asOf: request.data.startDate,
 			});
 			if (!managerCheck.ok) return managerCheck;
@@ -542,7 +617,7 @@ export async function returnLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN }),
 			);
 		},
 	});
@@ -565,7 +640,7 @@ export async function withdrawLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW }),
 			),
 	});
 }
@@ -593,7 +668,7 @@ export async function cancelApprovedLeaveRequest(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED }),
 			),
 	});
 }
@@ -606,7 +681,7 @@ export async function getLeaveRequest(
 		schema: getLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
-		execute: async (data, { store, authorization }) => {
+		execute: async (data, { store, authorization, identityResolver }) => {
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
 				requestId: data.requestId,
@@ -614,6 +689,33 @@ export async function getLeaveRequest(
 			if (!request.ok) return request;
 			if (request.data === null) {
 				return ok(null);
+			}
+
+			const actorIdentity = await resolveActorEmployeeIdentity(identityResolver, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+			});
+			const isOwner =
+				actorIdentity.ok &&
+				actorIdentity.data.employeeId === request.data.employeeId;
+
+			if (!isOwner) {
+				// Non-owners need an explicit sensitive-read administrative permission.
+				const sensitiveAdmin = await requireHumanResourcesPermission(
+					authorization,
+					{
+						organizationId: data.organizationId,
+						actorUserId: data.actorUserId,
+						permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+					},
+				);
+				if (!sensitiveAdmin.ok) {
+					return fail(
+						"FORBIDDEN",
+						"Cannot access other employee's leave request",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+					);
+				}
 			}
 
 			const policy = await store.getLeavePolicyById({
@@ -636,6 +738,24 @@ export async function getLeaveRequest(
 			);
 			if (!sensitive.ok) return sensitive;
 
+			if (policy.data.sensitive && options.resourceAwareAuthorization) {
+				const resourceAware = await requireHumanResourcesResourceAwarePermission(
+					options.resourceAwareAuthorization,
+					{
+						organizationId: data.organizationId,
+						actorUserId: data.actorUserId,
+						permission: isOwner
+							? HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN
+							: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+						resourceType: "leave",
+						resourceId: request.data.id,
+						subjectEmployeeId: request.data.employeeId,
+						sensitivity: "sensitive",
+					},
+				);
+				if (!resourceAware.ok) return resourceAware;
+			}
+
 			return ok(request.data);
 		},
 	});
@@ -649,12 +769,31 @@ export async function listLeaveRequests(
 		schema: listLeaveRequestsInputSchema,
 		invalidMessage: "Invalid leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST,
-		execute: async (data, { store, authorization }) => {
+		execute: async (data, { store, authorization, identityResolver }) => {
+			const actorIdentity = await resolveActorEmployeeIdentity(identityResolver, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+			});
+			if (!actorIdentity.ok) return actorIdentity;
+
+			// Own-scoped list: always derive subject from actor; never trust client employeeId alone.
+			if (
+				data.employeeId !== undefined &&
+				data.employeeId !== actorIdentity.data.employeeId
+			) {
+				return fail(
+					"FORBIDDEN",
+					"Cannot access other employee's leave requests",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+			const employeeId = actorIdentity.data.employeeId;
+
 			const page = await store.listLeaveRequests({
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
-				employeeId: data.employeeId,
+				employeeId,
 				status: data.status,
 			});
 			if (!page.ok) return page;
@@ -701,13 +840,35 @@ export async function listPendingApprovalLeaveRequests(
 		schema: listPendingApprovalLeaveRequestsInputSchema,
 		invalidMessage: "Invalid pending approval leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST_PENDING_APPROVAL,
-		execute: (data, { store }) =>
-			store.listPendingApprovalLeaveRequests({
+		execute: async (data, { store, identityResolver }) => {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+				);
+			}
+
+			// Resolve the manager identity from the actor user ID
+			const managerIdentity = await identityResolver.resolveEmployeeForActor({
 				organizationId: data.organizationId,
-				managerEmployeeId: data.managerEmployeeId,
+				actorUserId: data.actorUserId,
+			});
+			if (!managerIdentity.ok) return managerIdentity;
+			if (!managerIdentity.data) {
+				return fail(
+					"FORBIDDEN",
+					"Actor is not an employee",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+
+			return store.listPendingApprovalLeaveRequests({
+				organizationId: data.organizationId,
+				managerEmployeeId: managerIdentity.data.employeeId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
-			}),
+			});
+		},
 	});
 }
 
@@ -719,15 +880,37 @@ export async function listTeamCalendarLeaveRequests(
 		schema: listTeamCalendarLeaveRequestsInputSchema,
 		invalidMessage: "Invalid team calendar leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_TEAM_CALENDAR,
-		execute: (data, { store }) =>
-			store.listTeamCalendarLeaveRequests({
+		execute: async (data, { store, identityResolver }) => {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+				);
+			}
+
+			// Resolve the manager identity from the actor user ID
+			const managerIdentity = await identityResolver.resolveEmployeeForActor({
 				organizationId: data.organizationId,
-				managerEmployeeId: data.managerEmployeeId,
+				actorUserId: data.actorUserId,
+			});
+			if (!managerIdentity.ok) return managerIdentity;
+			if (!managerIdentity.data) {
+				return fail(
+					"FORBIDDEN",
+					"Actor is not an employee",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+
+			return store.listTeamCalendarLeaveRequests({
+				organizationId: data.organizationId,
+				managerEmployeeId: managerIdentity.data.employeeId,
 				rangeStart: data.rangeStart,
 				rangeEnd: data.rangeEnd,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
-			}),
+			});
+		},
 	});
 }
 

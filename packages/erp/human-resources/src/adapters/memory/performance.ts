@@ -1,3 +1,4 @@
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 /**
  * In-memory performance domain state and methods for composed HumanResourcesStore hosts.
  */
@@ -230,7 +231,7 @@ function newBrandId<T extends z.ZodTypeAny>(schema: T): Result<z.infer<T>> {
 
 async function recordAudit(
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -252,7 +253,7 @@ async function recordAudit(
 
 async function recordOutbox(
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -455,7 +456,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 		async createPerformanceCycle(
 			record: PerformanceCycleCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycle>> {
 			const key = idemKey(record.organizationId, record.createIdempotencyKey);
 			const existing = state.cycleIdempotency.get(key);
@@ -546,7 +547,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycle>> {
 			const current = getCycle(state, input.organizationId, input.cycleId);
 			if (!current.ok) {
@@ -607,7 +608,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycle>> {
 			const current = getCycle(state, input.organizationId, input.cycleId);
 			if (!current.ok) {
@@ -675,7 +676,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycle>> {
 			const current = getCycle(state, input.organizationId, input.cycleId);
 			if (!current.ok) {
@@ -728,7 +729,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycle>> {
 			const current = getCycle(state, input.organizationId, input.cycleId);
 			if (!current.ok) {
@@ -782,7 +783,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycleParticipant>> {
 			const cycleResult = getCycle(state, input.organizationId, input.cycleId);
 			if (!cycleResult.ok) {
@@ -884,7 +885,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceCycleParticipant>> {
 			const participant = state.cycleParticipants.get(input.participantId);
 			if (
@@ -1002,7 +1003,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 		async createPerformanceGoal(
 			record: PerformanceGoalCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			const key = idemKey(record.organizationId, record.createIdempotencyKey);
 			const existing = state.goalIdempotency.get(key);
@@ -1120,7 +1121,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			const current = getGoal(state, input.organizationId, input.goalId);
 			if (!current.ok) {
@@ -1197,7 +1198,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			return transitionGoalStatus(
 				state,
@@ -1217,7 +1218,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			const current = getGoal(state, input.organizationId, input.goalId);
 			if (!current.ok) {
@@ -1320,7 +1321,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			return transitionGoalStatus(
 				state,
@@ -1341,7 +1342,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoalProgress>> {
 			const current = getGoal(state, input.organizationId, input.goalId);
 			if (!current.ok) {
@@ -1394,7 +1395,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			return transitionGoalStatus(
 				state,
@@ -1414,7 +1415,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
 			return transitionGoalStatus(
 				state,
@@ -1465,7 +1466,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			if (input.managerEmployeeId === input.employeeId) {
 				return invalidInput(
@@ -1652,7 +1653,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			return submitAssessment(
 				state,
@@ -1675,7 +1676,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			const reviewResult = getReview(
 				state,
@@ -1711,7 +1712,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			return transitionReviewStatus(
 				state,
@@ -1732,7 +1733,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			const current = getReview(state, input.organizationId, input.reviewId);
 			if (!current.ok) {
@@ -1796,7 +1797,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			const key = idemKey(input.organizationId, input.finalizeIdempotencyKey);
 			const existing = state.reviewFinalizeIdempotency.get(key);
@@ -1913,7 +1914,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceReview>> {
 			const current = getReview(state, input.organizationId, input.reviewId);
 			if (!current.ok) {
@@ -2090,7 +2091,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 		async createImprovementPlan(
 			record: ImprovementPlanCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			const key = idemKey(record.organizationId, record.createIdempotencyKey);
 			const existing = state.planIdempotency.get(key);
@@ -2209,7 +2210,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			const current = getPlan(state, input.organizationId, input.planId);
 			if (!current.ok) {
@@ -2280,7 +2281,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			return transitionPlanStatus(
 				state,
@@ -2302,7 +2303,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementCheckpoint>> {
 			const planResult = getPlan(state, input.organizationId, input.planId);
 			if (!planResult.ok) {
@@ -2368,7 +2369,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			const current = getPlan(state, input.organizationId, input.planId);
 			if (!current.ok) {
@@ -2428,7 +2429,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			const current = getPlan(state, input.organizationId, input.planId);
 			if (!current.ok) {
@@ -2499,7 +2500,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			return transitionPlanStatus(
 				state,
@@ -2519,7 +2520,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
 			return transitionPlanStatus(
 				state,
@@ -2613,7 +2614,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 async function transitionGoalStatus(
 	state: PerformanceMemoryState,
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		goalId: HumanResourcesGoalId;
@@ -2672,7 +2673,7 @@ async function transitionGoalStatus(
 async function transitionReviewStatus(
 	state: PerformanceMemoryState,
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		reviewId: HumanResourcesReviewId;
@@ -2735,7 +2736,7 @@ async function transitionReviewStatus(
 async function transitionPlanStatus(
 	state: PerformanceMemoryState,
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		planId: HumanResourcesImprovementPlanId;
@@ -2794,7 +2795,7 @@ async function transitionPlanStatus(
 async function submitAssessment(
 	state: PerformanceMemoryState,
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		reviewId: HumanResourcesReviewId;

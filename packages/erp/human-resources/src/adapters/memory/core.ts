@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
@@ -163,7 +164,7 @@ export function createMemoryCoreMethods(
 		async createEmployee(
 			record: EmployeeCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Employee>> {
 			const existingByKey = await this.findEmployeeByIdempotencyKey({
 				organizationId: record.organizationId,
@@ -252,7 +253,7 @@ export function createMemoryCoreMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Employee>> {
 			const employee = state.employees.get(input.employeeId);
 			if (!employee || employee.organizationId !== input.organizationId) {
@@ -383,7 +384,7 @@ export function createMemoryCoreMethods(
 		async createEmployment(
 			record: EmploymentCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Employment>> {
 			const employee = state.employees.get(record.employeeId);
 			if (!employee || employee.organizationId !== record.organizationId) {
@@ -484,7 +485,7 @@ export function createMemoryCoreMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Employment>> {
 			const employment = state.employments.get(input.employmentId);
 			if (!employment || employment.organizationId !== input.organizationId) {
@@ -624,7 +625,7 @@ export function createMemoryCoreMethods(
 		async createEmploymentContract(
 			record: EmploymentContractCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentContract>> {
 			const employment = state.employments.get(record.employmentId);
 			if (!employment || employment.organizationId !== record.organizationId) {
@@ -774,7 +775,7 @@ export function createMemoryCoreMethods(
 		async createAssignment(
 			record: AssignmentCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkAssignment>> {
 			const employment = state.employments.get(record.employmentId);
 			if (!employment || employment.organizationId !== record.organizationId) {
@@ -880,7 +881,7 @@ export function createMemoryCoreMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkAssignment>> {
 			const assignment = state.assignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import {
 	and,
@@ -12,8 +13,31 @@ import {
 	hrLeaveRequest,
 	hrLeaveRequestSegment,
 	inArray,
+	sql,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import {
+	runLeaveTransaction,
+	validateTransactionInput,
+	resolveIdempotentCreateReplay,
+	type LeaveRequestSqlRow,
+	type LeaveEntitlementSqlRow,
+	type LeaveAdjustmentSqlRow,
+	type LeavePolicySqlRow,
+} from "./leave-transactions";
+import {
+	buildCreateLeaveRequestSql,
+	buildAmendLeaveRequestSql,
+	buildApproveLeaveRequestSql,
+	buildCancelApprovedLeaveRequestSql,
+	buildStatusTransitionSql,
+	buildCreateLeaveEntitlementSql,
+	buildCreateLeaveAdjustmentSql,
+	buildEntitlementStatusTransitionSql,
+	buildCarryForwardEntitlementSql,
+	buildCreateLeavePolicySql,
+	buildPolicyStatusTransitionSql,
+} from "./leave-sql-builders";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
 	HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
@@ -92,6 +116,100 @@ import type {
 	ResolvedLeavePolicy,
 	TeamCalendarLeavePage,
 } from "../../types";
+
+// Simple status transition helper function
+async function transitionLeavePolicyStatus(input: {
+	organizationId: string;
+	policyId: HumanResourcesLeavePolicyId;
+	expectedVersion: number;
+	actorUserId: string;
+	nextStatus: LeavePolicyStatus;
+	ports: MutationPorts;
+	meta: HumanResourcesMutationMeta;
+}): Promise<Result<LeavePolicy>> {
+	try {
+		const result = await db
+			.update(hrLeavePolicy)
+			.set({
+				status: input.nextStatus,
+				version: sql`${hrLeavePolicy.version} + 1`,
+				updatedBy: input.actorUserId,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(hrLeavePolicy.organizationId, input.organizationId),
+					eq(hrLeavePolicy.id, input.policyId),
+					eq(hrLeavePolicy.version, input.expectedVersion),
+				),
+			)
+			.returning({
+				id: hrLeavePolicy.id,
+				organizationId: hrLeavePolicy.organizationId,
+				code: hrLeavePolicy.code,
+				name: hrLeavePolicy.name,
+				leaveType: hrLeavePolicy.leaveType,
+				unit: hrLeavePolicy.unit,
+				paid: hrLeavePolicy.paid,
+				sensitive: hrLeavePolicy.sensitive,
+				allowsNegativeBalance: hrLeavePolicy.allowsNegativeBalance,
+				allowSelfApproval: hrLeavePolicy.allowSelfApproval,
+				allowsPartialDay: hrLeavePolicy.allowsPartialDay,
+				supersedesPolicyId: hrLeavePolicy.supersedesPolicyId,
+				status: hrLeavePolicy.status,
+				effectiveFrom: hrLeavePolicy.effectiveFrom,
+				effectiveTo: hrLeavePolicy.effectiveTo,
+				version: hrLeavePolicy.version,
+				createdBy: hrLeavePolicy.createdBy,
+				updatedBy: hrLeavePolicy.updatedBy,
+				createdAt: hrLeavePolicy.createdAt,
+				updatedAt: hrLeavePolicy.updatedAt,
+			});
+
+		if (result.length === 0) {
+			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
+		}
+
+		const policy = result[0]!;
+
+		// Record audit
+		await input.ports.audit.record({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.meta.correlationId,
+			entity: "hr_leave_policy",
+			entityId: input.policyId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "active", newValue: input.nextStatus }],
+		});
+
+		return ok({
+			id: policy.id as HumanResourcesLeavePolicyId,
+			organizationId: policy.organizationId,
+			code: policy.code,
+			name: policy.name,
+			leaveType: policy.leaveType as LeavePolicy["leaveType"],
+			unit: policy.unit as LeavePolicy["unit"],
+			paid: policy.paid,
+			sensitive: policy.sensitive,
+			allowsNegativeBalance: policy.allowsNegativeBalance,
+			allowSelfApproval: policy.allowSelfApproval,
+			allowsPartialDay: policy.allowsPartialDay,
+			supersedesPolicyId:
+				policy.supersedesPolicyId as HumanResourcesLeavePolicyId | null,
+			status: policy.status as LeavePolicyStatus,
+			effectiveFrom: policy.effectiveFrom,
+			effectiveTo: policy.effectiveTo,
+			version: policy.version,
+			createdBy: policy.createdBy,
+			updatedBy: policy.updatedBy,
+			createdAt: policy.createdAt,
+			updatedAt: policy.updatedAt,
+		});
+	} catch (error) {
+		return mapPersistenceFailure(error, "Failed to transition leave policy status");
+	}
+}
 
 export type DrizzleLeaveMethods = Pick<
 	HumanResourcesStore,
@@ -382,53 +500,6 @@ function activeOverlapStatuses(): LeaveRequestStatus[] {
 	return ["draft", "submitted", "returned", "approved"];
 }
 
-async function recordAudit(
-	ports: MutationPorts,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		correlationId: string;
-		entity: string;
-		entityId: string;
-		action: "CREATE" | "UPDATE" | "DELETE";
-	},
-): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.correlationId,
-		entity: input.entity,
-		entityId: input.entityId,
-		action: input.action,
-		changes: [],
-	});
-}
-
-async function emitOutbox(
-	ports: MutationPorts,
-	input: {
-		organizationId: string;
-		eventType: OutboxFactInput["type"];
-		entityType: string;
-		entityId: string;
-		actorId: string;
-		correlationId: string;
-	},
-): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
-		organizationId: input.organizationId,
-		actorUserId: input.actorId,
-		correlationId: input.correlationId,
-		type: input.eventType,
-		payload: {
-			organizationId: input.organizationId,
-			entityType: input.entityType,
-			entityId: input.entityId,
-			actorId: input.actorId,
-			correlationId: input.correlationId,
-		},
-	});
-}
 
 export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	async getLeavePolicyById(input) {
@@ -593,7 +664,16 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
-	async createLeavePolicy(record, ports, meta) {
+	async createLeavePolicy(record, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: record.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: record.createdBy,
+		});
+		if (!validation.ok) return validation;
+
+		// Pre-transaction validation
 		const duplicate = await this.findLeavePolicyByCode({
 			organizationId: record.organizationId,
 			code: record.code,
@@ -607,11 +687,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const policyId = parseHumanResourcesLeavePolicyId(randomUUID());
 		if (!policyId.ok) return policyId;
 		const eligibilityId = randomUUID();
-		const statusesJson = JSON.stringify(record.allowedEmploymentStatuses);
 
 		try {
-			await db.insert(hrLeavePolicy).values({
-				id: policyId.data,
+			const sql = buildCreateLeavePolicySql({
+				policyId: policyId.data,
 				organizationId: record.organizationId,
 				code: record.code,
 				name: record.name,
@@ -624,19 +703,43 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				allowsPartialDay: record.allowsPartialDay,
 				effectiveFrom: record.effectiveFrom,
 				effectiveTo: record.effectiveTo,
-				status: "draft",
-				version: 1,
 				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
-			});
-			await db.insert(hrLeavePolicyEligibility).values({
-				id: eligibilityId,
-				organizationId: record.organizationId,
-				policyId: policyId.data,
+				correlationId: meta.correlationId,
+				eligibilityId,
 				minTenureDays: record.minTenureDays,
-				allowedEmploymentStatuses: statusesJson,
-				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
+				allowedEmploymentStatuses: record.allowedEmploymentStatuses,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave policy creation failed");
+			}
+
+			return mapLeavePolicy({
+				id: row.id,
+				organizationId: row.organization_id,
+				code: row.code,
+				name: row.name,
+				leaveType: row.leave_type,
+				unit: row.unit,
+				paid: row.paid,
+				sensitive: row.sensitive,
+				allowsNegativeBalance: row.allows_negative_balance,
+				allowSelfApproval: row.allow_self_approval,
+				allowsPartialDay: row.allows_partial_day,
+				effectiveFrom: row.effective_from,
+				effectiveTo: row.effective_to,
+				status: row.status,
+				supersedesPolicyId: row.supersedes_policy_id,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
 			});
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
@@ -644,27 +747,6 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			}
 			return mapPersistenceFailure(error, "Failed to create leave policy");
 		}
-
-		const audit = await recordAudit(ports, {
-			organizationId: record.organizationId,
-			actorUserId: record.createdBy,
-			correlationId: meta.correlationId,
-			entity: "hr_leave_policy",
-			entityId: policyId.data,
-			action: "CREATE",
-		});
-		if (!audit.ok) return audit;
-
-		return this.getLeavePolicyById({
-			organizationId: record.organizationId,
-			policyId: policyId.data,
-		}).then((result) => {
-			if (!result.ok) return result;
-			if (result.data === null) {
-				return notFound("Leave policy not found after create");
-			}
-			return ok(result.data);
-		});
 	},
 
 	async updateLeavePolicy(input, ports, meta) {
@@ -747,13 +829,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			return mapPersistenceFailure(error, "Failed to update leave policy");
 		}
 
-		const audit = await recordAudit(ports, {
+		const audit = await ports.audit.record({
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
 			correlationId: meta.correlationId,
 			entity: "hr_leave_policy",
 			entityId: input.policyId,
 			action: "UPDATE",
+			changes: [], // Empty changes array for now
 		});
 		if (!audit.ok) return audit;
 
@@ -767,22 +850,114 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 	},
 
-	async publishLeavePolicy(input, ports, meta) {
-		return transitionLeavePolicyStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "published",
-			ports,
-			meta,
+	async publishLeavePolicy(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
 		});
+		if (!validation.ok) return validation;
+
+		try {
+			const sql = buildPolicyStatusTransitionSql({
+				policyId: input.policyId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				nextStatus: "published",
+			});
+
+			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave policy publication failed");
+			}
+
+			return mapLeavePolicy({
+				id: row.id,
+				organizationId: row.organization_id,
+				code: row.code,
+				name: row.name,
+				leaveType: row.leave_type,
+				unit: row.unit,
+				paid: row.paid,
+				sensitive: row.sensitive,
+				allowsNegativeBalance: row.allows_negative_balance,
+				allowSelfApproval: row.allow_self_approval,
+				allowsPartialDay: row.allows_partial_day,
+				effectiveFrom: row.effective_from,
+				effectiveTo: row.effective_to,
+				status: row.status,
+				supersedesPolicyId: row.supersedes_policy_id,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to publish leave policy");
+		}
 	},
 
-	async archiveLeavePolicy(input, ports, meta) {
-		return transitionLeavePolicyStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "archived",
-			ports,
-			meta,
+	async archiveLeavePolicy(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
 		});
+		if (!validation.ok) return validation;
+
+		try {
+			const sql = buildPolicyStatusTransitionSql({
+				policyId: input.policyId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				nextStatus: "archived",
+			});
+
+			const [rows] = await runLeaveTransaction<[LeavePolicySqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave policy archival failed");
+			}
+
+			return mapLeavePolicy({
+				id: row.id,
+				organizationId: row.organization_id,
+				code: row.code,
+				name: row.name,
+				leaveType: row.leave_type,
+				unit: row.unit,
+				paid: row.paid,
+				sensitive: row.sensitive,
+				allowsNegativeBalance: row.allows_negative_balance,
+				allowSelfApproval: row.allow_self_approval,
+				allowsPartialDay: row.allows_partial_day,
+				effectiveFrom: row.effective_from,
+				effectiveTo: row.effective_to,
+				status: row.status,
+				supersedesPolicyId: row.supersedes_policy_id,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to archive leave policy");
+		}
 	},
 
 	async supersedeLeavePolicy(input, ports, meta) {
@@ -934,7 +1109,16 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
-	async grantLeaveEntitlement(record, ports, meta) {
+	async grantLeaveEntitlement(record, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: record.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: record.createdBy,
+		});
+		if (!validation.ok) return validation;
+
+		// Pre-transaction validation
 		const policy = await this.getLeavePolicyById({
 			organizationId: record.organizationId,
 			policyId: record.policyId,
@@ -949,8 +1133,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!entitlementId.ok) return entitlementId;
 
 		try {
-			await db.insert(hrLeaveEntitlement).values({
-				id: entitlementId.data,
+			const sql = buildCreateLeaveEntitlementSql({
+				entitlementId: entitlementId.data,
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 				employmentId: record.employmentId,
@@ -958,12 +1142,38 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				periodStart: record.periodStart,
 				periodEnd: record.periodEnd,
 				openingQuantity: record.openingQuantity,
-				status: "active",
 				createIdempotencyKey: record.createIdempotencyKey,
 				createRequestFingerprint: record.createRequestFingerprint,
-				version: 1,
 				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
+				correlationId: meta.correlationId,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave entitlement creation failed");
+			}
+
+			return mapLeaveEntitlement({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				policyId: row.policy_id,
+				periodStart: row.period_start,
+				periodEnd: row.period_end,
+				openingQuantity: row.opening_quantity,
+				status: row.status,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
 			});
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -984,28 +1194,18 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			}
 			return mapPersistenceFailure(error, "Failed to grant leave entitlement");
 		}
-
-		const audit = await recordAudit(ports, {
-			organizationId: record.organizationId,
-			actorUserId: record.createdBy,
-			correlationId: meta.correlationId,
-			entity: "hr_leave_entitlement",
-			entityId: entitlementId.data,
-			action: "CREATE",
-		});
-		if (!audit.ok) return audit;
-
-		return this.getLeaveEntitlementById({
-			organizationId: record.organizationId,
-			entitlementId: entitlementId.data,
-		}).then((result) => {
-			if (!result.ok) return result;
-			if (result.data === null) return notFound("Leave entitlement not found");
-			return ok(result.data);
-		});
 	},
 
-	async carryForwardLeaveEntitlement(input, ports, meta) {
+	async carryForwardLeaveEntitlement(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
+		});
+		if (!validation.ok) return validation;
+
+		// Pre-transaction validation
 		const source = await this.getLeaveEntitlementById({
 			organizationId: input.organizationId,
 			entitlementId: input.entitlementId,
@@ -1018,75 +1218,158 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			"carried_forward",
 		);
 		if (!transition.ok) return transition;
+		
 		const versionCheck = assertExpectedVersion(
 			source.data.version,
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
 
-		const expired = await transitionLeaveEntitlementStatus.call(
-			this as LeaveHost,
-			{
+		// Generate IDs for transaction components
+		const newEntitlementId = parseHumanResourcesLeaveEntitlementId(randomUUID());
+		if (!newEntitlementId.ok) return newEntitlementId;
+
+		const carryAdjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+		if (!carryAdjustmentId.ok) return carryAdjustmentId;
+
+		try {
+			const sql = buildCarryForwardEntitlementSql({
+				sourceEntitlementId: input.entitlementId,
+				newEntitlementId: newEntitlementId.data,
 				organizationId: input.organizationId,
-				entitlementId: input.entitlementId,
 				expectedVersion: input.expectedVersion,
 				actorUserId: input.actorUserId,
-				nextStatus: "carried_forward",
-				ports,
-				meta,
-			},
-		);
-		if (!expired.ok) return expired;
-
-		const granted = await this.grantLeaveEntitlement(
-			{
-				organizationId: input.organizationId,
-				employeeId: source.data.employeeId,
-				employmentId: source.data.employmentId,
-				policyId: source.data.policyId,
-				periodStart: input.newPeriodStart,
-				periodEnd: input.newPeriodEnd,
-				openingQuantity: input.carriedQuantity,
+				correlationId: meta.correlationId,
+				newPeriodStart: input.newPeriodStart,
+				newPeriodEnd: input.newPeriodEnd,
+				carriedQuantity: input.carriedQuantity,
 				createIdempotencyKey: input.createIdempotencyKey,
 				createRequestFingerprint: input.createRequestFingerprint,
-				createdBy: input.actorUserId,
-			},
-			ports,
-			meta,
-		);
-		if (!granted.ok) return granted;
+				carryAdjustmentId: carryAdjustmentId.data,
+			});
 
-		const carryAdjustment = await this.adjustLeaveEntitlement(
-			{
-				organizationId: input.organizationId,
-				entitlementId: granted.data.id,
-				sourceRequestId: null,
-				kind: "carry_forward",
-				delta: input.carriedQuantity,
-				reason: `Carry forward from entitlement ${source.data.id}`,
-				source: "system",
-				createIdempotencyKey: `${input.createIdempotencyKey}:carry`,
-				createRequestFingerprint: input.createRequestFingerprint,
-				createdBy: input.actorUserId,
-			},
-			ports,
-			meta,
-		);
-		if (!carryAdjustment.ok) return carryAdjustment;
+			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
 
-		return ok(granted.data);
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Carry forward operation failed");
+			}
+
+			return mapLeaveEntitlement({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				policyId: row.policy_id,
+				periodStart: row.period_start,
+				periodEnd: row.period_end,
+				openingQuantity: row.opening_quantity,
+				status: row.status,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to carry forward leave entitlement");
+		}
 	},
 
-	async expireLeaveEntitlement(input, ports, meta) {
-		return transitionLeaveEntitlementStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "expired",
-			ports,
-			meta,
+	async expireLeaveEntitlement(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
 		});
+		if (!validation.ok) return validation;
+
+		try {
+			const sql = buildEntitlementStatusTransitionSql({
+				entitlementId: input.entitlementId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				nextStatus: "expired",
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave entitlement expiry failed");
+			}
+
+			// Handle expiry adjustment if there's remaining balance
+			const entitlement = mapLeaveEntitlement({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				policyId: row.policy_id,
+				periodStart: row.period_start,
+				periodEnd: row.period_end,
+				openingQuantity: row.opening_quantity,
+				status: row.status,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+			if (!entitlement.ok) return entitlement;
+
+			// Check if we need to create an expiry adjustment for remaining balance
+			const balance = await this.getLeaveBalance({
+				organizationId: input.organizationId,
+				entitlementId: input.entitlementId,
+			});
+			if (balance.ok && balance.data !== null && balance.data.balance !== "0") {
+				const expiryAdjustment = await this.adjustLeaveEntitlement(
+					{
+						organizationId: input.organizationId,
+						entitlementId: input.entitlementId,
+						sourceRequestId: null,
+						kind: "expiry",
+						delta: negateLeaveQuantity(balance.data.balance),
+						reason: "Entitlement expired",
+						source: "system",
+						createIdempotencyKey: `${input.entitlementId}:expiry`,
+						createRequestFingerprint: entitlement.data.fingerprint,
+						createdBy: input.actorUserId,
+					},
+					_ports,
+					meta,
+				);
+				if (!expiryAdjustment.ok) return expiryAdjustment;
+			}
+
+			return entitlement;
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to expire leave entitlement");
+		}
 	},
 
-	async adjustLeaveEntitlement(record, ports, meta) {
+	async adjustLeaveEntitlement(record, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: record.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: record.createdBy,
+		});
+		if (!validation.ok) return validation;
+
+		// Pre-transaction validation 
 		const entitlement = await this.getLeaveEntitlementById({
 			organizationId: record.organizationId,
 			entitlementId: record.entitlementId,
@@ -1100,9 +1383,14 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const adjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
 		if (!adjustmentId.ok) return adjustmentId;
 
+		// Determine if this adjustment type should emit an outbox event
+		const shouldEmitEvent = record.kind === "manual" || 
+			record.kind === "carry_forward" || 
+			record.kind === "expiry";
+
 		try {
-			await db.insert(hrLeaveAdjustment).values({
-				id: adjustmentId.data,
+			const sql = buildCreateLeaveAdjustmentSql({
+				adjustmentId: adjustmentId.data,
 				organizationId: record.organizationId,
 				entitlementId: record.entitlementId,
 				sourceRequestId: record.sourceRequestId,
@@ -1110,12 +1398,39 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				delta: record.delta,
 				reason: record.reason,
 				source: record.source,
-				status: "posted",
 				createIdempotencyKey: record.createIdempotencyKey,
 				createRequestFingerprint: record.createRequestFingerprint,
-				version: 1,
 				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
+				correlationId: meta.correlationId,
+				eventType: shouldEmitEvent ? HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT : undefined,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave adjustment creation failed");
+			}
+
+			return mapLeaveAdjustment({
+				id: row.id,
+				organizationId: row.organization_id,
+				entitlementId: row.entitlement_id,
+				sourceRequestId: row.source_request_id,
+				kind: row.kind,
+				delta: row.delta,
+				reason: row.reason,
+				source: row.source,
+				status: row.status,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
 			});
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -1123,41 +1438,6 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			}
 			return mapPersistenceFailure(error, "Failed to adjust leave entitlement");
 		}
-
-		const audit = await recordAudit(ports, {
-			organizationId: record.organizationId,
-			actorUserId: record.createdBy,
-			correlationId: meta.correlationId,
-			entity: "hr_leave_adjustment",
-			entityId: adjustmentId.data,
-			action: "CREATE",
-		});
-		if (!audit.ok) return audit;
-
-		if (
-			record.kind === "manual" ||
-			record.kind === "carry_forward" ||
-			record.kind === "expiry"
-		) {
-			const event = await emitOutbox(ports, {
-				organizationId: record.organizationId,
-				eventType: HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
-				entityType: "hr_leave_entitlement",
-				entityId: record.entitlementId,
-				actorId: record.createdBy,
-				correlationId: meta.correlationId,
-			});
-			if (!event.ok) return event;
-		}
-
-		const rows = await db
-			.select()
-			.from(hrLeaveAdjustment)
-			.where(eq(hrLeaveAdjustment.id, adjustmentId.data))
-			.limit(1);
-		const row = rows[0];
-		if (row === undefined) return notFound("Leave adjustment not found");
-		return mapLeaveAdjustment(row);
 	},
 
 	async listLeaveEntitlements(input) {
@@ -1368,13 +1648,34 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
-	async createDraftLeaveRequest(record, ports, meta) {
+	async createDraftLeaveRequest(record, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: record.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: record.createdBy,
+		});
+		if (!validation.ok) return validation;
+
 		const requestId = parseHumanResourcesLeaveRequestId(randomUUID());
 		if (!requestId.ok) return requestId;
 
+		// Generate segment IDs
+		const segments = [];
+		for (const segment of record.segments) {
+			const segmentId = parseHumanResourcesLeaveRequestSegmentId(randomUUID());
+			if (!segmentId.ok) return segmentId;
+			segments.push({
+				id: segmentId.data,
+				segmentDate: segment.segmentDate,
+				quantity: segment.quantity,
+				dayPortion: segment.dayPortion,
+			});
+		}
+
 		try {
-			await db.insert(hrLeaveRequest).values({
-				id: requestId.data,
+			const sql = buildCreateLeaveRequestSql({
+				requestId: requestId.data,
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 				employmentId: record.employmentId,
@@ -1384,258 +1685,227 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				endDate: record.endDate,
 				requestedQuantity: record.requestedQuantity,
 				unit: record.unit,
-				status: "draft",
 				isBackdated: record.isBackdated,
 				backdateJustification: record.backdateJustification,
 				createIdempotencyKey: record.createIdempotencyKey,
 				createRequestFingerprint: record.createRequestFingerprint,
-				version: 1,
 				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
+				correlationId: meta.correlationId,
+				segments,
 			});
 
-			for (const segment of record.segments) {
-				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
-					randomUUID(),
-				);
-				if (!segmentId.ok) return segmentId;
-				await db.insert(hrLeaveRequestSegment).values({
-					id: segmentId.data,
-					organizationId: record.organizationId,
-					requestId: requestId.data,
-					segmentDate: segment.segmentDate,
-					quantity: segment.quantity,
-					dayPortion: segment.dayPortion,
-				});
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request creation failed");
 			}
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
-				const replay = await this.findLeaveRequestByIdempotencyKey({
-					organizationId: record.organizationId,
-					idempotencyKey: record.createIdempotencyKey,
+				return resolveIdempotentCreateReplay({
+					expectedFingerprint: record.createRequestFingerprint,
+					find: async () => {
+						const replay = await this.findLeaveRequestByIdempotencyKey({
+							organizationId: record.organizationId,
+							idempotencyKey: record.createIdempotencyKey,
+						});
+						if (!replay.ok) return replay;
+						if (replay.data === null) return ok(null);
+						return ok({
+							fingerprint: replay.data.createRequestFingerprint,
+							value: replay.data.request,
+						});
+					},
 				});
-				if (!replay.ok) return replay;
-				if (replay.data !== null) {
-					if (
-						replay.data.createRequestFingerprint ===
-						record.createRequestFingerprint
-					) {
-						return ok(replay.data.request);
-					}
-					return conflict("Idempotency key already used with different data");
-				}
 			}
 			return mapPersistenceFailure(error, "Failed to create leave request");
 		}
-
-		const audit = await recordAudit(ports, {
-			organizationId: record.organizationId,
-			actorUserId: record.createdBy,
-			correlationId: meta.correlationId,
-			entity: "hr_leave_request",
-			entityId: requestId.data,
-			action: "CREATE",
-		});
-		if (!audit.ok) return audit;
-
-		return this.getLeaveRequestById({
-			organizationId: record.organizationId,
-			requestId: requestId.data,
-		}).then((result) => {
-			if (!result.ok) return result;
-			if (result.data === null) return notFound("Leave request not found");
-			return ok(result.data);
-		});
 	},
 
-	async amendLeaveRequest(record, ports, meta) {
+	async amendLeaveRequest(record, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: record.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: record.actorUserId,
+		});
+		if (!validation.ok) return validation;
+
+		// Pre-transaction validation
 		const existing = await this.getLeaveRequestById({
 			organizationId: record.organizationId,
 			requestId: record.requestId,
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) return notFound("Leave request not found");
+		
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			record.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
+		
 		const amendable = assertLeaveRequestAmendable(existing.data.status);
 		if (!amendable.ok) return amendable;
 
-		const nextVersion = record.expectedVersion + 1;
+		// Generate segment IDs
+		const segments = [];
+		for (const segment of record.segments) {
+			const segmentId = parseHumanResourcesLeaveRequestSegmentId(randomUUID());
+			if (!segmentId.ok) return segmentId;
+			segments.push({
+				id: segmentId.data,
+				segmentDate: segment.segmentDate,
+				quantity: segment.quantity,
+				dayPortion: segment.dayPortion,
+			});
+		}
+
 		try {
-			const updated = await db
-				.update(hrLeaveRequest)
-				.set({
-					startDate: record.startDate,
-					endDate: record.endDate,
-					requestedQuantity: record.requestedQuantity,
-					isBackdated: record.isBackdated,
-					backdateJustification: record.backdateJustification,
-					version: nextVersion,
-					updatedBy: record.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrLeaveRequest.id, record.requestId),
-						eq(hrLeaveRequest.organizationId, record.organizationId),
-						eq(hrLeaveRequest.version, record.expectedVersion),
-					),
-				)
-				.returning();
-			if (updated.length === 0) {
-				return notFound("Leave request not found or stale version");
+			const sql = buildAmendLeaveRequestSql({
+				requestId: record.requestId,
+				organizationId: record.organizationId,
+				expectedVersion: record.expectedVersion,
+				actorUserId: record.actorUserId,
+				correlationId: meta.correlationId,
+				startDate: record.startDate,
+				endDate: record.endDate,
+				requestedQuantity: record.requestedQuantity,
+				isBackdated: record.isBackdated,
+				backdateJustification: record.backdateJustification,
+				segments,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request amendment failed");
 			}
 
-			await db
-				.delete(hrLeaveRequestSegment)
-				.where(
-					and(
-						eq(hrLeaveRequestSegment.organizationId, record.organizationId),
-						eq(hrLeaveRequestSegment.requestId, record.requestId),
-					),
-				);
-
-			for (const segment of record.segments) {
-				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
-					randomUUID(),
-				);
-				if (!segmentId.ok) return segmentId;
-				await db.insert(hrLeaveRequestSegment).values({
-					id: segmentId.data,
-					organizationId: record.organizationId,
-					requestId: record.requestId,
-					segmentDate: segment.segmentDate,
-					quantity: segment.quantity,
-					dayPortion: segment.dayPortion,
-				});
-			}
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to amend leave request");
 		}
-
-		const audit = await recordAudit(ports, {
-			organizationId: record.organizationId,
-			actorUserId: record.actorUserId,
-			correlationId: meta.correlationId,
-			entity: "hr_leave_request",
-			entityId: record.requestId,
-			action: "UPDATE",
-		});
-		if (!audit.ok) return audit;
-
-		return this.getLeaveRequestById({
-			organizationId: record.organizationId,
-			requestId: record.requestId,
-		}).then((result) => {
-			if (!result.ok) return result;
-			if (result.data === null) return notFound("Leave request not found");
-			return ok(result.data);
-		});
 	},
 
-	async submitLeaveRequest(input, ports, meta) {
-		return transitionLeaveRequestStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "submitted",
-			ports,
-			meta,
-			emitEvent: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
-		});
-	},
-
-	async approveLeaveRequest(input, ports, meta) {
-		const request = await this.getLeaveRequestById({
+	async submitLeaveRequest(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
 			organizationId: input.organizationId,
-			requestId: input.requestId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
 		});
-		if (!request.ok) return request;
-		if (request.data === null) return notFound("Leave request not found");
+		if (!validation.ok) return validation;
 
-		const consumption = await this.adjustLeaveEntitlement(
-			{
-				organizationId: input.organizationId,
-				entitlementId: request.data.entitlementId,
-				sourceRequestId: request.data.id,
-				kind: "consumption",
-				delta: negateLeaveQuantity(request.data.requestedQuantity),
-				reason: `Approved leave request ${request.data.id}`,
-				source: "approval",
-				createIdempotencyKey: `${request.data.id}:consumption`,
-				createRequestFingerprint: request.data.fingerprint,
-				createdBy: input.actorUserId,
-			},
-			ports,
-			meta,
-		);
-		if (!consumption.ok) return consumption;
-
-		const approved = await transitionLeaveRequestStatus.call(
-			this as LeaveHost,
-			{
-				organizationId: input.organizationId,
+		try {
+			const sql = buildStatusTransitionSql({
 				requestId: input.requestId,
+				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
 				actorUserId: input.actorUserId,
-				nextStatus: "approved",
-				note: input.note,
-				decision: "approved",
-				ports,
-				meta,
-				emitEvent: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
-				approvedAt: new Date(),
-			},
-		);
-		if (!approved.ok) {
-			try {
-				await db
-					.delete(hrLeaveAdjustment)
-					.where(eq(hrLeaveAdjustment.id, consumption.data.id));
-			} catch (error) {
-				return mapPersistenceFailure(
-					error,
-					"Failed to roll back leave consumption adjustment",
-				);
+				correlationId: meta.correlationId,
+				nextStatus: "submitted",
+				eventType: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request submission failed");
 			}
-			return approved;
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to submit leave request");
 		}
-
-		return approved;
 	},
 
-	async rejectLeaveRequest(input, ports, meta) {
-		return transitionLeaveRequestStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "rejected",
-			decision: "rejected",
-			ports,
-			meta,
-			emitEvent: HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
+	async approveLeaveRequest(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
 		});
-	},
+		if (!validation.ok) return validation;
 
-	async returnLeaveRequest(input, ports, meta) {
-		return transitionLeaveRequestStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "returned",
-			decision: "returned",
-			ports,
-			meta,
-		});
-	},
-
-	async withdrawLeaveRequest(input, ports, meta) {
-		return transitionLeaveRequestStatus.call(this as LeaveHost, {
-			...input,
-			nextStatus: "withdrawn",
-			ports,
-			meta,
-		});
-	},
-
-	async cancelApprovedLeaveRequest(input, ports, meta) {
+		// Pre-transaction validation
 		const request = await this.getLeaveRequestById({
 			organizationId: input.organizationId,
 			requestId: input.requestId,
@@ -1643,36 +1913,321 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!request.ok) return request;
 		if (request.data === null) return notFound("Leave request not found");
 
-		const reversal = await this.adjustLeaveEntitlement(
-			{
-				organizationId: input.organizationId,
-				entitlementId: request.data.entitlementId,
-				sourceRequestId: request.data.id,
-				kind: "cancellation_reversal",
-				delta: request.data.requestedQuantity,
-				reason: `Cancelled approved leave request ${request.data.id}`,
-				source: "cancellation",
-				createIdempotencyKey: `${request.data.id}:reversal`,
-				createRequestFingerprint: request.data.fingerprint,
-				createdBy: input.actorUserId,
-			},
-			ports,
-			meta,
-		);
-		if (!reversal.ok) return reversal;
+		// Generate IDs for transaction components
+		const consumptionAdjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+		if (!consumptionAdjustmentId.ok) return consumptionAdjustmentId;
 
-		return transitionLeaveRequestStatus.call(this as LeaveHost, {
+		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
+		if (!decisionId.ok) return decisionId;
+
+		try {
+			const sql = buildApproveLeaveRequestSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				note: input.note,
+				consumptionAdjustmentId: consumptionAdjustmentId.data,
+				decisionId: decisionId.data,
+				createRequestFingerprint: request.data.fingerprint,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+				(sqlClient) => [sqlClient.query(sql)],
+				{ isolationLevel: "Serializable" },
+			);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request approval failed - insufficient balance or stale version");
+			}
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to approve leave request");
+		}
+	},
+
+	async rejectLeaveRequest(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
+		});
+		if (!validation.ok) return validation;
+
+		// Generate decision ID
+		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
+		if (!decisionId.ok) return decisionId;
+
+		try {
+			const sql = buildStatusTransitionSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				nextStatus: "rejected",
+				decision: "rejected",
+				decisionId: decisionId.data,
+				note: input.note,
+				eventType: HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request rejection failed");
+			}
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to reject leave request");
+		}
+	},
+
+	async returnLeaveRequest(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
+		});
+		if (!validation.ok) return validation;
+
+		// Generate decision ID
+		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
+		if (!decisionId.ok) return decisionId;
+
+		try {
+			const sql = buildStatusTransitionSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				nextStatus: "returned",
+				decision: "returned",
+				decisionId: decisionId.data,
+				note: input.note,
+				// Note: return does not emit outbox event per original code
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request return failed");
+			}
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to return leave request");
+		}
+	},
+
+	async withdrawLeaveRequest(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
+		});
+		if (!validation.ok) return validation;
+
+		try {
+			const sql = buildStatusTransitionSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				nextStatus: "withdrawn",
+				// Note: withdraw does not emit outbox event per original code
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request withdrawal failed");
+			}
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to withdraw leave request");
+		}
+	},
+
+	async cancelApprovedLeaveRequest(input, _ports, meta) {
+		// Validate transaction inputs
+		const validation = validateTransactionInput({
+			organizationId: input.organizationId,
+			correlationId: meta.correlationId,
+			actorUserId: input.actorUserId,
+		});
+		if (!validation.ok) return validation;
+
+		// Pre-transaction validation
+		const request = await this.getLeaveRequestById({
 			organizationId: input.organizationId,
 			requestId: input.requestId,
-			expectedVersion: input.expectedVersion,
-			actorUserId: input.actorUserId,
-			nextStatus: "cancelled",
-			note: input.note,
-			decision: "cancelled",
-			ports,
-			meta,
-			emitEvent: HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
 		});
+		if (!request.ok) return request;
+		if (request.data === null) return notFound("Leave request not found");
+
+		// Generate IDs for transaction components
+		const reversalAdjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+		if (!reversalAdjustmentId.ok) return reversalAdjustmentId;
+
+		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
+		if (!decisionId.ok) return decisionId;
+
+		try {
+			const sql = buildCancelApprovedLeaveRequestSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				note: input.note,
+				reversalAdjustmentId: reversalAdjustmentId.data,
+				decisionId: decisionId.data,
+				createRequestFingerprint: request.data.fingerprint,
+			});
+
+			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>((sqlClient) => [
+				sqlClient.query(sql),
+			]);
+
+			const row = rows[0];
+			if (row === undefined) {
+				return notFound("Leave request cancellation failed - request not in approved status or stale version");
+			}
+
+			return mapLeaveRequest({
+				id: row.id,
+				organizationId: row.organization_id,
+				employeeId: row.employee_id,
+				employmentId: row.employment_id,
+				entitlementId: row.entitlement_id,
+				policyId: row.policy_id,
+				startDate: row.start_date,
+				endDate: row.end_date,
+				requestedQuantity: row.requested_quantity,
+				unit: row.unit,
+				status: row.status,
+				isBackdated: row.is_backdated,
+				backdateJustification: row.backdate_justification,
+				approvedAt: row.approved_at,
+				createIdempotencyKey: row.create_idempotency_key,
+				createRequestFingerprint: row.create_request_fingerprint,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to cancel approved leave request");
+		}
 	},
 
 	async listLeaveRequests(input) {
@@ -1875,302 +2430,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	},
 };
 
-async function transitionLeavePolicyStatus(
-	this: LeaveHost,
-	input: {
-		organizationId: string;
-		policyId: HumanResourcesLeavePolicyId;
-		expectedVersion: number;
-		actorUserId: string;
-		nextStatus: LeavePolicyStatus;
-		ports: MutationPorts;
-		meta: { correlationId: string };
-	},
-): Promise<Result<LeavePolicy>> {
-	const existing = await this.getLeavePolicyById({
-		organizationId: input.organizationId,
-		policyId: input.policyId,
-	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Leave policy not found");
-	const versionCheck = assertExpectedVersion(
-		existing.data.version,
-		input.expectedVersion,
-	);
-	if (!versionCheck.ok) return versionCheck;
-	const transition = assertLeavePolicyStatusTransition(
-		existing.data.status,
-		input.nextStatus,
-	);
-	if (!transition.ok) return transition;
-
-	const nextVersion = input.expectedVersion + 1;
-	try {
-		const updated = await db
-			.update(hrLeavePolicy)
-			.set({
-				status: input.nextStatus,
-				version: nextVersion,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrLeavePolicy.id, input.policyId),
-					eq(hrLeavePolicy.organizationId, input.organizationId),
-					eq(hrLeavePolicy.version, input.expectedVersion),
-				),
-			)
-			.returning();
-		if (updated.length === 0) {
-			return notFound("Leave policy not found or stale version");
-		}
-	} catch (error) {
-		return mapPersistenceFailure(
-			error,
-			"Failed to transition leave policy status",
-		);
-	}
-
-	const audit = await recordAudit(input.ports, {
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.meta.correlationId,
-		entity: "hr_leave_policy",
-		entityId: input.policyId,
-		action: "UPDATE",
-	});
-	if (!audit.ok) return audit;
-
-	return this.getLeavePolicyById({
-		organizationId: input.organizationId,
-		policyId: input.policyId,
-	}).then((result) => {
-		if (!result.ok) return result;
-		if (result.data === null) return notFound("Leave policy not found");
-		return ok(result.data);
-	});
-}
-
-async function transitionLeaveEntitlementStatus(
-	this: LeaveHost,
-	input: {
-		organizationId: string;
-		entitlementId: HumanResourcesLeaveEntitlementId;
-		expectedVersion: number;
-		actorUserId: string;
-		nextStatus: LeaveEntitlement["status"];
-		ports: MutationPorts;
-		meta: { correlationId: string };
-	},
-): Promise<Result<LeaveEntitlement>> {
-	const existing = await this.getLeaveEntitlementById({
-		organizationId: input.organizationId,
-		entitlementId: input.entitlementId,
-	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Leave entitlement not found");
-	const versionCheck = assertExpectedVersion(
-		existing.data.version,
-		input.expectedVersion,
-	);
-	if (!versionCheck.ok) return versionCheck;
-	const transition = assertLeaveEntitlementStatusTransition(
-		existing.data.status,
-		input.nextStatus,
-	);
-	if (!transition.ok) return transition;
-
-	const nextVersion = input.expectedVersion + 1;
-	try {
-		const updated = await db
-			.update(hrLeaveEntitlement)
-			.set({
-				status: input.nextStatus,
-				version: nextVersion,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrLeaveEntitlement.id, input.entitlementId),
-					eq(hrLeaveEntitlement.organizationId, input.organizationId),
-					eq(hrLeaveEntitlement.version, input.expectedVersion),
-				),
-			)
-			.returning();
-		if (updated.length === 0) {
-			return notFound("Leave entitlement not found or stale version");
-		}
-	} catch (error) {
-		return mapPersistenceFailure(
-			error,
-			"Failed to transition leave entitlement status",
-		);
-	}
-
-	const audit = await recordAudit(input.ports, {
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.meta.correlationId,
-		entity: "hr_leave_entitlement",
-		entityId: input.entitlementId,
-		action: "UPDATE",
-	});
-	if (!audit.ok) return audit;
-
-	if (input.nextStatus === "expired") {
-		const balance = await this.getLeaveBalance({
-			organizationId: input.organizationId,
-			entitlementId: input.entitlementId,
-		});
-		if (!balance.ok) return balance;
-		if (balance.data !== null && balance.data.balance !== "0") {
-			const expiry = await this.adjustLeaveEntitlement(
-				{
-					organizationId: input.organizationId,
-					entitlementId: input.entitlementId,
-					sourceRequestId: null,
-					kind: "expiry",
-					delta: negateLeaveQuantity(balance.data.balance),
-					reason: "Entitlement expired",
-					source: "system",
-					createIdempotencyKey: `${input.entitlementId}:expiry`,
-					createRequestFingerprint: existing.data.fingerprint,
-					createdBy: input.actorUserId,
-				},
-				input.ports,
-				input.meta,
-			);
-			if (!expiry.ok) return expiry;
-		}
-	}
-
-	return this.getLeaveEntitlementById({
-		organizationId: input.organizationId,
-		entitlementId: input.entitlementId,
-	}).then((result) => {
-		if (!result.ok) return result;
-		if (result.data === null) return notFound("Leave entitlement not found");
-		return ok(result.data);
-	});
-}
-
-async function transitionLeaveRequestStatus(
-	this: LeaveHost,
-	input: {
-		organizationId: string;
-		requestId: HumanResourcesLeaveRequestId;
-		expectedVersion: number;
-		actorUserId: string;
-		nextStatus: LeaveRequestStatus;
-		note?: string | null;
-		decision?: "approved" | "rejected" | "returned" | "cancelled";
-		ports: MutationPorts;
-		meta: { correlationId: string };
-		emitEvent?: OutboxFactInput["type"];
-		approvedAt?: Date;
-	},
-): Promise<Result<LeaveRequest>> {
-	const existing = await this.getLeaveRequestById({
-		organizationId: input.organizationId,
-		requestId: input.requestId,
-	});
-	if (!existing.ok) return existing;
-	if (existing.data === null) return notFound("Leave request not found");
-	const versionCheck = assertExpectedVersion(
-		existing.data.version,
-		input.expectedVersion,
-	);
-	if (!versionCheck.ok) return versionCheck;
-	const transition = assertLeaveRequestStatusTransition(
-		existing.data.status,
-		input.nextStatus,
-	);
-	if (!transition.ok) return transition;
-
-	const nextVersion = input.expectedVersion + 1;
-	try {
-		const updated = await db
-			.update(hrLeaveRequest)
-			.set({
-				status: input.nextStatus,
-				approvedAt:
-					input.approvedAt !== undefined
-						? input.approvedAt
-						: existing.data.approvedAt,
-				version: nextVersion,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrLeaveRequest.id, input.requestId),
-					eq(hrLeaveRequest.organizationId, input.organizationId),
-					eq(hrLeaveRequest.version, input.expectedVersion),
-				),
-			)
-			.returning();
-		if (updated.length === 0) {
-			return notFound("Leave request not found or stale version");
-		}
-
-		if (input.decision !== undefined) {
-			const decisionId = parseHumanResourcesLeaveApprovalDecisionId(
-				randomUUID(),
-			);
-			if (!decisionId.ok) return decisionId;
-			const decision = approvalDecisionSchema.safeParse(input.decision);
-			if (!decision.success) return invalidState("Invalid approval decision");
-			await db.insert(hrLeaveApprovalDecision).values({
-				id: decisionId.data,
-				organizationId: input.organizationId,
-				requestId: input.requestId,
-				decision: decision.data,
-				decidedBy: input.actorUserId,
-				decidedAt: new Date(),
-				note: input.note ?? null,
-			});
-		}
-	} catch (error) {
-		return mapPersistenceFailure(
-			error,
-			"Failed to transition leave request status",
-		);
-	}
-
-	const audit = await recordAudit(input.ports, {
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.meta.correlationId,
-		entity: "hr_leave_request",
-		entityId: input.requestId,
-		action: "UPDATE",
-	});
-	if (!audit.ok) return audit;
-
-	if (input.emitEvent !== undefined) {
-		const event = await emitOutbox(input.ports, {
-			organizationId: input.organizationId,
-			eventType: input.emitEvent,
-			entityType: "hr_leave_request",
-			entityId: input.requestId,
-			actorId: input.actorUserId,
-			correlationId: input.meta.correlationId,
-		});
-		if (!event.ok) return event;
-	}
-
-	return this.getLeaveRequestById({
-		organizationId: input.organizationId,
-		requestId: input.requestId,
-	}).then((result) => {
-		if (!result.ok) return result;
-		if (result.data === null) return notFound("Leave request not found");
-		return ok(result.data);
-	});
-}
-
 export function attachDrizzleLeave(target: LeaveHost): void {
 	Object.assign(target, drizzleLeaveMethods);
 }
+
+/** Standalone leave adapter for concurrency / failure-injection tests. */
+export const drizzleLeave = {} as DrizzleLeaveMethods;
+attachDrizzleLeave(drizzleLeave as LeaveHost);

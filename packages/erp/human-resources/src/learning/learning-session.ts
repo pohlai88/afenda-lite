@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -85,7 +86,7 @@ export async function createSession(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_CREATE }),
 			);
 		},
 	});
@@ -111,7 +112,7 @@ export async function startSession(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_START }),
 			);
 		},
 	});
@@ -137,7 +138,7 @@ export async function completeSession(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE }),
 			);
 		},
 	});
@@ -160,7 +161,7 @@ export async function cancelSession(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL }),
 			);
 		},
 	});

@@ -9,6 +9,7 @@ import type {
 	HumanResourcesRequisitionId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	HeadcountEmploymentType,
 	HeadcountPlanStatus,
@@ -113,7 +114,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 	createHeadcountPlan(
 		record: HeadcountPlanCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountPlan>>;
 
 	updateHeadcountPlan(
@@ -127,7 +128,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountPlan>>;
 
 	transitionHeadcountPlanStatus(
@@ -140,13 +141,13 @@ export type HumanResourcesWorkforcePlanningStore = {
 			rejectionReason?: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountPlan>>;
 
 	supersedeHeadcountPlan(
 		record: HeadcountPlanSupersedeRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountPlan>>;
 
 	listHeadcountPlans(input: {
@@ -170,7 +171,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 	addHeadcountPlanLine(
 		record: HeadcountPlanLineCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountPlanLine>>;
 
 	updateHeadcountPlanLine(
@@ -190,7 +191,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountPlanLine>>;
 
 	removeHeadcountPlanLine(
@@ -201,7 +202,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<void>>;
 	// Workforce planning — headcount reservation
 	findHeadcountReservationByIdempotencyKey(input: {
@@ -222,7 +223,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 	reserveHeadcount(
 		record: HeadcountReservationCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountReservation>>;
 
 	releaseHeadcountReservation(
@@ -233,7 +234,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountReservation>>;
 
 	consumeHeadcountReservation(
@@ -244,7 +245,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<HeadcountReservation>>;
 
 	releaseActiveHeadcountReservationsForRequisition(
@@ -254,7 +255,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<void>>;
 
 	consumeActiveHeadcountReservationForRequisition(
@@ -264,7 +265,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<void>>;
 
 	listHeadcountReservations(input: {

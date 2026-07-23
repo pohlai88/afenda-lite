@@ -35,12 +35,60 @@ export type MutationPorts = {
 	outbox: OutboxPort;
 };
 
+export const HUMAN_RESOURCES_DOCUMENT_KINDS = [
+	"passport",
+	"work_authorization",
+	"identity_document",
+	"employment_contract",
+	"employee_document",
+	"case_evidence",
+	"policy_document",
+	"certification",
+	"other",
+] as const;
+
+export type DocumentKind = (typeof HUMAN_RESOURCES_DOCUMENT_KINDS)[number];
+
+export type ValidatedDocumentReference = {
+	/** Normalized canonical vault URI. */
+	reference: string;
+	organizationId: string;
+	documentKind: DocumentKind;
+	documentId: string;
+	version: string | null;
+};
+
 export type DocumentReferencePort = {
-	assertAcceptableRef(ref: string): Promise<Result<void>>;
+	validateReference(input: {
+		organizationId: string;
+		reference: string;
+		allowedKinds?: readonly DocumentKind[];
+		requireImmutableVersion?: boolean;
+	}): Promise<Result<ValidatedDocumentReference>>;
+};
+
+/**
+ * Optional existence / policy resolver injected at composition root when a
+ * document platform exists. Without it, DocumentReferencePort validates
+ * reference shape only.
+ */
+export type DocumentObjectResolverPort = {
+	assertObjectAcceptable(input: {
+		organizationId: string;
+		reference: string;
+		validated: ValidatedDocumentReference;
+	}): Promise<Result<void>>;
 };
 
 export type CurrencyLookupPort = {
 	exists(currencyCode: string): Promise<Result<boolean>>;
 };
 
+export type {
+	ApprovedLeaveFact,
+	ApprovedLeaveQueryPort,
+	AttendanceSourceBatch,
+	AttendanceSourceEvent,
+	AttendanceSourcePort,
+} from "./time/handoff/ports";
 export type { WorkCalendarPort } from "./work-calendar";

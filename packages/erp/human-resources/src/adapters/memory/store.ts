@@ -25,6 +25,7 @@ import {
 	type EmployeeRelationsMemoryState,
 	resetEmployeeRelationsMemoryState,
 } from "./employee-relations";
+import { createMemoryHumanResourcesIdentityStore } from "./identity";
 import {
 	createLearningMemoryState,
 	createMemoryLearningMethods,
@@ -68,6 +69,12 @@ import {
 	type TalentMemoryState,
 } from "./talent";
 import {
+	createMemoryTimeMethods,
+	createTimeMemoryState,
+	resetTimeMemoryState,
+	type TimeMemoryState,
+} from "./time";
+import {
 	createMemoryWorkforcePlanningMethods,
 	createWorkforcePlanningMemoryState,
 	resetWorkforcePlanningMemoryState,
@@ -84,6 +91,7 @@ export type MemoryHumanResourcesStoreState = {
 	performance: PerformanceMemoryState;
 	learning: LearningMemoryState;
 	talent: TalentMemoryState;
+	time: TimeMemoryState;
 	workforcePlanning: WorkforcePlanningMemoryState;
 	compliance: ComplianceMemoryState;
 	employeeRelations: EmployeeRelationsMemoryState;
@@ -105,6 +113,7 @@ function createMemoryHumanResourcesStoreState(): MemoryHumanResourcesStoreState 
 		performance: createPerformanceMemoryState(),
 		learning: createLearningMemoryState(),
 		talent: createTalentMemoryState(),
+		time: createTimeMemoryState(),
 		workforcePlanning: createWorkforcePlanningMemoryState(),
 		compliance: createComplianceMemoryState(),
 		employeeRelations: createEmployeeRelationsMemoryState(),
@@ -123,6 +132,7 @@ function resetMemoryHumanResourcesStoreState(
 	resetPerformanceMemoryState(state.performance);
 	resetLearningMemoryState(state.learning);
 	resetTalentMemoryState(state.talent);
+	resetTimeMemoryState(state.time);
 	resetWorkforcePlanningMemoryState(state.workforcePlanning);
 	resetComplianceMemoryState(state.compliance);
 	resetEmployeeRelationsMemoryState(state.employeeRelations);
@@ -150,9 +160,11 @@ export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
 		createMemoryPerformanceMethods(state.performance),
 		createMemoryLearningMethods(state.learning, state.core),
 		createMemoryTalentMethods(state.talent),
+		createMemoryTimeMethods(state.time, state.core),
 		createMemoryWorkforcePlanningMethods(state.workforcePlanning),
 		createMemoryComplianceMethods(state.compliance, state.core),
 		createMemoryEmployeeRelationsMethods(state.employeeRelations),
+		createMemoryHumanResourcesIdentityStore(state.organization),
 	) as MemoryHumanResourcesStore;
 
 	Object.defineProperty(store, "state", {

@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -50,7 +51,7 @@ export async function createSalaryBand(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE }),
 			);
 		},
 	});
@@ -85,7 +86,7 @@ export async function supersedeSalaryBand(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE }),
 			);
 		},
 	});
@@ -108,7 +109,7 @@ export async function archiveSalaryBand(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE }),
 			),
 	});
 }

@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -96,7 +97,7 @@ export async function createSuccessionPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE }),
 			);
 		},
 	});
@@ -121,7 +122,7 @@ export async function updateSuccessionPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE }),
 			);
 		},
 	});
@@ -182,7 +183,7 @@ export async function nominateSuccessionCandidate(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE }),
 			);
 		},
 	});
@@ -208,7 +209,7 @@ export async function assessSuccessionReadiness(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS }),
 			);
 		},
 	});
@@ -231,7 +232,7 @@ export async function approveSuccessionCandidate(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE }),
 			);
 		},
 	});
@@ -254,7 +255,7 @@ export async function removeSuccessionCandidate(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE }),
 			);
 		},
 	});
@@ -277,7 +278,7 @@ export async function closeSuccessionPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE }),
 			);
 		},
 	});

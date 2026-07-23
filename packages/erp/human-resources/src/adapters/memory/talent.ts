@@ -1,3 +1,4 @@
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 /**
  * In-memory talent domain state and attachment for HumanResourcesStore hosts.
  */
@@ -227,7 +228,7 @@ function paginate<T extends { createdAt: Date }>(
 
 async function recordAudit(
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -249,7 +250,7 @@ async function recordAudit(
 
 async function recordOutbox(
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;

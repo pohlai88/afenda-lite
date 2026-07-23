@@ -39,11 +39,17 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
+import {
+	eventPayloadJson,
+	fieldChangeJson,
+	valueSnapshotJson,
+} from "../../shared/audit-facts";
 import { missAfterOptimisticUpdate } from "../../shared/domain-guards";
 import {
 	assertValidDateRange,
 	employmentStatusSchema,
 } from "../../shared/employment-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isEmployeeNumberUniqueViolation,
@@ -216,22 +222,6 @@ function mapAssignment(
 	});
 }
 
-function fieldChangeJson(
-	field: string,
-	oldValue: unknown,
-	newValue: unknown,
-): string {
-	return JSON.stringify([{ field, oldValue, newValue }]);
-}
-
-function valueSnapshotJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
-}
-
-function eventPayloadJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
-}
-
 type DrizzleCoreHost = Pick<HumanResourcesStore, "getPositionById">;
 
 export type DrizzleCoreMethods = Pick<
@@ -320,7 +310,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createEmployee(
 		record: EmployeeCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employee>> {
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeId(entityId);
@@ -420,7 +410,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employee>> {
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
@@ -612,7 +602,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createEmployment(
 		record: EmploymentCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employment>> {
 		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
 		if (!dateCheck.ok) {
@@ -759,7 +749,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employment>> {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -948,7 +938,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createEmploymentContract(
 		record: EmploymentContractCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentContract>> {
 		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
 		if (!dateCheck.ok) {
@@ -1138,7 +1128,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createAssignment(
 		record: AssignmentCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkAssignment>> {
 		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
 		if (!dateCheck.ok) {
@@ -1294,7 +1284,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkAssignment>> {
 		const existing = await this.getAssignmentById({
 			organizationId: input.organizationId,

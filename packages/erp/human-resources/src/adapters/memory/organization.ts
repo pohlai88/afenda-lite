@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 
@@ -156,7 +157,7 @@ export function createMemoryOrganizationMethods(
 		async createDepartment(
 			record: DepartmentCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Department>> {
 			const existing = await this.findDepartmentByCode({
 				organizationId: record.organizationId,
@@ -236,7 +237,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Department>> {
 			const department = state.departments.get(input.departmentId);
 			if (!department || department.organizationId !== input.organizationId) {
@@ -324,7 +325,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Department>> {
 			const department = state.departments.get(input.departmentId);
 			if (!department || department.organizationId !== input.organizationId) {
@@ -475,7 +476,7 @@ export function createMemoryOrganizationMethods(
 		async createJob(
 			record: JobCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Job>> {
 			const existing = await this.findJobByCode({
 				organizationId: record.organizationId,
@@ -539,7 +540,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Job>> {
 			const job = state.jobs.get(input.jobId);
 			if (!job || job.organizationId !== input.organizationId) {
@@ -591,7 +592,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Job>> {
 			const job = state.jobs.get(input.jobId);
 			if (!job || job.organizationId !== input.organizationId) {
@@ -707,7 +708,7 @@ export function createMemoryOrganizationMethods(
 		async createPosition(
 			record: PositionCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Position>> {
 			const parsedStatus = positionStatusSchema.safeParse(record.status);
 			if (!parsedStatus.success) {
@@ -808,7 +809,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Position>> {
 			const position = state.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
@@ -903,7 +904,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Position>> {
 			const position = state.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
@@ -1150,7 +1151,7 @@ export function createMemoryOrganizationMethods(
 		async assignPrimaryReportingLine(
 			record: ReportingLineCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<ReportingLine>> {
 			const employee = core.employees.get(record.employeeId);
 			if (!employee || employee.organizationId !== record.organizationId) {
@@ -1275,7 +1276,7 @@ export function createMemoryOrganizationMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<ReportingLine>> {
 			const line = state.reportingLines.get(input.reportingLineId);
 			if (!line || line.organizationId !== input.organizationId) {
@@ -1338,7 +1339,7 @@ export function createMemoryOrganizationMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<ReportingLine>> {
 			const openPrimary = await this.findOpenPrimaryReportingLine({
 				organizationId: input.organizationId,

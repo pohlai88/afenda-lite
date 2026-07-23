@@ -8,6 +8,41 @@
       "when": 1784714750784,
       "tag": "0000_afenda_schema_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784778000000,
+      "tag": "0001_hr_work_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784781600000,
+      "tag": "0002_hr_time",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784785200000,
+      "tag": "0003_hr_user_employee",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784788800000,
+      "tag": "0004_hr_work_calendar_holiday_override",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784792400000,
+      "tag": "0005_hr_attendance_import",
+      "breakpoints": true
     }
   ]
 }

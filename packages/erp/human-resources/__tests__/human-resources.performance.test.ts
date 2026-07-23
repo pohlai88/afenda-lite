@@ -63,6 +63,11 @@ import {
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import type { PerformanceReview } from "../src/types";
+import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import {
+	createStoreBackedIdentityResolver,
+	mapActorToEmployee,
+} from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -90,7 +95,13 @@ function harness(
 	const store = createMemoryHumanResourcesStore();
 	const ports = createMemoryMutationPorts();
 	const authorization = createGrantingHumanResourcesAuthorization(permissions);
-	return { store, ports, authorization };
+	const identityResolver = createStoreBackedIdentityResolver(store);
+	return createTestHumanResourcesCommandOptions({
+		store,
+		ports,
+		authorization,
+		identityResolver,
+	});
 }
 
 async function seedWorker(
@@ -110,6 +121,16 @@ async function seedWorker(
 	);
 	if (!employee.ok) {
 		throw new Error(`Failed to seed employee: ${employee.code}`);
+	}
+	const mapped = await mapActorToEmployee(ready.store, {
+		organizationId: input.organizationId,
+		userId: ACTOR,
+		employeeId: employee.data.id,
+		actorUserId: ACTOR,
+		effectiveFrom: "2025-01-01",
+	});
+	if (!mapped.ok) {
+		throw new Error(`Failed to map actor to employee: ${mapped.code}`);
 	}
 	const employment = await createEmployment(
 		{
@@ -901,13 +922,15 @@ describe("Performance review workflow", () => {
 	it("redacts confidential review fields for own read without confidential.read", async () => {
 		const store = createMemoryHumanResourcesStore();
 		const ports = createMemoryMutationPorts();
-		const fullReady = {
+		const identityResolver = createStoreBackedIdentityResolver(store);
+		const fullReady = createTestHumanResourcesCommandOptions({
 			store,
 			ports,
 			authorization:
 				createGrantingHumanResourcesAuthorization(PERF_PERMISSIONS),
-		};
-		const ownReadReady = {
+			identityResolver,
+		});
+		const ownReadReady = createTestHumanResourcesCommandOptions({
 			store,
 			ports,
 			authorization: createGrantingHumanResourcesAuthorization([
@@ -917,7 +940,8 @@ describe("Performance review workflow", () => {
 				HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 				HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
 			]),
-		};
+			identityResolver,
+		});
 		const seeded = await seedReviewAtManagerSubmitted(fullReady, {
 			organizationId: ORG_A,
 			suffix: "redact",

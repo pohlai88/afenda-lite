@@ -67,6 +67,19 @@ import type {
 	HumanResourcesTalentProfileId,
 	HumanResourcesTerminationId,
 	HumanResourcesWorkEligibilityId,
+	HumanResourcesWorkCalendarId,
+	HumanResourcesWorkCalendarHolidayId,
+	HumanResourcesEmploymentCalendarAssignmentId,
+	HumanResourcesShiftId,
+	HumanResourcesShiftBreakId,
+	HumanResourcesShiftAssignmentId,
+	HumanResourcesAttendanceSessionId,
+	HumanResourcesAttendanceExceptionId,
+	HumanResourcesTimesheetEntryId,
+	HumanResourcesOvertimeRequestId,
+	HumanResourcesAttendanceEventId,
+	HumanResourcesAttendanceRecordId,
+	HumanResourcesTimesheetId,
 } from "./brands";
 import type {
 	BenefitEnrollmentStatus,
@@ -1854,4 +1867,586 @@ export type IdempotentSuccessionPlanRecord = {
 export type IdempotentSuccessionCandidateRecord = {
 	candidate: SuccessionCandidate;
 	createRequestFingerprint: string;
+};
+
+// Time Management Types
+export type WorkWeekDayPatternJson = {
+	dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+	isWorkingDay: boolean;
+	standardStartTime: string | null;
+	standardEndTime: string | null;
+	standardMinutes: number | null;
+};
+
+export type WorkCalendarDateOverrideKind =
+	| "holiday"
+	| "half_day"
+	| "shortened_day"
+	| "replacement_workday"
+	| "closure";
+
+export type WorkCalendar = {
+	id: HumanResourcesWorkCalendarId;
+	organizationId: string;
+	code: string;
+	name: string;
+	timezone: string;
+	calendarVersion: string;
+	workWeek: readonly WorkWeekDayPatternJson[];
+	standardHoursPerDay: string;
+	status: "active" | "archived";
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type WorkCalendarHolidayRecord = {
+	id: HumanResourcesWorkCalendarHolidayId;
+	organizationId: string;
+	calendarId: HumanResourcesWorkCalendarId;
+	holidayDate: string;
+	label: string | null;
+	locationCode: string | null;
+	jurisdiction: string | null;
+	overrideKind: WorkCalendarDateOverrideKind;
+	isWorkingDay: boolean;
+	expectedMinutes: number | null;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmploymentCalendarAssignment = {
+	id: HumanResourcesEmploymentCalendarAssignmentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	calendarId: HumanResourcesWorkCalendarId;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	locationCode: string | null;
+	jurisdiction: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ShiftKind =
+	| "fixed"
+	| "flexible"
+	| "split"
+	| "rest_day"
+	| "public_holiday";
+export type ShiftStatus = "draft" | "active" | "inactive";
+
+export type Shift = {
+	id: HumanResourcesShiftId;
+	organizationId: string;
+	code: string;
+	name: string;
+	shiftKind: ShiftKind;
+	startLocal: string;
+	endLocal: string;
+	isOvernight: boolean;
+	expectedMinutes: number;
+	graceEarlyMinutes: number;
+	graceLateMinutes: number;
+	minDurationMinutes: number | null;
+	maxDurationMinutes: number | null;
+	earliestClockInLocal: string | null;
+	latestClockOutLocal: string | null;
+	overtimeEligible: boolean;
+	timezone: string | null;
+	locationKey: string | null;
+	status: ShiftStatus;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ShiftBreak = {
+	id: HumanResourcesShiftBreakId;
+	organizationId: string;
+	shiftId: HumanResourcesShiftId;
+	breakOrder: number;
+	startOffsetMinutes: number | null;
+	durationMinutes: number;
+	isPaid: boolean;
+	label: string | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ShiftAssignmentPublicationStatus =
+	| "planned"
+	| "published"
+	| "changed"
+	| "cancelled"
+	| "completed";
+
+export type ShiftAssignment = {
+	id: HumanResourcesShiftAssignmentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	shiftId: HumanResourcesShiftId;
+	scheduledDate: string;
+	startsAt: Date;
+	endsAt: Date;
+	locationKey: string | null;
+	timezone: string;
+	publicationStatus: ShiftAssignmentPublicationStatus;
+	assignmentSource: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type AttendanceEventType =
+	| "clock_in"
+	| "clock_out"
+	| "break_start"
+	| "break_end"
+	| "manual_adjustment";
+
+export type AttendanceEventSource =
+	| "self"
+	| "supervisor"
+	| "import"
+	| "system"
+	| "manual";
+
+export type AttendanceEvent = {
+	id: HumanResourcesAttendanceEventId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
+	eventType: AttendanceEventType;
+	occurredAt: Date;
+	sourceTimezone: string;
+	localWorkDate: string;
+	source: AttendanceEventSource;
+	sourceReference: string | null;
+	locationKey: string | null;
+	deviceMetadata: Record<string, unknown> | null;
+	payloadChecksum: string | null;
+	notes: string | null;
+	voidedAt: Date | null;
+	voidReason: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type AttendanceImportBatchStatus =
+	| "completed"
+	| "partial"
+	| "failed";
+
+export type AttendanceImportAcceptedRow = {
+	rowIndex: number;
+	sourceReference: string;
+	eventId: HumanResourcesAttendanceEventId;
+};
+
+export type AttendanceImportSkippedRow = {
+	rowIndex: number;
+	sourceReference: string;
+	eventId: HumanResourcesAttendanceEventId;
+	reason: "already_imported";
+};
+
+export type AttendanceImportRejectedRow = {
+	rowIndex: number;
+	sourceReference: string | null;
+	errorCode: string;
+	errorMessage: string;
+};
+
+export type AttendanceImportResult = {
+	importBatchId: string;
+	batchId: string;
+	sourceKey: string;
+	status: AttendanceImportBatchStatus;
+	accepted: readonly AttendanceImportAcceptedRow[];
+	skipped: readonly AttendanceImportSkippedRow[];
+	rejected: readonly AttendanceImportRejectedRow[];
+	totals: {
+		accepted: number;
+		skipped: number;
+		rejected: number;
+	};
+	nextCursor?: string;
+};
+
+export type IdempotentAttendanceImportBatchRecord = {
+	result: AttendanceImportResult;
+	createRequestFingerprint: string;
+};
+
+export type AttendanceSessionResolutionStatus =
+	| "incomplete"
+	| "resolved"
+	| "needs_review"
+	| "voided";
+
+export type AttendanceSession = {
+	id: HumanResourcesAttendanceSessionId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
+	localWorkDate: string;
+	timezone: string;
+	firstClockInAt: Date | null;
+	finalClockOutAt: Date | null;
+	breakMinutes: number;
+	workedMinutes: number;
+	grossMinutes: number;
+	resolutionStatus: AttendanceSessionResolutionStatus;
+	requiresReview: boolean;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type AttendanceRecord = AttendanceSession;
+
+export type AttendanceExceptionType =
+	| "late_arrival"
+	| "early_departure"
+	| "absence"
+	| "missing_clock_in"
+	| "missing_clock_out"
+	| "unplanned_attendance"
+	| "overlapping_attendance"
+	| "excessive_break"
+	| "insufficient_rest"
+	| "schedule_mismatch"
+	| "location_mismatch"
+	| "overtime_candidate";
+
+export type AttendanceException = {
+	id: HumanResourcesAttendanceExceptionId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	sessionId: HumanResourcesAttendanceSessionId | null;
+	eventId: HumanResourcesAttendanceEventId | null;
+	shiftAssignmentId: HumanResourcesShiftAssignmentId | null;
+	exceptionType: AttendanceExceptionType;
+	severity: "info" | "warning" | "critical";
+	reviewStatus: "open" | "in_review" | "excused" | "rejected" | "resolved";
+	resolution: string | null;
+	reviewerUserId: string | null;
+	evidenceReference: string | null;
+	remarks: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type DailyAttendanceSummary = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	localWorkDate: string;
+	timezone: string;
+	scheduledAssignment: ShiftAssignment | null;
+	session: AttendanceSession | null;
+	events: AttendanceEvent[];
+	unresolvedExceptions: AttendanceException[];
+	workedMinutes: number;
+	breakMinutes: number;
+};
+
+export type TimesheetTotals = {
+	timesheetId: HumanResourcesTimesheetId;
+	totalRecordedMinutes: number;
+	totalApprovedMinutes: number;
+	entryCount: number;
+};
+
+export type TimesheetStatus =
+	| "draft"
+	| "submitted"
+	| "returned"
+	| "approved"
+	| "rejected"
+	| "locked"
+	| "superseded";
+
+export type Timesheet = {
+	id: HumanResourcesTimesheetId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	periodStart: string;
+	periodEnd: string;
+	status: TimesheetStatus;
+	totalRecordedMinutes: number;
+	totalApprovedMinutes: number;
+	submittedAt: Date | null;
+	approvedAt: Date | null;
+	approvedBy: string | null;
+	approverNotes: string | null;
+	rejectionReason: string | null;
+	lockedAt: Date | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TimesheetEntrySourceType =
+	| "attendance"
+	| "schedule"
+	| "manual"
+	| "leave"
+	| "external";
+
+export type TimesheetEntryTimeType =
+	| "regular"
+	| "overtime"
+	| "rest_day"
+	| "public_holiday"
+	| "night"
+	| "call_back"
+	| "training"
+	| "travel"
+	| "standby"
+	| "unpaid";
+
+export type TimesheetEntry = {
+	id: HumanResourcesTimesheetEntryId;
+	organizationId: string;
+	timesheetId: HumanResourcesTimesheetId;
+	employeeId: HumanResourcesEmployeeId;
+	workDate: string;
+	timezone: string;
+	sourceType: TimesheetEntrySourceType;
+	sourceReference: string | null;
+	timeType: TimesheetEntryTimeType;
+	startedAt: Date | null;
+	endedAt: Date | null;
+	recordedMinutes: number;
+	approvedMinutes: number;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OvertimeType =
+	| "weekday_overtime"
+	| "rest_day_overtime"
+	| "public_holiday_overtime"
+	| "night_overtime"
+	| "call_back"
+	| "emergency_overtime";
+
+export type OvertimeRequestStatus =
+	| "requested"
+	| "approved"
+	| "rejected"
+	| "worked"
+	| "verified"
+	| "cancelled";
+
+export type OvertimeRequest = {
+	id: HumanResourcesOvertimeRequestId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	overtimeType: OvertimeType;
+	requestedStartsAt: Date;
+	requestedEndsAt: Date;
+	requestedMinutes: number;
+	approvedMaximumMinutes: number | null;
+	actualMinutes: number | null;
+	payrollApprovedMinutes: number | null;
+	reason: string;
+	evidenceReference: string | null;
+	status: OvertimeRequestStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ApprovedTimeHandoff = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId | null;
+	periodStart: string;
+	periodEnd: string;
+	regularMinutes: number;
+	overtime: readonly { type: OvertimeType; minutes: number }[];
+	publicHolidayMinutes: number;
+	restDayMinutes: number;
+	nightMinutes: number;
+	unpaidMinutes: number;
+	paidLeaveMinutes: number;
+	unpaidLeaveMinutes: number;
+	timesheetId: HumanResourcesTimesheetId;
+	timesheetVersion: number;
+	approvedAt: string;
+	approvalReference: string;
+};
+
+export type IdempotentShiftRecord = {
+	shift: Shift;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentAttendanceEventRecord = {
+	event: AttendanceEvent;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentAttendanceSessionRecord = {
+	session: AttendanceSession;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentAttendanceRecordRecord = IdempotentAttendanceSessionRecord;
+
+export type IdempotentTimesheetRecord = {
+	timesheet: Timesheet;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentOvertimeRequestRecord = {
+	request: OvertimeRequest;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentShiftAssignmentRecord = {
+	assignment: ShiftAssignment;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentWorkCalendarRecord = {
+	calendar: WorkCalendar;
+	createRequestFingerprint: string;
+};
+
+export type ShiftCreateRecord = {
+	organizationId: string;
+	code: string;
+	name: string;
+	shiftKind: ShiftKind;
+	startLocal: string;
+	endLocal: string;
+	isOvernight: boolean;
+	expectedMinutes: number;
+	graceEarlyMinutes: number;
+	graceLateMinutes: number;
+	minDurationMinutes: number | null;
+	maxDurationMinutes: number | null;
+	earliestClockInLocal: string | null;
+	latestClockOutLocal: string | null;
+	overtimeEligible: boolean;
+	timezone: string | null;
+	locationKey: string | null;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	idempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+	correlationId: string;
+};
+
+export type AttendanceEventRecordInput = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId?: HumanResourcesEmploymentId | null;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null;
+	eventType: AttendanceEventType;
+	occurredAt: Date;
+	sourceTimezone: string;
+	localWorkDate: string;
+	source: AttendanceEventSource;
+	sourceReference?: string | null;
+	locationKey?: string | null;
+	deviceMetadata?: Record<string, unknown> | null;
+	payloadChecksum?: string | null;
+	notes?: string | null;
+	idempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+	correlationId: string;
+};
+
+export type AttendanceImportEventRowInput = {
+	employeeId: HumanResourcesEmployeeId;
+	employmentId?: HumanResourcesEmploymentId | null;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null;
+	eventType: AttendanceEventType;
+	occurredAt: Date;
+	sourceTimezone: string;
+	localWorkDate: string;
+	sourceReference: string;
+	locationKey?: string | null;
+	deviceMetadata?: Record<string, unknown> | null;
+	payloadChecksum?: string | null;
+	notes?: string | null;
+};
+
+export type AttendanceImportBatchInput = {
+	organizationId: string;
+	batchId: string;
+	sourceKey: string;
+	events: readonly AttendanceImportEventRowInput[];
+	idempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+	correlationId?: string;
+	nextCursor?: string;
+};
+
+export type AttendanceSessionResolveInput = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	localWorkDate: string;
+	timezone: string;
+	idempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+	correlationId: string;
+};
+
+export type AttendanceRecordGenerateInput = AttendanceSessionResolveInput;
+
+export type TimesheetCreateRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId?: HumanResourcesEmploymentId | null;
+	periodStart: string;
+	periodEnd: string;
+	idempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+	correlationId: string;
 };

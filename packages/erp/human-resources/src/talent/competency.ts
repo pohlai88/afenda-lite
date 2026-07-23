@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -98,7 +99,7 @@ export async function createCompetency(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE }),
 			);
 		},
 	});
@@ -124,7 +125,7 @@ export async function updateCompetency(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE }),
 			);
 		},
 	});
@@ -147,7 +148,7 @@ export async function retireCompetency(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE }),
 			);
 		},
 	});
@@ -171,7 +172,7 @@ export async function mapCompetencyToJob(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP }),
 			);
 		},
 	});
@@ -194,7 +195,7 @@ export async function removeCompetencyFromJob(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE }),
 			);
 		},
 	});
@@ -254,7 +255,7 @@ export async function assessEmployeeCompetency(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD }),
 			);
 		},
 	});
@@ -290,7 +291,7 @@ export async function supersedeCompetencyAssessment(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE }),
 			);
 		},
 	});

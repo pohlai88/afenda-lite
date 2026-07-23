@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -28,7 +29,9 @@ import {
 import { fingerprintPerformanceGoalCreate } from "../shared/fingerprint";
 import {
 	runPerformanceCommand,
+	runPerformanceEmployeeScopedQuery,
 	runPerformanceQuery,
+	runPerformanceResourceScopedQuery,
 } from "../shared/performance-command";
 import type {
 	PerformanceGoal,
@@ -97,7 +100,7 @@ export async function createPerformanceGoal(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE }),
 			);
 		},
 	});
@@ -130,7 +133,7 @@ export async function updatePerformanceGoal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE }),
 			),
 	});
 }
@@ -152,7 +155,7 @@ export async function submitPerformanceGoal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT }),
 			),
 	});
 }
@@ -174,7 +177,7 @@ export async function approvePerformanceGoal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE }),
 			),
 	});
 }
@@ -196,7 +199,7 @@ export async function rejectPerformanceGoal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT }),
 			),
 	});
 }
@@ -222,7 +225,7 @@ export async function recordGoalProgress(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS }),
 			),
 	});
 }
@@ -244,7 +247,7 @@ export async function closePerformanceGoal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE }),
 			),
 	});
 }
@@ -266,7 +269,7 @@ export async function cancelPerformanceGoal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL }),
 			),
 	});
 }
@@ -275,10 +278,9 @@ export async function getPerformanceGoalById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal | null>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceResourceScopedQuery(input, options, {
 		schema: getPerformanceGoalByIdInputSchema,
 		invalidMessage: "Invalid performance goal get input",
-		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_GET,
 		execute: (data, { store }) =>
 			store.getPerformanceGoalById({
 				organizationId: data.organizationId,
@@ -291,10 +293,9 @@ export async function listEmployeeGoals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalListPage>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceEmployeeScopedQuery(input, options, {
 		schema: listEmployeeGoalsInputSchema,
 		invalidMessage: "Invalid employee goals list input",
-		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_BY_EMPLOYEE,
 		execute: (data, { store }) =>
 			store.listEmployeeGoals({
 				organizationId: data.organizationId,

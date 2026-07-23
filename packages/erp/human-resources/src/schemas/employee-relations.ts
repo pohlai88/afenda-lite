@@ -13,7 +13,7 @@ import {
 	humanResourcesExpectedVersionSchema,
 	humanResourcesIdempotencyKeySchema,
 	humanResourcesMutationContextSchema,
-} from "../schemas/common";
+} from "./common";
 import {
 	employeeCaseActionTypeSchema,
 	employeeCaseEventKindSchema,

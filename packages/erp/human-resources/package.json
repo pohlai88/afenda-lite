@@ -12,6 +12,22 @@
 			"types": "./src/adapters/drizzle/index.ts",
 			"default": "./src/adapters/drizzle/index.ts"
 		},
+		"./authorization": {
+			"types": "./src/authorization.ts",
+			"default": "./src/authorization.ts"
+		},
+		"./brands": {
+			"types": "./src/brands.ts",
+			"default": "./src/brands.ts"
+		},
+		"./identity-resolver": {
+			"types": "./src/identity-resolver.ts",
+			"default": "./src/identity-resolver.ts"
+		},
+		"./resolve-store": {
+			"types": "./src/resolve-store.ts",
+			"default": "./src/resolve-store.ts"
+		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
 			"default": "./src/testing/index.ts"

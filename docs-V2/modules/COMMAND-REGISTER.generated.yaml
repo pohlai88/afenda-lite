@@ -736,6 +736,147 @@ commands:
   - id: human-resources.policy-acknowledgement.supersede
     moduleId: human-resources
     permission: human-resources.policy-acknowledgement.administer
+  - id: human-resources.work-calendar.create
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.update
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.archive
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.holiday.add
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.holiday.remove
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.date-override.add
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.date-override.remove
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.employment-calendar.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.employment-calendar.end
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.shift.create
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift.update
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift.activate
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift.deactivate
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift.break.add
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift.break.remove
+    moduleId: human-resources
+    permission: human-resources.time.shift.manage
+  - id: human-resources.shift-assignment.assign
+    moduleId: human-resources
+    permission: human-resources.time.schedule.manage
+  - id: human-resources.shift-assignment.publish
+    moduleId: human-resources
+    permission: human-resources.time.schedule.publish
+  - id: human-resources.shift-assignment.cancel
+    moduleId: human-resources
+    permission: human-resources.time.schedule.manage
+  - id: human-resources.shift-assignment.change
+    moduleId: human-resources
+    permission: human-resources.time.schedule.manage
+  - id: human-resources.shift-assignment.complete
+    moduleId: human-resources
+    permission: human-resources.time.schedule.manage
+  - id: human-resources.attendance-event.record
+    moduleId: human-resources
+    permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-event.correct
+    moduleId: human-resources
+    permission: human-resources.time.attendance.correct
+  - id: human-resources.attendance-event.void
+    moduleId: human-resources
+    permission: human-resources.time.attendance.correct
+  - id: human-resources.attendance-session.resolve
+    moduleId: human-resources
+    permission: human-resources.time.attendance.correct
+  - id: human-resources.attendance-exception.create
+    moduleId: human-resources
+    permission: human-resources.time.exception.resolve
+  - id: human-resources.attendance-exception.review
+    moduleId: human-resources
+    permission: human-resources.time.exception.resolve
+  - id: human-resources.attendance-exception.excuse
+    moduleId: human-resources
+    permission: human-resources.time.exception.resolve
+  - id: human-resources.attendance-exception.reject
+    moduleId: human-resources
+    permission: human-resources.time.exception.resolve
+  - id: human-resources.attendance-exception.resolve
+    moduleId: human-resources
+    permission: human-resources.time.exception.resolve
+  - id: human-resources.timesheet.create
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.self.edit
+  - id: human-resources.timesheet.generate-entries
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.self.edit
+  - id: human-resources.timesheet.entry.add
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.self.edit
+  - id: human-resources.timesheet.entry.update
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.self.edit
+  - id: human-resources.timesheet.entry.remove
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.self.edit
+  - id: human-resources.timesheet.submit
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.submit
+  - id: human-resources.timesheet.return
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.approve
+  - id: human-resources.timesheet.approve
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.approve
+  - id: human-resources.timesheet.reject
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.approve
+  - id: human-resources.timesheet.reopen
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.reopen
+  - id: human-resources.timesheet.lock
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.lock
+  - id: human-resources.timesheet.supersede
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.reopen
+  - id: human-resources.overtime-request.create
+    moduleId: human-resources
+    permission: human-resources.time.overtime.request
+  - id: human-resources.overtime-request.approve
+    moduleId: human-resources
+    permission: human-resources.time.overtime.approve
+  - id: human-resources.overtime-request.reject
+    moduleId: human-resources
+    permission: human-resources.time.overtime.approve
+  - id: human-resources.overtime-request.cancel
+    moduleId: human-resources
+    permission: human-resources.time.overtime.request
+  - id: human-resources.overtime-request.record-actual
+    moduleId: human-resources
+    permission: human-resources.time.attendance.correct
+  - id: human-resources.overtime-request.verify
+    moduleId: human-resources
+    permission: human-resources.time.overtime.approve
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

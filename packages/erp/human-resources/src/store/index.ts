@@ -5,12 +5,14 @@ import type { HumanResourcesComplianceStore } from "./compliance";
 // Import all domain store types locally for composition
 import type { HumanResourcesCoreStore } from "./core";
 import type { HumanResourcesEmployeeRelationsStore } from "./employee-relations";
+import type { HumanResourcesIdentityStore } from "./identity";
 import type { HumanResourcesLearningStore } from "./learning";
 import type { HumanResourcesLeaveStore } from "./leave";
 import type { HumanResourcesLifecycleStore } from "./lifecycle";
 import type { HumanResourcesPerformanceStore } from "./performance";
 import type { HumanResourcesRecruitmentStore } from "./recruitment";
 import type { HumanResourcesTalentStore } from "./talent";
+import type { HumanResourcesTimeStore } from "./time";
 import type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning";
 
 // Composite store type combining all domain stores
@@ -24,7 +26,9 @@ export type HumanResourcesStore = HumanResourcesCoreStore &
 	HumanResourcesTalentStore &
 	HumanResourcesComplianceStore &
 	HumanResourcesEmployeeRelationsStore &
-	HumanResourcesWorkforcePlanningStore;
+	HumanResourcesTimeStore &
+	HumanResourcesWorkforcePlanningStore &
+	HumanResourcesIdentityStore;
 
 export type { HumanResourcesCompensationStore } from "./compensation";
 export * from "./compensation";
@@ -36,6 +40,8 @@ export type { HumanResourcesCoreStore } from "./core";
 export * from "./core";
 export type { HumanResourcesEmployeeRelationsStore } from "./employee-relations";
 export * from "./employee-relations";
+export type { HumanResourcesIdentityStore } from "./identity";
+export * from "./identity";
 export type { HumanResourcesLearningStore } from "./learning";
 export * from "./learning";
 export type { HumanResourcesLeaveStore } from "./leave";
@@ -48,5 +54,7 @@ export type { HumanResourcesRecruitmentStore } from "./recruitment";
 export * from "./recruitment";
 export type { HumanResourcesTalentStore } from "./talent";
 export * from "./talent";
+export type { HumanResourcesTimeStore } from "./time";
+export * from "./time";
 export type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning";
 export * from "./workforce-planning";

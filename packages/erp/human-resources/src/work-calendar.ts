@@ -1,9 +1,12 @@
-import { ok, type Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors/result";
 
 import type { DayPortion, LeaveUnit } from "./shared/leave-status";
+import type { WorkCalendarDateOverrideKind } from "./types";
 
 export type WorkCalendarSegmentInput = {
 	organizationId: string;
+	employeeId: string;
+	employmentId: string;
 	startDate: string;
 	endDate: string;
 	unit: LeaveUnit;
@@ -14,88 +17,74 @@ export type WorkCalendarSegment = {
 	date: string;
 	quantity: string;
 	dayPortion: DayPortion;
+	/** Calendar definition version / id used for this segment. */
+	calendarVersion: string;
+};
+
+export type WorkCalendarHoliday = {
+	date: string;
+	locationCode: string | null;
+	jurisdiction: string | null;
+	label: string | null;
+	overrideKind: WorkCalendarDateOverrideKind;
+	isWorkingDay: boolean;
+	expectedMinutes: number | null;
+};
+
+export type WorkCalendarDayResolution = {
+	isWorkingDay: boolean;
+	expectedMinutes: number | null;
+	overrideKind: WorkCalendarDateOverrideKind | null;
+};
+
+export type WorkCalendarShiftWindow = {
+	/** Local wall-clock HH:mm */
+	startTime: string;
+	/** Local wall-clock HH:mm — may be before startTime when overnight */
+	endTime: string;
+	overnight: boolean;
+	expectedMinutes: number;
+};
+
+/** Day-of-week bitmask: 0 = Sunday … 6 = Saturday (JS getUTCDay / local weekday). */
+export type WorkWeekDayPattern = {
+	dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+	isWorkingDay: boolean;
+	standardStartTime: string | null;
+	standardEndTime: string | null;
+	standardMinutes: number | null;
+};
+
+export type ResolvedWorkCalendarContext = {
+	calendarId: string;
+	calendarVersion: string;
+	timezone: string;
+	workWeek: readonly WorkWeekDayPattern[];
+	standardHoursPerDay: number;
+	holidays: readonly WorkCalendarHoliday[];
+	shiftWindows: readonly WorkCalendarShiftWindow[];
+	locationCode: string | null;
+	jurisdiction: string | null;
+};
+
+export type WorkCalendarLookupPort = {
+	resolveCalendarContext(input: {
+		organizationId: string;
+		employeeId: string;
+		employmentId: string;
+		fromDate: string;
+		toDate: string;
+	}): Promise<Result<ResolvedWorkCalendarContext>>;
 };
 
 export type WorkCalendarPort = {
 	isWorkingDay(input: {
 		organizationId: string;
+		employeeId: string;
+		employmentId: string;
 		date: string;
 	}): Promise<Result<boolean>>;
 	expandLeaveSegments(
 		input: WorkCalendarSegmentInput,
 	): Promise<Result<WorkCalendarSegment[]>>;
 };
-
-function parseIsoDate(value: string): Date {
-	const [yearText, monthText, dayText] = value.split("-");
-	const year = Number(yearText);
-	const month = Number(monthText);
-	const day = Number(dayText);
-	if (
-		!Number.isInteger(year) ||
-		!Number.isInteger(month) ||
-		!Number.isInteger(day)
-	) {
-		throw new RangeError(`Invalid ISO date: ${value}`);
-	}
-	return new Date(Date.UTC(year, month - 1, day));
-}
-
-function formatIsoDate(value: Date): string {
-	return value.toISOString().slice(0, 10);
-}
-
-function isWeekend(value: Date): boolean {
-	const day = value.getUTCDay();
-	return day === 0 || day === 6;
-}
-
-function addUtcDays(value: Date, days: number): Date {
-	const next = new Date(value);
-	next.setUTCDate(next.getUTCDate() + days);
-	return next;
-}
-
-function quantityForPortion(dayPortion: DayPortion): string {
-	switch (dayPortion) {
-		case "morning":
-		case "afternoon":
-			return "0.5";
-		default:
-			return "1";
-	}
-}
-
-export function createMemoryWorkCalendar(): WorkCalendarPort {
-	return {
-		async isWorkingDay(input) {
-			try {
-				const date = parseIsoDate(input.date);
-				return ok(!isWeekend(date));
-			} catch {
-				return ok(false);
-			}
-		},
-		async expandLeaveSegments(input) {
-			const dayPortion = input.partialDay ?? "full";
-			const segments: WorkCalendarSegment[] = [];
-			let cursor = parseIsoDate(input.startDate);
-			const end = parseIsoDate(input.endDate);
-
-			while (cursor <= end) {
-				const date = formatIsoDate(cursor);
-				const working = input.unit === "hours" ? true : !isWeekend(cursor);
-				if (working) {
-					segments.push({
-						date,
-						quantity: quantityForPortion(dayPortion),
-						dayPortion,
-					});
-				}
-				cursor = addUtcDays(cursor, 1);
-			}
-
-			return ok(segments);
-		},
-	};
-}

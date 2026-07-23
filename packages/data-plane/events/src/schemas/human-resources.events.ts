@@ -7,6 +7,8 @@ const humanResourcesEntityPayloadBase = z.object({
 	actorId: z.string().trim().min(1),
 	correlationId: z.string().trim().min(1),
 	causationId: z.string().trim().min(1).optional(),
+	operation: z.string().trim().min(1).optional(),
+	idempotencyKey: z.string().trim().min(1).optional(),
 });
 
 export const humanResourcesEntityPayloadSchema =
@@ -54,6 +56,24 @@ export const HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT =
 	"human-resources.leave.entitlement-adjusted.v1" as const;
 export const HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT =
 	"human-resources.timesheet.approved.v1" as const;
+export const HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT =
+	"human-resources.time.schedule.published.v1" as const;
+export const HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT =
+	"human-resources.time.attendance.recorded.v1" as const;
+export const HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT =
+	"human-resources.time.attendance.corrected.v1" as const;
+export const HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT =
+	"human-resources.time.exception.created.v1" as const;
+export const HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT =
+	"human-resources.time.timesheet.submitted.v1" as const;
+export const HUMAN_RESOURCES_TIME_TIMESHEET_REOPENED_EVENT =
+	"human-resources.time.timesheet.reopened.v1" as const;
+export const HUMAN_RESOURCES_TIME_TIMESHEET_LOCKED_EVENT =
+	"human-resources.time.timesheet.locked.v1" as const;
+export const HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT =
+	"human-resources.time.overtime.approved.v1" as const;
+export const HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT =
+	"human-resources.time.payroll_handoff.ready.v1" as const;
 export const HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT =
 	"human-resources.certification.expiring.v1" as const;
 export const HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT =
@@ -136,6 +156,24 @@ export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_TIMESHEET_REOPENED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_TIMESHEET_LOCKED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT]:
@@ -209,6 +247,15 @@ export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
 	HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
 	HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
+	HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
+	HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT,
+	HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
+	HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT,
+	HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT,
+	HUMAN_RESOURCES_TIME_TIMESHEET_REOPENED_EVENT,
+	HUMAN_RESOURCES_TIME_TIMESHEET_LOCKED_EVENT,
+	HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT,
+	HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT,
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
 	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,

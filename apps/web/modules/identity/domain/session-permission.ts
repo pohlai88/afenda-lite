@@ -174,6 +174,196 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to read posting exceptions.",
 	"accounting.exception.manage":
 		"You do not have permission to manage posting exceptions.",
+	"human-resources.employee.create":
+		"You do not have permission to create employees.",
+	"human-resources.employee.read":
+		"You do not have permission to read employees.",
+	"human-resources.employee.update":
+		"You do not have permission to update employees.",
+	"human-resources.employment.manage":
+		"You do not have permission to manage employments.",
+	"human-resources.organization.read":
+		"You do not have permission to read HR organization structure.",
+	"human-resources.organization.manage":
+		"You do not have permission to manage HR organization structure.",
+	"human-resources.requisition.create":
+		"You do not have permission to create requisitions.",
+	"human-resources.candidate.manage":
+		"You do not have permission to manage candidates.",
+	"human-resources.interview.record":
+		"You do not have permission to record interviews.",
+	"human-resources.offer.approve":
+		"You do not have permission to approve offers.",
+	"human-resources.onboarding.manage":
+		"You do not have permission to manage onboarding.",
+	"human-resources.offboarding.manage":
+		"You do not have permission to manage offboarding.",
+	"human-resources.leave-policy.read":
+		"You do not have permission to read leave policies.",
+	"human-resources.leave-policy.manage":
+		"You do not have permission to manage leave policies.",
+	"human-resources.leave-entitlement.read":
+		"You do not have permission to read leave entitlements.",
+	"human-resources.leave-entitlement.grant":
+		"You do not have permission to grant leave entitlements.",
+	"human-resources.leave-entitlement.adjust":
+		"You do not have permission to adjust leave entitlements.",
+	"human-resources.leave-request.own":
+		"You do not have permission to submit leave requests.",
+	"human-resources.leave-request.approve-team":
+		"You do not have permission to approve team leave requests.",
+	"human-resources.leave-request.backdate":
+		"You do not have permission to submit backdated leave requests.",
+	"human-resources.leave-request.sensitive-read":
+		"You do not have permission to read sensitive leave data.",
+	"human-resources.attendance.manage":
+		"You do not have permission to manage attendance.",
+	"human-resources.time.calendar.read":
+		"You do not have permission to read work calendars.",
+	"human-resources.time.calendar.manage":
+		"You do not have permission to manage work calendars.",
+	"human-resources.time.shift.read":
+		"You do not have permission to read shifts.",
+	"human-resources.time.shift.manage":
+		"You do not have permission to manage shifts.",
+	"human-resources.time.schedule.read":
+		"You do not have permission to read schedules.",
+	"human-resources.time.schedule.manage":
+		"You do not have permission to manage schedules.",
+	"human-resources.time.schedule.publish":
+		"You do not have permission to publish schedules.",
+	"human-resources.time.attendance.self.record":
+		"You do not have permission to record attendance.",
+	"human-resources.time.attendance.read":
+		"You do not have permission to read attendance.",
+	"human-resources.time.attendance.correct":
+		"You do not have permission to correct attendance.",
+	"human-resources.time.attendance.manage":
+		"You do not have permission to enter attendance for others.",
+	"human-resources.time.exception.read":
+		"You do not have permission to read attendance exceptions.",
+	"human-resources.time.exception.resolve":
+		"You do not have permission to resolve attendance exceptions.",
+	"human-resources.time.timesheet.self.read":
+		"You do not have permission to read own timesheets.",
+	"human-resources.time.timesheet.self.edit":
+		"You do not have permission to edit own timesheets.",
+	"human-resources.time.timesheet.submit":
+		"You do not have permission to submit timesheets.",
+	"human-resources.time.timesheet.read":
+		"You do not have permission to read timesheets.",
+	"human-resources.time.timesheet.approve":
+		"You do not have permission to approve timesheets.",
+	"human-resources.time.timesheet.reopen":
+		"You do not have permission to reopen timesheets.",
+	"human-resources.time.timesheet.lock":
+		"You do not have permission to lock timesheets.",
+	"human-resources.time.overtime.request":
+		"You do not have permission to request overtime.",
+	"human-resources.time.overtime.read":
+		"You do not have permission to read overtime requests.",
+	"human-resources.time.overtime.approve":
+		"You do not have permission to approve overtime requests.",
+	"human-resources.time.handoff.read":
+		"You do not have permission to read approved time handoff.",
+	"human-resources.performance.manage":
+		"You do not have permission to manage performance.",
+	"human-resources.performance.own.read":
+		"You do not have permission to read own performance.",
+	"human-resources.performance.manager.manage":
+		"You do not have permission to manage team performance.",
+	"human-resources.performance.improvement-plan.manage":
+		"You do not have permission to manage improvement plans.",
+	"human-resources.performance.review.reopen":
+		"You do not have permission to reopen performance reviews.",
+	"human-resources.performance.confidential.read":
+		"You do not have permission to read confidential performance data.",
+	"human-resources.learning.manage":
+		"You do not have permission to manage learning.",
+	"human-resources.certification.manage":
+		"You do not have permission to manage certifications.",
+	"human-resources.compensation.read":
+		"You do not have permission to read compensation.",
+	"human-resources.compensation.manage":
+		"You do not have permission to manage compensation.",
+	"human-resources.benefits.manage":
+		"You do not have permission to manage benefits.",
+	"human-resources.employee-case.open":
+		"You do not have permission to open employee cases.",
+	"human-resources.employee-case.assigned.read":
+		"You do not have permission to read assigned employee cases.",
+	"human-resources.employee-case.investigate":
+		"You do not have permission to investigate employee cases.",
+	"human-resources.employee-case.finding":
+		"You do not have permission to record case findings.",
+	"human-resources.employee-case.action.approve":
+		"You do not have permission to approve case actions.",
+	"human-resources.employee-case.appeal":
+		"You do not have permission to manage case appeals.",
+	"human-resources.employee-case.exceptional.admin":
+		"You do not have permission for exceptional case administration.",
+	"human-resources.workforce-plan.read":
+		"You do not have permission to read workforce plans.",
+	"human-resources.workforce-plan.prepare":
+		"You do not have permission to prepare workforce plans.",
+	"human-resources.workforce-plan.approve":
+		"You do not have permission to approve workforce plans.",
+	"human-resources.headcount.reserve":
+		"You do not have permission to reserve headcount.",
+	"human-resources.headcount.exceptional-adjust":
+		"You do not have permission for exceptional headcount adjustments.",
+	"human-resources.document-requirement.manage":
+		"You do not have permission to manage document requirements.",
+	"human-resources.employee-document.own.read":
+		"You do not have permission to read own employee documents.",
+	"human-resources.employee-document.own.register":
+		"You do not have permission to register own employee documents.",
+	"human-resources.employee-document.verify":
+		"You do not have permission to verify employee documents.",
+	"human-resources.work-eligibility.verify":
+		"You do not have permission to verify work eligibility.",
+	"human-resources.compliance.administer":
+		"You do not have permission to administer compliance.",
+	"human-resources.identity-document.sensitive.read":
+		"You do not have permission to read sensitive identity documents.",
+	"human-resources.policy-acknowledgement.administer":
+		"You do not have permission to administer policy acknowledgements.",
+	"human-resources.competency.read":
+		"You do not have permission to read competencies.",
+	"human-resources.competency.manage":
+		"You do not have permission to manage competencies.",
+	"human-resources.competency.assess":
+		"You do not have permission to assess competencies.",
+	"human-resources.career-plan.own.read":
+		"You do not have permission to read own career plans.",
+	"human-resources.career-plan.manage":
+		"You do not have permission to manage career plans.",
+	"human-resources.talent.admin":
+		"You do not have permission to administer talent.",
+	"human-resources.talent.profile.sensitive.read":
+		"You do not have permission to read sensitive talent profiles.",
+	"human-resources.succession.admin":
+		"You do not have permission to administer succession plans.",
+	"human-resources.succession.executive.read":
+		"You do not have permission to read succession coverage.",
+	"payroll.setup.manage":
+		"You do not have permission to manage payroll setup.",
+	"payroll.input.manage":
+		"You do not have permission to manage payroll inputs.",
+	"payroll.run.create": "You do not have permission to create payroll runs.",
+	"payroll.run.calculate":
+		"You do not have permission to calculate payroll runs.",
+	"payroll.run.review": "You do not have permission to review payroll runs.",
+	"payroll.run.finalize":
+		"You do not have permission to finalize payroll runs.",
+	"payroll.run.reverse":
+		"You do not have permission to reverse payroll runs.",
+	"payroll.payslip.read-own":
+		"You do not have permission to read own payslips.",
+	"payroll.payslip.read-all":
+		"You do not have permission to read organization payslips.",
+	"payroll.reconciliation.manage":
+		"You do not have permission to manage payroll reconciliation.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

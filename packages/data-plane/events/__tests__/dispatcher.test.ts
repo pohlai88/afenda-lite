@@ -84,6 +84,50 @@ describe("@afenda/events dispatcher", () => {
 		expect(store.all()[0]?.attempts).toBe(1);
 	});
 
+	it("does not re-process already processed human-resources events", async () => {
+		const store = new MemoryEventStore();
+		const publisher = createEventPublisher({ store });
+		const handler = vi.fn(async () => undefined);
+
+		assertOk(
+			await publisher.publish({
+				type: "human-resources.employee-document.registered.v1",
+				sourceModule: "human-resources",
+				organizationId: "org-hr-replay",
+				actorUserId: "user-actor",
+				correlationId: "corr-hr-replay",
+				payload: {
+					organizationId: "org-hr-replay",
+					entityType: "hr_employee_document",
+					entityId: "00000000-0000-4000-8000-000000000099",
+					actorId: "user-actor",
+					correlationId: "corr-hr-replay",
+					operation: "human-resources.employee-document.register",
+				},
+			}),
+		);
+
+		const dispatcher = createEventDispatcher({
+			store,
+			handlers: {
+				"human-resources.employee-document.registered.v1": handler,
+			},
+		});
+
+		const first = assertOk(
+			await dispatcher.dispatchPending({ organizationId: "org-hr-replay" }),
+		);
+		expect(first.processed).toBe(1);
+		expect(handler).toHaveBeenCalledOnce();
+		expect(store.all()[0]?.status).toBe("processed");
+
+		const second = assertOk(
+			await dispatcher.dispatchPending({ organizationId: "org-hr-replay" }),
+		);
+		expect(second.processed).toBe(0);
+		expect(handler).toHaveBeenCalledOnce();
+	});
+
 	it("skips events without a registered handler", async () => {
 		const store = new MemoryEventStore();
 		const publisher = createEventPublisher({ store });

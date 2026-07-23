@@ -9,12 +9,14 @@ import {
 } from "../authorization";
 import {
 	type HumanResourcesCommandOptions,
+	requireWorkCalendar,
 	resolveCommandDeps,
 } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
 import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
@@ -40,12 +42,14 @@ type CommandDeps = {
 	ports: MutationPorts;
 	workCalendar: WorkCalendarPort;
 	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
 type QueryDeps = {
 	store: HumanResourcesStore;
 	workCalendar: WorkCalendarPort;
 	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
 export async function runLeaveCommand<
@@ -77,8 +81,12 @@ export async function runLeaveCommand<
 		return parsed;
 	}
 
-	const { store, ports, authorization, workCalendar } =
+	const { store, ports, authorization, identityResolver } =
 		resolveCommandDeps(options);
+	const workCalendar = requireWorkCalendar(options);
+	if (!workCalendar.ok) {
+		return workCalendar;
+	}
 	if (config.authorize !== undefined) {
 		const authorized = await config.authorize(authorization, parsed.data);
 		if (!authorized.ok) {
@@ -101,8 +109,9 @@ export async function runLeaveCommand<
 	return config.execute(parsed.data, {
 		store,
 		ports,
-		workCalendar,
+		workCalendar: workCalendar.data,
 		authorization,
+		identityResolver,
 	});
 }
 
@@ -128,7 +137,11 @@ export async function runLeaveQuery<
 		return parsed;
 	}
 
-	const { store, authorization, workCalendar } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const workCalendar = requireWorkCalendar(options);
+	if (!workCalendar.ok) {
+		return workCalendar;
+	}
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -138,7 +151,12 @@ export async function runLeaveQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, workCalendar, authorization });
+	return config.execute(parsed.data, {
+		store,
+		workCalendar: workCalendar.data,
+		authorization,
+		identityResolver,
+	});
 }
 
 export async function requireLeaveRequestBackdatePermission(

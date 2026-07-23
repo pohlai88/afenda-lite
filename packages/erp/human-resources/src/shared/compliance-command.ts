@@ -7,8 +7,10 @@ import {
 	requireHumanResourcesPermission,
 	requireHumanResourcesQueryPermission,
 } from "../authorization";
+import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	type HumanResourcesCommandOptions,
+	requireDocumentReference,
 	resolveCommandDeps,
 } from "../command-options";
 import {
@@ -16,6 +18,7 @@ import {
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
 import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
@@ -28,6 +31,10 @@ import {
 } from "../permissions";
 import type { DocumentReferencePort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import {
+	requireAdminResourceAccess,
+	requireOwnResourceAccess,
+} from "./subject-aware-authorization";
 
 type ActorScoped = {
 	organizationId: string;
@@ -43,6 +50,7 @@ type CommandDeps = {
 type QueryDeps = {
 	store: HumanResourcesStore;
 	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
 export async function runComplianceCommand<
@@ -70,8 +78,11 @@ export async function runComplianceCommand<
 		return parsed;
 	}
 
-	const { store, ports, authorization, documentReference } =
-		resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
+	const documentReference = requireDocumentReference(options);
+	if (!documentReference.ok) {
+		return documentReference;
+	}
 	const authorized = await requireHumanResourcesCommandPermission(
 		authorization,
 		{
@@ -84,7 +95,11 @@ export async function runComplianceCommand<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, ports, documentReference });
+	return config.execute(parsed.data, {
+		store,
+		ports,
+		documentReference: documentReference.data,
+	});
 }
 
 export async function runComplianceQuery<
@@ -109,7 +124,7 @@ export async function runComplianceQuery<
 		return parsed;
 	}
 
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } = resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -119,7 +134,7 @@ export async function runComplianceQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization });
+	return config.execute(parsed.data, { store, authorization, identityResolver });
 }
 
 /** Query path for employee-scoped or org-wide compliance reads. */
@@ -144,17 +159,29 @@ export async function runComplianceEmployeeScopedQuery<
 		return parsed;
 	}
 
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireComplianceEmployeeReadScope(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		employeeId: parsed.data.employeeId,
-	});
+	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	if (!identityResolver) {
+		return fail(
+			"UNAUTHORIZED",
+			"Human Resources identity resolver port is required",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+		);
+	}
+
+	const authorized = await requireComplianceEmployeeReadScope(
+		identityResolver,
+		authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			employeeId: parsed.data.employeeId,
+		},
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization });
+	return config.execute(parsed.data, { store, authorization, identityResolver });
 }
 
 async function hasHumanResourcesPermission(
@@ -176,11 +203,13 @@ async function hasHumanResourcesPermission(
 
 /** Org-wide compliance reads, or employee-scoped reads with own.read. */
 export async function requireComplianceEmployeeReadScope(
+	identityResolver: HumanResourcesIdentityResolverPort,
 	authorization: HumanResourcesAuthorizationPort | undefined,
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		employeeId?: string;
+		asOf?: string;
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
@@ -191,22 +220,48 @@ export async function requireComplianceEmployeeReadScope(
 		);
 	}
 
-	const canAdminister = await hasHumanResourcesPermission(authorization, {
-		...input,
+	// Check admin permission first
+	const adminCheck = await requireAdminResourceAccess(authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
 		permission: HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
 	});
-	if (canAdminister) {
+	if (adminCheck.ok) {
 		return ok(undefined);
 	}
 
-	if (input.employeeId !== undefined) {
-		const canReadOwn = await hasHumanResourcesPermission(authorization, {
-			...input,
+	// Own access: derive subject from actor. If client supplies employeeId, it must match.
+	const identity = await identityResolver.resolveEmployeeForActor({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		asOf: input.asOf,
+	});
+	if (!identity.ok) return identity;
+	if (!identity.data) {
+		return fail(
+			"FORBIDDEN",
+			"Actor is not an employee",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+		);
+	}
+
+	const targetEmployeeId =
+		(input.employeeId as HumanResourcesEmployeeId | undefined) ??
+		identity.data.employeeId;
+
+	const ownCheck = await requireOwnResourceAccess(
+		identityResolver,
+		authorization,
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			targetEmployeeId,
 			permission: HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_READ,
-		});
-		if (canReadOwn) {
-			return ok(undefined);
-		}
+			asOf: input.asOf,
+		},
+	);
+	if (ownCheck.ok) {
+		return ok(undefined);
 	}
 
 	return fail("FORBIDDEN", "Missing required human resources permission", {

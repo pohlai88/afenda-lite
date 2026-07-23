@@ -1,8 +1,10 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -28,6 +30,10 @@ import {
 } from "../shared/employee-relations-command";
 import { fingerprintEmployeeCaseOpen } from "../shared/fingerprint";
 import {
+	applyCaseFieldProjection,
+	requireCaseAccess,
+} from "./case-access-control";
+import {
 	addEmployeeCaseParticipantInputSchema,
 	assignEmployeeCaseOwnerInputSchema,
 	closeEmployeeCaseInputSchema,
@@ -43,7 +49,7 @@ import {
 	recordEmployeeCaseFindingInputSchema,
 	reopenEmployeeCaseInputSchema,
 	updateEmployeeCaseClassificationInputSchema,
-} from "./schemas";
+} from "../schemas/employee-relations";
 import type {
 	EmployeeCase,
 	EmployeeCaseListPage,
@@ -106,7 +112,7 @@ export async function openEmployeeCase(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN }),
 			);
 		},
 	});
@@ -130,7 +136,7 @@ export async function updateEmployeeCaseClassification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION }),
 			),
 	});
 }
@@ -153,7 +159,7 @@ export async function assignEmployeeCaseOwner(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER }),
 			),
 	});
 }
@@ -177,7 +183,7 @@ export async function addEmployeeCaseParticipant(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT }),
 			),
 	});
 }
@@ -203,7 +209,7 @@ export async function issueInterimEmployeeMeasure(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE }),
 			),
 	});
 }
@@ -227,7 +233,7 @@ export async function recordEmployeeCaseFinding(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING }),
 			),
 	});
 }
@@ -250,7 +256,7 @@ export async function closeEmployeeCase(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE }),
 			),
 	});
 }
@@ -273,7 +279,7 @@ export async function reopenEmployeeCase(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN }),
 			),
 	});
 }
@@ -281,17 +287,39 @@ export async function reopenEmployeeCase(
 export async function getEmployeeCaseById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<EmployeeCase>> {
+): Promise<Result<Partial<EmployeeCase>>> {
 	return runEmployeeRelationsQuery(input, options, {
 		schema: getEmployeeCaseByIdInputSchema,
 		invalidMessage: "Invalid employee case get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
-		execute: async (data, { store }) =>
-			store.getEmployeeCaseById({
-				organizationId: data.organizationId,
-				caseId: data.caseId,
-				actorUserId: data.actorUserId,
-			}),
+		execute: async (data, { store, authorization, identityResolver }) => {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Human Resources identity resolver port is required",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+				);
+			}
+
+			const access = await requireCaseAccess(
+				identityResolver,
+				store,
+				authorization,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					caseId: data.caseId,
+					accessType: "read",
+				},
+			);
+			if (!access.ok) return access;
+
+			const projected = await applyCaseFieldProjection(
+				access.data.employeeCase as unknown as Record<string, unknown>,
+				access.data.projectedFields,
+			);
+			return ok(projected as Partial<EmployeeCase>);
+		},
 	});
 }
 

@@ -6,6 +6,7 @@ export * from "./compensation";
 export * from "./compliance";
 // Domain-specific schemas
 export * from "./core";
+export * from "./employee-relations";
 export * from "./learning";
 export * from "./leave";
 export * from "./lifecycle";
@@ -14,4 +15,5 @@ export * from "./performance";
 export * from "./recruitment";
 // Talent schemas (subdirectory)
 export * from "./talent";
+export * from "./time";
 export * from "./workforce-planning";

@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -61,7 +62,7 @@ export async function createEmployeeCompensation(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE }),
 			);
 		},
 	});
@@ -85,7 +86,7 @@ export async function endEmployeeCompensation(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END }),
 			),
 	});
 }

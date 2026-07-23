@@ -10,6 +10,7 @@ import type {
 	HumanResourcesReportingLineId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	DepartmentStatus,
 	EmploymentStatus,
@@ -129,7 +130,7 @@ export type HumanResourcesCoreStore = {
 	createEmployee(
 		record: EmployeeCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employee>>;
 
 	updateEmployee(
@@ -141,7 +142,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employee>>;
 
 	listEmployees(input: {
@@ -166,7 +167,7 @@ export type HumanResourcesCoreStore = {
 	createEmployment(
 		record: EmploymentCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employment>>;
 
 	amendEmployment(
@@ -180,7 +181,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employment>>;
 	// Employment Contract
 	getEmploymentContractById(input: {
@@ -197,7 +198,7 @@ export type HumanResourcesCoreStore = {
 	createEmploymentContract(
 		record: EmploymentContractCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentContract>>;
 	// Department
 	getDepartmentById(input: {
@@ -213,7 +214,7 @@ export type HumanResourcesCoreStore = {
 	createDepartment(
 		record: DepartmentCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Department>>;
 
 	updateDepartment(
@@ -226,7 +227,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Department>>;
 
 	setDepartmentStatus(
@@ -238,7 +239,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Department>>;
 
 	listDepartments(input: {
@@ -266,7 +267,7 @@ export type HumanResourcesCoreStore = {
 	createJob(
 		record: JobCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Job>>;
 
 	updateJob(
@@ -278,7 +279,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Job>>;
 
 	setJobStatus(
@@ -290,7 +291,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Job>>;
 
 	listJobs(input: {
@@ -313,7 +314,7 @@ export type HumanResourcesCoreStore = {
 	createPosition(
 		record: PositionCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Position>>;
 
 	updatePosition(
@@ -327,7 +328,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Position>>;
 
 	setPositionStatus(
@@ -339,7 +340,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Position>>;
 
 	listPositions(input: {
@@ -384,7 +385,7 @@ export type HumanResourcesCoreStore = {
 	createAssignment(
 		record: AssignmentCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkAssignment>>;
 
 	endAssignment(
@@ -396,7 +397,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkAssignment>>;
 	// Reporting line
 	getReportingLineById(input: {
@@ -431,7 +432,7 @@ export type HumanResourcesCoreStore = {
 	assignPrimaryReportingLine(
 		record: ReportingLineCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ReportingLine>>;
 
 	closeReportingLine(
@@ -443,7 +444,7 @@ export type HumanResourcesCoreStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ReportingLine>>;
 
 	replacePrimaryReportingLine(
@@ -457,7 +458,7 @@ export type HumanResourcesCoreStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ReportingLine>>;
 
 	getOrganizationTree(input: {

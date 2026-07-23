@@ -1,7 +1,8 @@
-import type { Result } from "@afenda/errors/result";
+import { fail, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 
 import {
+	type HumanResourcesAuthorizationPort,
 	requireHumanResourcesCommandPermission,
 	requireHumanResourcesQueryPermission,
 } from "../authorization";
@@ -9,6 +10,11 @@ import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
 } from "../command-options";
+import {
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+	humanResourcesErrorDetails,
+} from "../error-codes";
+import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
 import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
@@ -25,10 +31,14 @@ type ActorScoped = {
 type CommandDeps = {
 	store: HumanResourcesStore;
 	ports: MutationPorts;
+	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
 type QueryDeps = {
 	store: HumanResourcesStore;
+	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
 export async function runEmployeeRelationsCommand<
@@ -56,7 +66,8 @@ export async function runEmployeeRelationsCommand<
 		return parsed;
 	}
 
-	const { store, ports, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesCommandPermission(
 		authorization,
 		{
@@ -69,7 +80,12 @@ export async function runEmployeeRelationsCommand<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, ports });
+	return config.execute(parsed.data, {
+		store,
+		ports,
+		authorization,
+		identityResolver,
+	});
 }
 
 export async function runEmployeeRelationsQuery<
@@ -94,7 +110,7 @@ export async function runEmployeeRelationsQuery<
 		return parsed;
 	}
 
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } = resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -104,5 +120,22 @@ export async function runEmployeeRelationsQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
+}
+
+export async function requireEmployeeRelationsIdentityResolver(
+	identityResolver: HumanResourcesIdentityResolverPort | undefined,
+): Promise<Result<HumanResourcesIdentityResolverPort>> {
+	if (!identityResolver) {
+		return fail(
+			"UNAUTHORIZED",
+			"Human Resources identity resolver port is required",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+		);
+	}
+	return { ok: true, data: identityResolver };
 }

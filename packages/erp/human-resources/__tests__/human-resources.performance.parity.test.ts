@@ -36,6 +36,7 @@ import {
 	submitSelfAssessment,
 } from "../src/performance/review";
 import { ensurePerformanceSchemaForTests } from "./helpers/ensure-performance-schema";
+import { mapActorToEmployee } from "./helpers/identity-resolver";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createWorkforceHarness,
@@ -67,6 +68,16 @@ async function seedEmployeeEmployment(
 	);
 	if (!employee.ok) {
 		throw new Error(`Failed to seed employee: ${employee.code}`);
+	}
+	const mapped = await mapActorToEmployee(ready.store, {
+		organizationId: input.organizationId,
+		userId: input.actorUserId,
+		employeeId: employee.data.id,
+		actorUserId: input.actorUserId,
+		effectiveFrom: "2025-01-01",
+	});
+	if (!mapped.ok) {
+		throw new Error(`Failed to map actor to employee: ${mapped.code}`);
 	}
 	const employment = await createEmployment(
 		{

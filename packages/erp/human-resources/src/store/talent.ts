@@ -17,6 +17,7 @@ import type {
 	HumanResourcesTalentProfileId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	CareerPlanStatus,
 	CompetencyScaleCode,
@@ -183,7 +184,7 @@ export type HumanResourcesTalentStore = {
 	createCompetency(
 		record: CompetencyCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Competency>>;
 
 	updateCompetency(
@@ -197,7 +198,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Competency>>;
 
 	retireCompetency(
@@ -208,7 +209,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Competency>>;
 
 	listCompetencies(input: {
@@ -227,7 +228,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<JobCompetency>>;
 
 	removeCompetencyFromJob(
@@ -238,7 +239,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<JobCompetency>>;
 
 	listJobCompetencies(input: {
@@ -267,13 +268,13 @@ export type HumanResourcesTalentStore = {
 	createCompetencyAssessment(
 		record: CompetencyAssessmentCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompetencyAssessment>>;
 
 	supersedeCompetencyAssessment(
 		record: CompetencyAssessmentSupersedeRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompetencyAssessment>>;
 
 	getEmployeeCompetencyProfile(input: {
@@ -299,7 +300,7 @@ export type HumanResourcesTalentStore = {
 	createTalentProfile(
 		record: TalentProfileCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentProfile>>;
 
 	updateTalentProfile(
@@ -311,7 +312,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentProfile>>;
 
 	archiveTalentProfile(
@@ -322,7 +323,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentProfile>>;
 
 	getTalentProfileByEmployee(input: {
@@ -341,7 +342,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentProfileAssessment>>;
 
 	confirmTalentProfileAssessment(
@@ -352,7 +353,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentProfileAssessment>>;
 	// Talent — Talent pool
 	getTalentPoolById(input: {
@@ -368,7 +369,7 @@ export type HumanResourcesTalentStore = {
 	createTalentPool(
 		record: TalentPoolCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentPool>>;
 
 	updateTalentPool(
@@ -381,7 +382,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentPool>>;
 
 	closeTalentPool(
@@ -392,7 +393,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentPool>>;
 	// Talent — Talent pool member
 	findTalentPoolMemberByIdempotencyKey(input: {
@@ -403,7 +404,7 @@ export type HumanResourcesTalentStore = {
 	nominateTalentPoolMember(
 		record: TalentPoolMemberCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentPoolMember>>;
 
 	approveTalentPoolMember(
@@ -415,7 +416,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentPoolMember>>;
 
 	removeTalentPoolMember(
@@ -426,7 +427,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentPoolMember>>;
 
 	listTalentPoolMembers(input: {
@@ -445,7 +446,7 @@ export type HumanResourcesTalentStore = {
 	createCareerPlan(
 		record: CareerPlanCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CareerPlan>>;
 
 	updateCareerPlan(
@@ -457,7 +458,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CareerPlan>>;
 
 	acknowledgeCareerPlan(
@@ -468,7 +469,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CareerPlan>>;
 
 	closeCareerPlan(
@@ -479,7 +480,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CareerPlan>>;
 
 	getCareerPlanById(input: {
@@ -505,7 +506,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CareerPlanAction>>;
 
 	completeCareerPlanAction(
@@ -516,7 +517,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CareerPlanAction>>;
 
 	getCareerPlanActionById(input: {
@@ -532,7 +533,7 @@ export type HumanResourcesTalentStore = {
 	createSuccessionPlan(
 		record: SuccessionPlanCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionPlan>>;
 
 	updateSuccessionPlan(
@@ -545,7 +546,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionPlan>>;
 
 	closeSuccessionPlan(
@@ -556,7 +557,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionPlan>>;
 
 	getSuccessionPlanById(input: {
@@ -580,7 +581,7 @@ export type HumanResourcesTalentStore = {
 	nominateSuccessionCandidate(
 		record: SuccessionCandidateCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionCandidate>>;
 
 	assessSuccessionReadiness(
@@ -594,7 +595,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionCandidate>>;
 
 	approveSuccessionCandidate(
@@ -605,7 +606,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionCandidate>>;
 
 	removeSuccessionCandidate(
@@ -616,7 +617,7 @@ export type HumanResourcesTalentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<SuccessionCandidate>>;
 
 	listSuccessionCandidates(input: {

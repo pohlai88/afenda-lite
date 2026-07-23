@@ -1,13 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
-import {
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
-import {
-	type HumanResourcesCommandOptions,
-	resolveCommandDeps,
-} from "../command-options";
+import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -16,105 +10,78 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import {
 	createEmploymentContractInputSchema,
 	getEmploymentContractInputSchema,
 } from "../schemas/core";
+import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import type { EmploymentContract } from "../types";
 
 export async function createEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
-	const parsed = parseHumanResourcesInput(
-		createEmploymentContractInputSchema,
-		input,
-		"Invalid employment contract create input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
+	return runCoreCommand(input, options, {
+		schema: createEmploymentContractInputSchema,
+		invalidMessage: "Invalid employment contract create input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+		execute: async (data, { store, ports }) => {
+			const employment = await store.getEmploymentById({
+				organizationId: data.organizationId,
+				employmentId: data.employmentId,
+			});
+			if (!employment.ok) {
+				return employment;
+			}
+			if (employment.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employment not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
 
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+			return store.createEmploymentContract(
+				{
+					organizationId: data.organizationId,
+					employmentId: data.employmentId,
+					employeeId: employment.data.employeeId,
+					referenceCode: data.referenceCode,
+					startsOn: data.startsOn,
+					endsOn: data.endsOn ?? null,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE }),
+			);
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const employment = await store.getEmploymentById({
-		organizationId: parsed.data.organizationId,
-		employmentId: parsed.data.employmentId,
 	});
-	if (!employment.ok) {
-		return employment;
-	}
-	if (employment.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-
-	return store.createEmploymentContract(
-		{
-			organizationId: parsed.data.organizationId,
-			employmentId: parsed.data.employmentId,
-			employeeId: employment.data.employeeId,
-			referenceCode: parsed.data.referenceCode,
-			startsOn: parsed.data.startsOn,
-			endsOn: parsed.data.endsOn ?? null,
-			createdBy: parsed.data.actorUserId,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
-	);
 }
 
 export async function getEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
-	const parsed = parseHumanResourcesInput(
-		getEmploymentContractInputSchema,
-		input,
-		"Invalid employment contract get input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runCoreQuery(input, options, {
+		schema: getEmploymentContractInputSchema,
+		invalidMessage: "Invalid employment contract get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET,
+		execute: async (data, { store }) => {
+			const contract = await store.getEmploymentContractById({
+				organizationId: data.organizationId,
+				employmentContractId: data.employmentContractId,
+			});
+			if (!contract.ok) {
+				return contract;
+			}
+			if (contract.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employment contract not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(contract.data);
+		},
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const contract = await store.getEmploymentContractById({
-		organizationId: parsed.data.organizationId,
-		employmentContractId: parsed.data.employmentContractId,
-	});
-	if (!contract.ok) {
-		return contract;
-	}
-	if (contract.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment contract not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-	return ok(contract.data);
 }

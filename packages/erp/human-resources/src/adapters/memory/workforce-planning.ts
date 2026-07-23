@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { ok, type Result } from "@afenda/errors/result";
 
@@ -166,7 +167,7 @@ async function transitionHeadcountReservationStatus(
 		actorUserId: string;
 		nextStatus: HeadcountReservationStatus;
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<HeadcountReservation>> {
 	const reservation = state.headcountReservations.get(input.reservationId);
@@ -263,7 +264,7 @@ export function createMemoryWorkforcePlanningMethods(
 		async createHeadcountPlan(
 			record: HeadcountPlanCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const validPeriod = assertValidHeadcountPeriod(
 				record.periodStart,
@@ -346,7 +347,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const plan = state.headcountPlans.get(input.planId);
 			if (!plan) return notFound("Headcount plan not found");
@@ -410,7 +411,7 @@ export function createMemoryWorkforcePlanningMethods(
 				rejectionReason?: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const plan = state.headcountPlans.get(input.planId);
 			if (!plan) return notFound("Headcount plan not found");
@@ -506,7 +507,7 @@ export function createMemoryWorkforcePlanningMethods(
 		async supersedeHeadcountPlan(
 			record: HeadcountPlanSupersedeRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlan>> {
 			const source = state.headcountPlans.get(record.sourcePlanId);
 			if (!source) return notFound("Headcount plan not found");
@@ -667,7 +668,7 @@ export function createMemoryWorkforcePlanningMethods(
 		async addHeadcountPlanLine(
 			record: HeadcountPlanLineCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlanLine>> {
 			const plan = state.headcountPlans.get(record.planId);
 			if (!plan) return notFound("Headcount plan not found");
@@ -738,7 +739,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountPlanLine>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
 			if (!line) return notFound("Headcount plan line not found");
@@ -817,7 +818,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<void>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
 			if (!line) return notFound("Headcount plan line not found");
@@ -896,7 +897,7 @@ export function createMemoryWorkforcePlanningMethods(
 		async reserveHeadcount(
 			record: HeadcountReservationCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
 			const requisition = await this.getRequisitionById({
 				organizationId: record.organizationId,
@@ -987,7 +988,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
 			return transitionHeadcountReservationStatus(
 				state,
@@ -1009,7 +1010,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
 			return transitionHeadcountReservationStatus(
 				state,
@@ -1030,7 +1031,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<void>> {
 			const active = Array.from(state.headcountReservations.values()).filter(
 				(row) =>
@@ -1064,7 +1065,7 @@ export function createMemoryWorkforcePlanningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<void>> {
 			const active = Array.from(state.headcountReservations.values()).find(
 				(row) =>

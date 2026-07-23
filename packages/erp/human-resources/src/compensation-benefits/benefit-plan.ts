@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -36,7 +37,7 @@ export async function createBenefitPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE }),
 			),
 	});
 }
@@ -60,7 +61,7 @@ export async function updateBenefitPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE }),
 			),
 	});
 }
@@ -82,7 +83,7 @@ export async function archiveBenefitPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE }),
 			),
 	});
 }

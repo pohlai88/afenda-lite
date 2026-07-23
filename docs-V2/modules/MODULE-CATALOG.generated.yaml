@@ -45,11 +45,15 @@ modules:
       - transfer
       - termination
       - offboarding
+      - work_calendar
       - shift
+      - shift_assignment
       - attendance_event
-      - attendance_record
-      - timesheet
+      - attendance_session
       - attendance_exception
+      - timesheet
+      - timesheet_entry
+      - overtime_request
       - leave_policy
       - entitlement
       - leave_request

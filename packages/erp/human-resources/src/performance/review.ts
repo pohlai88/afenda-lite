@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -31,7 +32,9 @@ import { fingerprintPerformanceReviewFinalize } from "../shared/fingerprint";
 import {
 	requirePerformanceConfidentialRead,
 	runPerformanceCommand,
+	runPerformanceEmployeeScopedQuery,
 	runPerformanceQuery,
+	runPerformanceResourceScopedQuery,
 } from "../shared/performance-command";
 import type {
 	EmployeePerformanceHistory,
@@ -63,7 +66,7 @@ export async function startPerformanceReview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START }),
 			),
 	});
 }
@@ -88,7 +91,7 @@ export async function submitSelfAssessment(
 					expectedVersion: data.expectedVersion,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT }),
 			),
 	});
 }
@@ -114,7 +117,7 @@ export async function submitManagerAssessment(
 					expectedVersion: data.expectedVersion,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT }),
 			),
 	});
 }
@@ -136,7 +139,7 @@ export async function returnPerformanceReviewForCorrection(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION }),
 			),
 	});
 }
@@ -159,7 +162,7 @@ export async function acknowledgePerformanceReview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE }),
 			),
 	});
 }
@@ -188,7 +191,7 @@ export async function finalizePerformanceReview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE }),
 			);
 		},
 	});
@@ -212,7 +215,7 @@ export async function reopenPerformanceReview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN }),
 			),
 	});
 }
@@ -221,10 +224,9 @@ export async function getPerformanceReviewById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewDetail | null>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceResourceScopedQuery(input, options, {
 		schema: getPerformanceReviewByIdInputSchema,
 		invalidMessage: "Invalid performance review get input",
-		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET,
 		execute: async (data, { store, authorization }) => {
 			const confidential = await requirePerformanceConfidentialRead(
 				authorization,
@@ -250,10 +252,9 @@ export async function listEmployeePerformanceReviews(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewListPage>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceEmployeeScopedQuery(input, options, {
 		schema: listEmployeePerformanceReviewsInputSchema,
 		invalidMessage: "Invalid employee performance reviews list input",
-		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE,
 		execute: async (data, { store, authorization }) => {
 			const confidential = await requirePerformanceConfidentialRead(
 				authorization,

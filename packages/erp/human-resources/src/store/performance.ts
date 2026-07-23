@@ -9,6 +9,7 @@ import type {
 	HumanResourcesReviewId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { PerformanceRatingScale } from "../shared/performance-rating";
 import type {
 	PerformanceCycleStatus,
@@ -112,7 +113,7 @@ export type HumanResourcesPerformanceStore = {
 	createPerformanceCycle(
 		record: PerformanceCycleCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycle>>;
 
 	updatePerformanceCycle(
@@ -126,7 +127,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycle>>;
 
 	openPerformanceCycle(
@@ -137,7 +138,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycle>>;
 
 	closePerformanceCycle(
@@ -148,7 +149,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycle>>;
 
 	cancelPerformanceCycle(
@@ -159,7 +160,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycle>>;
 
 	addCycleParticipant(
@@ -171,7 +172,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycleParticipant>>;
 
 	removeCycleParticipant(
@@ -183,7 +184,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycleParticipant>>;
 
 	listPerformanceCycles(input: {
@@ -211,7 +212,7 @@ export type HumanResourcesPerformanceStore = {
 	createPerformanceGoal(
 		record: PerformanceGoalCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	updatePerformanceGoal(
@@ -227,7 +228,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	submitPerformanceGoal(
@@ -238,7 +239,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	approvePerformanceGoal(
@@ -249,7 +250,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	rejectPerformanceGoal(
@@ -260,7 +261,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	recordGoalProgress(
@@ -272,7 +273,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoalProgress>>;
 
 	closePerformanceGoal(
@@ -283,7 +284,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	cancelPerformanceGoal(
@@ -294,7 +295,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoal>>;
 
 	listEmployeeGoals(input: {
@@ -315,7 +316,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	submitSelfAssessment(
@@ -329,7 +330,7 @@ export type HumanResourcesPerformanceStore = {
 			expectedVersion: number;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	submitManagerAssessment(
@@ -343,7 +344,7 @@ export type HumanResourcesPerformanceStore = {
 			expectedVersion: number;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	returnPerformanceReviewForCorrection(
@@ -354,7 +355,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	acknowledgePerformanceReview(
@@ -366,7 +367,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	finalizePerformanceReview(
@@ -380,7 +381,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	reopenPerformanceReview(
@@ -392,7 +393,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceReview>>;
 
 	getPerformanceReviewById(input: {
@@ -429,7 +430,7 @@ export type HumanResourcesPerformanceStore = {
 	createImprovementPlan(
 		record: ImprovementPlanCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	openImprovementPlan(
@@ -440,7 +441,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	acknowledgeImprovementPlan(
@@ -451,7 +452,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	recordImprovementCheckpoint(
@@ -464,7 +465,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementCheckpoint>>;
 
 	amendImprovementPlan(
@@ -478,7 +479,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	completeImprovementPlan(
@@ -489,7 +490,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	closeImprovementPlanUnsuccessful(
@@ -500,7 +501,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	cancelImprovementPlan(
@@ -511,7 +512,7 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceImprovementPlan>>;
 
 	listActiveImprovementPlans(input: {

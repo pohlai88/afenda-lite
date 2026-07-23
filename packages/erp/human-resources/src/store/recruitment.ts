@@ -10,6 +10,7 @@ import type {
 	HumanResourcesRequisitionId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	ApplicationStatus,
 	CandidateStatus,
@@ -129,7 +130,7 @@ export type HumanResourcesRecruitmentStore = {
 	createDraftRequisition(
 		record: RequisitionCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<JobRequisition>>;
 
 	amendRequisition(
@@ -144,7 +145,7 @@ export type HumanResourcesRecruitmentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<JobRequisition>>;
 
 	transitionRequisitionStatus(
@@ -157,7 +158,7 @@ export type HumanResourcesRecruitmentStore = {
 			emitApprovedEvent?: boolean;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<JobRequisition>>;
 
 	listRequisitions(input: {
@@ -185,7 +186,7 @@ export type HumanResourcesRecruitmentStore = {
 	createCandidate(
 		record: CandidateCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Candidate>>;
 
 	updateCandidateProfile(
@@ -198,7 +199,7 @@ export type HumanResourcesRecruitmentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Candidate>>;
 
 	listCandidates(input: {
@@ -222,7 +223,7 @@ export type HumanResourcesRecruitmentStore = {
 	createApplication(
 		record: ApplicationCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CandidateApplication>>;
 
 	transitionApplicationStatus(
@@ -234,7 +235,7 @@ export type HumanResourcesRecruitmentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CandidateApplication>>;
 
 	listApplications(input: {
@@ -254,7 +255,7 @@ export type HumanResourcesRecruitmentStore = {
 	scheduleInterview(
 		record: InterviewScheduleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Interview>>;
 
 	cancelInterview(
@@ -265,7 +266,7 @@ export type HumanResourcesRecruitmentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Interview>>;
 
 	listInterviews(input: {
@@ -283,7 +284,7 @@ export type HumanResourcesRecruitmentStore = {
 	recordInterviewEvaluation(
 		record: InterviewEvaluationCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<InterviewEvaluation>>;
 	// Offer
 	getOfferById(input: {
@@ -304,7 +305,7 @@ export type HumanResourcesRecruitmentStore = {
 	createOffer(
 		record: OfferCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentOffer>>;
 
 	amendOfferDraft(
@@ -317,7 +318,7 @@ export type HumanResourcesRecruitmentStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentOffer>>;
 
 	transitionOfferStatus(
@@ -330,7 +331,7 @@ export type HumanResourcesRecruitmentStore = {
 			asOfDate?: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentOffer>>;
 
 	acceptOffer(
@@ -344,7 +345,7 @@ export type HumanResourcesRecruitmentStore = {
 			asOfDate: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OfferAcceptanceHandoff>>;
 
 	listOffers(input: {

@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -99,7 +100,7 @@ export async function grantLeaveEntitlement(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT }),
 			);
 		},
 	});
@@ -135,7 +136,7 @@ export async function carryForwardLeaveEntitlement(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD }),
 			);
 		},
 	});
@@ -158,7 +159,7 @@ export async function expireLeaveEntitlement(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE }),
 			),
 	});
 }
@@ -192,7 +193,7 @@ export async function adjustLeaveEntitlement(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST }),
 			);
 		},
 	});

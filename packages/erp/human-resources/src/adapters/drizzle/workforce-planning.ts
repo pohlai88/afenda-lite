@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import {
 	and,
@@ -436,7 +437,7 @@ async function transitionHeadcountReservationStatus(
 		actorUserId: string;
 	},
 	nextStatus: HeadcountReservationStatus,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 ): Promise<Result<HeadcountReservation>> {
 	const auditId = randomUUID();
 	const nextVersion = input.expectedVersion + 1;

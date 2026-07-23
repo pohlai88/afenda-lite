@@ -37,7 +37,7 @@ export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;
 	}
-	return /hr_employee_org_create_idempotency_uidx|create_idempotency_key/i.test(
+	return /_org_create_idempotency_uidx|create_idempotency_key/i.test(
 		writeErrorMessage(error),
 	);
 }

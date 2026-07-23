@@ -24,6 +24,11 @@ import {
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import {
+	buildCreateAuditFact,
+	buildStatusTransitionAuditFact,
+	buildUpdateAuditFact,
+} from "../../shared/audit-facts";
+import {
 	assertDocumentRequirementStatusTransition,
 	assertEmployeeDocumentVerificationTransition,
 	assertPolicyAcknowledgementStatusTransition,
@@ -40,6 +45,8 @@ import {
 } from "../../shared/compliance-status";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
+import { buildHumanResourcesEntityEventPayload } from "../../shared/event-payload";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type { HumanResourcesStore } from "../../store";
 import type {
 	DocumentRequirement,
@@ -144,22 +151,6 @@ export function resetComplianceMemoryState(state: ComplianceMemoryState): void {
 	state.policyAcknowledgementIdempotencyByKey.clear();
 }
 
-function complianceEntityPayload(input: {
-	organizationId: string;
-	entityType: string;
-	entityId: string;
-	actorUserId: string;
-	correlationId: string;
-}) {
-	return {
-		organizationId: input.organizationId,
-		entityType: input.entityType,
-		entityId: input.entityId,
-		actorId: input.actorUserId,
-		correlationId: input.correlationId,
-	};
-}
-
 function employeeHasVerifiedDocumentForRequirement(
 	state: ComplianceMemoryState,
 	input: {
@@ -180,30 +171,64 @@ function employeeHasVerifiedDocumentForRequirement(
 async function recordComplianceAudit(
 	_state: ComplianceMemoryState,
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		entity: string;
 		entityId: string;
 		action: "CREATE" | "UPDATE";
+		oldValue?: Record<string, unknown> | null;
+		newValue?: Record<string, unknown> | null;
+		statusField?: string;
+		oldStatus?: string | null;
+		newStatus?: string;
 	},
 ): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+	const context = {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
-		correlationId: meta.correlationId,
 		entity: input.entity,
 		entityId: input.entityId,
-		action: input.action,
-		changes: [],
-	});
+		meta,
+	};
+	if (
+		input.action === "UPDATE" &&
+		input.oldStatus !== undefined &&
+		input.newStatus !== undefined
+	) {
+		return ports.audit.record(
+			buildStatusTransitionAuditFact({
+				context,
+				field: input.statusField,
+				oldStatus: input.oldStatus,
+				newStatus: input.newStatus,
+				oldValue: input.oldValue,
+				newValue: input.newValue,
+			}),
+		);
+	}
+	if (input.action === "CREATE") {
+		return ports.audit.record(
+			buildCreateAuditFact({
+				context,
+				newValue: input.newValue ?? { id: input.entityId },
+			}),
+		);
+	}
+	return ports.audit.record(
+		buildUpdateAuditFact({
+			context,
+			oldValue: input.oldValue ?? {},
+			newValue: input.newValue ?? { id: input.entityId },
+		}),
+	);
 }
 
 async function appendComplianceOutbox(
 	_state: ComplianceMemoryState,
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -223,12 +248,12 @@ async function appendComplianceOutbox(
 		actorUserId: input.actorUserId,
 		correlationId: meta.correlationId,
 		type: input.type,
-		payload: complianceEntityPayload({
+		payload: buildHumanResourcesEntityEventPayload({
 			organizationId: input.organizationId,
 			entityType: input.entityType,
 			entityId: input.entityId,
 			actorUserId: input.actorUserId,
-			correlationId: meta.correlationId,
+			meta,
 		}),
 	});
 }
@@ -242,7 +267,7 @@ async function transitionDocumentRequirementStatus(
 		actorUserId: string;
 		nextStatus: DocumentRequirement["status"];
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<DocumentRequirement>> {
 	const requirement = state.documentRequirements.get(input.requirementId);
@@ -289,6 +314,10 @@ async function transitionDocumentRequirementStatus(
 		entity: "hr_document_requirement",
 		entityId: updated.id,
 		action: "UPDATE",
+		oldStatus: previous.status,
+		newStatus: updated.status,
+		oldValue: { status: previous.status, version: previous.version },
+		newValue: { status: updated.status, version: updated.version },
 	});
 	if (!audit.ok) {
 		state.documentRequirements.set(updated.id, previous);
@@ -323,7 +352,7 @@ async function transitionEmployeeDocumentStatus(
 			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT
 		>;
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<EmployeeDocument>> {
 	const document = state.employeeDocuments.get(input.documentId);
@@ -380,6 +409,17 @@ async function transitionEmployeeDocumentStatus(
 		entity: "hr_employee_document",
 		entityId: updated.id,
 		action: "UPDATE",
+		statusField: "verificationStatus",
+		oldStatus: previous.verificationStatus,
+		newStatus: updated.verificationStatus,
+		oldValue: {
+			verificationStatus: previous.verificationStatus,
+			version: previous.version,
+		},
+		newValue: {
+			verificationStatus: updated.verificationStatus,
+			version: updated.version,
+		},
 	});
 	if (!audit.ok) {
 		for (const undo of rollback) undo();
@@ -424,7 +464,7 @@ async function transitionWorkEligibilityStatus(
 		>;
 		events?: Array<typeof HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT>;
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<WorkEligibility>> {
 	const eligibility = state.workEligibilities.get(input.eligibilityId);
@@ -476,6 +516,10 @@ async function transitionWorkEligibilityStatus(
 		entity: "hr_work_eligibility",
 		entityId: updated.id,
 		action: "UPDATE",
+		oldStatus: previous.status,
+		newStatus: updated.status,
+		oldValue: { status: previous.status, version: previous.version },
+		newValue: { status: updated.status, version: updated.version },
 	});
 	if (!audit.ok) {
 		for (const undo of rollback) undo();
@@ -523,7 +567,7 @@ async function transitionPolicyAcknowledgementStatus(
 			| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT
 		>;
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<PolicyAcknowledgement>> {
 	const acknowledgement = state.policyAcknowledgements.get(
@@ -577,6 +621,17 @@ async function transitionPolicyAcknowledgementStatus(
 		entity: "hr_policy_acknowledgement",
 		entityId: updated.id,
 		action: "UPDATE",
+		statusField: "requirementStatus",
+		oldStatus: previous.requirementStatus,
+		newStatus: updated.requirementStatus,
+		oldValue: {
+			requirementStatus: previous.requirementStatus,
+			version: previous.version,
+		},
+		newValue: {
+			requirementStatus: updated.requirementStatus,
+			version: updated.version,
+		},
 	});
 	if (!audit.ok) {
 		for (const undo of rollback) undo();
@@ -648,7 +703,7 @@ export function createMemoryComplianceMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<DocumentRequirement>> {
 			const existing = Array.from(state.documentRequirements.values()).find(
 				(row) =>
@@ -688,6 +743,7 @@ export function createMemoryComplianceMethods(
 				entity: "hr_document_requirement",
 				entityId: requirement.id,
 				action: "CREATE",
+				newValue: { id: requirement.id },
 			});
 			if (!audit.ok) {
 				state.documentRequirements.delete(requirement.id);
@@ -709,7 +765,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<DocumentRequirement>> {
 			const requirement = state.documentRequirements.get(input.requirementId);
 			if (!requirement) {
@@ -777,7 +833,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<DocumentRequirement>> {
 			return transitionDocumentRequirementStatus(state, {
 				organizationId: input.organizationId,
@@ -798,7 +854,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<DocumentRequirement>> {
 			return transitionDocumentRequirementStatus(state, {
 				organizationId: input.organizationId,
@@ -881,7 +937,7 @@ export function createMemoryComplianceMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
@@ -991,6 +1047,7 @@ export function createMemoryComplianceMethods(
 				entity: "hr_employee_document",
 				entityId: document.id,
 				action: "CREATE",
+				newValue: { id: document.id },
 			});
 			if (!audit.ok) {
 				for (const undo of rollback) undo();
@@ -1038,7 +1095,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
 			const document = state.employeeDocuments.get(input.documentId);
 			if (!document) {
@@ -1134,7 +1191,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
 			return transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
@@ -1162,7 +1219,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
 			const reasonCheck = assertRejectionReasonProvided(input.rejectionReason);
 			if (!reasonCheck.ok) {
@@ -1193,7 +1250,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
 			return transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
@@ -1214,7 +1271,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeDocument>> {
 			return transitionEmployeeDocumentStatus(state, {
 				organizationId: input.organizationId,
@@ -1429,7 +1486,7 @@ export function createMemoryComplianceMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
@@ -1516,6 +1573,7 @@ export function createMemoryComplianceMethods(
 				entity: "hr_work_eligibility",
 				entityId: eligibility.id,
 				action: "CREATE",
+				newValue: { id: eligibility.id },
 			});
 			if (!audit.ok) {
 				for (const undo of rollback) undo();
@@ -1534,7 +1592,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
 			return transitionWorkEligibilityStatus(state, {
 				organizationId: input.organizationId,
@@ -1559,7 +1617,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
 			return transitionWorkEligibilityStatus(state, {
 				organizationId: input.organizationId,
@@ -1584,7 +1642,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
 			const eligibility = state.workEligibilities.get(input.eligibilityId);
 			if (!eligibility) {
@@ -1673,7 +1731,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<WorkEligibility>> {
 			return transitionWorkEligibilityStatus(state, {
 				organizationId: input.organizationId,
@@ -1769,7 +1827,7 @@ export function createMemoryComplianceMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PolicyAcknowledgement>> {
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
@@ -1847,6 +1905,7 @@ export function createMemoryComplianceMethods(
 				entity: "hr_policy_acknowledgement",
 				entityId: acknowledgement.id,
 				action: "CREATE",
+				newValue: { id: acknowledgement.id },
 			});
 			if (!audit.ok) {
 				for (const undo of rollback) undo();
@@ -1876,7 +1935,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PolicyAcknowledgement>> {
 			const now = new Date();
 			return transitionPolicyAcknowledgementStatus(state, {
@@ -1903,7 +1962,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PolicyAcknowledgement>> {
 			return transitionPolicyAcknowledgementStatus(state, {
 				organizationId: input.organizationId,
@@ -1925,7 +1984,7 @@ export function createMemoryComplianceMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PolicyAcknowledgement>> {
 			const existing = state.policyAcknowledgements.get(
 				input.acknowledgementId,
@@ -1999,6 +2058,7 @@ export function createMemoryComplianceMethods(
 				entity: "hr_policy_acknowledgement",
 				entityId: replacement.id,
 				action: "CREATE",
+				newValue: { id: replacement.id },
 			});
 			if (!audit.ok) {
 				for (const undo of rollback) undo();

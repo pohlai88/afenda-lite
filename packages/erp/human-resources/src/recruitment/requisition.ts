@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -91,7 +92,7 @@ export async function createDraftRequisition(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT }),
 			);
 		},
 	});
@@ -118,7 +119,7 @@ export async function amendRequisition(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND }),
 			),
 	});
 }
@@ -148,7 +149,7 @@ async function transitionRequisition(
 					emitApprovedEvent: config.emitApprovedEvent,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND }),
 			),
 	});
 }

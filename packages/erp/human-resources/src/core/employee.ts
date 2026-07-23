@@ -1,13 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
-import {
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
-import {
-	type HumanResourcesCommandOptions,
-	resolveCommandDeps,
-} from "../command-options";
+import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -19,13 +13,13 @@ import {
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import {
 	createEmployeeInputSchema,
 	getEmployeeByIdInputSchema,
 	listEmployeesInputSchema,
 	updateEmployeeInputSchema,
 } from "../schemas/core";
+import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { normalizeEmployeeNumber } from "../shared/employee-number";
 import { fingerprintEmployeeCreate } from "../shared/fingerprint";
 import type { Employee, EmployeeListPage } from "../types";
@@ -34,182 +28,128 @@ export async function createEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
-	const parsed = parseHumanResourcesInput(
-		createEmployeeInputSchema,
-		input,
-		"Invalid employee create input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
+	return runCoreCommand(input, options, {
+		schema: createEmployeeInputSchema,
+		invalidMessage: "Invalid employee create input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+		execute: async (data, { store, ports }) => {
+			const numberResult = normalizeEmployeeNumber(data.employeeNumber);
+			if (!numberResult.ok) {
+				return numberResult;
+			}
 
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
+			const requestFingerprint = fingerprintEmployeeCreate({
+				employeeNumber: numberResult.data.employeeNumber,
+				legalName: data.legalName,
+			});
 
-	const numberResult = normalizeEmployeeNumber(parsed.data.employeeNumber);
-	if (!numberResult.ok) {
-		return numberResult;
-	}
+			const existingByKey = await store.findEmployeeByIdempotencyKey({
+				organizationId: data.organizationId,
+				idempotencyKey: data.idempotencyKey,
+			});
+			if (!existingByKey.ok) {
+				return existingByKey;
+			}
+			if (existingByKey.data !== null) {
+				if (existingByKey.data.createRequestFingerprint !== requestFingerprint) {
+					return fail(
+						"CONFLICT",
+						"Idempotency key reused with different payload",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+					);
+				}
+				return ok(existingByKey.data.employee);
+			}
 
-	const requestFingerprint = fingerprintEmployeeCreate({
-		employeeNumber: numberResult.data.employeeNumber,
-		legalName: parsed.data.legalName,
-	});
-
-	const existingByKey = await store.findEmployeeByIdempotencyKey({
-		organizationId: parsed.data.organizationId,
-		idempotencyKey: parsed.data.idempotencyKey,
-	});
-	if (!existingByKey.ok) {
-		return existingByKey;
-	}
-	if (existingByKey.data !== null) {
-		if (existingByKey.data.createRequestFingerprint !== requestFingerprint) {
-			return fail(
-				"CONFLICT",
-				"Idempotency key reused with different payload",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			return store.createEmployee(
+				{
+					organizationId: data.organizationId,
+					employeeNumber: numberResult.data.employeeNumber,
+					normalizedEmployeeNumber: numberResult.data.normalizedEmployeeNumber,
+					legalName: data.legalName.trim(),
+					createIdempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: requestFingerprint,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE }),
 			);
-		}
-		return ok(existingByKey.data.employee);
-	}
-
-	return store.createEmployee(
-		{
-			organizationId: parsed.data.organizationId,
-			employeeNumber: numberResult.data.employeeNumber,
-			normalizedEmployeeNumber: numberResult.data.normalizedEmployeeNumber,
-			legalName: parsed.data.legalName.trim(),
-			createIdempotencyKey: parsed.data.idempotencyKey,
-			createRequestFingerprint: requestFingerprint,
-			createdBy: parsed.data.actorUserId,
 		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
-	);
+	});
 }
 
 export async function updateEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
-	const parsed = parseHumanResourcesInput(
-		updateEmployeeInputSchema,
-		input,
-		"Invalid employee update input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+	return runCoreCommand(input, options, {
+		schema: updateEmployeeInputSchema,
+		invalidMessage: "Invalid employee update input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+		execute: async (data, { store, ports }) => {
+			return store.updateEmployee(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+					legalName: data.legalName.trim(),
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE }),
+			);
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.updateEmployee(
-		{
-			organizationId: parsed.data.organizationId,
-			employeeId: parsed.data.employeeId,
-			legalName: parsed.data.legalName.trim(),
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
-	);
+	});
 }
 
 export async function getEmployeeById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
-	const parsed = parseHumanResourcesInput(
-		getEmployeeByIdInputSchema,
-		input,
-		"Invalid employee get input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runCoreQuery(input, options, {
+		schema: getEmployeeByIdInputSchema,
+		invalidMessage: "Invalid employee get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
+		execute: async (data, { store }) => {
+			const employee = await store.getEmployeeById({
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+			});
+			if (!employee.ok) {
+				return employee;
+			}
+			if (employee.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employee not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(employee.data);
+		},
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const employee = await store.getEmployeeById({
-		organizationId: parsed.data.organizationId,
-		employeeId: parsed.data.employeeId,
-	});
-	if (!employee.ok) {
-		return employee;
-	}
-	if (employee.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employee not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-	return ok(employee.data);
 }
 
 export async function listEmployees(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeListPage>> {
-	const parsed = parseHumanResourcesInput(
-		listEmployeesInputSchema,
-		input,
-		"Invalid employee list input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runCoreQuery(input, options, {
+		schema: listEmployeesInputSchema,
+		invalidMessage: "Invalid employee list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
+		execute: async (data, { store }) => {
+			const page = data.page ?? 1;
+			const pageSize = data.pageSize ?? 20;
 
-	const page = parsed.data.page ?? 1;
-	const pageSize = parsed.data.pageSize ?? 20;
-
-	return store.listEmployees({
-		organizationId: parsed.data.organizationId,
-		page,
-		pageSize,
-		employeeNumberPrefix: parsed.data.employeeNumberPrefix,
-		legalNamePrefix: parsed.data.legalNamePrefix,
-		employmentStatus: parsed.data.employmentStatus,
+			return store.listEmployees({
+				organizationId: data.organizationId,
+				page,
+				pageSize,
+				employeeNumberPrefix: data.employeeNumberPrefix,
+				legalNamePrefix: data.legalNamePrefix,
+				employmentStatus: data.employmentStatus,
+			});
+		},
 	});
 }
