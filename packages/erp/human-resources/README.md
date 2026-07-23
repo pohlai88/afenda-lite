@@ -1,69 +1,83 @@
 # `@afenda/human-resources`
 
-**Complete workforce management for enterprise applications.** Handles employees, employment contracts, organizational structure, recruitment workflows, lifecycle events, and compensation agreements with organization-scoped data isolation and enterprise-grade permissions.
+Enterprise HR bounded context for Afenda-Lite — workforce records, organizational structure, recruitment and lifecycle, leave and compensation, performance and learning, compliance and employee relations, time and attendance, talent, and workforce planning. Commands and queries return `@afenda/errors` `Result` types; mutations emit domain events for audit, notifications, and downstream payroll handoff.
 
-This package provides the core commands and queries for all HR operations while maintaining strict boundaries — it owns mutation authority for 43 `hr_*` tables but delegates database schema to `@afenda/db` and payroll calculations to `@afenda/payroll`. All operations return `@afenda/errors` `Result` types for consistent error handling.
+**Who it's for:** `apps/web` server actions and sibling packages that need typed HR mutations — not UI shells, HTTP handlers, or payroll calculation engines.
 
-**Requirements:** Node 24.x · pnpm ≥10.33.4 (specified in root `package.json` engines).
+**Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
 ## Consume
 
-Workspace dependency — import permissions, port types, brands, shipped commands/queries, and tenant schemas from the root barrel:
+Workspace import from the root barrel:
 
 ```ts
 import {
-  createEmployee,
-  updateEmployee,
-  createEmployment,
-  amendEmployment,
-  createEmploymentContract,
-  createAssignment,
-  endAssignment,
-  getEmployeeById,
-  listEmployees,
-  type CreateEmployeeInput,
-  type HumanResourcesCommandOptions,
+	createEmployee,
+	listEmployees,
+	requestLeave,
+	recordAttendanceEvent,
+	submitTimesheet,
+	type CreateEmployeeInput,
+	type HumanResourcesCommandOptions,
 } from "@afenda/human-resources";
 ```
 
-**Key capabilities:**
+Wire the Drizzle store and command options at the app composition root (see `apps/web/lib/erp/human-resources-command-options.ts`):
 
-- **Core workforce:** Employee records, employment contracts, job assignments
-- **Organization structure:** Departments, positions, reporting relationships 
-- **Recruitment:** Requisitions, candidates, interviews, offers
-- **Lifecycle management:** Onboarding, probation, transfers, terminations
-- **Compensation:** Salary bands, compensation reviews, benefit enrollments
-- **Workforce planning:** Headcount capacity, reservations, planning scopes
+```ts
+import type { HumanResourcesCommandOptions } from "@afenda/human-resources";
+import { createProductionAssignmentContextQuery } from "@afenda/human-resources";
+import {
+	createDrizzleAssignmentContextQuery,
+	createDrizzleHumanResourcesStore,
+} from "@afenda/human-resources/adapters/drizzle";
+```
 
-All operations follow ERP `create*`/`update*`/`list*` conventions and emit domain events for integration with payroll, notifications, and audit systems.
+| Domain farm | Responsibility |
+|-------------|----------------|
+| `core` | Employees, employment, contracts, assignments |
+| `organization` | Departments, jobs, positions, reporting lines |
+| `recruitment` | Requisitions, candidates, interviews, offers |
+| `lifecycle` | Onboarding, probation, transfers, terminations, offboarding |
+| `leave` | Policies, entitlements, requests |
+| `compensation-benefits` | Grades, salary bands, reviews, benefit enrollments |
+| `performance` | Cycles, goals, reviews, improvement plans |
+| `learning` | Courses, sessions, assignments, certifications |
+| `talent` | Profiles, pools, career plans, succession |
+| `compliance` | Document requirements, work eligibility, policy acknowledgements |
+| `employee-relations` | Employee cases, actions, appeals |
+| `time` | Work calendars, shifts, attendance, timesheets, overtime, payroll handoff ports |
+| `workforce-planning` | Headcount plans, reservations, availability |
 
-**Security:** All commands require authorization via injected `HumanResourcesAuthorizationPort` and organization-scoped data access. Commands use strict schemas that prevent tenant field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after client payload validation.
+**Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Data isolation:** Uses organization-scoped rows with hard `organization_id` tenancy boundaries. All 43 `hr_*` tables enforce organization isolation at the database level. See [tenancy documentation](../../../docs-V2/tenancy/README.md) for full details.
+**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **104** `hr_*` hard-tenant roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
 ## Public surfaces
 
-| Path | Role |
-|------|------|
-| `@afenda/human-resources` | Employee / employment / contract / position / assignment commands & queries, brands, schemas, permissions, errors, authz / mutation port types |
-| `@afenda/human-resources/adapters/drizzle` | `createDrizzleHumanResourcesStore` + `HumanResourcesStore` type |
-| `@afenda/human-resources/testing` | Memory + Drizzle store factories + `HumanResourcesStore` / `MutationPorts` types for Vitest (Neon Drizzle suites skip when `DATABASE_URL` is absent) |
+| Subpath | Role |
+|---------|------|
+| `@afenda/human-resources` | Domain commands, queries, brands, schemas, permissions, port types, production wiring helpers |
+| `@afenda/human-resources/adapters/drizzle` | `createDrizzleHumanResourcesStore`, per-domain Drizzle adapters, assignment-context and work-calendar lookups |
+| `@afenda/human-resources/authorization` | Authorization port types and helpers |
+| `@afenda/human-resources/brands` | Branded ID types for HR entities |
+| `@afenda/human-resources/identity-resolver` | Actor / subject identity resolution port |
+| `@afenda/human-resources/resolve-store` | Store resolver for composition roots |
+| `@afenda/human-resources/testing` | Memory store factories and test harness ports (Vitest; Neon suites skip when `DATABASE_URL` is absent) |
 | `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
 
-The root surface never exports raw Drizzle tables, query builders, database handles, Next.js types, or HTTP envelopes.
+The root barrel does not export raw Drizzle tables, SQL builders, database handles, Next.js types, or HTTP envelopes.
 
 ## Maintain
 
-Run package checks with Node 24.x and pnpm ≥10.33.4:
-
 ```bash
 pnpm --filter @afenda/human-resources lint
-pnpm --filter @afenda/human-resources typecheck  
+pnpm --filter @afenda/human-resources typecheck
 pnpm --filter @afenda/human-resources test
 pnpm --filter @afenda/human-resources check
 ```
 
-After module manifest changes:
+After manifest or register changes:
 
 ```bash
 pnpm validate:modules
@@ -72,24 +86,25 @@ pnpm governance:packages
 
 ## Boundaries
 
-**This package owns:** HR domain commands, business rules, validation, and events for 43 `hr_*` tables.
+| Owns | Does not own |
+|------|----------------|
+| HR domain commands, validation, business rules, and events for `hr_*` tables | Database schema host (`@afenda/db` — `writeOwner` in SCHEMA-OWNERSHIP-MANIFEST) |
+| Store adapters (`adapters/drizzle`, `adapters/memory`) | Payroll calculation (`@afenda/payroll`) |
+| Zod input/output contracts under `src/schemas/` | UI (`@afenda/ui-system` in `apps/web` only) |
 
-**Dependencies:** Database schema (`@afenda/db`), error handling (`@afenda/errors`), master data lookups (`@afenda/master-data`), domain events (`@afenda/events`).
-
-**Anti-goals:** Payroll calculations, financial journal entries, UI components, HTTP handlers. See [monorepo documentation](../../../docs-V2/monorepo/README.md) for package boundaries.
+**Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/master-data`, `@afenda/audit`.
 
 ## Authority
 
 | Topic | Link |
 |-------|------|
-| HR-00 implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) |
-| Drizzle adapter audit (Scratch) | [human-resources-drizzle-adapter-audit.md](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-audit.md) |
-| Drizzle adapter migration (Scratch) | [human-resources-drizzle-adapter-migration.md](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-migration.md) |
-| Drizzle adapter validation (Scratch) | [human-resources-drizzle-adapter-validation.md](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-validation.md) |
-| Bounded-context architecture (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
+| Bounded-context map (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
 | Phase sequencing (Scratch) | [human-resources-roadmap.md](../../../docs-V2/_scratch/erp/human-resources-roadmap.md) |
+| Time domain spec (Scratch) | [time.md](../../../docs-V2/_scratch/erp/time.md) · [time-slices-roadmap.md](../../../docs-V2/_scratch/erp/time-slices-roadmap.md) |
+| Implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) |
+| Drizzle adapter audit / migration / validation (Scratch) | [AUDIT](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-audit.md) · [MIGRATION](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-migration.md) · [VALIDATION](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-validation.md) |
 | ERP scaffold rules | [SCAFFOLDING.md](../SCAFFOLDING.md) |
-| Tenancy · shared schema · org-scoped rows | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
+| Tenancy | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
 | Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) |
 | Schema ownership | [SCHEMA-OWNERSHIP-MANIFEST.yaml](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

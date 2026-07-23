@@ -81,7 +81,10 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 			}
 
 			const calendarAssignmentRows = await db
-				.select({ locationCode: hrEmploymentCalendarAssignment.locationCode })
+				.select({
+					locationCode: hrEmploymentCalendarAssignment.locationCode,
+					jurisdiction: hrEmploymentCalendarAssignment.jurisdiction,
+				})
 				.from(hrEmploymentCalendarAssignment)
 				.where(
 					and(
@@ -106,7 +109,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 				employeeId: input.employeeId,
 				departmentId,
 				locationKey: calendarAssignmentRows[0]?.locationCode ?? null,
-				legalEntityKey: null,
+				legalEntityKey: calendarAssignmentRows[0]?.jurisdiction ?? null,
 			});
 		},
 	};

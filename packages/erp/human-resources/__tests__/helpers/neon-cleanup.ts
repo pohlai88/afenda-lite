@@ -96,6 +96,7 @@ import {
 	hrWorkAssignment,
 	hrWorkCalendar,
 	hrWorkCalendarHoliday,
+	hrWorkCalendarScopeAssignment,
 	hrWorkEligibility,
 	inArray,
 	platformAuditLog,
@@ -321,6 +322,11 @@ async function deleteTimeGraphForOrganization(
 		db
 			.delete(hrWorkCalendarHoliday)
 			.where(eq(hrWorkCalendarHoliday.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrWorkCalendarScopeAssignment)
+			.where(eq(hrWorkCalendarScopeAssignment.organizationId, organizationId)),
 	);
 	await deleteOrgRows(() =>
 		db

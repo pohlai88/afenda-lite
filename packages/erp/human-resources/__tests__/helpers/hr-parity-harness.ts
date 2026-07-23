@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { createDrizzleHumanResourcesStore } from "../../src/adapters/drizzle";
+import { createDrizzleAssignmentContextQuery } from "../../src/adapters/drizzle/assignment-context-query";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
@@ -22,7 +23,10 @@ import type {
 	LeavePolicy,
 	LeaveRequest,
 } from "../../src/types";
-import { createMemoryHumanResourcesStore } from "../../src/testing";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../../src/testing";
 import type { HumanResourcesMutationMeta } from "../../src/shared/mutation-meta";
 import type { MutationPorts } from "../../src/ports";
 import { createTestHumanResourcesCommandOptions } from "./command-options";
@@ -87,12 +91,17 @@ export function createHrParityHarness(
 		...HUMAN_RESOURCES_PERMISSION_CODES,
 	]);
 	const identityResolver = createStoreBackedIdentityResolver(store);
+	const assignmentContext =
+		adapter === "memory"
+			? createStoreAssignmentContextQuery({ store })
+			: createDrizzleAssignmentContextQuery();
 	return {
 		...createTestHumanResourcesCommandOptions({
 			store,
 			ports,
 			authorization,
 			identityResolver,
+			assignmentContext,
 		}),
 		adapter,
 		ports,

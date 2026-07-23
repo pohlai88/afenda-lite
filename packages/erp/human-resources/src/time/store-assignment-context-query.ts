@@ -32,12 +32,31 @@ export function createStoreAssignmentContextQuery(input: {
 				return employmentCalendar;
 			}
 
+			let departmentId: string | null = null;
+			const openAssignment = await store.findOpenAssignmentByEmployment({
+				organizationId: query.organizationId,
+				employmentId: employmentId.data,
+			});
+			if (!openAssignment.ok) {
+				return openAssignment;
+			}
+			if (openAssignment.data !== null) {
+				const position = await store.getPositionById({
+					organizationId: query.organizationId,
+					positionId: openAssignment.data.positionId,
+				});
+				if (!position.ok) {
+					return position;
+				}
+				departmentId = position.data?.departmentId ?? null;
+			}
+
 			return ok({
 				employmentId: query.employmentId,
 				employeeId: query.employeeId,
-				departmentId: null,
+				departmentId,
 				locationKey: employmentCalendar.data?.locationCode ?? null,
-				legalEntityKey: null,
+				legalEntityKey: employmentCalendar.data?.jurisdiction ?? null,
 			});
 		},
 	};

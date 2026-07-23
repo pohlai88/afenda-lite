@@ -41,6 +41,112 @@ describe("calendar-scope-resolution", () => {
 		expect(selected).toEqual({ calendarId: "emp-cal" });
 	});
 
+	it("prefers employee over location, department, legal entity, and organization", () => {
+		const selected = selectScopedWorkCalendarAssignment({
+			asOf: "2025-07-01",
+			candidates: [
+				candidate({
+					scopeType: "organization",
+					scopeKey: "org-1",
+					calendarId: "org-cal",
+				}),
+				candidate({
+					scopeType: "legal_entity",
+					scopeKey: "le-1",
+					calendarId: "legal-cal",
+				}),
+				candidate({
+					scopeType: "department",
+					scopeKey: "dept-1",
+					calendarId: "dept-cal",
+				}),
+				candidate({
+					scopeType: "location",
+					scopeKey: "loc-1",
+					calendarId: "loc-cal",
+				}),
+				candidate({
+					scopeType: "employee",
+					scopeKey: "employee-1",
+					calendarId: "employee-cal",
+				}),
+			],
+		});
+		expect(selected).toEqual({ calendarId: "employee-cal" });
+	});
+
+	it("prefers location over department, legal entity, and organization", () => {
+		const selected = selectScopedWorkCalendarAssignment({
+			asOf: "2025-07-01",
+			candidates: [
+				candidate({
+					scopeType: "organization",
+					scopeKey: "org-1",
+					calendarId: "org-cal",
+				}),
+				candidate({
+					scopeType: "legal_entity",
+					scopeKey: "le-1",
+					calendarId: "legal-cal",
+				}),
+				candidate({
+					scopeType: "department",
+					scopeKey: "dept-1",
+					calendarId: "dept-cal",
+				}),
+				candidate({
+					scopeType: "location",
+					scopeKey: "loc-1",
+					calendarId: "loc-cal",
+				}),
+			],
+		});
+		expect(selected).toEqual({ calendarId: "loc-cal" });
+	});
+
+	it("prefers department over legal entity and organization", () => {
+		const selected = selectScopedWorkCalendarAssignment({
+			asOf: "2025-07-01",
+			candidates: [
+				candidate({
+					scopeType: "organization",
+					scopeKey: "org-1",
+					calendarId: "org-cal",
+				}),
+				candidate({
+					scopeType: "legal_entity",
+					scopeKey: "le-1",
+					calendarId: "legal-cal",
+				}),
+				candidate({
+					scopeType: "department",
+					scopeKey: "dept-1",
+					calendarId: "dept-cal",
+				}),
+			],
+		});
+		expect(selected).toEqual({ calendarId: "dept-cal" });
+	});
+
+	it("prefers legal entity over organization default", () => {
+		const selected = selectScopedWorkCalendarAssignment({
+			asOf: "2025-07-01",
+			candidates: [
+				candidate({
+					scopeType: "organization",
+					scopeKey: "org-1",
+					calendarId: "org-cal",
+				}),
+				candidate({
+					scopeType: "legal_entity",
+					scopeKey: "le-1",
+					calendarId: "legal-cal",
+				}),
+			],
+		});
+		expect(selected).toEqual({ calendarId: "legal-cal" });
+	});
+
 	it("rejects ties at the same scope level", () => {
 		const selected = selectScopedWorkCalendarAssignment({
 			asOf: "2025-07-01",
