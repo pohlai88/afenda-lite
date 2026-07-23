@@ -145,7 +145,76 @@ permissions:
   - code: human-resources.attendance.manage
     moduleId: human-resources
     namespace: human-resources
-  - code: human-resources.timesheet.approve
+  - code: human-resources.time.calendar.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.calendar.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.shift.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.shift.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.schedule.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.schedule.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.schedule.publish
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.attendance.self.record
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.attendance.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.attendance.correct
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.attendance.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.exception.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.exception.resolve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.self.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.self.edit
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.submit
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.reopen
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.timesheet.lock
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.overtime.request
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.overtime.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.overtime.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.time.handoff.read
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.performance.manage

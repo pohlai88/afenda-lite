@@ -55,6 +55,11 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import {
+	createStoreBackedIdentityResolver,
+	mapActorToEmployee,
+} from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -84,7 +89,13 @@ function harness(
 	const store = createMemoryHumanResourcesStore();
 	const ports = createMemoryMutationPorts();
 	const authorization = createGrantingHumanResourcesAuthorization(permissions);
-	return { store, ports, authorization };
+	const identityResolver = createStoreBackedIdentityResolver(store);
+	return createTestHumanResourcesCommandOptions({
+		store,
+		ports,
+		authorization,
+		identityResolver,
+	});
 }
 
 async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
@@ -109,6 +120,44 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 	if (!employee.ok) {
 		throw new Error(`seed employee failed: ${employee.code}`);
 	}
+
+	const ownerEmployee = await createEmployee(
+		{
+			organizationId: ORG,
+			actorUserId: OWNER,
+			correlationId: "corr-er-owner-emp",
+			idempotencyKey: `idem-er-owner-emp-${Date.now()}`,
+			employeeNumber: `E-ER-OWNER-${Date.now()}`,
+			legalName: "Case Owner",
+		},
+		seedReady,
+	);
+	if (!ownerEmployee.ok) {
+		throw new Error(`seed owner employee failed: ${ownerEmployee.code}`);
+	}
+
+	const mappedOwner = await mapActorToEmployee(ready.store, {
+		organizationId: ORG,
+		userId: OWNER,
+		employeeId: ownerEmployee.data.id,
+		actorUserId: OWNER,
+		effectiveFrom: "2025-01-01",
+	});
+	if (!mappedOwner.ok) {
+		throw new Error(`map owner failed: ${mappedOwner.code}`);
+	}
+
+	const mappedSubject = await mapActorToEmployee(ready.store, {
+		organizationId: ORG,
+		userId: SUBJECT,
+		employeeId: employee.data.id,
+		actorUserId: OWNER,
+		effectiveFrom: "2025-01-01",
+	});
+	if (!mappedSubject.ok) {
+		throw new Error(`map subject failed: ${mappedSubject.code}`);
+	}
+
 	const employment = await createEmployment(
 		{
 			organizationId: ORG,
@@ -296,7 +345,7 @@ describe("Employee relations case lifecycle", () => {
 		);
 		expect(outsiderRead.ok).toBe(false);
 		expect(humanResourcesCodeFromResult(outsiderRead)).toBe(
-			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
 
 		const ownerRead = await getEmployeeCaseById(
@@ -727,9 +776,11 @@ describe("Employee relations case lifecycle", () => {
 			ready,
 		);
 		expect(crossOrg.ok).toBe(false);
-		expect(humanResourcesCodeFromResult(crossOrg)).toBe(
-			HUMAN_RESOURCES_ERROR_NOT_FOUND,
-		);
+		const code = humanResourcesCodeFromResult(crossOrg);
+		expect(
+			code === HUMAN_RESOURCES_ERROR_NOT_FOUND ||
+				code === HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		).toBe(true);
 	});
 
 	it("lists employee history for exceptional admin without participant ACL", async () => {

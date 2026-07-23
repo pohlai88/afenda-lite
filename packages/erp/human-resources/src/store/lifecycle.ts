@@ -14,6 +14,7 @@ import type {
 	HumanResourcesTerminationId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
@@ -151,7 +152,7 @@ export type HumanResourcesLifecycleStore = {
 	startOnboarding(
 		record: OnboardingCaseCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OnboardingCase>>;
 
 	completeOnboardingTask(
@@ -163,7 +164,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OnboardingCase>>;
 
 	completeOnboarding(
@@ -174,7 +175,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OnboardingCase>>;
 
 	listOnboardingTasks(input: {
@@ -195,7 +196,7 @@ export type HumanResourcesLifecycleStore = {
 	openProbation(
 		record: ProbationReviewCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ProbationReview>>;
 
 	extendProbation(
@@ -207,7 +208,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ProbationReview>>;
 
 	recordProbationOutcome(
@@ -220,7 +221,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ProbationReview>>;
 	// Employment Confirmation
 	getEmploymentConfirmation(input: {
@@ -236,7 +237,7 @@ export type HumanResourcesLifecycleStore = {
 	confirmEmployment(
 		record: EmploymentConfirmationCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentConfirmation>>;
 	// Transfer
 	findTransferByIdempotencyKey(input: {
@@ -255,7 +256,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentMovement>>;
 	// Termination
 	getTermination(input: {
@@ -271,7 +272,7 @@ export type HumanResourcesLifecycleStore = {
 	finalizeTermination(
 		record: TerminationCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Termination>>;
 	// Offboarding
 	getOffboardingCase(input: {
@@ -287,7 +288,7 @@ export type HumanResourcesLifecycleStore = {
 	startOffboarding(
 		record: OffboardingCaseCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OffboardingCase>>;
 
 	completeOffboardingTask(
@@ -299,7 +300,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OffboardingCase>>;
 
 	recordExitInterview(
@@ -311,7 +312,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OffboardingCase>>;
 
 	recordClearance(
@@ -323,7 +324,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OffboardingCase>>;
 
 	completeOffboarding(
@@ -334,7 +335,7 @@ export type HumanResourcesLifecycleStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<OffboardingCase>>;
 
 	listOffboardingTasks(input: {

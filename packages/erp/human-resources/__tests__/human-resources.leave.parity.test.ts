@@ -18,7 +18,9 @@ import {
 	getApprovedLeaveHandoff,
 	submitLeaveRequest,
 } from "../src/leave/leave-request";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { mapActorToEmployee } from "./helpers/identity-resolver";
 import {
 	createWorkforceHarness,
 	type WorkforceStoreAdapter,
@@ -58,6 +60,16 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(employee.ok).toBe(true);
 		if (!employee.ok) return;
+
+		const actorMapped = await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: ACTOR,
+			employeeId: employee.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+		expect(actorMapped.ok).toBe(true);
+		if (!actorMapped.ok) return;
 
 		const employment = await createEmployment(
 			{
@@ -151,6 +163,44 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(submitted.ok).toBe(true);
 		if (!submitted.ok) return;
+
+		const manager = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-mgr-${suffix}`,
+				idempotencyKey: `idem-mgr-${suffix}`,
+				employeeNumber: `MGR-${suffix}`,
+				legalName: `Manager ${suffix}`,
+			},
+			ready,
+		);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const managerMapped = await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: MANAGER,
+			employeeId: manager.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+		expect(managerMapped.ok).toBe(true);
+		if (!managerMapped.ok) return;
+
+		const reportingLine = await assignPrimaryReportingLine(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-line-${suffix}`,
+				employeeId: employee.data.id,
+				managerEmployeeId: manager.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(reportingLine.ok).toBe(true);
+		if (!reportingLine.ok) return;
 
 		const approved = await approveLeaveRequest(
 			{

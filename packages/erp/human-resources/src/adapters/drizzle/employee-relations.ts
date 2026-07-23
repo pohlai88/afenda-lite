@@ -86,6 +86,7 @@ export type DrizzleEmployeeRelationsMethods = Pick<
 	| "openEmployeeCase"
 	| "findEmployeeCaseByIdempotencyKey"
 	| "getEmployeeCaseById"
+	| "findEmployeeCaseInOrganization"
 	| "listEmployeeCases"
 	| "listCasesAssignedToActor"
 	| "listOpenEmployeeRelationsCases"
@@ -847,6 +848,20 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 
 	async getEmployeeCaseById(input) {
 		return fetchCaseWithAccess(input);
+	},
+
+	async findEmployeeCaseInOrganization(input) {
+		const loaded = await fetchCaseInOrg({
+			organizationId: input.organizationId,
+			caseId: input.caseId,
+		});
+		if (!loaded.ok) {
+			if (loaded.code === "NOT_FOUND") {
+				return ok(null);
+			}
+			return loaded;
+		}
+		return ok(loaded.data);
 	},
 
 	async listEmployeeCases(input) {

@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -56,7 +57,7 @@ export async function startOffboarding(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_START }),
 			);
 		},
 	});
@@ -80,7 +81,7 @@ export async function completeOffboardingTask(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK }),
 			),
 	});
 }
@@ -103,7 +104,7 @@ export async function recordExitInterview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW }),
 			),
 	});
 }
@@ -126,7 +127,7 @@ export async function recordClearance(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE }),
 			),
 	});
 }
@@ -148,7 +149,7 @@ export async function completeOffboarding(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE }),
 			),
 	});
 }

@@ -205,7 +205,6 @@ export const approveLeaveRequestInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			requestId: humanResourcesLeaveRequestIdSchema,
-			managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
 			note: z.string().trim().max(2000).nullable().optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
@@ -214,7 +213,6 @@ export const approveLeaveRequestInputSchema =
 export const rejectLeaveRequestInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		requestId: humanResourcesLeaveRequestIdSchema,
-		managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
 		note: z.string().trim().max(2000).nullable().optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
@@ -223,7 +221,6 @@ export const rejectLeaveRequestInputSchema = humanResourcesMutationContextSchema
 export const returnLeaveRequestInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		requestId: humanResourcesLeaveRequestIdSchema,
-		managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
 		note: z.string().trim().max(2000).nullable().optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
@@ -277,7 +274,6 @@ export const listLeaveRequestsInputSchema = humanResourcesMutationContextSchema
 export const listPendingApprovalLeaveRequestsInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
-			managerEmployeeId: humanResourcesEmployeeIdSchema,
 			page: z.number().int().positive().optional(),
 			pageSize: z.number().int().positive().max(100).optional(),
 		})
@@ -286,7 +282,6 @@ export const listPendingApprovalLeaveRequestsInputSchema =
 export const listTeamCalendarLeaveRequestsInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
-			managerEmployeeId: humanResourcesEmployeeIdSchema,
 			rangeStart: isoDateSchema,
 			rangeEnd: isoDateSchema,
 			page: z.number().int().positive().optional(),

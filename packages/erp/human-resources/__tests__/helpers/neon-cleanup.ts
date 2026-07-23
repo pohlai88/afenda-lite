@@ -24,6 +24,7 @@ import {
 	hrEmployeeCertification,
 	hrEmployeeCompensation,
 	hrEmployeeDocument,
+	hrUserEmployee,
 	hrEmployment,
 	hrEmploymentConfirmation,
 	hrEmploymentContract,
@@ -75,7 +76,22 @@ import {
 	hrTalentProfileAssessment,
 	hrTermination,
 	hrWorkAssignment,
+	hrWorkCalendar,
+	hrWorkCalendarHoliday,
 	hrWorkEligibility,
+	hrAttendanceAdjustment,
+	hrAttendanceEvent,
+	hrAttendanceException,
+	hrAttendanceSession,
+	hrEmploymentCalendarAssignment,
+	hrOvertimeApproval,
+	hrOvertimeRequest,
+	hrShift,
+	hrShiftAssignment,
+	hrShiftAssignmentSegment,
+	hrShiftBreak,
+	hrTimesheet,
+	hrTimesheetEntry,
 	inArray,
 	platformAuditLog,
 	platformDomainEvent,
@@ -167,11 +183,126 @@ async function deleteLeaveGraphForOrganization(
 		.where(eq(hrLeavePolicy.organizationId, organizationId));
 }
 
+function isUndefinedTable(error: unknown): boolean {
+	let current: unknown = error;
+	for (let depth = 0; depth < 4 && current != null; depth += 1) {
+		if (
+			typeof current === "object" &&
+			"code" in current &&
+			(current as { code: unknown }).code === "42P01"
+		) {
+			return true;
+		}
+		if (
+			current instanceof Error &&
+			/relation .* does not exist/i.test(current.message)
+		) {
+			return true;
+		}
+		current =
+			typeof current === "object" && current !== null && "cause" in current
+				? (current as { cause: unknown }).cause
+				: null;
+	}
+	return false;
+}
+
+async function deleteOrgRows(
+	deleteFn: () => Promise<unknown>,
+): Promise<void> {
+	try {
+		await deleteFn();
+	} catch (error) {
+		if (!isUndefinedTable(error)) {
+			throw error;
+		}
+	}
+}
+
+async function deleteTimeGraphForOrganization(
+	organizationId: string,
+): Promise<void> {
+	await deleteOrgRows(() =>
+		db
+			.delete(hrOvertimeApproval)
+			.where(eq(hrOvertimeApproval.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrOvertimeRequest)
+			.where(eq(hrOvertimeRequest.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrTimesheetEntry)
+			.where(eq(hrTimesheetEntry.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrTimesheet)
+			.where(eq(hrTimesheet.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrAttendanceAdjustment)
+			.where(eq(hrAttendanceAdjustment.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrAttendanceException)
+			.where(eq(hrAttendanceException.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrAttendanceSession)
+			.where(eq(hrAttendanceSession.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrAttendanceEvent)
+			.where(eq(hrAttendanceEvent.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrShiftAssignmentSegment)
+			.where(eq(hrShiftAssignmentSegment.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrShiftAssignment)
+			.where(eq(hrShiftAssignment.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrShiftBreak)
+			.where(eq(hrShiftBreak.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db.delete(hrShift).where(eq(hrShift.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrEmploymentCalendarAssignment)
+			.where(eq(hrEmploymentCalendarAssignment.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrWorkCalendarHoliday)
+			.where(eq(hrWorkCalendarHoliday.organizationId, organizationId)),
+	);
+	await deleteOrgRows(() =>
+		db
+			.delete(hrWorkCalendar)
+			.where(eq(hrWorkCalendar.organizationId, organizationId)),
+	);
+}
+
 /** Wipe synthetic-org HR fixtures and co-written audit / domain-event rows. */
 export async function cleanupHumanResourcesNeonOrgs(
 	organizationIds: readonly string[],
 ): Promise<void> {
 	for (const organizationId of organizationIds) {
+		await deleteTimeGraphForOrganization(organizationId);
 		await db
 			.delete(hrInterviewEvaluation)
 			.where(eq(hrInterviewEvaluation.organizationId, organizationId));
@@ -387,6 +518,9 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrDocumentRequirement)
 			.where(eq(hrDocumentRequirement.organizationId, organizationId));
+		await db
+			.delete(hrUserEmployee)
+			.where(eq(hrUserEmployee.organizationId, organizationId));
 		await db
 			.delete(hrEmployee)
 			.where(eq(hrEmployee.organizationId, organizationId));

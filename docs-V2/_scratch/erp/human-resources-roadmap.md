@@ -255,13 +255,27 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 | **Proposed tables (draft for review)** | |
 
 ```text
-Time:     hr_shift, hr_attendance_event, hr_attendance_record, hr_timesheet,
-          hr_attendance_exception
-Leave:    hr_leave_policy, hr_leave_entitlement, hr_leave_request, hr_leave_adjustment
-Performance (defer ok): hr_performance_cycle, hr_goal, hr_review, hr_improvement_plan
-Talent (defer ok):      hr_competency, hr_talent_profile, hr_talent_pool,
-          hr_succession_plan, hr_career_plan
+Time (HR-TIME / time.md §9 — APPROVED 2026-07-23):
+  Calendar (shipped): hr_work_calendar, hr_work_calendar_holiday,
+                      hr_employment_calendar_assignment
+                      (week pattern via work_week_json; holidays cover date overrides)
+  Remaining: hr_shift, hr_shift_break,
+             hr_shift_assignment, hr_shift_assignment_segment,
+             hr_attendance_event, hr_attendance_session, hr_attendance_exception,
+             hr_attendance_adjustment,
+             hr_timesheet, hr_timesheet_entry,
+             hr_overtime_request, hr_overtime_approval
+Leave:    implemented
+Performance: implemented
+Talent:      implemented
 ```
+
+**HR-TIME breaking-change inventory (HR-TIME-00):**
+- `createShift` currently binds `employeeId`+`shiftDate` — cut over to reusable shift definition; employee schedule moves to `assignShift` / `hr_shift_assignment`
+- `AttendanceRecord` → `AttendanceSession` (resolved projection from events)
+- Timesheet lifecycle expands: `draft|submitted|returned|approved|rejected|locked|superseded`
+- Aggregate placeholders `attendance_record` removed from `HUMAN_RESOURCES_AGGREGATES`
+- Authority: [time.md](./time.md)
 
 | **Verify** | Human review of scratch PR; `pnpm governance:packages` after manifest table list updated |
 | **Done when** | [human-resource.md](./human-resource.md) contains § for time/leave/(perf/talent); `mutation-tables.ts` matches; SCHEMA-OWNERSHIP-MANIFEST rows approved |
@@ -269,6 +283,8 @@ Talent (defer ok):      hr_competency, hr_talent_profile, hr_talent_pool,
 ---
 
 ### HR10 — Time & attendance
+
+**P0 closure slices:** [time-slices-roadmap.md](./time-slices-roadmap.md) (`HR-TIME-P0-01` … `HR-TIME-P0-08`) — supersedes the single-row scope below for in-flight work.
 
 | | |
 | --- | --- |

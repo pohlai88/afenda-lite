@@ -7,6 +7,7 @@ import type {
 	HumanResourcesWorkEligibilityId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { EmployeeDocumentVerificationStatus } from "../shared/compliance-status";
 import type {
 	DocumentRequirement,
@@ -52,7 +53,7 @@ export type HumanResourcesComplianceStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<DocumentRequirement>>;
 
 	updateDocumentRequirement(
@@ -67,7 +68,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<DocumentRequirement>>;
 
 	publishDocumentRequirement(
@@ -78,7 +79,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<DocumentRequirement>>;
 
 	retireDocumentRequirement(
@@ -89,7 +90,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<DocumentRequirement>>;
 
 	listPublishedDocumentRequirements(input: {
@@ -126,7 +127,7 @@ export type HumanResourcesComplianceStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeDocument>>;
 
 	updateEmployeeDocumentMetadata(
@@ -140,7 +141,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeDocument>>;
 
 	verifyEmployeeDocument(
@@ -152,7 +153,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeDocument>>;
 
 	rejectEmployeeDocument(
@@ -164,7 +165,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeDocument>>;
 
 	revokeEmployeeDocumentVerification(
@@ -175,7 +176,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeDocument>>;
 
 	markEmployeeDocumentExpired(
@@ -186,7 +187,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeDocument>>;
 
 	listEmployeeDocuments(input: {
@@ -242,7 +243,7 @@ export type HumanResourcesComplianceStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkEligibility>>;
 
 	verifyWorkEligibility(
@@ -254,7 +255,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkEligibility>>;
 
 	suspendWorkEligibility(
@@ -265,7 +266,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkEligibility>>;
 
 	renewWorkEligibility(
@@ -279,7 +280,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkEligibility>>;
 
 	closeWorkEligibility(
@@ -290,7 +291,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<WorkEligibility>>;
 
 	listEmployeesWithWorkEligibilityRisk(input: {
@@ -321,7 +322,7 @@ export type HumanResourcesComplianceStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PolicyAcknowledgement>>;
 
 	acknowledgePolicy(
@@ -332,7 +333,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PolicyAcknowledgement>>;
 
 	revokePolicyAcknowledgement(
@@ -343,7 +344,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PolicyAcknowledgement>>;
 
 	supersedePolicyAcknowledgementRequirement(
@@ -355,7 +356,7 @@ export type HumanResourcesComplianceStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PolicyAcknowledgement>>;
 
 	getPolicyAcknowledgementStatus(input: {

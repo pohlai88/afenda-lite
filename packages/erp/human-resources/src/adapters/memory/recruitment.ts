@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
@@ -328,7 +329,7 @@ export function createMemoryRecruitmentMethods(
 		async createDraftRequisition(
 			record: RequisitionCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<JobRequisition>> {
 			const existingByKey = await this.findRequisitionByIdempotencyKey({
 				organizationId: record.organizationId,
@@ -429,7 +430,7 @@ export function createMemoryRecruitmentMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<JobRequisition>> {
 			const requisition = state.requisitions.get(input.requisitionId);
 			if (requisition === undefined) {
@@ -521,7 +522,7 @@ export function createMemoryRecruitmentMethods(
 				emitApprovedEvent?: boolean;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<JobRequisition>> {
 			const requisition = state.requisitions.get(input.requisitionId);
 			if (requisition === undefined) {
@@ -703,7 +704,7 @@ export function createMemoryRecruitmentMethods(
 		async createCandidate(
 			record: CandidateCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Candidate>> {
 			const existingByKey = await this.findCandidateByIdempotencyKey({
 				organizationId: record.organizationId,
@@ -797,7 +798,7 @@ export function createMemoryRecruitmentMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Candidate>> {
 			const candidate = state.candidates.get(input.candidateId);
 			if (candidate === undefined) {
@@ -919,7 +920,7 @@ export function createMemoryRecruitmentMethods(
 		async createApplication(
 			record: ApplicationCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CandidateApplication>> {
 			const candidate = state.candidates.get(record.candidateId);
 			if (candidate === undefined) {
@@ -1021,7 +1022,7 @@ export function createMemoryRecruitmentMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CandidateApplication>> {
 			const application = state.applications.get(input.applicationId);
 			if (application === undefined) {
@@ -1139,7 +1140,7 @@ export function createMemoryRecruitmentMethods(
 		async scheduleInterview(
 			record: InterviewScheduleRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Interview>> {
 			const application = state.applications.get(record.applicationId);
 			if (application === undefined) {
@@ -1206,7 +1207,7 @@ export function createMemoryRecruitmentMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<Interview>> {
 			const interview = state.interviews.get(input.interviewId);
 			if (interview === undefined) {
@@ -1326,7 +1327,7 @@ export function createMemoryRecruitmentMethods(
 		async recordInterviewEvaluation(
 			record: InterviewEvaluationCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<InterviewEvaluation>> {
 			const interview = state.interviews.get(record.interviewId);
 			if (interview === undefined) {
@@ -1492,7 +1493,7 @@ export function createMemoryRecruitmentMethods(
 		async createOffer(
 			record: OfferCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentOffer>> {
 			const application = state.applications.get(record.applicationId);
 			if (application === undefined) {
@@ -1574,7 +1575,7 @@ export function createMemoryRecruitmentMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentOffer>> {
 			const offer = state.offers.get(input.offerId);
 			if (offer === undefined) {
@@ -1644,7 +1645,7 @@ export function createMemoryRecruitmentMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentOffer>> {
 			const offer = state.offers.get(input.offerId);
 			if (offer === undefined) {
@@ -1776,7 +1777,7 @@ export function createMemoryRecruitmentMethods(
 				asOfDate: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<OfferAcceptanceHandoff>> {
 			const existingByKey = await this.findOfferByAcceptIdempotencyKey({
 				organizationId: input.organizationId,

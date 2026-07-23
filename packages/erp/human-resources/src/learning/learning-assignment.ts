@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -87,7 +88,7 @@ export async function assignLearning(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE }),
 			);
 		},
 	});
@@ -111,7 +112,7 @@ export async function enrolAssignment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL }),
 			);
 		},
 	});
@@ -134,7 +135,7 @@ export async function waiveAssignment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE }),
 			);
 		},
 	});

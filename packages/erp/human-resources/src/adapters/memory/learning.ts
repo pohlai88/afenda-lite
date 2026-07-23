@@ -25,8 +25,13 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
+import {
+	buildCreateAuditFact,
+	buildStatusTransitionAuditFact,
+} from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, notFound } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertAssignmentEnrollable,
 	assertAssignmentWaivable,
@@ -205,7 +210,7 @@ export function createMemoryLearningMethods(
 		async createCourse(
 			record: CourseCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningCourse>> {
 			const existing = Array.from(state.courses.values()).find(
 				(c) =>
@@ -281,7 +286,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningCourse>> {
 			const course = state.courses.get(input.courseId);
 			if (!course || course.organizationId !== input.organizationId) {
@@ -340,7 +345,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningCourse>> {
 			const course = state.courses.get(input.courseId);
 			if (!course || course.organizationId !== input.organizationId) {
@@ -395,7 +400,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningCourse>> {
 			const course = state.courses.get(input.courseId);
 			if (!course || course.organizationId !== input.organizationId) {
@@ -525,7 +530,7 @@ export function createMemoryLearningMethods(
 		async createSession(
 			record: SessionCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningSession>> {
 			const course = state.courses.get(record.courseId);
 			if (!course || course.organizationId !== record.organizationId) {
@@ -620,7 +625,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningSession>> {
 			const session = state.sessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
@@ -682,7 +687,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningSession>> {
 			const session = state.sessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
@@ -743,7 +748,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningSession>> {
 			const session = state.sessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
@@ -858,7 +863,7 @@ export function createMemoryLearningMethods(
 		async createLearningAssignment(
 			record: LearningAssignmentCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningAssignment>> {
 			const employee = core.employees.get(record.employeeId);
 			if (!employee || employee.organizationId !== record.organizationId) {
@@ -993,7 +998,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningAssignment>> {
 			const assignment = state.learningAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
@@ -1086,7 +1091,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningAssignment>> {
 			const assignment = state.learningAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
@@ -1218,7 +1223,7 @@ export function createMemoryLearningMethods(
 		async recordCompletion(
 			record: CompletionCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LearningCompletion>> {
 			const assignment = state.learningAssignments.get(record.assignmentId);
 			if (!assignment || assignment.organizationId !== record.organizationId) {
@@ -1433,7 +1438,7 @@ export function createMemoryLearningMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeCertification>> {
 			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
@@ -1517,15 +1522,22 @@ export function createMemoryLearningMethods(
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
 
-			const audit = await ports.audit.record({
-				organizationId: certification.organizationId,
-				actorUserId: certification.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_employee_certification",
-				entityId: certification.id,
-				action: "CREATE",
-				changes: [],
-			});
+			const audit = await ports.audit.record(
+				buildCreateAuditFact({
+					context: {
+						organizationId: certification.organizationId,
+						actorUserId: certification.createdBy,
+						entity: "hr_employee_certification",
+						entityId: certification.id,
+						meta,
+					},
+					newValue: {
+						id: certification.id,
+						status: certification.status,
+						certificationCode: certification.certificationCode,
+					},
+				}),
+			);
 			if (!audit.ok) {
 				state.certifications.delete(certification.id);
 				state.certificationIdempotencyByKey.delete(idempotencyKey);
@@ -1543,7 +1555,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeCertification>> {
 			const certification = state.certifications.get(input.certificationId);
 			if (
@@ -1579,15 +1591,21 @@ export function createMemoryLearningMethods(
 
 			state.certifications.set(input.certificationId, updated);
 
-			const audit = await ports.audit.record({
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_employee_certification",
-				entityId: updated.id,
-				action: "UPDATE",
-				changes: [],
-			});
+			const audit = await ports.audit.record(
+				buildStatusTransitionAuditFact({
+					context: {
+						organizationId: updated.organizationId,
+						actorUserId: input.actorUserId,
+						entity: "hr_employee_certification",
+						entityId: updated.id,
+						meta,
+					},
+					oldStatus: certification.status,
+					newStatus: updated.status,
+					oldValue: { status: certification.status, version: certification.version },
+					newValue: { status: updated.status, version: updated.version },
+				}),
+			);
 			if (!audit.ok) {
 				state.certifications.set(input.certificationId, certification);
 				return audit;
@@ -1604,7 +1622,7 @@ export function createMemoryLearningMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeCertification>> {
 			const certification = state.certifications.get(input.certificationId);
 			if (
@@ -1638,15 +1656,21 @@ export function createMemoryLearningMethods(
 
 			state.certifications.set(input.certificationId, updated);
 
-			const audit = await ports.audit.record({
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_employee_certification",
-				entityId: updated.id,
-				action: "UPDATE",
-				changes: [],
-			});
+			const audit = await ports.audit.record(
+				buildStatusTransitionAuditFact({
+					context: {
+						organizationId: updated.organizationId,
+						actorUserId: input.actorUserId,
+						entity: "hr_employee_certification",
+						entityId: updated.id,
+						meta,
+					},
+					oldStatus: certification.status,
+					newStatus: updated.status,
+					oldValue: { status: certification.status, version: certification.version },
+					newValue: { status: updated.status, version: updated.version },
+				}),
+			);
 			if (!audit.ok) {
 				state.certifications.set(input.certificationId, certification);
 				return audit;

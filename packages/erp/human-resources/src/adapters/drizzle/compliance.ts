@@ -32,6 +32,7 @@ import {
 	parseHumanResourcesWorkEligibilityId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
+import { fieldChangeJson, valueSnapshotJson } from "../../shared/audit-facts";
 import {
 	assertDocumentRequirementStatusTransition,
 	assertEmployeeDocumentVerificationTransition,
@@ -58,6 +59,8 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import { humanResourcesEntityEventPayloadJson } from "../../shared/event-payload";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,
@@ -79,23 +82,19 @@ import type {
 	WorkEligibilityRiskListPage,
 } from "../../types";
 
-function eventPayloadJson(value: Record<string, unknown>): string {
-	return JSON.stringify(value);
-}
-
 function complianceEntityPayload(input: {
 	organizationId: string;
 	entityType: string;
 	entityId: string;
 	actorId: string;
-	correlationId: string;
+	meta: HumanResourcesMutationMeta;
 }): string {
-	return eventPayloadJson({
+	return humanResourcesEntityEventPayloadJson({
 		organizationId: input.organizationId,
 		entityType: input.entityType,
 		entityId: input.entityId,
-		actorId: input.actorId,
-		correlationId: input.correlationId,
+		actorUserId: input.actorId,
+		meta: input.meta,
 	});
 }
 
@@ -541,6 +540,13 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesDocumentRequirementId(id);
 		if (!brandedId.ok) return brandedId;
+		const changesJson = fieldChangeJson("status", null, "draft");
+		const newValueJson = valueSnapshotJson({
+			code: record.code,
+			name: record.name,
+			documentType: record.documentType,
+			status: "draft",
+		});
 		const auditId = randomUUID();
 
 		try {
@@ -565,11 +571,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, new_value
 							)
 							SELECT
 								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_document_requirement', id, 'CREATE', '[]'::jsonb
+								'human-resources', 'hr_document_requirement', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -611,6 +617,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!versionCheck.ok) return versionCheck;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"name",
+			existing.data.name,
+			input.name ?? existing.data.name,
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -640,7 +651,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_document_requirement', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_document_requirement', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -684,6 +695,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"published",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -710,7 +726,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_document_requirement', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_document_requirement', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -754,6 +770,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"retired",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -780,7 +801,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_document_requirement', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_document_requirement', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -945,6 +966,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeDocumentId(id);
 		if (!brandedId.ok) return brandedId;
+		const changesJson = fieldChangeJson("verificationStatus", null, "pending");
+		const newValueJson = valueSnapshotJson({
+			employeeId: record.employeeId,
+			requirementId: record.requirementId,
+			documentType: record.documentType,
+			verificationStatus: "pending",
+			documentRef: record.documentRef,
+		});
 		const auditId = randomUUID();
 		const registeredEventId = randomUUID();
 		const nearingExpiryEventId = randomUUID();
@@ -955,14 +984,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			entityType: "hr_employee_document",
 			entityId: brandedId.data,
 			actorId: record.createdBy,
-			correlationId: meta.correlationId,
+			meta,
 		});
 		const nearingPayload = complianceEntityPayload({
 			organizationId: record.organizationId,
 			entityType: "hr_employee_document",
 			entityId: brandedId.data,
 			actorId: record.createdBy,
-			correlationId: meta.correlationId,
+			meta,
 		});
 		const asOf = record.issuedOn;
 		const emitNearingExpiry = isNearingExpiry({
@@ -1013,11 +1042,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, new_value
 							)
 							SELECT
 								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employee_document', id, 'CREATE', '[]'::jsonb
+								'human-resources', 'hr_employee_document', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
 						),
@@ -1105,6 +1134,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!dateRange.ok) return dateRange;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"issuingJurisdiction",
+			existing.data.issuingJurisdiction,
+			input.issuingJurisdiction ?? existing.data.issuingJurisdiction,
+		);
 		const auditId = randomUUID();
 		const nearingExpiryEventId = randomUUID();
 		const metadataJson =
@@ -1123,7 +1157,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			entityType: "hr_employee_document",
 			entityId: input.documentId,
 			actorId: input.actorUserId,
-			correlationId: meta.correlationId,
+			meta,
 		});
 
 		try {
@@ -1150,7 +1184,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_document', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						),
@@ -1209,6 +1243,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"verificationStatus",
+			existing.data.verificationStatus,
+			"verified",
+		);
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = complianceEntityPayload({
@@ -1216,7 +1255,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			entityType: "hr_employee_document",
 			entityId: input.documentId,
 			actorId: input.actorUserId,
-			correlationId: meta.correlationId,
+			meta,
 		});
 
 		try {
@@ -1245,7 +1284,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_document', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						),
@@ -1302,6 +1341,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"verificationStatus",
+			existing.data.verificationStatus,
+			"rejected",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -1330,7 +1374,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_document', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -1372,6 +1416,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"verificationStatus",
+			existing.data.verificationStatus,
+			"revoked",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -1397,7 +1446,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_document', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -1442,6 +1491,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"verificationStatus",
+			existing.data.verificationStatus,
+			"expired",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -1469,7 +1523,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_employee_document', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -1749,6 +1803,13 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesWorkEligibilityId(id);
 		if (!brandedId.ok) return brandedId;
+		const changesJson = fieldChangeJson("status", null, "pending");
+		const newValueJson = valueSnapshotJson({
+			employeeId: record.employeeId,
+			status: "pending",
+			countryCode: record.countryCode,
+			documentRef: record.documentRef,
+		});
 		const auditId = randomUUID();
 
 		try {
@@ -1779,11 +1840,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, new_value
 							)
 							SELECT
 								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_work_eligibility', id, 'CREATE', '[]'::jsonb
+								'human-resources', 'hr_work_eligibility', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -1838,6 +1899,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"active",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -1865,7 +1931,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_work_eligibility', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -1907,6 +1973,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"suspended",
+		);
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = complianceEntityPayload({
@@ -1914,7 +1985,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			entityType: "hr_work_eligibility",
 			entityId: input.eligibilityId,
 			actorId: input.actorUserId,
-			correlationId: meta.correlationId,
+			meta,
 		});
 
 		try {
@@ -1940,7 +2011,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_work_eligibility', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						),
@@ -2004,6 +2075,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!versionCheck.ok) return versionCheck;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"expiresOn",
+			existing.data.expiresOn,
+			input.expiresOn,
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -2031,7 +2107,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_work_eligibility', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -2073,6 +2149,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"closed",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -2098,7 +2179,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_work_eligibility', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -2263,6 +2344,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesPolicyAcknowledgementId(id);
 		if (!brandedId.ok) return brandedId;
+		const changesJson = fieldChangeJson(
+			"requirementStatus",
+			null,
+			"outstanding",
+		);
+		const newValueJson = valueSnapshotJson({
+			employeeId: record.employeeId,
+			policyCode: record.policyCode,
+			requirementStatus: "outstanding",
+		});
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = complianceEntityPayload({
@@ -2270,7 +2361,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			entityType: "hr_policy_acknowledgement",
 			entityId: brandedId.data,
 			actorId: record.createdBy,
-			correlationId: meta.correlationId,
+			meta,
 		});
 
 		try {
@@ -2301,11 +2392,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, new_value
 							)
 							SELECT
 								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_policy_acknowledgement', id, 'CREATE', '[]'::jsonb
+								'human-resources', 'hr_policy_acknowledgement', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
 						),
@@ -2378,6 +2469,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"requirementStatus",
+			existing.data.requirementStatus,
+			"acknowledged",
+		);
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const payloadJson = complianceEntityPayload({
@@ -2385,7 +2481,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			entityType: "hr_policy_acknowledgement",
 			entityId: input.acknowledgementId,
 			actorId: input.actorUserId,
-			correlationId: meta.correlationId,
+			meta,
 		});
 
 		try {
@@ -2414,7 +2510,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_policy_acknowledgement', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_policy_acknowledgement', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						),
@@ -2468,6 +2564,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"requirementStatus",
+			existing.data.requirementStatus,
+			"revoked",
+		);
 		const auditId = randomUUID();
 
 		try {
@@ -2494,7 +2595,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_policy_acknowledgement', id, 'UPDATE', '[]'::jsonb
+								'human-resources', 'hr_policy_acknowledgement', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -2535,6 +2636,17 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const newId = randomUUID();
 		const brandedNewId = parseHumanResourcesPolicyAcknowledgementId(newId);
 		if (!brandedNewId.ok) return brandedNewId;
+		const changesJson = fieldChangeJson(
+			"requirementStatus",
+			null,
+			"outstanding",
+		);
+		const newValueJson = valueSnapshotJson({
+			employeeId: existing.data.employeeId,
+			policyCode: existing.data.policyCode,
+			requirementStatus: "outstanding",
+			supersedesAcknowledgementId: input.acknowledgementId,
+		});
 		const auditId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<
@@ -2575,11 +2687,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, new_value
 							)
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-								'human-resources', 'hr_policy_acknowledgement', id, 'CREATE', '[]'::jsonb
+								'human-resources', 'hr_policy_acknowledgement', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)

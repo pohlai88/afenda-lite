@@ -10,6 +10,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesPermission } from "../src/authorization";
+import type { HumanResourcesEmployeeId } from "../src/brands";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
@@ -57,6 +58,11 @@ import {
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import {
+	createStoreBackedIdentityResolver,
+	mapActorToEmployee,
+} from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -84,7 +90,13 @@ function harness(
 	const store = createMemoryHumanResourcesStore();
 	const ports = createMemoryMutationPorts();
 	const authorization = createGrantingHumanResourcesAuthorization(permissions);
-	return { store, ports, authorization };
+	const identityResolver = createStoreBackedIdentityResolver(store);
+	return createTestHumanResourcesCommandOptions({
+		store,
+		ports,
+		authorization,
+		identityResolver,
+	});
 }
 
 async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
@@ -107,6 +119,15 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 		seedReady,
 	);
 	if (!employee.ok) return employee;
+
+	const mapped = await mapActorToEmployee(ready.store, {
+		organizationId: ORG,
+		userId: ACTOR,
+		employeeId: employee.data.id,
+		actorUserId: ACTOR,
+		effectiveFrom: "2025-01-01",
+	});
+	if (!mapped.ok) return mapped;
 
 	const employment = await createEmployment(
 		{
@@ -168,7 +189,10 @@ async function seedPublishedPolicy(ready: ReturnType<typeof harness>) {
 	return published;
 }
 
-async function seedManagerEmployee(ready: ReturnType<typeof harness>) {
+async function seedManagerEmployee(
+	ready: ReturnType<typeof harness>,
+	options?: { correlationId?: string; idempotencyKey?: string; employeeNumber?: string },
+) {
 	const seedReady = {
 		...ready,
 		authorization: createGrantingHumanResourcesAuthorization([
@@ -180,13 +204,55 @@ async function seedManagerEmployee(ready: ReturnType<typeof harness>) {
 		{
 			organizationId: ORG,
 			actorUserId: ACTOR,
-			correlationId: "corr-mgr-emp",
-			idempotencyKey: "idem-mgr-emp",
-			employeeNumber: "E-MGR-1",
+			correlationId: options?.correlationId ?? "corr-mgr-emp",
+			idempotencyKey: options?.idempotencyKey ?? "idem-mgr-emp",
+			employeeNumber: options?.employeeNumber ?? "E-MGR-1",
 			legalName: "Leave Manager",
 		},
 		seedReady,
 	);
+	if (!manager.ok) return manager;
+
+	const mapped = await mapActorToEmployee(ready.store, {
+		organizationId: ORG,
+		userId: MANAGER,
+		employeeId: manager.data.id,
+		actorUserId: ACTOR,
+		effectiveFrom: "2025-01-01",
+	});
+	if (!mapped.ok) return mapped;
+
+	return manager;
+}
+
+async function seedManagerWithReportingLine(
+	ready: ReturnType<typeof harness>,
+	employeeId: HumanResourcesEmployeeId,
+	options?: { correlationId?: string; idempotencyKey?: string; employeeNumber?: string },
+) {
+	const manager = await seedManagerEmployee(ready, options);
+	if (!manager.ok) return manager;
+
+	const assigned = await assignPrimaryReportingLine(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `${options?.correlationId ?? "corr-mgr"}-line`,
+			employeeId,
+			managerEmployeeId: manager.data.id,
+			startsOn: "2025-01-01",
+		},
+		{
+			...ready,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+				HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+			]),
+		},
+	);
+	if (!assigned.ok) return assigned;
+
 	return manager;
 }
 
@@ -326,16 +392,18 @@ describe("Leave entitlement", () => {
 
 describe("Leave request workflow", () => {
 	it("submit and approve reduces balance", async () => {
-		const ready = harness([
-			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_READ,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
-		]);
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
+
+		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
+			correlationId: "corr-mgr-balance",
+			idempotencyKey: "idem-mgr-balance",
+			employeeNumber: "E-MGR-BALANCE",
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
@@ -602,16 +670,18 @@ describe("Leave request workflow", () => {
 	});
 
 	it("cancel-approved reverses consumption", async () => {
-		const ready = harness([
-			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_READ,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
-			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
-		]);
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
+
+		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
+			correlationId: "corr-mgr-cancel",
+			idempotencyKey: "idem-mgr-cancel",
+			employeeNumber: "E-MGR-CANCEL",
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
 
 		const policyReady = {
 			...ready,
@@ -701,7 +771,7 @@ describe("Leave request workflow", () => {
 		const approved = await approveLeaveRequest(
 			{
 				organizationId: ORG,
-				actorUserId: ACTOR,
+				actorUserId: MANAGER,
 				correlationId: "corr-cancel-approve",
 				requestId: submitted.data.id,
 				expectedVersion: submitted.data.version,
@@ -983,7 +1053,7 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 				actorUserId: MANAGER,
 				correlationId: "corr-amend-return",
 				requestId: submitted.data.id,
-				managerEmployeeId: manager.data.id,
+				
 				expectedVersion: submitted.data.version,
 			},
 			ready,
@@ -1095,36 +1165,35 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		expect(submitted.ok).toBe(true);
 		if (!submitted.ok) return;
 
-		const missingManager = await approveLeaveRequest(
+		// Non-manager actor cannot approve even with approve-team permission.
+		const outsider = await approveLeaveRequest(
 			{
 				organizationId: ORG,
-				actorUserId: MANAGER,
-				correlationId: "corr-mgr-missing",
+				actorUserId: OTHER,
+				correlationId: "corr-mgr-outsider",
 				requestId: submitted.data.id,
 				expectedVersion: submitted.data.version,
 			},
 			ready,
 		);
-		expect(missingManager.ok).toBe(false);
-		expect(humanResourcesCodeFromResult(missingManager)).toBe(
+		expect(outsider.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(outsider)).toBe(
 			HUMAN_RESOURCES_ERROR_FORBIDDEN,
 		);
 
-		const wrongManager = await approveLeaveRequest(
+		// Spoofed client managerEmployeeId is rejected by schema (server derives manager).
+		const spoofed = await approveLeaveRequest(
 			{
 				organizationId: ORG,
 				actorUserId: MANAGER,
-				correlationId: "corr-mgr-wrong",
+				correlationId: "corr-mgr-spoof",
 				requestId: submitted.data.id,
 				managerEmployeeId: seeded.employee.id,
 				expectedVersion: submitted.data.version,
 			},
 			ready,
 		);
-		expect(wrongManager.ok).toBe(false);
-		expect(humanResourcesCodeFromResult(wrongManager)).toBe(
-			HUMAN_RESOURCES_ERROR_FORBIDDEN,
-		);
+		expect(spoofed.ok).toBe(false);
 
 		const approved = await approveLeaveRequest(
 			{
@@ -1132,7 +1201,6 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 				actorUserId: MANAGER,
 				correlationId: "corr-mgr-approve",
 				requestId: submitted.data.id,
-				managerEmployeeId: manager.data.id,
 				expectedVersion: submitted.data.version,
 			},
 			ready,
@@ -1147,6 +1215,14 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
+
+		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
+			correlationId: "corr-mgr-handoff",
+			idempotencyKey: "idem-mgr-handoff",
+			employeeNumber: "E-MGR-HANDOFF",
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);
@@ -1428,6 +1504,14 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
+
+		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
+			correlationId: "corr-mgr-stale",
+			idempotencyKey: "idem-mgr-stale",
+			employeeNumber: "E-MGR-STALE",
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
 
 		const policy = await seedPublishedPolicy(ready);
 		expect(policy.ok).toBe(true);

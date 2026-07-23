@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -77,7 +78,7 @@ export async function createTalentProfile(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE }),
 			);
 		},
 	});
@@ -101,7 +102,7 @@ export async function updateTalentProfile(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE }),
 			);
 		},
 	});
@@ -127,7 +128,7 @@ export async function recordTalentProfileAssessment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD }),
 			);
 		},
 	});
@@ -150,7 +151,7 @@ export async function confirmTalentProfileAssessment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM }),
 			);
 		},
 	});
@@ -173,7 +174,7 @@ export async function archiveTalentProfile(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE }),
 			);
 		},
 	});

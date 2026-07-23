@@ -20,6 +20,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_IDS,
 	HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+	HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
 	HUMAN_RESOURCES_QUERY_ASSIGNMENT_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
@@ -38,6 +39,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_READ,
+	HUMAN_RESOURCES_PERMISSION_TIME_TIMESHEET_APPROVE,
 } from "../src/permissions";
 
 const pkgPath = path.resolve(
@@ -60,7 +62,7 @@ describe("humanResourcesModuleManifest", () => {
 		expect(HUMAN_RESOURCES_PERMISSION_CODES).toContain(
 			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 		);
-		expect(humanResourcesModuleManifest.events.emits).toHaveLength(45);
+		expect(humanResourcesModuleManifest.events.emits).toHaveLength(54);
 		expect(humanResourcesModuleManifest.owns.commands).toEqual([
 			...HUMAN_RESOURCES_COMMAND_IDS,
 		]);
@@ -145,6 +147,14 @@ describe("humanResourcesModuleManifest", () => {
 				HUMAN_RESOURCES_QUERY_ASSIGNMENT_GET
 			],
 		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
+		expect(
+			humanResourcesModuleManifest.authorization.commands[
+				HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_TIME_TIMESHEET_APPROVE);
+		expect(HUMAN_RESOURCES_PERMISSION_CODES).toContain(
+			HUMAN_RESOURCES_PERMISSION_TIME_TIMESHEET_APPROVE,
+		);
 	});
 
 	it("keeps the kernel error catalog complete", () => {
@@ -168,7 +178,7 @@ describe("humanResourcesModuleManifest", () => {
 	});
 
 	it("registers every mutation table as a hard tenant root (HR1)", () => {
-		expect(HUMAN_RESOURCES_MUTATION_TABLES).toHaveLength(81);
+		expect(HUMAN_RESOURCES_MUTATION_TABLES).toHaveLength(98);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);

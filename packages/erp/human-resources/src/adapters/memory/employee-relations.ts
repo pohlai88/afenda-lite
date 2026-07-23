@@ -1,3 +1,4 @@
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 /**
  * In-memory employee-relations domain state and attachment for HumanResourcesStore hosts.
  */
@@ -90,6 +91,7 @@ export type MemoryEmployeeRelationsMethods = Pick<
 	| "openEmployeeCase"
 	| "findEmployeeCaseByIdempotencyKey"
 	| "getEmployeeCaseById"
+	| "findEmployeeCaseInOrganization"
 	| "listEmployeeCases"
 	| "listCasesAssignedToActor"
 	| "listOpenEmployeeRelationsCases"
@@ -163,7 +165,7 @@ function promoteToInvestigatingIfOpen(
 
 async function recordAudit(
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -185,7 +187,7 @@ async function recordAudit(
 
 async function recordOutbox(
 	ports: MutationPorts,
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -500,6 +502,19 @@ export function createMemoryEmployeeRelationsMethods(
 				return result;
 			}
 			return ok(cloneCase(result.data));
+		},
+
+		async findEmployeeCaseInOrganization(input) {
+			const state = erState;
+			const loaded = getCaseInOrg(
+				state,
+				input.organizationId,
+				input.caseId,
+			);
+			if (!loaded.ok) {
+				return ok(null);
+			}
+			return ok(cloneCase(loaded.data));
 		},
 
 		async listEmployeeCases(input) {

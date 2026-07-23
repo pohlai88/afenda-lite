@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { ok, type Result } from "@afenda/errors/result";
 import {
@@ -289,7 +290,7 @@ async function transitionLeavePolicyStatus(
 		actorUserId: string;
 		nextStatus: LeavePolicyStatus;
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<LeavePolicy>> {
 	const policy = state.leavePolicies.get(input.policyId);
@@ -348,7 +349,7 @@ async function transitionLeaveEntitlementStatus(
 		actorUserId: string;
 		nextStatus: LeaveEntitlement["status"];
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 	},
 ): Promise<Result<LeaveEntitlement>> {
 	const entitlement = state.leaveEntitlements.get(input.entitlementId);
@@ -435,7 +436,7 @@ async function transitionLeaveRequestStatus(
 		note?: string | null;
 		decision?: "approved" | "rejected" | "returned" | "cancelled";
 		ports: MutationPorts;
-		meta: { correlationId: string };
+		meta: HumanResourcesMutationMeta;
 		emitEvent?: HumanResourcesEventType;
 		approvedAt?: Date;
 	},
@@ -636,7 +637,7 @@ export function createMemoryLeaveMethods(
 		async createLeavePolicy(
 			record: LeavePolicyCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			const duplicate = await this.findLeavePolicyByCode({
 				organizationId: record.organizationId,
@@ -722,7 +723,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			const policy = state.leavePolicies.get(input.policyId);
 			if (!policy) return notFound("Leave policy not found");
@@ -808,7 +809,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			return transitionLeavePolicyStatus(
 				state,
@@ -843,7 +844,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			const existing = state.leavePolicies.get(input.policyId);
 			if (!existing) return notFound("Leave policy not found");
@@ -912,7 +913,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeavePolicy>> {
 			return transitionLeavePolicyStatus(
 				state,
@@ -978,7 +979,7 @@ export function createMemoryLeaveMethods(
 		async grantLeaveEntitlement(
 			record: LeaveEntitlementGrantRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveEntitlement>> {
 			const policy = state.leavePolicies.get(record.policyId);
 			if (!policy || policy.organizationId !== record.organizationId) {
@@ -1051,7 +1052,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveEntitlement>> {
 			const source = state.leaveEntitlements.get(input.entitlementId);
 			if (!source) return notFound("Leave entitlement not found");
@@ -1139,7 +1140,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveEntitlement>> {
 			return transitionLeaveEntitlementStatus(
 				state,
@@ -1156,7 +1157,7 @@ export function createMemoryLeaveMethods(
 		async adjustLeaveEntitlement(
 			record: LeaveAdjustmentCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveAdjustment>> {
 			const entitlement = state.leaveEntitlements.get(record.entitlementId);
 			if (!entitlement) return notFound("Leave entitlement not found");
@@ -1348,7 +1349,7 @@ export function createMemoryLeaveMethods(
 		async createDraftLeaveRequest(
 			record: LeaveRequestCreateRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const requestId = parseHumanResourcesLeaveRequestId(randomUUID());
 			if (!requestId.ok) return requestId;
@@ -1432,7 +1433,7 @@ export function createMemoryLeaveMethods(
 		async amendLeaveRequest(
 			record: LeaveRequestAmendRecord,
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(record.requestId);
 			if (!request) return notFound("Leave request not found");
@@ -1526,7 +1527,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const transitioned = await transitionLeaveRequestStatus(
 				state,
@@ -1551,7 +1552,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(input.requestId);
 			if (!request) return notFound("Leave request not found");
@@ -1614,7 +1615,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			return transitionLeaveRequestStatus(
 				state,
@@ -1639,7 +1640,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			return transitionLeaveRequestStatus(
 				state,
@@ -1662,7 +1663,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			return transitionLeaveRequestStatus(
 				state,
@@ -1685,7 +1686,7 @@ export function createMemoryLeaveMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
 			const request = state.leaveRequests.get(input.requestId);
 			if (!request) return notFound("Leave request not found");

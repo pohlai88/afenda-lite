@@ -4,6 +4,7 @@ import { drizzleComplianceMethods } from "./compliance";
 import { composeStoreSlices } from "./compose";
 import { drizzleCoreMethods } from "./core";
 import { drizzleEmployeeRelationsMethods } from "./employee-relations";
+import { drizzleIdentityMethods } from "./identity";
 import { drizzleLearningMethods } from "./learning";
 import { drizzleLeaveMethods } from "./leave";
 import { drizzleLifecycleMethods } from "./lifecycle";
@@ -11,6 +12,7 @@ import { drizzleOrganizationMethods } from "./organization";
 import { drizzlePerformanceMethods } from "./performance";
 import { drizzleRecruitmentMethods } from "./recruitment";
 import { drizzleTalentMethods } from "./talent";
+import { drizzleTimeMethods } from "./time";
 import { drizzleWorkforcePlanningMethods } from "./workforce-planning";
 
 /** Composition root only. Domain persistence lives in one adapter per HR subdomain. */
@@ -25,9 +27,11 @@ export function createDrizzleHumanResourcesStore(): HumanResourcesStore {
 		drizzlePerformanceMethods,
 		drizzleLearningMethods,
 		drizzleTalentMethods,
+		drizzleTimeMethods,
 		drizzleWorkforcePlanningMethods,
 		drizzleComplianceMethods,
 		drizzleEmployeeRelationsMethods,
+		drizzleIdentityMethods,
 	);
 
 	return store satisfies HumanResourcesStore;

@@ -1498,6 +1498,107 @@ export type HumanResourcesSuccessionCandidateId = z.infer<
 	typeof humanResourcesSuccessionCandidateIdSchema
 >;
 
+export const humanResourcesWorkCalendarIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesWorkCalendarId">();
+export type HumanResourcesWorkCalendarId = z.infer<
+	typeof humanResourcesWorkCalendarIdSchema
+>;
+
+export const humanResourcesWorkCalendarHolidayIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesWorkCalendarHolidayId">();
+export type HumanResourcesWorkCalendarHolidayId = z.infer<
+	typeof humanResourcesWorkCalendarHolidayIdSchema
+>;
+
+export const humanResourcesEmploymentCalendarAssignmentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesEmploymentCalendarAssignmentId">();
+export type HumanResourcesEmploymentCalendarAssignmentId = z.infer<
+	typeof humanResourcesEmploymentCalendarAssignmentIdSchema
+>;
+
+export const humanResourcesShiftIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesShiftId">();
+export type HumanResourcesShiftId = z.infer<
+	typeof humanResourcesShiftIdSchema
+>;
+
+export const humanResourcesShiftBreakIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesShiftBreakId">();
+export type HumanResourcesShiftBreakId = z.infer<
+	typeof humanResourcesShiftBreakIdSchema
+>;
+
+export const humanResourcesShiftAssignmentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesShiftAssignmentId">();
+export type HumanResourcesShiftAssignmentId = z.infer<
+	typeof humanResourcesShiftAssignmentIdSchema
+>;
+
+export const humanResourcesAttendanceEventIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesAttendanceEventId">();
+export type HumanResourcesAttendanceEventId = z.infer<
+	typeof humanResourcesAttendanceEventIdSchema
+>;
+
+export const humanResourcesAttendanceSessionIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesAttendanceSessionId">();
+export type HumanResourcesAttendanceSessionId = z.infer<
+	typeof humanResourcesAttendanceSessionIdSchema
+>;
+/** Alias retained for existing parse helper name until callers migrate. */
+export const humanResourcesAttendanceRecordIdSchema =
+	humanResourcesAttendanceSessionIdSchema;
+export type HumanResourcesAttendanceRecordId =
+	HumanResourcesAttendanceSessionId;
+
+export const humanResourcesAttendanceExceptionIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesAttendanceExceptionId">();
+export type HumanResourcesAttendanceExceptionId = z.infer<
+	typeof humanResourcesAttendanceExceptionIdSchema
+>;
+
+export const humanResourcesTimesheetIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesTimesheetId">();
+export type HumanResourcesTimesheetId = z.infer<
+	typeof humanResourcesTimesheetIdSchema
+>;
+
+export const humanResourcesTimesheetEntryIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesTimesheetEntryId">();
+export type HumanResourcesTimesheetEntryId = z.infer<
+	typeof humanResourcesTimesheetEntryIdSchema
+>;
+
+export const humanResourcesOvertimeRequestIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesOvertimeRequestId">();
+export type HumanResourcesOvertimeRequestId = z.infer<
+	typeof humanResourcesOvertimeRequestIdSchema
+>;
+
 export function parseHumanResourcesCompetencyId(
 	id: string,
 ): Result<HumanResourcesCompetencyId> {
@@ -1646,6 +1747,188 @@ export function parseHumanResourcesSuccessionCandidateId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid succession candidate identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesShiftId(
+	id: string,
+): Result<HumanResourcesShiftId> {
+	const parsed = humanResourcesShiftIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid shift identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesAttendanceEventId(
+	id: string,
+): Result<HumanResourcesAttendanceEventId> {
+	const parsed = humanResourcesAttendanceEventIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid attendance event identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesAttendanceRecordId(
+	id: string,
+): Result<HumanResourcesAttendanceRecordId> {
+	const parsed = humanResourcesAttendanceRecordIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid attendance record identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesTimesheetId(
+	id: string,
+): Result<HumanResourcesTimesheetId> {
+	const parsed = humanResourcesTimesheetIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid timesheet identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesWorkCalendarId(
+	id: string,
+): Result<HumanResourcesWorkCalendarId> {
+	const parsed = humanResourcesWorkCalendarIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid work calendar identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesWorkCalendarHolidayId(
+	id: string,
+): Result<HumanResourcesWorkCalendarHolidayId> {
+	const parsed = humanResourcesWorkCalendarHolidayIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid work calendar holiday identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesEmploymentCalendarAssignmentId(
+	id: string,
+): Result<HumanResourcesEmploymentCalendarAssignmentId> {
+	const parsed = humanResourcesEmploymentCalendarAssignmentIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employment calendar assignment identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesShiftBreakId(
+	id: string,
+): Result<HumanResourcesShiftBreakId> {
+	const parsed = humanResourcesShiftBreakIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid shift break identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesShiftAssignmentId(
+	id: string,
+): Result<HumanResourcesShiftAssignmentId> {
+	const parsed = humanResourcesShiftAssignmentIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid shift assignment identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesAttendanceSessionId(
+	id: string,
+): Result<HumanResourcesAttendanceSessionId> {
+	const parsed = humanResourcesAttendanceSessionIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid attendance session identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesAttendanceExceptionId(
+	id: string,
+): Result<HumanResourcesAttendanceExceptionId> {
+	const parsed = humanResourcesAttendanceExceptionIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid attendance exception identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesTimesheetEntryId(
+	id: string,
+): Result<HumanResourcesTimesheetEntryId> {
+	const parsed = humanResourcesTimesheetEntryIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid timesheet entry identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesOvertimeRequestId(
+	id: string,
+): Result<HumanResourcesOvertimeRequestId> {
+	const parsed = humanResourcesOvertimeRequestIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid overtime request identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

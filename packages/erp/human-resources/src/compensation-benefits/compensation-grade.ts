@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -36,7 +37,7 @@ export async function createCompensationGrade(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE }),
 			),
 	});
 }
@@ -59,7 +60,7 @@ export async function updateCompensationGrade(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE }),
 			),
 	});
 }
@@ -81,7 +82,7 @@ export async function archiveCompensationGrade(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE }),
 			),
 	});
 }

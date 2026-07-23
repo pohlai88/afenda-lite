@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -48,7 +49,7 @@ export async function createCompensationReviewDraft(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT }),
 			);
 		},
 	});
@@ -84,7 +85,7 @@ export async function recordCompensationRecommendation(
 					expectedVersion: data.expectedVersion,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION }),
 			);
 		},
 	});
@@ -107,7 +108,7 @@ export async function finalizeCompensationReview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE }),
 			),
 	});
 }
@@ -130,7 +131,7 @@ export async function applyApprovedCompensationResult(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT }),
 			),
 	});
 }

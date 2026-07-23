@@ -1,4 +1,5 @@
 import { fail, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -59,7 +60,7 @@ export async function createDocumentRequirement(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE }),
 			);
 		},
 	});
@@ -86,7 +87,7 @@ export async function updateDocumentRequirement(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE }),
 			),
 	});
 }
@@ -108,7 +109,7 @@ export async function publishDocumentRequirement(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH }),
 			),
 	});
 }
@@ -130,7 +131,7 @@ export async function retireDocumentRequirement(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE }),
 			),
 	});
 }

@@ -8,6 +8,7 @@ import type {
 	HumanResourcesSessionId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	AssignmentStatus,
 	CertificationStatus,
@@ -130,7 +131,7 @@ export type HumanResourcesLearningStore = {
 	createCourse(
 		record: CourseCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningCourse>>;
 
 	updateCourse(
@@ -144,7 +145,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningCourse>>;
 
 	activateCourse(
@@ -155,7 +156,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningCourse>>;
 
 	archiveCourse(
@@ -166,7 +167,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningCourse>>;
 
 	listCourses(input: {
@@ -194,7 +195,7 @@ export type HumanResourcesLearningStore = {
 	createSession(
 		record: SessionCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningSession>>;
 
 	startSession(
@@ -206,7 +207,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningSession>>;
 
 	completeSession(
@@ -218,7 +219,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningSession>>;
 
 	cancelSession(
@@ -229,7 +230,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningSession>>;
 
 	listSessions(input: {
@@ -258,7 +259,7 @@ export type HumanResourcesLearningStore = {
 	createLearningAssignment(
 		record: LearningAssignmentCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningAssignment>>;
 
 	enrollLearningAssignment(
@@ -270,7 +271,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningAssignment>>;
 
 	waiveLearningAssignment(
@@ -281,7 +282,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningAssignment>>;
 
 	listLearningAssignments(input: {
@@ -311,7 +312,7 @@ export type HumanResourcesLearningStore = {
 	recordCompletion(
 		record: CompletionCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningCompletion>>;
 
 	listCompletions(input: {
@@ -346,7 +347,7 @@ export type HumanResourcesLearningStore = {
 			createdBy: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCertification>>;
 
 	revokeCertification(
@@ -358,7 +359,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCertification>>;
 
 	expireCertification(
@@ -369,7 +370,7 @@ export type HumanResourcesLearningStore = {
 			actorUserId: string;
 		},
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCertification>>;
 
 	listCertifications(input: {

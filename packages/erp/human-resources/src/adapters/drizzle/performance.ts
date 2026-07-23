@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import {
 	and,
@@ -830,7 +831,7 @@ async function mutateGoalStatus(
 		actorUserId: string;
 	},
 	nextStatus: PerformanceGoal["status"],
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 ): Promise<Result<PerformanceGoal>> {
 	const existing = await host.getPerformanceGoalById({
 		organizationId: input.organizationId,
@@ -912,7 +913,7 @@ async function mutateReviewStatus(
 		actorUserId: string;
 	},
 	nextStatus: PerformanceReview["status"],
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 ): Promise<Result<PerformanceReview>> {
 	const detail = await host.getPerformanceReviewById({
 		organizationId: input.organizationId,
@@ -995,7 +996,7 @@ async function mutatePlanStatus(
 		actorUserId: string;
 	},
 	nextStatus: PerformanceImprovementPlan["status"],
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 ): Promise<Result<PerformanceImprovementPlan>> {
 	const existing = await host.getImprovementPlanById({
 		organizationId: input.organizationId,
@@ -1081,7 +1082,7 @@ async function submitAssessment(
 	},
 	kind: PerformanceAssessment["kind"],
 	nextStatus: PerformanceReview["status"],
-	meta: { correlationId: string },
+	meta: HumanResourcesMutationMeta,
 ): Promise<Result<PerformanceReview>> {
 	const detail = await host.getPerformanceReviewById({
 		organizationId: input.organizationId,

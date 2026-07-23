@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -98,7 +99,11 @@ export async function issueCertification(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE },
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
+					idempotencyKey: data.idempotencyKey,
+				}),
 			);
 		},
 	});
@@ -121,7 +126,7 @@ export async function expireCertification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE }),
 			);
 		},
 	});
@@ -145,7 +150,7 @@ export async function revokeCertification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE }),
 			);
 		},
 	});

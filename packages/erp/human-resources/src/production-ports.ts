@@ -40,17 +40,28 @@ export function createSqlOutboxPort(): OutboxPort {
 	const publisher = createEventPublisher();
 	return {
 		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
+			const causationId =
+				typeof input.payload.causationId === "string"
+					? input.payload.causationId
+					: undefined;
+			const operation =
+				typeof input.payload.operation === "string"
+					? input.payload.operation
+					: undefined;
 			const result = await publisher.publish({
 				type: input.type,
 				sourceModule: HUMAN_RESOURCES_MODULE,
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: input.correlationId,
-				causationId:
-					typeof input.payload.causationId === "string"
-						? input.payload.causationId
-						: undefined,
+				causationId,
 				payload: input.payload,
+				metadata:
+					operation === undefined
+						? undefined
+						: {
+								operation,
+							},
 			});
 			if (!result.ok) {
 				return result;

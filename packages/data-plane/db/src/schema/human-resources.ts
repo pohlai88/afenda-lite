@@ -57,6 +57,55 @@ export const hrEmployee = pgTable(
 	],
 );
 
+/** User-to-employee identity mapping for actor resolution and RBAC */
+export const hrUserEmployee = pgTable(
+	"hr_user_employee",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		userId: text("user_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		relationshipType: text("relationship_type")
+			.notNull()
+			.$type<"self" | "proxy">(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveUntil: date("effective_until"),
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_user_employee_org_user_idx").on(t.organizationId, t.userId),
+		index("hr_user_employee_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_user_employee_effective_idx").on(
+			t.organizationId,
+			t.userId,
+			t.effectiveFrom,
+			t.effectiveUntil,
+		),
+		uniqueIndex("hr_user_employee_org_user_emp_from_uidx").on(
+			t.organizationId,
+			t.userId,
+			t.employeeId,
+			t.effectiveFrom,
+		),
+		check(
+			"hr_user_employee_relationship_type_check",
+			sql`${t.relationshipType} IN ('self', 'proxy')`,
+		),
+		check(
+			"hr_user_employee_effective_dates_check",
+			sql`${t.effectiveUntil} IS NULL OR ${t.effectiveUntil} > ${t.effectiveFrom}`,
+		),
+	],
+);
+
 export const hrDepartment = pgTable(
 	"hr_department",
 	{
@@ -3343,6 +3392,849 @@ export const hrPolicyAcknowledgement = pgTable(
 		check(
 			"hr_policy_acknowledgement_status_check",
 			sql`${t.requirementStatus} IN ('outstanding', 'acknowledged', 'revoked', 'superseded')`,
+		),
+	],
+);
+
+/** Organization work calendar — leave segment expansion / working-day resolution. */
+export const hrWorkCalendar = pgTable(
+	"hr_work_calendar",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		timezone: text("timezone").notNull(),
+		/** Monotonic calendar rule version used in leave calculations. */
+		calendarVersion: text("calendar_version").notNull(),
+		/**
+		 * Working-week pattern JSON:
+		 * [{ dayOfWeek: 0-6, isWorkingDay, standardStartTime?, standardEndTime?, standardMinutes? }]
+		 */
+		workWeekJson: jsonb("work_week_json").notNull(),
+		standardHoursPerDay: numeric("standard_hours_per_day", {
+			precision: 6,
+			scale: 2,
+		}).notNull(),
+		/** active | archived */
+		status: text("status").notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_work_calendar_org_id_idx").on(t.organizationId, t.id),
+		index("hr_work_calendar_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_work_calendar_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_work_calendar_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_work_calendar_status_check",
+			sql`${t.status} IN ('active', 'archived')`,
+		),
+		check(
+			"hr_work_calendar_hours_pos_check",
+			sql`${t.standardHoursPerDay}::numeric > 0`,
+		),
+		check(
+			"hr_work_calendar_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+export const hrWorkCalendarHoliday = pgTable(
+	"hr_work_calendar_holiday",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		calendarId: uuid("calendar_id")
+			.notNull()
+			.references(() => hrWorkCalendar.id),
+		holidayDate: date("holiday_date", { mode: "string" }).notNull(),
+		label: text("label"),
+		locationCode: text("location_code"),
+		jurisdiction: text("jurisdiction"),
+		overrideKind: text("override_kind").notNull().default("holiday"),
+		isWorkingDay: boolean("is_working_day").notNull().default(false),
+		expectedMinutes: integer("expected_minutes"),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_work_calendar_holiday_org_id_idx").on(t.organizationId, t.id),
+		index("hr_work_calendar_holiday_org_calendar_idx").on(
+			t.organizationId,
+			t.calendarId,
+		),
+		index("hr_work_calendar_holiday_org_date_idx").on(
+			t.organizationId,
+			t.holidayDate,
+		),
+		uniqueIndex("hr_work_calendar_holiday_org_calendar_date_loc_jur_uidx").on(
+			t.organizationId,
+			t.calendarId,
+			t.holidayDate,
+			t.locationCode,
+			t.jurisdiction,
+		),
+		check(
+			"hr_work_calendar_holiday_override_kind_check",
+			sql`${t.overrideKind} IN ('holiday', 'half_day', 'shortened_day', 'replacement_workday', 'closure')`,
+		),
+		check(
+			"hr_work_calendar_holiday_expected_minutes_pos_check",
+			sql`${t.expectedMinutes} IS NULL OR ${t.expectedMinutes} > 0`,
+		),
+		check(
+			"hr_work_calendar_holiday_override_consistency_check",
+			sql`(
+				(${t.overrideKind} IN ('holiday', 'closure') AND ${t.isWorkingDay} = false)
+				OR (
+					${t.overrideKind} IN ('half_day', 'shortened_day', 'replacement_workday')
+					AND ${t.isWorkingDay} = true
+				)
+			)`,
+		),
+	],
+);
+
+export const hrEmploymentCalendarAssignment = pgTable(
+	"hr_employment_calendar_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		calendarId: uuid("calendar_id")
+			.notNull()
+			.references(() => hrWorkCalendar.id),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		locationCode: text("location_code"),
+		jurisdiction: text("jurisdiction"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_calendar_assignment_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_employment_calendar_assignment_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		index("hr_employment_calendar_assignment_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_employment_calendar_assignment_org_employment_from_uidx").on(
+			t.organizationId,
+			t.employmentId,
+			t.effectiveFrom,
+		),
+		check(
+			"hr_employment_calendar_assignment_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+/** Reusable shift definition — time.md §2.2 / §9. */
+export const hrShift = pgTable(
+	"hr_shift",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		shiftKind: text("shift_kind").notNull(),
+		startLocal: text("start_local").notNull(),
+		endLocal: text("end_local").notNull(),
+		isOvernight: boolean("is_overnight").notNull().default(false),
+		expectedMinutes: integer("expected_minutes").notNull(),
+		graceEarlyMinutes: integer("grace_early_minutes").notNull().default(0),
+		graceLateMinutes: integer("grace_late_minutes").notNull().default(0),
+		minDurationMinutes: integer("min_duration_minutes"),
+		maxDurationMinutes: integer("max_duration_minutes"),
+		earliestClockInLocal: text("earliest_clock_in_local"),
+		latestClockOutLocal: text("latest_clock_out_local"),
+		overtimeEligible: boolean("overtime_eligible").notNull().default(true),
+		timezone: text("timezone"),
+		locationKey: text("location_key"),
+		status: text("status").notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_shift_org_id_idx").on(t.organizationId, t.id),
+		index("hr_shift_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_shift_org_code_effective_uidx").on(
+			t.organizationId,
+			t.code,
+			t.effectiveFrom,
+		),
+		uniqueIndex("hr_shift_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_shift_kind_check",
+			sql`${t.shiftKind} IN ('fixed', 'flexible', 'split', 'rest_day', 'public_holiday')`,
+		),
+		check(
+			"hr_shift_status_check",
+			sql`${t.status} IN ('draft', 'active', 'inactive')`,
+		),
+		check(
+			"hr_shift_expected_minutes_check",
+			sql`${t.expectedMinutes} > 0 AND ${t.expectedMinutes} <= 1440`,
+		),
+	],
+);
+
+export const hrShiftBreak = pgTable(
+	"hr_shift_break",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		shiftId: uuid("shift_id")
+			.notNull()
+			.references(() => hrShift.id),
+		breakOrder: integer("break_order").notNull().default(1),
+		startOffsetMinutes: integer("start_offset_minutes"),
+		durationMinutes: integer("duration_minutes").notNull(),
+		isPaid: boolean("is_paid").notNull().default(false),
+		label: text("label"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_shift_break_org_id_idx").on(t.organizationId, t.id),
+		index("hr_shift_break_org_shift_idx").on(t.organizationId, t.shiftId),
+		check(
+			"hr_shift_break_duration_check",
+			sql`${t.durationMinutes} > 0 AND ${t.durationMinutes} <= 720`,
+		),
+	],
+);
+
+export const hrShiftAssignment = pgTable(
+	"hr_shift_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id").references(() => hrEmployment.id),
+		shiftId: uuid("shift_id")
+			.notNull()
+			.references(() => hrShift.id),
+		scheduledDate: date("scheduled_date", { mode: "string" }).notNull(),
+		startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+		endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+		locationKey: text("location_key"),
+		timezone: text("timezone").notNull(),
+		publicationStatus: text("publication_status").notNull(),
+		assignmentSource: text("assignment_source").notNull().default("manual"),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_shift_assignment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_shift_assignment_org_employee_date_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.scheduledDate,
+		),
+		index("hr_shift_assignment_org_status_idx").on(
+			t.organizationId,
+			t.publicationStatus,
+		),
+		uniqueIndex("hr_shift_assignment_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_shift_assignment_status_check",
+			sql`${t.publicationStatus} IN ('planned', 'published', 'changed', 'cancelled', 'completed')`,
+		),
+		check(
+			"hr_shift_assignment_range_check",
+			sql`${t.endsAt} > ${t.startsAt}`,
+		),
+	],
+);
+
+export const hrShiftAssignmentSegment = pgTable(
+	"hr_shift_assignment_segment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		assignmentId: uuid("assignment_id")
+			.notNull()
+			.references(() => hrShiftAssignment.id),
+		segmentOrder: integer("segment_order").notNull().default(1),
+		startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+		endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_shift_assignment_segment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_shift_assignment_segment_org_assignment_idx").on(
+			t.organizationId,
+			t.assignmentId,
+		),
+		check(
+			"hr_shift_assignment_segment_range_check",
+			sql`${t.endsAt} > ${t.startsAt}`,
+		),
+	],
+);
+
+export const hrAttendanceEvent = pgTable(
+	"hr_attendance_event",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id").references(() => hrEmployment.id),
+		shiftAssignmentId: uuid("shift_assignment_id").references(
+			() => hrShiftAssignment.id,
+		),
+		eventType: text("event_type").notNull(),
+		occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+		sourceTimezone: text("source_timezone").notNull(),
+		localWorkDate: date("local_work_date", { mode: "string" }).notNull(),
+		source: text("source").notNull(),
+		sourceReference: text("source_reference"),
+		deviceMetadata: jsonb("device_metadata"),
+		locationKey: text("location_key"),
+		notes: text("notes"),
+		payloadChecksum: text("payload_checksum"),
+		voidedAt: timestamp("voided_at", { withTimezone: true }),
+		voidReason: text("void_reason"),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_attendance_event_org_id_idx").on(t.organizationId, t.id),
+		index("hr_attendance_event_org_employee_date_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.localWorkDate,
+		),
+		uniqueIndex("hr_attendance_event_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_attendance_event_org_source_ref_uidx")
+			.on(t.organizationId, t.source, t.sourceReference)
+			.where(sql`${t.sourceReference} IS NOT NULL`),
+		check(
+			"hr_attendance_event_type_check",
+			sql`${t.eventType} IN ('clock_in', 'clock_out', 'break_start', 'break_end', 'manual_adjustment')`,
+		),
+		check(
+			"hr_attendance_event_source_check",
+			sql`${t.source} IN ('self', 'supervisor', 'import', 'system', 'manual')`,
+		),
+	],
+);
+
+export const hrAttendanceSession = pgTable(
+	"hr_attendance_session",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id").references(() => hrEmployment.id),
+		shiftAssignmentId: uuid("shift_assignment_id").references(
+			() => hrShiftAssignment.id,
+		),
+		localWorkDate: date("local_work_date", { mode: "string" }).notNull(),
+		timezone: text("timezone").notNull(),
+		firstClockInAt: timestamp("first_clock_in_at", { withTimezone: true }),
+		finalClockOutAt: timestamp("final_clock_out_at", { withTimezone: true }),
+		breakMinutes: integer("break_minutes").notNull().default(0),
+		workedMinutes: integer("worked_minutes").notNull().default(0),
+		grossMinutes: integer("gross_minutes").notNull().default(0),
+		resolutionStatus: text("resolution_status").notNull(),
+		requiresReview: boolean("requires_review").notNull().default(false),
+		provenance: jsonb("provenance"),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_attendance_session_org_id_idx").on(t.organizationId, t.id),
+		index("hr_attendance_session_org_employee_date_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.localWorkDate,
+		),
+		uniqueIndex("hr_attendance_session_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_attendance_session_status_check",
+			sql`${t.resolutionStatus} IN ('incomplete', 'resolved', 'needs_review', 'voided')`,
+		),
+		check(
+			"hr_attendance_session_minutes_check",
+			sql`${t.breakMinutes} >= 0 AND ${t.workedMinutes} >= 0 AND ${t.grossMinutes} >= 0`,
+		),
+	],
+);
+
+export const hrAttendanceException = pgTable(
+	"hr_attendance_exception",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		sessionId: uuid("session_id").references(() => hrAttendanceSession.id),
+		eventId: uuid("event_id").references(() => hrAttendanceEvent.id),
+		shiftAssignmentId: uuid("shift_assignment_id").references(
+			() => hrShiftAssignment.id,
+		),
+		exceptionType: text("exception_type").notNull(),
+		severity: text("severity").notNull(),
+		detectedFacts: jsonb("detected_facts"),
+		reviewStatus: text("review_status").notNull(),
+		resolution: text("resolution"),
+		reviewerUserId: text("reviewer_user_id"),
+		evidenceReference: text("evidence_reference"),
+		remarks: text("remarks"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_attendance_exception_org_id_idx").on(t.organizationId, t.id),
+		index("hr_attendance_exception_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_attendance_exception_org_status_idx").on(
+			t.organizationId,
+			t.reviewStatus,
+		),
+		check(
+			"hr_attendance_exception_type_check",
+			sql`${t.exceptionType} IN ('late_arrival', 'early_departure', 'absence', 'missing_clock_in', 'missing_clock_out', 'unplanned_attendance', 'overlapping_attendance', 'excessive_break', 'insufficient_rest', 'schedule_mismatch', 'location_mismatch', 'overtime_candidate')`,
+		),
+		check(
+			"hr_attendance_exception_severity_check",
+			sql`${t.severity} IN ('info', 'warning', 'critical')`,
+		),
+		check(
+			"hr_attendance_exception_status_check",
+			sql`${t.reviewStatus} IN ('open', 'in_review', 'excused', 'rejected', 'resolved')`,
+		),
+	],
+);
+
+export const hrAttendanceAdjustment = pgTable(
+	"hr_attendance_adjustment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		eventId: uuid("event_id")
+			.notNull()
+			.references(() => hrAttendanceEvent.id),
+		previousOccurredAt: timestamp("previous_occurred_at", {
+			withTimezone: true,
+		}).notNull(),
+		newOccurredAt: timestamp("new_occurred_at", {
+			withTimezone: true,
+		}).notNull(),
+		adjustmentReason: text("adjustment_reason").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_attendance_adjustment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_attendance_adjustment_org_event_idx").on(
+			t.organizationId,
+			t.eventId,
+		),
+	],
+);
+
+export const hrTimesheet = pgTable(
+	"hr_timesheet",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id").references(() => hrEmployment.id),
+		periodStart: date("period_start", { mode: "string" }).notNull(),
+		periodEnd: date("period_end", { mode: "string" }).notNull(),
+		status: text("status").notNull(),
+		totalRecordedMinutes: integer("total_recorded_minutes").notNull().default(0),
+		totalApprovedMinutes: integer("total_approved_minutes").notNull().default(0),
+		submittedAt: timestamp("submitted_at", { withTimezone: true }),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		approvedBy: text("approved_by"),
+		returnedAt: timestamp("returned_at", { withTimezone: true }),
+		rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+		lockedAt: timestamp("locked_at", { withTimezone: true }),
+		approverNotes: text("approver_notes"),
+		rejectionReason: text("rejection_reason"),
+		supersedesTimesheetId: uuid("supersedes_timesheet_id").references(
+			(): AnyPgColumn => hrTimesheet.id,
+		),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_timesheet_org_id_idx").on(t.organizationId, t.id),
+		index("hr_timesheet_org_employee_idx").on(t.organizationId, t.employeeId),
+		index("hr_timesheet_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_timesheet_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_timesheet_org_employee_period_active_uidx")
+			.on(t.organizationId, t.employeeId, t.periodStart, t.periodEnd)
+			.where(sql`${t.status} NOT IN ('superseded', 'rejected')`),
+		check(
+			"hr_timesheet_status_check",
+			sql`${t.status} IN ('draft', 'submitted', 'returned', 'approved', 'rejected', 'locked', 'superseded')`,
+		),
+		check(
+			"hr_timesheet_period_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+		check(
+			"hr_timesheet_minutes_check",
+			sql`${t.totalRecordedMinutes} >= 0 AND ${t.totalApprovedMinutes} >= 0`,
+		),
+	],
+);
+
+export const hrTimesheetEntry = pgTable(
+	"hr_timesheet_entry",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		timesheetId: uuid("timesheet_id")
+			.notNull()
+			.references(() => hrTimesheet.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		workDate: date("work_date", { mode: "string" }).notNull(),
+		timezone: text("timezone").notNull(),
+		sourceType: text("source_type").notNull(),
+		sourceReference: text("source_reference"),
+		timeType: text("time_type").notNull(),
+		startedAt: timestamp("started_at", { withTimezone: true }),
+		endedAt: timestamp("ended_at", { withTimezone: true }),
+		recordedMinutes: integer("recorded_minutes").notNull(),
+		approvedMinutes: integer("approved_minutes").notNull(),
+		costCenterId: text("cost_center_id"),
+		projectId: text("project_id"),
+		locationId: text("location_id"),
+		departmentId: text("department_id"),
+		approvalReference: text("approval_reference"),
+		evidenceReference: text("evidence_reference"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_timesheet_entry_org_id_idx").on(t.organizationId, t.id),
+		index("hr_timesheet_entry_org_timesheet_idx").on(
+			t.organizationId,
+			t.timesheetId,
+		),
+		index("hr_timesheet_entry_org_employee_date_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.workDate,
+		),
+		check(
+			"hr_timesheet_entry_source_type_check",
+			sql`${t.sourceType} IN ('attendance', 'schedule', 'manual', 'leave', 'external')`,
+		),
+		check(
+			"hr_timesheet_entry_time_type_check",
+			sql`${t.timeType} IN ('regular', 'overtime', 'rest_day', 'public_holiday', 'night', 'call_back', 'training', 'travel', 'standby', 'unpaid')`,
+		),
+		check(
+			"hr_timesheet_entry_minutes_check",
+			sql`${t.recordedMinutes} >= 0 AND ${t.approvedMinutes} >= 0`,
+		),
+	],
+);
+
+export const hrOvertimeRequest = pgTable(
+	"hr_overtime_request",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id").references(() => hrEmployment.id),
+		overtimeType: text("overtime_type").notNull(),
+		requestedStartsAt: timestamp("requested_starts_at", {
+			withTimezone: true,
+		}).notNull(),
+		requestedEndsAt: timestamp("requested_ends_at", {
+			withTimezone: true,
+		}).notNull(),
+		requestedMinutes: integer("requested_minutes").notNull(),
+		approvedMaximumMinutes: integer("approved_maximum_minutes"),
+		actualMinutes: integer("actual_minutes"),
+		payrollApprovedMinutes: integer("payroll_approved_minutes"),
+		reason: text("reason").notNull(),
+		evidenceReference: text("evidence_reference"),
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_overtime_request_org_id_idx").on(t.organizationId, t.id),
+		index("hr_overtime_request_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_overtime_request_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_overtime_request_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_overtime_request_type_check",
+			sql`${t.overtimeType} IN ('weekday_overtime', 'rest_day_overtime', 'public_holiday_overtime', 'night_overtime', 'call_back', 'emergency_overtime')`,
+		),
+		check(
+			"hr_overtime_request_status_check",
+			sql`${t.status} IN ('requested', 'approved', 'rejected', 'worked', 'verified', 'cancelled')`,
+		),
+		check(
+			"hr_overtime_request_range_check",
+			sql`${t.requestedEndsAt} > ${t.requestedStartsAt}`,
+		),
+		check(
+			"hr_overtime_request_minutes_check",
+			sql`${t.requestedMinutes} > 0`,
+		),
+	],
+);
+
+export const hrOvertimeApproval = pgTable(
+	"hr_overtime_approval",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		overtimeRequestId: uuid("overtime_request_id")
+			.notNull()
+			.references(() => hrOvertimeRequest.id),
+		decision: text("decision").notNull(),
+		approvedMaximumMinutes: integer("approved_maximum_minutes"),
+		actorUserId: text("actor_user_id").notNull(),
+		authority: text("authority"),
+		comment: text("comment"),
+		decidedAt: timestamp("decided_at", { withTimezone: true }).notNull(),
+		correlationId: text("correlation_id"),
+		versionApproved: integer("version_approved").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_overtime_approval_org_id_idx").on(t.organizationId, t.id),
+		index("hr_overtime_approval_org_request_idx").on(
+			t.organizationId,
+			t.overtimeRequestId,
+		),
+		check(
+			"hr_overtime_approval_decision_check",
+			sql`${t.decision} IN ('approved', 'rejected', 'verified', 'cancelled')`,
+		),
+	],
+);
+
+export const hrAttendanceImportBatch = pgTable(
+	"hr_attendance_import_batch",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		batchId: text("batch_id").notNull(),
+		sourceKey: text("source_key").notNull(),
+		status: text("status").notNull(),
+		acceptedCount: integer("accepted_count").notNull().default(0),
+		skippedCount: integer("skipped_count").notNull().default(0),
+		rejectedCount: integer("rejected_count").notNull().default(0),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		resultSnapshot: jsonb("result_snapshot").notNull(),
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+	},
+	(t) => [
+		index("hr_attendance_import_batch_org_id_idx").on(t.organizationId, t.id),
+		index("hr_attendance_import_batch_org_batch_idx").on(
+			t.organizationId,
+			t.batchId,
+		),
+		uniqueIndex("hr_attendance_import_batch_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_attendance_import_batch_status_check",
+			sql`${t.status} IN ('completed', 'partial', 'failed')`,
+		),
+	],
+);
+
+export const hrAttendanceImportError = pgTable(
+	"hr_attendance_import_error",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		importBatchId: uuid("import_batch_id")
+			.notNull()
+			.references(() => hrAttendanceImportBatch.id),
+		rowIndex: integer("row_index").notNull(),
+		sourceReference: text("source_reference"),
+		errorCode: text("error_code").notNull(),
+		errorMessage: text("error_message").notNull(),
+		payloadChecksum: text("payload_checksum"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_attendance_import_error_org_batch_idx").on(
+			t.organizationId,
+			t.importBatchId,
 		),
 	],
 );

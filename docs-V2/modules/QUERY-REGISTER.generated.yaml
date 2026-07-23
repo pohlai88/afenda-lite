@@ -331,6 +331,90 @@ queries:
   - id: human-resources.employee-compliance-summary.get
     moduleId: human-resources
     permission: human-resources.compliance.administer
+  - id: human-resources.work-calendar.get
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.work-calendar.list
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.work-calendar.holiday.list
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.employment-calendar.resolve
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.shift.get
+    moduleId: human-resources
+    permission: human-resources.time.shift.read
+  - id: human-resources.shift.list
+    moduleId: human-resources
+    permission: human-resources.time.shift.read
+  - id: human-resources.shift.break.list
+    moduleId: human-resources
+    permission: human-resources.time.shift.read
+  - id: human-resources.shift-assignment.get
+    moduleId: human-resources
+    permission: human-resources.time.schedule.read
+  - id: human-resources.shift-assignment.list
+    moduleId: human-resources
+    permission: human-resources.time.schedule.read
+  - id: human-resources.shift-assignment.scheduled-for-date
+    moduleId: human-resources
+    permission: human-resources.time.schedule.read
+  - id: human-resources.shift-assignment.location-schedule.list
+    moduleId: human-resources
+    permission: human-resources.time.schedule.read
+  - id: human-resources.attendance-event.get
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
+  - id: human-resources.attendance-event.list
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
+  - id: human-resources.attendance-session.get
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
+  - id: human-resources.attendance-session.list
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
+  - id: human-resources.attendance-exception.get
+    moduleId: human-resources
+    permission: human-resources.time.exception.read
+  - id: human-resources.attendance-exception.list
+    moduleId: human-resources
+    permission: human-resources.time.exception.read
+  - id: human-resources.attendance-exception.list-unresolved
+    moduleId: human-resources
+    permission: human-resources.time.exception.read
+  - id: human-resources.attendance.daily-summary.get
+    moduleId: human-resources
+    permission: human-resources.time.attendance.read
+  - id: human-resources.timesheet.get
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.read
+  - id: human-resources.timesheet.for-employee-period.get
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.read
+  - id: human-resources.timesheet.list
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.read
+  - id: human-resources.timesheet.entry.list
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.read
+  - id: human-resources.timesheet.totals.get
+    moduleId: human-resources
+    permission: human-resources.time.timesheet.read
+  - id: human-resources.approved-time-handoff.get
+    moduleId: human-resources
+    permission: human-resources.time.handoff.read
+  - id: human-resources.overtime-request.get
+    moduleId: human-resources
+    permission: human-resources.time.overtime.read
+  - id: human-resources.overtime-request.list
+    moduleId: human-resources
+    permission: human-resources.time.overtime.read
+  - id: human-resources.overtime-request.list-pending-approval
+    moduleId: human-resources
+    permission: human-resources.time.overtime.approve
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read

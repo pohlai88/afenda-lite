@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -64,9 +65,11 @@ export async function registerEmployeeDocument(
 		invalidMessage: "Invalid employee document register input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
 		execute: async (data, { store, ports, documentReference }) => {
-			const refCheck = await documentReference.assertAcceptableRef(
-				data.documentRef,
-			);
+			const refCheck = await documentReference.validateReference({
+				organizationId: data.organizationId,
+				reference: data.documentRef,
+				allowedKinds: ["employee_document", "passport", "identity_document", "other"],
+			});
 			if (!refCheck.ok) {
 				return refCheck;
 			}
@@ -135,7 +138,11 @@ export async function registerEmployeeDocument(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER },
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
+					idempotencyKey: data.idempotencyKey,
+				}),
 			);
 		},
 	});
@@ -181,10 +188,7 @@ export async function updateEmployeeDocumentMetadata(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{
-					correlationId:
-						HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
-				},
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA }),
 			);
 		},
 	});
@@ -208,7 +212,7 @@ export async function verifyEmployeeDocument(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY }),
 			),
 	});
 }
@@ -231,7 +235,7 @@ export async function rejectEmployeeDocument(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT }),
 			),
 	});
 }
@@ -253,10 +257,7 @@ export async function revokeEmployeeDocumentVerification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{
-					correlationId:
-						HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
-				},
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION }),
 			),
 	});
 }
@@ -278,9 +279,10 @@ export async function markEmployeeDocumentExpired(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{
-					correlationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
-				},
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
+				}),
 			),
 	});
 }
@@ -292,7 +294,7 @@ export async function getEmployeeDocument(
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: getEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document get input",
-		execute: async (data, { store, authorization }) => {
+		execute: async (data, { store, authorization, identityResolver }) => {
 			const documentResult = await store.getEmployeeDocumentById({
 				organizationId: data.organizationId,
 				documentId: data.documentId,
@@ -304,7 +306,13 @@ export async function getEmployeeDocument(
 				return fail("NOT_FOUND", "Employee document not found");
 			}
 
-			const scope = await requireComplianceEmployeeReadScope(authorization, {
+			if (!identityResolver) {
+				return fail(
+					"UNAUTHORIZED",
+					"Identity resolver is required for employee document access",
+				);
+			}
+			const scope = await requireComplianceEmployeeReadScope(identityResolver, authorization, {
 				organizationId: data.organizationId,
 				actorUserId: data.actorUserId,
 				employeeId: documentResult.data.employeeId,

@@ -27,6 +27,7 @@ import {
 	parseHumanResourcesSessionId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
+import { fieldChangeJson, valueSnapshotJson } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -2294,6 +2295,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCertificationId(id);
 		if (!brandedId.ok) return brandedId;
+		const changesJson = fieldChangeJson("status", null, "active");
+		const newValueJson = valueSnapshotJson({
+			employeeId: record.employeeId,
+			courseId: record.courseId,
+			certificationCode: record.certificationCode,
+			status: "active",
+		});
 		const auditId = randomUUID();
 
 		try {
@@ -2338,12 +2346,12 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
+								entity_id, action, changes, new_value
 							)
 							SELECT
 								${auditId}, organization_id, created_by, ${meta.correlationId},
 								'human-resources', 'hr_employee_certification', id, 'CREATE',
-								'[]'::jsonb
+								${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -2398,6 +2406,11 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		if (!revokeCheck.ok) return revokeCheck;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"revoked",
+		);
 		const auditId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
@@ -2425,7 +2438,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
 								'human-resources', 'hr_employee_certification', id, 'UPDATE',
-								'[]'::jsonb
+								${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)
@@ -2464,6 +2477,11 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		if (!expireCheck.ok) return expireCheck;
 
 		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"expired",
+		);
 		const auditId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
@@ -2489,7 +2507,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 							SELECT
 								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
 								'human-resources', 'hr_employee_certification', id, 'UPDATE',
-								'[]'::jsonb
+								${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
 						)

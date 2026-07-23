@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -14,7 +15,7 @@ import { fingerprintEmployeeCaseAppeal } from "../shared/fingerprint";
 import {
 	recordEmployeeCaseAppealInputSchema,
 	resolveEmployeeCaseAppealInputSchema,
-} from "./schemas";
+} from "../schemas/employee-relations";
 import type { EmployeeCaseAppeal } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_APPEAL =
@@ -78,7 +79,7 @@ export async function recordEmployeeCaseAppeal(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL }),
 			);
 		},
 	});
@@ -103,7 +104,7 @@ export async function resolveEmployeeCaseAppeal(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: data.correlationId },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL }),
 			),
 	});
 }

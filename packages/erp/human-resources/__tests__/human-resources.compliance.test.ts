@@ -56,6 +56,8 @@ import {
 	HUMAN_RESOURCES_PERMISSION_WORK_ELIGIBILITY_VERIFY,
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
+import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -71,7 +73,13 @@ function harness(
 ) {
 	const store = createMemoryHumanResourcesStore();
 	const authorization = createGrantingHumanResourcesAuthorization(permissions);
-	return { store, ports, authorization };
+	const identityResolver = createStoreBackedIdentityResolver(store);
+	return createTestHumanResourcesCommandOptions({
+		store,
+		ports,
+		authorization,
+		identityResolver,
+	});
 }
 
 async function seedEmployee(

@@ -45,7 +45,7 @@ export async function ensurePerformanceSchemaForTests(): Promise<void> {
 	}
 
 	await runNeonHttpTransaction((sql) => [
-		...migrationStatements.map((statement) => sql.unsafe(statement)),
+		...migrationStatements.map((statement) => sql.query(statement)),
 	]);
 
 	await runNeonHttpTransaction((sql) => [

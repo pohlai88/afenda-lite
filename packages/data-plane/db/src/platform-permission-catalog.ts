@@ -646,9 +646,149 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
-		code: "human-resources.timesheet.approve",
+		code: "human-resources.time.calendar.read",
 		module: "human_resources",
-		description: "Approve employee timesheets",
+		description: "Read work calendars and assignments",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.calendar.manage",
+		module: "human_resources",
+		description: "Manage work calendars, holidays, and assignments",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.shift.read",
+		module: "human_resources",
+		description: "Read shift definitions",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.shift.manage",
+		module: "human_resources",
+		description: "Manage shift definitions and breaks",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.schedule.read",
+		module: "human_resources",
+		description: "Read employee schedules",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.schedule.manage",
+		module: "human_resources",
+		description: "Assign and amend employee schedules",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.schedule.publish",
+		module: "human_resources",
+		description: "Publish employee schedules",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.time.attendance.self.record",
+		module: "human_resources",
+		description: "Record own attendance clock events",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.attendance.read",
+		module: "human_resources",
+		description: "Read attendance events and sessions",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.attendance.correct",
+		module: "human_resources",
+		description: "Correct and void attendance events",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.attendance.manage",
+		module: "human_resources",
+		description:
+			"Record supervisor-entered attendance on behalf of employees",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.exception.read",
+		module: "human_resources",
+		description: "Read attendance exceptions",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.exception.resolve",
+		module: "human_resources",
+		description: "Resolve attendance exceptions",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.self.read",
+		module: "human_resources",
+		description: "Read own timesheets",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.self.edit",
+		module: "human_resources",
+		description: "Edit own draft timesheets",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.submit",
+		module: "human_resources",
+		description: "Submit timesheets for approval",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.read",
+		module: "human_resources",
+		description: "Read team and organization timesheets",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.approve",
+		module: "human_resources",
+		description:
+			"Approve, return, or reject employee timesheets (manager/HR)",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.reopen",
+		module: "human_resources",
+		description: "Reopen approved timesheets under control",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.timesheet.lock",
+		module: "human_resources",
+		description: "Lock timesheets for payroll handoff",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.overtime.request",
+		module: "human_resources",
+		description: "Request overtime",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.overtime.read",
+		module: "human_resources",
+		description: "Read overtime requests",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.overtime.approve",
+		module: "human_resources",
+		description: "Approve overtime requests",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.time.handoff.read",
+		module: "human_resources",
+		description: "Read approved time payroll handoff facts",
 		sensitive: true,
 	},
 	{
@@ -953,7 +1093,13 @@ export const PLATFORM_PERMISSION_V1 = [
 	},
 ] as const;
 
-/** Retired v1 codes removed by the domain wipe / S15 cutover or fine-grained split — deleted on ensure. */
+/**
+ * Retired v1 codes removed by the domain wipe / S15 cutover or fine-grained
+ * split — deleted on ensure.
+ *
+ * HR-TIME-P0-08: `human-resources.timesheet.approve` →
+ * `human-resources.time.timesheet.approve` (role grants copied before delete).
+ */
 const RETIRED_PLATFORM_PERMISSION_CODES = [
 	"declarations.manage",
 	"declarations.read",
@@ -970,7 +1116,14 @@ const RETIRED_PLATFORM_PERMISSION_CODES = [
 	"payments.manage",
 	"accounting.read",
 	"accounting.manage",
+	"human-resources.timesheet.approve",
 ] as const;
+
+/** HR-TIME-P0-08 seed migration: legacy permission → successor. */
+const LEGACY_TIMESHEET_APPROVE_PERMISSION =
+	"human-resources.timesheet.approve" as const;
+const TIME_TIMESHEET_APPROVE_PERMISSION =
+	"human-resources.time.timesheet.approve" as const;
 
 export type PlatformPermissionV1 = (typeof PLATFORM_PERMISSION_V1)[number];
 
@@ -1168,6 +1321,32 @@ export async function ensurePlatformPermissionCatalog(
 					sensitive: row.sensitive,
 				},
 			});
+	}
+
+	// HR-TIME-P0-08: copy legacy timesheet.approve grants to successor before retire.
+	const legacyTimesheetApproveGrants = await database
+		.select({
+			roleId: platformRolePermission.roleId,
+			grantedBy: platformRolePermission.grantedBy,
+		})
+		.from(platformRolePermission)
+		.where(
+			eq(
+				platformRolePermission.permissionCode,
+				LEGACY_TIMESHEET_APPROVE_PERMISSION,
+			),
+		);
+	if (legacyTimesheetApproveGrants.length > 0) {
+		await database
+			.insert(platformRolePermission)
+			.values(
+				legacyTimesheetApproveGrants.map((grant) => ({
+					roleId: grant.roleId,
+					permissionCode: TIME_TIMESHEET_APPROVE_PERMISSION,
+					grantedBy: grant.grantedBy,
+				})),
+			)
+			.onConflictDoNothing();
 	}
 
 	await database

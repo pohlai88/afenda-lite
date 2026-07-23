@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import { buildMutationMeta } from "../shared/mutation-meta";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -56,9 +57,16 @@ export async function recordWorkEligibility(
 			}
 
 			if (data.documentRef !== undefined) {
-				const refCheck = await documentReference.assertAcceptableRef(
-					data.documentRef,
-				);
+				const refCheck = await documentReference.validateReference({
+					organizationId: data.organizationId,
+					reference: data.documentRef,
+					allowedKinds: [
+						"passport",
+						"work_authorization",
+						"identity_document",
+						"other",
+					],
+				});
 				if (!refCheck.ok) {
 					return refCheck;
 				}
@@ -107,7 +115,11 @@ export async function recordWorkEligibility(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD },
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+					idempotencyKey: data.idempotencyKey,
+				}),
 			);
 		},
 	});
@@ -131,7 +143,7 @@ export async function verifyWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY }),
 			),
 	});
 }
@@ -153,7 +165,7 @@ export async function suspendWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND }),
 			),
 	});
 }
@@ -176,9 +188,16 @@ export async function renewWorkEligibility(
 			}
 
 			if (data.documentRef !== undefined) {
-				const refCheck = await documentReference.assertAcceptableRef(
-					data.documentRef,
-				);
+				const refCheck = await documentReference.validateReference({
+					organizationId: data.organizationId,
+					reference: data.documentRef,
+					allowedKinds: [
+						"passport",
+						"work_authorization",
+						"identity_document",
+						"other",
+					],
+				});
 				if (!refCheck.ok) {
 					return refCheck;
 				}
@@ -195,7 +214,7 @@ export async function renewWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW }),
 			);
 		},
 	});
@@ -218,7 +237,7 @@ export async function closeWorkEligibility(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE },
+				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE }),
 			),
 	});
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { ok, type Result } from "@afenda/errors/result";
 import {
@@ -183,7 +184,7 @@ export function createMemoryCompensationBenefitsMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CompensationGrade>> {
 			const existing = Array.from(state.compensationGrades.values()).find(
 				(g) =>
@@ -238,7 +239,7 @@ export function createMemoryCompensationBenefitsMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CompensationGrade>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
@@ -291,7 +292,7 @@ export function createMemoryCompensationBenefitsMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CompensationGrade>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
@@ -397,7 +398,7 @@ export function createMemoryCompensationBenefitsMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<SalaryBand>> {
 			const grade = state.compensationGrades.get(record.gradeId);
 			if (!grade || grade.organizationId !== record.organizationId) {
@@ -489,7 +490,7 @@ export function createMemoryCompensationBenefitsMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<SalaryBand>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
@@ -601,7 +602,7 @@ export function createMemoryCompensationBenefitsMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<SalaryBand>> {
 			const band = state.salaryBands.get(input.salaryBandId);
 			if (!band || band.organizationId !== input.organizationId) {
@@ -719,7 +720,7 @@ export function createMemoryCompensationBenefitsMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeCompensation>> {
 			const idempKey = idempotencyMapKey(
 				record.organizationId,
@@ -829,7 +830,7 @@ export function createMemoryCompensationBenefitsMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeCompensation>> {
 			const comp = state.employeeCompensations.get(input.compensationId);
 			if (!comp || comp.organizationId !== input.organizationId) {
@@ -973,7 +974,7 @@ export function createMemoryCompensationBenefitsMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CompensationReview>> {
 			const key = `${record.organizationId}:${record.createIdempotencyKey}`;
 			const existing = state.reviewIdempotencyByKey.get(key);
@@ -1065,7 +1066,7 @@ export function createMemoryCompensationBenefitsMethods(
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CompensationReview>> {
 			const review = state.compensationReviews.get(input.reviewId);
 			if (!review) {
@@ -1142,7 +1143,7 @@ export function createMemoryCompensationBenefitsMethods(
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<CompensationReview>> {
 			const review = state.compensationReviews.get(input.reviewId);
 			if (!review) {
@@ -1216,7 +1217,7 @@ export function createMemoryCompensationBenefitsMethods(
 				actorUserId: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmployeeCompensation>> {
 			const review = state.compensationReviews.get(input.reviewId);
 			if (!review) {
@@ -1441,7 +1442,7 @@ export function createMemoryCompensationBenefitsMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitPlan>> {
 			const existing = Array.from(state.benefitPlans.values()).find(
 				(p) =>
@@ -1497,7 +1498,7 @@ export function createMemoryCompensationBenefitsMethods(
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitPlan>> {
 			const plan = state.benefitPlans.get(input.planId);
 			if (!plan) {
@@ -1561,7 +1562,7 @@ export function createMemoryCompensationBenefitsMethods(
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitPlan>> {
 			const plan = state.benefitPlans.get(input.planId);
 			if (!plan) {
@@ -1668,7 +1669,7 @@ export function createMemoryCompensationBenefitsMethods(
 				createdBy: string;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitEnrollment>> {
 			const key = `${record.organizationId}:${record.createIdempotencyKey}`;
 			const existing = state.enrollmentIdempotencyByKey.get(key);
@@ -1796,7 +1797,7 @@ export function createMemoryCompensationBenefitsMethods(
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitEnrollment>> {
 			const enrollment = state.benefitEnrollments.get(input.enrollmentId);
 			if (!enrollment) {
@@ -1883,7 +1884,7 @@ export function createMemoryCompensationBenefitsMethods(
 				expectedVersion: number;
 			},
 			ports: MutationPorts,
-			meta: { correlationId: string },
+			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitEnrollment>> {
 			const enrollment = state.benefitEnrollments.get(input.enrollmentId);
 			if (!enrollment) {
