@@ -32,14 +32,14 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
-import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 

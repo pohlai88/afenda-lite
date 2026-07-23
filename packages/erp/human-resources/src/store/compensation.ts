@@ -10,12 +10,12 @@ import type {
 	HumanResourcesSalaryBandId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	BenefitPlanStatus,
 	CompensationGradeStatus,
 	SalaryBandStatus,
 } from "../shared/compensation-status";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	ApprovedCompensationHandoff,
 	BenefitEnrollment,
@@ -199,6 +199,12 @@ export type HumanResourcesCompensationStore = {
 	findActiveEmployeeCompensationByEmployment(input: {
 		organizationId: string;
 		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<EmployeeCompensation | null>>;
+
+	findEmployeeCompensationByEmploymentAsOf(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
 	}): Promise<Result<EmployeeCompensation | null>>;
 	// Compensation Review
 	getCompensationReview(input: {

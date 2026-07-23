@@ -1,8 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { ok, type Result } from "@afenda/errors/result";
-
 import {
 	type HumanResourcesHeadcountPlanId,
 	type HumanResourcesHeadcountPlanLineId,
@@ -16,6 +13,7 @@ import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertHeadcountPlanStatusTransition,
 	assertValidHeadcountPeriod,

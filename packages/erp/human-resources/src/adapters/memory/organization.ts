@@ -1,8 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { fail, ok, type Result } from "@afenda/errors/result";
-
 import {
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
@@ -15,6 +12,7 @@ import {
 	parseHumanResourcesReportingLineId,
 } from "../../brands";
 import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -30,6 +28,7 @@ import {
 	type PositionStatus,
 	positionStatusSchema,
 } from "../../shared/employment-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertActiveDepartment,
 	assertActiveJob,
@@ -1105,18 +1104,23 @@ export function createMemoryOrganizationMethods(
 			employeeId: HumanResourcesEmployeeId;
 			asOf: string;
 		}): Promise<Result<ReportingLine | null>> {
-			for (const line of state.reportingLines.values()) {
-				if (
+			const matches = Array.from(state.reportingLines.values()).filter(
+				(line) =>
 					line.organizationId === input.organizationId &&
 					line.employeeId === input.employeeId &&
 					line.relationshipKind === "primary" &&
 					line.startsOn <= input.asOf &&
-					(line.endsOn === null || line.endsOn >= input.asOf)
-				) {
-					return ok({ ...line });
-				}
+					(line.endsOn === null || line.endsOn >= input.asOf),
+			);
+			if (matches.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple primary reporting lines are effective on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
 			}
-			return ok(null);
+			const line = matches[0];
+			return ok(line === undefined ? null : { ...line });
 		},
 
 		async listDirectReports(input: {

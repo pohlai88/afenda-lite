@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -15,6 +13,7 @@ import {
 	getEmploymentContractInputSchema,
 } from "../schemas/core";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentContract } from "../types";
 
 export async function createEmploymentContract(
@@ -52,7 +51,10 @@ export async function createEmploymentContract(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+				}),
 			);
 		},
 	});

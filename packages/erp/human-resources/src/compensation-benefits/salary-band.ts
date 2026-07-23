@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
@@ -16,6 +14,7 @@ import {
 	assertCurrencyExists,
 	runCompensationCommand,
 } from "../shared/compensation-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { SalaryBand } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_SALARY_BAND = "salary_band" as const;
@@ -51,7 +50,10 @@ export async function createSalaryBand(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
+				}),
 			);
 		},
 	});
@@ -86,7 +88,10 @@ export async function supersedeSalaryBand(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
+				}),
 			);
 		},
 	});
@@ -109,7 +114,10 @@ export async function archiveSalaryBand(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
+				}),
 			),
 	});
 }

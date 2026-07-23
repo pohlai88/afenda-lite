@@ -77,7 +77,7 @@ export function createMappingIdentityResolver(
 			if (!employeeId) {
 				return ok(null);
 			}
-			const asOf = input.asOf ?? new Date().toISOString().split("T")[0]!;
+			const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
 			if (effectiveFrom > asOf) {
 				return ok(null);
 			}

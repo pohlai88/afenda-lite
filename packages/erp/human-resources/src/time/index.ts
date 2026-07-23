@@ -26,6 +26,12 @@ export type {
 	AttendanceSourceEvent,
 	AttendanceSourcePort,
 } from "./handoff/ports";
+export {
+	allocateWorkedMinutesByCivilDate,
+	attendanceEntrySourceReference,
+	civilDateInTimeZone,
+	workedMinutesForSessionCivilDate,
+} from "./legal-minute-allocation";
 export * from "./overtime";
 export * from "./policy";
 export * from "./scheduling";
@@ -33,6 +39,7 @@ export * from "./shift";
 export * from "./timesheet";
 export {
 	approvedLeaveMinutesForDate,
+	buildAttendanceTimesheetEntryPlans,
 	encodeAbsenceDetectionRemarks,
 	hasExistingTimesheetGenerationAbsence,
 	isActiveEmploymentOnDate,
@@ -43,12 +50,5 @@ export {
 	parseAbsenceDetectionRemarks,
 	qualifyingWorkedMinutesForDate,
 	segmentMinutesFromQuantity,
-	buildAttendanceTimesheetEntryPlans,
 	TIMESHEET_GENERATION_ABSENCE_SOURCE,
 } from "./timesheet-generation";
-export {
-	allocateWorkedMinutesByCivilDate,
-	attendanceEntrySourceReference,
-	civilDateInTimeZone,
-	workedMinutesForSessionCivilDate,
-} from "./legal-minute-allocation";

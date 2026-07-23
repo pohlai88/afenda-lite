@@ -9,7 +9,10 @@ import {
 	requireHumanResourcesQueryPermission,
 } from "../authorization";
 import type { HumanResourcesEmployeeId } from "../brands";
-import { parseHumanResourcesGoalId, parseHumanResourcesReviewId } from "../brands";
+import {
+	parseHumanResourcesGoalId,
+	parseHumanResourcesReviewId,
+} from "../brands";
 import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
@@ -33,7 +36,11 @@ import {
 } from "../permissions";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
-import { requireAdminResourceAccess, requireManagerResourceAccess, requireOwnResourceAccess } from "./subject-aware-authorization";
+import {
+	requireAdminResourceAccess,
+	requireManagerResourceAccess,
+	requireOwnResourceAccess,
+} from "./subject-aware-authorization";
 
 type ActorScoped = {
 	organizationId: string;
@@ -115,7 +122,8 @@ export async function runPerformanceQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -125,7 +133,11 @@ export async function runPerformanceQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization, identityResolver });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
 }
 
 /** Query path for employee-scoped or org-wide performance reads. */
@@ -150,7 +162,8 @@ export async function runPerformanceEmployeeScopedQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	if (!identityResolver) {
 		return fail(
 			"UNAUTHORIZED",
@@ -173,7 +186,11 @@ export async function runPerformanceEmployeeScopedQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization, identityResolver });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
 }
 
 /** Org-wide performance reads, or employee-scoped reads with own.read. */
@@ -245,7 +262,9 @@ export async function requirePerformanceEmployeeReadScope(
 
 /** Query path for resource-specific performance reads (goal, review) with ownership validation. */
 export async function runPerformanceResourceScopedQuery<
-	TSchema extends z.ZodType<ActorScoped & { goalId?: string; reviewId?: string }>,
+	TSchema extends z.ZodType<
+		ActorScoped & { goalId?: string; reviewId?: string }
+	>,
 	TOut,
 >(
 	input: unknown,
@@ -265,7 +284,8 @@ export async function runPerformanceResourceScopedQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	if (!identityResolver) {
 		return fail(
 			"UNAUTHORIZED",
@@ -289,7 +309,11 @@ export async function runPerformanceResourceScopedQuery<
 		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 	});
 	if (adminCheck.ok) {
-		return config.execute(parsed.data, { store, authorization, identityResolver });
+		return config.execute(parsed.data, {
+			store,
+			authorization,
+			identityResolver,
+		});
 	}
 
 	// For resource-specific access, get the resource and validate ownership
@@ -346,7 +370,11 @@ export async function runPerformanceResourceScopedQuery<
 		}
 	}
 
-	return config.execute(parsed.data, { store, authorization, identityResolver });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
 }
 
 /** Gate confidential performance reads when includeConfidential is true. */

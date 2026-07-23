@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryHumanResourcesStore, createStoreAssignmentContextQuery } from "../src/testing";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../src/testing";
 import {
 	assignEmploymentCalendar,
 	assignWorkCalendarScope,
@@ -99,7 +102,10 @@ async function seedCalendar(ready: ReturnType<typeof harness>, suffix: string) {
 describe("calendar-scope-assignment (memory)", () => {
 	it("prefers employee scope over organization default", async () => {
 		const ready = harness();
-		const { employee, employment } = await seedEmployeeEmployment(ready, "emp-win");
+		const { employee, employment } = await seedEmployeeEmployment(
+			ready,
+			"emp-win",
+		);
 		const orgCalendar = await seedCalendar(ready, "org");
 		const employeeCalendar = await seedCalendar(ready, "employee");
 

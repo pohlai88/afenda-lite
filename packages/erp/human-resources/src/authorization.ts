@@ -1,5 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
+import type { HumanResourcesEmployeeId } from "./brands";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
@@ -11,7 +11,6 @@ import type {
 	HumanResourcesQueryId,
 } from "./module-ids";
 import type { HUMAN_RESOURCES_PERMISSION_CODES } from "./permissions";
-import type { HumanResourcesEmployeeId } from "./brands";
 
 export type HumanResourcesPermission =
 	(typeof HUMAN_RESOURCES_PERMISSION_CODES)[number];
@@ -113,13 +112,17 @@ export async function requireHumanResourcesPermission(
 }
 
 export async function requireHumanResourcesResourceAwarePermission(
-	resourceAwareAuthorization: HumanResourcesResourceAwareAuthorizationPort | undefined,
+	resourceAwareAuthorization:
+		| HumanResourcesResourceAwareAuthorizationPort
+		| undefined,
 	input: HumanResourcesAuthorizationDecisionInput,
-): Promise<Result<{
-	allowed: boolean;
-	projectedFields?: string[];
-	reason?: string;
-}>> {
+): Promise<
+	Result<{
+		allowed: boolean;
+		projectedFields?: string[];
+		reason?: string;
+	}>
+> {
 	if (!resourceAwareAuthorization) {
 		return fail(
 			"UNAUTHORIZED",
@@ -130,18 +133,18 @@ export async function requireHumanResourcesResourceAwarePermission(
 			},
 		);
 	}
-	
+
 	const result = await resourceAwareAuthorization.canWithContext(input);
 	if (!result.ok) {
 		return result;
 	}
-	
+
 	if (!result.data.allowed) {
 		return fail("FORBIDDEN", result.data.reason || "Access denied", {
 			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 			permission: input.permission,
 		});
 	}
-	
+
 	return ok(result.data);
 }

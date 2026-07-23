@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -16,7 +14,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
 	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
 	HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET,
-	HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
 } from "../module-ids";
 import {
 	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_MANAGE,
@@ -34,6 +31,7 @@ import {
 	updateCareerPlanInputSchema,
 } from "../schemas/talent";
 import { fingerprintCareerPlanCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	requireAdminResourceAccess,
 	requireOwnResourceAccess,
@@ -101,7 +99,10 @@ export async function createCareerPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
+				}),
 			);
 		},
 	});
@@ -125,7 +126,10 @@ export async function updateCareerPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
+				}),
 			);
 		},
 	});
@@ -148,7 +152,10 @@ export async function acknowledgeCareerPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
+				}),
 			);
 		},
 	});
@@ -173,7 +180,10 @@ export async function addCareerPlanAction(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
+				}),
 			);
 		},
 	});
@@ -196,7 +206,10 @@ export async function completeCareerPlanAction(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
+				}),
 			);
 		},
 	});
@@ -219,7 +232,10 @@ export async function closeCareerPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
+				}),
 			);
 		},
 	});

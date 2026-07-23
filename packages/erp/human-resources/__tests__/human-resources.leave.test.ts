@@ -191,7 +191,11 @@ async function seedPublishedPolicy(ready: ReturnType<typeof harness>) {
 
 async function seedManagerEmployee(
 	ready: ReturnType<typeof harness>,
-	options?: { correlationId?: string; idempotencyKey?: string; employeeNumber?: string },
+	options?: {
+		correlationId?: string;
+		idempotencyKey?: string;
+		employeeNumber?: string;
+	},
 ) {
 	const seedReady = {
 		...ready,
@@ -228,7 +232,11 @@ async function seedManagerEmployee(
 async function seedManagerWithReportingLine(
 	ready: ReturnType<typeof harness>,
 	employeeId: HumanResourcesEmployeeId,
-	options?: { correlationId?: string; idempotencyKey?: string; employeeNumber?: string },
+	options?: {
+		correlationId?: string;
+		idempotencyKey?: string;
+		employeeNumber?: string;
+	},
 ) {
 	const manager = await seedManagerEmployee(ready, options);
 	if (!manager.ok) return manager;
@@ -397,11 +405,15 @@ describe("Leave request workflow", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
-		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
-			correlationId: "corr-mgr-balance",
-			idempotencyKey: "idem-mgr-balance",
-			employeeNumber: "E-MGR-BALANCE",
-		});
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-mgr-balance",
+				idempotencyKey: "idem-mgr-balance",
+				employeeNumber: "E-MGR-BALANCE",
+			},
+		);
 		expect(manager.ok).toBe(true);
 		if (!manager.ok) return;
 
@@ -675,11 +687,15 @@ describe("Leave request workflow", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
-		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
-			correlationId: "corr-mgr-cancel",
-			idempotencyKey: "idem-mgr-cancel",
-			employeeNumber: "E-MGR-CANCEL",
-		});
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-mgr-cancel",
+				idempotencyKey: "idem-mgr-cancel",
+				employeeNumber: "E-MGR-CANCEL",
+			},
+		);
 		expect(manager.ok).toBe(true);
 		if (!manager.ok) return;
 
@@ -1053,7 +1069,7 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 				actorUserId: MANAGER,
 				correlationId: "corr-amend-return",
 				requestId: submitted.data.id,
-				
+
 				expectedVersion: submitted.data.version,
 			},
 			ready,
@@ -1216,11 +1232,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
-		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
-			correlationId: "corr-mgr-handoff",
-			idempotencyKey: "idem-mgr-handoff",
-			employeeNumber: "E-MGR-HANDOFF",
-		});
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-mgr-handoff",
+				idempotencyKey: "idem-mgr-handoff",
+				employeeNumber: "E-MGR-HANDOFF",
+			},
+		);
 		expect(manager.ok).toBe(true);
 		if (!manager.ok) return;
 
@@ -1505,11 +1525,15 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
-		const manager = await seedManagerWithReportingLine(ready, seeded.employee.id, {
-			correlationId: "corr-mgr-stale",
-			idempotencyKey: "idem-mgr-stale",
-			employeeNumber: "E-MGR-STALE",
-		});
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-mgr-stale",
+				idempotencyKey: "idem-mgr-stale",
+				employeeNumber: "E-MGR-STALE",
+			},
+		);
 		expect(manager.ok).toBe(true);
 		if (!manager.ok) return;
 

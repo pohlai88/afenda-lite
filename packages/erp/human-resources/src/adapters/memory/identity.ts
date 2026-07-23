@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { ok, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesEmployeeId } from "../../brands";
 import type { HumanResourcesEmployeeIdentity } from "../../identity-resolver";
@@ -28,8 +28,7 @@ export function createMemoryHumanResourcesIdentityStore(
 			userId: string;
 			asOf?: string;
 		}): Promise<Result<HumanResourcesEmployeeIdentity | null>> {
-			const defaultDate = new Date().toISOString().split("T")[0]!;
-			const queryDate = input.asOf || defaultDate;
+			const queryDate = input.asOf ?? new Date().toISOString().slice(0, 10);
 
 			const mapping = mappings.find(
 				(m) =>
@@ -69,8 +68,7 @@ export function createMemoryHumanResourcesIdentityStore(
 			}
 
 			const managerEmployeeId = userEmployeeResult.data.employeeId;
-			const defaultDate = new Date().toISOString().split("T")[0]!;
-			const queryDate = input.asOf || defaultDate;
+			const queryDate = input.asOf ?? new Date().toISOString().slice(0, 10);
 
 			const employeeIds = Array.from(organization.reportingLines.values())
 				.filter(

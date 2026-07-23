@@ -1,5 +1,6 @@
 // Drizzle adapter exports for human resources
 
+export * from "./assignment-context-query";
 export * from "./compensation-benefits";
 export * from "./compliance";
 export * from "./compose";
@@ -17,6 +18,6 @@ export * from "./recruitment";
 // Store composition and main entry
 export * from "./store";
 export * from "./talent";
-export * from "./assignment-context-query";
 export * from "./work-calendar-lookup";
+export * from "./workforce-foundation";
 export * from "./workforce-planning";

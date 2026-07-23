@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
@@ -19,6 +17,7 @@ import {
 	runCompensationCommand,
 } from "../shared/compensation-command";
 import { fingerprintCompensationReviewDraft } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CompensationReview, EmployeeCompensation } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW =
@@ -49,7 +48,10 @@ export async function createCompensationReviewDraft(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
+				}),
 			);
 		},
 	});
@@ -85,7 +87,11 @@ export async function recordCompensationRecommendation(
 					expectedVersion: data.expectedVersion,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION,
+				}),
 			);
 		},
 	});
@@ -108,7 +114,10 @@ export async function finalizeCompensationReview(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
+				}),
 			),
 	});
 }
@@ -131,7 +140,11 @@ export async function applyApprovedCompensationResult(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
+				}),
 			),
 	});
 }

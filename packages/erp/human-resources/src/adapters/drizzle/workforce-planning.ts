@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import {
 	and,
 	db,
@@ -13,7 +11,6 @@ import {
 	sql,
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
-
 import {
 	type HumanResourcesHeadcountReservationId,
 	parseHumanResourcesDepartmentId,
@@ -32,6 +29,7 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,

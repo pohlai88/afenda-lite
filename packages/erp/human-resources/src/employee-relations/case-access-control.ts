@@ -317,7 +317,7 @@ async function checkManagerCaseAccess(
 	},
 ): Promise<Result<boolean>> {
 	const employeeCase = input.employeeCase;
-	const currentDate = new Date().toISOString().split("T")[0]!;
+	const currentDate = new Date().toISOString().slice(0, 10);
 
 	const isPrimaryManager = await store.getPrimaryManagerForEmployee({
 		organizationId: input.organizationId,

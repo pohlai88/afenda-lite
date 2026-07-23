@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -25,6 +23,7 @@ import {
 	runLearningCommand,
 	runLearningQuery,
 } from "../shared/learning-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { LearningAssignment, LearningAssignmentListPage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_LEARNING_ASSIGNMENT =
@@ -88,7 +87,10 @@ export async function assignLearning(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
+				}),
 			);
 		},
 	});
@@ -112,7 +114,10 @@ export async function enrolAssignment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL,
+				}),
 			);
 		},
 	});
@@ -135,7 +140,10 @@ export async function waiveAssignment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE,
+				}),
 			);
 		},
 	});

@@ -8,12 +8,7 @@
  * - Testing atomic behavior under various failure conditions
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { randomUUID } from "node:crypto";
-import { drizzleLeave } from "../src/adapters/drizzle/leave";
-import * as leaveTransactions from "../src/adapters/drizzle/leave-transactions";
-import { createTestHarness } from "./helpers/hr-parity-harness";
 import {
 	and,
 	db,
@@ -22,13 +17,18 @@ import {
 	hrLeaveRequest,
 	hrLeaveRequestSegment,
 } from "@afenda/db";
-import type { 
-	WorkforceTestHarness,
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { drizzleLeave } from "../src/adapters/drizzle/leave";
+import * as leaveTransactions from "../src/adapters/drizzle/leave-transactions";
+import type {
 	TestEmployee,
 	TestEmployment,
-	TestLeavePolicy,
 	TestLeaveEntitlement,
+	TestLeavePolicy,
+	WorkforceTestHarness,
 } from "./helpers/hr-parity-harness";
+import { createTestHarness } from "./helpers/hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -38,15 +38,19 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 	let employment: TestEmployment;
 	let policy: TestLeavePolicy;
 	let entitlement: TestLeaveEntitlement;
-	
+
 	beforeEach(async () => {
 		harness = await createTestHarness();
-		
+
 		// Create test data
 		employee = await harness.createEmployee();
 		employment = await harness.createEmployment(employee);
 		policy = await harness.createLeavePolicy();
-		entitlement = await harness.createLeaveEntitlement(employee, employment, policy);
+		entitlement = await harness.createLeaveEntitlement(
+			employee,
+			employment,
+			policy,
+		);
 	});
 
 	afterEach(() => {
@@ -98,7 +102,9 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 			const segments = await db
 				.select()
 				.from(hrLeaveRequestSegment)
-				.where(eq(hrLeaveRequestSegment.organizationId, harness.organizationId));
+				.where(
+					eq(hrLeaveRequestSegment.organizationId, harness.organizationId),
+				);
 
 			expect(requests).toHaveLength(0);
 			expect(segments).toHaveLength(0);
@@ -109,7 +115,7 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 				new Error("Audit service unavailable"),
 			);
 
-			// Attempt to create request  
+			// Attempt to create request
 			const result = await drizzleLeave.createDraftLeaveRequest(
 				{
 					organizationId: harness.organizationId,
@@ -156,10 +162,10 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 			// Create and submit a request
 			const request = await harness.createLeaveRequest(
 				employee,
-				employment, 
+				employment,
 				entitlement,
 				policy,
-				{ requestedQuantity: entitlement.openingQuantity }
+				{ requestedQuantity: entitlement.openingQuantity },
 			);
 
 			await drizzleLeave.submitLeaveRequest(
@@ -222,16 +228,21 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 				.where(
 					and(
 						eq(hrLeaveAdjustment.organizationId, harness.organizationId),
-						eq(hrLeaveAdjustment.sourceRequestId, request.id)
-					)
+						eq(hrLeaveAdjustment.sourceRequestId, request.id),
+					),
 				);
 
 			expect(adjustments).toHaveLength(0);
 		});
 
 		it("rolls back approval on outbox failure", async () => {
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
-			
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
+
 			await drizzleLeave.submitLeaveRequest(
 				{
 					organizationId: harness.organizationId,
@@ -283,8 +294,13 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 	describe("Cancel Approved Leave Request Failures", () => {
 		it("prevents partial cancellation on reversal failure", async () => {
 			// Create, submit and approve a request
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
-			
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
+
 			await drizzleLeave.submitLeaveRequest(
 				{
 					organizationId: harness.organizationId,
@@ -344,8 +360,8 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 					and(
 						eq(hrLeaveAdjustment.organizationId, harness.organizationId),
 						eq(hrLeaveAdjustment.sourceRequestId, request.id),
-						eq(hrLeaveAdjustment.kind, "cancellation_reversal")
-					)
+						eq(hrLeaveAdjustment.kind, "cancellation_reversal"),
+					),
 				);
 
 			expect(adjustments).toHaveLength(0);
@@ -423,8 +439,8 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 				.where(
 					and(
 						eq(hrLeaveAdjustment.organizationId, harness.organizationId),
-						eq(hrLeaveAdjustment.entitlementId, entitlement.id)
-					)
+						eq(hrLeaveAdjustment.entitlementId, entitlement.id),
+					),
 				);
 
 			expect(adjustments).toHaveLength(0);
@@ -435,7 +451,12 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 
 	describe("Amendment Failures", () => {
 		it("prevents partial amendment on segment deletion failure", async () => {
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
 
 			vi.spyOn(leaveTransactions, "runLeaveTransaction").mockRejectedValue(
 				new Error("Foreign key constraint violation"),
@@ -487,7 +508,7 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 
 			// Set shorter timeout for test
 			const startTime = Date.now();
-			
+
 			const result = await Promise.race([
 				drizzleLeave.createDraftLeaveRequest(
 					{
@@ -512,9 +533,12 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 					harness.ports,
 					harness.meta,
 				),
-				new Promise<{ ok: false; error: any }>((resolve) => 
-					setTimeout(() => resolve({ ok: false, error: { code: "TIMEOUT" } }), 5000)
-				)
+				new Promise<{ ok: false; error: { code: string } }>((resolve) =>
+					setTimeout(
+						() => resolve({ ok: false, error: { code: "TIMEOUT" } }),
+						5000,
+					),
+				),
 			]);
 
 			const elapsed = Date.now() - startTime;
@@ -535,7 +559,12 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 
 	describe("Version Conflict Failures", () => {
 		it("prevents lost updates during version conflicts", async () => {
-			const request = await harness.createLeaveRequest(employee, employment, entitlement, policy);
+			const request = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+			);
 
 			// First user amends the request
 			const amendment1 = await drizzleLeave.amendLeaveRequest(
@@ -620,7 +649,7 @@ describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
 				employment,
 				limitedEntitlement,
 				policy,
-				{ requestedQuantity: "1" }
+				{ requestedQuantity: "1" },
 			);
 
 			await drizzleLeave.submitLeaveRequest(

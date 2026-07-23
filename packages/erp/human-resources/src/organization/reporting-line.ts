@@ -1,6 +1,4 @@
 import type { Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import {
 	requireHumanResourcesCommandPermission,
 	requireHumanResourcesQueryPermission,
@@ -24,6 +22,7 @@ import {
 	replacePrimaryReportingLineInputSchema,
 	resolvePrimaryManagerInputSchema,
 } from "../schemas/organization";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ReportingLine } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_REPORTING_LINE =
@@ -67,7 +66,10 @@ export async function assignPrimaryReportingLine(
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY,
+		}),
 	);
 }
 
@@ -106,7 +108,10 @@ export async function closeReportingLine(
 			actorUserId: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE,
+		}),
 	);
 }
 
@@ -149,7 +154,10 @@ export async function replacePrimaryReportingLine(
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
-		buildMutationMeta({ correlationId: parsed.data.correlationId, operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY }),
+		buildMutationMeta({
+			correlationId: parsed.data.correlationId,
+			operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
+		}),
 	);
 }
 

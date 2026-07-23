@@ -6,6 +6,22 @@ import {
 	humanResourcesErrorDetails,
 } from "./error-codes";
 
+export const humanResourcesPersonIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesPersonId">();
+export type HumanResourcesPersonId = z.infer<
+	typeof humanResourcesPersonIdSchema
+>;
+
+export const humanResourcesWorkerIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesWorkerId">();
+export type HumanResourcesWorkerId = z.infer<
+	typeof humanResourcesWorkerIdSchema
+>;
+
 export const humanResourcesEmployeeIdSchema = z
 	.string()
 	.uuid()
@@ -481,6 +497,34 @@ export type HumanResourcesPolicyAcknowledgementId = z.infer<
 >;
 
 /** Brand after UUID generation or trusted DB load — never cast without parse. */
+export function parseHumanResourcesPersonId(
+	id: string,
+): Result<HumanResourcesPersonId> {
+	const parsed = humanResourcesPersonIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid person identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesWorkerId(
+	id: string,
+): Result<HumanResourcesWorkerId> {
+	const parsed = humanResourcesWorkerIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid worker identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
 export function parseHumanResourcesEmployeeId(
 	id: string,
 ): Result<HumanResourcesEmployeeId> {
@@ -1931,7 +1975,8 @@ export function parseHumanResourcesEmploymentCalendarAssignmentId(
 export function parseHumanResourcesWorkCalendarScopeAssignmentId(
 	id: string,
 ): Result<HumanResourcesWorkCalendarScopeAssignmentId> {
-	const parsed = humanResourcesWorkCalendarScopeAssignmentIdSchema.safeParse(id);
+	const parsed =
+		humanResourcesWorkCalendarScopeAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
 		return fail(
 			"INTERNAL_ERROR",

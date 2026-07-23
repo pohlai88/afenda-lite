@@ -87,7 +87,9 @@ export function applySensitivityProjection<T extends Record<string, unknown>>(
 	};
 }
 
-function getFieldsToCheckForSensitivity(sensitivity: SensitivityLevel): string[] {
+function getFieldsToCheckForSensitivity(
+	sensitivity: SensitivityLevel,
+): string[] {
 	switch (sensitivity) {
 		case "standard":
 			return [];

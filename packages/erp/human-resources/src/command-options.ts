@@ -17,8 +17,8 @@ import type {
 	DocumentReferencePort,
 	MutationPorts,
 } from "./ports";
-import { createProductionMutationPorts } from "./production-ports";
 import { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
+import { createProductionMutationPorts } from "./production-ports";
 import { resolveHumanResourcesStore } from "./resolve-store";
 import type { HumanResourcesStore } from "./store";
 import type { AssignmentContextQueryPort } from "./time/handoff/ports";
@@ -81,9 +81,7 @@ export function requireApprovedLeaveQuery(
 export function resolveAssignmentContext(
 	options: HumanResourcesCommandOptions = {},
 ): AssignmentContextQueryPort {
-	return (
-		options.assignmentContext ?? createProductionAssignmentContextQuery()
-	);
+	return options.assignmentContext ?? createProductionAssignmentContextQuery();
 }
 
 export function requireAttendanceSource(

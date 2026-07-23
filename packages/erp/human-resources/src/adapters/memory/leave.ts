@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
@@ -10,7 +8,6 @@ import {
 	HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
@@ -25,6 +22,7 @@ import {
 	parseHumanResourcesLeaveRequestSegmentId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
+import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../../leave/leave-policy-lineage";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
@@ -45,6 +43,7 @@ import type {
 	LeavePolicyStatus,
 	LeaveRequestStatus,
 } from "../../shared/leave-status";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
 	HumanResourcesStore,
 	IdempotentLeaveEntitlementRecord,
@@ -194,7 +193,7 @@ function tenureDaysOn(startsOn: string, asOfDate: string): number {
 	return Math.floor((asOfMs - startMs) / (1000 * 60 * 60 * 24));
 }
 
-function isPolicyEffectiveOn(policy: LeavePolicy, asOfDate: string): boolean {
+function _isPolicyEffectiveOn(policy: LeavePolicy, asOfDate: string): boolean {
 	if (policy.effectiveFrom > asOfDate) {
 		return false;
 	}
@@ -563,21 +562,14 @@ export function createMemoryLeaveMethods(
 				return ok(null);
 			}
 
-			const candidates = Array.from(state.leavePolicies.values())
-				.filter(
-					(policy) =>
-						policy.organizationId === input.organizationId &&
-						policy.code === input.policyCode &&
-						policy.status === "published" &&
-						isPolicyEffectiveOn(policy, input.asOfDate),
-				)
-				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
-			if (candidates.length === 0) {
-				return ok(null);
-			}
-
-			const policy = candidates[0];
-			if (policy === undefined) {
+			const policy = resolvePublishedLeavePolicyByCodeLineageAsOf({
+				policies: Array.from(state.leavePolicies.values()).filter(
+					(row) => row.organizationId === input.organizationId,
+				),
+				code: input.policyCode,
+				asOf: input.asOfDate,
+			});
+			if (policy === null) {
 				return ok(null);
 			}
 

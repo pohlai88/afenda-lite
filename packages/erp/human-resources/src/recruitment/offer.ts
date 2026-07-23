@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -28,6 +26,7 @@ import {
 	offerStatusTransitionInputSchema,
 } from "../schemas/recruitment";
 import { fingerprintOfferAccept } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
@@ -65,7 +64,10 @@ export async function createOffer(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFER_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_OFFER_CREATE,
+				}),
 			),
 	});
 }
@@ -89,7 +91,10 @@ export async function amendOfferDraft(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
+				}),
 			),
 	});
 }
@@ -119,7 +124,10 @@ async function transitionOffer(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
+				}),
 			),
 	});
 }
@@ -180,7 +188,10 @@ export async function acceptOffer(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
+				}),
 			);
 		},
 	});

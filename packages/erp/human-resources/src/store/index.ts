@@ -13,6 +13,7 @@ import type { HumanResourcesPerformanceStore } from "./performance";
 import type { HumanResourcesRecruitmentStore } from "./recruitment";
 import type { HumanResourcesTalentStore } from "./talent";
 import type { HumanResourcesTimeStore } from "./time";
+import type { HumanResourcesWorkforceFoundationStore } from "./workforce-foundation";
 import type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning";
 
 // Composite store type combining all domain stores
@@ -28,7 +29,8 @@ export type HumanResourcesStore = HumanResourcesCoreStore &
 	HumanResourcesEmployeeRelationsStore &
 	HumanResourcesTimeStore &
 	HumanResourcesWorkforcePlanningStore &
-	HumanResourcesIdentityStore;
+	HumanResourcesIdentityStore &
+	HumanResourcesWorkforceFoundationStore;
 
 export type { HumanResourcesCompensationStore } from "./compensation";
 export * from "./compensation";
@@ -56,5 +58,7 @@ export type { HumanResourcesTalentStore } from "./talent";
 export * from "./talent";
 export type { HumanResourcesTimeStore } from "./time";
 export * from "./time";
+export type { HumanResourcesWorkforceFoundationStore } from "./workforce-foundation";
+export * from "./workforce-foundation";
 export type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning";
 export * from "./workforce-planning";

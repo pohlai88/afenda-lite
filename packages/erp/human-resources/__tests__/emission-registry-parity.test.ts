@@ -1,8 +1,7 @@
 import { HumanResourcesEventSchemas } from "@afenda/events";
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_TIME_COMMAND_IDS } from "../src/module-ids";
 import { humanResourcesModuleManifest } from "../src/module.manifest";
+import { HUMAN_RESOURCES_TIME_COMMAND_IDS } from "../src/module-ids";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
 
 describe("mutation emission registry parity", () => {

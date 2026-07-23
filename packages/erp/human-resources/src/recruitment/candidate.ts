@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -20,6 +18,7 @@ import {
 	updateCandidateProfileInputSchema,
 } from "../schemas/recruitment";
 import { fingerprintCandidateCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
@@ -80,7 +79,10 @@ export async function createCandidate(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
+				}),
 			);
 		},
 	});
@@ -105,7 +107,10 @@ export async function updateCandidateProfile(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
+				}),
 			),
 	});
 }

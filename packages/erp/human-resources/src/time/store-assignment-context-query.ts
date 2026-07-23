@@ -33,17 +33,18 @@ export function createStoreAssignmentContextQuery(input: {
 			}
 
 			let departmentId: string | null = null;
-			const openAssignment = await store.findOpenAssignmentByEmployment({
+			const assignment = await store.findAssignmentByEmploymentAsOf({
 				organizationId: query.organizationId,
 				employmentId: employmentId.data,
+				asOf: query.asOf,
 			});
-			if (!openAssignment.ok) {
-				return openAssignment;
+			if (!assignment.ok) {
+				return assignment;
 			}
-			if (openAssignment.data !== null) {
+			if (assignment.data !== null) {
 				const position = await store.getPositionById({
 					organizationId: query.organizationId,
-					positionId: openAssignment.data.positionId,
+					positionId: assignment.data.positionId,
 				});
 				if (!position.ok) {
 					return position;

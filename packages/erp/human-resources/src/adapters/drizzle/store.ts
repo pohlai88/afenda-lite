@@ -13,6 +13,7 @@ import { drizzlePerformanceMethods } from "./performance";
 import { drizzleRecruitmentMethods } from "./recruitment";
 import { drizzleTalentMethods } from "./talent";
 import { drizzleTimeMethods } from "./time";
+import { drizzleWorkforceFoundationMethods } from "./workforce-foundation";
 import { drizzleWorkforcePlanningMethods } from "./workforce-planning";
 
 /** Composition root only. Domain persistence lives in one adapter per HR subdomain. */
@@ -31,6 +32,7 @@ export function createDrizzleHumanResourcesStore(): HumanResourcesStore {
 		drizzleWorkforcePlanningMethods,
 		drizzleComplianceMethods,
 		drizzleEmployeeRelationsMethods,
+		drizzleWorkforceFoundationMethods,
 		drizzleIdentityMethods,
 	);
 

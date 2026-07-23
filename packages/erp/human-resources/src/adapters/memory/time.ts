@@ -965,7 +965,9 @@ export function createMemoryTimeMethods(
 		},
 
 		async listWorkCalendarScopeAssignments(input) {
-			const rows = Array.from(state.workCalendarScopeAssignments.values()).filter(
+			const rows = Array.from(
+				state.workCalendarScopeAssignments.values(),
+			).filter(
 				(assignment) =>
 					assignment.organizationId === input.organizationId &&
 					assignment.effectiveFrom <= input.asOf &&
@@ -980,13 +982,14 @@ export function createMemoryTimeMethods(
 			if (!calendar || calendar.organizationId !== input.organizationId) {
 				return notFound("Work calendar not found");
 			}
-			const overlap = Array.from(state.workCalendarScopeAssignments.values()).some(
+			const overlap = Array.from(
+				state.workCalendarScopeAssignments.values(),
+			).some(
 				(assignment) =>
 					assignment.organizationId === input.organizationId &&
 					assignment.scopeType === input.scopeType &&
 					assignment.scopeKey === input.scopeKey &&
-					assignment.effectiveFrom <=
-						(input.effectiveTo ?? "9999-12-31") &&
+					assignment.effectiveFrom <= (input.effectiveTo ?? "9999-12-31") &&
 					(assignment.effectiveTo ?? "9999-12-31") >= input.effectiveFrom,
 			);
 			if (overlap) {
@@ -1028,7 +1031,9 @@ export function createMemoryTimeMethods(
 		},
 
 		async endWorkCalendarScopeAssignment(input, ports) {
-			const assignment = state.workCalendarScopeAssignments.get(input.assignmentId);
+			const assignment = state.workCalendarScopeAssignments.get(
+				input.assignmentId,
+			);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
 				return notFound("Work calendar scope assignment not found");
 			}

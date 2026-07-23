@@ -1,34 +1,28 @@
 /**
  * HR Leave SQL Builders
- * 
+ *
  * Specialized SQL generation utilities for complex leave workflow transactions.
  * Provides high-level builders for complete leave operations that require
  * multiple related database changes in a single atomic transaction.
  */
 
 import {
-	buildAuditCte,
-	buildOutboxCte,
-	buildLockEntitlementCte,
-	buildLockRequestCte,
-	buildBalanceCheckCte,
-	buildCreateRequestWithSegmentsCte,
-	buildCreateAdjustmentCte,
-	generateTransactionIds,
-	eventPayloadJson,
-	fieldChangeJson,
-	valueSnapshotJson,
-	type LeaveRequestSqlRow,
-	type LeaveAdjustmentSqlRow,
-	type LeaveEntitlementSqlRow,
-	type LeavePolicySqlRow,
-} from "./leave-transactions";
-import type { OutboxFactInput } from "../../ports";
-import {
 	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
 	HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
 	HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
 } from "@afenda/events";
+import type { OutboxFactInput } from "../../ports";
+import {
+	buildAuditCte,
+	buildCreateRequestWithSegmentsCte,
+	buildLockEntitlementCte,
+	buildLockRequestCte,
+	buildOutboxCte,
+	eventPayloadJson,
+	fieldChangeJson,
+	generateTransactionIds,
+	valueSnapshotJson,
+} from "./leave-transactions";
 
 /**
  * Build complete CREATE leave request transaction SQL
@@ -58,7 +52,7 @@ export function buildCreateLeaveRequestSql(params: {
 	}>;
 }): string {
 	const { auditId } = generateTransactionIds();
-	
+
 	const newValueJson = valueSnapshotJson({
 		employeeId: params.employeeId,
 		startDate: params.startDate,
@@ -68,18 +62,18 @@ export function buildCreateLeaveRequestSql(params: {
 	});
 
 	const requestCte = buildCreateRequestWithSegmentsCte(params);
-	
+
 	const auditCte = buildAuditCte({
 		auditId,
 		module: "human-resources",
-		entity: "hr_leave_request", 
+		entity: "hr_leave_request",
 		action: "CREATE",
 		correlationId: params.correlationId,
 		newValue: `'${newValueJson}'`,
 		fromCte: "inserted_request",
 		selectFields: {
 			organizationId: "organization_id",
-			entityId: "id", 
+			entityId: "id",
 			actorUserId: "created_by",
 		},
 	});
@@ -109,7 +103,7 @@ export function buildApproveLeaveRequestSql(params: {
 	createRequestFingerprint: string;
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
-	
+
 	const payloadJson = eventPayloadJson({
 		organizationId: params.organizationId,
 		entityType: "hr_leave_request",
@@ -180,7 +174,7 @@ export function buildApproveLeaveRequestSql(params: {
 			)
 			SELECT 
 				'${params.decisionId}', '${params.organizationId}', id, 'approved', 
-				'${params.actorUserId}', NOW(), ${params.note ? `'${params.note}'` : 'NULL'}
+				'${params.actorUserId}', NOW(), ${params.note ? `'${params.note}'` : "NULL"}
 			FROM updated_request
 			RETURNING *
 		),
@@ -188,7 +182,7 @@ export function buildApproveLeaveRequestSql(params: {
 			auditId,
 			module: "human-resources",
 			entity: "hr_leave_request",
-			action: "UPDATE", 
+			action: "UPDATE",
 			correlationId: params.correlationId,
 			changes: `'${changesJson}'`,
 			fromCte: "updated_request",
@@ -230,10 +224,10 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 	createRequestFingerprint: string;
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
-	
+
 	const payloadJson = eventPayloadJson({
 		organizationId: params.organizationId,
-		entityType: "hr_leave_request", 
+		entityType: "hr_leave_request",
 		entityId: params.requestId,
 		actorId: params.actorUserId,
 		correlationId: params.correlationId,
@@ -288,7 +282,7 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 			)
 			SELECT 
 				'${params.decisionId}', '${params.organizationId}', id, 'cancelled', 
-				'${params.actorUserId}', NOW(), ${params.note ? `'${params.note}'` : 'NULL'}
+				'${params.actorUserId}', NOW(), ${params.note ? `'${params.note}'` : "NULL"}
 			FROM updated_request
 			RETURNING *
 		),
@@ -345,13 +339,21 @@ export function buildAmendLeaveRequestSql(params: {
 	}>;
 }): string {
 	const { auditId } = generateTransactionIds();
-	
-	const changesJson = fieldChangeJson("segments", "replaced", params.segments.length);
-	
-	const segmentInserts = params.segments.map(segment => `
+
+	const changesJson = fieldChangeJson(
+		"segments",
+		"replaced",
+		params.segments.length,
+	);
+
+	const segmentInserts = params.segments
+		.map(
+			(segment) => `
 		('${segment.id}', '${params.organizationId}', '${params.requestId}', 
 		 '${segment.segmentDate}', '${segment.quantity}', '${segment.dayPortion}')
-	`).join(', ');
+	`,
+		)
+		.join(", ");
 
 	return `
 		WITH deleted_segments AS (
@@ -367,7 +369,7 @@ export function buildAmendLeaveRequestSql(params: {
 				end_date = '${params.endDate}',
 				requested_quantity = '${params.requestedQuantity}',
 				is_backdated = ${params.isBackdated},
-				backdate_justification = ${params.backdateJustification ? `'${params.backdateJustification}'` : 'NULL'},
+				backdate_justification = ${params.backdateJustification ? `'${params.backdateJustification}'` : "NULL"},
 				version = version + 1,
 				updated_by = '${params.actorUserId}',
 				updated_at = NOW()
@@ -384,7 +386,7 @@ export function buildAmendLeaveRequestSql(params: {
 		),
 		${buildAuditCte({
 			auditId,
-			module: "human-resources", 
+			module: "human-resources",
 			entity: "hr_leave_request",
 			action: "UPDATE",
 			correlationId: params.correlationId,
@@ -421,7 +423,7 @@ export function buildCreateLeaveEntitlementSql(params: {
 	correlationId: string;
 }): string {
 	const { auditId } = generateTransactionIds();
-	
+
 	const newValueJson = valueSnapshotJson({
 		employeeId: params.employeeId,
 		policyId: params.policyId,
@@ -484,7 +486,7 @@ export function buildCreateLeaveAdjustmentSql(params: {
 	eventType?: OutboxFactInput["type"];
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
-	
+
 	const newValueJson = valueSnapshotJson({
 		entitlementId: params.entitlementId,
 		kind: params.kind,
@@ -508,24 +510,26 @@ export function buildCreateLeaveAdjustmentSql(params: {
 		},
 	});
 
-	const outboxCte = params.eventType ? buildOutboxCte({
-		eventId,
-		eventType: params.eventType,
-		sourceModule: "human-resources",
-		correlationId: params.correlationId,
-		payload: `'${eventPayloadJson({
-			organizationId: params.organizationId,
-			entityType: "hr_leave_entitlement",
-			entityId: params.entitlementId,
-			actorId: params.createdBy,
-			correlationId: params.correlationId,
-		})}'`,
-		fromCte: "inserted_adjustment",
-		selectFields: {
-			organizationId: "organization_id",
-			actorUserId: "created_by",
-		},
-	}) : "";
+	const outboxCte = params.eventType
+		? buildOutboxCte({
+				eventId,
+				eventType: params.eventType,
+				sourceModule: "human-resources",
+				correlationId: params.correlationId,
+				payload: `'${eventPayloadJson({
+					organizationId: params.organizationId,
+					entityType: "hr_leave_entitlement",
+					entityId: params.entitlementId,
+					actorId: params.createdBy,
+					correlationId: params.correlationId,
+				})}'`,
+				fromCte: "inserted_adjustment",
+				selectFields: {
+					organizationId: "organization_id",
+					actorUserId: "created_by",
+				},
+			})
+		: "";
 
 	return `
 		WITH ${buildLockEntitlementCte({
@@ -540,7 +544,7 @@ export function buildCreateLeaveAdjustmentSql(params: {
 			)
 			SELECT 
 				'${params.adjustmentId}', '${params.organizationId}', '${params.entitlementId}',
-				${params.sourceRequestId ? `'${params.sourceRequestId}'` : 'NULL'}, '${params.kind}',
+				${params.sourceRequestId ? `'${params.sourceRequestId}'` : "NULL"}, '${params.kind}',
 				'${params.delta}', '${params.reason}', '${params.source}', 'posted',
 				'${params.createIdempotencyKey}', '${params.createRequestFingerprint}',
 				1, '${params.createdBy}', '${params.createdBy}'
@@ -548,8 +552,12 @@ export function buildCreateLeaveAdjustmentSql(params: {
 			WHERE locked_entitlement.status = 'active'
 			RETURNING *
 		),
-		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${params.eventType ? `,
-		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}` : ""}
+		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${
+			params.eventType
+				? `,
+		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+				: ""
+		}
 		SELECT inserted_adjustment.*
 		FROM inserted_adjustment, audited${params.eventType ? ", outboxed" : ""}
 	`;
@@ -572,21 +580,24 @@ export function buildStatusTransitionSql(params: {
 	approvedAt?: Date;
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
-	
+
 	const changesJson = fieldChangeJson("status", null, params.nextStatus);
-	
-	const decisionCte = params.decision && params.decisionId ? `
+
+	const decisionCte =
+		params.decision && params.decisionId
+			? `
 		approval_decision AS (
 			INSERT INTO hr_leave_approval_decision (
 				id, organization_id, request_id, decision, decided_by, decided_at, note
 			)
 			SELECT 
 				'${params.decisionId}', '${params.organizationId}', id, '${params.decision}', 
-				'${params.actorUserId}', NOW(), ${params.note ? `'${params.note}'` : 'NULL'}
+				'${params.actorUserId}', NOW(), ${params.note ? `'${params.note}'` : "NULL"}
 			FROM updated_request
 			RETURNING *
 		),
-	` : "";
+	`
+			: "";
 
 	const auditCte = buildAuditCte({
 		auditId,
@@ -603,26 +614,28 @@ export function buildStatusTransitionSql(params: {
 		},
 	});
 
-	const outboxCte = params.eventType ? buildOutboxCte({
-		eventId,
-		eventType: params.eventType,
-		sourceModule: "human-resources",
-		correlationId: params.correlationId,
-		payload: `'${eventPayloadJson({
-			organizationId: params.organizationId,
-			entityType: "hr_leave_request",
-			entityId: params.requestId,
-			actorId: params.actorUserId,
-			correlationId: params.correlationId,
-		})}'`,
-		fromCte: "updated_request",
-		selectFields: {
-			organizationId: "organization_id",
-			actorUserId: `'${params.actorUserId}'`,
-		},
-	}) : "";
+	const outboxCte = params.eventType
+		? buildOutboxCte({
+				eventId,
+				eventType: params.eventType,
+				sourceModule: "human-resources",
+				correlationId: params.correlationId,
+				payload: `'${eventPayloadJson({
+					organizationId: params.organizationId,
+					entityType: "hr_leave_request",
+					entityId: params.requestId,
+					actorId: params.actorUserId,
+					correlationId: params.correlationId,
+				})}'`,
+				fromCte: "updated_request",
+				selectFields: {
+					organizationId: "organization_id",
+					actorUserId: `'${params.actorUserId}'`,
+				},
+			})
+		: "";
 
-	const approvedAtClause = params.approvedAt 
+	const approvedAtClause = params.approvedAt
 		? `, approved_at = '${params.approvedAt.toISOString()}'`
 		: "";
 
@@ -640,8 +653,12 @@ export function buildStatusTransitionSql(params: {
 			RETURNING *
 		),
 		${decisionCte}
-		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${params.eventType ? `,
-		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}` : ""}
+		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${
+			params.eventType
+				? `,
+		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+				: ""
+		}
 		SELECT updated_request.*
 		FROM updated_request${params.decision && params.decisionId ? ", approval_decision" : ""}, audited${params.eventType ? ", outboxed" : ""}
 	`;
@@ -659,7 +676,7 @@ export function buildEntitlementStatusTransitionSql(params: {
 	nextStatus: string;
 }): string {
 	const { auditId } = generateTransactionIds();
-	
+
 	const changesJson = fieldChangeJson("status", null, params.nextStatus);
 
 	return `
@@ -715,7 +732,11 @@ export function buildCarryForwardEntitlementSql(params: {
 	const { auditId: newAuditId } = generateTransactionIds();
 	const { auditId: carryAuditId } = generateTransactionIds();
 
-	const sourceChangesJson = fieldChangeJson("status", "active", "carried_forward");
+	const sourceChangesJson = fieldChangeJson(
+		"status",
+		"active",
+		"carried_forward",
+	);
 	const newValueJson = valueSnapshotJson({
 		periodStart: params.newPeriodStart,
 		periodEnd: params.newPeriodEnd,
@@ -866,7 +887,7 @@ export function buildCreateLeavePolicySql(params: {
 	allowedEmploymentStatuses: string[];
 }): string {
 	const { auditId } = generateTransactionIds();
-	
+
 	const newValueJson = valueSnapshotJson({
 		code: params.code,
 		name: params.name,
@@ -887,7 +908,7 @@ export function buildCreateLeavePolicySql(params: {
 				'${params.policyId}', '${params.organizationId}', '${params.code}', '${params.name}',
 				'${params.leaveType}', '${params.unit}', ${params.paid}, ${params.sensitive},
 				${params.allowsNegativeBalance}, ${params.allowSelfApproval}, ${params.allowsPartialDay},
-				'${params.effectiveFrom}', ${params.effectiveTo ? `'${params.effectiveTo}'` : 'NULL'},
+				'${params.effectiveFrom}', ${params.effectiveTo ? `'${params.effectiveTo}'` : "NULL"},
 				'draft', 1, '${params.createdBy}', '${params.createdBy}'
 			)
 			RETURNING *
@@ -898,7 +919,7 @@ export function buildCreateLeavePolicySql(params: {
 				created_by, updated_by
 			)
 			SELECT 
-				'${params.eligibilityId}', organization_id, id, ${params.minTenureDays ?? 'NULL'},
+				'${params.eligibilityId}', organization_id, id, ${params.minTenureDays ?? "NULL"},
 				'${statusesJson}', '${params.createdBy}', '${params.createdBy}'
 			FROM inserted_policy
 			RETURNING *
@@ -934,7 +955,7 @@ export function buildPolicyStatusTransitionSql(params: {
 	nextStatus: string;
 }): string {
 	const { auditId } = generateTransactionIds();
-	
+
 	const changesJson = fieldChangeJson("status", null, params.nextStatus);
 
 	return `

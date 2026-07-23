@@ -24,7 +24,9 @@ function isDocumentKind(value: string): value is DocumentKind {
  */
 export function createMemoryDocumentReferencePort(): DocumentReferencePort {
 	return {
-		async validateReference(input): Promise<Result<ValidatedDocumentReference>> {
+		async validateReference(
+			input,
+		): Promise<Result<ValidatedDocumentReference>> {
 			const trimmed = input.reference.trim();
 			if (trimmed.length === 0) {
 				return fail(

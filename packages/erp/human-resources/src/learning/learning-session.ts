@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -25,6 +23,7 @@ import {
 	runLearningCommand,
 	runLearningQuery,
 } from "../shared/learning-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { LearningSession, SessionListPage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_SESSION = "session" as const;
@@ -86,7 +85,10 @@ export async function createSession(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SESSION_CREATE,
+				}),
 			);
 		},
 	});
@@ -112,7 +114,10 @@ export async function startSession(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_START }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SESSION_START,
+				}),
 			);
 		},
 	});
@@ -138,7 +143,10 @@ export async function completeSession(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
+				}),
 			);
 		},
 	});
@@ -161,7 +169,10 @@ export async function cancelSession(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
+				}),
 			);
 		},
 	});

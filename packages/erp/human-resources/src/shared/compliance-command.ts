@@ -124,7 +124,8 @@ export async function runComplianceQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -134,7 +135,11 @@ export async function runComplianceQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization, identityResolver });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
 }
 
 /** Query path for employee-scoped or org-wide compliance reads. */
@@ -159,7 +164,8 @@ export async function runComplianceEmployeeScopedQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	if (!identityResolver) {
 		return fail(
 			"UNAUTHORIZED",
@@ -181,10 +187,14 @@ export async function runComplianceEmployeeScopedQuery<
 		return authorized;
 	}
 
-	return config.execute(parsed.data, { store, authorization, identityResolver });
+	return config.execute(parsed.data, {
+		store,
+		authorization,
+		identityResolver,
+	});
 }
 
-async function hasHumanResourcesPermission(
+async function _hasHumanResourcesPermission(
 	authorization: HumanResourcesAuthorizationPort | undefined,
 	input: {
 		organizationId: string;

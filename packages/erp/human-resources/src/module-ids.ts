@@ -1,3 +1,13 @@
+export const HUMAN_RESOURCES_COMMAND_PERSON_CREATE =
+	"human-resources.person.create" as const;
+export const HUMAN_RESOURCES_COMMAND_PERSON_UPDATE =
+	"human-resources.person.update" as const;
+export const HUMAN_RESOURCES_COMMAND_WORKER_CREATE =
+	"human-resources.worker.create" as const;
+export const HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE =
+	"human-resources.worker.change-type" as const;
+export const HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS =
+	"human-resources.worker.change-status" as const;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE =
 	"human-resources.employee.create" as const;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE =
@@ -564,6 +574,11 @@ export const HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY =
 	"human-resources.overtime-request.verify" as const;
 
 export const HUMAN_RESOURCES_COMMAND_IDS = [
+	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+	HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
+	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
+	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
@@ -914,6 +929,12 @@ export const HUMAN_RESOURCES_TIME_COMMAND_IDS = [
 export type HumanResourcesTimeCommandId =
 	(typeof HUMAN_RESOURCES_TIME_COMMAND_IDS)[number];
 
+export const HUMAN_RESOURCES_QUERY_EMPLOYEE_ORG_CONTEXT_RESOLVE =
+	"human-resources.employee.org-context.resolve" as const;
+export const HUMAN_RESOURCES_QUERY_PERSON_GET =
+	"human-resources.person.get" as const;
+export const HUMAN_RESOURCES_QUERY_WORKER_GET =
+	"human-resources.worker.get" as const;
 export const HUMAN_RESOURCES_QUERY_EMPLOYEE_GET =
 	"human-resources.employee.get" as const;
 export const HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST =
@@ -1187,6 +1208,9 @@ export const HUMAN_RESOURCES_QUERY_OVERTIME_REQUEST_LIST_PENDING_APPROVAL =
 	"human-resources.overtime-request.list-pending-approval" as const;
 
 export const HUMAN_RESOURCES_QUERY_IDS = [
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_ORG_CONTEXT_RESOLVE,
+	HUMAN_RESOURCES_QUERY_PERSON_GET,
+	HUMAN_RESOURCES_QUERY_WORKER_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_GET,

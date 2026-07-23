@@ -12,11 +12,11 @@ import { createSalaryBand } from "../src/compensation-benefits/salary-band";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { createMemoryCurrencyLookup } from "../src/currency-lookup";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 

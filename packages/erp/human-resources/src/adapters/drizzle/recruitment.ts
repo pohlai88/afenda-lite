@@ -51,6 +51,7 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
@@ -106,7 +107,6 @@ import type {
 	OfferListPage,
 	RequisitionListPage,
 } from "../../types";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 function mapNullableDepartmentId(
 	value: string | null,

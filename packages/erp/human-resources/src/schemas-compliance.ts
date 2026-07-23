@@ -1,6 +1,6 @@
 /**
  * Compliance schema barrel export.
- * 
+ *
  * Re-exports all compliance-related schemas from src/schemas/compliance.ts.
  */
 

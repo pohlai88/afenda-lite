@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -39,6 +37,7 @@ import {
 	toEmployeeDocumentSensitiveDetail,
 } from "../shared/compliance-privacy";
 import { fingerprintEmployeeDocumentRegister } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	DocumentRequirementListPage,
 	EmployeeDocument,
@@ -68,7 +67,12 @@ export async function registerEmployeeDocument(
 			const refCheck = await documentReference.validateReference({
 				organizationId: data.organizationId,
 				reference: data.documentRef,
-				allowedKinds: ["employee_document", "passport", "identity_document", "other"],
+				allowedKinds: [
+					"employee_document",
+					"passport",
+					"identity_document",
+					"other",
+				],
 			});
 			if (!refCheck.ok) {
 				return refCheck;
@@ -188,7 +192,10 @@ export async function updateEmployeeDocumentMetadata(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
+				}),
 			);
 		},
 	});
@@ -212,7 +219,10 @@ export async function verifyEmployeeDocument(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
+				}),
 			),
 	});
 }
@@ -235,7 +245,10 @@ export async function rejectEmployeeDocument(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
+				}),
 			),
 	});
 }
@@ -257,7 +270,11 @@ export async function revokeEmployeeDocumentVerification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
+				}),
 			),
 	});
 }
@@ -312,11 +329,15 @@ export async function getEmployeeDocument(
 					"Identity resolver is required for employee document access",
 				);
 			}
-			const scope = await requireComplianceEmployeeReadScope(identityResolver, authorization, {
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				employeeId: documentResult.data.employeeId,
-			});
+			const scope = await requireComplianceEmployeeReadScope(
+				identityResolver,
+				authorization,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					employeeId: documentResult.data.employeeId,
+				},
+			);
 			if (!scope.ok) {
 				return scope;
 			}

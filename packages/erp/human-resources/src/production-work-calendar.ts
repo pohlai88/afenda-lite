@@ -78,7 +78,8 @@ function quantityForPortion(
 		context.standardHoursPerDay > 0
 			? Math.round(context.standardHoursPerDay * 60)
 			: 0);
-	const dayHours = dayMinutes > 0 ? dayMinutes / 60 : context.standardHoursPerDay;
+	const dayHours =
+		dayMinutes > 0 ? dayMinutes / 60 : context.standardHoursPerDay;
 
 	if (unit === "hours") {
 		const hours =

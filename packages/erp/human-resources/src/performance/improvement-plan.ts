@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -27,6 +25,7 @@ import {
 	recordImprovementCheckpointInputSchema,
 } from "../schemas/performance";
 import { fingerprintImprovementPlanCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runPerformanceCommand,
 	runPerformanceQuery,
@@ -95,7 +94,10 @@ export async function createImprovementPlan(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
+				}),
 			);
 		},
 	});
@@ -118,7 +120,10 @@ export async function openImprovementPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
+				}),
 			),
 	});
 }
@@ -140,7 +145,10 @@ export async function acknowledgeImprovementPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE,
+				}),
 			),
 	});
 }
@@ -164,7 +172,10 @@ export async function recordImprovementCheckpoint(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
+				}),
 			),
 	});
 }
@@ -189,7 +200,10 @@ export async function amendImprovementPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND,
+				}),
 			),
 	});
 }
@@ -211,7 +225,10 @@ export async function completeImprovementPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
+				}),
 			),
 	});
 }
@@ -233,7 +250,11 @@ export async function closeImprovementPlanUnsuccessful(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL,
+				}),
 			),
 	});
 }
@@ -255,7 +276,10 @@ export async function cancelImprovementPlan(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL,
+				}),
 			),
 	});
 }

@@ -137,7 +137,8 @@ export async function runLeaveQuery<
 		return parsed;
 	}
 
-	const { store, authorization, identityResolver } = resolveCommandDeps(options);
+	const { store, authorization, identityResolver } =
+		resolveCommandDeps(options);
 	const workCalendar = requireWorkCalendar(options);
 	if (!workCalendar.ok) {
 		return workCalendar;

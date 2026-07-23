@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -24,6 +22,7 @@ import {
 	runLearningCommand,
 	runLearningQuery,
 } from "../shared/learning-command";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CertificationListPage, EmployeeCertification } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_CERTIFICATION = "certification" as const;
@@ -126,7 +125,10 @@ export async function expireCertification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
+				}),
 			);
 		},
 	});
@@ -150,7 +152,10 @@ export async function revokeCertification(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
+				}),
 			);
 		},
 	});

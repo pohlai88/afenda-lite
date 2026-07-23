@@ -1,12 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
 } from "@afenda/events/schemas";
-
 import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
@@ -32,6 +29,7 @@ import {
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, notFound } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertApplicationEligibleForOffer,
 	assertApplicationStatusTransition,

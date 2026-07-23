@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -23,6 +21,7 @@ import {
 	updateTalentProfileInputSchema,
 } from "../schemas/talent";
 import { fingerprintTalentProfileCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	requireTalentProfileSensitiveRead,
 	runTalentCommand,
@@ -78,7 +77,10 @@ export async function createTalentProfile(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
+				}),
 			);
 		},
 	});
@@ -102,7 +104,10 @@ export async function updateTalentProfile(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+				}),
 			);
 		},
 	});
@@ -128,7 +133,10 @@ export async function recordTalentProfileAssessment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
+				}),
 			);
 		},
 	});
@@ -151,7 +159,10 @@ export async function confirmTalentProfileAssessment(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
+				}),
 			);
 		},
 	});
@@ -174,7 +185,10 @@ export async function archiveTalentProfile(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
+				}),
 			);
 		},
 	});

@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -29,6 +27,7 @@ import {
 	updatePerformanceCycleInputSchema,
 } from "../schemas/performance";
 import { fingerprintPerformanceCycleCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runPerformanceCommand,
 	runPerformanceQuery,
@@ -95,7 +94,10 @@ export async function createPerformanceCycle(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE,
+				}),
 			);
 		},
 	});
@@ -121,7 +123,10 @@ export async function updatePerformanceCycle(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
+				}),
 			),
 	});
 }
@@ -143,7 +148,10 @@ export async function openPerformanceCycle(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
+				}),
 			),
 	});
 }
@@ -165,7 +173,10 @@ export async function closePerformanceCycle(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CLOSE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CLOSE,
+				}),
 			),
 	});
 }
@@ -187,7 +198,10 @@ export async function cancelPerformanceCycle(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL,
+				}),
 			),
 	});
 }
@@ -210,7 +224,10 @@ export async function addCycleParticipant(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ADD_PARTICIPANT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ADD_PARTICIPANT,
+				}),
 			),
 	});
 }
@@ -233,7 +250,11 @@ export async function removeCycleParticipant(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_REMOVE_PARTICIPANT }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_REMOVE_PARTICIPANT,
+				}),
 			),
 	});
 }

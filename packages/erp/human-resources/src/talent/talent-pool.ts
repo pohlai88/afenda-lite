@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -28,6 +26,7 @@ import {
 	fingerprintTalentPoolCreate,
 	fingerprintTalentPoolMemberCreate,
 } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	TalentPool,
@@ -84,7 +83,10 @@ export async function createTalentPool(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
+				}),
 			);
 		},
 	});
@@ -109,7 +111,10 @@ export async function updateTalentPool(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
+				}),
 			);
 		},
 	});
@@ -132,7 +137,10 @@ export async function closeTalentPool(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
+				}),
 			);
 		},
 	});
@@ -184,7 +192,10 @@ export async function nominateTalentPoolMember(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
+				}),
 			);
 		},
 	});
@@ -208,7 +219,10 @@ export async function approveTalentPoolMember(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
+				}),
 			);
 		},
 	});
@@ -231,7 +245,10 @@ export async function removeTalentPoolMember(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
+				}),
 			);
 		},
 	});

@@ -1,6 +1,6 @@
 /**
  * HR Leave Transaction Utilities
- * 
+ *
  * Shared transaction patterns and SQL builders for atomic leave operations.
  * Provides utilities for embedding audit logs, outbox events, and row locking
  * within Neon HTTP transactions using CTE patterns.
@@ -130,9 +130,13 @@ export function buildAuditCte(params: {
 		actorUserId: string;
 	};
 }): string {
-	const changesClause = params.changes ? `, ${params.changes}::jsonb` : ", '[]'::jsonb";
-	const newValueClause = params.newValue ? `, ${params.newValue}::jsonb` : ", NULL";
-	
+	const changesClause = params.changes
+		? `, ${params.changes}::jsonb`
+		: ", '[]'::jsonb";
+	const newValueClause = params.newValue
+		? `, ${params.newValue}::jsonb`
+		: ", NULL";
+
 	return `
 		audited AS (
 			INSERT INTO platform_audit_log (
@@ -274,9 +278,7 @@ export async function runLeaveTransaction<T extends unknown[]>(
  * transaction to commit and return the existing row when fingerprints match.
  */
 export async function resolveIdempotentCreateReplay<T>(params: {
-	find: () => Promise<
-		Result<{ fingerprint: string; value: T } | null>
-	>;
+	find: () => Promise<Result<{ fingerprint: string; value: T } | null>>;
 	expectedFingerprint: string;
 	mismatchMessage?: string;
 	conflictMessage?: string;
@@ -293,17 +295,15 @@ export async function resolveIdempotentCreateReplay<T>(params: {
 			}
 			return fail(
 				"CONFLICT",
-				params.mismatchMessage ?? "Idempotency key already used with different data",
+				params.mismatchMessage ??
+					"Idempotency key already used with different data",
 			);
 		}
 		if (attempt < maxAttempts - 1) {
 			await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
 		}
 	}
-	return fail(
-		"CONFLICT",
-		params.conflictMessage ?? "Idempotency key conflict",
-	);
+	return fail("CONFLICT", params.conflictMessage ?? "Idempotency key conflict");
 }
 
 /**
@@ -366,10 +366,14 @@ export function buildCreateRequestWithSegmentsCte(params: {
 		dayPortion: string;
 	}>;
 }): string {
-	const segmentInserts = params.segments.map(segment => `
+	const segmentInserts = params.segments
+		.map(
+			(segment) => `
 		('${segment.id}', '${params.organizationId}', '${params.requestId}', 
 		 '${segment.segmentDate}', '${segment.quantity}', '${segment.dayPortion}')
-	`).join(', ');
+	`,
+		)
+		.join(", ");
 
 	return `
 		inserted_request AS (
@@ -383,7 +387,7 @@ export function buildCreateRequestWithSegmentsCte(params: {
 				'${params.employmentId}', '${params.entitlementId}', '${params.policyId}',
 				'${params.startDate}', '${params.endDate}', '${params.requestedQuantity}',
 				'${params.unit}', 'draft', ${params.isBackdated}, 
-				${params.backdateJustification ? `'${params.backdateJustification}'` : 'NULL'},
+				${params.backdateJustification ? `'${params.backdateJustification}'` : "NULL"},
 				'${params.createIdempotencyKey}', '${params.createRequestFingerprint}',
 				1, '${params.createdBy}', '${params.createdBy}'
 			)
@@ -416,9 +420,10 @@ export function buildCreateAdjustmentCte(params: {
 	requiredBalance?: string;
 	fromCte?: string;
 }): string {
-	const balanceCondition = params.requiredBalance && params.fromCte 
-		? `WHERE (SELECT available_balance FROM ${params.fromCte}) >= ${params.requiredBalance}`
-		: "";
+	const balanceCondition =
+		params.requiredBalance && params.fromCte
+			? `WHERE (SELECT available_balance FROM ${params.fromCte}) >= ${params.requiredBalance}`
+			: "";
 
 	return `
 		inserted_adjustment AS (
@@ -429,7 +434,7 @@ export function buildCreateAdjustmentCte(params: {
 			) 
 			SELECT 
 				'${params.adjustmentId}', '${params.organizationId}', '${params.entitlementId}',
-				${params.sourceRequestId ? `'${params.sourceRequestId}'` : 'NULL'}, '${params.kind}',
+				${params.sourceRequestId ? `'${params.sourceRequestId}'` : "NULL"}, '${params.kind}',
 				'${params.delta}', '${params.reason}', '${params.source}', 'posted',
 				'${params.createIdempotencyKey}', '${params.createRequestFingerprint}',
 				1, '${params.createdBy}', '${params.createdBy}'

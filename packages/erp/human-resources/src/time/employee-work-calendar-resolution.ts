@@ -1,9 +1,9 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
+	type HumanResourcesWorkCalendarId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
-	type HumanResourcesWorkCalendarId,
 } from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -70,12 +70,17 @@ function matchesScopeKey(
 		case "employee":
 			return assignment.scopeKey === keys.employeeId;
 		case "location":
-			return keys.locationKey !== null && assignment.scopeKey === keys.locationKey;
+			return (
+				keys.locationKey !== null && assignment.scopeKey === keys.locationKey
+			);
 		case "department":
-			return keys.departmentId !== null && assignment.scopeKey === keys.departmentId;
+			return (
+				keys.departmentId !== null && assignment.scopeKey === keys.departmentId
+			);
 		case "legal_entity":
 			return (
-				keys.legalEntityKey !== null && assignment.scopeKey === keys.legalEntityKey
+				keys.legalEntityKey !== null &&
+				assignment.scopeKey === keys.legalEntityKey
 			);
 		case "organization":
 			return assignment.scopeKey === keys.organizationKey;

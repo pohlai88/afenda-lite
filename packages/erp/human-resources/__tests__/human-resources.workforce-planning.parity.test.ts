@@ -24,13 +24,13 @@ import {
 	listHeadcountReservations,
 	reserveHeadcount,
 } from "../src/workforce-planning/headcount-reservation";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
-import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -48,7 +48,7 @@ async function approvePlanWithLine(
 			actorUserId: input.actorUserId,
 			correlationId: `corr-plan-${input.suffix}`,
 			idempotencyKey: `idem-plan-${input.suffix}`,
-			code: `WFP-${input.suffix}`.slice(0, 32),
+			code: `WFP-${input.suffix}`.slice(0, 64),
 			title: "Parity plan",
 			planningScopeKey: `scope-${input.suffix}`,
 			periodStart: "2026-01-01",
@@ -129,7 +129,7 @@ async function openRequisitionPipeline(
 			actorUserId: input.actorUserId,
 			correlationId: `corr-req-${input.suffix}`,
 			idempotencyKey: `idem-req-${input.suffix}`,
-			code: `REQ-${input.suffix}`.slice(0, 32),
+			code: `REQ-${input.suffix}`.slice(0, 64),
 			title: "Parity hire",
 		},
 		ready,

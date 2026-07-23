@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -22,6 +20,7 @@ import {
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { normalizeEmployeeNumber } from "../shared/employee-number";
 import { fingerprintEmployeeCreate } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Employee, EmployeeListPage } from "../types";
 
 export async function createEmployee(
@@ -51,7 +50,9 @@ export async function createEmployee(
 				return existingByKey;
 			}
 			if (existingByKey.data !== null) {
-				if (existingByKey.data.createRequestFingerprint !== requestFingerprint) {
+				if (
+					existingByKey.data.createRequestFingerprint !== requestFingerprint
+				) {
 					return fail(
 						"CONFLICT",
 						"Idempotency key reused with different payload",
@@ -72,7 +73,10 @@ export async function createEmployee(
 					createdBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+				}),
 			);
 		},
 	});
@@ -96,7 +100,10 @@ export async function updateEmployee(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+				}),
 			);
 		},
 	});

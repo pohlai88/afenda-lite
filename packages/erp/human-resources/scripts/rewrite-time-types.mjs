@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
 const path = new URL("../src/types.ts", import.meta.url);
-let s = fs.readFileSync(path, "utf8");
+const s = fs.readFileSync(path, "utf8");
 const start = s.indexOf("// Time Management Types");
 if (start < 0) {
 	console.error("marker not found");

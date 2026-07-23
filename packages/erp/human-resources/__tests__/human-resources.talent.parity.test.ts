@@ -19,12 +19,12 @@ import {
 	createTalentProfile,
 	getTalentProfileByEmployee,
 } from "../src/talent/talent-profile";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 

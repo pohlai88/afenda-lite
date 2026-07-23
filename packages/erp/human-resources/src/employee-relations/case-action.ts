@@ -1,6 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { buildMutationMeta } from "../shared/mutation-meta";
-
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -10,12 +8,13 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
 } from "../module-ids";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
-import { fingerprintEmployeeCaseActionRecommend } from "../shared/fingerprint";
 import {
 	approveEmployeeCaseActionInputSchema,
 	recommendEmployeeCaseActionInputSchema,
 } from "../schemas/employee-relations";
+import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
+import { fingerprintEmployeeCaseActionRecommend } from "../shared/fingerprint";
+import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmployeeCaseAction } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_ACTION =
@@ -65,7 +64,10 @@ export async function recommendEmployeeCaseAction(
 					recommendedBy: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
+				}),
 			);
 		},
 	});
@@ -90,7 +92,10 @@ export async function approveEmployeeCaseAction(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				buildMutationMeta({ correlationId: data.correlationId, operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION }),
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
+				}),
 			),
 	});
 }

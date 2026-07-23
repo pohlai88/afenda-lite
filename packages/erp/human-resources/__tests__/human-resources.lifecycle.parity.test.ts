@@ -16,12 +16,12 @@ import { createEmployment } from "../src/core/employment";
 import { finalizeTermination } from "../src/lifecycle/termination";
 import { transferAssignment } from "../src/lifecycle/transfer";
 import { createPosition } from "../src/organization/position";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -50,7 +50,7 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 					actorUserId,
 					correlationId: `corr-emp-${suffix}`,
 					idempotencyKey: `idem-emp-${suffix}`,
-					employeeNumber: `E-${suffix}`.slice(0, 32),
+					employeeNumber: `E-${suffix}`.slice(0, 64),
 					legalName: "Parity Worker",
 				},
 				ready,
@@ -83,7 +83,7 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 					organizationId,
 					actorUserId,
 					correlationId: `corr-pos-a-${suffix}`,
-					code: `PA-${suffix}`.slice(0, 32),
+					code: `PA-${suffix}`.slice(0, 64),
 					title: "Role A",
 					departmentId: orgSeed.departmentId,
 					jobId: orgSeed.jobId,
@@ -98,7 +98,7 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 					organizationId,
 					actorUserId,
 					correlationId: `corr-pos-b-${suffix}`,
-					code: `PB-${suffix}`.slice(0, 32),
+					code: `PB-${suffix}`.slice(0, 64),
 					title: "Role B",
 					departmentId: orgSeed.departmentId,
 					jobId: orgSeed.jobId,

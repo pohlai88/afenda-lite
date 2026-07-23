@@ -5,24 +5,25 @@ import {
 	createOrganizationMemoryState,
 	type OrganizationMemoryState,
 } from "../src/adapters/memory/organization";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import type { HumanResourcesIdentityStore } from "../src/store/identity";
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+import type { HumanResourcesEmployeeId } from "../src/brands";
 import { createEmployee } from "../src/core/employee";
-import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
-import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 } from "../src/permissions";
+import type { HumanResourcesIdentityStore } from "../src/store/identity";
+import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 describe("Identity Resolver Parity - Memory Store", () => {
 	let organization: OrganizationMemoryState;
 	let store: HumanResourcesIdentityStore;
 	const organizationId = "org-identity-parity";
 	const userId = "user-123";
-	const employeeId = "550e8400-e29b-41d4-a716-446655440001" as HumanResourcesEmployeeId;
+	const employeeId =
+		"550e8400-e29b-41d4-a716-446655440001" as HumanResourcesEmployeeId;
 	const actorUserId = "actor-456";
 
 	beforeEach(() => {

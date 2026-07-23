@@ -13,11 +13,11 @@ import {
 import { issuePolicyAcknowledgementRequirement } from "../src/compliance/policy-acknowledgement";
 import { recordWorkEligibility } from "../src/compliance/work-eligibility";
 import { createEmployee } from "../src/core/employee";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
