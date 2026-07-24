@@ -4,7 +4,6 @@
  * exercise C01 scoped-calendar precedence.
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createEmployee } from "../src/core/employee";
@@ -24,15 +23,12 @@ import {
 	supersedeShift,
 } from "../src/time/shift";
 import type { Shift, WorkCalendar } from "../src/types";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const runDrizzleParity =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
 	dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -58,12 +54,13 @@ function defineSuccessorLineageParitySuite(
 	adapter: WorkforceStoreAdapter,
 ): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-successor-lineage-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-successor-lineage-${suffix}`);
 	const ACTOR = `user-hr-successor-lineage-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 

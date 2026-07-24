@@ -3,7 +3,6 @@
  */
 
 import { ok } from "@afenda/errors/result";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createAssignment } from "../src/core/assignment";
@@ -21,18 +20,15 @@ import {
 import type { EmployeeAssignmentContext } from "../src/time/handoff/ports";
 import type { WorkCalendar, WorkCalendarScopeType } from "../src/types";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const runDrizzleParity =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
 
 const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
 	dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -218,17 +214,17 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 		return `org-cal-scope-parity-${suffix}-${testKey}`.slice(0, 64);
 	}
 
-	const drizzleOrgs: string[] = [];
+	const neonOrgs = createNeonOrgTracker();
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs(drizzleOrgs);
+			await neonOrgs.cleanup();
 		}
 	});
 
 	function trackOrg(org: string): string {
-		if (adapter === "drizzle" && !drizzleOrgs.includes(org)) {
-			drizzleOrgs.push(org);
+		if (adapter === "drizzle") {
+			return neonOrgs.trackOrg(org);
 		}
 		return org;
 	}

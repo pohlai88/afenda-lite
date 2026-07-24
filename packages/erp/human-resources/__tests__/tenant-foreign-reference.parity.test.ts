@@ -1,38 +1,23 @@
 import { randomUUID } from "node:crypto";
 
 import { and, db, eq, hrEmployee, hrUserEmployee } from "@afenda/db";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const runDatabaseEvidence =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
-const describeDatabase = runDatabaseEvidence ? describe : describe.skip;
+import { runDrizzleParity } from "./helpers/database-gate";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
+
+const describeDatabase = runDrizzleParity ? describe : describe.skip;
 
 describeDatabase("HR tenant foreign-reference isolation", () => {
 	const suffix = randomUUID();
-	const ownerOrganizationId = `org-fk-owner-${suffix}`;
-	const attackerOrganizationId = `org-fk-attacker-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ownerOrganizationId = neonOrgs.trackOrg(`org-fk-owner-${suffix}`);
+	const attackerOrganizationId = neonOrgs.trackOrg(`org-fk-attacker-${suffix}`);
 	const employeeId = randomUUID();
 	const mappingId = randomUUID();
 
 	afterAll(async () => {
-		await db
-			.delete(hrUserEmployee)
-			.where(
-				and(
-					eq(hrUserEmployee.organizationId, attackerOrganizationId),
-					eq(hrUserEmployee.id, mappingId),
-				),
-			);
-		await db
-			.delete(hrEmployee)
-			.where(
-				and(
-					eq(hrEmployee.organizationId, ownerOrganizationId),
-					eq(hrEmployee.id, employeeId),
-				),
-			);
+		await neonOrgs.cleanup();
 	});
 
 	it("rejects an HR reference to a row owned by another tenant", async () => {

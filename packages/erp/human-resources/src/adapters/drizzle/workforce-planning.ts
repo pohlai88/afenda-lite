@@ -477,8 +477,22 @@ async function transitionHeadcountReservationStatus(
 				reservationId: input.reservationId,
 			});
 			if (!again.ok) return again;
-			if (again.data === null)
+			if (again.data === null) {
+				const foreign = await db
+					.select({
+						organizationId: hrHeadcountReservation.organizationId,
+					})
+					.from(hrHeadcountReservation)
+					.where(eq(hrHeadcountReservation.id, input.reservationId))
+					.limit(1);
+				if (foreign[0] !== undefined) {
+					return notFound(
+						"Headcount reservation not found",
+						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+					);
+				}
 				return notFound("Headcount reservation not found");
+			}
 			if (again.data.status !== "active") {
 				return invalidState(
 					`Cannot transition headcount reservation from ${again.data.status} to ${nextStatus}`,

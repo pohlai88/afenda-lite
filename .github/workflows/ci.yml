@@ -74,6 +74,9 @@ jobs:
       - name: Typecheck · test
         run: pnpm exec turbo run typecheck test
 
+      - name: HR Neon parity (serial)
+        run: pnpm test:hr:parity
+
   # N9 / ARCH-023 — live null-org audit on eight hard tenant roots.
   # Uses production DATABASE_URL (same secret class as Deploy / N4 monitor).
   # Runs on main only so PR forks are not blocked on environment secrets.

@@ -144,6 +144,7 @@ import type {
 	ShiftAssignment,
 	ShiftAssignmentSegment,
 	ShiftBreak,
+	TimeApprovalAuthority,
 	TimeApprovalAuthorityAssignment,
 	TimePolicy,
 	TimePolicyAssignment,
@@ -270,6 +271,7 @@ export type TimeMemoryState = {
 		decision: "approved" | "rejected" | "verified" | "cancelled";
 		approvedMaximumMinutes: number | null;
 		actorUserId: string;
+		authority: TimeApprovalAuthority | null;
 		comment: string | null;
 		decidedAt: Date;
 		versionApproved: number;
@@ -4194,6 +4196,7 @@ export function createMemoryTimeMethods(
 				decision: "approved",
 				approvedMaximumMinutes: input.approvedMaximumMinutes,
 				actorUserId: input.actorUserId,
+				authority: input.authority,
 				comment: input.comment ?? null,
 				decidedAt: new Date(),
 				versionApproved: request.version,
@@ -4300,6 +4303,7 @@ export function createMemoryTimeMethods(
 				decision: "verified",
 				approvedMaximumMinutes: input.payrollApprovedMinutes,
 				actorUserId: input.actorUserId,
+				authority: null,
 				comment: null,
 				decidedAt: new Date(),
 				versionApproved: request.version,
@@ -4577,6 +4581,7 @@ async function transitionOvertime(
 			decision: next === "rejected" ? "rejected" : "cancelled",
 			approvedMaximumMinutes: null,
 			actorUserId: input.actorUserId,
+			authority: null,
 			comment: extra?.comment ?? input.comment ?? null,
 			decidedAt: new Date(),
 			versionApproved: request.version,

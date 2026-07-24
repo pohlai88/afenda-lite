@@ -24,7 +24,10 @@ const nodeProject = (name: string, root: string) => ({
 	},
 });
 
-const authProject = nodeProject("auth", path.join(repoRoot, "packages/control-plane/auth"));
+const authProject = nodeProject(
+	"auth",
+	path.join(repoRoot, "packages/control-plane/auth"),
+);
 const humanResourcesRoot = path.join(repoRoot, "packages/erp/human-resources");
 /** Neon / shared-branch suites — serial only; keep out of the unit inner loop. */
 const humanResourcesParityIncludes = [
@@ -68,7 +71,10 @@ export default defineConfig({
 			nodeProject("admin", path.join(repoRoot, "packages/control-plane/admin")),
 			nodeProject("errors", path.join(repoRoot, "packages/foundation/errors")),
 			nodeProject("logger", path.join(repoRoot, "packages/runtime/logger")),
-			nodeProject("rate-limit", path.join(repoRoot, "packages/runtime/rate-limit")),
+			nodeProject(
+				"rate-limit",
+				path.join(repoRoot, "packages/runtime/rate-limit"),
+			),
 			nodeProject("cache", path.join(repoRoot, "packages/runtime/cache")),
 			nodeProject("audit", path.join(repoRoot, "packages/data-plane/audit")),
 			nodeProject("search", path.join(repoRoot, "packages/data-plane/search")),
@@ -181,6 +187,10 @@ export default defineConfig({
 				test: {
 					...humanResourcesParityProject.test,
 					include: humanResourcesParityIncludes,
+					// Resolve DATABASE_URL (env / local `.env.local`) before suite modules load.
+					setupFiles: [
+						path.join(repoRoot, "testing/setup-hr-parity-database.ts"),
+					],
 					// Neon parity suites: cold import + multi-round-trip workflows exceed 5s.
 					testTimeout: 30_000,
 					// Org cleanup is many sequential deletes; parallel files amplify hook cost.
@@ -239,7 +249,10 @@ export default defineConfig({
 					},
 				},
 			},
-			nodeProject("ui-system", path.join(repoRoot, "packages/surfaces/ui-system")),
+			nodeProject(
+				"ui-system",
+				path.join(repoRoot, "packages/surfaces/ui-system"),
+			),
 			nodeProject("docs", path.join(repoRoot, "apps/docs")),
 			{
 				resolve: {

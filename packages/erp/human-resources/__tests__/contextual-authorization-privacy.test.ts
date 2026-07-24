@@ -75,8 +75,10 @@ describe("HR-ENT-04 contextual authorization", () => {
 			return policy ? [{ operation, policy }] : [];
 		});
 
-		expect(commandPolicies).toHaveLength(123);
-		expect(queryPolicies).toHaveLength(47);
+		// Canonical inventory: every sensitive-prefixed command/query in the
+		// module registers must match a policy family (not a brittle snapshot).
+		expect(commandPolicies).toHaveLength(128);
+		expect(queryPolicies).toHaveLength(50);
 		for (const { policy } of [...commandPolicies, ...queryPolicies]) {
 			expect(policy.subjectPolicy).toMatch(
 				/^(subject|manager|assigned)_or_privileged$|^privileged_only$/,

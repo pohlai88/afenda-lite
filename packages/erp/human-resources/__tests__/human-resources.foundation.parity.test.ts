@@ -2,7 +2,6 @@
  * Wave 1A foundation parity: historical assignment + canonical org-context asOf.
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createAssignment, endAssignment } from "../src/core/assignment";
@@ -15,16 +14,13 @@ import {
 	createWorkCalendar,
 } from "../src/time/calendar";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const runDrizzleParity =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
 	dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -40,12 +36,13 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 
 function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-foundation-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-foundation-${suffix}`);
 	const ACTOR = `user-hr-foundation-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 

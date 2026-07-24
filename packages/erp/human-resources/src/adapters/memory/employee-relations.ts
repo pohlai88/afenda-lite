@@ -30,7 +30,6 @@ import type {
 	EmployeeCaseAction,
 	EmployeeCaseAppeal,
 	EmployeeCaseEvent,
-	EmployeeCaseListPage,
 	EmployeeCaseOutcome,
 	EmployeeCaseTimeline,
 } from "../../employee-relations/types";
@@ -239,23 +238,6 @@ function getCaseWithAccess(
 		return notFound("Case not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 	}
 	return loaded;
-}
-
-function paginateCases(
-	cases: EmployeeCase[],
-	page: number,
-	pageSize: number,
-): EmployeeCaseListPage {
-	const sorted = [...cases].sort(
-		(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-	);
-	const offset = (page - 1) * pageSize;
-	return {
-		cases: sorted.slice(offset, offset + pageSize).map(cloneCase),
-		totalCount: sorted.length,
-		page,
-		pageSize,
-	};
 }
 
 export function createEmployeeRelationsMemoryState(): EmployeeRelationsMemoryState {
@@ -515,13 +497,8 @@ export function createMemoryEmployeeRelationsMethods(
 
 		async listEmployeeCases(input) {
 			const state = erState;
-			const page = input.page ?? 1;
-			const pageSize = input.pageSize ?? 20;
 			const filtered = Array.from(state.cases.values()).filter((caseRecord) => {
 				if (caseRecord.organizationId !== input.organizationId) {
-					return false;
-				}
-				if (!hasCaseAccess(caseRecord, input.actorUserId)) {
 					return false;
 				}
 				if (input.status !== undefined && caseRecord.status !== input.status) {
@@ -529,44 +506,37 @@ export function createMemoryEmployeeRelationsMethods(
 				}
 				return true;
 			});
-			return ok(paginateCases(filtered, page, pageSize));
+			return ok(filtered.map(cloneCase));
 		},
 
 		async listCasesAssignedToActor(input) {
 			const state = erState;
-			const page = input.page ?? 1;
-			const pageSize = input.pageSize ?? 20;
 			const filtered = Array.from(state.cases.values()).filter(
 				(caseRecord) =>
 					caseRecord.organizationId === input.organizationId &&
-					hasCaseAccess(caseRecord, input.actorUserId),
+					caseRecord.ownerActorUserId === input.ownerActorUserId,
 			);
-			return ok(paginateCases(filtered, page, pageSize));
+			return ok(filtered.map(cloneCase));
 		},
 
 		async listOpenEmployeeRelationsCases(input) {
 			const state = erState;
-			const page = input.page ?? 1;
-			const pageSize = input.pageSize ?? 20;
 			const filtered = Array.from(state.cases.values()).filter(
 				(caseRecord) =>
 					caseRecord.organizationId === input.organizationId &&
-					caseRecord.status !== "closed" &&
-					hasCaseAccess(caseRecord, input.actorUserId),
+					caseRecord.status !== "closed",
 			);
-			return ok(paginateCases(filtered, page, pageSize));
+			return ok(filtered.map(cloneCase));
 		},
 
 		async getEmployeeRelationsHistoryByEmployee(input) {
 			const state = erState;
-			const page = input.page ?? 1;
-			const pageSize = input.pageSize ?? 20;
 			const filtered = Array.from(state.cases.values()).filter(
 				(caseRecord) =>
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.employeeId === input.employeeId,
 			);
-			return ok(paginateCases(filtered, page, pageSize));
+			return ok(filtered.map(cloneCase));
 		},
 
 		async updateEmployeeCaseClassification(input, ports, meta) {
@@ -1703,7 +1673,7 @@ export function createMemoryEmployeeRelationsMethods(
 
 		async getEmployeeCaseTimeline(input) {
 			const state = erState;
-			const loaded = getCaseWithAccess(state, input);
+			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
 				return loaded;
 			}
@@ -1724,7 +1694,7 @@ export function createMemoryEmployeeRelationsMethods(
 
 		async getEmployeeCaseOutcome(input) {
 			const state = erState;
-			const loaded = getCaseWithAccess(state, input);
+			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
 				return loaded;
 			}

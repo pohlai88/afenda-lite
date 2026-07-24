@@ -2,9 +2,7 @@
  * Memory vs Drizzle parity for leave administration (HR-LEAVE-01).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { grantLeaveEntitlement } from "../src/leave/entitlement";
@@ -19,14 +17,13 @@ import {
 	submitLeaveRequest,
 } from "../src/leave/leave-request";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { mapActorToEmployee } from "./helpers/identity-resolver";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -34,13 +31,14 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 
 function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-leave-parity-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-leave-parity-${suffix}`);
 	const ACTOR = `user-hr-leave-parity-${suffix}`;
 	const MANAGER = `user-hr-leave-mgr-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -240,6 +238,6 @@ describe("Leave parity (memory)", () => {
 	defineLeaveParitySuite("memory");
 });
 
-describe.skipIf(!hasDatabase)("Leave parity (drizzle)", () => {
+describe.skipIf(!runDrizzleParity)("Leave parity (drizzle)", () => {
 	defineLeaveParitySuite("drizzle");
 });

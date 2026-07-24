@@ -3,6 +3,10 @@
  *
  * Local without DATABASE_URL may skip (skip is not a CI PASS claim).
  * CI / REQUIRE_DATABASE_TESTS=1 without DATABASE_URL throws — never skip-as-PASS.
+ *
+ * Resolution order:
+ * 1. `process.env.DATABASE_URL` (CI Actions secret / injected env)
+ * 2. Local `.env.local` when not in CI (including local REQUIRE_DATABASE_TESTS=1)
  */
 
 import { readFileSync } from "node:fs";
@@ -17,12 +21,14 @@ const repoRoot = path.resolve(
 	"..",
 );
 
-function requireDatabaseInCi(): boolean {
+function isCiEnvironment(): boolean {
 	const ci = process.env.CI;
+	return ci === "true" || ci === "1";
+}
+
+function requireDatabaseInCi(): boolean {
 	const requireFlag = process.env.REQUIRE_DATABASE_TESTS;
-	return (
-		ci === "true" || ci === "1" || requireFlag === "1" || requireFlag === "true"
-	);
+	return isCiEnvironment() || requireFlag === "1" || requireFlag === "true";
 }
 
 function loadDatabaseUrlFromEnvLocal(): string | undefined {
@@ -55,7 +61,7 @@ export type DatabaseForTests = {
 
 /**
  * Resolve DATABASE_URL (env or `.env.local`), set `process.env.DATABASE_URL`
- * when found, and fail closed under CI when missing.
+ * when found, and fail closed under CI / REQUIRE_DATABASE_TESTS when missing.
  */
 export function resolveDatabaseUrlForTests(): DatabaseForTests {
 	const fromEnv =
@@ -63,8 +69,9 @@ export function resolveDatabaseUrlForTests(): DatabaseForTests {
 		process.env.DATABASE_URL.length > 0
 			? process.env.DATABASE_URL
 			: undefined;
-	// CI only trusts injected env (Actions secret). Local may use `.env.local`.
-	const databaseUrl = requireDatabaseInCi()
+	// CI only trusts injected env (Actions secret). Local may use `.env.local`
+	// even when REQUIRE_DATABASE_TESTS=1 (HR outer-loop parity).
+	const databaseUrl = isCiEnvironment()
 		? fromEnv
 		: (fromEnv ?? loadDatabaseUrlFromEnvLocal());
 	if (databaseUrl) {
@@ -76,7 +83,7 @@ export function resolveDatabaseUrlForTests(): DatabaseForTests {
 	if (requireDatabaseInCi() && !hasDatabase) {
 		throw new Error(
 			"I5.5 CI DB gate BLOCKED — DATABASE_URL missing under CI/REQUIRE_DATABASE_TESTS=1. " +
-				"Set Actions secret DATABASE_URL (repo or production env). Owner: Platform. " +
+				"Set Actions secret DATABASE_URL (repo or production env), or local `.env.local`. Owner: Platform. " +
 				"Skip is not PASS.",
 		);
 	}

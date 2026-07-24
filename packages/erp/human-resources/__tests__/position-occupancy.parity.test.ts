@@ -1,4 +1,3 @@
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 import { createAssignment, endAssignment } from "../src/core/assignment";
 import { createEmployee } from "../src/core/employee";
@@ -8,25 +7,27 @@ import {
 	getPositionOccupancyAsOf,
 } from "../src/organization/position";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
 
 function definePositionOccupancyParitySuite(
 	adapter: WorkforceStoreAdapter,
 ): void {
 	const suffix = `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const organizationId = `org-hr-position-occupancy-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const organizationId = neonOrgs.trackOrg(
+		`org-hr-position-occupancy-${suffix}`,
+	);
 	const actorUserId = `user-hr-position-occupancy-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([organizationId]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -149,7 +150,7 @@ describe("@afenda/human-resources position occupancy parity (memory)", () => {
 	definePositionOccupancyParitySuite("memory");
 });
 
-describe.runIf(hasDatabase)(
+describe.runIf(runDrizzleParity)(
 	"@afenda/human-resources position occupancy parity (drizzle/neon)",
 	() => {
 		definePositionOccupancyParitySuite("drizzle");

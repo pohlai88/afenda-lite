@@ -120,9 +120,12 @@ export function createHrParityHarness(
 }
 
 /** Drizzle-only harness for leave concurrency and failure-injection tests. */
-export async function createTestHarness(): Promise<WorkforceTestHarness> {
+export async function createTestHarness(options?: {
+	trackOrg?: (organizationId: string) => void;
+}): Promise<WorkforceTestHarness> {
 	const commandOptions = createHrParityHarness("drizzle");
 	const organizationId = `org-hr-leave-test-${Date.now()}-${randomUUID().slice(0, 8)}`;
+	options?.trackOrg?.(organizationId);
 	const actorUserId = `user-hr-leave-test-${randomUUID().slice(0, 8)}`;
 	const correlationId = randomUUID();
 

@@ -94,6 +94,16 @@ import type {
 	Termination,
 } from "../../types";
 
+/** Neon HTTP RETURNING rows may surface timestamptz as strings; Drizzle select returns Date. */
+function parseDate(value: Date | string): Date {
+	return value instanceof Date ? value : new Date(value);
+}
+
+/** Public EmploymentMovement boundary: ISO datetime string with offset (Z). */
+function toIsoDateTime(value: Date | string): string {
+	return parseDate(value).toISOString();
+}
+
 function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
@@ -238,7 +248,13 @@ function mapConfirmation(
 }
 
 function mapMovement(
-	row: typeof hrEmploymentMovement.$inferSelect,
+	row: Omit<
+		typeof hrEmploymentMovement.$inferSelect,
+		"createdAt" | "updatedAt"
+	> & {
+		createdAt: Date | string;
+		updatedAt: Date | string;
+	},
 ): Result<EmploymentMovement> {
 	const id = parseHumanResourcesEmploymentMovementId(row.id);
 	if (!id.ok) return id;
@@ -275,8 +291,8 @@ function mapMovement(
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
-		createdAt: row.createdAt,
-		updatedAt: row.updatedAt,
+		createdAt: toIsoDateTime(row.createdAt),
+		updatedAt: toIsoDateTime(row.updatedAt),
 	});
 }
 
@@ -504,8 +520,8 @@ type MovementSqlRow = {
 	version: number;
 	created_by: string;
 	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
+	created_at: Date | string;
+	updated_at: Date | string;
 };
 
 type TerminationSqlRow = {

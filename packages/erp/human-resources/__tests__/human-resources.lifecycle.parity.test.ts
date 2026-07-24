@@ -7,42 +7,39 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 } from "@afenda/events/schemas";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createAssignment } from "../src/core/assignment";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { finalizeTermination } from "../src/lifecycle/termination";
 import { transferAssignment } from "../src/lifecycle/transfer";
 import { createPosition } from "../src/organization/position";
+import { isoDateTimeSchema } from "../src/schemas/common";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
-	const neonOrgs: string[] = [];
+describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
+	const neonOrgs = createNeonOrgTracker();
 
 	afterAll(async () => {
-		await cleanupHumanResourcesNeonOrgs(neonOrgs);
+		await neonOrgs.cleanup();
 	});
 
 	for (const adapter of ["memory", "drizzle"] as const) {
 		it(`${adapter}: transfer then finalizeTermination emit workforce events`, async () => {
 			const ready = createHrParityHarness(adapter);
 			const suffix = uniqueSuffix(adapter);
-			const organizationId = `org-life-parity-${suffix}`;
-			neonOrgs.push(organizationId);
+			const organizationId = neonOrgs.trackOrg(`org-life-parity-${suffix}`);
 			const actorUserId = "user-life-parity";
 
 			const employee = await createEmployee(
@@ -140,6 +137,12 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 			);
 			expect(transfer.ok).toBe(true);
 			if (!transfer.ok) return;
+			expect(isoDateTimeSchema.safeParse(transfer.data.createdAt).success).toBe(
+				true,
+			);
+			expect(isoDateTimeSchema.safeParse(transfer.data.updatedAt).success).toBe(
+				true,
+			);
 			const replay = await transferAssignment(
 				{
 					organizationId,
@@ -155,6 +158,10 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(replay).toEqual(transfer);
+			if (replay.ok) {
+				expect(replay.data.createdAt).toBe(transfer.data.createdAt);
+				expect(replay.data.updatedAt).toBe(transfer.data.updatedAt);
+			}
 
 			const previousAssignment = await ready.store.getAssignmentById({
 				organizationId,

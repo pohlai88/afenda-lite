@@ -385,14 +385,6 @@ describe("End-to-End Authorization Parity Tests", () => {
 		});
 	});
 
-	describe("Cross-Store Consistency", () => {
-		// These tests would verify that memory and Drizzle stores behave identically
-		// Skip implementation details for now due to complexity of setting up test DB
-		it.skip("should have identical behavior between memory and Drizzle stores", () => {
-			// Would need to set up test database and run same tests against both stores
-		});
-	});
-
 	describe("Identity Resolution Security", () => {
 		it("should handle missing identity resolver gracefully", async () => {
 			const authPort = createAuthPort({
@@ -724,61 +716,6 @@ describe("End-to-End Authorization Parity Tests", () => {
 			expect(result.message).toContain("Invalid leave request approve input");
 		});
 
-		it.skip("should enforce temporal boundaries in employee case access", async () => {
-			// Test that former managers lose access to employee relations cases
-			const { getEmployeeCaseById } = await import(
-				"../src/employee-relations/employee-case"
-			);
-
-			const authPort = createAuthPort({
-				[`${actorUserId1}:human-resources.employee-case.assigned.read`]: true,
-			});
-			const identityResolver = createIdentityResolver({
-				[actorUserId1]: managerEmployeeId,
-			});
-
-			const temporalStore = {
-				...memoryStore,
-				async getEmployeeCaseById() {
-					return ok({
-						id: "f47ac10b-58cc-4372-a567-0e02b2c3d484",
-						subjectEmployeeId: employeeId1,
-						status: "open",
-						caseType: "performance",
-						ownerEmployeeId: "f47ac10b-58cc-4372-a567-0e02b2c3d485",
-						participants: [],
-					});
-				},
-				async assertPrimaryManagerWhenAssigned(input: { asOf: string }) {
-					// Manager relationship ended on 2024-06-30
-					if (input.asOf > "2024-06-30") {
-						return fail("FORBIDDEN", "Former manager - access revoked");
-					}
-					return ok(undefined);
-				},
-			};
-
-			const result = await getEmployeeCaseById(
-				{
-					organizationId,
-					correlationId,
-					actorUserId: actorUserId1,
-					caseId: "f47ac10b-58cc-4372-a567-0e02b2c3d484",
-					// asOf handled by store mock
-				},
-				{
-					store: temporalStore,
-					authorization: authPort,
-					identityResolver,
-				},
-			);
-
-			expect(result.ok).toBe(false);
-			// Note: This test demonstrates temporal control concept - authorization prevents access
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
-		});
 	});
 
 	describe("IDOR Prevention Comprehensive", () => {

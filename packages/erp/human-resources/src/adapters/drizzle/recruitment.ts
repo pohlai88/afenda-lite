@@ -73,7 +73,9 @@ import {
 import {
 	type ApplicationStatus,
 	applicationStatusSchema,
+	type CandidateConsentSource,
 	type CandidateStatus,
+	candidateConsentSourceSchema,
 	candidateStatusSchema,
 	interviewEvaluationResultSchema,
 	interviewStatusSchema,
@@ -245,17 +247,41 @@ type CandidateSqlRow = {
 	email: string;
 	phone: string | null;
 	consent_policy_version: string | null;
-	consent_captured_at: Date | null;
+	consent_captured_at: Date | string | null;
 	consent_source: string | null;
 	retention_until: string | null;
-	consent_withdrawn_at: Date | null;
+	consent_withdrawn_at: Date | string | null;
 	status: string;
 	version: number;
 	created_by: string;
 	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
+	created_at: Date | string;
+	updated_at: Date | string;
 };
+
+function coercePersistedTimestamp(value: Date | string | null): Date | null {
+	if (value === null) {
+		return null;
+	}
+	return value instanceof Date ? value : new Date(value);
+}
+
+function parsePersistedCandidateConsentSource(
+	value: string | null,
+): Result<CandidateConsentSource | null> {
+	if (value === null) {
+		return ok(null);
+	}
+	const parsed = candidateConsentSourceSchema.safeParse(value);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid candidate consent source in persistence",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	return ok(parsed.data);
+}
 
 function mapCandidateFields(input: {
 	id: string;
@@ -263,17 +289,17 @@ function mapCandidateFields(input: {
 	displayName: string;
 	email: string;
 	phone: string | null;
-	consent_policy_version: string | null;
-	consent_captured_at: Date | null;
-	consent_source: string | null;
-	retention_until: string | null;
-	consent_withdrawn_at: Date | null;
+	consentPolicyVersion: string | null;
+	consentCapturedAt: Date | string | null;
+	consentSource: string | null;
+	retentionUntil: string | null;
+	consentWithdrawnAt: Date | string | null;
 	status: string;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	createdAt: Date | string;
+	updatedAt: Date | string;
 }): Result<Candidate> {
 	const id = parseHumanResourcesCandidateId(input.id);
 	if (!id.ok) return id;
@@ -285,18 +311,27 @@ function mapCandidateFields(input: {
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 		);
 	}
+	const consentSource = parsePersistedCandidateConsentSource(
+		input.consentSource,
+	);
+	if (!consentSource.ok) return consentSource;
 	return ok({
 		id: id.data,
 		organizationId: input.organizationId,
 		displayName: input.displayName,
 		email: input.email,
 		phone: input.phone,
+		consentPolicyVersion: input.consentPolicyVersion,
+		consentCapturedAt: coercePersistedTimestamp(input.consentCapturedAt),
+		consentSource: consentSource.data,
+		retentionUntil: input.retentionUntil,
+		consentWithdrawnAt: coercePersistedTimestamp(input.consentWithdrawnAt),
 		status: status.data,
 		version: input.version,
 		createdBy: input.createdBy,
 		updatedBy: input.updatedBy,
-		createdAt: input.createdAt,
-		updatedAt: input.updatedAt,
+		createdAt: coercePersistedTimestamp(input.createdAt) ?? new Date(0),
+		updatedAt: coercePersistedTimestamp(input.updatedAt) ?? new Date(0),
 	});
 }
 
@@ -307,6 +342,11 @@ function mapCandidateSqlRow(row: CandidateSqlRow): Result<Candidate> {
 		displayName: row.display_name,
 		email: row.email,
 		phone: row.phone,
+		consentPolicyVersion: row.consent_policy_version,
+		consentCapturedAt: row.consent_captured_at,
+		consentSource: row.consent_source,
+		retentionUntil: row.retention_until,
+		consentWithdrawnAt: row.consent_withdrawn_at,
 		status: row.status,
 		version: row.version,
 		createdBy: row.created_by,
@@ -323,6 +363,11 @@ function mapCandidate(row: typeof hrCandidate.$inferSelect): Result<Candidate> {
 		displayName: row.displayName,
 		email: row.email,
 		phone: row.phone,
+		consentPolicyVersion: row.consentPolicyVersion,
+		consentCapturedAt: row.consentCapturedAt,
+		consentSource: row.consentSource,
+		retentionUntil: row.retentionUntil,
+		consentWithdrawnAt: row.consentWithdrawnAt,
 		status: row.status,
 		version: row.version,
 		createdBy: row.createdBy,
@@ -1458,11 +1503,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							WITH mutated AS (
 								INSERT INTO hr_candidate (
 									id, organization_id, display_name, email, normalized_email, phone,
+									consent_policy_version, consent_captured_at, consent_source,
+									retention_until, consent_withdrawn_at,
 									status, create_idempotency_key, create_request_fingerprint,
 									version, created_by, updated_by
 								) VALUES (
 									${brandedId.data}, ${record.organizationId}, ${record.displayName},
 									${record.email}, ${record.normalizedEmail}, ${record.phone},
+									${record.consentPolicyVersion}, ${record.consentCapturedAt},
+									${record.consentSource}, ${record.retentionUntil}, NULL,
 									'active', ${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 									1, ${record.createdBy}, ${record.createdBy}
 								)
@@ -1603,11 +1652,18 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		page: number;
 		pageSize: number;
 		status?: CandidateStatus;
+		retentionDueAsOf?: string;
 	}): Promise<Result<CandidateListPage>> {
 		try {
 			const conditions = [eq(hrCandidate.organizationId, input.organizationId)];
 			if (input.status !== undefined) {
 				conditions.push(eq(hrCandidate.status, input.status));
+			}
+			if (input.retentionDueAsOf !== undefined) {
+				conditions.push(sql`${hrCandidate.retentionUntil} IS NOT NULL`);
+				conditions.push(
+					lte(hrCandidate.retentionUntil, input.retentionDueAsOf),
+				);
 			}
 			const offset = (input.page - 1) * input.pageSize;
 			const [rows, countRows] = await Promise.all([

@@ -127,6 +127,13 @@
       "when": 1784994000000,
       "tag": "0016_payroll_calculation_outputs",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784997600000,
+      "tag": "0017_hr_candidate_consent",
+      "breakpoints": true
     }
   ]
 }

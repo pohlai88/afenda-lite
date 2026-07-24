@@ -30,7 +30,7 @@ import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
 	runDrizzleParity,
@@ -40,13 +40,14 @@ import {
 
 function defineTimeSchedulingParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-time-parity-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-time-parity-${suffix}`);
 	const ACTOR = `user-hr-time-parity-${suffix}`;
 	const _MANAGER = `user-hr-time-mgr-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -434,11 +435,26 @@ function defineTimeSchedulingParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(requested.data.actualMinutes).toBeNull();
 		expect(requested.data.payrollApprovedMinutes).toBeNull();
 
+		const managerAuthority = await assignTimeApprovalAuthority(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-overtime-manager-authority-${suffix}`,
+				targetActorUserId: overtimeManager,
+				authority: "line_manager",
+				effectiveFrom: "2020-01-01",
+			},
+			ready,
+		);
+		expect(managerAuthority.ok).toBe(true);
+		if (!managerAuthority.ok) return;
+
 		const approved = await approveOvertimeRequest(
 			{
 				organizationId: ORG,
 				actorUserId: overtimeManager,
 				correlationId: `corr-overtime-approve-${suffix}`,
+				requestedAuthority: "line_manager",
 				requestId: requested.data.id,
 				approvedMaximumMinutes: 90,
 				expectedVersion: requested.data.version,

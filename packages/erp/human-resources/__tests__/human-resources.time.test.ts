@@ -25,7 +25,10 @@ import {
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../src/testing";
 import {
 	approveAttendanceBreakWaiver,
 	listAttendanceBreakWaiverDecisions,
@@ -159,6 +162,7 @@ function harness() {
 			ports,
 			authorization,
 			identityResolver,
+			assignmentContext: createStoreAssignmentContextQuery({ store }),
 		}),
 		store,
 		ports,
@@ -5062,11 +5066,19 @@ describe("human-resources.time (memory)", () => {
 			if (!requested.ok) return;
 			expect(requested.data.requestedMinutes).toBe(120);
 
+			await grantTimeApprovalAuthority(ready, {
+				organizationId: ORG,
+				targetActorUserId: MANAGER,
+				authority: "line_manager",
+				suffix: "p07-ot-manager",
+			});
+
 			const approved = await approveOvertimeRequest(
 				{
 					organizationId: ORG,
 					actorUserId: MANAGER,
 					correlationId: "corr-p07-ot-approve",
+					requestedAuthority: "line_manager",
 					requestId: requested.data.id,
 					approvedMaximumMinutes: 90,
 					expectedVersion: requested.data.version,

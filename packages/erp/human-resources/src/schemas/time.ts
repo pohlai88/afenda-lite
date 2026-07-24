@@ -1220,6 +1220,7 @@ export const approveOvertimeRequestInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			requestId: humanResourcesOvertimeRequestIdSchema,
+			requestedAuthority: timeApprovalAuthoritySchema,
 			approvedMaximumMinutes: positiveMinutesSchema,
 			comment: z.string().trim().max(1000).nullable().optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,

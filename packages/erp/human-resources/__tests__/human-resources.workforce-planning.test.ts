@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 } from "../src/error-codes";
 import {
@@ -37,11 +39,14 @@ import {
 	updateHeadcountPlanLine,
 } from "../src/workforce-planning/headcount-plan-line";
 import {
+	consumeHeadcountReservation,
 	getHeadcountAvailability,
 	getRecruitmentHeadcountHandoff,
 	listHeadcountReservations,
+	releaseHeadcountReservation,
 	reserveHeadcount,
 } from "../src/workforce-planning/headcount-reservation";
+import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -516,6 +521,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 				idempotencyKey: `idem-cand-${tag}`,
 				displayName: "Candidate",
 				email: `cand-${tag}@example.com`,
+				...candidateConsentFixture(),
 			},
 			ready,
 		);
@@ -588,6 +594,7 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			ready,
 		);
 		expect(accepted.ok).toBe(true);
+		if (!accepted.ok) return;
 
 		const listed = await listHeadcountReservations(
 			{
@@ -600,7 +607,196 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		);
 		expect(listed.ok).toBe(true);
 		if (listed.ok) {
+			expect(listed.data.reservations).toHaveLength(1);
+			expect(listed.data.reservations[0]?.id).toBe(reserved.data.id);
 			expect(listed.data.reservations[0]?.status).toBe("consumed");
+		}
+	});
+
+	it("rejects duplicate reservation consume", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approved = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const requisition = await openRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+
+		const reserved = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-dup-res-${tag}`,
+				idempotencyKey: `idem-dup-res-${tag}`,
+				planLineId: approved.data.line.id,
+				requisitionId: requisition.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(reserved.ok).toBe(true);
+		if (!reserved.ok) return;
+
+		const first = await consumeHeadcountReservation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-dup-consume-1-${tag}`,
+				reservationId: reserved.data.id,
+				expectedVersion: reserved.data.version,
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+		expect(first.data.status).toBe("consumed");
+
+		const duplicate = await consumeHeadcountReservation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-dup-consume-2-${tag}`,
+				reservationId: first.data.id,
+				expectedVersion: first.data.version,
+			},
+			ready,
+		);
+		expect(duplicate.ok).toBe(false);
+		if (!duplicate.ok) {
+			expect(humanResourcesCodeFromResult(duplicate)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+	});
+
+	it("rejects consume of released reservation", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approved = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const requisition = await openRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+
+		const reserved = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-rel-res-${tag}`,
+				idempotencyKey: `idem-rel-res-${tag}`,
+				planLineId: approved.data.line.id,
+				requisitionId: requisition.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(reserved.ok).toBe(true);
+		if (!reserved.ok) return;
+
+		const released = await releaseHeadcountReservation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-rel-${tag}`,
+				reservationId: reserved.data.id,
+				expectedVersion: reserved.data.version,
+			},
+			ready,
+		);
+		expect(released.ok).toBe(true);
+		if (!released.ok) return;
+		expect(released.data.status).toBe("released");
+
+		const consumed = await consumeHeadcountReservation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-rel-consume-${tag}`,
+				reservationId: released.data.id,
+				expectedVersion: released.data.version,
+			},
+			ready,
+		);
+		expect(consumed.ok).toBe(false);
+		if (!consumed.ok) {
+			expect(humanResourcesCodeFromResult(consumed)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+	});
+
+	it("rejects cross-tenant reservation consume", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approved = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const requisition = await openRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+
+		const reserved = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-xt-res-${tag}`,
+				idempotencyKey: `idem-xt-res-${tag}`,
+				planLineId: approved.data.line.id,
+				requisitionId: requisition.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(reserved.ok).toBe(true);
+		if (!reserved.ok) return;
+
+		const crossTenant = await consumeHeadcountReservation(
+			{
+				organizationId: ORG_B,
+				actorUserId: ACTOR,
+				correlationId: `corr-xt-consume-${tag}`,
+				reservationId: reserved.data.id,
+				expectedVersion: reserved.data.version,
+			},
+			ready,
+		);
+		expect(crossTenant.ok).toBe(false);
+		if (!crossTenant.ok) {
+			expect(humanResourcesCodeFromResult(crossTenant)).toBe(
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
 		}
 	});
 

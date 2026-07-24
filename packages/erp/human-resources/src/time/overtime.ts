@@ -3,6 +3,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -27,9 +28,18 @@ import {
 	rejectOvertimeRequestInputSchema,
 	verifyOvertimeRequestInputSchema,
 } from "../schemas/time";
+import { notFound } from "../shared/domain-guards";
 import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import { resolveActiveTimeEmployment } from "../shared/time-employment";
 import type { OvertimeRequest } from "../types";
+
+/**
+ * UTC civil date for approval-authority `asOf` resolution.
+ * Residual: HR-OPS-P2-006 — align with organization-local work date when required.
+ */
+function overtimeApprovalAuthorityAsOf(requestedStartsAt: Date): string {
+	return requestedStartsAt.toISOString().slice(0, 10);
+}
 
 export async function createOvertimeRequest(
 	input: unknown,
@@ -103,8 +113,46 @@ export async function approveOvertimeRequest(
 		schema: approveOvertimeRequestInputSchema,
 		invalidMessage: "Invalid overtime request approve input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
-		execute: async (data, { store, ports }) =>
-			store.approveOvertimeRequest(data, ports),
+		execute: async (data, { store, ports }) => {
+			const existing = await store.getOvertimeRequest({
+				organizationId: data.organizationId,
+				requestId: data.requestId,
+			});
+			if (!existing.ok) return existing;
+			if (existing.data === null) {
+				return notFound("Overtime request not found");
+			}
+			const asOf = overtimeApprovalAuthorityAsOf(
+				existing.data.requestedStartsAt,
+			);
+			const resolvedAssignment = await store.resolveTimeApprovalAuthority({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				authority: data.requestedAuthority,
+				asOf,
+			});
+			if (!resolvedAssignment.ok) return resolvedAssignment;
+			if (resolvedAssignment.data === null) {
+				return fail(
+					"FORBIDDEN",
+					"Actor does not hold the required approval authority",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				);
+			}
+			return store.approveOvertimeRequest(
+				{
+					organizationId: data.organizationId,
+					requestId: data.requestId,
+					authority: resolvedAssignment.data.authority,
+					approvedMaximumMinutes: data.approvedMaximumMinutes,
+					comment: data.comment ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+				},
+				ports,
+			);
+		},
 	});
 }
 

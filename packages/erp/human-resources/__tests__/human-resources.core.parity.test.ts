@@ -3,7 +3,7 @@
  *
  * Memory cases always run. Drizzle cases hit live Neon and skip cleanly when
  * DATABASE_URL is absent (local). CI / REQUIRE_DATABASE_TESTS=1 fail-closed via
- * `@afenda/testing/require-database-for-ci`.
+ * `./helpers/database-gate` → `@afenda/testing/require-database-for-ci`.
  */
 
 import { and, db, eq, platformAuditLog, platformDomainEvent } from "@afenda/db";
@@ -11,9 +11,7 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createAssignment, endAssignment } from "../src/core/assignment";
 import { createEmployee, updateEmployee } from "../src/core/employee";
 import {
@@ -33,16 +31,15 @@ import {
 } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -50,14 +47,14 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 
 function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG_A = `org-hr-parity-a-${suffix}`;
-	const ORG_B = `org-hr-parity-b-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG_A = neonOrgs.trackOrg(`org-hr-parity-a-${suffix}`);
+	const ORG_B = neonOrgs.trackOrg(`org-hr-parity-b-${suffix}`);
 	const ACTOR = `user-hr-parity-${suffix}`;
-	const orgIds = [ORG_A, ORG_B] as const;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs(orgIds);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -652,7 +649,7 @@ describe("@afenda/human-resources core Memory parity", () => {
 	defineCoreParitySuite("memory");
 });
 
-describe.skipIf(!hasDatabase)(
+describe.skipIf(!runDrizzleParity)(
 	"@afenda/human-resources core Drizzle Neon parity",
 	() => {
 		defineCoreParitySuite("drizzle");

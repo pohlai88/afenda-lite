@@ -20,26 +20,63 @@ Reject Cypress and Jest as new runners. Prefer the **lowest** layer that capture
 
 | Loop | When | Commands |
 |------|------|----------|
-| **Inner** | After every HR/time edit | `pnpm check:hr` (= `lint:hr` + `typecheck:hr` + `test:hr:unit`) |
-| **Outer** | Before merge / CI parity | `pnpm --filter @afenda/human-resources test` or `pnpm test:hr:parity` (requires `DATABASE_URL`; serial Neon) |
-| **Monorepo** | CI / cross-package | `pnpm test` · `pnpm lint` · `pnpm typecheck` · `pnpm check` |
+| **Inner** | After every HR/time edit | `pnpm check:hr` (= `lint:hr` + `typecheck:hr` + `test:hr:unit`) — parallel memory only, no Neon |
+| **Monorepo inner** | Cross-package edits without Neon | `pnpm test:unit:fast` (all Vitest projects except `human-resources-parity`) |
+| **Outer** | Before merge / CI parity | `REQUIRE_DATABASE_TESTS=1 pnpm test:hr:parity` with `DATABASE_URL` (env or local `.env.local`; serial Neon) |
+| **Monorepo full** | Release / local full matrix | `pnpm test:unit` (includes HR parity when env gates fire) · `pnpm test` · `pnpm lint` · `pnpm typecheck` |
 
 Root scripts (see root `package.json`):
 
 | Script | Runs |
 |--------|------|
 | `pnpm test:hr:unit` | Vitest `human-resources-unit` — memory/unit tests **in parallel** (excludes `*.parity.test.ts` and Neon concurrency suites) |
-| `pnpm test:hr:parity` | Vitest `human-resources-parity` — Drizzle/memory parity + Neon concurrency (**serial**, 30s test / 90s hook timeout) |
+| `pnpm test:hr:parity` | Vitest `human-resources-parity` — Drizzle/memory parity + Neon concurrency (**serial**, **verbose** reporter, 30s test / 90s hook timeout; setup resolves `DATABASE_URL`) |
 | `pnpm test:hr` | Both HR vitest projects |
 | `pnpm lint:hr` / `pnpm typecheck:hr` | Single-package Biome + `tsc` |
 | `pnpm exec biome check --write <path>` | Touch-only lint/format |
 | `pnpm exec vitest run --config testing/vitest.config.ts --project human-resources-unit -- <one.test.ts>` | Single spec |
+
+**DATABASE_URL resolution (I5.5 / Slice 1.4):** parity suites call [`resolveDatabaseUrlForTests`](../packages/foundation/testing/src/require-database-for-ci.ts) via `packages/erp/human-resources/__tests__/helpers/database-gate.ts` (`runDrizzleParity`) and Vitest setup `testing/setup-hr-parity-database.ts`. Local: env injection or `.env.local`. CI: injected Actions secret only. Drizzle describes run only when URL is present **and** `CI` / `REQUIRE_DATABASE_TESTS=1` is set — so the unit inner loop never hits Neon from `.env.local` alone. Under that flag with missing URL, resolution **throws** (skip ≠ PASS).
+
+```bash
+# Inner (no Neon)
+pnpm test:hr:unit
+
+# Outer (fail-closed Neon parity) — bash
+REQUIRE_DATABASE_TESTS=1 pnpm test:hr:parity
+
+# Outer — PowerShell
+$env:REQUIRE_DATABASE_TESTS = "1"; pnpm test:hr:parity
+```
 
 **Baseline timings (Windows dev, 2026-07-24):** `pnpm --filter @afenda/human-resources typecheck` ≈ **5.2s**; `pnpm check:hr` ≈ **39s** (lint + typecheck + 400 unit tests in parallel). Re-measure after adapter splits with `Measure-Command { pnpm check:hr }`.
 
 Time parity is sharded under `packages/erp/human-resources/__tests__/human-resources.time.*.parity.test.ts` (calendar, policy, attendance, timesheet, scheduling, exceptions) so a domain edit can target one file.
 
 Adapter megafile roadmap: [`docs-V2/_scratch/erp/hr-time-adapter-split-roadmap.md`](../docs-V2/_scratch/erp/hr-time-adapter-split-roadmap.md).
+
+### HR Neon cleanup contract (Slice 1.5)
+
+Every Neon-writing HR suite (`*.parity.test.ts`, leave concurrency, failure injection, tenant FK parity) must:
+
+1. `createNeonOrgTracker()` from [`packages/erp/human-resources/__tests__/helpers/neon-cleanup.ts`](../packages/erp/human-resources/__tests__/helpers/neon-cleanup.ts)
+2. Register **every** synthetic `organizationId` via `trackOrg()` (including harness-minted ids — pass `trackOrg` into `createTestHarness` for leave suites)
+3. `afterAll` → `await tracker.cleanup()` (Drizzle-only suites: guard with `if (adapter === "drizzle")`)
+
+**Forbidden:** ad-hoc partial table deletes for synthetic `org-*` fixtures — use `cleanupHumanResourcesNeonOrgs` via the tracker only.
+
+**Timeouts (`human-resources-parity` project):** `testTimeout: 30_000` (cold import + multi-round-trip workflows); `hookTimeout: 90_000` (org wipe is many sequential deletes across 106+ HR tables). `fileParallelism: false` avoids timeout-aborted writers racing `afterAll` on the shared Neon branch. Do not add per-file timeout overrides; back-to-back `pnpm test:hr:parity` must not accumulate hook timeouts.
+
+**Progress / duration (Windows dev, `REQUIRE_DATABASE_TESTS=1`, 2026-07-24):**
+
+| Phase | Typical duration | Terminal output |
+|-------|------------------|-----------------|
+| Import (27 files) | ~40s | `RUN v4.x` then per-file lines begin |
+| Neon tests + cleanup | ~4–5 min | `verbose` reporter: one line per test (`✓ \|human-resources-parity\| …`) |
+| Full `pnpm test:hr:parity` | **~280s** | `Test Files 27 passed` summary |
+| Concurrency only (`leave-concurrency` + `time-policy-concurrency`) | **~37s** | 10 tests |
+
+If you see only `RUN v4.x` for **>3 min** with **zero** `✓` lines and Node CPU at 0%, stop — likely DB/network stall. Hook cleanup that exceeds 90s fails with `Hook timed out in 90000ms` (not a silent hang).
 
 ## I4 adverse / recovery matrix
 
@@ -141,10 +178,12 @@ Factory identities use `*@afenda-lite.test` emails and `e2e-w{worker}-{runId}-*`
 ## Commands (pnpm only)
 
 ```bash
-pnpm test:unit              # all Vitest node projects (__tests__)
+pnpm test:unit:fast         # inner monorepo loop — excludes human-resources-parity (no Neon)
+pnpm test:unit              # full Vitest matrix (includes HR parity when DATABASE_URL + CI/REQUIRE flag)
 pnpm test:interaction       # jsdom interaction project only
 pnpm --filter @afenda/auth test
-pnpm exec turbo run lint typecheck test   # CI parity
+pnpm exec turbo run lint typecheck test   # CI turbo (HR package test = unit only)
+pnpm test:hr:parity         # CI outer loop — serial Neon parity (also runs in quality job)
 
 pnpm test:e2e:smoke         # Playwright @smoke
 pnpm test:e2e:journey       # Playwright @journey

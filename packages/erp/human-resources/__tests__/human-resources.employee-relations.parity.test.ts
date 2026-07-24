@@ -2,9 +2,7 @@
  * Memory vs Drizzle parity for employee-relations (HR-ER-01).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
@@ -23,16 +21,14 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
-
-const ORG = "org-er-parity";
 const ACTOR = "user-er-parity";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
@@ -41,7 +37,7 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 
 async function seedEmployeeEmployment(
 	ready: ReturnType<typeof createHrParityHarness>,
-	suffix: string,
+	input: { organizationId: string; suffix: string },
 ) {
 	const seedReady = {
 		...ready,
@@ -52,12 +48,12 @@ async function seedEmployeeEmployment(
 	};
 	const employee = await createEmployee(
 		{
-			organizationId: ORG,
+			organizationId: input.organizationId,
 			actorUserId: ACTOR,
-			correlationId: `corr-emp-${suffix}`,
-			idempotencyKey: `idem-emp-${suffix}`,
-			employeeNumber: `E-${suffix}`,
-			legalName: `Worker ${suffix}`,
+			correlationId: `corr-emp-${input.suffix}`,
+			idempotencyKey: `idem-emp-${input.suffix}`,
+			employeeNumber: `E-${input.suffix}`,
+			legalName: `Worker ${input.suffix}`,
 		},
 		seedReady,
 	);
@@ -66,9 +62,9 @@ async function seedEmployeeEmployment(
 	}
 	const employment = await createEmployment(
 		{
-			organizationId: ORG,
+			organizationId: input.organizationId,
 			actorUserId: ACTOR,
-			correlationId: `corr-employ-${suffix}`,
+			correlationId: `corr-employ-${input.suffix}`,
 			employeeId: employee.data.id,
 			startsOn: "2025-01-01",
 		},
@@ -89,11 +85,14 @@ const ER_PARITY_PERMISSIONS = [
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ACTION_APPROVE,
 ] as const;
 
-describe.skipIf(!hasDatabase)(
+describe.skipIf(!runDrizzleParity)(
 	"Employee relations memory vs drizzle parity",
 	() => {
+		const neonOrgs = createNeonOrgTracker();
+		const ORG = neonOrgs.trackOrg("org-er-parity");
+
 		afterAll(async () => {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		});
 
 		for (const adapter of ["memory", "drizzle"] as const) {
@@ -108,7 +107,7 @@ describe.skipIf(!hasDatabase)(
 				};
 				const { employee, employment } = await seedEmployeeEmployment(
 					authReady,
-					suffix,
+					{ organizationId: ORG, suffix },
 				);
 
 				const opened = await openEmployeeCase(

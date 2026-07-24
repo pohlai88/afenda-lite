@@ -6,6 +6,8 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
+**Disk inventory (2026-07-24):** **286** commands · **141** queries · **99** permissions · **106** `hr_*` mutation / hard-tenant tables · emission registry **88** / 286 (~31%). Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 1 Slice 1.4 test-env parity **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+
 ## Consume
 
 Workspace import from the root barrel:
@@ -98,6 +100,16 @@ pnpm --filter @afenda/human-resources test
 pnpm --filter @afenda/human-resources check
 ```
 
+**Verify loops** (root scripts; see [`testing/README.md`](../../../testing/README.md)):
+
+| Loop | Command | Notes |
+|------|---------|-------|
+| Inner | `pnpm test:hr:unit` / `pnpm check:hr` | Vitest `human-resources-unit` — parallel; memory only; no Neon |
+| Package turbo | `pnpm --filter @afenda/human-resources test` | Unit project only — Neon parity is **not** included |
+| Outer | `REQUIRE_DATABASE_TESTS=1 pnpm test:hr:parity` | Vitest `human-resources-parity` — serial; includes `*.parity.test.ts`, concurrency, and failure-injection suites |
+
+PowerShell outer loop: `$env:REQUIRE_DATABASE_TESTS = "1"; pnpm test:hr:parity`.
+
 After manifest or register changes:
 
 ```bash
@@ -120,9 +132,13 @@ pnpm governance:packages
 | Topic | Link |
 |-------|------|
 | Bounded-context map (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
+| Enterprise audit pack (Scratch) | [human-resources-enterprise-audit/](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) — authority, scorecard, repair roadmap (Phase 0 exit MET) |
+| Active mission queue (Scratch) | [44-next-repair-mission.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-next-repair-mission.md) · program [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md) (Slice 1.4 **DONE**; next Phase 1 = Slice 1.5 cleanup) |
+| Program roadmap (Scratch) | [00.hrm.md](../../../docs-V2/_scratch/00.hrm.md) |
+| Architecture + dual scores (Scratch) | [45-architecture-composition-and-dual-scores.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/45-architecture-composition-and-dual-scores.md) |
 | Phase sequencing (Scratch) | [human-resources-roadmap.md](../../../docs-V2/_scratch/erp/human-resources-roadmap.md) |
 | Time domain spec (Scratch) | [time.md](../../../docs-V2/_scratch/erp/time.md) · [time-slices-roadmap.md](../../../docs-V2/_scratch/erp/time-slices-roadmap.md) |
-| Implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) |
+| Implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) — **superseded** by enterprise-audit pack; 43-table snapshot only |
 | Drizzle adapter audit / migration / validation (Scratch) | [AUDIT](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-audit.md) · [MIGRATION](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-migration.md) · [VALIDATION](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-validation.md) |
 | ERP scaffold rules | [SCAFFOLDING.md](../SCAFFOLDING.md) |
 | Tenancy | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
