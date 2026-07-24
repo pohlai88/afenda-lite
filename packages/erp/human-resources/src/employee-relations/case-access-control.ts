@@ -110,8 +110,6 @@ export async function requireCaseAccess(
 		);
 	}
 
-	const employeeCase = caseResult.data;
-
 	const identity = await identityResolver.resolveEmployeeForActor({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
@@ -125,7 +123,35 @@ export async function requireCaseAccess(
 		);
 	}
 
-	const actorEmployeeId = identity.data.employeeId;
+	return evaluateCaseReadAccess(store, authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		actorEmployeeId: identity.data.employeeId,
+		employeeCase: caseResult.data,
+		accessType: input.accessType,
+	});
+}
+
+export async function evaluateCaseReadAccess(
+	store: HumanResourcesStore,
+	authorization: HumanResourcesAuthorizationPort,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		actorEmployeeId: HumanResourcesEmployeeId;
+		employeeCase: EmployeeCase;
+		accessType: CaseAccessType;
+	},
+): Promise<Result<CaseAccessResult>> {
+	const { employeeCase } = input;
+
+	if (employeeCase.organizationId !== input.organizationId) {
+		return fail(
+			"FORBIDDEN",
+			"No access to this employee relations case",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+		);
+	}
 
 	const adminPermissions = [
 		HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_EXCEPTIONAL_ADMIN,
@@ -174,7 +200,7 @@ export async function requireCaseAccess(
 		const isInvestigator = await checkCaseInvestigatorAccess(store, {
 			organizationId: input.organizationId,
 			employeeCase,
-			employeeId: actorEmployeeId,
+			employeeId: input.actorEmployeeId,
 		});
 		if (isInvestigator.ok && isInvestigator.data) {
 			return ok({
@@ -189,7 +215,7 @@ export async function requireCaseAccess(
 	const participantAccess = await checkCaseParticipantAccess(store, {
 		organizationId: input.organizationId,
 		employeeCase,
-		employeeId: actorEmployeeId,
+		employeeId: input.actorEmployeeId,
 	});
 
 	if (participantAccess.ok && participantAccess.data) {
@@ -211,7 +237,7 @@ export async function requireCaseAccess(
 	const managerAccess = await checkManagerCaseAccess(store, {
 		organizationId: input.organizationId,
 		employeeCase,
-		managerEmployeeId: actorEmployeeId,
+		managerEmployeeId: input.actorEmployeeId,
 	});
 
 	if (managerAccess.ok && managerAccess.data) {
@@ -235,6 +261,80 @@ export async function requireCaseAccess(
 		"No access to this employee relations case",
 		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 	);
+}
+
+export async function buildAuthorizedProjectedCaseListPage(
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		page: number;
+		pageSize: number;
+		candidates: EmployeeCase[];
+	},
+	deps: {
+		identityResolver: HumanResourcesIdentityResolverPort;
+		store: HumanResourcesStore;
+		authorization: HumanResourcesAuthorizationPort;
+	},
+): Promise<
+	Result<{
+		cases: Partial<EmployeeCase>[];
+		totalCount: number;
+		page: number;
+		pageSize: number;
+	}>
+> {
+	const identity = await deps.identityResolver.resolveEmployeeForActor({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+	});
+	if (!identity.ok) return identity;
+	if (!identity.data) {
+		return fail(
+			"FORBIDDEN",
+			"Actor is not an employee",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+		);
+	}
+
+	const sorted = [...input.candidates]
+		.filter(
+			(employeeCase) => employeeCase.organizationId === input.organizationId,
+		)
+		.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+	const authorizedProjected: Partial<EmployeeCase>[] = [];
+
+	for (const employeeCase of sorted) {
+		const access = await evaluateCaseReadAccess(
+			deps.store,
+			deps.authorization,
+			{
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				actorEmployeeId: identity.data.employeeId,
+				employeeCase,
+				accessType: "read",
+			},
+		);
+		if (!access.ok) {
+			continue;
+		}
+
+		const projected = await applyCaseFieldProjection(
+			access.data.employeeCase as unknown as Record<string, unknown>,
+			access.data.projectedFields,
+		);
+		authorizedProjected.push(projected as Partial<EmployeeCase>);
+	}
+
+	const offset = (input.page - 1) * input.pageSize;
+	return ok({
+		cases: authorizedProjected.slice(offset, offset + input.pageSize),
+		totalCount: authorizedProjected.length,
+		page: input.page,
+		pageSize: input.pageSize,
+	});
 }
 
 async function checkCaseInvestigatorAccess(

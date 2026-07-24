@@ -39,7 +39,6 @@ import type {
 	EmployeeCaseAction,
 	EmployeeCaseAppeal,
 	EmployeeCaseEvent,
-	EmployeeCaseListPage,
 	EmployeeCaseOutcome,
 	EmployeeCaseParticipant,
 	EmployeeCaseTimeline,
@@ -497,23 +496,6 @@ function hasCaseAccess(caseRecord: EmployeeCase, actorUserId: string): boolean {
 	return caseRecord.participants.some((p) => p.actorUserId === actorUserId);
 }
 
-function paginateCases(
-	cases: EmployeeCase[],
-	page: number,
-	pageSize: number,
-): EmployeeCaseListPage {
-	const sorted = [...cases].sort(
-		(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-	);
-	const offset = (page - 1) * pageSize;
-	return {
-		cases: sorted.slice(offset, offset + pageSize),
-		totalCount: sorted.length,
-		page,
-		pageSize,
-	};
-}
-
 function idempotencyConflict(): Result<never> {
 	return conflict("Idempotency key reused with different payload");
 }
@@ -865,53 +847,42 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	},
 
 	async listEmployeeCases(input) {
-		const page = input.page ?? 1;
-		const pageSize = input.pageSize ?? 20;
 		const loaded = await listCasesForOrg(input.organizationId);
 		if (!loaded.ok) return loaded;
 		const filtered = loaded.data.filter((caseRecord) => {
-			if (!hasCaseAccess(caseRecord, input.actorUserId)) return false;
 			if (input.status !== undefined && caseRecord.status !== input.status) {
 				return false;
 			}
 			return true;
 		});
-		return ok(paginateCases(filtered, page, pageSize));
+		return ok(filtered);
 	},
 
 	async listCasesAssignedToActor(input) {
-		const page = input.page ?? 1;
-		const pageSize = input.pageSize ?? 20;
-		const loaded = await listCasesForOrg(input.organizationId);
-		if (!loaded.ok) return loaded;
-		const filtered = loaded.data.filter((caseRecord) =>
-			hasCaseAccess(caseRecord, input.actorUserId),
-		);
-		return ok(paginateCases(filtered, page, pageSize));
-	},
-
-	async listOpenEmployeeRelationsCases(input) {
-		const page = input.page ?? 1;
-		const pageSize = input.pageSize ?? 20;
 		const loaded = await listCasesForOrg(input.organizationId);
 		if (!loaded.ok) return loaded;
 		const filtered = loaded.data.filter(
-			(caseRecord) =>
-				caseRecord.status !== "closed" &&
-				hasCaseAccess(caseRecord, input.actorUserId),
+			(caseRecord) => caseRecord.ownerActorUserId === input.ownerActorUserId,
 		);
-		return ok(paginateCases(filtered, page, pageSize));
+		return ok(filtered);
+	},
+
+	async listOpenEmployeeRelationsCases(input) {
+		const loaded = await listCasesForOrg(input.organizationId);
+		if (!loaded.ok) return loaded;
+		const filtered = loaded.data.filter(
+			(caseRecord) => caseRecord.status !== "closed",
+		);
+		return ok(filtered);
 	},
 
 	async getEmployeeRelationsHistoryByEmployee(input) {
-		const page = input.page ?? 1;
-		const pageSize = input.pageSize ?? 20;
 		const loaded = await listCasesForOrg(input.organizationId);
 		if (!loaded.ok) return loaded;
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.employeeId === input.employeeId,
 		);
-		return ok(paginateCases(filtered, page, pageSize));
+		return ok(filtered);
 	},
 
 	async updateEmployeeCaseClassification(input, _ports, meta) {
@@ -2409,7 +2380,10 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	},
 
 	async getEmployeeCaseTimeline(input) {
-		const loaded = await fetchCaseWithAccess(input);
+		const loaded = await fetchCaseInOrg({
+			organizationId: input.organizationId,
+			caseId: input.caseId,
+		});
 		if (!loaded.ok) return loaded;
 		try {
 			const rows = await db
@@ -2442,7 +2416,10 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	},
 
 	async getEmployeeCaseOutcome(input) {
-		const loaded = await fetchCaseWithAccess(input);
+		const loaded = await fetchCaseInOrg({
+			organizationId: input.organizationId,
+			caseId: input.caseId,
+		});
 		if (!loaded.ok) return loaded;
 		try {
 			const actionRows = await db

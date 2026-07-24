@@ -548,8 +548,10 @@ export type EmploymentMovement = {
 	version: number;
 	createdBy: string;
 	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	/** ISO datetime string (offset) at the public store boundary. */
+	createdAt: string;
+	/** ISO datetime string (offset) at the public store boundary. */
+	updatedAt: string;
 };
 
 export type Termination = {

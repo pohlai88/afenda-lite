@@ -1,0 +1,40 @@
+domain_id	cluster	product_score_10	coding_score_10	confidence	primary_finding	repair_mission	notes
+person	A_foundation	8.7	10.0	high	—	—	Authz Partial only blocker
+worker	A_foundation	8.7	10.0	high	—	—	Same as person
+employee	A_foundation	8.7	10.0	high	—	—	Same as person
+employment	A_foundation	6.3	8.7	high	HR-COREORG-P1-004	HR-ENT-02-ORG-CONTEXT	Authz Gap on assignment-scoped reads
+employment_contract	A_foundation	6.3	8.7	high	HR-COREORG-P1-004	HR-ENT-02-ORG-CONTEXT	Same pattern as employment
+assignment	A_foundation	6.3	8.7	high	HR-COREORG-P1-004	HR-ENT-02-ORG-CONTEXT	Same pattern as employment
+organization_context	A_foundation	8.0	10.0	high	HR-COREORG-P1-004	HR-ENT-02-ORG-CONTEXT	Evidence Partial — dimension wiring at app layer
+organization_structure	A_foundation	6.3	8.7	high	—	—	Only cluster-A domain with Overall Pass
+lifecycle	A_foundation	5.0	7.3	high	HR-COREORG-P1-005	HR-COREORG-LIFECYCLE-SERIALIZE-PARITY (CLOSED Slice 1.2)	Transfer timestamp parity CLOSED; no product Actions
+recruitment	A_foundation	6.3	8.0	high	HR-COREORG-P1-005	HR-COREORG-HIRE-ORCHESTRATION	HR-COREORG-P0-001 / consent align CLOSED (Slice 0.1) — not a blocker; residual open = hire orchestration + product Actions; Phase 0 exit MET
+classification	A_foundation	10.0	10.0	high	—	—	N/A axes excluded; worker foundation complete
+leave_policies	B_operations	8.7	8.7	high	—	—	Strong command+store depth
+leave_balances_requests	B_operations	8.7	8.7	high	HR-OPS-P1-003	HR-ENT-07-PRODUCT-LEAVE-ACTIONS	No leave Server Actions in apps/web
+leave_aware_time_handoff	B_operations	8.7	8.7	high	HR-OPS-P1-004	—	Calendar chain CLOSED Slice 1.1; residual handoff timezone elsewhere
+leave_emission_registry	B_operations	5.3	10.0	high	HR-OPS-P0-001	HR-OPS-LEAVE-EMISSION-REGISTRY	ACTIVE next vertical; 0/18 leave commands in emission registry per AUD-04
+time_calendars_resolution	B_operations	10.0	10.0	high	—	HR-OPS-TIME-CALENDAR-RESOLUTION-FIXTURES (CLOSED Slice 1.1)	HR-OPS-P1-005 CLOSED; unit + Memory/Drizzle parity green
+time_shifts_scheduling_attendance	B_operations	10.0	10.0	high	—	—	Strongest audited ops surface
+time_timesheets_generation	B_operations	10.0	10.0	high	—	—	Fully Pass on all axes
+time_overtime	B_operations	7.3	8.7	high	—	—	HR-OPS-P1-001 / HR-OPS-OVERTIME-APPROVAL-AUTHORITY CLOSED (Slice 0.1)
+time_emission_registry	B_operations	10.0	10.0	high	—	—	59/59 time commands mapped per AUD-04
+time_attendance_connector	B_operations	8.0	10.0	high	HR-OPS-P2-005	HR-ENT-14-ATTENDANCE-CONNECTOR	Fail-closed port by design; inline import is prod path
+compliance	C_governance	6.0	8.7	high	HR-GOV-P2-001	HR-ENT-09-PLATFORM-DOCUMENT-BOUNDARY	Vault refs only; platform doc storage external
+employee_relations	C_governance	8.0	10.0	high	—	—	HR-GOV-P0-001 / HR-ENT-ER-CASE-LIST-ACL CLOSED (Slice 0.1) — not a blocker; ER DB parity = evidence residual only; Phase 0 exit MET
+talent	C_governance	5.3	10.0	medium	HR-GOV-P1-002	HR-ENT-WFP-VARIANCE-ACTUALS	Evidence Fail — no product composition
+workforce_planning	C_governance	6.0	7.3	high	HR-GOV-P1-002	HR-ENT-WFP-VARIANCE-ACTUALS	Variance uses reservations not employment actuals
+integration_governance_ports	C_governance	4.0	8.0	high	HR-XCUT-P0-001	HR-ENT-04-AUTH-PRIVACY	Privacy port unwired; four authz surfaces
+compensation_benefits	unaudited	4.0	4.0	low	—	HR-AUD follow-on	No dedicated AUD cluster pack; parity tests exist on disk
+performance	unaudited	4.0	4.0	low	—	HR-AUD follow-on	Same orphan status
+learning	unaudited	4.0	4.0	low	—	HR-AUD follow-on	Partial hr-learning Actions only
+crosscut_tenancy	package	10.0	10.0	high	—	—	106 hr_* hard-tenant roots
+crosscut_brands_zod_errors	package	10.0	10.0	high	—	—	Pass all axes
+crosscut_effective_truth	package	6.0	10.0	high	HR-XCUT-P0-002	HR-ENT-03-EFFECTIVE-TRUTH	33/106 tables in machine matrix
+crosscut_emission_registry	package	3.0	5.0	high	HR-XCUT-P0-003	HR-XCUT-EMISSION-REGISTRY	88/286 commands (~31%)
+crosscut_authorization_kernel	package	3.0	6.0	high	HR-XCUT-P0-001	HR-ENT-04-AUTH-PRIVACY	Fail at audit; fragmented surfaces
+crosscut_privacy_port	package	0.0	5.0	high	HR-XCUT-P0-004	HR-ENT-04-AUTH-PRIVACY	Types exist; port not composed
+crosscut_memory_drizzle_compose	package	6.0	10.0	high	—	—	Evidence Partial — DATABASE_URL parity not run this session
+crosscut_package_typecheck_ci	package	8.0	10.0	high	—	—	HR-COREORG-P0-001 CLOSED (Slice 0.1); typecheck no longer blocked by consent drift
+crosscut_product_composition_apps_web	package	3.0	6.0	high	HR-OPS-P1-003	HR-ENT-07-PRODUCT-LEAVE-ACTIONS	5 hr-* Action files vs 286 commands
+PACKAGE_ROLLUP	all	50.0	76.0	high	—	HR-OPS-LEAVE-EMISSION-REGISTRY	Product=F (<60) Coding=C (70-79); Phase 0 exit MET; Slice 1.1 calendar CLOSED; active queue = leave emission; see 45-architecture-composition-and-dual-scores.md

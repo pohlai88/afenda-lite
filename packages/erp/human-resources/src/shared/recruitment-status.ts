@@ -19,8 +19,7 @@ export const CANDIDATE_CONSENT_SOURCES = [
 	"recruiter_recorded",
 	"import",
 ] as const;
-export type CandidateConsentSource =
-	(typeof CANDIDATE_CONSENT_SOURCES)[number];
+export type CandidateConsentSource = (typeof CANDIDATE_CONSENT_SOURCES)[number];
 
 export const APPLICATION_STATUSES = [
 	"submitted",

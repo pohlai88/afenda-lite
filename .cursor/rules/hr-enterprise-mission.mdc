@@ -1,0 +1,162 @@
+---
+description: "Human Resources enterprise mission discipline: bounded missions, authority precedence, package boundaries, invariants, verification, and completion evidence"
+globs: "packages/erp/human-resources/**,apps/web/**/human-resources/**,apps/web/**/*human-resources*,apps/web/app/actions/hr-*.ts,apps/web/lib/erp/human-resources*.ts,apps/web/__tests__/hr-*.ts,apps/web/__tests__/**/*hr*,apps/web/__tests__/**/*human-resources*,packages/data-plane/db/src/schema/human-resources.ts,packages/data-plane/db/src/schema/human-resources/**,packages/data-plane/db/drizzle/*hr*,packages/data-plane/db/drizzle/**/*hr*,packages/data-plane/db/__tests__/**/*hr*,docs-V2/_scratch/slice/enterprise.md,docs-V2/_scratch/slice/final.md,docs-V2/_scratch/erp/human-resource*.md,docs-V2/_scratch/erp/human-resources/**,docs-V2/_scratch/erp/human-resources-enterprise-audit/**"
+alwaysApply: false
+---
+
+# HR enterprise mission discipline
+
+Apply this rule when working on HR package behavior, application composition, database contracts, HR tests, or active HR enterprise plans.
+
+## 1. One mission
+
+Each mission must declare:
+
+- one primary objective;
+- the applicable `HR-ENT-*` requirement;
+- allowed paths;
+- explicit exclusions;
+- acceptance criteria;
+- verification commands and evidence.
+
+Do not combine package-wide normalization, product enrichment, database redesign, application buildout, and housekeeping in one mission.
+
+Record unrelated discoveries as residual findings. Do not repair them unless they block the named objective.
+
+## 2. Mandatory preparation
+
+Before editing:
+
+1. Read `docs-V2/_scratch/slice/enterprise.md` and the applicable `HR-ENT-*`.
+2. Read the relevant package README, manifest, public exports, and existing audit evidence.
+3. Trace the affected capability through:
+   - schema;
+   - command or query;
+   - authorization;
+   - store contract;
+   - Memory adapter;
+   - Drizzle adapter;
+   - database table and migration;
+   - audit or event output;
+   - tests and app composition.
+4. Establish failing, missing, or conflicting evidence before changing code.
+
+Do not infer implemented behavior from filenames, interfaces, comments, or passing unrelated tests.
+
+## 3. Authority precedence
+
+Resolve conflicts using:
+
+1. active repository governance and approved architecture decisions;
+2. active `enterprise.md` and `HR-ENT-*` requirements;
+3. released database invariants and migration reality;
+4. package public contracts;
+5. commands and queries;
+6. adapters and application composition;
+7. tests and fixtures;
+8. comments, examples, and stale documentation.
+
+Tests are evidence, not automatic business authority.
+
+If this rule conflicts with a repository-wide authority or preflight rule, report the conflict instead of silently overriding either rule.
+
+## 4. Package boundaries
+
+- `@afenda/human-resources` owns HR behavior and HR mutation authority.
+- `@afenda/db` owns physical schemas, relations, constraints, and migrations.
+- Payroll calculation and gross-to-net processing remain in `@afenda/payroll`.
+- HR exposes approved workforce, compensation, leave, attendance, overtime, and timesheet facts through explicit handoff contracts.
+- Application code composes dependencies and must not duplicate package domain rules.
+- Memory and Drizzle adapters must provide equivalent observable domain behavior.
+
+## 5. Cross-cutting invariants
+
+Preserve where applicable:
+
+- organization isolation;
+- explicit authorization;
+- deterministic parsing and serialization;
+- typed domain errors;
+- durable idempotency;
+- optimistic concurrency;
+- effective dating and historical truth;
+- predecessor and successor lineage;
+- reason and evidence references;
+- transaction atomicity;
+- audit and outbox emission;
+- privacy and sensitive-operation controls;
+- stable public exports.
+
+Do not claim guarantees that durable persistence does not support.
+
+## 6. Generated and maintenance artifacts
+
+- Treat `tsconfig.tsbuildinfo` as generated. Do not intentionally edit or include it in a mission.
+- If it is tracked or unexpectedly changed, report it separately.
+- Treat `scripts/**` and `*.txt` fragments as maintenance artifacts until their purpose is verified.
+- Do not delete files solely because Knip reports them as unused.
+- Separate runtime defects from housekeeping noise.
+
+## 7. Coding discipline
+
+Prefer:
+
+- domain-local ownership;
+- one canonical enum, status, schema, and error definition;
+- explicit state transitions;
+- small functions with clear invariants;
+- deterministic records and event payloads;
+- shared abstractions only for genuinely identical semantics;
+- focused changes and tests.
+
+Do not introduce:
+
+- speculative frameworks;
+- package-wide rewrites;
+- unchecked casts;
+- silent fallbacks;
+- destructive historical updates;
+- compatibility aliases without retirement criteria;
+- unrelated formatting or export churn.
+
+## 8. Verification
+
+Derive commands from repository scripts. Do not invent unavailable commands.
+
+Run the narrowest relevant combination of:
+
+- focused unit tests;
+- Memory/Drizzle parity tests;
+- DB-backed tests;
+- typecheck;
+- lint;
+- package tests;
+- module validation;
+- package governance validation.
+
+Classify failures as:
+
+- introduced regression;
+- pre-existing blocking failure;
+- pre-existing non-blocking noise.
+
+A passing test does not prove correctness when the test encodes the wrong contract.
+
+## 9. Completion report
+
+Report:
+
+1. mission objective;
+2. files changed;
+3. canonical decisions;
+4. tests added or updated;
+5. commands executed and exit results;
+6. findings closed;
+7. residual findings;
+8. named `HR-ENT-*` status:
+   - `complete`;
+   - `partially complete`;
+   - `blocked`;
+   - `unchanged`.
+
+Never claim the entire Human Resources module is repaired or enterprise-ready based on one bounded slice.

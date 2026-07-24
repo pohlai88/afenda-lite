@@ -7,9 +7,7 @@ import {
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
 } from "@afenda/events/schemas";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -26,14 +24,14 @@ import {
 	openRequisition,
 	submitRequisition,
 } from "../src/recruitment/requisition";
+import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -95,14 +93,14 @@ function expectOpenRequisitionPipeline(
 
 function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-recruit-parity-${suffix}`;
-	const DUP_ORG = `org-hr-recruit-dup-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-recruit-parity-${suffix}`);
+	const DUP_ORG = neonOrgs.trackOrg(`org-hr-recruit-dup-${suffix}`);
 	const ACTOR = `user-hr-recruit-parity-${suffix}`;
-	const drizzleOrgs = [ORG, DUP_ORG];
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs(drizzleOrgs);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -123,6 +121,7 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-cand-${suffix}`,
 				displayName: "Parity Candidate",
 				email: `parity-${suffix}@example.com`,
+				...candidateConsentFixture(),
 			},
 			ready,
 		);
@@ -252,6 +251,7 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-dup-cand-${suffix}`,
 				displayName: "Dup Candidate",
 				email: `dup-${suffix}@example.com`,
+				...candidateConsentFixture(),
 			},
 			ready,
 		);
@@ -295,7 +295,7 @@ describe("@afenda/human-resources recruitment parity (memory)", () => {
 	defineRecruitmentParitySuite("memory");
 });
 
-describe.runIf(hasDatabase)(
+describe.runIf(runDrizzleParity)(
 	"@afenda/human-resources recruitment parity (drizzle/neon)",
 	() => {
 		defineRecruitmentParitySuite("drizzle");

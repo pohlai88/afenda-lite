@@ -187,6 +187,9 @@ queries:
   - id: human-resources.leave-balance.get
     moduleId: human-resources
     permission: human-resources.leave-entitlement.read
+  - id: human-resources.leave-balance.reconcile
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.read
   - id: human-resources.leave-request.get
     moduleId: human-resources
     permission: human-resources.leave-request.own

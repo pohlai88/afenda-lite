@@ -9,9 +9,9 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
+import { runDrizzleParity } from "./helpers/database-gate";
 import type {
 	TestEmployee,
 	TestEmployment,
@@ -20,12 +20,11 @@ import type {
 	WorkforceTestHarness,
 } from "./helpers/hr-parity-harness";
 import { createTestHarness } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const neonOrgs: string[] = [];
+const neonOrgs = createNeonOrgTracker();
 
-describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
+describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 	let harness: WorkforceTestHarness;
 	let employee: TestEmployee;
 	let employment: TestEmployment;
@@ -33,12 +32,13 @@ describe.skipIf(!hasDatabase)("Leave Concurrency Tests", () => {
 	let entitlement: TestLeaveEntitlement;
 
 	afterAll(async () => {
-		await cleanupHumanResourcesNeonOrgs(neonOrgs);
+		await neonOrgs.cleanup();
 	});
 
 	beforeEach(async () => {
-		harness = await createTestHarness();
-		neonOrgs.push(harness.organizationId);
+		harness = await createTestHarness({
+			trackOrg: neonOrgs.trackOrg.bind(neonOrgs),
+		});
 
 		// Create test data
 		employee = await harness.createEmployee();

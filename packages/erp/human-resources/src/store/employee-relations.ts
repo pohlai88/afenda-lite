@@ -12,7 +12,6 @@ import type {
 	EmployeeCaseAction,
 	EmployeeCaseAppeal,
 	EmployeeCaseEvent,
-	EmployeeCaseListPage,
 	EmployeeCaseOutcome,
 	EmployeeCaseTimeline,
 } from "../employee-relations/types";
@@ -114,32 +113,22 @@ export type HumanResourcesEmployeeRelationsStore = {
 
 	listEmployeeCases(input: {
 		organizationId: string;
-		actorUserId: string;
-		page?: number;
-		pageSize?: number;
 		status?: EmployeeCaseStatus;
-	}): Promise<Result<EmployeeCaseListPage>>;
+	}): Promise<Result<EmployeeCase[]>>;
 
 	listCasesAssignedToActor(input: {
 		organizationId: string;
-		actorUserId: string;
-		page?: number;
-		pageSize?: number;
-	}): Promise<Result<EmployeeCaseListPage>>;
+		ownerActorUserId: string;
+	}): Promise<Result<EmployeeCase[]>>;
 
 	listOpenEmployeeRelationsCases(input: {
 		organizationId: string;
-		actorUserId: string;
-		page?: number;
-		pageSize?: number;
-	}): Promise<Result<EmployeeCaseListPage>>;
+	}): Promise<Result<EmployeeCase[]>>;
 
 	getEmployeeRelationsHistoryByEmployee(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
-		page?: number;
-		pageSize?: number;
-	}): Promise<Result<EmployeeCaseListPage>>;
+	}): Promise<Result<EmployeeCase[]>>;
 
 	updateEmployeeCaseClassification(
 		input: {

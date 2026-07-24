@@ -3,7 +3,6 @@
  * Cross-midnight break → per-date minutes → calendar classification.
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createEmployee } from "../src/core/employee";
@@ -38,16 +37,13 @@ import {
 } from "../src/time/timesheet";
 import { buildAttendanceTimesheetEntryPlans } from "../src/time/timesheet-generation";
 import type { AttendanceSession, Employee, Employment } from "../src/types";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { createStoreWorkCalendarLookup } from "./helpers/store-work-calendar-lookup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const runDrizzleParity =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
 
 const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
 	dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -275,17 +271,17 @@ function defineLegalMinuteAllocationParitySuite(
 	const ORG = `org-legal-minute-parity-${suffix}`.slice(0, 64);
 	const ACTOR = `user-legal-minute-parity-${suffix}`;
 
-	const drizzleOrgs: string[] = [];
+	const neonOrgs = createNeonOrgTracker();
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs(drizzleOrgs);
+			await neonOrgs.cleanup();
 		}
 	});
 
 	function trackOrg(org: string): string {
-		if (adapter === "drizzle" && !drizzleOrgs.includes(org)) {
-			drizzleOrgs.push(org);
+		if (adapter === "drizzle") {
+			return neonOrgs.trackOrg(org);
 		}
 		return org;
 	}

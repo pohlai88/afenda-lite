@@ -107,7 +107,7 @@ export type EmployeeCaseAppeal = {
 };
 
 export type EmployeeCaseListPage = {
-	cases: EmployeeCase[];
+	cases: Partial<EmployeeCase>[];
 	totalCount: number;
 	page: number;
 	pageSize: number;

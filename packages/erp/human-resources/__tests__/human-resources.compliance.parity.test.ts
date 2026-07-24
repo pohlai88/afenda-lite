@@ -1,6 +1,5 @@
 /** Memory vs Drizzle parity for compliance (HR-COMPLIANCE-01). */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 import {
 	createDocumentRequirement,
@@ -13,13 +12,12 @@ import {
 import { issuePolicyAcknowledgementRequirement } from "../src/compliance/policy-acknowledgement";
 import { recordWorkEligibility } from "../src/compliance/work-eligibility";
 import { createEmployee } from "../src/core/employee";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -46,18 +44,19 @@ async function seedEmployee(
 	return employee.data;
 }
 
-describe.runIf(hasDatabase)("human-resources compliance parity", () => {
-	const parityOrgs: string[] = [];
+describe.runIf(runDrizzleParity)("human-resources compliance parity", () => {
+	const neonOrgs = createNeonOrgTracker();
 
 	afterAll(async () => {
-		await cleanupHumanResourcesNeonOrgs(parityOrgs);
+		await neonOrgs.cleanup();
 	});
 
 	for (const adapter of ["memory", "drizzle"] as const) {
 		it(`${adapter}: document register + verify + policy + eligibility`, async () => {
 			const suffix = uniqueSuffix(adapter);
-			const organizationId = `org-compliance-parity-${suffix}`;
-			parityOrgs.push(organizationId);
+			const organizationId = neonOrgs.trackOrg(
+				`org-compliance-parity-${suffix}`,
+			);
 			const actorUserId = `actor-${suffix}`;
 			const ready = createHrParityHarness(adapter);
 

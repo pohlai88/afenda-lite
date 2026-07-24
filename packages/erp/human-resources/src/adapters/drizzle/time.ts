@@ -6529,6 +6529,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				decision: "approved",
 				approvedMaximumMinutes: input.approvedMaximumMinutes,
 				actorUserId: input.actorUserId,
+				authority: input.authority,
 				comment: input.comment ?? null,
 				decidedAt: new Date(),
 				versionApproved: existing.data.version + 1,

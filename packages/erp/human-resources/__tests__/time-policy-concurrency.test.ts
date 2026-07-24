@@ -3,7 +3,6 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createEmployee } from "../src/core/employee";
@@ -18,22 +17,20 @@ import {
 	assignTimePolicy,
 	createTimePolicy,
 } from "../src/time/policy";
+import { runDrizzleParity } from "./helpers/database-gate";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
-const runConcurrency =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
-
-describe.skipIf(!runConcurrency)("Time policy concurrency (Drizzle)", () => {
+describe.skipIf(!runDrizzleParity)("Time policy concurrency (Drizzle)", () => {
 	const suffix = `${Date.now()}-${randomUUID().slice(0, 8)}`;
-	const ORG = `org-hr-time-concurrency-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-time-concurrency-${suffix}`);
 	const ACTOR = `user-hr-time-concurrency-${suffix}`;
 	const MANAGER = `user-hr-time-mgr-concurrency-${suffix}`;
 
 	afterAll(async () => {
-		await cleanupHumanResourcesNeonOrgs([ORG]);
+		await neonOrgs.cleanup();
 	});
 
 	async function seedEmployment() {

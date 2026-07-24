@@ -870,10 +870,11 @@ export function createMemoryRecruitmentMethods(
 				filtered = filtered.filter((c) => c.status === input.status);
 			}
 			if (input.retentionDueAsOf !== undefined) {
+				const retentionDueAsOf = input.retentionDueAsOf;
 				filtered = filtered.filter(
 					(candidate) =>
 						candidate.retentionUntil !== null &&
-						candidate.retentionUntil <= input.retentionDueAsOf,
+						candidate.retentionUntil <= retentionDueAsOf,
 				);
 			}
 			filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));

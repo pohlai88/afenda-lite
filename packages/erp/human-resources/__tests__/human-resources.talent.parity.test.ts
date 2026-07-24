@@ -2,9 +2,7 @@
  * Memory vs Drizzle parity for talent management (competency, profile, pool).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
@@ -19,14 +17,13 @@ import {
 	createTalentProfile,
 	getTalentProfileByEmployee,
 } from "../src/talent/talent-profile";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -68,12 +65,13 @@ async function seedEmployee(
 
 function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-talent-parity-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-talent-parity-${suffix}`);
 	const ACTOR = `user-hr-talent-parity-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -234,7 +232,7 @@ describe("@afenda/human-resources talent parity (memory)", () => {
 	defineTalentParitySuite("memory");
 });
 
-describe.skipIf(!hasDatabase)(
+describe.skipIf(!runDrizzleParity)(
 	"@afenda/human-resources talent parity (drizzle/neon)",
 	() => {
 		defineTalentParitySuite("drizzle");

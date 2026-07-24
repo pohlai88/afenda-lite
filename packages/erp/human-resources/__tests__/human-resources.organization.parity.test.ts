@@ -2,9 +2,7 @@
  * Memory vs Drizzle parity for organization-structure invariants (HR-03).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -24,15 +22,14 @@ import {
 	replacePrimaryReportingLine,
 	resolvePrimaryManager,
 } from "../src/organization/reporting-line";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -40,13 +37,14 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 
 function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-org-parity-${suffix}`;
-	const ORG_B = `org-hr-org-parity-b-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-org-parity-${suffix}`);
+	const ORG_B = neonOrgs.trackOrg(`org-hr-org-parity-b-${suffix}`);
 	const ACTOR = `user-hr-org-parity-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG, ORG_B]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -563,7 +561,7 @@ describe("@afenda/human-resources organization parity (memory)", () => {
 	defineOrganizationParitySuite("memory");
 });
 
-describe.runIf(hasDatabase)(
+describe.runIf(runDrizzleParity)(
 	"@afenda/human-resources organization parity (drizzle/neon)",
 	() => {
 		defineOrganizationParitySuite("drizzle");

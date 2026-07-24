@@ -2,9 +2,7 @@
  * Memory vs Drizzle parity for learning & certification (HR-06).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
@@ -39,14 +37,13 @@ import {
 	listSessions,
 	startSession,
 } from "../src/learning/learning-session";
+import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -102,12 +99,13 @@ async function seedCourse(
 
 function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-learn-parity-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-learn-parity-${suffix}`);
 	const ACTOR = `user-hr-learn-parity-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -768,6 +766,6 @@ describe("Learning parity [memory]", () => {
 	defineLearningParitySuite("memory");
 });
 
-describe.skipIf(!hasDatabase)("Learning parity [drizzle]", () => {
+describe.skipIf(!runDrizzleParity)("Learning parity [drizzle]", () => {
 	defineLearningParitySuite("drizzle");
 });

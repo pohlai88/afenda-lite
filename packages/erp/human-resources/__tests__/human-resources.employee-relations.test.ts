@@ -786,6 +786,32 @@ describe("Employee relations case lifecycle", () => {
 	it("lists employee history for exceptional admin without participant ACL", async () => {
 		const ready = harness();
 		const { employee, employment } = await seedEmployeeEmployment(ready);
+		const adminEmployee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: OWNER,
+				correlationId: "corr-er-admin-emp",
+				idempotencyKey: `idem-er-admin-${Date.now()}`,
+				employeeNumber: `E-ER-ADMIN-${Date.now()}`,
+				legalName: "History Admin",
+			},
+			{
+				...ready,
+				authorization: createGrantingHumanResourcesAuthorization([
+					HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+				]),
+			},
+		);
+		if (!adminEmployee.ok) return;
+		const mappedAdmin = await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: OUTSIDER,
+			employeeId: adminEmployee.data.id,
+			actorUserId: OWNER,
+			effectiveFrom: "2025-01-01",
+		});
+		if (!mappedAdmin.ok) return;
+
 		const opened = await openCase(ready, {
 			employeeId: employee.id,
 			employmentId: employment.id,

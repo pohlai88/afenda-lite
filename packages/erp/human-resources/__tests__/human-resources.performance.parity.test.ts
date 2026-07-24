@@ -2,9 +2,7 @@
  * Memory vs Drizzle parity for performance management (HR-PERF-01).
  */
 
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
@@ -35,15 +33,14 @@ import {
 	submitManagerAssessment,
 	submitSelfAssessment,
 } from "../src/performance/review";
+import { runDrizzleParity } from "./helpers/database-gate";
 import { ensurePerformanceSchemaForTests } from "./helpers/ensure-performance-schema";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { mapActorToEmployee } from "./helpers/identity-resolver";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 const RATING_SCALE = { codes: ["meets", "exceeds"] } as const;
 
@@ -97,12 +94,13 @@ async function seedEmployeeEmployment(
 
 function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 	const suffix = uniqueSuffix(adapter);
-	const ORG = `org-hr-perf-parity-${suffix}`;
+	const neonOrgs = createNeonOrgTracker();
+	const ORG = neonOrgs.trackOrg(`org-hr-perf-parity-${suffix}`);
 	const ACTOR = `user-hr-perf-parity-${suffix}`;
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
-			await cleanupHumanResourcesNeonOrgs([ORG]);
+			await neonOrgs.cleanup();
 		}
 	});
 
@@ -520,7 +518,7 @@ describe("Performance parity [memory]", () => {
 	definePerformanceParitySuite("memory");
 });
 
-describe.skipIf(!hasDatabase)("Performance parity [drizzle]", () => {
+describe.skipIf(!runDrizzleParity)("Performance parity [drizzle]", () => {
 	beforeAll(async () => {
 		await ensurePerformanceSchemaForTests();
 	});

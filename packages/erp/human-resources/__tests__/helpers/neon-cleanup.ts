@@ -70,6 +70,7 @@ import {
 	hrPerformanceImprovementPlan,
 	hrPerformanceReview,
 	hrPerformanceReviewParticipant,
+	hrPerson,
 	hrPolicyAcknowledgement,
 	hrPosition,
 	hrProbationReview,
@@ -98,6 +99,7 @@ import {
 	hrWorkCalendarHoliday,
 	hrWorkCalendarScopeAssignment,
 	hrWorkEligibility,
+	hrWorker,
 	inArray,
 	mdOrganizationDimension,
 	platformAuditLog,
@@ -561,8 +563,14 @@ export async function cleanupHumanResourcesNeonOrgs(
 			.delete(hrUserEmployee)
 			.where(eq(hrUserEmployee.organizationId, organizationId));
 		await db
+			.delete(hrWorker)
+			.where(eq(hrWorker.organizationId, organizationId));
+		await db
 			.delete(hrEmployee)
 			.where(eq(hrEmployee.organizationId, organizationId));
+		await db
+			.delete(hrPerson)
+			.where(eq(hrPerson.organizationId, organizationId));
 		await db
 			.delete(mdOrganizationDimension)
 			.where(eq(mdOrganizationDimension.organizationId, organizationId));
@@ -573,4 +581,25 @@ export async function cleanupHumanResourcesNeonOrgs(
 			.delete(platformDomainEvent)
 			.where(eq(platformDomainEvent.organizationId, organizationId));
 	}
+}
+
+export function createNeonOrgTracker(): {
+	trackOrg: (organizationId: string) => string;
+	cleanup: () => Promise<void>;
+} {
+	const organizationIds: string[] = [];
+	return {
+		trackOrg(organizationId: string): string {
+			if (!organizationIds.includes(organizationId)) {
+				organizationIds.push(organizationId);
+			}
+			return organizationId;
+		},
+		async cleanup(): Promise<void> {
+			if (organizationIds.length === 0) {
+				return;
+			}
+			await cleanupHumanResourcesNeonOrgs(organizationIds);
+		},
+	};
 }

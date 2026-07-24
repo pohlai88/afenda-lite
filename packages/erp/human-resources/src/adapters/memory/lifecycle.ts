@@ -134,8 +134,8 @@ function cloneEmploymentMovement(
 ): EmploymentMovement {
 	return {
 		...value,
-		createdAt: new Date(value.createdAt),
-		updatedAt: new Date(value.updatedAt),
+		createdAt: value.createdAt,
+		updatedAt: value.updatedAt,
 	};
 }
 
@@ -1131,6 +1131,7 @@ export function createMemoryLifecycleMethods(
 			}
 
 			const now = new Date();
+			const nowIso = now.toISOString();
 			const previousAssignment = { ...openAssignment.data };
 			const endedAssignment: WorkAssignment = {
 				...openAssignment.data,
@@ -1169,8 +1170,8 @@ export function createMemoryLifecycleMethods(
 				version: 1,
 				createdBy: input.actorUserId,
 				updatedBy: input.actorUserId,
-				createdAt: now,
-				updatedAt: now,
+				createdAt: nowIso,
+				updatedAt: nowIso,
 			};
 
 			deps.core.assignments.set(endedAssignment.id, endedAssignment);

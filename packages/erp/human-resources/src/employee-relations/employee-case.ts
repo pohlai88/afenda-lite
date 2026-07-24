@@ -1,10 +1,12 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import type { HumanResourcesAuthorizationPort } from "../authorization";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
@@ -40,13 +42,16 @@ import {
 	updateEmployeeCaseClassificationInputSchema,
 } from "../schemas/employee-relations";
 import {
+	requireEmployeeRelationsIdentityResolver,
 	runEmployeeRelationsCommand,
 	runEmployeeRelationsQuery,
 } from "../shared/employee-relations-command";
 import { fingerprintEmployeeCaseOpen } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import type { HumanResourcesStore } from "../store";
 import {
 	applyCaseFieldProjection,
+	buildAuthorizedProjectedCaseListPage,
 	requireCaseAccess,
 } from "./case-access-control";
 import type {
@@ -55,6 +60,51 @@ import type {
 	EmployeeCaseOutcome,
 	EmployeeCaseTimeline,
 } from "./types";
+
+async function executeAuthorizedCaseListQuery(
+	data: {
+		organizationId: string;
+		actorUserId: string;
+		page?: number;
+		pageSize?: number;
+	},
+	deps: {
+		store: HumanResourcesStore;
+		authorization: HumanResourcesAuthorizationPort | undefined;
+		identityResolver: HumanResourcesIdentityResolverPort | undefined;
+	},
+	loadCandidates: () => Promise<Result<EmployeeCase[]>>,
+): Promise<Result<EmployeeCaseListPage>> {
+	const identity = await requireEmployeeRelationsIdentityResolver(
+		deps.identityResolver,
+	);
+	if (!identity.ok) return identity;
+	if (!deps.authorization) {
+		return fail(
+			"UNAUTHORIZED",
+			"Human Resources authorization port is required",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+		);
+	}
+
+	const candidates = await loadCandidates();
+	if (!candidates.ok) return candidates;
+
+	return buildAuthorizedProjectedCaseListPage(
+		{
+			organizationId: data.organizationId,
+			actorUserId: data.actorUserId,
+			page: data.page ?? 1,
+			pageSize: data.pageSize ?? 20,
+			candidates: candidates.data,
+		},
+		{
+			identityResolver: identity.data,
+			store: deps.store,
+			authorization: deps.authorization,
+		},
+	);
+}
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE = "employee_case" as const;
 export type HumanResourcesEmployeeCaseAggregate =
@@ -356,14 +406,13 @@ export async function listEmployeeCases(
 		schema: listEmployeeCasesInputSchema,
 		invalidMessage: "Invalid employee case list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST,
-		execute: (data, { store }) =>
-			store.listEmployeeCases({
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				page: data.page,
-				pageSize: data.pageSize,
-				status: data.status,
-			}),
+		execute: (data, deps) =>
+			executeAuthorizedCaseListQuery(data, deps, () =>
+				deps.store.listEmployeeCases({
+					organizationId: data.organizationId,
+					status: data.status,
+				}),
+			),
 	});
 }
 
@@ -375,13 +424,13 @@ export async function listCasesAssignedToActor(
 		schema: listCasesAssignedToActorInputSchema,
 		invalidMessage: "Invalid assigned employee case list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED,
-		execute: (data, { store }) =>
-			store.listCasesAssignedToActor({
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				page: data.page,
-				pageSize: data.pageSize,
-			}),
+		execute: (data, deps) =>
+			executeAuthorizedCaseListQuery(data, deps, () =>
+				deps.store.listCasesAssignedToActor({
+					organizationId: data.organizationId,
+					ownerActorUserId: data.actorUserId,
+				}),
+			),
 	});
 }
 
@@ -393,13 +442,12 @@ export async function listOpenEmployeeRelationsCases(
 		schema: listOpenEmployeeRelationsCasesInputSchema,
 		invalidMessage: "Invalid open employee case list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN,
-		execute: (data, { store }) =>
-			store.listOpenEmployeeRelationsCases({
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				page: data.page,
-				pageSize: data.pageSize,
-			}),
+		execute: (data, deps) =>
+			executeAuthorizedCaseListQuery(data, deps, () =>
+				deps.store.listOpenEmployeeRelationsCases({
+					organizationId: data.organizationId,
+				}),
+			),
 	});
 }
 
@@ -411,13 +459,13 @@ export async function getEmployeeRelationsHistoryByEmployee(
 		schema: getEmployeeRelationsHistoryByEmployeeInputSchema,
 		invalidMessage: "Invalid employee relations history input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
-		execute: (data, { store }) =>
-			store.getEmployeeRelationsHistoryByEmployee({
-				organizationId: data.organizationId,
-				employeeId: data.employeeId,
-				page: data.page,
-				pageSize: data.pageSize,
-			}),
+		execute: (data, deps) =>
+			executeAuthorizedCaseListQuery(data, deps, () =>
+				deps.store.getEmployeeRelationsHistoryByEmployee({
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+				}),
+			),
 	});
 }
 
@@ -429,12 +477,30 @@ export async function getEmployeeCaseTimeline(
 		schema: getEmployeeCaseTimelineInputSchema,
 		invalidMessage: "Invalid employee case timeline input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_TIMELINE,
-		execute: (data, { store }) =>
-			store.getEmployeeCaseTimeline({
+		execute: async (data, { store, authorization, identityResolver }) => {
+			const identity =
+				await requireEmployeeRelationsIdentityResolver(identityResolver);
+			if (!identity.ok) return identity;
+
+			const access = await requireCaseAccess(
+				identity.data,
+				store,
+				authorization,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					caseId: data.caseId,
+					accessType: "read",
+				},
+			);
+			if (!access.ok) return access;
+
+			return store.getEmployeeCaseTimeline({
 				organizationId: data.organizationId,
 				caseId: data.caseId,
 				actorUserId: data.actorUserId,
-			}),
+			});
+		},
 	});
 }
 
@@ -446,11 +512,29 @@ export async function getEmployeeCaseOutcome(
 		schema: getEmployeeCaseOutcomeInputSchema,
 		invalidMessage: "Invalid employee case outcome input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_OUTCOME,
-		execute: (data, { store }) =>
-			store.getEmployeeCaseOutcome({
+		execute: async (data, { store, authorization, identityResolver }) => {
+			const identity =
+				await requireEmployeeRelationsIdentityResolver(identityResolver);
+			if (!identity.ok) return identity;
+
+			const access = await requireCaseAccess(
+				identity.data,
+				store,
+				authorization,
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					caseId: data.caseId,
+					accessType: "read",
+				},
+			);
+			if (!access.ok) return access;
+
+			return store.getEmployeeCaseOutcome({
 				organizationId: data.organizationId,
 				caseId: data.caseId,
 				actorUserId: data.actorUserId,
-			}),
+			});
+		},
 	});
 }

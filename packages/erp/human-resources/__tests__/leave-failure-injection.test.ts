@@ -17,10 +17,18 @@ import {
 	hrLeaveRequest,
 	hrLeaveRequestSegment,
 } from "@afenda/db";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
 import * as leaveTransactions from "../src/adapters/drizzle/leave-transactions";
+import { runDrizzleParity } from "./helpers/database-gate";
 import type {
 	TestEmployee,
 	TestEmployment,
@@ -29,18 +37,25 @@ import type {
 	WorkforceTestHarness,
 } from "./helpers/hr-parity-harness";
 import { createTestHarness } from "./helpers/hr-parity-harness";
+import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
+const neonOrgs = createNeonOrgTracker();
 
-describe.skipIf(!hasDatabase)("Leave Failure Injection Tests", () => {
+describe.skipIf(!runDrizzleParity)("Leave Failure Injection Tests", () => {
 	let harness: WorkforceTestHarness;
 	let employee: TestEmployee;
 	let employment: TestEmployment;
 	let policy: TestLeavePolicy;
 	let entitlement: TestLeaveEntitlement;
 
+	afterAll(async () => {
+		await neonOrgs.cleanup();
+	});
+
 	beforeEach(async () => {
-		harness = await createTestHarness();
+		harness = await createTestHarness({
+			trackOrg: neonOrgs.trackOrg.bind(neonOrgs),
+		});
 
 		// Create test data
 		employee = await harness.createEmployee();

@@ -621,6 +621,15 @@ export const hrCandidate = pgTable(
 		email: text("email").notNull(),
 		normalizedEmail: text("normalized_email").notNull(),
 		phone: text("phone"),
+		consentPolicyVersion: text("consent_policy_version"),
+		consentCapturedAt: timestamp("consent_captured_at", {
+			withTimezone: true,
+		}),
+		consentSource: text("consent_source"),
+		retentionUntil: date("retention_until", { mode: "string" }),
+		consentWithdrawnAt: timestamp("consent_withdrawn_at", {
+			withTimezone: true,
+		}),
 		/** active | archived */
 		status: text("status").notNull(),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
@@ -645,6 +654,10 @@ export const hrCandidate = pgTable(
 		uniqueIndex("hr_candidate_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+		check(
+			"hr_candidate_consent_source_check",
+			sql`${t.consentSource} IS NULL OR ${t.consentSource} IN ('self_service', 'recruiter_recorded', 'import')`,
 		),
 	],
 );

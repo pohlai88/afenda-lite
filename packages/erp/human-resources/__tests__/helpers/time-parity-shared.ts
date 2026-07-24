@@ -1,12 +1,8 @@
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
-
 import type { AttendanceExceptionType } from "../../src/types";
+import { runDrizzleParity } from "./database-gate";
 import type { WorkforceStoreAdapter } from "./hr-parity-harness";
 
-const { hasDatabase } = resolveDatabaseUrlForTests();
-
-export const runDrizzleParity =
-	hasDatabase && process.env.REQUIRE_DATABASE_TESTS === "1";
+export { runDrizzleParity };
 
 export const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
 	dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,

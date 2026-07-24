@@ -1098,6 +1098,7 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			requestId: HumanResourcesOvertimeRequestId;
+			authority: TimeApprovalAuthority;
 			approvedMaximumMinutes: number;
 			comment?: string | null;
 			expectedVersion: number;

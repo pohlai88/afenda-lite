@@ -12,7 +12,7 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
-	HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
@@ -21,6 +21,13 @@ import type {
 	EmployeeAssignmentContext,
 } from "../../time/handoff/ports";
 
+/**
+ * Drizzle-backed assignment context for calendar / time resolution.
+ * Missing work assignments resolve to null dimension keys so organization-
+ * and employee-scoped calendars remain selectable. Multiple effective work
+ * assignments fail with CONFLICT (parity with Memory
+ * {@link createStoreAssignmentContextQuery} / findAssignmentByEmploymentAsOf).
+ */
 export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPort {
 	return {
 		async resolveAsOf(input): Promise<Result<EmployeeAssignmentContext>> {
@@ -62,30 +69,31 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 						),
 					),
 				);
+			if (workAssignmentRows.length === 0) {
+				return ok({
+					employmentId: input.employmentId,
+					employeeId: input.employeeId,
+					departmentId: null,
+					locationKey: null,
+					legalEntityKey: null,
+				});
+			}
 			if (workAssignmentRows.length !== 1) {
 				return fail(
-					workAssignmentRows.length === 0 ? "NOT_FOUND" : "CONFLICT",
-					workAssignmentRows.length === 0
-						? "No assignment effective on the requested date"
-						: "Multiple assignments are effective on the requested date",
-					humanResourcesErrorDetails(
-						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
-					),
+					"CONFLICT",
+					"Multiple assignments are effective on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
 			const assignment = workAssignmentRows[0];
-			if (
-				assignment === undefined ||
-				assignment.locationKey === null ||
-				assignment.legalEntityKey === null
-			) {
-				return fail(
-					"CONFLICT",
-					"Assignment has no deterministic organization dimension snapshot",
-					humanResourcesErrorDetails(
-						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
-					),
-				);
+			if (assignment === undefined) {
+				return ok({
+					employmentId: input.employmentId,
+					employeeId: input.employeeId,
+					departmentId: null,
+					locationKey: null,
+					legalEntityKey: null,
+				});
 			}
 
 			let departmentId: string | null = null;

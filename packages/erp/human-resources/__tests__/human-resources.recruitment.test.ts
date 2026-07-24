@@ -50,6 +50,7 @@ import {
 	submitRequisition,
 } from "../src/recruitment/requisition";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -167,6 +168,7 @@ async function seedCandidate(
 			idempotencyKey: `idem-cand-${input.email}`,
 			displayName: "Candidate One",
 			email: input.email,
+			...candidateConsentFixture(),
 		},
 		ready,
 	);
