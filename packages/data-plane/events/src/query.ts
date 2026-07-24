@@ -5,8 +5,11 @@ import {
 	eventPageSchema,
 	eventPurgeOptionsSchema,
 	eventQueryOptionsSchema,
+	eventReplayOptionsSchema,
+	eventRetryOptionsSchema,
 } from "./schemas";
 import type { EventStore } from "./store";
+import type { DomainEvent } from "./types";
 
 /**
  * Paginated org-scoped domain-event query with total.
@@ -62,4 +65,61 @@ export async function purgeProcessedDomainEvents(
 	}
 
 	return resolveEventStore(store).purgeProcessed(parsed.data);
+}
+
+/**
+ * Retry a failed event. The org predicate and expected failed state prevent
+ * cross-tenant or stale-state requeues.
+ */
+export async function retryFailedDomainEvent(
+	input: unknown,
+	store?: EventStore,
+): Promise<Result<DomainEvent>> {
+	const parsed = eventRetryOptionsSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid event retry input", {
+			fieldErrors: parsed.error.flatten().fieldErrors,
+		});
+	}
+
+	const result = await resolveEventStore(store).requeue({
+		...parsed.data,
+		fromStatus: "failed",
+	});
+	if (!result.ok) {
+		return result;
+	}
+	if (result.data === null) {
+		return fail("NOT_FOUND", "Failed domain event not found");
+	}
+	return ok(result.data);
+}
+
+/**
+ * Explicitly replay a processed event. A literal confirmation is required
+ * because downstream handlers must be idempotent before operators use this.
+ */
+export async function replayProcessedDomainEvent(
+	input: unknown,
+	store?: EventStore,
+): Promise<Result<DomainEvent>> {
+	const parsed = eventReplayOptionsSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid event replay input", {
+			fieldErrors: parsed.error.flatten().fieldErrors,
+		});
+	}
+
+	const result = await resolveEventStore(store).requeue({
+		id: parsed.data.id,
+		organizationId: parsed.data.organizationId,
+		fromStatus: "processed",
+	});
+	if (!result.ok) {
+		return result;
+	}
+	if (result.data === null) {
+		return fail("NOT_FOUND", "Processed domain event not found");
+	}
+	return ok(result.data);
 }

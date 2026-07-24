@@ -48,6 +48,7 @@ import {
 	valueSnapshotJson,
 } from "../../shared/audit-facts";
 import { missAfterOptimisticUpdate } from "../../shared/domain-guards";
+import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
 	employmentStatusSchema,
@@ -72,6 +73,7 @@ import type {
 	EmployeeListPage,
 	Employment,
 	EmploymentContract,
+	PositionOccupancyAsOf,
 	WorkAssignment,
 } from "../../types";
 
@@ -215,6 +217,55 @@ function mapAssignment(
 		employmentId: employmentId.data,
 		employeeId: employeeId.data,
 		positionId: positionId.data,
+		organizationDimensions:
+			row.legalEntityDimensionId !== null &&
+			row.legalEntityKeySnapshot !== null &&
+			row.legalEntityNameSnapshot !== null &&
+			row.businessUnitDimensionId !== null &&
+			row.businessUnitKeySnapshot !== null &&
+			row.businessUnitNameSnapshot !== null &&
+			row.locationDimensionId !== null &&
+			row.locationKeySnapshot !== null &&
+			row.locationNameSnapshot !== null &&
+			row.costCentreDimensionId !== null &&
+			row.costCentreKeySnapshot !== null &&
+			row.costCentreNameSnapshot !== null &&
+			row.projectDimensionId !== null &&
+			row.projectKeySnapshot !== null &&
+			row.projectNameSnapshot !== null
+				? {
+						legal_entity: {
+							id: row.legalEntityDimensionId,
+							kind: "legal_entity",
+							key: row.legalEntityKeySnapshot,
+							name: row.legalEntityNameSnapshot,
+						},
+						business_unit: {
+							id: row.businessUnitDimensionId,
+							kind: "business_unit",
+							key: row.businessUnitKeySnapshot,
+							name: row.businessUnitNameSnapshot,
+						},
+						location: {
+							id: row.locationDimensionId,
+							kind: "location",
+							key: row.locationKeySnapshot,
+							name: row.locationNameSnapshot,
+						},
+						cost_centre: {
+							id: row.costCentreDimensionId,
+							kind: "cost_centre",
+							key: row.costCentreKeySnapshot,
+							name: row.costCentreNameSnapshot,
+						},
+						project: {
+							id: row.projectDimensionId,
+							kind: "project",
+							key: row.projectKeySnapshot,
+							name: row.projectNameSnapshot,
+						},
+					}
+				: null,
 		startsOn: row.startsOn,
 		endsOn: row.endsOn,
 		version: row.version,
@@ -222,6 +273,111 @@ function mapAssignment(
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
+	});
+}
+
+type AssignmentSqlRow = {
+	id: string;
+	organization_id: string;
+	employment_id: string;
+	employee_id: string;
+	position_id: string;
+	legal_entity_dimension_id: string | null;
+	legal_entity_key_snapshot: string | null;
+	legal_entity_name_snapshot: string | null;
+	business_unit_dimension_id: string | null;
+	business_unit_key_snapshot: string | null;
+	business_unit_name_snapshot: string | null;
+	location_dimension_id: string | null;
+	location_key_snapshot: string | null;
+	location_name_snapshot: string | null;
+	cost_centre_dimension_id: string | null;
+	cost_centre_key_snapshot: string | null;
+	cost_centre_name_snapshot: string | null;
+	project_dimension_id: string | null;
+	project_key_snapshot: string | null;
+	project_name_snapshot: string | null;
+	starts_on: string;
+	ends_on: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+function mapAssignmentSqlRow(
+	row: AssignmentSqlRow,
+	id: HumanResourcesAssignmentId,
+): Result<WorkAssignment> {
+	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
+	const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
+	const positionId = parseHumanResourcesPositionId(row.position_id);
+	if (!employmentId.ok) return employmentId;
+	if (!employeeId.ok) return employeeId;
+	if (!positionId.ok) return positionId;
+	return ok({
+		id,
+		organizationId: row.organization_id,
+		employmentId: employmentId.data,
+		employeeId: employeeId.data,
+		positionId: positionId.data,
+		organizationDimensions:
+			row.legal_entity_dimension_id !== null &&
+			row.legal_entity_key_snapshot !== null &&
+			row.legal_entity_name_snapshot !== null &&
+			row.business_unit_dimension_id !== null &&
+			row.business_unit_key_snapshot !== null &&
+			row.business_unit_name_snapshot !== null &&
+			row.location_dimension_id !== null &&
+			row.location_key_snapshot !== null &&
+			row.location_name_snapshot !== null &&
+			row.cost_centre_dimension_id !== null &&
+			row.cost_centre_key_snapshot !== null &&
+			row.cost_centre_name_snapshot !== null &&
+			row.project_dimension_id !== null &&
+			row.project_key_snapshot !== null &&
+			row.project_name_snapshot !== null
+				? {
+						legal_entity: {
+							id: row.legal_entity_dimension_id,
+							kind: "legal_entity",
+							key: row.legal_entity_key_snapshot,
+							name: row.legal_entity_name_snapshot,
+						},
+						business_unit: {
+							id: row.business_unit_dimension_id,
+							kind: "business_unit",
+							key: row.business_unit_key_snapshot,
+							name: row.business_unit_name_snapshot,
+						},
+						location: {
+							id: row.location_dimension_id,
+							kind: "location",
+							key: row.location_key_snapshot,
+							name: row.location_name_snapshot,
+						},
+						cost_centre: {
+							id: row.cost_centre_dimension_id,
+							kind: "cost_centre",
+							key: row.cost_centre_key_snapshot,
+							name: row.cost_centre_name_snapshot,
+						},
+						project: {
+							id: row.project_dimension_id,
+							kind: "project",
+							key: row.project_key_snapshot,
+							name: row.project_name_snapshot,
+						},
+					}
+				: null,
+		startsOn: row.starts_on,
+		endsOn: row.ends_on,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
 	});
 }
 
@@ -243,6 +399,7 @@ export type DrizzleCoreMethods = Pick<
 	| "findContractByEmploymentAndCode"
 	| "createEmploymentContract"
 	| "countOpenAssignmentsForPosition"
+	| "resolvePositionOccupancyAsOf"
 	| "getAssignmentById"
 	| "findOpenAssignmentByEmployment"
 	| "findAssignmentByEmploymentAsOf"
@@ -617,24 +774,26 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					and(
 						eq(hrEmployment.organizationId, input.organizationId),
 						eq(hrEmployment.employeeId, input.employeeId),
-						lte(hrEmployment.startsOn, input.asOf),
-						or(
-							isNull(hrEmployment.endsOn),
-							gte(hrEmployment.endsOn, input.asOf),
-						),
 					),
 				)
-				.orderBy(desc(hrEmployment.startsOn))
-				.limit(2);
-			if (result.length > 1) {
+				.orderBy(desc(hrEmployment.startsOn));
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: result,
+				asOf: input.asOf,
+				getId: (employment) => employment.id,
+				getEffectiveFrom: (employment) => employment.startsOn,
+				getEffectiveTo: (employment) => employment.endsOn,
+			});
+			if (!resolution.ok) {
 				return fail(
 					"CONFLICT",
 					"Multiple employments are effective for the Time work date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			const record = result[0];
-			return record === undefined ? ok(null) : mapEmployment(record);
+			return resolution.record === null
+				? ok(null)
+				: mapEmployment(resolution.record);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1126,6 +1285,71 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 	},
 
+	async resolvePositionOccupancyAsOf(input: {
+		organizationId: string;
+		positionId: HumanResourcesPositionId;
+		asOf: string;
+	}): Promise<Result<PositionOccupancyAsOf | null>> {
+		const position = await this.getPositionById({
+			organizationId: input.organizationId,
+			positionId: input.positionId,
+		});
+		if (!position.ok) {
+			return position;
+		}
+		if (position.data === null) return ok(null);
+
+		try {
+			const rows = await db
+				.select()
+				.from(hrWorkAssignment)
+				.where(
+					and(
+						eq(hrWorkAssignment.organizationId, input.organizationId),
+						eq(hrWorkAssignment.positionId, input.positionId),
+						lte(hrWorkAssignment.startsOn, input.asOf),
+						or(
+							isNull(hrWorkAssignment.endsOn),
+							gte(hrWorkAssignment.endsOn, input.asOf),
+						),
+					),
+				)
+				.limit(2);
+			if (rows.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple assignments occupy the position on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const row = rows[0];
+			if (!row) {
+				return ok({
+					position: position.data,
+					asOf: input.asOf,
+					assignment: null,
+					state: "vacant",
+				});
+			}
+			const assignment = mapAssignment(row);
+			if (!assignment.ok) {
+				return assignment;
+			}
+			return ok({
+				position: position.data,
+				asOf: input.asOf,
+				assignment: assignment.data,
+				state: "occupied",
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to resolve position occupancy on date",
+			);
+		}
+	},
+
 	async getAssignmentById(input: {
 		organizationId: string;
 		assignmentId: HumanResourcesAssignmentId;
@@ -1186,23 +1410,25 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					and(
 						eq(hrWorkAssignment.organizationId, input.organizationId),
 						eq(hrWorkAssignment.employmentId, input.employmentId),
-						lte(hrWorkAssignment.startsOn, input.asOf),
-						or(
-							isNull(hrWorkAssignment.endsOn),
-							gte(hrWorkAssignment.endsOn, input.asOf),
-						),
 					),
 				);
-			if (result.length > 1) {
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: result,
+				asOf: input.asOf,
+				getId: (assignment) => assignment.id,
+				getEffectiveFrom: (assignment) => assignment.startsOn,
+				getEffectiveTo: (assignment) => assignment.endsOn,
+			});
+			if (!resolution.ok) {
 				return fail(
 					"CONFLICT",
 					"Multiple assignments are effective on the requested date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			const [assignment] = result;
-			if (!assignment) return ok(null);
-			return mapAssignment(assignment);
+			return resolution.record === null
+				? ok(null)
+				: mapAssignment(resolution.record);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1233,6 +1459,21 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						employment_id: string;
 						employee_id: string;
 						position_id: string;
+						legal_entity_dimension_id: string | null;
+						legal_entity_key_snapshot: string | null;
+						legal_entity_name_snapshot: string | null;
+						business_unit_dimension_id: string | null;
+						business_unit_key_snapshot: string | null;
+						business_unit_name_snapshot: string | null;
+						location_dimension_id: string | null;
+						location_key_snapshot: string | null;
+						location_name_snapshot: string | null;
+						cost_centre_dimension_id: string | null;
+						cost_centre_key_snapshot: string | null;
+						cost_centre_name_snapshot: string | null;
+						project_dimension_id: string | null;
+						project_key_snapshot: string | null;
+						project_name_snapshot: string | null;
 						starts_on: string;
 						ends_on: string | null;
 						version: number;
@@ -1258,16 +1499,75 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 								AND organization_id = ${record.organizationId}
 								AND status = 'active'
 						),
+						legal_entity AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${record.organizationDimensions.legal_entity.id}
+								AND organization_id = ${record.organizationId}
+								AND kind = 'legal_entity'
+								AND effective_from <= ${record.startsOn}
+								AND (effective_to IS NULL OR effective_to >= ${record.startsOn})
+						),
+						business_unit AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${record.organizationDimensions.business_unit.id}
+								AND organization_id = ${record.organizationId}
+								AND kind = 'business_unit'
+								AND effective_from <= ${record.startsOn}
+								AND (effective_to IS NULL OR effective_to >= ${record.startsOn})
+						),
+						location AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${record.organizationDimensions.location.id}
+								AND organization_id = ${record.organizationId}
+								AND kind = 'location'
+								AND effective_from <= ${record.startsOn}
+								AND (effective_to IS NULL OR effective_to >= ${record.startsOn})
+						),
+						cost_centre AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${record.organizationDimensions.cost_centre.id}
+								AND organization_id = ${record.organizationId}
+								AND kind = 'cost_centre'
+								AND effective_from <= ${record.startsOn}
+								AND (effective_to IS NULL OR effective_to >= ${record.startsOn})
+						),
+						project AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${record.organizationDimensions.project.id}
+								AND organization_id = ${record.organizationId}
+								AND kind = 'project'
+								AND effective_from <= ${record.startsOn}
+								AND (effective_to IS NULL OR effective_to >= ${record.startsOn})
+						),
 						mutated AS (
 							INSERT INTO hr_work_assignment (
 								id, organization_id, employment_id, employee_id, position_id,
+								legal_entity_dimension_id, legal_entity_key_snapshot,
+								legal_entity_name_snapshot, business_unit_dimension_id,
+								business_unit_key_snapshot, business_unit_name_snapshot,
+								location_dimension_id, location_key_snapshot, location_name_snapshot,
+								cost_centre_dimension_id, cost_centre_key_snapshot,
+								cost_centre_name_snapshot, project_dimension_id,
+								project_key_snapshot, project_name_snapshot,
 								starts_on, ends_on, version, created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, employment.organization_id, employment.id,
-								employment.employee_id, position.id, ${record.startsOn},
+								employment.employee_id, position.id,
+								legal_entity.id, legal_entity.key, legal_entity.name,
+								business_unit.id, business_unit.key, business_unit.name,
+								location.id, location.key, location.name,
+								cost_centre.id, cost_centre.key, cost_centre.name,
+								project.id, project.key, project.name,
+								${record.startsOn},
 								${record.endsOn}, 1, ${record.createdBy}, ${record.createdBy}
-							FROM employment, position
+							FROM employment, position, legal_entity, business_unit, location,
+								cost_centre, project
 							WHERE NOT EXISTS (
 								SELECT 1
 								FROM hr_work_assignment open_assignment
@@ -1336,26 +1636,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-			const positionId = parseHumanResourcesPositionId(row.position_id);
-			if (!employmentId.ok) return employmentId;
-			if (!employeeId.ok) return employeeId;
-			if (!positionId.ok) return positionId;
-			return ok({
-				id: brandedId.data,
-				organizationId: row.organization_id,
-				employmentId: employmentId.data,
-				employeeId: employeeId.data,
-				positionId: positionId.data,
-				startsOn: row.starts_on,
-				endsOn: row.ends_on,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapAssignmentSqlRow(row, brandedId.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to create assignment");
 		}
@@ -1403,6 +1684,21 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						employment_id: string;
 						employee_id: string;
 						position_id: string;
+						legal_entity_dimension_id: string | null;
+						legal_entity_key_snapshot: string | null;
+						legal_entity_name_snapshot: string | null;
+						business_unit_dimension_id: string | null;
+						business_unit_key_snapshot: string | null;
+						business_unit_name_snapshot: string | null;
+						location_dimension_id: string | null;
+						location_key_snapshot: string | null;
+						location_name_snapshot: string | null;
+						cost_centre_dimension_id: string | null;
+						cost_centre_key_snapshot: string | null;
+						cost_centre_name_snapshot: string | null;
+						project_dimension_id: string | null;
+						project_key_snapshot: string | null;
+						project_name_snapshot: string | null;
 						starts_on: string;
 						ends_on: string | null;
 						version: number;
@@ -1451,26 +1747,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					entityLabel: "Assignment",
 				});
 			}
-			const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-			const positionId = parseHumanResourcesPositionId(row.position_id);
-			if (!employmentId.ok) return employmentId;
-			if (!employeeId.ok) return employeeId;
-			if (!positionId.ok) return positionId;
-			return ok({
-				id: input.assignmentId,
-				organizationId: row.organization_id,
-				employmentId: employmentId.data,
-				employeeId: employeeId.data,
-				positionId: positionId.data,
-				startsOn: row.starts_on,
-				endsOn: row.ends_on,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapAssignmentSqlRow(row, input.assignmentId);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to end assignment");
 		}

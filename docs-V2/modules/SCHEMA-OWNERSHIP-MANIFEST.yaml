@@ -105,6 +105,9 @@ tables:
   - table: md_import_batch
     writeOwner: "@afenda/master-data"
     kind: erp
+  - table: md_organization_dimension
+    writeOwner: "@afenda/master-data"
+    kind: erp
 
   - table: sales_order
     writeOwner: "@afenda/sales"
@@ -618,5 +621,8 @@ tables:
     writeOwner: "@afenda/payroll"
     kind: erp
   - table: payroll_reconciliation
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_rule_finalized_usage
     writeOwner: "@afenda/payroll"
     kind: erp

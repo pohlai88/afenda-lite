@@ -12,7 +12,8 @@ export type ShellNavModuleId =
 	| "receivables"
 	| "payables"
 	| "payments"
-	| "accounting";
+	| "accounting"
+	| "human-resources";
 
 export type ShellNavKind = "module";
 
@@ -113,6 +114,18 @@ export const OPERATOR_SHELL_NAV: readonly ShellNavItem[] = [
 		permissionCodes: ["payments.payment.read"],
 	},
 	{
+		id: "human-resources",
+		label: "Human resources",
+		href: "/admin/human-resources",
+		moduleId: "human-resources",
+		kind: "module",
+		permissionCodes: [
+			"human-resources.employee.read",
+			"human-resources.candidate.manage",
+			"human-resources.organization.read",
+		],
+	},
+	{
 		id: "accounting",
 		label: "Accounting",
 		href: "/admin/accounting",
@@ -198,6 +211,18 @@ export const CLIENT_SHELL_NAV: readonly ShellNavItem[] = [
 		moduleId: "payments",
 		kind: "module",
 		permissionCodes: ["payments.payment.read"],
+	},
+	{
+		id: "human-resources",
+		label: "Human resources",
+		href: "/client/human-resources",
+		moduleId: "human-resources",
+		kind: "module",
+		permissionCodes: [
+			"human-resources.leave-request.own",
+			"human-resources.leave-request.approve-team",
+			"human-resources.time.attendance.self.record",
+		],
 	},
 	{
 		id: "accounting",

@@ -20,6 +20,7 @@ import type {
 	HumanResourcesWorkCalendarScopeAssignmentId,
 } from "../brands";
 import type { ApprovedLeaveQueryPort, MutationPorts } from "../ports";
+import type { WorkCalendarPort } from "../time/work-calendar";
 import type {
 	ApprovedTimeHandoff,
 	AttendanceAdjustment,
@@ -70,7 +71,6 @@ import type {
 	WorkCalendarScopeAssignment,
 	WorkWeekDayPatternJson,
 } from "../types";
-import type { WorkCalendarPort } from "../work-calendar";
 
 /**
  * Persistence contract for Time Management.

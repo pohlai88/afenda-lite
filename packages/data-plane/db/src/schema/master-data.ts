@@ -8,6 +8,9 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
+	date,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -147,6 +150,66 @@ export const refUom = pgTable(
 );
 
 // ── Organization operational masters (hard-tenant) ──────────────────────────
+
+/**
+ * Governed organization dimensions consumed by HR and other ERP domains.
+ *
+ * Rows are effective-dated immutable versions. Consumers persist both the row
+ * identity and a business-key/name snapshot so historical decisions remain
+ * reproducible after a rename or restructure.
+ */
+export const mdOrganizationDimension = pgTable(
+	"md_organization_dimension",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		/** legal_entity | business_unit | location | cost_centre | project */
+		kind: text("kind").notNull(),
+		key: text("key").notNull(),
+		normalizedKey: text("normalized_key").notNull(),
+		name: text("name").notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		supersedesId: uuid("supersedes_id"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("md_org_dimension_org_id_uidx").on(t.organizationId, t.id),
+		index("md_org_dimension_org_kind_key_idx").on(
+			t.organizationId,
+			t.kind,
+			t.normalizedKey,
+		),
+		index("md_org_dimension_org_effective_idx").on(
+			t.organizationId,
+			t.effectiveFrom,
+			t.effectiveTo,
+		),
+		uniqueIndex("md_org_dimension_org_kind_key_from_uidx").on(
+			t.organizationId,
+			t.kind,
+			t.normalizedKey,
+			t.effectiveFrom,
+		),
+		check(
+			"md_org_dimension_kind_check",
+			sql`${t.kind} IN ('legal_entity', 'business_unit', 'location', 'cost_centre', 'project')`,
+		),
+		check(
+			"md_org_dimension_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.supersedesId],
+			foreignColumns: [t.organizationId, t.id],
+			name: "md_org_dimension_org_supersedes_fk",
+		}),
+	],
+);
 
 export const mdParty = pgTable(
 	"md_party",

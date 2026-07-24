@@ -31,6 +31,7 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@afenda/testing": "workspace:*",
 		"@types/node": "catalog:",
 		"drizzle-kit": "^0.31.4",
 		"typescript": "catalog:"

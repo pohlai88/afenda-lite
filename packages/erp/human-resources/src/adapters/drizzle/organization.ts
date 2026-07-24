@@ -42,6 +42,7 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
 	type DepartmentStatus,
@@ -1809,23 +1810,25 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						eq(hrReportingLine.organizationId, input.organizationId),
 						eq(hrReportingLine.employeeId, input.employeeId),
 						eq(hrReportingLine.relationshipKind, "primary"),
-						lte(hrReportingLine.startsOn, input.asOf),
-						or(
-							isNull(hrReportingLine.endsOn),
-							gte(hrReportingLine.endsOn, input.asOf),
-						),
 					),
 				);
-			if (result.length > 1) {
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: result,
+				asOf: input.asOf,
+				getId: (line) => line.id,
+				getEffectiveFrom: (line) => line.startsOn,
+				getEffectiveTo: (line) => line.endsOn,
+			});
+			if (!resolution.ok) {
 				return fail(
 					"CONFLICT",
 					"Multiple primary reporting lines are effective on the requested date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			const [reportingLine] = result;
-			if (!reportingLine) return ok(null);
-			return mapReportingLine(reportingLine);
+			return resolution.record === null
+				? ok(null)
+				: mapReportingLine(resolution.record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to resolve primary manager");
 		}

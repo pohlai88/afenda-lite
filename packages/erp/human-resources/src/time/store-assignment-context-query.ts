@@ -1,9 +1,13 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 } from "../brands";
+import {
+	HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 import type { HumanResourcesStore } from "../store";
 import type {
 	AssignmentContextQueryPort,
@@ -22,17 +26,6 @@ export function createStoreAssignmentContextQuery(input: {
 			const employmentId = parseHumanResourcesEmploymentId(query.employmentId);
 			if (!employmentId.ok) return employmentId;
 
-			const employmentCalendar = await store.resolveEmploymentCalendar({
-				organizationId: query.organizationId,
-				employeeId: employeeId.data,
-				employmentId: employmentId.data,
-				asOf: query.asOf,
-			});
-			if (!employmentCalendar.ok) {
-				return employmentCalendar;
-			}
-
-			let departmentId: string | null = null;
 			const assignment = await store.findAssignmentByEmploymentAsOf({
 				organizationId: query.organizationId,
 				employmentId: employmentId.data,
@@ -41,23 +34,32 @@ export function createStoreAssignmentContextQuery(input: {
 			if (!assignment.ok) {
 				return assignment;
 			}
-			if (assignment.data !== null) {
-				const position = await store.getPositionById({
-					organizationId: query.organizationId,
-					positionId: assignment.data.positionId,
-				});
-				if (!position.ok) {
-					return position;
-				}
-				departmentId = position.data?.departmentId ?? null;
+			if (
+				assignment.data === null ||
+				assignment.data.organizationDimensions === null
+			) {
+				return fail(
+					assignment.data === null ? "NOT_FOUND" : "CONFLICT",
+					"Assignment has no deterministic organization context",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+					),
+				);
+			}
+			const position = await store.getPositionById({
+				organizationId: query.organizationId,
+				positionId: assignment.data.positionId,
+			});
+			if (!position.ok) {
+				return position;
 			}
 
 			return ok({
 				employmentId: query.employmentId,
 				employeeId: query.employeeId,
-				departmentId,
-				locationKey: employmentCalendar.data?.locationCode ?? null,
-				legalEntityKey: employmentCalendar.data?.jurisdiction ?? null,
+				departmentId: position.data?.departmentId ?? null,
+				locationKey: assignment.data.organizationDimensions.location.key,
+				legalEntityKey: assignment.data.organizationDimensions.legal_entity.key,
 			});
 		},
 	};

@@ -19,6 +19,10 @@
 		"./module-manifest": {
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"
+		},
+		"./testing/organization-dimensions": {
+			"types": "./src/testing/organization-dimension-store.ts",
+			"default": "./src/testing/organization-dimension-store.ts"
 		}
 	},
 	"scripts": {

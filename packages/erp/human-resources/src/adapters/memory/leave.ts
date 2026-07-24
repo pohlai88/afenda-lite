@@ -46,6 +46,7 @@ import type {
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
 	HumanResourcesStore,
+	IdempotentLeaveAdjustmentRecord,
 	IdempotentLeaveEntitlementRecord,
 	IdempotentLeaveRequestRecord,
 	LeaveAdjustmentCreateRecord,
@@ -242,6 +243,7 @@ export type MemoryLeaveMethods = Pick<
 	| "grantLeaveEntitlement"
 	| "carryForwardLeaveEntitlement"
 	| "expireLeaveEntitlement"
+	| "findLeaveAdjustmentByIdempotencyKey"
 	| "adjustLeaveEntitlement"
 	| "listLeaveEntitlements"
 	| "listPostedLeaveAdjustments"
@@ -1146,11 +1148,46 @@ export function createMemoryLeaveMethods(
 			);
 		},
 
+		async findLeaveAdjustmentByIdempotencyKey(input: {
+			organizationId: string;
+			idempotencyKey: string;
+		}): Promise<Result<IdempotentLeaveAdjustmentRecord | null>> {
+			const adjustment =
+				Array.from(state.leaveAdjustments.values()).find(
+					(candidate) =>
+						candidate.organizationId === input.organizationId &&
+						candidate.createIdempotencyKey === input.idempotencyKey,
+				) ?? null;
+			return ok(
+				adjustment
+					? {
+							adjustment: { ...adjustment },
+							createRequestFingerprint: adjustment.fingerprint,
+						}
+					: null,
+			);
+		},
+
 		async adjustLeaveEntitlement(
 			record: LeaveAdjustmentCreateRecord,
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveAdjustment>> {
+			const replay = await this.findLeaveAdjustmentByIdempotencyKey({
+				organizationId: record.organizationId,
+				idempotencyKey: record.createIdempotencyKey,
+			});
+			if (!replay.ok) return replay;
+			if (replay.data !== null) {
+				if (
+					replay.data.createRequestFingerprint ===
+					record.createRequestFingerprint
+				) {
+					return ok(replay.data.adjustment);
+				}
+				return conflict("Idempotency key already used with different data");
+			}
+
 			const entitlement = state.leaveEntitlements.get(record.entitlementId);
 			if (!entitlement) return notFound("Leave entitlement not found");
 			if (entitlement.organizationId !== record.organizationId) {
@@ -1201,6 +1238,7 @@ export function createMemoryLeaveMethods(
 
 			if (
 				record.kind === "manual" ||
+				record.kind === "accrual" ||
 				record.kind === "carry_forward" ||
 				record.kind === "expiry"
 			) {

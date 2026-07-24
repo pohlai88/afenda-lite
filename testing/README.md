@@ -1,6 +1,8 @@
-# Testing factory (SSOT)
+# Testing factory
 
-Authority for Vitest / Playwright runners, helpers, and gate commands. Product packages do **not** own the factory — especially [`@afenda/config`](../packages/foundation/config) (Biome + TypeScript bases only; no Vitest scripts or test helpers).
+**Runner/config SSOT** for Vitest / Playwright matrices, gate commands, and e2e helpers. Shared test **utility implementation** SSOT is [`@afenda/testing`](../packages/foundation/testing/README.md) (`packages/foundation/testing`) — import `@afenda/testing/*` from product tests; do not import repo-root `testing/` paths for shared utilities.
+
+Product packages do **not** own the factory — especially [`@afenda/config`](../packages/foundation/config) (Biome + TypeScript bases only; no Vitest scripts or test helpers).
 
 | Layer | Runner | Place tests | Gate |
 |-------|--------|-------------|------|
@@ -83,7 +85,7 @@ Local authenticated runs still **skip** with a named reason when factory env is 
 |------|--------|
 | Deploy order | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) runs via `workflow_run` after workflow **CI** succeeds on `main` (not parallel `push`) |
 | Human override | `workflow_dispatch` on Deploy is named Platform override — not a silent skip |
-| Quality DB suites | `quality` injects `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`; [`testing/require-database-for-ci.ts`](require-database-for-ci.ts) throws when CI lacks DB (skip is not PASS) |
+| Quality DB suites | `quality` injects `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`; [`@afenda/testing/require-database-for-ci`](../packages/foundation/testing/src/require-database-for-ci.ts) throws when CI lacks DB (skip is not PASS) |
 | Secrets audit | Ops name-list: `pnpm audit:github-actions-secrets`. In-CI: job `secrets-presence` probes non-empty injection (`node scripts/ci-secrets-presence.mjs`) — not `gh secret list` |
 | Branch protection | `pnpm protect:main` verifies Living contract (required check `quality`); apply with `pnpm protect:main -- --apply` |
 | Owner | Platform |
@@ -93,7 +95,7 @@ Local authenticated runs still **skip** with a named reason when factory env is 
 | Need | Import |
 |------|--------|
 | SUT from package tests | `from "../src/..."` (or app-relative from `apps/web/__tests__`) |
-| DB suite CI fail-closed | `import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci"` (Vitest alias) |
+| DB suite CI fail-closed | `import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci"` (workspace package export) |
 | L2 interaction | `@testing-library/react` + `@testing-library/user-event` directly in `*.interaction.test.tsx` |
 | L4 specs | `import { test, expect } from "@/testing/e2e/playwright-base"` |
 | L4 login flows | `from "@/testing/e2e/flows"` |

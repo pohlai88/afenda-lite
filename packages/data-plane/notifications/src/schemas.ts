@@ -12,6 +12,7 @@ export const MAX_NOTIFICATION_PAGE_SIZE = 100 as const;
 export const MAX_NOTIFICATION_TITLE_LENGTH = 200 as const;
 export const MAX_NOTIFICATION_BODY_LENGTH = 2_000 as const;
 export const MAX_NOTIFICATION_MODULE_LENGTH = 64 as const;
+export const MAX_NOTIFICATION_DEDUPLICATION_KEY_LENGTH = 200 as const;
 export const MAX_NOTIFICATION_ACTION_URL_LENGTH = 2_048 as const;
 
 export const notificationTypeSchema = z.enum(NOTIFICATION_TYPES);
@@ -30,6 +31,11 @@ export const notificationSchema = z.object({
 	title: z.string().min(1).max(MAX_NOTIFICATION_TITLE_LENGTH),
 	body: z.string().min(1).max(MAX_NOTIFICATION_BODY_LENGTH),
 	module: z.string().min(1).max(MAX_NOTIFICATION_MODULE_LENGTH),
+	deduplicationKey: z
+		.string()
+		.min(1)
+		.max(MAX_NOTIFICATION_DEDUPLICATION_KEY_LENGTH)
+		.nullable(),
 	actionUrl: z.string().max(MAX_NOTIFICATION_ACTION_URL_LENGTH).nullable(),
 	metadata: jsonObjectSchema.nullable(),
 	read: z.boolean(),
@@ -58,6 +64,12 @@ export const recordNotificationCommandSchema = z.object({
 	title: z.string().trim().min(1).max(MAX_NOTIFICATION_TITLE_LENGTH),
 	body: z.string().trim().min(1).max(MAX_NOTIFICATION_BODY_LENGTH),
 	module: z.string().trim().min(1).max(MAX_NOTIFICATION_MODULE_LENGTH),
+	deduplicationKey: z
+		.string()
+		.trim()
+		.min(1)
+		.max(MAX_NOTIFICATION_DEDUPLICATION_KEY_LENGTH)
+		.optional(),
 	actionUrl: z
 		.string()
 		.trim()

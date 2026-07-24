@@ -28,6 +28,15 @@ queries:
   - id: fulfillment.delivery.list
     moduleId: fulfillment
     permission: fulfillment.delivery.read
+  - id: human-resources.employee.org-context.resolve
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.person.get
+    moduleId: human-resources
+    permission: human-resources.person.read
+  - id: human-resources.worker.get
+    moduleId: human-resources
+    permission: human-resources.worker.read
   - id: human-resources.employee.get
     moduleId: human-resources
     permission: human-resources.employee.read
@@ -56,6 +65,9 @@ queries:
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.position.list
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.position.occupancy-as-of
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.assignment.get
@@ -445,6 +457,9 @@ queries:
   - id: inventory.stock.availability
     moduleId: inventory
     permission: inventory.availability.read
+  - id: master_data.organization_dimension.resolve_as_of
+    moduleId: master-data
+    permission: master_data.read
   - id: master_data.party.get_by_id
     moduleId: master-data
     permission: master_data.read
@@ -601,6 +616,51 @@ queries:
   - id: payments.availability.get
     moduleId: payments
     permission: payments.availability.read
+  - id: payroll.setup.calendar.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.calendar.list
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.pay-group.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.pay-group.list
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.period.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.period.list
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.earning-rule.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.deduction-rule.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.statutory-rule.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.assignment.get
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.input.variable.get
+    moduleId: payroll
+    permission: payroll.input.manage
+  - id: payroll.run.get
+    moduleId: payroll
+    permission: payroll.run.review
+  - id: payroll.run.list
+    moduleId: payroll
+    permission: payroll.run.review
+  - id: payroll.payslip.get-own
+    moduleId: payroll
+    permission: payroll.payslip.read-own
+  - id: payroll.payslip.get
+    moduleId: payroll
+    permission: payroll.payslip.read-all
   - id: purchasing.order.get
     moduleId: purchasing
     permission: purchasing.order.read

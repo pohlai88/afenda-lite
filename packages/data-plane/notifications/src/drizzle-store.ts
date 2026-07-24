@@ -8,6 +8,7 @@ import {
 	lt,
 	or,
 	platformNotification,
+	sql,
 } from "@afenda/db";
 import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 
@@ -72,15 +73,56 @@ export class DrizzleNotificationStore implements NotificationStore {
 					title: entry.title,
 					body: entry.body,
 					module: entry.module,
+					deduplicationKey: entry.deduplicationKey ?? null,
 					actionUrl: entry.actionUrl ?? null,
 					metadata: entry.metadata ?? null,
 					expiresAt: entry.expiresAt ?? null,
 					createdAt: entry.createdAt,
 				})
+				.onConflictDoNothing({
+					target: [
+						platformNotification.organizationId,
+						platformNotification.userId,
+						platformNotification.module,
+						platformNotification.deduplicationKey,
+					],
+					where: sql`${platformNotification.deduplicationKey} IS NOT NULL`,
+				})
 				.returning();
 
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "notification write returned no row");
+				if (
+					entry.deduplicationKey === undefined ||
+					entry.deduplicationKey === null
+				) {
+					return fail("INTERNAL_ERROR", "notification write returned no row");
+				}
+				const [existing] = await db
+					.select()
+					.from(platformNotification)
+					.where(
+						and(
+							eq(platformNotification.organizationId, entry.organizationId),
+							eq(platformNotification.userId, entry.userId),
+							eq(platformNotification.module, entry.module),
+							eq(platformNotification.deduplicationKey, entry.deduplicationKey),
+						),
+					)
+					.limit(1);
+				if (existing === undefined) {
+					return fail(
+						"INTERNAL_ERROR",
+						"notification deduplication lookup returned no row",
+					);
+				}
+				const mappedExisting = mapNotificationRow(existing);
+				if (!mappedExisting.ok) {
+					return fail(
+						"INTERNAL_ERROR",
+						`notification deduplication lookup returned unreadable row: ${mappedExisting.reason}`,
+					);
+				}
+				return ok(mappedExisting.data);
 			}
 
 			const mapped = mapNotificationRow(row);

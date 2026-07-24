@@ -55,6 +55,7 @@ export async function recordWorkEligibility(
 				return dateRange;
 			}
 
+			let normalizedDocumentRef: string | null = null;
 			if (data.documentRef !== undefined) {
 				const refCheck = await documentReference.validateReference({
 					organizationId: data.organizationId,
@@ -65,10 +66,12 @@ export async function recordWorkEligibility(
 						"identity_document",
 						"other",
 					],
+					requireImmutableVersion: true,
 				});
 				if (!refCheck.ok) {
 					return refCheck;
 				}
+				normalizedDocumentRef = refCheck.data.reference;
 			}
 
 			const requestFingerprint = fingerprintWorkEligibilityRecord({
@@ -77,7 +80,7 @@ export async function recordWorkEligibility(
 				jurisdiction: data.jurisdiction ?? null,
 				issuedOn: data.issuedOn,
 				expiresOn: data.expiresOn ?? null,
-				documentRef: data.documentRef ?? null,
+				documentRef: normalizedDocumentRef,
 			});
 
 			const existingByKey = await store.findWorkEligibilityByIdempotencyKey({
@@ -108,7 +111,7 @@ export async function recordWorkEligibility(
 					jurisdiction: data.jurisdiction ?? null,
 					issuedOn: data.issuedOn,
 					expiresOn: data.expiresOn ?? null,
-					documentRef: data.documentRef ?? null,
+					documentRef: normalizedDocumentRef ?? null,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -192,6 +195,7 @@ export async function renewWorkEligibility(
 				return dateRange;
 			}
 
+			let normalizedDocumentRef: string | null = null;
 			if (data.documentRef !== undefined) {
 				const refCheck = await documentReference.validateReference({
 					organizationId: data.organizationId,
@@ -202,10 +206,12 @@ export async function renewWorkEligibility(
 						"identity_document",
 						"other",
 					],
+					requireImmutableVersion: true,
 				});
 				if (!refCheck.ok) {
 					return refCheck;
 				}
+				normalizedDocumentRef = refCheck.data.reference;
 			}
 
 			return store.renewWorkEligibility(
@@ -214,7 +220,7 @@ export async function renewWorkEligibility(
 					eligibilityId: data.eligibilityId,
 					issuedOn: data.issuedOn,
 					expiresOn: data.expiresOn ?? null,
-					documentRef: data.documentRef ?? null,
+					documentRef: normalizedDocumentRef,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},

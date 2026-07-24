@@ -34,7 +34,7 @@ Category placement does not create dependency rights. The following is the effec
 
 | Consumer | May depend on |
 |----------|---------------|
-| Foundation (R1-A) | No internal `@afenda/*` runtime packages (`@afenda/env` / `@afenda/errors` are leaves; `@afenda/config` is tooling only) |
+| Foundation (R1-A) | No internal `@afenda/*` runtime packages (`@afenda/env` / `@afenda/errors` are leaves; `@afenda/config` / `@afenda/testing` are dev/test tooling only) |
 | Runtime Infrastructure (R1-B) | Foundation (`env` · `errors` where registered). Most runtime packages are leaves with no `@afenda/*` deps |
 | Data Plane (R1-C) | Foundation · `@afenda/db` (for platform table stores). Same-band only via registered edges |
 | Control Plane (R1-D) | Foundation · Runtime · approved Data Plane packages (`@afenda/admin` → `auth` · `db` · `env` · `errors`) |
@@ -61,6 +61,7 @@ Same-band imports are allowed only when listed in the edge register. One data-pl
 | [`@afenda/config`](./foundation/config/README.md) | Node/build | Active | Shared Biome + TypeScript bases (dev-time only) |
 | [`@afenda/env`](./foundation/env/README.md) | Node/build | Active | Typed env contract (`createEnv` + Zod) — sole product env SSOT |
 | [`@afenda/errors`](./foundation/errors/README.md) | Universal | Active | Transport-neutral `AppError` / codes / `Result` leaf |
+| [`@afenda/testing`](./foundation/testing/README.md) | Dev/test | Active | Shared Vitest/Playwright test utilities (not a runtime product import) |
 
 ### Runtime Infrastructure — Rank 1B — [`runtime/`](./runtime/README.md)
 

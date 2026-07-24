@@ -5,7 +5,7 @@ import type {
 	WorkCalendarPort,
 	WorkCalendarSegment,
 	WorkCalendarSegmentInput,
-} from "../work-calendar";
+} from "../time/work-calendar";
 
 function parseIsoDate(value: string): Date {
 	const [yearText, monthText, dayText] = value.split("-");

@@ -10,15 +10,15 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import {
-	type ScopedCalendarAssignmentCandidate,
-	selectScopedWorkCalendarAssignment,
-} from "../shared/calendar-scope-resolution";
 import type { HumanResourcesStore } from "../store";
 import type {
 	WorkCalendarScopeAssignment,
 	WorkCalendarScopeType,
 } from "../types";
+import {
+	type ScopedCalendarAssignmentCandidate,
+	selectScopedWorkCalendarAssignment,
+} from "./calendar-scope-resolution";
 import type { AssignmentContextQueryPort } from "./handoff/ports";
 
 type EmployeeWorkCalendarStoreSlice = Pick<

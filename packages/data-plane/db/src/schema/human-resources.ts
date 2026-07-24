@@ -15,7 +15,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-
+import { mdOrganizationDimension } from "./master-data";
 import { createErpScaffoldTable } from "./scaffold-table";
 
 /** Human Resources mutation tables — sole mutator `@afenda/human-resources`. */
@@ -120,10 +120,7 @@ export const hrWorker = pgTable(
 			t.createIdempotencyKey,
 		),
 		uniqueIndex("hr_worker_org_id_uidx").on(t.organizationId, t.id),
-		uniqueIndex("hr_worker_org_person_uidx").on(
-			t.organizationId,
-			t.personId,
-		),
+		uniqueIndex("hr_worker_org_person_uidx").on(t.organizationId, t.personId),
 		uniqueIndex("hr_worker_org_employee_uidx")
 			.on(t.organizationId, t.employeeId)
 			.where(sql`${t.employeeId} IS NOT NULL`),
@@ -380,6 +377,22 @@ export const hrWorkAssignment = pgTable(
 		positionId: uuid("position_id")
 			.notNull()
 			.references(() => hrPosition.id),
+		/** Nullable only for rows predating governed dimensions; reads fail closed. */
+		legalEntityDimensionId: uuid("legal_entity_dimension_id"),
+		legalEntityKeySnapshot: text("legal_entity_key_snapshot"),
+		legalEntityNameSnapshot: text("legal_entity_name_snapshot"),
+		businessUnitDimensionId: uuid("business_unit_dimension_id"),
+		businessUnitKeySnapshot: text("business_unit_key_snapshot"),
+		businessUnitNameSnapshot: text("business_unit_name_snapshot"),
+		locationDimensionId: uuid("location_dimension_id"),
+		locationKeySnapshot: text("location_key_snapshot"),
+		locationNameSnapshot: text("location_name_snapshot"),
+		costCentreDimensionId: uuid("cost_centre_dimension_id"),
+		costCentreKeySnapshot: text("cost_centre_key_snapshot"),
+		costCentreNameSnapshot: text("cost_centre_name_snapshot"),
+		projectDimensionId: uuid("project_dimension_id"),
+		projectKeySnapshot: text("project_key_snapshot"),
+		projectNameSnapshot: text("project_name_snapshot"),
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }),
 		version: integer("version").notNull().default(1),
@@ -402,9 +415,69 @@ export const hrWorkAssignment = pgTable(
 			t.organizationId,
 			t.positionId,
 		),
+		index("hr_work_assignment_org_legal_entity_idx").on(
+			t.organizationId,
+			t.legalEntityDimensionId,
+		),
+		index("hr_work_assignment_org_business_unit_idx").on(
+			t.organizationId,
+			t.businessUnitDimensionId,
+		),
+		index("hr_work_assignment_org_location_idx").on(
+			t.organizationId,
+			t.locationDimensionId,
+		),
+		index("hr_work_assignment_org_cost_centre_idx").on(
+			t.organizationId,
+			t.costCentreDimensionId,
+		),
+		index("hr_work_assignment_org_project_idx").on(
+			t.organizationId,
+			t.projectDimensionId,
+		),
 		uniqueIndex("hr_work_assignment_org_employment_open_uidx")
 			.on(t.organizationId, t.employmentId)
 			.where(sql`${t.endsOn} IS NULL`),
+		foreignKey({
+			columns: [t.organizationId, t.legalEntityDimensionId],
+			foreignColumns: [
+				mdOrganizationDimension.organizationId,
+				mdOrganizationDimension.id,
+			],
+			name: "hr_work_assignment_org_legal_entity_dimension_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.businessUnitDimensionId],
+			foreignColumns: [
+				mdOrganizationDimension.organizationId,
+				mdOrganizationDimension.id,
+			],
+			name: "hr_work_assignment_org_business_unit_dimension_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.locationDimensionId],
+			foreignColumns: [
+				mdOrganizationDimension.organizationId,
+				mdOrganizationDimension.id,
+			],
+			name: "hr_work_assignment_org_location_dimension_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.costCentreDimensionId],
+			foreignColumns: [
+				mdOrganizationDimension.organizationId,
+				mdOrganizationDimension.id,
+			],
+			name: "hr_work_assignment_org_cost_centre_dimension_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.projectDimensionId],
+			foreignColumns: [
+				mdOrganizationDimension.organizationId,
+				mdOrganizationDimension.id,
+			],
+			name: "hr_work_assignment_org_project_dimension_fk",
+		}),
 	],
 );
 
@@ -1886,7 +1959,7 @@ export const hrLeaveAdjustment = pgTable(
 		),
 		check(
 			"hr_leave_adjustment_kind_check",
-			sql`${t.kind} IN ('manual', 'carry_forward', 'expiry', 'consumption', 'cancellation_reversal')`,
+			sql`${t.kind} IN ('manual', 'accrual', 'carry_forward', 'expiry', 'consumption', 'cancellation_reversal')`,
 		),
 		check("hr_leave_adjustment_status_check", sql`${t.status} IN ('posted')`),
 		check(
@@ -3651,9 +3724,12 @@ export const hrWorkCalendarScopeAssignment = pgTable(
 			t.scopeType,
 			t.scopeKey,
 		),
-		uniqueIndex(
-			"hr_work_calendar_scope_assignment_org_scope_from_uidx",
-		).on(t.organizationId, t.scopeType, t.scopeKey, t.effectiveFrom),
+		uniqueIndex("hr_work_calendar_scope_assignment_org_scope_from_uidx").on(
+			t.organizationId,
+			t.scopeType,
+			t.scopeKey,
+			t.effectiveFrom,
+		),
 		check(
 			"hr_work_calendar_scope_assignment_scope_type_check",
 			sql`${t.scopeType} IN ('employment', 'employee', 'location', 'department', 'legal_entity', 'organization')`,

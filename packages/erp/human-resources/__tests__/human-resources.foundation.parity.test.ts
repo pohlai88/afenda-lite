@@ -14,6 +14,7 @@ import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
 } from "../src/time/calendar";
+import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
@@ -164,6 +165,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-assign-a-${suffix}`,
 				employmentId: employment.data.id,
 				positionId: positionA.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				startsOn: "2025-01-01",
 				endsOn: null,
 			},
@@ -192,6 +194,11 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-assign-b-${suffix}`,
 				employmentId: employment.data.id,
 				positionId: positionB.data.id,
+				legalEntityKey: "LE-TEST-V2",
+				businessUnitKey: "BU-TEST-V2",
+				locationKey: "LOC-TEST-V2",
+				costCentreKey: "CC-TEST-V2",
+				projectKey: "PRJ-TEST-V2",
 				startsOn: "2025-07-01",
 				endsOn: null,
 			},
@@ -214,6 +221,11 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (beforeTransfer.ok) {
 			expect(beforeTransfer.data.positionId).toBe(positionA.data.id);
 			expect(beforeTransfer.data.departmentId).toBe(seeded.departmentId);
+			expect(beforeTransfer.data.legalEntityKey).toBe("LE-TEST");
+			expect(beforeTransfer.data.businessUnitKey).toBe("BU-TEST");
+			expect(beforeTransfer.data.locationKey).toBe("LOC-TEST");
+			expect(beforeTransfer.data.costCentreKey).toBe("CC-TEST");
+			expect(beforeTransfer.data.projectKey).toBe("PRJ-TEST");
 		}
 
 		const afterTransfer = await resolveEmployeeOrgContextAsOf(
@@ -230,6 +242,11 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (afterTransfer.ok) {
 			expect(afterTransfer.data.positionId).toBe(positionB.data.id);
 			expect(afterTransfer.data.departmentId).toBe(deptB.departmentId);
+			expect(afterTransfer.data.legalEntityKey).toBe("LE-TEST-V2");
+			expect(afterTransfer.data.businessUnitKey).toBe("BU-TEST-V2");
+			expect(afterTransfer.data.locationKey).toBe("LOC-TEST-V2");
+			expect(afterTransfer.data.costCentreKey).toBe("CC-TEST-V2");
+			expect(afterTransfer.data.projectKey).toBe("PRJ-TEST-V2");
 		}
 	});
 }

@@ -2,59 +2,19 @@
  * GUIDE-018 I3.1 — Tier-2 hasPermission + admin bootstrap (N12 Path-to-100% WithAudit).
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import { and, db, eq, platformRoleAssignment } from "@afenda/db";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
+import {
+	hasDatabase,
+	resolveSystemTemplateRoleId,
+} from "./helpers/identity-database";
 
 const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
 const createdAuditIds: Array<{ id: string; orgId: string }> = [];
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
-
-const ORG_ADMIN_TEMPLATE_ROLE_ID = "790f03ae-5d20-4ef4-9c8a-a5ee1ed6a28a";
-const VIEWER_TEMPLATE_ROLE_ID = "67ee19f3-ab7e-4856-aaed-68c55cdb87de";
 
 describe("hasPermission guards (I3.1 / N10)", () => {
 	it("rejects empty orgId before touching the database", async () => {
@@ -93,6 +53,15 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 	const runId = `${Date.now()}`;
 	const orgId = `org-i31-perm-a-${runId}`;
 	const grantedBy = `user-i31-perm-actor-${runId}`;
+	let orgAdminRoleId = "";
+	let viewerRoleId = "";
+
+	beforeAll(async () => {
+		[orgAdminRoleId, viewerRoleId] = await Promise.all([
+			resolveSystemTemplateRoleId("org_admin"),
+			resolveSystemTemplateRoleId("viewer"),
+		]);
+	});
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
@@ -139,7 +108,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 		const adminAssign = await assignOrgRoleWithAudit({
 			orgId,
 			userId: adminUser,
-			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+			roleId: orgAdminRoleId,
 			grantedBy,
 			actorUserId: grantedBy,
 			correlationId: "test-correlation-id",
@@ -154,7 +123,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 		const viewerAssign = await assignOrgRoleWithAudit({
 			orgId,
 			userId: viewerUser,
-			roleId: VIEWER_TEMPLATE_ROLE_ID,
+			roleId: viewerRoleId,
 			grantedBy,
 			actorUserId: grantedBy,
 			correlationId: "test-correlation-id",

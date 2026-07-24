@@ -76,6 +76,21 @@ commands:
   - id: fulfillment.delivery.close
     moduleId: fulfillment
     permission: fulfillment.delivery.close
+  - id: human-resources.person.create
+    moduleId: human-resources
+    permission: human-resources.person.manage
+  - id: human-resources.person.update
+    moduleId: human-resources
+    permission: human-resources.person.manage
+  - id: human-resources.worker.create
+    moduleId: human-resources
+    permission: human-resources.worker.manage
+  - id: human-resources.worker.change-type
+    moduleId: human-resources
+    permission: human-resources.worker.manage
+  - id: human-resources.worker.change-status
+    moduleId: human-resources
+    permission: human-resources.worker.manage
   - id: human-resources.employee.create
     moduleId: human-resources
     permission: human-resources.employee.create
@@ -424,6 +439,9 @@ commands:
   - id: human-resources.leave-entitlement.grant
     moduleId: human-resources
     permission: human-resources.leave-entitlement.grant
+  - id: human-resources.leave-entitlement.accrue
+    moduleId: human-resources
+    permission: human-resources.leave-entitlement.adjust
   - id: human-resources.leave-entitlement.carry-forward
     moduleId: human-resources
     permission: human-resources.leave-entitlement.grant
@@ -940,6 +958,9 @@ commands:
   - id: inventory.reservation.cancel
     moduleId: inventory
     permission: inventory.reservation.release
+  - id: master_data.organization_dimension.create
+    moduleId: master-data
+    permission: master_data.manage
   - id: master_data.party.create
     moduleId: master-data
     permission: master_data.manage
@@ -1204,6 +1225,96 @@ commands:
   - id: payments.application_instruction.mark_rejected
     moduleId: payments
     permission: payments.application_instruction.manage
+  - id: payroll.setup.calendar.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.calendar.update
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.calendar.archive
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.pay-group.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.pay-group.update
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.pay-group.archive
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.period.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.period.update
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.period.close
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.earning-rule.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.earning-rule.update
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.earning-rule.archive
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.earning-rule.supersede
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.deduction-rule.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.deduction-rule.update
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.deduction-rule.archive
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.deduction-rule.supersede
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.statutory-rule.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.statutory-rule.update
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.statutory-rule.archive
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.setup.statutory-rule.supersede
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.assignment.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.assignment.recurring-earning.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.assignment.recurring-deduction.create
+    moduleId: payroll
+    permission: payroll.setup.manage
+  - id: payroll.input.variable.create
+    moduleId: payroll
+    permission: payroll.input.manage
+  - id: payroll.run.create
+    moduleId: payroll
+    permission: payroll.run.create
+  - id: payroll.run.calculate
+    moduleId: payroll
+    permission: payroll.run.calculate
+  - id: payroll.run.review
+    moduleId: payroll
+    permission: payroll.run.review
+  - id: payroll.run.finalize
+    moduleId: payroll
+    permission: payroll.run.finalize
+  - id: payroll.run.reverse
+    moduleId: payroll
+    permission: payroll.run.reverse
   - id: purchasing.order.create
     moduleId: purchasing
     permission: purchasing.order.create

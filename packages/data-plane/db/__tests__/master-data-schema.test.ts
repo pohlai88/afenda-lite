@@ -16,6 +16,7 @@ import {
 	mdItemUom,
 	mdItemVariant,
 	mdItemVariantAttributeValue,
+	mdOrganizationDimension,
 	mdParty,
 	mdPartyAddress,
 	mdPartyContact,
@@ -64,6 +65,7 @@ const IN_SCOPE_TABLES = {
 	mdItemVariantAttributeValue,
 	mdChangeRequest,
 	mdImportBatch,
+	mdOrganizationDimension,
 } as const;
 
 describe("@afenda/db master-data schema (Authority B)", () => {
@@ -86,6 +88,7 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 				"md_item_uom",
 				"md_item_variant",
 				"md_item_variant_attribute_value",
+				"md_organization_dimension",
 				"md_party",
 				"md_party_address",
 				"md_party_contact",
@@ -114,7 +117,8 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_tax_registration");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_change_request");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_import_batch");
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(154);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_organization_dimension");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(198);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payment_account");
 	});
 
@@ -128,6 +132,7 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 			mdItemVariant,
 			mdPaymentTerm,
 			mdTaxRegistration,
+			mdOrganizationDimension,
 		]) {
 			const columns = getTableColumns(table);
 			expect(columns.organizationId.notNull).toBe(true);

@@ -51,7 +51,11 @@ import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 } from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+import {
+	createMemoryHumanResourcesStore,
+	createMemoryOrganizationDimensionDirectory,
+} from "../src/testing";
+import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -67,7 +71,12 @@ function harness(
 ) {
 	const store = createMemoryHumanResourcesStore();
 	const authorization = createGrantingHumanResourcesAuthorization(permissions);
-	return { store, ports, authorization };
+	return {
+		store,
+		ports,
+		authorization,
+		organizationDimensions: createMemoryOrganizationDimensionDirectory(),
+	};
 }
 
 async function seedActiveEmployment(
@@ -161,6 +170,7 @@ async function seedEmploymentWithAssignment(
 			correlationId: `corr-asg-${input.suffix}`,
 			employmentId: seeded.employment.id,
 			positionId: positionA.data.id,
+			...TEST_ORGANIZATION_DIMENSION_KEYS,
 			startsOn: "2025-01-01",
 		},
 		ready,
@@ -329,6 +339,7 @@ describe("human-resources lifecycle", () => {
 				idempotencyKey: "idem-transfer-happy",
 				employmentId: seeded.employment.id,
 				toPositionId: seeded.positionB.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				effectiveOn: "2025-05-01",
 				reason: "Org restructure",
 			},
@@ -723,6 +734,7 @@ describe("human-resources lifecycle", () => {
 				idempotencyKey: "idem-xfer-same",
 				employmentId: seeded.employment.id,
 				toPositionId: seeded.positionA.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				effectiveOn: "2025-05-01",
 				reason: "noop",
 			},
@@ -773,6 +785,7 @@ describe("human-resources lifecycle", () => {
 				idempotencyKey: "idem-xfer-frozen",
 				employmentId: seeded.employment.id,
 				toPositionId: frozen.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				effectiveOn: "2025-05-01",
 				reason: "bad target",
 			},

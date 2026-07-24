@@ -1,0 +1,28 @@
+# Merge this file into the repository's root .cursorignore.
+# Never expose real payroll, HR, payment, tax, or payslip data to AI tooling.
+
+**/.env
+**/.env.*
+**/credentials.json
+**/secrets.json
+**/*.key
+**/*.pem
+**/id_rsa
+
+# Production data, database dumps, exports, and generated employee documents
+**/production-dumps/**
+**/database-dumps/**
+**/payroll-data/**
+**/real-payroll-fixtures/**
+**/employee-exports/**
+**/payslip-exports/**
+**/bank-files/**
+**/tax-submissions/**
+**/*.csv
+**/*.xlsx
+**/*.pdf
+
+# Generated output
+**/dist/**
+**/build/**
+**/coverage/**

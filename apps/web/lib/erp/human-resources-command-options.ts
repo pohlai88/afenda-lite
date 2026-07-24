@@ -9,6 +9,7 @@ import {
 } from "@/lib/erp/human-resources-authorization-port";
 import { createHumanResourcesDocumentReferencePort } from "@/lib/erp/human-resources-document-reference-port";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
+import { createHumanResourcesOrganizationDimensionPort } from "@/lib/erp/human-resources-organization-dimension-port";
 import { createHumanResourcesWorkCalendarPort } from "@/lib/erp/human-resources-work-calendar-port";
 
 /** Composition-root options for `@afenda/human-resources` public APIs. */
@@ -18,6 +19,7 @@ export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptio
 		resourceAwareAuthorization:
 			createHumanResourcesResourceAwareAuthorizationPort(),
 		identityResolver: createHumanResourcesIdentityResolverPort(),
+		organizationDimensions: createHumanResourcesOrganizationDimensionPort(),
 		workCalendar: createHumanResourcesWorkCalendarPort(),
 		approvedLeave: createHumanResourcesApprovedLeaveQueryPort(),
 		assignmentContext: createProductionAssignmentContextQuery({

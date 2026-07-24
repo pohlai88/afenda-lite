@@ -37,6 +37,7 @@ export function createNotificationRecorder(
 				title: command.title,
 				body: command.body,
 				module: command.module,
+				deduplicationKey: command.deduplicationKey ?? null,
 				actionUrl: command.actionUrl ?? null,
 				metadata: command.metadata ?? null,
 				expiresAt: command.expiresAt ?? null,

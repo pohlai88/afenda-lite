@@ -32,6 +32,21 @@ export class MemoryNotificationStore implements NotificationStore {
 	}
 
 	async write(entry: NotificationWriteInput): Promise<Result<Notification>> {
+		if (
+			entry.deduplicationKey !== undefined &&
+			entry.deduplicationKey !== null
+		) {
+			const existing = this.entries.find(
+				(row) =>
+					row.organizationId === entry.organizationId &&
+					row.userId === entry.userId &&
+					row.module === entry.module &&
+					row.deduplicationKey === entry.deduplicationKey,
+			);
+			if (existing !== undefined) {
+				return ok({ ...existing });
+			}
+		}
 		const created: Notification = {
 			id: randomUUID(),
 			organizationId: entry.organizationId,
@@ -42,6 +57,7 @@ export class MemoryNotificationStore implements NotificationStore {
 			title: entry.title,
 			body: entry.body,
 			module: entry.module,
+			deduplicationKey: entry.deduplicationKey ?? null,
 			actionUrl: entry.actionUrl ?? null,
 			metadata: entry.metadata ?? null,
 			read: false,

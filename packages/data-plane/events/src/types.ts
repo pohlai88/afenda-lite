@@ -29,6 +29,7 @@ export type DomainEvent<T = unknown> = {
 	id: string;
 	type: string;
 	sourceModule: EventSourceModule;
+	deduplicationKey?: string | null;
 	occurredAt: Date;
 	correlationId: string;
 	causationId: string | null;
@@ -46,6 +47,7 @@ export type DomainEventWriteInput = {
 	organizationId: string;
 	type: string;
 	sourceModule: EventSourceModule;
+	deduplicationKey?: string | null;
 	correlationId: string;
 	causationId?: string | null;
 	actorUserId: string;
@@ -56,7 +58,9 @@ export type DomainEventWriteInput = {
 
 export type DomainEventQueryFilter = {
 	organizationId: string;
+	id?: string;
 	type?: string;
+	sourceModule?: EventSourceModule;
 	status?: EventStatus;
 	correlationId?: string;
 	from?: Date;
@@ -83,6 +87,12 @@ export type DomainEventMarkFailedInput = {
 	id: string;
 	organizationId: string;
 	lastError: string;
+};
+
+export type DomainEventRequeueInput = {
+	id: string;
+	organizationId: string;
+	fromStatus: "failed" | "processed";
 };
 
 export type DomainEventPurgeOptions = {

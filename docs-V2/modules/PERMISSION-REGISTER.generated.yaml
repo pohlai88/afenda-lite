@@ -88,6 +88,42 @@ permissions:
   - code: human-resources.employee.update
     moduleId: human-resources
     namespace: human-resources
+  - code: human-resources.person.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.person.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.worker.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.worker.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.personal-details.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.personal-details.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.sensitive-identifiers.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.sensitive-identifiers.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.assignment.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.assignment.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.organization-context.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.reporting-line.manage
+    moduleId: human-resources
+    namespace: human-resources
   - code: human-resources.employment.manage
     moduleId: human-resources
     namespace: human-resources

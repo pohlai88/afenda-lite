@@ -18,6 +18,7 @@ export const PAYROLL_MUTATION_TABLES = [
 	"payroll_payslip",
 	"payroll_adjustment",
 	"payroll_reconciliation",
+	"payroll_rule_finalized_usage",
 ] as const;
 
 export const PAYROLL_AGGREGATES = [

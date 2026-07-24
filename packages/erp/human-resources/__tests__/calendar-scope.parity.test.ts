@@ -20,6 +20,7 @@ import {
 } from "../src/time/calendar";
 import type { EmployeeAssignmentContext } from "../src/time/handoff/ports";
 import type { WorkCalendar, WorkCalendarScopeType } from "../src/types";
+import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
@@ -270,6 +271,7 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-asg-${suffix}`,
 				employmentId: employment.id,
 				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				startsOn: "2025-01-01",
 			},
 			ready,
@@ -508,6 +510,7 @@ function defineCalendarScopeParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-asg-dept-${suffix}`,
 				employmentId: employment.id,
 				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				startsOn: "2025-01-01",
 			},
 			ready,

@@ -1,5 +1,7 @@
 /** Master-data command / query IDs — package authority for MODULE registers. */
 
+export const MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE =
+	"master_data.organization_dimension.create" as const;
 export const MASTER_COMMAND_PARTY_CREATE = "master_data.party.create" as const;
 export const MASTER_COMMAND_PARTY_UPDATE = "master_data.party.update" as const;
 export const MASTER_COMMAND_PARTY_ACTIVATE =
@@ -128,6 +130,7 @@ export const MASTER_COMMAND_SEARCH_REBUILD =
 	"master_data.search.rebuild" as const;
 
 export const MASTER_DATA_COMMAND_IDS = [
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE,
 	MASTER_COMMAND_PARTY_CREATE,
 	MASTER_COMMAND_PARTY_UPDATE,
 	MASTER_COMMAND_PARTY_ACTIVATE,
@@ -199,6 +202,8 @@ export const MASTER_DATA_COMMAND_IDS = [
 
 export type MasterCommandId = (typeof MASTER_DATA_COMMAND_IDS)[number];
 
+export const MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF =
+	"master_data.organization_dimension.resolve_as_of" as const;
 export const MASTER_QUERY_PARTY_GET_BY_ID =
 	"master_data.party.get_by_id" as const;
 export const MASTER_QUERY_PARTY_GET_BY_CODE =
@@ -286,6 +291,7 @@ export const MASTER_QUERY_REF_UOM_DIMENSION_GET_BY_CODE =
 export const MASTER_QUERY_SEARCH_QUERY = "master_data.search.query" as const;
 
 export const MASTER_DATA_QUERY_IDS = [
+	MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF,
 	MASTER_QUERY_PARTY_GET_BY_ID,
 	MASTER_QUERY_PARTY_GET_BY_CODE,
 	MASTER_QUERY_PARTY_LIST,

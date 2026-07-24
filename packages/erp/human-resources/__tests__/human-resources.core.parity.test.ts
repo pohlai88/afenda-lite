@@ -32,6 +32,7 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
+import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
@@ -155,6 +156,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-inact-4-${suffix}`,
 				employmentId: employment.data.id,
 				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				startsOn: "2025-01-01",
 				endsOn: null,
 			},
@@ -388,6 +390,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-asg-4-${suffix}`,
 				employmentId: employment.data.id,
 				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				startsOn: "2025-01-01",
 				endsOn: null,
 			},
@@ -403,6 +406,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-asg-5-${suffix}`,
 				employmentId: employment.data.id,
 				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
 				startsOn: "2025-06-01",
 				endsOn: null,
 			},

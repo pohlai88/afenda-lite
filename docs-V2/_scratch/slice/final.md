@@ -9,11 +9,11 @@
 | Mission ID | `HR-ENTERPRISE-READINESS-00` |
 | Priority | P0 — program control before enterprise production claims |
 | Package | `packages/erp/human-resources` |
-| Wave missions | **This file** — `HR-WAVE1-FOUNDATION` · `HR-WAVE1-EFFECTIVE-TRUTH` (§ Wave 1) |
+| Wave missions | **This file** — Wave 1 foundation/effective truth · `HR-ENT-05-PLATFORM-*` Wave 2 boundaries |
 | Parent roadmap | [human-resources-roadmap.md](../erp/human-resources-roadmap.md) |
 | Time control state | [time-remaining.md](../erp/time-remaining.md) |
 | Baseline snapshot | 2026-07-24 |
-| Lifecycle | **Open** — Wave 0 complete; Wave 1 executing inline (§ Wave 1) |
+| Lifecycle | **Open** — Wave 0 complete; Wave 2 shared-platform boundary mission complete; module remains `scaffolded` |
 
 **Action this doc enables:** Paste the **Wave 0 compile block** (or wave-routing table row) into a **new** Agent chat. Implementing agent emits project PREFLIGHT; compile blocks do **not** include PREFLIGHT or skill dumps.
 
@@ -39,9 +39,65 @@ It is **not** yet evidence of a complete enterprise HR product. Several domains 
 | ------ | ----- | --------- |
 | Total hard-tenant roots | **179** (post Wave 1A Phase 1) | `packages/data-plane/db/src/hard-tenant-roots.ts` → `HARD_TENANT_ROOT_TABLE_NAMES` |
 | `hr_*` subset | **106** (post Wave 1A Phase 1: +`hr_person`, +`hr_worker`) | Same array, entries `hr_employee` … `hr_worker` |
-| Null-org audit | **177 audited, 0 skipped** | `pnpm audit:tenancy-nulls` — see [time-remaining.md](../erp/time-remaining.md) PASS-03 |
+| Null-org audit | **PASS-03** — registry and configured DB aligned: **179 audited, 0 skipped** after `0008_hr_workforce_foundation.sql` | `pnpm audit:tenancy-nulls` — see [time-remaining.md](../erp/time-remaining.md) PASS-03 |
 
-**Not a contradiction:** README cites **104 `hr_*`** roots; the audit counts **177** roots repo-wide (platform, master-data, ERP modules, and HR). Stale elsewhere: [AGENTS.md](../../../AGENTS.md) still lists **116** total / **43 `hr_*`** — Wave 0 acceptance includes aligning that line.
+**Slice A aligned (2026-07-24):** SSOT, audit mirror, [AGENTS.md](../../../AGENTS.md), and [README](../../../packages/erp/human-resources/README.md) report **179** total hard-tenant roots and **106 `hr_*`**. The configured production branch now audits **179 / 179** after the separately authorized `0008_hr_workforce_foundation.sql` operator migration.
+
+### Slice closeout — Slice B (test hygiene)
+
+**Classification:** Complete with follow-up architectural alignment required (closed in **Slice B2**).
+
+| Outcome | Status |
+| ------- | ------ |
+| Test import path fixed (`time-parity-shared.ts`) | Done |
+| Knip unresolved import / unlisted `@afenda/testing` on HR | Done |
+| HR typecheck · lint · 540 tests | Done |
+| PASS-03 evidence (registry vs DB) | Done — current registry and DB **179 audited, 0 skipped**; Slice B originally closed at 177/2 before `0008` |
+| Unauthorized `db:migrate` | Not run |
+| `packages/foundation/testing` bridge (upward re-export) | **Conditional in B — resolved in B2** |
+
+**Slice B2 (2026-07-24):** `@afenda/testing` is canonical — `require-database-for-ci` lives in `packages/foundation/testing/src/`; Vitest/tsconfig resolve via workspace exports; governance catalog registered; repo-root `testing/` retains runner config and e2e helpers only.
+
+### Slice closeout — HR-ENT-00-STABILIZE
+
+**Classification:** Complete on the 2026-07-24 working-tree revision. This
+closeout changed no module lifecycle and did not itself authorize the
+then-pending `0008` database migration.
+
+| Acceptance evidence | Exact result |
+| ------------------- | ------------ |
+| Biome stabilization | 9 import/export ordering failures corrected mechanically; no behavior changes |
+| `pnpm check:hr` | **PASS** — lint checked 330 files; typecheck passed; unit project passed 38 files / 397 tests with 2 skipped |
+| Database-enforced `pnpm test:hr:parity` | **PASS** with `DATABASE_URL` loaded from `.env.local` and `REQUIRE_DATABASE_TESTS=1` — 25 files / 178 tests passed with 1 skipped |
+| `pnpm validate:modules` | **PASS** — 12 manifests; 7 generated registers matched; all 21 negative fixtures proven |
+| `pnpm governance:packages` | **PASS** — catalog-to-disk, workspace edges, dependency DAG, schema write-owner, deep-import, and ERP-manifest governance |
+| `pnpm check:editor-biome` | **PASS** |
+
+Governance stabilization added the missing canonical schema-symbol mappings for
+`hr_person` and `hr_worker`, then regenerated the seven manifest-derived
+registers through `pnpm validate:modules --write`. The subsequent non-writing
+validation and package-governance gates both passed.
+
+### Slice closeout — HR-ENT-01-WORKFORCE-CLOSE
+
+**Classification:** Complete on 2026-07-24 against the configured protected
+production Neon branch. Module lifecycle remains `scaffolded`.
+
+| Acceptance evidence | Exact result |
+| ------------------- | ------------ |
+| Branch and guard preflight | **PASS** — `.neon` and `.env.local` agree on protected production branch `br-tiny-hill-ao82jp6f`; `db:check` journal valid |
+| Guarded migration | **PASS** — `AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate`; no baseline or destructive override |
+| Migration ledger | **PASS** — 9 journal entries / 9 DB ledger rows; applied through `0008_hr_workforce_foundation`; pending forward 0 |
+| Tenancy audit | **PASS** — 179 hard-tenant roots audited, 0 skipped; `hr_person` and `hr_worker` each report `null_count=0` |
+| DB package tests | **PASS** — 20 files / 80 tests |
+| Database-enforced workforce parity | **PASS** — `human-resources.foundation.parity.test.ts`: 1 file / 2 tests with `REQUIRE_DATABASE_TESTS=1` |
+
+### Deferred follow-on slices (not B2)
+
+| Slice | Scope | Operator / doc action |
+| ----- | ----- | --------------------- |
+| **C — Tenancy migration** | Apply `0008_hr_workforce_foundation.sql` on approved branch | **Done 2026-07-24** — ledger 9/9; **179 audited, 0 skipped, PASS** |
+| **D — `time-remaining.md` PASS-03 history** | Align historical **177** evidence vs current **179** registry | **Done 2026-07-24** — dated M01/C01-A evidence retained; post-`0008` evidence added |
 
 ### Manifest and Time maturity
 
@@ -87,7 +143,7 @@ CONSTRAINTS:
 - Extend existing architecture — no rewrite of working Time domain
 - One wave mission per chat; Wave 0 is audit + doc/structure control only
 - Cite disk paths as evidence; no Living docs/ recreation
-- Align tenancy SSOT: 177 total roots, 104 hr_* — not a README/audit conflict
+- Align tenancy SSOT: 179 total roots, 106 hr_* — audit mirror and docs match hard-tenant-roots.ts
 ACCEPTANCE:
 - Capability/evidence ledger draft for all HR domains (scaffolded | partial | production-candidate)
 - Structural cleanup checklist completed or owned with paths (§ Structural cleanup)
@@ -141,7 +197,7 @@ RESPONSE:
 | **0** | Readiness truth + structural control | **This file** — Master compile block above |
 | **1A** | Worker/org foundation | **This file** — `HR-WAVE1-FOUNDATION` Phases 1–6 (§ Wave 1A) |
 | **1B** | Cross-domain effective history | **This file** — `HR-WAVE1-EFFECTIVE-TRUTH` Phases 1–6 (§ Wave 1B; after 1A Phase 3) |
-| **2** | Shared platform boundaries | Capability ledger rows 3–8 |
+| **2** | Shared platform boundaries | **Complete 2026-07-24** — capability ledger rows 5–9; evidence in [enterprise.md](./enterprise.md#phase-5-implementation-record--2026-07-24) |
 | **3** | Domain completeness | Domain gap matrix + [human-resources-roadmap.md](../erp/human-resources-roadmap.md) HR phases |
 | **4** | Product + operational readiness | ESS/MSS/HR admin surfaces, connectors, ops, formal lifecycle promotion |
 
@@ -178,12 +234,13 @@ ACCEPTANCE: adoption matrix documented; Time remains reference bar
 | 2 | Effective dating and historical truth | Package-wide lineage, corrections, policy binding | 1B | HR | Wave 1B Phase 6 + dispute scenario | § Wave 1B |
 | 3 | Field-level HR authorization | Row/field scope, SoD, break-glass, sensitive fields | 2 | HR auth maps + platform RBAC | Auth boundary tests per domain | Future slice |
 | 4 | Privacy, retention, legal hold | Classification, export, rectification, holds — not delete-only | 2 | Platform privacy + HR metadata | Retention workflow tests | Future slice |
-| 5 | Workflow, tasks, approvals | Shared orchestration; HR owns transitions and snapshots | 2 | Platform workflow | Time approval pattern generalized | Future slice |
-| 6 | Document and e-signature boundary | Vault refs only; scan, version, ACL, signing external | 2 | Document platform | Vault reference validator + integration events | Future slice |
-| 7 | Integration and bulk data | Webhooks, idempotency, import/export, reconciliation | 2 | Platform integration | Attendance connector or explicit API-only scope | Future slice |
-| 8 | Reporting and analytics | Permission-aware read models, `asOf`, projections | 2 | Data platform / search | Metric reproducibility tests | Future slice |
-| 9 | HR product surfaces | ESS, MSS, HR admin, candidate experience | 4 | `apps/web` features | UI compose + action coverage matrix | Product lane |
-| 10 | Production operations | Logging, metrics, outbox lag, runbooks, load/recovery | 4 | Platform ops | SLO dashboards + drill evidence | Ops lane |
+| 5 | Workflow, tasks, approvals | HR owns transition/task state; platform owns durable outcome facts | 2 | `@afenda/events` + app platform handlers | Policy snapshot/outcome publication; retry/replay/tenant tests | `HR-ENT-05-PLATFORM-01` complete |
+| 6 | Document and e-signature boundary | HR persists canonical immutable refs only | 2 | Document/e-sign platform | Vault tenant/kind/version/resolver failure tests | `HR-ENT-05-PLATFORM-02` complete |
+| 7 | Notifications and identity provisioning | Event intents plus joiner/mover/leaver facts | 2 | `@afenda/notifications` + IAM events | Handler failure, dedupe, replay, tenant evidence | `HR-ENT-05-PLATFORM-03/04` complete |
+| 8 | Integration and bulk data | Dry-run, row results, idempotency, reconciliation | 2 | Platform integration + HR attendance boundary | No-write dry-run and deterministic reconciliation tests | `HR-ENT-05-PLATFORM-05` complete |
+| 9 | Reporting and analytics | Permission-aware stable facts and search projections | 2 | `@afenda/events` + `@afenda/search` | Fact version/permission and cross-tenant projection tests | `HR-ENT-05-PLATFORM-06` complete |
+| 10 | HR product surfaces | ESS, MSS, HR admin, candidate experience | 4 | `apps/web` features | UI compose + action coverage matrix | Product lane |
+| 11 | Production operations | Logging, metrics, outbox lag, runbooks/load/recovery | 4 | Platform ops | SLO dashboards + drill evidence | Ops lane |
 
 **Production requirement (capability 1):** Query `resolveEmployeeOrgContextAsOf({ organizationId, employeeId, asOf })` returns exactly one record with `employmentId`, `positionId`, `departmentId`, `managerEmployeeId`, `locationKey`, `legalEntityKey`, `costCentreKey`, `workCalendarId` — or a typed fail-closed error when ambiguous or absent. See § Wave 1A Phase 4.
 
@@ -206,6 +263,17 @@ ACCEPTANCE: adoption matrix documented; Time remains reference bar
 | Compliance + ER | Thin | Applicability rules, acknowledgement campaigns, confidential ER chain of custody | 3 |
 | Talent + WFP | Thin | Review cycles, succession slates, plan versions/scenarios/approval/reconciliation | 3 |
 
+### Phase 6 domain-depth execution ledger
+
+| Mission | Domain | State | Implemented evidence | Open gate |
+| ------- | ------ | ----- | -------------------- | --------- |
+| `HR-ENT-06-DOMAIN-CORE-ORG-OCCUPANCY` | Core + organization | Source implemented and focused verification passed; live database parity blocked | Permission-mapped `human-resources.position.occupancy-as-of` query; deterministic vacant/occupied replay; tenant-safe memory adapter; Drizzle adapter fails closed on ambiguous occupancy; focused unit 2/2, memory parity 1/1, manifest 5/5, scoped Biome, and full HR typecheck pass | Apply reviewed `0009_hr_organization_dimensions.sql` with explicit operator authorization, then rerun Drizzle parity. Core remains open: contacts/dependants and merge governance lack an accepted aggregate contract; contact-point ownership must be reconciled with the Master Data party aggregate before adding HR mutation tables. |
+| `HR-ENT-06-DOMAIN-LEAVE-ACCRUAL` | Leave + lifecycle | Source implemented and focused verification passed; live database parity blocked | Governed `human-resources.leave-entitlement.accrue` command; strict positive quantity and bounded accrual period; immutable `accrual` adjustment; period-bearing idempotency fingerprint; exactly-once replay in memory and Drizzle adapters; sensitive-operation policy; transactional adjustment event parity; leave suite 19/19, manifest 5/5, migration contracts 12/12, scoped Biome, HR and DB typechecks pass | Apply the reviewed migration chain through `0014_hr_leave_accrual_kind.sql` with explicit operator authorization, then run Drizzle parity. Leave still requires full policy/calendar/reconciliation evidence before domain closure. |
+
+These rows do not close Core + organization, Leave + lifecycle, or Phase 6.
+The remaining domain gaps and enterprise aggregate definition of done continue
+to apply. Production database migrations were not authorized or applied.
+
 Time remaining work: [time-remaining.md](../erp/time-remaining.md). Do not claim module enterprise readiness until MOD packs reopen.
 
 ---
@@ -214,7 +282,7 @@ Time remaining work: [time-remaining.md](../erp/time-remaining.md). Do not claim
 
 | # | Item | Paths / action |
 | - | ---- | -------------- |
-| 1 | Tenancy doc SSOT | Align [AGENTS.md](../../../AGENTS.md) audit line to **177** total / **104 `hr_*`**; optional README clarifier |
+| 1 | Tenancy doc SSOT | **Resolved (Slice A):** [AGENTS.md](../../../AGENTS.md), README, and audit mirror aligned to **179** total / **106 `hr_*`** |
 | 2 | Manifest lifecycle | Keep `scaffolded` until HR16 gate; document promotion process in evidence ledger |
 | 3 | Work-calendar ownership | `src/work-calendar.ts`, `src/time/work-calendar.ts`, empty `src/work-calendar/` — pick canonical owner |
 | 4 | Vault document adapters | Verify root vs compliance-specific adapters intentional |
@@ -290,7 +358,7 @@ Adapted from command conventions — doc-only shape for each wave chat:
 
 ### Control plane
 
-- [ ] Tenancy SSOT table in this doc matches `hard-tenant-roots.ts` (**177** / **104 `hr_*`**)
+- [ ] Tenancy SSOT table in this doc matches `hard-tenant-roots.ts` (**179** / **106 `hr_*`**)
 - [ ] [AGENTS.md](../../../AGENTS.md) tenancy audit line updated to match SSOT
 - [ ] [README](../../../packages/erp/human-resources/README.md) clarifies `hr_*` subset vs total roots (if needed)
 - [ ] [human-resources-roadmap.md](../erp/human-resources-roadmap.md) links this file as readiness index
@@ -357,8 +425,8 @@ Do not claim **enterprise production ready** for the package until Wave 4 and mo
 
 | File | Change |
 | ---- | ------ |
-| [AGENTS.md](../../../AGENTS.md) | Testing table: **177** hard-tenant roots, **104 `hr_*`** |
-| [packages/erp/human-resources/README.md](../../../packages/erp/human-resources/README.md) | Tenancy line: optional “104 `hr_*` of 177 total roots” |
+| [AGENTS.md](../../../AGENTS.md) | Testing table: **179** hard-tenant roots, **106 `hr_*`** |
+| [packages/erp/human-resources/README.md](../../../packages/erp/human-resources/README.md) | Tenancy line: **106 `hr_*` of 179 total roots** |
 | [human-resources-roadmap.md](../erp/human-resources-roadmap.md) | Link `docs-V2/_scratch/slice/final.md` as readiness index |
 | [time-remaining.md](../erp/time-remaining.md) | Keep PASS-03 counts aligned when roots change |
 
@@ -381,14 +449,20 @@ Remove resolved rows from the implementing agent's Wave 0 response.
 
 **Prerequisite:** Wave 0 complete.
 
-| Phase | Theme | Deliverables | Verify |
-| ----- | ----- | ------------ | ------ |
-| **1** | Person/Worker DDL | `hr_person`, `hr_worker` in `@afenda/db`; migration `0008`; `hard-tenant-roots.ts`; `mutation-tables.ts`; SCHEMA-OWNERSHIP | `pnpm audit:tenancy-nulls` · migration test |
-| **2** | Memory adapter | `adapters/memory/workforce-foundation.ts` | unit tests |
-| **3** | Drizzle + commands | Drizzle adapter; store composition; `createPerson`, `createWorker`, …; module-ids; permissions; manifest auth maps | `pnpm --filter @afenda/human-resources test` |
-| **4** | Canonical org context | `resolveEmployeeOrgContextAsOf` query + DTO | typecheck |
-| **5** | Assignment asOf parity | `findAssignmentByEmploymentAsOf`; align store assignment-context with Drizzle | parity tests |
-| **6** | Historical scenario | Restructure + transfer → deterministic past-date org context; memory/Drizzle parity | `human-resources.foundation.parity.test.ts` |
+| Phase | Theme | Deliverables | Status (2026-07-24) | Current evidence | Verify |
+| ----- | ----- | ------------ | ------------------- | ---------------- | ------ |
+| **1** | Person/Worker DDL | `hr_person`, `hr_worker` in `@afenda/db`; migration `0008`; `hard-tenant-roots.ts`; `mutation-tables.ts`; SCHEMA-OWNERSHIP | **Complete** | Protected production branch ledger is 9/9 through `0008`; tenancy audit is 179 audited / 0 skipped; DB package is 20 files / 80 tests | `pnpm audit:tenancy-nulls` · migration test |
+| **2** | Memory adapter | `adapters/memory/workforce-foundation.ts` | **Complete** | Memory composition is wired; targeted workforce foundation and command suite is 2 files / 18 tests | unit tests |
+| **3** | Drizzle + commands | Drizzle adapter; store composition; `createPerson`, `createWorker`, …; module-ids; permissions; manifest auth maps | **Complete** | Drizzle composition, commands, IDs, permissions, and manifest authorization maps are present; database-enforced foundation parity is 1 file / 2 tests | `pnpm --filter @afenda/human-resources test` |
+| **4** | Canonical org context | `resolveEmployeeOrgContextAsOf` query + DTO | **Partial** | Query and DTO exist, but `legalEntityKey` still maps calendar `jurisdiction` and `costCentreKey` remains constant `null`; close in `HR-ENT-02-ORG-CONTEXT` | typecheck |
+| **5** | Assignment asOf parity | `findAssignmentByEmploymentAsOf`; align store assignment-context with Drizzle | **Complete** | Memory and Drizzle implement employment/assignment `asOf` selection and primary-manager resolution; database-enforced parity passes | parity tests |
+| **6** | Historical scenario | Restructure + transfer → deterministic past-date org context; memory/Drizzle parity | **Partial** | The shared memory/Drizzle scenario proves deterministic history before and after a transfer; a distinct restructure scenario remains in `HR-ENT-02-ORG-CONTEXT` | `human-resources.foundation.parity.test.ts` |
+
+**Phase 1 reconciliation:** `HR-ENT-01-WORKFORCE-CLOSE` is complete: the
+workforce DDL is applied and its database, tenancy, migration-contract, and
+parity evidence is green. Within the broader Wave 1A plan, Phases 1–3 and 5 are
+complete; Phases 4 and 6 remain partial and are explicitly owned by
+`HR-ENT-02-ORG-CONTEXT`. Module lifecycle remains `scaffolded`.
 
 ### Canonical org-context contract (Phase 4)
 
@@ -416,25 +490,68 @@ Fail-closed on: no employment, ambiguous employment, ambiguous assignment, ambig
 
 **Prerequisite:** Wave 1A Phase 3 complete.
 
-| Phase | Theme | Deliverables | Verify |
-| ----- | ----- | ------------ | ------ |
-| **1** | Adoption matrix | Table of aggregates using `supersedes*` / effective ranges (Time = reference) | doc in this section |
-| **2** | Store asOf standards | `findAssignmentByEmploymentAsOf` on core store (shared with 1A Phase 5) | core tests |
-| **3** | Leave lineage | Adopt `selectEffectiveLineageRecord` in leave adapters for policy resolution | leave parity |
-| **4** | Compensation lineage | Same for compensation effective records | comp parity |
-| **5** | Remaining domains | Org/talent/compliance/WFP supersede fields where present | adapter tests |
-| **6** | Cross-domain evidence | Parity + historical dispute scenarios | domain test suites |
+| Phase | Theme | Deliverables | Status | Verify |
+| ----- | ----- | ------------ | ------ | ------ |
+| **1** | Adoption matrix | Every mutable definition/assignment classified below; Time remains the reference | **Complete** | Matrix review + focused tests |
+| **2** | Store asOf standards | Core employment/assignment and organization manager reads use the shared fail-closed range resolver | **Complete** | Core/foundation/organization tests |
+| **3** | Leave lineage | Published and superseded policy rows resolve through one continuous lineage | **Complete** | `leave-policy-lineage.test.ts` + leave suites |
+| **4** | Compensation lineage | Compensation `asOf` uses the shared effective-range resolver; salary-band successor ranges remain closed | **Complete** | Compensation suites |
+| **5** | Remaining domains | Time lineages plus talent/compliance/WFP successor histories are classified with existing command/parity evidence | **Complete** | Domain suites named below |
+| **6** | Cross-domain evidence | Typed malformed-truth reasons, memory/Drizzle parity, and historical dispute scenarios | **Blocked** | Focused 4-file gate: 24/24 green; package/parity close blocked by concurrent Phase 2/4 work |
 
 ### Lineage adoption matrix (Phase 1)
 
-| Domain | Aggregate | Mechanism | Adapter path |
-| ------ | --------- | --------- | ------------ |
-| Time | work calendar, shift, time policy | `supersedes*` + `selectEffectiveLineageRecord` | `adapters/{memory,drizzle}/time.ts` |
-| Leave | leave policy | effective range + eligibility | `adapters/{memory,drizzle}/leave.ts` |
-| Compensation | employee compensation | effective range | `adapters/{memory,drizzle}/compensation-benefits.ts` |
-| Core/org | work assignment, reporting line | date-bounded rows + asOf queries | `adapters/{memory,drizzle}/{core,organization}.ts` |
+| Domain | Mutable definition / assignment | Classification | Canonical selection / evidence |
+| ------ | ------------------------------- | -------------- | ------------------------------ |
+| Workforce foundation | worker classification | Versioned current state; effective change provenance is audit/outbox-backed, while employment/assignment rows own historical organization decisions | `workforce-foundation` commands + foundation parity |
+| Core | employment | Effective range | `findEmploymentByEmployeeAsOf` → `resolveUniqueEffectiveRangeRecord` |
+| Core | employment contract | Effective range; contract-code history is retained as separate rows | Core store/adapters + contract tests |
+| Core | work assignment | Effective range | `findAssignmentByEmploymentAsOf` → shared range resolver |
+| Organization | reporting line | Effective range | `resolvePrimaryManager` → shared range resolver |
+| Organization | department, job, position | Versioned current definitions; historical decisions bind through assignment/reporting rows | Organization unit/parity suites |
+| Leave | leave policy | Successor lineage + effective range | `resolvePublishedLeavePolicyByCodeLineageAsOf` → `selectEffectiveLineageRecord`; both `published` and `superseded` history retained |
+| Compensation | salary band | Closed effective-range successor keyed by grade/currency | Salary-band supersede unit/parity evidence |
+| Compensation | employee compensation | Effective range | `findEmployeeCompensationByEmploymentAsOf` → shared range resolver |
+| Compensation | benefit enrollment | Effective range + explicit end/cancel state | Compensation unit/parity evidence |
+| Time | work calendar, time policy, shift | Successor lineage + effective range | `supersedes*` → `selectEffectiveLineageRecord`; `successor-lineage.parity.test.ts` |
+| Time | employment calendar, calendar scope, time policy, approval authority, shift assignments | Effective range | Memory/Drizzle Time parity |
+| Time | timesheet correction | Immutable successor history | `supersedesTimesheetId`; Time correction parity |
+| Talent | competency assessment | Immutable successor history | `supersedesAssessmentId`; talent adapter tests |
+| Compliance | policy acknowledgement requirement | Immutable successor history | `supersedesAcknowledgementId`; compliance unit/parity tests |
+| Workforce planning | headcount plan | Immutable successor history | `supersedesPlanId`; workforce-planning unit/parity tests |
+| Other domain definitions | requisition, learning, performance, benefit-plan, talent-pool, succession, compliance-document, and employee-relations definitions/workflows | Versioned current state or immutable workflow/fact; no domain-validity range is encoded, so `asOf` selection is not applicable | Owning domain command/parity suites; optimistic concurrency and audit/outbox remain mandatory |
 
-Shared helpers: `src/shared/effective-dates.ts`, `src/shared/effective-lineage.ts`.
+No mutable definition/assignment is left unclassified. Transaction facts such
+as attendance events, leave requests, case events, approvals, and adjustments
+are immutable or versioned workflow history rather than effective-dated
+definitions; they therefore do not introduce a competing `asOf` algorithm.
+
+Shared helpers:
+`src/shared/effective-dates.ts`,
+`src/shared/effective-range.ts`, and
+`src/shared/effective-lineage.ts`. The resolvers now return typed fail-closed
+reasons for duplicate IDs, invalid ranges, ambiguity, overlap, gaps, missing
+predecessors, cycles, and branches. Compatibility selectors continue returning
+`null` at public read boundaries. The executable inventory is
+`src/effective-truth-adoption.ts`; `effective-truth-adoption.test.ts` rejects
+duplicate aggregates/tables, unknown mutation tables, missing evidence, and
+lineage rows without branch rejection.
+
+### Phase 3 verification status
+
+| Gate | Status | Evidence |
+| ---- | ------ | -------- |
+| Focused effective-truth unit gate | **Pass** | 4 files, 24 tests |
+| Scoped Biome | **Pass** | Phase 3 implementation and test files |
+| Full `test:hr:unit` | **Blocked outside Phase 3** | 36 files / 378 tests pass; 7 files / 44 tests fail in concurrent Phase 2 organization-dimension and Phase 4 authorization work |
+| Core memory/Drizzle parity | **Blocked outside Phase 3** | 16 tests pass; 2 tests and cleanup fail because the configured Neon database lacks `md_organization_dimension` (`42P01`) |
+| HR typecheck | **Inconclusive** | Repeated runs timed out while concurrent HR typecheck processes were active; no Phase 3 type error was emitted |
+
+Drizzle core and organization reads now load the complete scoped aggregate
+history before invoking the shared resolver, so an overlap outside the
+requested `asOf` window cannot be hidden by SQL prefiltering. Database parity
+cannot close until the separately owned Phase 2 master-data migration is
+authorized and applied; Wave 1B Phase 6 therefore remains blocked.
 
 ---
 

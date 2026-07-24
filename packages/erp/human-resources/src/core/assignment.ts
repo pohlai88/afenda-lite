@@ -1,5 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import type { HumanResourcesCommandOptions } from "../command-options";
+import {
+	type HumanResourcesCommandOptions,
+	requireOrganizationDimensionDirectory,
+} from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -27,6 +30,22 @@ export async function createAssignment(
 		invalidMessage: "Invalid assignment create input",
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
 		execute: async (data, { store, ports }) => {
+			const directory = requireOrganizationDimensionDirectory(options);
+			if (!directory.ok) return directory;
+			const dimensions = await directory.data.resolveRequiredAsOf({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				asOf: data.startsOn,
+				keys: {
+					legal_entity: data.legalEntityKey,
+					business_unit: data.businessUnitKey,
+					location: data.locationKey,
+					cost_centre: data.costCentreKey,
+					project: data.projectKey,
+				},
+			});
+			if (!dimensions.ok) return dimensions;
+
 			const employment = await store.getEmploymentById({
 				organizationId: data.organizationId,
 				employmentId: data.employmentId,
@@ -48,6 +67,7 @@ export async function createAssignment(
 					employmentId: data.employmentId,
 					employeeId: employment.data.employeeId,
 					positionId: data.positionId,
+					organizationDimensions: dimensions.data,
 					startsOn: data.startsOn,
 					endsOn: data.endsOn ?? null,
 					createdBy: data.actorUserId,

@@ -250,6 +250,46 @@ function checkCliFormatsTs() {
 	}
 }
 
+function checkLspProxyStaysAlive() {
+	const nativeBin = resolveBiomeNativeBin(root);
+	if (!nativeBin) {
+		return;
+	}
+
+	const child = spawnSync(nativeBin, ["lsp-proxy", "--stdio"], {
+		cwd: root,
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "pipe"],
+		env: {
+			...process.env,
+			BIOME_CONFIG_PATH: "./biome.jsonc",
+		},
+		timeout: 2500,
+	});
+
+	if (child.error?.name === "Error" && child.error.message.includes("ETIMEDOUT")) {
+		debugLog("lsp-proxy smoke ok", { nativeBin });
+		return;
+	}
+
+	if (child.status === null && child.signal === "SIGTERM") {
+		debugLog("lsp-proxy smoke ok", { nativeBin });
+		return;
+	}
+
+	const stderr = (child.stderr || "").trim();
+	if (stderr.includes("FATAL") || stderr.includes("INTERNAL")) {
+		errors.push(`biome lsp-proxy emitted fatal/internal diagnostics: ${stderr.slice(0, 500)}`);
+		return;
+	}
+
+	if (child.status !== null && child.status !== 0) {
+		errors.push(
+			`biome lsp-proxy exited early (code ${child.status}): ${stderr || child.stdout || "no output"}`,
+		);
+	}
+}
+
 const settings = readSettings();
 if (settings) {
 	checkScalarPosture(settings);
@@ -261,6 +301,7 @@ if (settings) {
 }
 checkWorkspaceBinary();
 checkCliFormatsTs();
+checkLspProxyStaysAlive();
 
 if (errors.length > 0) {
 	console.error("check-editor-biome: FAIL");

@@ -2,8 +2,7 @@
 	"extends": "@afenda/config/tsconfig/nextjs.json",
 	"compilerOptions": {
 		"paths": {
-			"@/*": ["./*"],
-			"@afenda/testing/*": ["../../testing/*"]
+			"@/*": ["./*"]
 		}
 	},
 	"include": [

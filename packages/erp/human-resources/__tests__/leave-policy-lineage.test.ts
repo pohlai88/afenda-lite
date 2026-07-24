@@ -12,6 +12,7 @@ function policy(input: {
 	effectiveFrom: string;
 	effectiveTo?: string | null;
 	supersedesPolicyId?: string | null;
+	status?: LeavePolicy["status"];
 }): LeavePolicy {
 	const id = parseHumanResourcesLeavePolicyId(input.id);
 	if (!id.ok) {
@@ -42,7 +43,7 @@ function policy(input: {
 		allowsPartialDay: true,
 		effectiveFrom: input.effectiveFrom,
 		effectiveTo: input.effectiveTo ?? null,
-		status: "published",
+		status: input.status ?? "published",
 		supersedesPolicyId,
 		version: 1,
 		createdBy: "tester",
@@ -59,6 +60,7 @@ describe("resolvePublishedLeavePolicyByCodeLineageAsOf", () => {
 			code: "ANNUAL",
 			effectiveFrom: "2025-01-01",
 			effectiveTo: "2025-06-30",
+			status: "superseded",
 		});
 		const successor = policy({
 			id: "10000000-0000-4000-8000-000000000002",
@@ -101,5 +103,35 @@ describe("resolvePublishedLeavePolicyByCodeLineageAsOf", () => {
 		});
 
 		expect(resolved).toBeNull();
+	});
+
+	it("fails closed when a published successor branches", () => {
+		const root = policy({
+			id: "10000000-0000-4000-8000-000000000021",
+			code: "ANNUAL",
+			effectiveFrom: "2025-01-01",
+			effectiveTo: "2025-06-30",
+			status: "superseded",
+		});
+		const branchA = policy({
+			id: "10000000-0000-4000-8000-000000000022",
+			code: "ANNUAL",
+			effectiveFrom: "2025-07-01",
+			supersedesPolicyId: root.id,
+		});
+		const branchB = policy({
+			id: "10000000-0000-4000-8000-000000000023",
+			code: "ANNUAL",
+			effectiveFrom: "2025-07-01",
+			supersedesPolicyId: root.id,
+		});
+
+		expect(
+			resolvePublishedLeavePolicyByCodeLineageAsOf({
+				policies: [root, branchA, branchB],
+				code: "ANNUAL",
+				asOf: "2025-08-01",
+			}),
+		).toBeNull();
 	});
 });

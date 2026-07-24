@@ -125,6 +125,25 @@ export const grantLeaveEntitlementInputSchema =
 		})
 		.strict();
 
+export const accrueLeaveEntitlementInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			entitlementId: humanResourcesLeaveEntitlementIdSchema,
+			quantity: leaveQuantitySchema.refine(
+				(value) => Number(value) > 0,
+				"Accrual quantity must be greater than zero",
+			),
+			accrualPeriodStart: isoDateSchema,
+			accrualPeriodEnd: isoDateSchema,
+			reason: z.string().trim().min(1).max(500),
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+		})
+		.strict()
+		.refine((value) => value.accrualPeriodEnd >= value.accrualPeriodStart, {
+			message: "Accrual period end must not precede its start",
+			path: ["accrualPeriodEnd"],
+		});
+
 export const carryForwardLeaveEntitlementInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({

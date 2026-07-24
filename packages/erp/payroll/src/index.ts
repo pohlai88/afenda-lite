@@ -1,5 +1,11 @@
 import "server-only";
 
+export {
+	createPayrollEmployeeAssignment,
+	getPayrollEmployeeAssignment,
+} from "./assignments/employee-payroll-assignment";
+export { createPayrollRecurringDeduction } from "./assignments/recurring-deduction";
+export { createPayrollRecurringEarning } from "./assignments/recurring-earning";
 export type {
 	PayrollAuthorizationPort,
 	PayrollPermission,
@@ -12,6 +18,10 @@ export {
 	type PayrollErrorCode,
 	payrollErrorDetails,
 } from "./error-codes";
+export {
+	createPayrollVariableInput,
+	getPayrollVariableInput,
+} from "./inputs/variable-input";
 export {
 	PAYROLL_PERMISSION_CODES,
 	PAYROLL_PERMISSION_INPUT_MANAGE,
@@ -30,6 +40,72 @@ export type {
 	MutationPorts,
 	OutboxPort,
 	PayrollEmployeeQueryPort,
+	PayrollRunCalculatorPort,
+	PayrollRunCalculatorResult,
 } from "./ports";
-export { payrollTenantContextSchema } from "./schemas";
-export type { PayrollTenantContext } from "./types";
+export {
+	calculateEmployeePayroll,
+	hashSnapshot,
+	normalizeCalcOutput,
+	PAYROLL_CALCULATION_VERSION,
+	verifyAccountingIdentities,
+} from "./runs/calculation";
+export {
+	listPayrollExceptionsForRun,
+	recordPayrollException,
+} from "./runs/exception";
+export { finalizePayrollRun } from "./runs/finalization";
+export {
+	closePayrollPeriod,
+	createPayrollPeriod,
+	getPayrollPeriod,
+	listPayrollPeriods,
+	updatePayrollPeriod,
+} from "./runs/payroll-period";
+export {
+	createPayrollRun,
+	getPayrollRun,
+} from "./runs/payroll-run";
+export { createProductionPayrollRunCalculator } from "./runs/production-run-calculator";
+export { reversePayrollRun } from "./runs/reversal";
+export { calculatePayrollRun } from "./runs/run-calculate-command";
+export {
+	payrollMutationContextSchema,
+	payrollTenantContextSchema,
+} from "./schemas";
+export {
+	archivePayrollCalendar,
+	createPayrollCalendar,
+	getPayrollCalendar,
+	listPayrollCalendars,
+	updatePayrollCalendar,
+} from "./setup/calendar";
+export {
+	archivePayrollDeductionRule,
+	createPayrollDeductionRule,
+	getPayrollDeductionRule,
+	supersedePayrollDeductionRule,
+	updatePayrollDeductionRule,
+} from "./setup/deduction-rule";
+export {
+	archivePayrollEarningRule,
+	createPayrollEarningRule,
+	getPayrollEarningRule,
+	supersedePayrollEarningRule,
+	updatePayrollEarningRule,
+} from "./setup/earning-rule";
+export {
+	archivePayrollPayGroup,
+	createPayrollPayGroup,
+	getPayrollPayGroup,
+	listPayrollPayGroups,
+	updatePayrollPayGroup,
+} from "./setup/pay-group";
+export {
+	archivePayrollStatutoryRule,
+	createPayrollStatutoryRule,
+	getPayrollStatutoryRule,
+	supersedePayrollStatutoryRule,
+	updatePayrollStatutoryRule,
+} from "./setup/statutory-rule";
+export type { PayrollMutationContext, PayrollTenantContext } from "./types";

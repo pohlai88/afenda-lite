@@ -105,6 +105,7 @@ modules:
     packageName: "@afenda/inventory"
   - activationMode: core
     aggregates:
+      - organization_dimension
       - party
       - item
       - item_group
@@ -175,7 +176,7 @@ modules:
     band: R1-F
     category: erp
     id: payroll
-    lifecycle: scaffolded
+    lifecycle: active
     packageName: "@afenda/payroll"
   - activationMode: organization_toggle
     aggregates:

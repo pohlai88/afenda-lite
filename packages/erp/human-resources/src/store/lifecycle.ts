@@ -13,7 +13,10 @@ import type {
 	HumanResourcesProbationReviewId,
 	HumanResourcesTerminationId,
 } from "../brands";
-import type { MutationPorts } from "../ports";
+import type {
+	HumanResourcesOrganizationDimensions,
+	MutationPorts,
+} from "../ports";
 import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
@@ -250,6 +253,7 @@ export type HumanResourcesLifecycleStore = {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
 			toPositionId: HumanResourcesPositionId;
+			organizationDimensions: HumanResourcesOrganizationDimensions;
 			effectiveOn: string;
 			reason: string;
 			idempotencyKey: string;

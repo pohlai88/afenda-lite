@@ -52,6 +52,7 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import { previousIsoDate } from "../../shared/effective-dates";
 import { assertValidDateRange } from "../../shared/employment-status";
 import { fingerprintTransfer } from "../../shared/fingerprint";
 import {
@@ -1545,20 +1546,14 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 	},
 
 	async transferAssignment(input, _ports, meta) {
-		const openAssignment = await this.findOpenAssignmentByEmployment({
-			organizationId: input.organizationId,
-			employmentId: input.employmentId,
-		});
-		if (!openAssignment.ok) return openAssignment;
-		if (openAssignment.data === null) {
-			return notFound("Open assignment not found");
-		}
-
 		const fingerprint = fingerprintTransfer({
 			employmentId: input.employmentId,
-			fromPositionId: openAssignment.data.positionId,
 			toPositionId: input.toPositionId,
+			organizationDimensionIds: Object.values(input.organizationDimensions).map(
+				(dimension) => dimension.id,
+			),
 			effectiveOn: input.effectiveOn,
+			reason: input.reason.trim(),
 		});
 
 		const existing = await this.findTransferByIdempotencyKey({
@@ -1571,6 +1566,15 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				return conflict("Idempotency key reused with different payload");
 			}
 			return ok(existing.data.employmentMovement);
+		}
+
+		const openAssignment = await this.findOpenAssignmentByEmployment({
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+		});
+		if (!openAssignment.ok) return openAssignment;
+		if (openAssignment.data === null) {
+			return notFound("Open assignment not found");
 		}
 
 		const toPosition = await this.getPositionById({
@@ -1625,9 +1629,59 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								AND organization_id = ${input.organizationId}
 								AND status = 'active'
 						),
+						legal_entity AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${input.organizationDimensions.legal_entity.id}
+								AND organization_id = ${input.organizationId}
+								AND kind = 'legal_entity'
+								AND key = ${input.organizationDimensions.legal_entity.key}
+								AND effective_from <= ${input.effectiveOn}
+								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+						),
+						business_unit AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${input.organizationDimensions.business_unit.id}
+								AND organization_id = ${input.organizationId}
+								AND kind = 'business_unit'
+								AND key = ${input.organizationDimensions.business_unit.key}
+								AND effective_from <= ${input.effectiveOn}
+								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+						),
+						location AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${input.organizationDimensions.location.id}
+								AND organization_id = ${input.organizationId}
+								AND kind = 'location'
+								AND key = ${input.organizationDimensions.location.key}
+								AND effective_from <= ${input.effectiveOn}
+								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+						),
+						cost_centre AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${input.organizationDimensions.cost_centre.id}
+								AND organization_id = ${input.organizationId}
+								AND kind = 'cost_centre'
+								AND key = ${input.organizationDimensions.cost_centre.key}
+								AND effective_from <= ${input.effectiveOn}
+								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+						),
+						project AS (
+							SELECT id, key, name
+							FROM md_organization_dimension
+							WHERE id = ${input.organizationDimensions.project.id}
+								AND organization_id = ${input.organizationId}
+								AND kind = 'project'
+								AND key = ${input.organizationDimensions.project.key}
+								AND effective_from <= ${input.effectiveOn}
+								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+						),
 						ended AS (
 							UPDATE hr_work_assignment
-							SET ends_on = ${input.effectiveOn},
+							SET ends_on = ${previousIsoDate(input.effectiveOn)},
 								version = ${nextAssignmentVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -1640,13 +1694,25 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						created_assignment AS (
 							INSERT INTO hr_work_assignment (
 								id, organization_id, employment_id, employee_id, position_id,
+								legal_entity_dimension_id, legal_entity_key_snapshot, legal_entity_name_snapshot,
+								business_unit_dimension_id, business_unit_key_snapshot, business_unit_name_snapshot,
+								location_dimension_id, location_key_snapshot, location_name_snapshot,
+								cost_centre_dimension_id, cost_centre_key_snapshot, cost_centre_name_snapshot,
+								project_dimension_id, project_key_snapshot, project_name_snapshot,
 								starts_on, ends_on, version, created_by, updated_by
 							)
 							SELECT
 								${brandedAssignmentId.data}, employment.organization_id, employment.id,
-								employment.employee_id, position.id, ${input.effectiveOn}, NULL, 1,
+								employment.employee_id, position.id,
+								legal_entity.id, legal_entity.key, legal_entity.name,
+								business_unit.id, business_unit.key, business_unit.name,
+								location.id, location.key, location.name,
+								cost_centre.id, cost_centre.key, cost_centre.name,
+								project.id, project.key, project.name,
+								${input.effectiveOn}, NULL, 1,
 								${input.actorUserId}, ${input.actorUserId}
-							FROM employment, position, ended
+							FROM employment, position, legal_entity, business_unit, location,
+								cost_centre, project, ended
 							RETURNING *
 						),
 						mutated AS (

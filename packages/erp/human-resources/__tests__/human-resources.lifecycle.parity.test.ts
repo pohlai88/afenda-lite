@@ -16,6 +16,7 @@ import { createEmployment } from "../src/core/employment";
 import { finalizeTermination } from "../src/lifecycle/termination";
 import { transferAssignment } from "../src/lifecycle/transfer";
 import { createPosition } from "../src/organization/position";
+import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
@@ -115,6 +116,7 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 					correlationId: `corr-asg-${suffix}`,
 					employmentId: employment.data.id,
 					positionId: positionA.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 				},
 				ready,
@@ -130,6 +132,7 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 					idempotencyKey: `idem-xfer-${suffix}`,
 					employmentId: employment.data.id,
 					toPositionId: positionB.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					effectiveOn: "2025-03-01",
 					reason: "Parity transfer",
 				},
@@ -137,6 +140,41 @@ describe.runIf(hasDatabase)("human-resources lifecycle parity", () => {
 			);
 			expect(transfer.ok).toBe(true);
 			if (!transfer.ok) return;
+			const replay = await transferAssignment(
+				{
+					organizationId,
+					actorUserId,
+					correlationId: `corr-xfer-replay-${suffix}`,
+					idempotencyKey: `idem-xfer-${suffix}`,
+					employmentId: employment.data.id,
+					toPositionId: positionB.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
+					effectiveOn: "2025-03-01",
+					reason: "Parity transfer",
+				},
+				ready,
+			);
+			expect(replay).toEqual(transfer);
+
+			const previousAssignment = await ready.store.getAssignmentById({
+				organizationId,
+				assignmentId: transfer.data.fromAssignmentId,
+			});
+			expect(previousAssignment.ok).toBe(true);
+			if (previousAssignment.ok && previousAssignment.data) {
+				expect(previousAssignment.data.endsOn).toBe("2025-02-28");
+			}
+			const successorAssignment = await ready.store.getAssignmentById({
+				organizationId,
+				assignmentId: transfer.data.toAssignmentId,
+			});
+			expect(successorAssignment.ok).toBe(true);
+			if (successorAssignment.ok && successorAssignment.data) {
+				expect(successorAssignment.data.startsOn).toBe("2025-03-01");
+				expect(
+					successorAssignment.data.organizationDimensions?.legal_entity.key,
+				).toBe(TEST_ORGANIZATION_DIMENSION_KEYS.legalEntityKey);
+			}
 
 			const termination = await finalizeTermination(
 				{

@@ -15,6 +15,7 @@ export type RecordOrgRoleAssignedNotificationInput = {
 	userId: string;
 	roleId: string;
 	assignmentId: string;
+	eventId: string;
 	actorUserId: string;
 	reactivated: boolean;
 };
@@ -54,6 +55,7 @@ export async function recordOrgRoleAssignedNotification(
 		title,
 		body,
 		module: ROLE_ASSIGNED_NOTIFICATION.module,
+		deduplicationKey: `event:${input.eventId}`,
 		actionUrl: ROLE_ASSIGNED_NOTIFICATION.actionUrl,
 		metadata: {
 			roleId: input.roleId,

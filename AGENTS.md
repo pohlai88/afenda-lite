@@ -67,6 +67,9 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | UI in app routes / FE scaffold | `afenda-elite-frontend-scaffold` (consume `@afenda/ui-system` barrel) |
 | Next.js App Router / RSC / proxy / cache | `afenda-elite-nextjs-best-practice` |
 | Modules / ports / residue | `afenda-elite-backend-modules` |
+| `@afenda/payroll` package (schemas / store / adapters) | `afenda-elite-payroll` |
+| Payroll plan / discovery / schema design (read-only) | `payroll-architect` subagent |
+| Payroll phase verify / pre-merge review (read-only) | `payroll-verifier` subagent |
 | API contract / ActionResult / OpenAPI / REST | `afenda-elite-api-contract` |
 | Module evidence / MOD readiness claims | `afenda-elite-module-readiness` |
 | Cross-package import / DAG | `afenda-elite-monorepo-discipline` |
@@ -371,7 +374,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**177** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting · **104 `hr_*`**) — inventory mirrored in `scripts/audit-tenancy-nulls.mjs` |
+| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**179** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting · **106 `hr_*`**) — inventory mirrored in `scripts/audit-tenancy-nulls.mjs` |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 

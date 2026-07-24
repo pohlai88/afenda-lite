@@ -8,12 +8,14 @@ export * from "./compensation-benefits/benefit-enrollment";
 export * from "./compensation-benefits/benefit-plan";
 export * from "./compensation-benefits/compensation-grade";
 export * from "./compensation-benefits/compensation-review";
+export * from "./compensation-benefits/currency-lookup";
 export * from "./compensation-benefits/employee-compensation";
 export * from "./compensation-benefits/salary-band";
 export * from "./compliance/document-requirement";
 export * from "./compliance/employee-compliance-summary";
 export * from "./compliance/employee-document";
 export * from "./compliance/policy-acknowledgement";
+export { createVaultDocumentReferenceAdapter } from "./compliance/vault-document-reference-adapter";
 export * from "./compliance/work-eligibility";
 export * from "./core/assignment";
 // Command entry points
@@ -21,7 +23,7 @@ export * from "./core/employee";
 export * from "./core/employment";
 export * from "./core/employment-contract";
 export * from "./core/org-context";
-export * from "./currency-lookup";
+export * from "./effective-truth-adoption";
 export * from "./employee-relations/case-action";
 export * from "./employee-relations/case-appeal";
 export * from "./employee-relations/case-event";
@@ -29,6 +31,7 @@ export * from "./employee-relations/employee-case";
 // Error codes and utilities
 export * from "./error-codes";
 export type * from "./identity-resolver";
+export * from "./integrations/platform-facts";
 export * from "./learning/certification";
 export * from "./learning/completion";
 export * from "./learning/course";
@@ -54,6 +57,7 @@ export * from "./performance/review";
 export * from "./permissions";
 // Ports and options
 export type * from "./ports";
+export * from "./privacy";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
 export { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 export { createProductionAttendanceSource } from "./production-attendance-source";
@@ -64,6 +68,9 @@ export * from "./recruitment/interview";
 export * from "./recruitment/offer";
 export * from "./recruitment/requisition";
 export * from "./schemas";
+export * from "./sensitive-operation-policies";
+export * from "./shared/contextual-authorization";
+export * from "./shared/field-projection";
 export type * from "./store";
 // Store resolver removed - internal only
 export * from "./talent/career-plan";
@@ -72,9 +79,7 @@ export * from "./talent/succession-plan";
 export * from "./talent/talent-pool";
 export * from "./talent/talent-profile";
 export * from "./time";
-// Types and brands
-export type * from "./types";
-export { createVaultDocumentReferenceAdapter } from "./vault-document-reference-adapter";
+export * from "./time/attendance/dry-run";
 export type {
 	ResolvedWorkCalendarContext,
 	WorkCalendarDayResolution,
@@ -85,7 +90,9 @@ export type {
 	WorkCalendarSegmentInput,
 	WorkCalendarShiftWindow,
 	WorkWeekDayPattern,
-} from "./work-calendar";
+} from "./time/work-calendar";
+// Types and brands
+export type * from "./types";
 export * from "./workforce-foundation/classification";
 export * from "./workforce-foundation/person";
 export type * from "./workforce-foundation/types";

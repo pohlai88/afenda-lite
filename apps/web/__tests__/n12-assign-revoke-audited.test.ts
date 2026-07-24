@@ -2,9 +2,6 @@
  * N12 — assign/revoke + audit atomic domain entry points (Neon HTTP tx).
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
 	deleteRbacAuditRow,
 	ROLE_ASSIGN_AUDIT_ACTION,
@@ -18,56 +15,25 @@ import {
 	platformRoleAssignment,
 	withOrg,
 } from "@afenda/db";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
+import {
+	hasDatabase,
+	resolveSystemTemplateRoleId,
+} from "./helpers/identity-database";
 
 const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
 const createdAuditIds: Array<{ id: string; orgId: string }> = [];
 
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
-
-/** Live Org Admin system template on br-tiny-hill (ARCH-023 seed). */
-const ORG_ADMIN_TEMPLATE_ROLE_ID = "790f03ae-5d20-4ef4-9c8a-a5ee1ed6a28a";
-
 describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 	const runId = `${Date.now()}`;
+	let orgAdminRoleId = "";
+
+	beforeAll(async () => {
+		orgAdminRoleId = await resolveSystemTemplateRoleId("org_admin");
+	});
+
 	const orgA = `org-n12-audited-a-${runId}`;
 	const userId = `user-n12-audited-target-${runId}`;
 	const actorUserId = `user-n12-audited-actor-${runId}`;
@@ -92,7 +58,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 		const result = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
-			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+			roleId: orgAdminRoleId,
 			grantedBy: actorUserId,
 			actorUserId,
 			correlationId: "test-correlation-id",
@@ -134,7 +100,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 		const assigned = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId: `${userId}-revoke`,
-			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+			roleId: orgAdminRoleId,
 			grantedBy: actorUserId,
 			actorUserId,
 			correlationId: "test-correlation-id",

@@ -1,5 +1,8 @@
 import type { Result } from "@afenda/errors/result";
-import type { HumanResourcesCommandOptions } from "../command-options";
+import {
+	type HumanResourcesCommandOptions,
+	requireOrganizationDimensionDirectory,
+} from "../command-options";
 import { HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER } from "../module-ids";
 import { transferAssignmentInputSchema } from "../schemas/lifecycle";
 import { runLifecycleCommand } from "../shared/lifecycle-command";
@@ -18,12 +21,28 @@ export async function transferAssignment(
 		schema: transferAssignmentInputSchema,
 		invalidMessage: "Invalid transfer assignment input",
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
-		execute: (data, { store, ports }) =>
-			store.transferAssignment(
+		execute: async (data, { store, ports }) => {
+			const directory = requireOrganizationDimensionDirectory(options);
+			if (!directory.ok) return directory;
+			const dimensions = await directory.data.resolveRequiredAsOf({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				asOf: data.effectiveOn,
+				keys: {
+					legal_entity: data.legalEntityKey,
+					business_unit: data.businessUnitKey,
+					location: data.locationKey,
+					cost_centre: data.costCentreKey,
+					project: data.projectKey,
+				},
+			});
+			if (!dimensions.ok) return dimensions;
+			return store.transferAssignment(
 				{
 					organizationId: data.organizationId,
 					employmentId: data.employmentId,
 					toPositionId: data.toPositionId,
+					organizationDimensions: dimensions.data,
 					effectiveOn: data.effectiveOn,
 					reason: data.reason,
 					idempotencyKey: data.idempotencyKey,
@@ -34,6 +53,7 @@ export async function transferAssignment(
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 				}),
-			),
+			);
+		},
 	});
 }

@@ -29,8 +29,8 @@ import {
 } from "../permissions";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import type { WorkCalendarPort } from "../time/work-calendar";
 import type { LeavePolicy, LeaveRequest } from "../types";
-import type { WorkCalendarPort } from "../work-calendar";
 
 type ActorScoped = {
 	organizationId: string;

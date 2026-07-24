@@ -9,7 +9,10 @@ import type {
 	HumanResourcesPositionId,
 	HumanResourcesReportingLineId,
 } from "../brands";
-import type { MutationPorts } from "../ports";
+import type {
+	HumanResourcesOrganizationDimensions,
+	MutationPorts,
+} from "../ports";
 import type {
 	DepartmentStatus,
 	EmploymentStatus,
@@ -26,6 +29,7 @@ import type {
 	Job,
 	OrganizationTreePage,
 	Position,
+	PositionOccupancyAsOf,
 	ReportingLine,
 	WorkAssignment,
 } from "../types";
@@ -101,6 +105,7 @@ export type AssignmentCreateRecord = {
 	employmentId: HumanResourcesEmploymentId;
 	employeeId: HumanResourcesEmployeeId;
 	positionId: HumanResourcesPositionId;
+	organizationDimensions: HumanResourcesOrganizationDimensions;
 	startsOn: string;
 	endsOn: string | null;
 	createdBy: string;
@@ -362,6 +367,12 @@ export type HumanResourcesCoreStore = {
 		organizationId: string;
 		positionId: HumanResourcesPositionId;
 	}): Promise<Result<number>>;
+
+	resolvePositionOccupancyAsOf(input: {
+		organizationId: string;
+		positionId: HumanResourcesPositionId;
+		asOf: string;
+	}): Promise<Result<PositionOccupancyAsOf | null>>;
 
 	countActiveOrFrozenPositionsForDepartment(input: {
 		organizationId: string;

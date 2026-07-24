@@ -228,6 +228,8 @@ export const platformNotification = pgTable(
 		title: text("title").notNull(),
 		body: text("body").notNull(),
 		module: text("module").notNull(),
+		/** Optional handler idempotency key, scoped to org + user + module. */
+		deduplicationKey: text("deduplication_key"),
 		actionUrl: text("action_url"),
 		metadata: jsonb("metadata"),
 		read: boolean("read").notNull().default(false),
@@ -247,6 +249,9 @@ export const platformNotification = pgTable(
 			t.userId,
 			t.read,
 		),
+		uniqueIndex("platform_notification_org_user_module_dedupe_uidx")
+			.on(t.organizationId, t.userId, t.module, t.deduplicationKey)
+			.where(sql`${t.deduplicationKey} IS NOT NULL`),
 	],
 );
 
@@ -264,6 +269,8 @@ export const platformDomainEvent = pgTable(
 		type: text("type").notNull(),
 		/** Living module source — platform | identity */
 		sourceModule: text("source_module").notNull(),
+		/** Replay-safe producer key, scoped to org + source + event type. */
+		deduplicationKey: text("deduplication_key"),
 		correlationId: text("correlation_id").notNull(),
 		causationId: text("causation_id"),
 		actorUserId: text("actor_user_id").notNull(),
@@ -288,5 +295,8 @@ export const platformDomainEvent = pgTable(
 			t.createdAt,
 		),
 		index("platform_domain_event_org_type_idx").on(t.organizationId, t.type),
+		uniqueIndex("platform_domain_event_org_source_type_dedupe_uidx")
+			.on(t.organizationId, t.sourceModule, t.type, t.deduplicationKey)
+			.where(sql`${t.deduplicationKey} IS NOT NULL`),
 	],
 );

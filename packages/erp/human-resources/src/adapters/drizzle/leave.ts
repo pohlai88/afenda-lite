@@ -69,6 +69,7 @@ import {
 } from "../../shared/persistence-errors";
 import type {
 	HumanResourcesStore,
+	IdempotentLeaveAdjustmentRecord,
 	IdempotentLeaveEntitlementRecord,
 	IdempotentLeaveRequestRecord,
 } from "../../store";
@@ -228,6 +229,7 @@ export type DrizzleLeaveMethods = Pick<
 	| "grantLeaveEntitlement"
 	| "carryForwardLeaveEntitlement"
 	| "expireLeaveEntitlement"
+	| "findLeaveAdjustmentByIdempotencyKey"
 	| "adjustLeaveEntitlement"
 	| "listLeaveEntitlements"
 	| "listPostedLeaveAdjustments"
@@ -1362,7 +1364,50 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
+	async findLeaveAdjustmentByIdempotencyKey(
+		input,
+	): Promise<Result<IdempotentLeaveAdjustmentRecord | null>> {
+		try {
+			const rows = await db
+				.select()
+				.from(hrLeaveAdjustment)
+				.where(
+					and(
+						eq(hrLeaveAdjustment.organizationId, input.organizationId),
+						eq(hrLeaveAdjustment.createIdempotencyKey, input.idempotencyKey),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (row === undefined) return ok(null);
+			const adjustment = mapLeaveAdjustment(row);
+			if (!adjustment.ok) return adjustment;
+			return ok({
+				adjustment: adjustment.data,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find leave adjustment by idempotency key",
+			);
+		}
+	},
+
 	async adjustLeaveEntitlement(record, _ports, meta) {
+		const replay = await this.findLeaveAdjustmentByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.createIdempotencyKey,
+		});
+		if (!replay.ok) return replay;
+		if (replay.data !== null) {
+			if (
+				replay.data.createRequestFingerprint === record.createRequestFingerprint
+			) {
+				return ok(replay.data.adjustment);
+			}
+			return conflict("Idempotency key already used with different data");
+		}
 		// Validate transaction inputs
 		const validation = validateTransactionInput({
 			organizationId: record.organizationId,
@@ -1388,6 +1433,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		// Determine if this adjustment type should emit an outbox event
 		const shouldEmitEvent =
 			record.kind === "manual" ||
+			record.kind === "accrual" ||
 			record.kind === "carry_forward" ||
 			record.kind === "expiry";
 
@@ -1439,7 +1485,20 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
-				return conflict("Idempotency key already used with different data");
+				const replay = await this.findLeaveAdjustmentByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!replay.ok) return replay;
+				if (replay.data !== null) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
+						return ok(replay.data.adjustment);
+					}
+					return conflict("Idempotency key already used with different data");
+				}
 			}
 			return mapPersistenceFailure(error, "Failed to adjust leave entitlement");
 		}

@@ -73,6 +73,7 @@ export async function registerEmployeeDocument(
 					"identity_document",
 					"other",
 				],
+				requireImmutableVersion: true,
 			});
 			if (!refCheck.ok) {
 				return refCheck;
@@ -92,7 +93,7 @@ export async function registerEmployeeDocument(
 				documentType: data.documentType,
 				issuedOn: data.issuedOn,
 				expiresOn: data.expiresOn ?? null,
-				documentRef: data.documentRef,
+				documentRef: refCheck.data.reference,
 			});
 
 			const existingByKey = await store.findEmployeeDocumentByIdempotencyKey({
@@ -133,7 +134,7 @@ export async function registerEmployeeDocument(
 					issuingJurisdiction: data.issuingJurisdiction ?? null,
 					issuedOn: data.issuedOn,
 					expiresOn: data.expiresOn ?? null,
-					documentRef: data.documentRef,
+					documentRef: refCheck.data.reference,
 					identifierLast4,
 					identifierFingerprint,
 					metadata: data.metadata ?? null,

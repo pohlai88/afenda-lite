@@ -99,6 +99,7 @@ import {
 	hrWorkCalendarScopeAssignment,
 	hrWorkEligibility,
 	inArray,
+	mdOrganizationDimension,
 	platformAuditLog,
 	platformDomainEvent,
 } from "@afenda/db";
@@ -562,6 +563,9 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrEmployee)
 			.where(eq(hrEmployee.organizationId, organizationId));
+		await db
+			.delete(mdOrganizationDimension)
+			.where(eq(mdOrganizationDimension.organizationId, organizationId));
 		await db
 			.delete(platformAuditLog)
 			.where(eq(platformAuditLog.organizationId, organizationId));

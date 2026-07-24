@@ -11,6 +11,7 @@ import {
 } from "../brands";
 import {
 	applicationStatusSchema,
+	candidateConsentSourceSchema,
 	candidateStatusSchema,
 	interviewEvaluationResultSchema,
 	offerStatusSchema,
@@ -92,8 +93,19 @@ export const createCandidateInputSchema = humanResourcesMutationContextSchema
 		displayName: z.string().trim().min(1).max(200),
 		email: z.string().trim().email().max(320),
 		phone: z.string().trim().min(1).max(40).nullable().optional(),
+		consentPolicyVersion: z.string().trim().min(1).max(64),
+		consentCapturedAt: z.string().datetime({ offset: true }),
+		consentSource: candidateConsentSourceSchema,
+		retentionUntil: z.string().date(),
 	})
-	.strict();
+	.strict()
+	.refine(
+		(value) => value.retentionUntil >= value.consentCapturedAt.slice(0, 10),
+		{
+			message: "Candidate retention date must not precede consent capture",
+			path: ["retentionUntil"],
+		},
+	);
 
 export type CreateCandidateInput = z.infer<typeof createCandidateInputSchema>;
 
@@ -124,6 +136,7 @@ export const listCandidatesInputSchema = humanResourcesMutationContextSchema
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 		status: candidateStatusSchema.optional(),
+		retentionDueAsOf: z.string().date().optional(),
 	})
 	.strict();
 

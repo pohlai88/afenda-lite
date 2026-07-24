@@ -73,6 +73,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
     ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
+    ├── `@afenda/payroll` domain farm? ─────────────────────→ afenda-elite-payroll
     └── Domain farm (Neon tenancy)? ────────────────────────→ neon-tenancy-efficiency
 ```
 
@@ -162,6 +163,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted **and** if Living 
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
 - Next.js App Router: [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) — Accelint + Cache Components Mode A default / Mode B ADR-gated
 - Modules: [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)
+- Payroll package: [afenda-elite-payroll](../afenda-elite-payroll/SKILL.md) — `@afenda/payroll` domain farms · schemas · store · adapters · boundaries/domain/testing/security companions · phased [workflow](../afenda-elite-payroll/workflow.md); Plan → [payroll-architect](../../agents/payroll-architect.md); phase gate → [payroll-verifier](../../agents/payroll-verifier.md)
 - API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — `docs-V2/api` Scratch + disk + companions; `pnpm check:openapi`
 - Module readiness: [afenda-elite-module-readiness](../afenda-elite-module-readiness/SKILL.md) — MOD-002 evidence + Module Enterprise Readiness claims (`*-MOD-009` / `*-MOD-010`)
 - Vendor lifecycle: [using-agent-skills](../agent-skills/skills/using-agent-skills/SKILL.md)

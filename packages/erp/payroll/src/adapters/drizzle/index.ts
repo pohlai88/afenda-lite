@@ -1,1 +1,10 @@
 export type { PayrollStore } from "../../store";
+export { drizzleAssignmentsMethods } from "./assignments";
+export { composeStoreSlices } from "./compose";
+export { drizzleInputsMethods } from "./inputs";
+export { drizzleOutputsMethods } from "./outputs";
+export { drizzleReconciliationMethods } from "./reconciliation";
+export { drizzleRunsMethods } from "./runs";
+export { drizzleSetupMethods } from "./setup";
+export { drizzleStatutoryMethods } from "./statutory";
+export { createDrizzlePayrollStore } from "./store";

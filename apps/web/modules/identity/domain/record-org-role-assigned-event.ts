@@ -74,6 +74,7 @@ export async function recordOrgRoleAssignedEvent(
 					userId: parsed.data.recipientUserId,
 					roleId: parsed.data.roleId,
 					assignmentId: parsed.data.assignmentId,
+					eventId: event.id,
 					actorUserId: event.actorUserId,
 					reactivated: parsed.data.reactivated,
 				});

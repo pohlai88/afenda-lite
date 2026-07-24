@@ -19,6 +19,8 @@ export type MasterDataEntityPayload = z.infer<
 >;
 
 export const MasterDataEventSchemas = {
+	"master_data.organization_dimension.created.v1":
+		masterDataEntityPayloadSchema,
 	"master_data.party.created.v1": masterDataEntityPayloadSchema,
 	"master_data.party.updated.v1": masterDataEntityPayloadSchema,
 	"master_data.party.activated.v1": masterDataEntityPayloadSchema,

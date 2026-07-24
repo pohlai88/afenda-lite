@@ -51,11 +51,19 @@ export function fingerprintCandidateCreate(input: {
 	displayName: string;
 	normalizedEmail: string;
 	phone: string | null;
+	consentPolicyVersion: string;
+	consentCapturedAt: string;
+	consentSource: string;
+	retentionUntil: string;
 }): string {
 	return sha256Fingerprint({
 		displayName: input.displayName.trim(),
 		normalizedEmail: input.normalizedEmail,
 		phone: input.phone,
+		consentPolicyVersion: input.consentPolicyVersion,
+		consentCapturedAt: input.consentCapturedAt,
+		consentSource: input.consentSource,
+		retentionUntil: input.retentionUntil,
 	});
 }
 
@@ -99,15 +107,17 @@ export function fingerprintConfirmation(input: {
 
 export function fingerprintTransfer(input: {
 	employmentId: string;
-	fromPositionId: string;
 	toPositionId: string;
+	organizationDimensionIds: readonly string[];
 	effectiveOn: string;
+	reason: string;
 }): string {
 	return sha256Fingerprint({
 		employmentId: input.employmentId,
-		fromPositionId: input.fromPositionId,
 		toPositionId: input.toPositionId,
+		organizationDimensionIds: input.organizationDimensionIds,
 		effectiveOn: input.effectiveOn,
+		reason: input.reason,
 	});
 }
 
@@ -279,6 +289,7 @@ export function fingerprintLeaveAdjustment(input: {
 	kind: string;
 	delta: string;
 	reason: string;
+	source?: string;
 }): string {
 	return sha256Fingerprint(input);
 }

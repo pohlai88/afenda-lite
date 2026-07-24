@@ -55,6 +55,7 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@afenda/testing": "workspace:*",
 		"@tailwindcss/postcss": "catalog:",
 		"@types/node": "catalog:",
 		"@types/react": "catalog:",

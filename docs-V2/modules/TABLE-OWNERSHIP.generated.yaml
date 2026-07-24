@@ -69,7 +69,15 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_person
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_employee
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_worker
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
@@ -505,6 +513,10 @@ tables:
   - moduleId: master-data
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
+    table: md_organization_dimension
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
     table: md_party
   - moduleId: master-data
     packageName: "@afenda/master-data"
@@ -710,6 +722,10 @@ tables:
     packageName: "@afenda/payroll"
     schemaOwner: "@afenda/db"
     table: payroll_reconciliation
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_rule_finalized_usage
   - moduleId: purchasing
     packageName: "@afenda/purchasing"
     schemaOwner: "@afenda/db"

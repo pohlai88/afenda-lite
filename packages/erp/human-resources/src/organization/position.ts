@@ -19,17 +19,19 @@ import {
 	HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
 	HUMAN_RESOURCES_QUERY_POSITION_GET,
 	HUMAN_RESOURCES_QUERY_POSITION_LIST,
+	HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
 } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
 import {
 	createPositionInputSchema,
 	getPositionInputSchema,
+	getPositionOccupancyAsOfInputSchema,
 	listPositionsInputSchema,
 	positionStatusTransitionInputSchema,
 	updatePositionInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { Position } from "../types";
+import type { Position, PositionOccupancyAsOf } from "../types";
 
 export async function createPosition(
 	input: unknown,
@@ -283,6 +285,47 @@ export async function getPosition(
 		);
 	}
 	return ok(position.data);
+}
+
+export async function getPositionOccupancyAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PositionOccupancyAsOf>> {
+	const parsed = parseHumanResourcesInput(
+		getPositionOccupancyAsOfInputSchema,
+		input,
+		"Invalid position occupancy input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireHumanResourcesQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	const occupancy = await store.resolvePositionOccupancyAsOf({
+		organizationId: parsed.data.organizationId,
+		positionId: parsed.data.positionId,
+		asOf: parsed.data.asOf,
+	});
+	if (!occupancy.ok) {
+		return occupancy;
+	}
+	if (occupancy.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Position not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+	return ok(occupancy.data);
 }
 
 export async function listPositions(

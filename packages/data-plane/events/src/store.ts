@@ -7,6 +7,7 @@ import type {
 	DomainEventMarkProcessedInput,
 	DomainEventPurgeOptions,
 	DomainEventQueryOptions,
+	DomainEventRequeueInput,
 	DomainEventWriteInput,
 } from "./types";
 
@@ -26,5 +27,6 @@ export type EventStore = {
 	markFailed(
 		input: DomainEventMarkFailedInput,
 	): Promise<Result<DomainEvent | null>>;
+	requeue(input: DomainEventRequeueInput): Promise<Result<DomainEvent | null>>;
 	purgeProcessed(options: DomainEventPurgeOptions): Promise<Result<number>>;
 };

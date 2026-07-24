@@ -742,6 +742,11 @@ export function createMemoryRecruitmentMethods(
 				displayName: record.displayName,
 				email: record.email,
 				phone: record.phone,
+				consentPolicyVersion: record.consentPolicyVersion,
+				consentCapturedAt: record.consentCapturedAt,
+				consentSource: record.consentSource,
+				retentionUntil: record.retentionUntil,
+				consentWithdrawnAt: null,
 				status: "active",
 				version: 1,
 				createdBy: record.createdBy,
@@ -856,12 +861,20 @@ export function createMemoryRecruitmentMethods(
 			page: number;
 			pageSize: number;
 			status?: CandidateStatus;
+			retentionDueAsOf?: string;
 		}): Promise<Result<CandidateListPage>> {
 			let filtered = Array.from(state.candidates.values()).filter(
 				(c) => c.organizationId === input.organizationId,
 			);
 			if (input.status !== undefined) {
 				filtered = filtered.filter((c) => c.status === input.status);
+			}
+			if (input.retentionDueAsOf !== undefined) {
+				filtered = filtered.filter(
+					(candidate) =>
+						candidate.retentionUntil !== null &&
+						candidate.retentionUntil <= input.retentionDueAsOf,
+				);
 			}
 			filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
 			const totalCount = filtered.length;

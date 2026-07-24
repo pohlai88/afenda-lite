@@ -5,6 +5,9 @@ import {
 	type AttendanceBreakWaiverDecision,
 	type AttendanceEvent,
 	type AttendanceException,
+	type AttendanceImportDryRunResult,
+	type AttendanceImportResult,
+	type AttendanceSession,
 	activateTimePolicy,
 	approveAttendanceBreakWaiver,
 	approveTimesheet,
@@ -18,6 +21,7 @@ import {
 	createTimePolicy,
 	createTimesheet,
 	createWorkCalendar,
+	dryRunAttendanceImport,
 	endTimeApprovalAuthorityAssignment,
 	generateTimesheetEntries,
 	getApprovedTimeHandoff,
@@ -41,8 +45,6 @@ import {
 	supersedeTimePolicy,
 	supersedeTimesheet,
 	supersedeWorkCalendar,
-	type AttendanceImportResult,
-	type AttendanceSession,
 	type TimeApprovalAuthorityAssignment,
 	type TimePolicy,
 	type TimePolicyAssignment,
@@ -108,6 +110,51 @@ const clockEventInputSchema = mutationContextSchema.extend({
 	locationKey: z.string().trim().min(1).max(128).nullable().optional(),
 	notes: z.string().trim().max(2000).nullable().optional(),
 });
+
+const attendanceImportActionSchema = mutationContextSchema.extend({
+	idempotencyKey: z.string().trim().min(1).max(128),
+	batchId: z.string().trim().min(1).max(200),
+	sourceKey: z
+		.string()
+		.trim()
+		.min(1)
+		.max(64)
+		.regex(/^[a-zA-Z0-9._-]+$/),
+	cursor: z.string().trim().min(1).max(500).optional(),
+	events: z
+		.array(
+			z.object({
+				employeeId: z.string().uuid(),
+				employmentId: z.string().uuid().nullable().optional(),
+				shiftAssignmentId: z.string().uuid().nullable().optional(),
+				eventType: z.enum([
+					"clock_in",
+					"clock_out",
+					"break_start",
+					"break_end",
+				]),
+				occurredAt: z.string().datetime({ offset: true }),
+				sourceTimezone: z.string().trim().min(1).max(64),
+				localWorkDate: isoDateSchema,
+				sourceReference: z.string().trim().min(1).max(200),
+				locationKey: z.string().trim().min(1).max(128).nullable().optional(),
+				deviceMetadata: z.record(z.string(), z.unknown()).nullable().optional(),
+				payloadChecksum: z
+					.string()
+					.trim()
+					.min(1)
+					.max(128)
+					.nullable()
+					.optional(),
+				notes: z.string().trim().max(500).nullable().optional(),
+			}),
+		)
+		.min(1)
+		.max(500)
+		.optional(),
+});
+
+type AttendanceImportActionInput = z.input<typeof attendanceImportActionSchema>;
 
 export async function createWorkCalendarAction(input: {
 	correlationId?: string;
@@ -1515,67 +1562,41 @@ export async function supersedeTimesheetAction(input: {
 	});
 }
 
-export async function importAttendanceEventsAction(input: {
-	correlationId?: string;
-	idempotencyKey: string;
-	batchId: string;
-	sourceKey: string;
-	cursor?: string;
-	events?: Array<{
-		employeeId: string;
-		employmentId?: string | null;
-		shiftAssignmentId?: string | null;
-		eventType: "clock_in" | "clock_out" | "break_start" | "break_end";
-		occurredAt: string;
-		sourceTimezone: string;
-		localWorkDate: string;
-		sourceReference: string;
-		locationKey?: string | null;
-		notes?: string | null;
-	}>;
-}): Promise<ActionResult<{ result: AttendanceImportResult }>> {
+export async function validateAttendanceImportAction(
+	input: AttendanceImportActionInput,
+): Promise<ActionResult<{ result: AttendanceImportDryRunResult }>> {
+	return runOperatorPermissionAction({
+		path: "validateAttendanceImportAction",
+		permission: "human-resources.time.attendance.manage",
+		safeMessage: "Could not validate attendance events.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(attendanceImportActionSchema, input);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid attendance import request.",
+					parsed.details,
+				);
+			}
+			const result = dryRunAttendanceImport(
+				withSessionContext(session, correlationId, parsed.data),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { result: mapped.data } };
+		},
+	});
+}
+
+export async function importAttendanceEventsAction(
+	input: AttendanceImportActionInput,
+): Promise<ActionResult<{ result: AttendanceImportResult }>> {
 	return runOperatorPermissionAction({
 		path: "importAttendanceEventsAction",
 		permission: "human-resources.time.attendance.manage",
 		safeMessage: "Could not import attendance events.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(
-				mutationContextSchema.extend({
-					idempotencyKey: z.string().trim().min(1).max(128),
-					batchId: z.string().trim().min(1).max(200),
-					sourceKey: z
-						.string()
-						.trim()
-						.min(1)
-						.max(64)
-						.regex(/^[a-zA-Z0-9._-]+$/),
-					cursor: z.string().trim().min(1).max(500).optional(),
-					events: z
-						.array(
-							z.object({
-								employeeId: z.string().uuid(),
-								employmentId: z.string().uuid().nullable().optional(),
-								shiftAssignmentId: z.string().uuid().nullable().optional(),
-								eventType: z.enum([
-									"clock_in",
-									"clock_out",
-									"break_start",
-									"break_end",
-								]),
-								occurredAt: z.string().datetime({ offset: true }),
-								sourceTimezone: z.string().trim().min(1).max(64),
-								localWorkDate: isoDateSchema,
-								sourceReference: z.string().trim().min(1).max(200),
-								locationKey: z.string().trim().min(1).max(128).nullable().optional(),
-								notes: z.string().trim().max(500).nullable().optional(),
-							}),
-						)
-						.min(1)
-						.max(500)
-						.optional(),
-				}),
-				input,
-			);
+			const parsed = parseSchema(attendanceImportActionSchema, input);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",

@@ -11,6 +11,7 @@ import {
 	hrInterview,
 	hrInterviewEvaluation,
 	hrJobRequisition,
+	lte,
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
@@ -243,6 +244,11 @@ type CandidateSqlRow = {
 	display_name: string;
 	email: string;
 	phone: string | null;
+	consent_policy_version: string | null;
+	consent_captured_at: Date | null;
+	consent_source: string | null;
+	retention_until: string | null;
+	consent_withdrawn_at: Date | null;
 	status: string;
 	version: number;
 	created_by: string;
@@ -257,6 +263,11 @@ function mapCandidateFields(input: {
 	displayName: string;
 	email: string;
 	phone: string | null;
+	consent_policy_version: string | null;
+	consent_captured_at: Date | null;
+	consent_source: string | null;
+	retention_until: string | null;
+	consent_withdrawn_at: Date | null;
 	status: string;
 	version: number;
 	createdBy: string;

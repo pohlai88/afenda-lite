@@ -2,6 +2,42 @@ import type { Change } from "@afenda/audit";
 import type { Result } from "@afenda/errors/result";
 import type { PayrollEventType } from "@afenda/events";
 
+import type { PayrollPayGroupId, PayrollPeriodId, PayrollRunId } from "./brands";
+import type { PayrollExceptionSeverity, PayrollRunType } from "./types";
+
+export type PayrollRunCalculatorException = {
+	severity: PayrollExceptionSeverity;
+	exceptionCode: string;
+	message: string;
+	employeeRef: string | null;
+};
+
+export type PayrollRunCalculatorResult = {
+	calculationSnapshotHash: string;
+	calculationVersion: string;
+	roundingPolicyJson: Record<string, unknown>;
+	exceptions: PayrollRunCalculatorException[];
+};
+
+export type PayrollRunCalculatorInput = {
+	organizationId: string;
+	runId: PayrollRunId;
+	payGroupId: PayrollPayGroupId;
+	periodId: PayrollPeriodId;
+	runType: PayrollRunType;
+	sequence: number;
+	actorUserId: string;
+	correlationId: string;
+	employeeIds?: string[];
+};
+
+export type PayrollRunCalculatorPort = {
+	calculate(
+		input: PayrollRunCalculatorInput,
+		ports: MutationPorts,
+	): Promise<Result<PayrollRunCalculatorResult>>;
+};
+
 export type PayrollEmployeeQueryPort = {
 	getPayrollEmployee(input: {
 		organizationId: string;

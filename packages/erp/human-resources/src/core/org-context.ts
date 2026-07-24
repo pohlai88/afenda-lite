@@ -1,6 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
@@ -46,20 +47,36 @@ export async function resolveEmployeeOrgContextAsOf(
 			if (!assignment.ok) {
 				return assignment;
 			}
-
-			let positionId: EmployeeOrgContextAsOf["positionId"] = null;
-			let departmentId: string | null = null;
-			if (assignment.data !== null) {
-				positionId = assignment.data.positionId;
-				const position = await store.getPositionById({
-					organizationId: data.organizationId,
-					positionId: assignment.data.positionId,
-				});
-				if (!position.ok) {
-					return position;
-				}
-				departmentId = position.data?.departmentId ?? null;
+			if (assignment.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"No assignment effective on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
 			}
+			const assignmentRecord = assignment.data;
+			const dimensions = assignmentRecord.organizationDimensions;
+			if (dimensions === null) {
+				return fail(
+					"CONFLICT",
+					"Assignment has no deterministic organization dimension snapshot",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+					),
+				);
+			}
+			const resolvedDimensions = dimensions;
+
+			const positionId: EmployeeOrgContextAsOf["positionId"] =
+				assignmentRecord.positionId;
+			const position = await store.getPositionById({
+				organizationId: data.organizationId,
+				positionId: assignmentRecord.positionId,
+			});
+			if (!position.ok) {
+				return position;
+			}
+			const departmentId = position.data?.departmentId ?? null;
 
 			const manager = await store.resolvePrimaryManager({
 				organizationId: data.organizationId,
@@ -68,16 +85,6 @@ export async function resolveEmployeeOrgContextAsOf(
 			});
 			if (!manager.ok) {
 				return manager;
-			}
-
-			const calendar = await store.resolveEmploymentCalendar({
-				organizationId: data.organizationId,
-				employeeId: data.employeeId,
-				employmentId: employmentRecord.id,
-				asOf: data.asOf,
-			});
-			if (!calendar.ok) {
-				return calendar;
 			}
 
 			const scopedCalendar = await resolveEmployeeWorkCalendar(
@@ -95,8 +102,8 @@ export async function resolveEmployeeOrgContextAsOf(
 								employmentId: employmentRecord.id,
 								employeeId: data.employeeId,
 								departmentId,
-								locationKey: calendar.data?.locationCode ?? null,
-								legalEntityKey: calendar.data?.jurisdiction ?? null,
+								locationKey: resolvedDimensions.location.key,
+								legalEntityKey: resolvedDimensions.legal_entity.key,
 							});
 						},
 					},
@@ -112,9 +119,11 @@ export async function resolveEmployeeOrgContextAsOf(
 				positionId,
 				departmentId,
 				managerEmployeeId: manager.data?.managerEmployeeId ?? null,
-				locationKey: calendar.data?.locationCode ?? null,
-				legalEntityKey: calendar.data?.jurisdiction ?? null,
-				costCentreKey: null,
+				locationKey: resolvedDimensions.location.key,
+				legalEntityKey: resolvedDimensions.legal_entity.key,
+				businessUnitKey: resolvedDimensions.business_unit.key,
+				costCentreKey: resolvedDimensions.cost_centre.key,
+				projectKey: resolvedDimensions.project.key,
 				workCalendarId: scopedCalendar.data?.calendarId ?? null,
 			});
 		},

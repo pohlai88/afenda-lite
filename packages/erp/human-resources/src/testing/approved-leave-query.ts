@@ -1,8 +1,8 @@
 import { createProductionApprovedLeaveQuery } from "../production-approved-leave-query";
 import type { HumanResourcesStore } from "../store";
 import type { ApprovedLeaveQueryPort } from "../time/handoff/ports";
-import type { WorkCalendarLookupPort } from "../work-calendar";
-import { createStoreWorkCalendarLookup } from "./store-work-calendar-lookup";
+import { createStoreWorkCalendarLookup } from "../time/store-work-calendar-lookup";
+import type { WorkCalendarLookupPort } from "../time/work-calendar";
 
 /** Test/composition helper — store-backed approved leave query for Time. */
 export function createStoreApprovedLeaveQuery(input: {

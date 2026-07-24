@@ -31,6 +31,7 @@ describe("recordOrgRoleAssignedNotification", () => {
 			userId: "user-target",
 			roleId: "role-1",
 			assignmentId: "assign-1",
+			eventId: "event-1",
 			actorUserId: "user-actor",
 			reactivated: false,
 		});
@@ -45,6 +46,7 @@ describe("recordOrgRoleAssignedNotification", () => {
 			title: "Organization role assigned",
 			body: "You were assigned an organization role.",
 			module: "identity",
+			deduplicationKey: "event:event-1",
 			actionUrl: "/admin",
 			metadata: {
 				roleId: "role-1",
@@ -61,6 +63,7 @@ describe("recordOrgRoleAssignedNotification", () => {
 			userId: "user-target",
 			roleId: "role-1",
 			assignmentId: "assign-1",
+			eventId: "event-2",
 			actorUserId: "user-actor",
 			reactivated: true,
 		});
@@ -86,6 +89,7 @@ describe("recordOrgRoleAssignedNotification", () => {
 			userId: "user-target",
 			roleId: "role-1",
 			assignmentId: "assign-1",
+			eventId: "event-3",
 			actorUserId: "user-actor",
 			reactivated: false,
 		});

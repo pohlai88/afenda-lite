@@ -13,6 +13,7 @@ import type { MutationPorts } from "../ports";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	ApplicationStatus,
+	CandidateConsentSource,
 	CandidateStatus,
 	InterviewEvaluationResult,
 	OfferStatus,
@@ -62,6 +63,10 @@ export type CandidateCreateRecord = {
 	email: string;
 	normalizedEmail: string;
 	phone: string | null;
+	consentPolicyVersion: string;
+	consentCapturedAt: Date;
+	consentSource: CandidateConsentSource;
+	retentionUntil: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -207,6 +212,7 @@ export type HumanResourcesRecruitmentStore = {
 		page: number;
 		pageSize: number;
 		status?: CandidateStatus;
+		retentionDueAsOf?: string;
 	}): Promise<Result<CandidateListPage>>;
 	// Application
 	getApplicationById(input: {

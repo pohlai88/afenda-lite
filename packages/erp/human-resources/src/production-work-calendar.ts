@@ -16,7 +16,7 @@ import type {
 	WorkCalendarPort,
 	WorkCalendarSegment,
 	WorkCalendarSegmentInput,
-} from "./work-calendar";
+} from "./time/work-calendar";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 

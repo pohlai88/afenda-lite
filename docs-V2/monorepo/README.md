@@ -41,7 +41,7 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 |------|-------|----------|
 | 3 | Application | `apps/web` · `apps/docs` (`@afenda/docs`) |
 | 2 | Surfaces | `@afenda/ui-system` · `@afenda/emails` |
-| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/cache` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/master-data` · `@afenda/sales` · `@afenda/purchasing` · `@afenda/inventory` · `@afenda/receiving` · `@afenda/fulfillment` · `@afenda/receivables` · `@afenda/payables` · `@afenda/payments` · `@afenda/accounting` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` · `@afenda/config` |
+| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/testing` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/cache` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/master-data` · `@afenda/sales` · `@afenda/purchasing` · `@afenda/inventory` · `@afenda/receiving` · `@afenda/fulfillment` · `@afenda/receivables` · `@afenda/payables` · `@afenda/payments` · `@afenda/accounting` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` · `@afenda/config` |
 
 ### Rank-1 bands (classification only)
 
@@ -49,7 +49,7 @@ Bands never grant import rights. Every edge is package-specific via dual-control
 
 | Band | Kind | On-disk path |
 |------|------|--------------|
-| R1-A | Foundation | `packages/foundation/{config,env,errors}` |
+| R1-A | Foundation | `packages/foundation/{config,env,errors,testing}` |
 | R1-B | Runtime | `packages/runtime/{logger,http,security,metrics,openapi,rate-limit,cache}` |
 | R1-C | Data plane | `packages/data-plane/{db,audit,events,search,notifications}` |
 | R1-D | Control plane | `packages/control-plane/{auth,admin}` |

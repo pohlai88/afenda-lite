@@ -10,6 +10,7 @@ import type {
 	DomainEventMarkProcessedInput,
 	DomainEventPurgeOptions,
 	DomainEventQueryOptions,
+	DomainEventRequeueInput,
 	DomainEventWriteInput,
 } from "../../src/types";
 
@@ -31,11 +32,25 @@ export class MemoryEventStore implements EventStore {
 	}
 
 	async append(entry: DomainEventWriteInput): Promise<Result<DomainEvent>> {
+		if (
+			entry.deduplicationKey !== undefined &&
+			entry.deduplicationKey !== null
+		) {
+			const existing = this.entries.find(
+				(row) =>
+					row.organizationId === entry.organizationId &&
+					row.sourceModule === entry.sourceModule &&
+					row.type === entry.type &&
+					row.deduplicationKey === entry.deduplicationKey,
+			);
+			if (existing !== undefined) return ok({ ...existing });
+		}
 		const created: DomainEvent = {
 			id: randomUUID(),
 			organizationId: entry.organizationId,
 			type: entry.type,
 			sourceModule: entry.sourceModule,
+			deduplicationKey: entry.deduplicationKey ?? null,
 			occurredAt: entry.createdAt ?? new Date(),
 			correlationId: entry.correlationId,
 			causationId: entry.causationId ?? null,
@@ -111,6 +126,24 @@ export class MemoryEventStore implements EventStore {
 		return ok({ ...entry });
 	}
 
+	async requeue(
+		input: DomainEventRequeueInput,
+	): Promise<Result<DomainEvent | null>> {
+		const entry = this.entries.find(
+			(row) =>
+				row.id === input.id &&
+				row.organizationId === input.organizationId &&
+				row.status === input.fromStatus,
+		);
+		if (!entry) {
+			return ok(null);
+		}
+		entry.status = "pending";
+		entry.lastError = null;
+		entry.processedAt = null;
+		return ok({ ...entry });
+	}
+
 	async purgeProcessed(
 		options: DomainEventPurgeOptions,
 	): Promise<Result<number>> {
@@ -133,7 +166,16 @@ export class MemoryEventStore implements EventStore {
 			if (entry.organizationId !== options.organizationId) {
 				return false;
 			}
+			if (options.id !== undefined && entry.id !== options.id) {
+				return false;
+			}
 			if (options.type !== undefined && entry.type !== options.type) {
+				return false;
+			}
+			if (
+				options.sourceModule !== undefined &&
+				entry.sourceModule !== options.sourceModule
+			) {
 				return false;
 			}
 			if (options.status !== undefined && entry.status !== options.status) {

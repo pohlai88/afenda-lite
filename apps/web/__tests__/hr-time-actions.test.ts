@@ -113,6 +113,7 @@ import {
 	supersedeShiftAction,
 	supersedeTimePolicyAction,
 	supersedeWorkCalendarAction,
+	validateAttendanceImportAction,
 } from "../app/actions/hr-time";
 
 const sampleWorkWeek = [
@@ -792,6 +793,36 @@ describe("hr-time Server Actions", () => {
 			operatorSession,
 			"human-resources.time.attendance.manage",
 		);
+	});
+	it("dry-runs attendance imports with session-stamped tenancy and no writes", async () => {
+		const result = await validateAttendanceImportAction({
+			idempotencyKey: "dry-run-1",
+			batchId: "batch-dry-run-1",
+			sourceKey: "device-a",
+			events: [
+				{
+					employeeId: "77777777-7777-4777-8777-777777777777",
+					eventType: "clock_in",
+					occurredAt: "2026-07-01T09:00:00+08:00",
+					sourceTimezone: "Asia/Singapore",
+					localWorkDate: "2026-07-01",
+					sourceReference: "ref-dry-run-1",
+				},
+			],
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.data.result).toMatchObject({
+			mode: "dry_run",
+			organizationId: "org-hr-time-active",
+			totals: { accepted: 1, rejected: 0 },
+		});
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.attendance.manage",
+		);
+		expect(hrTimeMocks.importAttendanceEvents).not.toHaveBeenCalled();
 	});
 
 	it("maps package failure from approveTimesheetAction", async () => {

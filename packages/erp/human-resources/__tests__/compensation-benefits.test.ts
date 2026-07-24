@@ -21,11 +21,11 @@ import {
 	finalizeCompensationReview,
 	recordCompensationRecommendation,
 } from "../src/compensation-benefits/compensation-review";
+import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
 import { createEmployeeCompensation } from "../src/compensation-benefits/employee-compensation";
 import { createSalaryBand } from "../src/compensation-benefits/salary-band";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
-import { createMemoryCurrencyLookup } from "../src/currency-lookup";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,

@@ -88,6 +88,7 @@ import type {
 	HumanResourcesWorkCalendarScopeAssignmentId,
 	HumanResourcesWorkEligibilityId,
 } from "./brands";
+import type { HumanResourcesOrganizationDimensions } from "./ports";
 import type {
 	BenefitEnrollmentStatus,
 	BenefitPlanStatus,
@@ -149,6 +150,7 @@ import type {
 } from "./shared/performance-status";
 import type {
 	ApplicationStatus,
+	CandidateConsentSource,
 	CandidateStatus,
 	InterviewEvaluationResult,
 	InterviewStatus,
@@ -266,6 +268,8 @@ export type WorkAssignment = {
 	employmentId: HumanResourcesEmploymentId;
 	employeeId: HumanResourcesEmployeeId;
 	positionId: HumanResourcesPositionId;
+	/** Null only for rows created before governed organization dimensions. */
+	organizationDimensions: HumanResourcesOrganizationDimensions | null;
 	startsOn: string;
 	endsOn: string | null;
 	version: number;
@@ -273,6 +277,13 @@ export type WorkAssignment = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type PositionOccupancyAsOf = {
+	position: Position;
+	asOf: string;
+	assignment: WorkAssignment | null;
+	state: "vacant" | "occupied";
 };
 
 export type ReportingLine = {
@@ -333,6 +344,11 @@ export type Candidate = {
 	displayName: string;
 	email: string;
 	phone: string | null;
+	consentPolicyVersion: string | null;
+	consentCapturedAt: Date | null;
+	consentSource: CandidateConsentSource | null;
+	retentionUntil: string | null;
+	consentWithdrawnAt: Date | null;
 	status: CandidateStatus;
 	version: number;
 	createdBy: string;
@@ -1021,6 +1037,20 @@ export type LeaveBalance = {
 	unit: LeaveUnit;
 	openingQuantity: string;
 	balance: string;
+};
+
+export type LeaveBalanceReconciliation = {
+	entitlementId: HumanResourcesLeaveEntitlementId;
+	openingQuantity: string;
+	adjustments: Array<
+		Pick<
+			LeaveAdjustment,
+			"id" | "kind" | "delta" | "reason" | "source" | "createdAt"
+		>
+	>;
+	adjustmentCount: number;
+	balance: string;
+	latestAdjustmentAt: Date | null;
 };
 
 export type ApprovedLeaveHandoff = {

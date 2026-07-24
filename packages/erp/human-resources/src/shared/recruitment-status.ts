@@ -14,6 +14,14 @@ export type RequisitionStatus = (typeof REQUISITION_STATUSES)[number];
 export const CANDIDATE_STATUSES = ["active", "archived"] as const;
 export type CandidateStatus = (typeof CANDIDATE_STATUSES)[number];
 
+export const CANDIDATE_CONSENT_SOURCES = [
+	"self_service",
+	"recruiter_recorded",
+	"import",
+] as const;
+export type CandidateConsentSource =
+	(typeof CANDIDATE_CONSENT_SOURCES)[number];
+
 export const APPLICATION_STATUSES = [
 	"submitted",
 	"in_review",
@@ -63,6 +71,7 @@ export const OFFER_ACTIVE_STATUSES = [
 
 export const requisitionStatusSchema = z.enum(REQUISITION_STATUSES);
 export const candidateStatusSchema = z.enum(CANDIDATE_STATUSES);
+export const candidateConsentSourceSchema = z.enum(CANDIDATE_CONSENT_SOURCES);
 export const applicationStatusSchema = z.enum(APPLICATION_STATUSES);
 export const interviewStatusSchema = z.enum(INTERVIEW_STATUSES);
 export const interviewEvaluationResultSchema = z.enum(

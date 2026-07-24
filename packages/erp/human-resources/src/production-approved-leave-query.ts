@@ -11,7 +11,7 @@ import { segmentMinutesFromQuantity } from "./time/timesheet-generation";
 import type {
 	ResolvedWorkCalendarContext,
 	WorkCalendarLookupPort,
-} from "./work-calendar";
+} from "./time/work-calendar";
 
 const DEFAULT_DAY_MINUTES = 480;
 const PAGE_SIZE = 100;

@@ -27,7 +27,7 @@ Authority: ARCH-024 operative (this file + SKILL.md) + ERP expansion governance 
 
 | Band | Kind | Packages |
 |------|------|----------|
-| R1-A | Foundation | `@afenda/config` · `@afenda/env` · `@afenda/errors` |
+| R1-A | Foundation | `@afenda/config` · `@afenda/env` · `@afenda/errors` · `@afenda/testing` (dev/test leaf; `@afenda/config` only) |
 | R1-B | Runtime | `@afenda/logger` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/rate-limit` · `@afenda/cache` |
 | R1-C | Data plane | `@afenda/db` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · `@afenda/notifications` |
 | R1-D | Control plane | `@afenda/auth` · `@afenda/admin` |

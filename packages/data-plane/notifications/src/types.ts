@@ -36,6 +36,7 @@ export type Notification = {
 	title: string;
 	body: string;
 	module: string;
+	deduplicationKey: string | null;
 	actionUrl: string | null;
 	metadata: Record<string, unknown> | null;
 	read: boolean;
@@ -52,6 +53,7 @@ export type NotificationWriteInput = {
 	title: string;
 	body: string;
 	module: string;
+	deduplicationKey?: string | null;
 	actionUrl?: string | null;
 	metadata?: Record<string, unknown> | null;
 	expiresAt?: Date | null;

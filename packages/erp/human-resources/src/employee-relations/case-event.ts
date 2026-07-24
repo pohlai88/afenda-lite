@@ -67,6 +67,7 @@ export async function addEmployeeCaseEvidenceReference(
 				organizationId: data.organizationId,
 				reference: data.documentRef,
 				allowedKinds: ["case_evidence", "employee_document", "other"],
+				requireImmutableVersion: true,
 			});
 			if (!refCheck.ok) {
 				return refCheck;

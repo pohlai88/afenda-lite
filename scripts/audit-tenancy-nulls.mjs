@@ -22,6 +22,7 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"platform_notification",
 	"platform_domain_event",
 	"md_party",
+	"md_organization_dimension",
 	"md_item_group",
 	"md_item",
 	"md_warehouse",
@@ -64,6 +65,25 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"payment",
 	"payment_allocation",
 	"payment_reversal",
+	"payroll_calendar",
+	"payroll_pay_group",
+	"payroll_period",
+	"payroll_employee_assignment",
+	"payroll_earning_rule",
+	"payroll_deduction_rule",
+	"payroll_statutory_rule",
+	"payroll_recurring_earning",
+	"payroll_recurring_deduction",
+	"payroll_variable_input",
+	"payroll_run",
+	"payroll_run_employee",
+	"payroll_result_line",
+	"payroll_statutory_result",
+	"payroll_exception",
+	"payroll_payslip",
+	"payroll_adjustment",
+	"payroll_reconciliation",
+	"payroll_rule_finalized_usage",
 	"stock_movement",
 	"stock_movement_line",
 	"stock_balance",
@@ -88,7 +108,9 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"posting_profile_line",
 	"source_posting_link",
 	"financial_posting_exception",
+	"hr_person",
 	"hr_employee",
+	"hr_worker",
 	"hr_employment",
 	"hr_employment_contract",
 	"hr_work_assignment",
@@ -229,6 +251,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM platform_domain_event WHERE organization_id IS NULL`,
 	md_party: () =>
 		sql`SELECT count(*)::int AS null_count FROM md_party WHERE organization_id IS NULL`,
+	md_organization_dimension: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_organization_dimension WHERE organization_id IS NULL`,
 	md_item_group: () =>
 		sql`SELECT count(*)::int AS null_count FROM md_item_group WHERE organization_id IS NULL`,
 	md_item: () =>
@@ -313,6 +337,44 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM payment_allocation WHERE organization_id IS NULL`,
 	payment_reversal: () =>
 		sql`SELECT count(*)::int AS null_count FROM payment_reversal WHERE organization_id IS NULL`,
+	payroll_calendar: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_calendar WHERE organization_id IS NULL`,
+	payroll_pay_group: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_pay_group WHERE organization_id IS NULL`,
+	payroll_period: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_period WHERE organization_id IS NULL`,
+	payroll_employee_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_employee_assignment WHERE organization_id IS NULL`,
+	payroll_earning_rule: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_earning_rule WHERE organization_id IS NULL`,
+	payroll_deduction_rule: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_deduction_rule WHERE organization_id IS NULL`,
+	payroll_statutory_rule: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_statutory_rule WHERE organization_id IS NULL`,
+	payroll_recurring_earning: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_recurring_earning WHERE organization_id IS NULL`,
+	payroll_recurring_deduction: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_recurring_deduction WHERE organization_id IS NULL`,
+	payroll_variable_input: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_variable_input WHERE organization_id IS NULL`,
+	payroll_run: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_run WHERE organization_id IS NULL`,
+	payroll_run_employee: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_run_employee WHERE organization_id IS NULL`,
+	payroll_result_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_result_line WHERE organization_id IS NULL`,
+	payroll_statutory_result: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_statutory_result WHERE organization_id IS NULL`,
+	payroll_exception: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_exception WHERE organization_id IS NULL`,
+	payroll_payslip: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_payslip WHERE organization_id IS NULL`,
+	payroll_adjustment: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_adjustment WHERE organization_id IS NULL`,
+	payroll_reconciliation: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_reconciliation WHERE organization_id IS NULL`,
+	payroll_rule_finalized_usage: () =>
+		sql`SELECT count(*)::int AS null_count FROM payroll_rule_finalized_usage WHERE organization_id IS NULL`,
 	stock_movement: () =>
 		sql`SELECT count(*)::int AS null_count FROM stock_movement WHERE organization_id IS NULL`,
 	stock_movement_line: () =>
@@ -361,8 +423,12 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM source_posting_link WHERE organization_id IS NULL`,
 	financial_posting_exception: () =>
 		sql`SELECT count(*)::int AS null_count FROM financial_posting_exception WHERE organization_id IS NULL`,
+	hr_person: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_person WHERE organization_id IS NULL`,
 	hr_employee: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_employee WHERE organization_id IS NULL`,
+	hr_worker: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_worker WHERE organization_id IS NULL`,
 	hr_employment: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_employment WHERE organization_id IS NULL`,
 	hr_employment_contract: () =>

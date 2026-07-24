@@ -5,15 +5,18 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
 	HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_GET,
+	HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_RECONCILE,
 	HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_GET,
 	HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_LIST,
 } from "../module-ids";
 import {
+	accrueLeaveEntitlementInputSchema,
 	adjustLeaveEntitlementInputSchema,
 	carryForwardLeaveEntitlementInputSchema,
 	expireLeaveEntitlementInputSchema,
@@ -26,12 +29,14 @@ import {
 	fingerprintLeaveAdjustment,
 	fingerprintLeaveEntitlementGrant,
 } from "../shared/fingerprint";
+import { computeLeaveBalance } from "../shared/leave-balance";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
 import { assertLeavePolicyPublished } from "../shared/leave-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	LeaveAdjustment,
 	LeaveBalance,
+	LeaveBalanceReconciliation,
 	LeaveEntitlement,
 	LeaveEntitlementListPage,
 } from "../types";
@@ -102,6 +107,46 @@ export async function grantLeaveEntitlement(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
+				}),
+			);
+		},
+	});
+}
+
+export async function accrueLeaveEntitlement(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<LeaveAdjustment>> {
+	return runLeaveCommand(input, options, {
+		schema: accrueLeaveEntitlementInputSchema,
+		invalidMessage: "Invalid leave entitlement accrual input",
+		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
+		execute: (data, { store, ports }) => {
+			const source = `accrual:${data.accrualPeriodStart}:${data.accrualPeriodEnd}`;
+			const fingerprint = fingerprintLeaveAdjustment({
+				entitlementId: data.entitlementId,
+				kind: "accrual",
+				delta: data.quantity,
+				reason: data.reason,
+				source,
+			});
+			return store.adjustLeaveEntitlement(
+				{
+					organizationId: data.organizationId,
+					entitlementId: data.entitlementId,
+					sourceRequestId: null,
+					kind: "accrual",
+					delta: data.quantity,
+					reason: data.reason,
+					source,
+					createIdempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: fingerprint,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
 				}),
 			);
 		},
@@ -243,6 +288,55 @@ export async function listLeaveEntitlements(
 				employmentId: data.employmentId,
 				policyId: data.policyId,
 			}),
+	});
+}
+
+export async function reconcileLeaveBalance(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<LeaveBalanceReconciliation | null>> {
+	return runLeaveQuery(input, options, {
+		schema: getLeaveBalanceInputSchema,
+		invalidMessage: "Invalid leave balance reconciliation input",
+		query: HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_RECONCILE,
+		execute: async (data, { store }) => {
+			const entitlement = await store.getLeaveEntitlementById({
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!entitlement.ok) return entitlement;
+			if (entitlement.data === null) return ok(null);
+			const posted = await store.listPostedLeaveAdjustments({
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!posted.ok) return posted;
+			const adjustments = posted.data
+				.map(({ id, kind, delta, reason, source, createdAt }) => ({
+					id,
+					kind,
+					delta,
+					reason,
+					source,
+					createdAt,
+				}))
+				.sort(
+					(left, right) =>
+						left.createdAt.getTime() - right.createdAt.getTime() ||
+						left.id.localeCompare(right.id),
+				);
+			return ok({
+				entitlementId: entitlement.data.id,
+				openingQuantity: entitlement.data.openingQuantity,
+				adjustments,
+				adjustmentCount: adjustments.length,
+				balance: computeLeaveBalance(
+					entitlement.data.openingQuantity,
+					adjustments,
+				),
+				latestAdjustmentAt: adjustments.at(-1)?.createdAt ?? null,
+			});
+		},
 	});
 }
 

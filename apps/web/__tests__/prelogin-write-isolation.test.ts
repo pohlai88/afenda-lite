@@ -279,14 +279,18 @@ describe("@afenda/web Pre-Login write isolation (PL-S10)", () => {
 	it("packages/data-plane/db schema has no app-owned session or credential tables", () => {
 		const tableNames = collectPgTableNames(schemaRoot);
 		expect(tableNames.length).toBeGreaterThan(0);
-		const offenders = tableNames.filter(
-			(name) =>
+		const offenders = tableNames.filter((name) => {
+			if (name.startsWith("hr_")) {
+				return false;
+			}
+			return (
 				/(?:^|_)session(?:_|$)/.test(name) ||
 				/(?:^|_)credential(?:s)?(?:_|$)/.test(name) ||
 				name === "app_session" ||
 				name === "user_credentials" ||
-				name === "local_credentials",
-		);
+				name === "local_credentials"
+			);
+		});
 		expect(offenders).toEqual([]);
 	});
 

@@ -18,6 +18,7 @@ export const domainEventSchema = z.object({
 	id: z.string().min(1),
 	type: z.string().min(1),
 	sourceModule: eventSourceModuleSchema,
+	deduplicationKey: z.string().trim().min(1).max(255).nullable().optional(),
 	occurredAt: z
 		.union([z.string().datetime(), z.date()])
 		.transform((value) => (value instanceof Date ? value : new Date(value))),
@@ -47,6 +48,7 @@ export const publishEventCommandSchema = z
 	.object({
 		type: z.string().trim().min(1),
 		sourceModule: eventSourceModuleSchema,
+		deduplicationKey: z.string().trim().min(1).max(255).optional(),
 		organizationId: z.string().trim().min(1),
 		actorUserId: z.string().trim().min(1),
 		correlationId: z.string().trim().min(1),
@@ -78,7 +80,9 @@ export type PublishEventCommand = z.infer<typeof publishEventCommandSchema>;
 const eventFilterBaseSchema = z
 	.object({
 		organizationId: z.string().trim().min(1),
+		id: z.string().trim().min(1).optional(),
 		type: z.string().trim().min(1).optional(),
+		sourceModule: eventSourceModuleSchema.optional(),
 		status: eventStatusSchema.optional(),
 		correlationId: z.string().trim().min(1).optional(),
 		from: z.coerce.date().optional(),
@@ -141,6 +145,19 @@ export const eventPurgeOptionsSchema = z.object({
 
 export type ParsedEventPurgeOptions = z.infer<typeof eventPurgeOptionsSchema>;
 
+export const eventRetryOptionsSchema = z.object({
+	organizationId: z.string().trim().min(1),
+	id: z.string().trim().min(1),
+});
+
+export type ParsedEventRetryOptions = z.infer<typeof eventRetryOptionsSchema>;
+
+export const eventReplayOptionsSchema = eventRetryOptionsSchema.extend({
+	confirmation: z.literal("REPLAY_PROCESSED_EVENT"),
+});
+
+export type ParsedEventReplayOptions = z.infer<typeof eventReplayOptionsSchema>;
+
 export {
 	ACCOUNTING_EVENT_IDS,
 	ACCOUNTING_JOURNAL_CREATED_EVENT,
@@ -187,9 +204,12 @@ export {
 	HumanResourcesEventSchemas,
 	type HumanResourcesEventType,
 	humanResourcesEntityPayloadSchema,
+	IDENTITY_HUMAN_RESOURCES_LIFECYCLE_FACT_RECORDED_EVENT,
 	IdentityEventSchemas,
 	type IdentityEventType,
+	type IdentityHumanResourcesLifecycleFactPayload,
 	type IdentityOrgRoleAssignedPayload,
+	identityHumanResourcesLifecycleFactPayloadSchema,
 	identityOrgRoleAssignedPayloadSchema,
 	isKnownEventType,
 	type MasterDataEntityPayload,
@@ -230,8 +250,12 @@ export {
 	type PayrollEntityPayload,
 	PayrollEventSchemas,
 	type PayrollEventType,
+	PLATFORM_HUMAN_RESOURCES_REPORTING_FACT_RECORDED_EVENT,
+	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
 	PlatformEventSchemas,
 	type PlatformEventType,
+	type PlatformHumanResourcesReportingFactPayload,
+	type PlatformHumanResourcesWorkflowFactPayload,
 	type PlatformOrganizationDeletedPayload,
 	type PurchaseOrderLinePayload,
 	type PurchaseOrderPayload,
@@ -240,6 +264,8 @@ export {
 	payablesPayloadSchema,
 	paymentPayloadSchema,
 	payrollEntityPayloadSchema,
+	platformHumanResourcesReportingFactPayloadSchema,
+	platformHumanResourcesWorkflowFactPayloadSchema,
 	platformOrganizationDeletedPayloadSchema,
 	purchaseOrderPayloadSchema,
 	RECEIVABLES_ALLOCATION_POSTED_EVENT,

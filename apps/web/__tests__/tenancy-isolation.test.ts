@@ -11,10 +11,8 @@ import {
 	recordRbacAudit,
 } from "@afenda/admin/audit";
 import { platformRbacAudit, withOrg } from "@afenda/db";
-import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
-const { hasDatabase } = resolveDatabaseUrlForTests();
+import { hasDatabase } from "./helpers/identity-database";
 
 describe("tenancy isolation guards (N9)", () => {
 	it("withOrg rejects empty orgId", async () => {

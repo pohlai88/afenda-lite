@@ -1676,7 +1676,7 @@ export function createMemoryComplianceMethods(
 					patch: {
 						issuedOn: input.issuedOn,
 						expiresOn: input.expiresOn,
-						documentRef: input.documentRef,
+						documentRef: input.documentRef ?? eligibility.documentRef,
 					},
 					ports,
 					meta,
@@ -1701,7 +1701,7 @@ export function createMemoryComplianceMethods(
 				...eligibility,
 				issuedOn: input.issuedOn,
 				expiresOn: input.expiresOn,
-				documentRef: input.documentRef,
+				documentRef: input.documentRef ?? eligibility.documentRef,
 				version: eligibility.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,

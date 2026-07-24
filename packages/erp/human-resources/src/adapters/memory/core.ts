@@ -28,6 +28,7 @@ import {
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { assertActivePosition } from "../../shared/domain-guards";
+import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
 	type EmploymentStatus,
@@ -48,6 +49,7 @@ import type {
 	EmployeeListPage,
 	Employment,
 	EmploymentContract,
+	PositionOccupancyAsOf,
 	WorkAssignment,
 } from "../../types";
 import type { OrganizationMemoryState } from "./organization";
@@ -99,6 +101,7 @@ export type MemoryCoreMethods = Pick<
 	| "findContractByEmploymentAndCode"
 	| "createEmploymentContract"
 	| "countOpenAssignmentsForPosition"
+	| "resolvePositionOccupancyAsOf"
 	| "getAssignmentById"
 	| "findOpenAssignmentByEmployment"
 	| "findAssignmentByEmploymentAsOf"
@@ -386,23 +389,25 @@ export function createMemoryCoreMethods(
 			employeeId: HumanResourcesEmployeeId;
 			asOf: string;
 		}): Promise<Result<Employment | null>> {
-			const matches = [...state.employments.values()]
-				.filter(
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: [...state.employments.values()].filter(
 					(employment) =>
 						employment.organizationId === input.organizationId &&
-						employment.employeeId === input.employeeId &&
-						employment.startsOn <= input.asOf &&
-						(employment.endsOn === null || employment.endsOn >= input.asOf),
-				)
-				.sort((left, right) => right.startsOn.localeCompare(left.startsOn));
-			if (matches.length > 1) {
+						employment.employeeId === input.employeeId,
+				),
+				asOf: input.asOf,
+				getId: (employment) => employment.id,
+				getEffectiveFrom: (employment) => employment.startsOn,
+				getEffectiveTo: (employment) => employment.endsOn,
+			});
+			if (!resolution.ok) {
 				return fail(
 					"CONFLICT",
 					"Multiple employments are effective for the Time work date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			return ok(matches[0] ? { ...matches[0] } : null);
+			return ok(resolution.record === null ? null : { ...resolution.record });
 		},
 
 		async createEmployment(
@@ -768,6 +773,40 @@ export function createMemoryCoreMethods(
 			return ok(count);
 		},
 
+		async resolvePositionOccupancyAsOf(input: {
+			organizationId: string;
+			positionId: HumanResourcesPositionId;
+			asOf: string;
+		}): Promise<Result<PositionOccupancyAsOf | null>> {
+			const position = org.positions.get(input.positionId);
+			if (!position || position.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+
+			const assignments = [...state.assignments.values()].filter(
+				(assignment) =>
+					assignment.organizationId === input.organizationId &&
+					assignment.positionId === input.positionId &&
+					assignment.startsOn <= input.asOf &&
+					(assignment.endsOn === null || assignment.endsOn >= input.asOf),
+			);
+			if (assignments.length > 1) {
+				return fail(
+					"CONFLICT",
+					"Multiple assignments occupy the position on the requested date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const assignment = assignments[0] ?? null;
+			return ok({
+				position: { ...position },
+				asOf: input.asOf,
+				assignment: assignment ? { ...assignment } : null,
+				state: assignment ? "occupied" : "vacant",
+			});
+		},
+
 		// Assignment methods
 		async getAssignmentById(input: {
 			organizationId: string;
@@ -801,23 +840,25 @@ export function createMemoryCoreMethods(
 			employmentId: HumanResourcesEmploymentId;
 			asOf: string;
 		}): Promise<Result<WorkAssignment | null>> {
-			const matches = [...state.assignments.values()]
-				.filter(
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: [...state.assignments.values()].filter(
 					(assignment) =>
 						assignment.organizationId === input.organizationId &&
-						assignment.employmentId === input.employmentId &&
-						assignment.startsOn <= input.asOf &&
-						(assignment.endsOn === null || assignment.endsOn >= input.asOf),
-				)
-				.sort((left, right) => right.startsOn.localeCompare(left.startsOn));
-			if (matches.length > 1) {
+						assignment.employmentId === input.employmentId,
+				),
+				asOf: input.asOf,
+				getId: (assignment) => assignment.id,
+				getEffectiveFrom: (assignment) => assignment.startsOn,
+				getEffectiveTo: (assignment) => assignment.endsOn,
+			});
+			if (!resolution.ok) {
 				return fail(
 					"CONFLICT",
 					"Multiple assignments are effective on the requested date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			return ok(matches[0] ? { ...matches[0] } : null);
+			return ok(resolution.record === null ? null : { ...resolution.record });
 		},
 
 		async createAssignment(
@@ -892,6 +933,7 @@ export function createMemoryCoreMethods(
 				employmentId: record.employmentId,
 				employeeId: record.employeeId,
 				positionId: record.positionId,
+				organizationDimensions: structuredClone(record.organizationDimensions),
 				startsOn: record.startsOn,
 				endsOn: record.endsOn,
 				version: 1,

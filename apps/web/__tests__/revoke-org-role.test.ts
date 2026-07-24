@@ -2,58 +2,19 @@
  * GUIDE-018 I3.1 — revoke org role Zod + hard-tenancy soft-revoke with audit (N12 Path-to-100%).
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import { and, db, eq, platformRoleAssignment } from "@afenda/db";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
 import { parseRevokeOrgRoleCommand } from "../modules/identity/schemas/revoke-org-role";
-
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
+import {
+	hasDatabase,
+	resolveSystemTemplateRoleId,
+} from "./helpers/identity-database";
 
 const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
 const createdAuditIds: Array<{ id: string; orgId: string }> = [];
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
-
-const VIEWER_TEMPLATE_ROLE_ID = "67ee19f3-ab7e-4856-aaed-68c55cdb87de";
 
 describe("parseRevokeOrgRoleCommand (I3.1)", () => {
 	it("accepts uuid assignmentId", () => {
@@ -77,6 +38,11 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 	const orgB = `org-i31-revoke-b-${runId}`;
 	const userId = `user-i31-revoke-target-${runId}`;
 	const grantedBy = `user-i31-revoke-actor-${runId}`;
+	let viewerRoleId = "";
+
+	beforeAll(async () => {
+		viewerRoleId = await resolveSystemTemplateRoleId("viewer");
+	});
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
@@ -98,7 +64,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 		const assigned = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
-			roleId: VIEWER_TEMPLATE_ROLE_ID,
+			roleId: viewerRoleId,
 			grantedBy,
 			actorUserId: grantedBy,
 			correlationId: "test-correlation-id",
@@ -149,7 +115,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 		const reactivated = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
-			roleId: VIEWER_TEMPLATE_ROLE_ID,
+			roleId: viewerRoleId,
 			grantedBy,
 			actorUserId: grantedBy,
 			correlationId: "test-correlation-id",

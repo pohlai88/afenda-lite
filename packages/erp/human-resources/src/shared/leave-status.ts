@@ -22,6 +22,7 @@ export type LeaveAdjustmentStatus = (typeof LEAVE_ADJUSTMENT_STATUSES)[number];
 
 export const LEAVE_ADJUSTMENT_KINDS = [
 	"manual",
+	"accrual",
 	"carry_forward",
 	"expiry",
 	"consumption",

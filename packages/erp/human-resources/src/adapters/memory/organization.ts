@@ -21,6 +21,7 @@ import {
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidInput, notFound } from "../../shared/domain-guards";
+import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
 	type DepartmentStatus,
@@ -1104,23 +1105,26 @@ export function createMemoryOrganizationMethods(
 			employeeId: HumanResourcesEmployeeId;
 			asOf: string;
 		}): Promise<Result<ReportingLine | null>> {
-			const matches = Array.from(state.reportingLines.values()).filter(
-				(line) =>
-					line.organizationId === input.organizationId &&
-					line.employeeId === input.employeeId &&
-					line.relationshipKind === "primary" &&
-					line.startsOn <= input.asOf &&
-					(line.endsOn === null || line.endsOn >= input.asOf),
-			);
-			if (matches.length > 1) {
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: Array.from(state.reportingLines.values()).filter(
+					(line) =>
+						line.organizationId === input.organizationId &&
+						line.employeeId === input.employeeId &&
+						line.relationshipKind === "primary",
+				),
+				asOf: input.asOf,
+				getId: (line) => line.id,
+				getEffectiveFrom: (line) => line.startsOn,
+				getEffectiveTo: (line) => line.endsOn,
+			});
+			if (!resolution.ok) {
 				return fail(
 					"CONFLICT",
 					"Multiple primary reporting lines are effective on the requested date",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			const line = matches[0];
-			return ok(line === undefined ? null : { ...line });
+			return ok(resolution.record === null ? null : { ...resolution.record });
 		},
 
 		async listDirectReports(input: {

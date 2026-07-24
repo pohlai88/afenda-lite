@@ -13,7 +13,7 @@ The Time P0 spine is substantially implemented, but it is not ready to be declar
 |---|---|---:|---:|---|---|---|---|
 | PASS-01 | P0 calendars → payroll handoff | Yes | Yes | Memory Time suite — **52 passed** on 2026-07-23; the production-backed parity run remains blocked by absent Time policy/approval and successor-lineage schema | Core Time spine exists; database verification is migration-blocked | Pass | Apply the reviewed migration only with explicit production-branch authorization, then rerun parity |
 | PASS-02 | Audit/outbox/event contracts | Yes | Yes | Emission/correlation **14 passed**; `@afenda/events` **26 passed** | Event schemas and mutation registry are operational | Pass | None |
-| PASS-03 | Tenant isolation | Yes | **Closed post-C01-A** | **M01 (2026-07-24):** `pnpm audit:tenancy-nulls` **PASS** on **176** roots after `0006`. **C01-A (2026-07-24):** **177** roots **PASS** after `0007_hr_work_calendar_scope` applied (`hr_work_calendar_scope_assignment` live on configured branch) | Hard-tenant inventory and null-org audit align at 177 roots | Pass | Retain in exit gate |
+| PASS-03 | Tenant isolation | Yes | **Closed post-HR-ENT-01** | **M01 (2026-07-24):** **176** roots PASS after `0006`. **C01-A:** **177** roots PASS after `0007`. **HR-ENT-01:** **179** roots PASS after `0008_hr_workforce_foundation` (`hr_person` and `hr_worker` live; 0 skipped) | Hard-tenant inventory and configured DB align at 179 roots while dated migration history remains explicit | Pass | Retain in exit gate |
 | PASS-04 | Web permission adapters | Yes | Yes | HR web tests **16 passed**; web and HR typechecks pass | All 26 exported Actions are permission-gated and session-stamped. Policy create/activate/supersede/assign, approval-authority assign/end and break-waiver approval are now exposed; their denial and representative validation boundaries are proven | Pass | Expand only with later product flows |
 | TIME-G01 | Generated governance registers match manifest | Yes | **Closed** | `pnpm validate:modules --write` — **PASS** on 2026-07-23; 7 registers written and all 21 negative fixtures proven | Command/event/schema-ownership governance matches the implementation | Pass | Retain non-write validation in the exit gate |
 | TIME-G02 | Time code passes coding-quality gate | Yes | **Closed for Time scope** | Targeted Biome check — **30 Time files clean**; forbidden non-null assertions removed; HR typecheck passes | The audited Time surface is clean; unrelated package-wide legacy findings are outside this gap | Pass | Full package lint remains an exit-gate observation |
@@ -43,6 +43,7 @@ The Time P0 spine is substantially implemented, but it is not ready to be declar
 Closed:                         G01, G02, G03, G04, G05, G11, G12, G14, G15, G17
 Verified post-M01 (0006):      G09 core (40/40), G10, PASS-03 (176 roots at M01)
 Verified post-C01-A (0007):    G09 scoped (18/18), PASS-03 (177 roots)
+Verified post-HR-ENT-01 (0008): PASS-03 (179 roots, 0 skipped)
 Partially closed:              G08 (C02 allocator)
 Documentation / OBS:           G13, G16, OBS-01, OBS-02, OBS-03, OBS-04
 Still open (implementation):   G06, G07 Drizzle successor/exception parity on configured branch
@@ -71,11 +72,11 @@ Coverage Status: Incomplete — HR10 and Time remain not claimable until T-C01�
 | Isolation | Cross-organization calendar/timesheet reads return no fact; attendance-correction mutation returns canonical not-found and adjustment-history query returns no fact; representative foreign assignment, timesheet-entry and overtime mutations return canonical not-found and preserve the owning aggregate | Drizzle execution after migration |
 | Concurrency | Stale timesheet submission rejected; a deferred failed attendance correction remains invisible and a competing same-version correction succeeds only after rollback | Drizzle transaction races for overlapping policy/authority assignments |
 | Idempotency | Calendar replay/fingerprint conflict, external attendance replay, mixed import-batch replay and source-reference conflict without extra persistence | Drizzle execution after migration |
-| Persistence | Same 20 core contracts registered for memory and Drizzle; scoped calendar suite adds 9 memory + 9 Drizzle counterparts | Authorized **0006**/**0007** migrations, core + scoped Drizzle passes and **177-root** null audit |
+| Persistence | Same 20 core contracts registered for memory and Drizzle; scoped calendar suite adds 9 memory + 9 Drizzle counterparts | Authorized **0006**/**0007**/**0008** migrations; core + scoped Drizzle passes; current **179-root** null audit |
 
 ## Decisions and external authorization required
 
-1. **Production-backed migration:** the configured local database is the production Neon branch. **`0006_hr_time_policy.sql`** and **`0007_hr_work_calendar_scope.sql`** are applied on the configured branch (see **Authorization M01** and **Authorization C01-A**). Further schema changes still require explicit authorization before mutation.
+1. **Production-backed migration:** the configured local database is the production Neon branch. **`0006_hr_time_policy.sql`**, **`0007_hr_work_calendar_scope.sql`**, and **`0008_hr_workforce_foundation.sql`** are applied on the configured branch (see **Authorization M01**, **Authorization C01-A**, and **Authorization HR-ENT-01**). Further schema changes still require explicit authorization before mutation.
 2. **Calendar-scope precedence:** resolved under **Decision C01 Option A** and closed by **C01-A** (`calendar-scope.parity.test.ts`).
 3. **Cross-midnight breaks:** accurate legal-date classification needs timestamped break intervals. The current session aggregate retains only total break minutes, so allocation across midnight would be fabricated without a model change.
 
@@ -125,6 +126,21 @@ Option A is the narrowest choice that satisfies `time.md` §15 without inventing
 | 2026-07-24 | `pnpm --filter @afenda/human-resources test -- calendar-scope-assignment` | **3/3 PASS** |
 | 2026-07-24 | `REQUIRE_DATABASE_TESTS=1 pnpm --filter @afenda/human-resources test -- calendar-scope.parity` | **18/18 PASS** (9 memory + 9 Drizzle) |
 | 2026-07-24 | `pnpm audit:tenancy-nulls` | **177** hard-tenant roots PASS |
+
+### Authorization HR-ENT-01 — workforce foundation (`0008`)
+
+**Status (2026-07-24):** `0008_hr_workforce_foundation.sql` applied through the
+guarded migrator on the configured protected production branch. The migration
+ledger is 9/9 with pending forward 0; `hr_person` and `hr_worker` are live.
+
+| Date | Command | Result |
+|---|---|---|
+| 2026-07-24 | `pnpm --filter @afenda/db db:check` | **PASS** |
+| 2026-07-24 | `AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate` | **PASS** — no baseline/destructive override |
+| 2026-07-24 | `pnpm --filter @afenda/db db:migration-status` | **9/9**, applied through `0008`, pending 0 |
+| 2026-07-24 | `pnpm audit:tenancy-nulls` | **179** hard-tenant roots PASS; 0 skipped |
+| 2026-07-24 | `pnpm --filter @afenda/db test` | **20 files / 80 tests PASS** |
+| 2026-07-24 | `REQUIRE_DATABASE_TESTS=1` targeted workforce foundation parity | **1 file / 2 tests PASS** |
 
 ## Implementation slices
 

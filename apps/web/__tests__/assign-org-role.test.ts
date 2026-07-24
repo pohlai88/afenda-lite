@@ -2,69 +2,30 @@
  * GUIDE-018 I3.1 — assign org role Zod + hard-tenancy audited write (N12 Path-to-100%).
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import { and, db, eq, platformRoleAssignment, withOrg } from "@afenda/db";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { parseAssignOrgRoleCommand } from "../modules/identity/schemas/assign-org-role";
-
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
+import {
+	hasDatabase,
+	resolveSystemTemplateRoleId,
+} from "./helpers/identity-database";
 
 const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
 const createdAuditIds: Array<{ id: string; orgId: string }> = [];
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
-
-/** Live Org Admin system template on br-tiny-hill (ARCH-023 seed). */
-const ORG_ADMIN_TEMPLATE_ROLE_ID = "790f03ae-5d20-4ef4-9c8a-a5ee1ed6a28a";
+const SAMPLE_ROLE_ID = "00000000-0000-4000-8000-000000000001";
 
 describe("parseAssignOrgRoleCommand (I3.1)", () => {
 	it("accepts trimmed userId and uuid roleId", () => {
 		expect(
 			parseAssignOrgRoleCommand({
 				userId: "  user-abc  ",
-				roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+				roleId: SAMPLE_ROLE_ID,
 			}),
 		).toEqual({
 			userId: "user-abc",
-			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+			roleId: SAMPLE_ROLE_ID,
 		});
 	});
 
@@ -72,7 +33,7 @@ describe("parseAssignOrgRoleCommand (I3.1)", () => {
 		expect(() =>
 			parseAssignOrgRoleCommand({
 				userId: "   ",
-				roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+				roleId: SAMPLE_ROLE_ID,
 			}),
 		).toThrow();
 	});
@@ -95,6 +56,11 @@ describe.skipIf(!hasDatabase)(
 		const orgB = `org-i31-assign-b-${runId}`;
 		const userId = `user-i31-assign-target-${runId}`;
 		const grantedBy = `user-i31-assign-actor-${runId}`;
+		let orgAdminRoleId = "";
+
+		beforeAll(async () => {
+			orgAdminRoleId = await resolveSystemTemplateRoleId("org_admin");
+		});
 
 		afterAll(async () => {
 			for (const row of createdAuditIds) {
@@ -116,20 +82,19 @@ describe.skipIf(!hasDatabase)(
 			const result = await assignOrgRoleWithAudit({
 				orgId: orgA,
 				userId,
-				roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+				roleId: orgAdminRoleId,
 				grantedBy,
 				actorUserId: grantedBy,
 				correlationId: "test-correlation-id",
 			});
-			expect(result.ok).toBe(true);
 			if (!result.ok) {
-				return;
+				expect.fail(`${result.code}: ${result.message}`);
 			}
 
 			createdAssignmentIds.push({ id: result.assignment.id, orgId: orgA });
 			createdAuditIds.push({ id: result.auditId, orgId: orgA });
 			expect(result.assignment.organizationId).toBe(orgA);
-			expect(result.assignment.roleId).toBe(ORG_ADMIN_TEMPLATE_ROLE_ID);
+			expect(result.assignment.roleId).toBe(orgAdminRoleId);
 			expect(result.assignment.active).toBe(true);
 			expect(result.reactivated).toBe(false);
 			expect(result.auditId).toBeTruthy();
@@ -147,7 +112,7 @@ describe.skipIf(!hasDatabase)(
 			const conflict = await assignOrgRoleWithAudit({
 				orgId: orgA,
 				userId,
-				roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+				roleId: orgAdminRoleId,
 				grantedBy,
 				actorUserId: grantedBy,
 				correlationId: "test-correlation-id",

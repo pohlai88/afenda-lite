@@ -75,4 +75,32 @@ describe("@afenda/events publisher", () => {
 		});
 		expect(store.all()).toHaveLength(1);
 	});
+	it("deduplicates replayed producer facts within the tenant boundary", async () => {
+		const store = new MemoryEventStore();
+		const publisher = createEventPublisher({ store });
+		const command = {
+			type: "identity.org_role.assigned",
+			sourceModule: "identity",
+			deduplicationKey: "source-event:event-1",
+			organizationId: "org-1",
+			actorUserId: "user-actor",
+			correlationId: "corr-1",
+			payload: {
+				roleId: "role-1",
+				assignmentId: "assign-1",
+				recipientUserId: "user-target",
+				reactivated: false,
+			},
+		} as const;
+
+		const first = assertOk(await publisher.publish(command));
+		const replay = assertOk(await publisher.publish(command));
+		const otherTenant = assertOk(
+			await publisher.publish({ ...command, organizationId: "org-2" }),
+		);
+
+		expect(replay.id).toBe(first.id);
+		expect(otherTenant.id).not.toBe(first.id);
+		expect(store.all()).toHaveLength(2);
+	});
 });

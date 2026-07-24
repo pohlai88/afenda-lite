@@ -12,14 +12,7 @@ const repoRoot = path.resolve(
 /** L0/L2 Vitest specs live only under `<package|app>/__tests__/`. */
 const TESTS_DIR = "__tests__";
 
-const testingAlias = {
-	"@afenda/testing": path.join(repoRoot, "testing"),
-};
-
 const nodeProject = (name: string, root: string) => ({
-	resolve: {
-		alias: testingAlias,
-	},
 	test: {
 		name,
 		root,
@@ -41,7 +34,6 @@ const humanResourcesParityIncludes = [
 	`${TESTS_DIR}/**/leave-failure-injection.test.ts`,
 ];
 const humanResourcesServerOnlyAlias = {
-	...testingAlias,
 	"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 };
 const humanResourcesUnitProject = nodeProject(
@@ -92,7 +84,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -101,7 +92,6 @@ export default defineConfig({
 				...nodeProject("sales", path.join(repoRoot, "packages/erp/sales")),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -113,7 +103,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -125,7 +114,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -137,7 +125,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -149,7 +136,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -161,7 +147,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -173,7 +158,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -209,7 +193,6 @@ export default defineConfig({
 				...nodeProject("payroll", path.join(repoRoot, "packages/erp/payroll")),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -221,7 +204,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -233,7 +215,6 @@ export default defineConfig({
 				),
 				resolve: {
 					alias: {
-						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
 				},
@@ -265,7 +246,6 @@ export default defineConfig({
 					alias: {
 						"@": path.join(repoRoot, "apps/web"),
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
-						...testingAlias,
 					},
 				},
 				test: {
@@ -275,6 +255,7 @@ export default defineConfig({
 					environment: "node" as const,
 					// Cold import / Neon SELECT under turbo parallel load can exceed 5s.
 					testTimeout: 15_000,
+					hookTimeout: 30_000,
 					env: {
 						SKIP_ENV_VALIDATION: "true",
 					},
@@ -285,7 +266,6 @@ export default defineConfig({
 				resolve: {
 					alias: {
 						"@": path.join(repoRoot, "apps/web"),
-						...testingAlias,
 					},
 				},
 				test: {

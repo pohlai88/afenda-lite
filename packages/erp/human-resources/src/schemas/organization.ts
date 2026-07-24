@@ -175,6 +175,18 @@ export const getPositionInputSchema = humanResourcesMutationContextSchema
 
 export type GetPositionInput = z.infer<typeof getPositionInputSchema>;
 
+export const getPositionOccupancyAsOfInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			positionId: humanResourcesPositionIdSchema,
+			asOf: isoDateSchema,
+		})
+		.strict();
+
+export type GetPositionOccupancyAsOfInput = z.infer<
+	typeof getPositionOccupancyAsOfInputSchema
+>;
+
 export const listPositionsInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		page: z.number().int().positive().optional(),
@@ -192,6 +204,11 @@ export const createAssignmentInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		employmentId: humanResourcesEmploymentIdSchema,
 		positionId: humanResourcesPositionIdSchema,
+		legalEntityKey: z.string().trim().min(1),
+		businessUnitKey: z.string().trim().min(1),
+		locationKey: z.string().trim().min(1),
+		costCentreKey: z.string().trim().min(1),
+		projectKey: z.string().trim().min(1),
 		startsOn: isoDateSchema,
 		endsOn: isoDateSchema.nullable().optional(),
 	})

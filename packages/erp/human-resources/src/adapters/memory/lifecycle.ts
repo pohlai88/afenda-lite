@@ -34,7 +34,10 @@ import {
 	parseHumanResourcesTerminationId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
-import type { MutationPorts } from "../../ports";
+import type {
+	HumanResourcesOrganizationDimensions,
+	MutationPorts,
+} from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	assertActivePosition,
@@ -43,6 +46,7 @@ import {
 	invalidState,
 	notFound,
 } from "../../shared/domain-guards";
+import { previousIsoDate } from "../../shared/effective-dates";
 import { assertValidDateRange } from "../../shared/employment-status";
 import { fingerprintTransfer } from "../../shared/fingerprint";
 import {
@@ -1036,6 +1040,7 @@ export function createMemoryLifecycleMethods(
 				organizationId: string;
 				employmentId: HumanResourcesEmploymentId;
 				toPositionId: HumanResourcesPositionId;
+				organizationDimensions: HumanResourcesOrganizationDimensions;
 				effectiveOn: string;
 				reason: string;
 				idempotencyKey: string;
@@ -1044,22 +1049,14 @@ export function createMemoryLifecycleMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<EmploymentMovement>> {
-			const openAssignment = await this.findOpenAssignmentByEmployment({
-				organizationId: input.organizationId,
-				employmentId: input.employmentId,
-			});
-			if (!openAssignment.ok) {
-				return openAssignment;
-			}
-			if (openAssignment.data === null) {
-				return notFound("Open assignment not found");
-			}
-
 			const fingerprint = fingerprintTransfer({
 				employmentId: input.employmentId,
-				fromPositionId: openAssignment.data.positionId,
 				toPositionId: input.toPositionId,
+				organizationDimensionIds: Object.values(
+					input.organizationDimensions,
+				).map((dimension) => dimension.id),
 				effectiveOn: input.effectiveOn,
+				reason: input.reason.trim(),
 			});
 
 			const existingByKey = await this.findTransferByIdempotencyKey({
@@ -1076,6 +1073,17 @@ export function createMemoryLifecycleMethods(
 				return ok(
 					cloneEmploymentMovement(existingByKey.data.employmentMovement),
 				);
+			}
+
+			const openAssignment = await this.findOpenAssignmentByEmployment({
+				organizationId: input.organizationId,
+				employmentId: input.employmentId,
+			});
+			if (!openAssignment.ok) {
+				return openAssignment;
+			}
+			if (openAssignment.data === null) {
+				return notFound("Open assignment not found");
 			}
 
 			const employment = deps.core.employments.get(input.employmentId);
@@ -1126,7 +1134,7 @@ export function createMemoryLifecycleMethods(
 			const previousAssignment = { ...openAssignment.data };
 			const endedAssignment: WorkAssignment = {
 				...openAssignment.data,
-				endsOn: input.effectiveOn,
+				endsOn: previousIsoDate(input.effectiveOn),
 				version: openAssignment.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1137,6 +1145,7 @@ export function createMemoryLifecycleMethods(
 				employmentId: input.employmentId,
 				employeeId: employment.employeeId,
 				positionId: input.toPositionId,
+				organizationDimensions: structuredClone(input.organizationDimensions),
 				startsOn: input.effectiveOn,
 				endsOn: null,
 				version: 1,

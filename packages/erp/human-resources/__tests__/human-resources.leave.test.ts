@@ -19,9 +19,11 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import {
+	accrueLeaveEntitlement,
 	adjustLeaveEntitlement,
 	getLeaveBalance,
 	grantLeaveEntitlement,
+	reconcileLeaveBalance,
 } from "../src/leave/entitlement";
 import {
 	archiveLeavePolicy,
@@ -395,6 +397,100 @@ describe("Leave entitlement", () => {
 		expect(balance.ok).toBe(true);
 		if (!balance.ok) return;
 		expect(balance.data?.balance).toBe("12");
+	});
+
+	it("posts governed accrual exactly once for an accrual period", async () => {
+		const ready = harness([
+			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_ADJUST,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_READ,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+		]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-accrual-grant",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-accrual-grant",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+		const accrualInput = {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: "corr-ent-accrual",
+			entitlementId: granted.data.id,
+			quantity: "1.5",
+			accrualPeriodStart: "2025-01-01",
+			accrualPeriodEnd: "2025-01-31",
+			reason: "January monthly accrual",
+			idempotencyKey: "idem-ent-accrual",
+		};
+		const accrued = await accrueLeaveEntitlement(accrualInput, ready);
+		const repeated = await accrueLeaveEntitlement(accrualInput, ready);
+		expect(accrued.ok).toBe(true);
+		expect(repeated.ok).toBe(true);
+		if (!accrued.ok || !repeated.ok) return;
+		expect(repeated.data.id).toBe(accrued.data.id);
+		expect(accrued.data.kind).toBe("accrual");
+		expect(accrued.data.source).toBe("accrual:2025-01-01:2025-01-31");
+		const balance = await getLeaveBalance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-accrual-balance",
+				entitlementId: granted.data.id,
+			},
+			ready,
+		);
+		expect(balance.ok).toBe(true);
+		if (!balance.ok) return;
+		expect(balance.data?.balance).toBe("11.5");
+		const reconciliation = await reconcileLeaveBalance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-accrual-reconcile",
+				entitlementId: granted.data.id,
+			},
+			ready,
+		);
+		expect(reconciliation.ok).toBe(true);
+		if (!reconciliation.ok) return;
+		expect(reconciliation.data).toMatchObject({
+			openingQuantity: "10",
+			adjustmentCount: 1,
+			balance: "11.5",
+		});
+		expect(reconciliation.data?.adjustments).toHaveLength(1);
+		expect(reconciliation.data?.adjustments[0]?.kind).toBe("accrual");
+		const invalid = await accrueLeaveEntitlement(
+			{
+				...accrualInput,
+				correlationId: "corr-ent-accrual-invalid",
+				idempotencyKey: "idem-ent-accrual-invalid",
+				accrualPeriodStart: "2025-02-01",
+				accrualPeriodEnd: "2025-01-31",
+			},
+			ready,
+		);
+		expect(humanResourcesCodeFromResult(invalid)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		);
 	});
 });
 

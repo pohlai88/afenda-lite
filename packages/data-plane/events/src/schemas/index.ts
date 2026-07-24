@@ -101,18 +101,21 @@ export {
 	HUMAN_RESOURCES_TIME_TIMESHEET_REOPENED_EVENT,
 	HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT,
 	HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 	HUMAN_RESOURCES_WORKER_CHANGED_EVENT,
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
-	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 	type HumanResourcesEntityPayload,
 	HumanResourcesEventSchemas,
 	type HumanResourcesEventType,
 	humanResourcesEntityPayloadSchema,
 } from "./human-resources.events";
 export {
+	IDENTITY_HUMAN_RESOURCES_LIFECYCLE_FACT_RECORDED_EVENT,
 	IdentityEventSchemas,
 	type IdentityEventType,
+	type IdentityHumanResourcesLifecycleFactPayload,
 	type IdentityOrgRoleAssignedPayload,
+	identityHumanResourcesLifecycleFactPayloadSchema,
 	identityOrgRoleAssignedPayloadSchema,
 } from "./identity.events";
 export {
@@ -184,9 +187,15 @@ export {
 	payrollEntityPayloadSchema,
 } from "./payroll.events";
 export {
+	PLATFORM_HUMAN_RESOURCES_REPORTING_FACT_RECORDED_EVENT,
+	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
 	PlatformEventSchemas,
 	type PlatformEventType,
+	type PlatformHumanResourcesReportingFactPayload,
+	type PlatformHumanResourcesWorkflowFactPayload,
 	type PlatformOrganizationDeletedPayload,
+	platformHumanResourcesReportingFactPayloadSchema,
+	platformHumanResourcesWorkflowFactPayloadSchema,
 	platformOrganizationDeletedPayloadSchema,
 } from "./platform.events";
 export {

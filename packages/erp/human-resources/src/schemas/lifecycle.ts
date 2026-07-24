@@ -166,6 +166,11 @@ export const transferAssignmentInputSchema = humanResourcesMutationContextSchema
 		idempotencyKey: humanResourcesIdempotencyKeySchema,
 		employmentId: humanResourcesEmploymentIdSchema,
 		toPositionId: humanResourcesPositionIdSchema,
+		legalEntityKey: z.string().trim().min(1).max(64),
+		businessUnitKey: z.string().trim().min(1).max(64),
+		locationKey: z.string().trim().min(1).max(64),
+		costCentreKey: z.string().trim().min(1).max(64),
+		projectKey: z.string().trim().min(1).max(64),
 		effectiveOn: isoDateSchema,
 		reason: z.string().trim().min(1).max(500),
 	})

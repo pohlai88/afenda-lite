@@ -71,6 +71,8 @@ SSOT: [`scripts/lib/editor-posture.mjs`](../../scripts/lib/editor-posture.mjs) �
 
 **Symptom:** `couldn't create connection to server` — node-wrapper `biome.lsp.bin`, or stale extension cache. Delete `%APPDATA%\\Cursor\\User\\globalStorage\\biomejs.biome\\tmp-bin`, run `pnpm install`, `pnpm check:editor-biome`, reload window.
 
+**Symptom:** `write EOF` / `write EPIPE` / `connection to server is erroring. Shutting down server` — LSP **client** transport failure after the Biome server process exited. This is not a Biome lint diagnostic; read **Output → Biome** for `[cli-stderr]` **FATAL** / **INTERNAL** lines ([diagnostics reference](https://biomejs.dev/reference/diagnostics/)). Workflow: set `"biome.lsp.trace.server": "verbose"` (user settings) → reload → reproduce → classify stderr → kill all `biome.exe` → clear `globalStorage/biomejs.biome` → `pnpm check:editor-biome` (includes `lsp-proxy` smoke) → reload window → set trace back to `"off"`.
+
 **Symptom:** Explorer stalls — re-enabling `excludeGitIgnore` or dropping watcher excludes. Run `pnpm check:editor-biome`.
 
 **User settings:** must not override workspace (`excludeGitIgnore`, global Biome paths, ESLint/Prettier as TS formatter).

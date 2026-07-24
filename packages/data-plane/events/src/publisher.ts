@@ -36,6 +36,7 @@ export function createEventPublisher(
 				organizationId: command.organizationId,
 				type: command.type,
 				sourceModule: command.sourceModule,
+				deduplicationKey: command.deduplicationKey ?? null,
 				correlationId: command.correlationId,
 				causationId: command.causationId ?? null,
 				actorUserId: command.actorUserId,

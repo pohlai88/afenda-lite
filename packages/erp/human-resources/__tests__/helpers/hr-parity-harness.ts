@@ -28,6 +28,7 @@ import type {
 	LeaveRequest,
 } from "../../src/types";
 import { createTestHumanResourcesCommandOptions } from "./command-options";
+import { createDrizzleTestOrganizationDimensionDirectory } from "./drizzle-organization-dimensions";
 import { createStoreBackedIdentityResolver } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 import { createMemoryMutationPorts } from "./memory-ports";
@@ -106,6 +107,12 @@ export function createHrParityHarness(
 			authorization,
 			identityResolver,
 			assignmentContext,
+			...(adapter === "drizzle"
+				? {
+						organizationDimensions:
+							createDrizzleTestOrganizationDimensionDirectory(),
+					}
+				: {}),
 		}),
 		adapter,
 		ports,

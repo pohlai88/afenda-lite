@@ -1,30 +1,29 @@
 # Human Resources store refactor
 
-The original `store.ts` combined every HR bounded context into one 4,000+ line contract. This refactor keeps the complete public contract while moving each persistence slice to its owning domain.
+The original monolithic store contract combined every HR bounded context into one 4,000+ line surface. This refactor keeps the complete public contract while moving each persistence slice to its owning domain.
 
 ## Layout
 
 ```text
-src/
-├── store.ts                         # compatibility facade
-└── store/
-    ├── index.ts                     # HumanResourcesStore composition
-    ├── core.ts
-    ├── recruitment.ts
-    ├── lifecycle.ts
-    ├── compensation.ts
-    ├── learning.ts
-    ├── leave.ts
-    ├── compliance.ts
-    ├── performance.ts
-    ├── employee-relations.ts
-    ├── workforce-planning.ts
-    └── talent.ts
+src/store/
+├── index.ts                     # HumanResourcesStore composition (SSOT)
+├── core.ts
+├── recruitment.ts
+├── lifecycle.ts
+├── compensation.ts
+├── learning.ts
+├── leave.ts
+├── compliance.ts
+├── performance.ts
+├── employee-relations.ts
+├── workforce-planning.ts
+├── talent.ts
+└── time.ts
 ```
 
-## Compatibility
+Package subpath `@afenda/human-resources/store` resolves to `store/index.ts`.
 
-Existing code remains valid:
+## Import patterns
 
 ```ts
 import type { HumanResourcesStore } from "./store";
@@ -49,14 +48,6 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
   // Existing implementation remains structurally compatible.
 }
 ```
-
-## Migration order
-
-1. Replace the current `src/store.ts` with the compatibility facade in this package.
-2. Copy the `src/store/` directory beside it.
-3. Keep full adapters typed as `HumanResourcesStore` initially.
-4. Change each command domain, memory helper, and adapter factory to its focused store type.
-5. Split adapter implementations by the same domain boundaries only after the contract split is green.
 
 ## Boundary rule
 

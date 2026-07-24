@@ -24,11 +24,6 @@ import type {
 	WorkCalendar,
 	WorkCalendarHolidayRecord,
 } from "../types";
-import type {
-	ResolvedWorkCalendarContext,
-	WorkCalendarHoliday,
-	WorkWeekDayPattern,
-} from "../work-calendar";
 import { resolveWorkCalendarCivilDay } from "./calendar-resolution";
 import type { ApprovedLeaveFact } from "./handoff/ports";
 import {
@@ -37,6 +32,11 @@ import {
 	sessionBreakIntervals,
 	workedMinutesForSessionCivilDate,
 } from "./legal-minute-allocation";
+import type {
+	ResolvedWorkCalendarContext,
+	WorkCalendarHoliday,
+	WorkWeekDayPattern,
+} from "./work-calendar";
 
 export const TIMESHEET_GENERATION_ABSENCE_SOURCE = "timesheet_generation";
 

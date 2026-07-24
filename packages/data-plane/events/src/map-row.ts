@@ -6,6 +6,7 @@ export type DomainEventRow = {
 	organizationId: string;
 	type: string;
 	sourceModule: string;
+	deduplicationKey?: string | null;
 	correlationId: string;
 	causationId: string | null;
 	actorUserId: string;
@@ -69,6 +70,7 @@ export function mapDomainEventRow(
 		id: row.id,
 		type: row.type,
 		sourceModule: row.sourceModule,
+		deduplicationKey: row.deduplicationKey ?? null,
 		occurredAt: row.createdAt,
 		correlationId: row.correlationId,
 		causationId: row.causationId,

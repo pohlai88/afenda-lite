@@ -489,6 +489,9 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:../../packages/foundation/config
+      '@afenda/testing':
+        specifier: workspace:*
+        version: link:../../packages/foundation/testing
       '@tailwindcss/postcss':
         specifier: 'catalog:'
         version: 4.1.18
@@ -631,6 +634,9 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@afenda/testing':
+        specifier: workspace:*
+        version: link:../../foundation/testing
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
@@ -808,6 +814,9 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@afenda/testing':
+        specifier: workspace:*
+        version: link:../../foundation/testing
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
@@ -969,6 +978,9 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:../../foundation/config
+      '@afenda/testing':
+        specifier: workspace:*
+        version: link:../../foundation/testing
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
@@ -1140,6 +1152,18 @@ importers:
         version: 5.9.3
 
   packages/foundation/errors:
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/foundation/testing:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*

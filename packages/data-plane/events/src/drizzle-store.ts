@@ -22,6 +22,7 @@ import type {
 	DomainEventMarkProcessedInput,
 	DomainEventPurgeOptions,
 	DomainEventQueryOptions,
+	DomainEventRequeueInput,
 	DomainEventWriteInput,
 } from "./types";
 
@@ -46,8 +47,14 @@ function buildFilterWhere(options: DomainEventQueryOptions) {
 	const predicates = [
 		eq(platformDomainEvent.organizationId, options.organizationId),
 	];
+	if (options.id !== undefined) {
+		predicates.push(eq(platformDomainEvent.id, options.id));
+	}
 	if (options.type !== undefined) {
 		predicates.push(eq(platformDomainEvent.type, options.type));
+	}
+	if (options.sourceModule !== undefined) {
+		predicates.push(eq(platformDomainEvent.sourceModule, options.sourceModule));
 	}
 	if (options.status !== undefined) {
 		predicates.push(eq(platformDomainEvent.status, options.status));
@@ -75,6 +82,7 @@ export class DrizzleEventStore implements EventStore {
 					organizationId: entry.organizationId,
 					type: entry.type,
 					sourceModule: entry.sourceModule,
+					deduplicationKey: entry.deduplicationKey ?? null,
 					correlationId: entry.correlationId,
 					causationId: entry.causationId ?? null,
 					actorUserId: entry.actorUserId,
@@ -84,13 +92,42 @@ export class DrizzleEventStore implements EventStore {
 					attempts: 0,
 					createdAt: entry.createdAt,
 				})
+				.onConflictDoNothing({
+					target: [
+						platformDomainEvent.organizationId,
+						platformDomainEvent.sourceModule,
+						platformDomainEvent.type,
+						platformDomainEvent.deduplicationKey,
+					],
+					where: sql`${platformDomainEvent.deduplicationKey} IS NOT NULL`,
+				})
 				.returning();
 
-			if (row === undefined) {
+			let resolvedRow = row;
+			if (
+				resolvedRow === undefined &&
+				entry.deduplicationKey !== undefined &&
+				entry.deduplicationKey !== null
+			) {
+				[resolvedRow] = await db
+					.select()
+					.from(platformDomainEvent)
+					.where(
+						and(
+							eq(platformDomainEvent.organizationId, entry.organizationId),
+							eq(platformDomainEvent.sourceModule, entry.sourceModule),
+							eq(platformDomainEvent.type, entry.type),
+							eq(platformDomainEvent.deduplicationKey, entry.deduplicationKey),
+						),
+					)
+					.limit(1);
+			}
+
+			if (resolvedRow === undefined) {
 				return fail("INTERNAL_ERROR", "domain event append returned no row");
 			}
 
-			const mapped = mapDomainEventRow(row);
+			const mapped = mapDomainEventRow(resolvedRow);
 			if (!mapped.ok) {
 				return fail(
 					"INTERNAL_ERROR",
@@ -253,6 +290,43 @@ export class DrizzleEventStore implements EventStore {
 			return ok(mapped.data);
 		} catch (error) {
 			return failFromUnknown(error, "Failed to mark domain event failed");
+		}
+	}
+
+	async requeue(
+		input: DomainEventRequeueInput,
+	): Promise<Result<DomainEvent | null>> {
+		try {
+			const [row] = await db
+				.update(platformDomainEvent)
+				.set({
+					status: "pending",
+					lastError: null,
+					processedAt: null,
+				})
+				.where(
+					and(
+						eq(platformDomainEvent.id, input.id),
+						eq(platformDomainEvent.organizationId, input.organizationId),
+						eq(platformDomainEvent.status, input.fromStatus),
+					),
+				)
+				.returning();
+
+			if (row === undefined) {
+				return ok(null);
+			}
+
+			const mapped = mapDomainEventRow(row);
+			if (!mapped.ok) {
+				return fail(
+					"INTERNAL_ERROR",
+					`domain event requeue returned unreadable row: ${mapped.reason}`,
+				);
+			}
+			return ok(mapped.data);
+		} catch (error) {
+			return failFromUnknown(error, "Failed to requeue domain event");
 		}
 	}
 

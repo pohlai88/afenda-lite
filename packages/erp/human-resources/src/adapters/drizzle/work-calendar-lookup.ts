@@ -2,7 +2,7 @@ import { createStoreWorkCalendarLookup } from "../../time/store-work-calendar-lo
 import type {
 	WorkCalendarLookupPort,
 	WorkWeekDayPattern,
-} from "../../work-calendar";
+} from "../../time/work-calendar";
 import { createDrizzleAssignmentContextQuery } from "./assignment-context-query";
 import { createDrizzleHumanResourcesStore } from "./store";
 

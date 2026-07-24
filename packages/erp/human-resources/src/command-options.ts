@@ -4,7 +4,7 @@ import type {
 	HumanResourcesAuthorizationPort,
 	HumanResourcesResourceAwareAuthorizationPort,
 } from "./authorization";
-import { createProductionCurrencyLookup } from "./currency-lookup";
+import { createProductionCurrencyLookup } from "./compensation-benefits/currency-lookup";
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 	humanResourcesErrorDetails,
@@ -16,19 +16,22 @@ import type {
 	CurrencyLookupPort,
 	DocumentReferencePort,
 	MutationPorts,
+	OrganizationDimensionDirectoryPort,
 } from "./ports";
+import type { HumanResourcesPrivacyPort } from "./privacy";
 import { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveHumanResourcesStore } from "./resolve-store";
 import type { HumanResourcesStore } from "./store";
 import type { AssignmentContextQueryPort } from "./time/handoff/ports";
-import type { WorkCalendarPort } from "./work-calendar";
+import type { WorkCalendarPort } from "./time/work-calendar";
 
 export type HumanResourcesCommandOptions = {
 	store?: HumanResourcesStore;
 	ports?: MutationPorts;
 	currency?: CurrencyLookupPort;
 	documentReference?: DocumentReferencePort;
+	organizationDimensions?: OrganizationDimensionDirectoryPort;
 	workCalendar?: WorkCalendarPort;
 	approvedLeave?: ApprovedLeaveQueryPort;
 	assignmentContext?: AssignmentContextQueryPort;
@@ -36,6 +39,7 @@ export type HumanResourcesCommandOptions = {
 	authorization?: HumanResourcesAuthorizationPort;
 	resourceAwareAuthorization?: HumanResourcesResourceAwareAuthorizationPort;
 	identityResolver?: HumanResourcesIdentityResolverPort;
+	privacy?: HumanResourcesPrivacyPort;
 };
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
@@ -110,6 +114,32 @@ export function requireDocumentReference(
 	return ok(options.documentReference);
 }
 
+export function requirePrivacyPort(
+	options: HumanResourcesCommandOptions,
+): Result<HumanResourcesPrivacyPort> {
+	if (options.privacy === undefined) {
+		return fail(
+			"CONFLICT",
+			"Human Resources privacy adapter is required for this operation.",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
+		);
+	}
+	return ok(options.privacy);
+}
+
+export function requireOrganizationDimensionDirectory(
+	options: HumanResourcesCommandOptions,
+): Result<OrganizationDimensionDirectoryPort> {
+	if (options.organizationDimensions === undefined) {
+		return fail(
+			"CONFLICT",
+			"Organization dimension directory is required for this command.",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
+		);
+	}
+	return ok(options.organizationDimensions);
+}
+
 export function resolveCommandDeps(
 	options: HumanResourcesCommandOptions = {},
 ): {
@@ -121,6 +151,7 @@ export function resolveCommandDeps(
 		| HumanResourcesResourceAwareAuthorizationPort
 		| undefined;
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
+	privacy: HumanResourcesPrivacyPort | undefined;
 } {
 	return {
 		store: resolveStore(options.store),
@@ -129,5 +160,6 @@ export function resolveCommandDeps(
 		authorization: options.authorization,
 		resourceAwareAuthorization: options.resourceAwareAuthorization,
 		identityResolver: options.identityResolver,
+		privacy: options.privacy,
 	};
 }

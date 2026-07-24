@@ -4,14 +4,18 @@ import {
 	eq,
 	gte,
 	hrEmployment,
-	hrEmploymentCalendarAssignment,
 	hrPosition,
 	hrWorkAssignment,
 	isNull,
 	lte,
 	or,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	humanResourcesErrorDetails,
+} from "../../error-codes";
 import type {
 	AssignmentContextQueryPort,
 	EmployeeAssignmentContext,
@@ -32,18 +36,18 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 				)
 				.limit(1);
 			if (employmentRows.length === 0) {
-				return ok({
-					employmentId: input.employmentId,
-					employeeId: input.employeeId,
-					departmentId: null,
-					locationKey: null,
-					legalEntityKey: null,
-				});
+				return fail(
+					"NOT_FOUND",
+					"Employment not found for assignment context",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
 			}
 
 			const workAssignmentRows = await db
 				.select({
 					positionId: hrWorkAssignment.positionId,
+					locationKey: hrWorkAssignment.locationKeySnapshot,
+					legalEntityKey: hrWorkAssignment.legalEntityKeySnapshot,
 				})
 				.from(hrWorkAssignment)
 				.where(
@@ -57,54 +61,54 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 							gte(hrWorkAssignment.endsOn, input.asOf),
 						),
 					),
-				)
-				.limit(1);
+				);
+			if (workAssignmentRows.length !== 1) {
+				return fail(
+					workAssignmentRows.length === 0 ? "NOT_FOUND" : "CONFLICT",
+					workAssignmentRows.length === 0
+						? "No assignment effective on the requested date"
+						: "Multiple assignments are effective on the requested date",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+					),
+				);
+			}
+			const assignment = workAssignmentRows[0];
+			if (
+				assignment === undefined ||
+				assignment.locationKey === null ||
+				assignment.legalEntityKey === null
+			) {
+				return fail(
+					"CONFLICT",
+					"Assignment has no deterministic organization dimension snapshot",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
+					),
+				);
+			}
 
 			let departmentId: string | null = null;
-			if (workAssignmentRows[0]?.positionId !== undefined) {
+			if (assignment.positionId !== undefined) {
 				const positionRows = await db
 					.select({ departmentId: hrPosition.departmentId })
 					.from(hrPosition)
 					.where(
 						and(
 							eq(hrPosition.organizationId, input.organizationId),
-							eq(hrPosition.id, workAssignmentRows[0].positionId),
+							eq(hrPosition.id, assignment.positionId),
 						),
 					)
 					.limit(1);
 				departmentId = positionRows[0]?.departmentId ?? null;
 			}
 
-			const calendarAssignmentRows = await db
-				.select({
-					locationCode: hrEmploymentCalendarAssignment.locationCode,
-					jurisdiction: hrEmploymentCalendarAssignment.jurisdiction,
-				})
-				.from(hrEmploymentCalendarAssignment)
-				.where(
-					and(
-						eq(
-							hrEmploymentCalendarAssignment.organizationId,
-							input.organizationId,
-						),
-						eq(hrEmploymentCalendarAssignment.employmentId, input.employmentId),
-						eq(hrEmploymentCalendarAssignment.employeeId, input.employeeId),
-						lte(hrEmploymentCalendarAssignment.effectiveFrom, input.asOf),
-						or(
-							isNull(hrEmploymentCalendarAssignment.effectiveTo),
-							gte(hrEmploymentCalendarAssignment.effectiveTo, input.asOf),
-						),
-					),
-				)
-				.orderBy(hrEmploymentCalendarAssignment.effectiveFrom)
-				.limit(1);
-
 			return ok({
 				employmentId: input.employmentId,
 				employeeId: input.employeeId,
 				departmentId,
-				locationKey: calendarAssignmentRows[0]?.locationCode ?? null,
-				legalEntityKey: calendarAssignmentRows[0]?.jurisdiction ?? null,
+				locationKey: assignment.locationKey,
+				legalEntityKey: assignment.legalEntityKey,
 			});
 		},
 	};

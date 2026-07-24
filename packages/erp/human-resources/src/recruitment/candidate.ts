@@ -45,6 +45,10 @@ export async function createCandidate(
 				displayName: data.displayName,
 				normalizedEmail,
 				phone,
+				consentPolicyVersion: data.consentPolicyVersion,
+				consentCapturedAt: data.consentCapturedAt,
+				consentSource: data.consentSource,
+				retentionUntil: data.retentionUntil,
 			});
 
 			const existingByKey = await store.findCandidateByIdempotencyKey({
@@ -74,6 +78,10 @@ export async function createCandidate(
 					email: data.email.trim(),
 					normalizedEmail,
 					phone,
+					consentPolicyVersion: data.consentPolicyVersion,
+					consentCapturedAt: new Date(data.consentCapturedAt),
+					consentSource: data.consentSource,
+					retentionUntil: data.retentionUntil,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -157,6 +165,7 @@ export async function listCandidates(
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
+				retentionDueAsOf: data.retentionDueAsOf,
 			}),
 	});
 }

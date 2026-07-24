@@ -3,64 +3,24 @@
  * Assign/revoke via WithAudit (N12 Path-to-100%).
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import {
 	and,
 	db,
-	ensurePlatformPermissionCatalog,
 	eq,
 	PLATFORM_PERMISSION_CODES_V1,
 	platformRoleAssignment,
 } from "@afenda/db";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
 import { listPermissionCatalog } from "../modules/identity/domain/list-permission-catalog";
 import { listUserPermissions } from "../modules/identity/domain/list-user-permissions";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
-
-const ORG_ADMIN_TEMPLATE_ROLE_ID = "790f03ae-5d20-4ef4-9c8a-a5ee1ed6a28a";
+import {
+	hasDatabase,
+	resolveSystemTemplateRoleId,
+} from "./helpers/identity-database";
 
 describe("permission kernel guards (N10)", () => {
 	it("hasPermission returns false for unknown codes", async () => {
@@ -88,8 +48,13 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 	const orgB = `org-n10-b-${runId}`;
 	const userId = `user-n10-iso-${runId}`;
 	const grantedBy = `user-n10-actor-${runId}`;
+	let orgAdminRoleId = "";
 	const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
 	const createdAuditIds: Array<{ id: string; orgId: string }> = [];
+
+	beforeAll(async () => {
+		orgAdminRoleId = await resolveSystemTemplateRoleId("org_admin");
+	});
 
 	afterAll(async () => {
 		for (const row of createdAuditIds) {
@@ -108,7 +73,6 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 	});
 
 	it("lists catalog codes that include ARCH-023 v1", async () => {
-		await ensurePlatformPermissionCatalog(db);
 		const catalog = await listPermissionCatalog();
 		const codes = catalog.map((row) => row.code);
 		for (const code of PLATFORM_PERMISSION_CODES_V1) {
@@ -120,7 +84,7 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 		const assign = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
-			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
+			roleId: orgAdminRoleId,
 			grantedBy,
 			actorUserId: grantedBy,
 			correlationId: "test-correlation-id",

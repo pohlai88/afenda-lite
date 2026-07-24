@@ -11,6 +11,7 @@ export type NotificationRow = {
 	title: string;
 	body: string;
 	module: string;
+	deduplicationKey: string | null;
 	actionUrl: string | null;
 	metadata: unknown;
 	read: boolean;
@@ -61,6 +62,7 @@ export function mapNotificationRow(
 		title: row.title,
 		body: row.body,
 		module: row.module,
+		deduplicationKey: row.deduplicationKey,
 		actionUrl: row.actionUrl,
 		metadata: metadata.data,
 		read: row.read,

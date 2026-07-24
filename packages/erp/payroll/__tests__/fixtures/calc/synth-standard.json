@@ -1,0 +1,10 @@
+{
+	"description": "Synthetic payroll calc fixture — synth.v1 only, not a real jurisdiction",
+	"expectedTotals": {
+		"gross": "5200",
+		"employeeDeductions": "600",
+		"employeeStatutory": "470",
+		"employerCost": "235",
+		"net": "4130"
+	}
+}

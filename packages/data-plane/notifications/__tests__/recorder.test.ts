@@ -85,4 +85,26 @@ describe("@afenda/notifications recorder", () => {
 		expect(entry.actionUrl).toBe("/admin");
 		expect(store.all()).toHaveLength(1);
 	});
+
+	it("returns the original notification when a handler replays a deduplication key", async () => {
+		const store = new MemoryNotificationStore();
+		const recorder = createNotificationRecorder({ store });
+		const command = {
+			organizationId: "org-1",
+			userId: "user-1",
+			type: "ACTION_REQUIRED",
+			priority: "HIGH",
+			title: "Document expiring",
+			body: "Review the employee document.",
+			module: "human-resources",
+			deduplicationKey: "event:event-1",
+		} as const;
+
+		const first = assertOk(await recorder.record(command));
+		const replay = assertOk(await recorder.record(command));
+
+		expect(replay.id).toBe(first.id);
+		expect(replay.deduplicationKey).toBe("event:event-1");
+		expect(store.all()).toHaveLength(1);
+	});
 });

@@ -32,6 +32,18 @@ events:
     id: fulfillment.delivery.closed.v1
     moduleId: fulfillment
   - direction: emits
+    id: human-resources.person.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.person.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.worker.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.worker.changed.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.employee.created.v1
     moduleId: human-resources
   - direction: emits
@@ -217,6 +229,9 @@ events:
   - direction: emits
     id: inventory.reservation.cancelled.v1
     moduleId: inventory
+  - direction: emits
+    id: master_data.organization_dimension.created.v1
+    moduleId: master-data
   - direction: emits
     id: master_data.party.created.v1
     moduleId: master-data

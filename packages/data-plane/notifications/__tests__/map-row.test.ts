@@ -14,6 +14,7 @@ describe("@afenda/notifications map-row", () => {
 			title: "Hello",
 			body: "World",
 			module: "identity",
+			deduplicationKey: null,
 			actionUrl: "/admin",
 			metadata: { roleId: "r1" },
 			read: false,

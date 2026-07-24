@@ -75,6 +75,11 @@ export type IdempotentLeaveEntitlementRecord = {
 	createRequestFingerprint: string;
 };
 
+export type IdempotentLeaveAdjustmentRecord = {
+	adjustment: LeaveAdjustment;
+	createRequestFingerprint: string;
+};
+
 export type LeaveAdjustmentCreateRecord = {
 	organizationId: string;
 	entitlementId: HumanResourcesLeaveEntitlementId;
@@ -285,6 +290,11 @@ export type HumanResourcesLeaveStore = {
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LeaveEntitlement>>;
+
+	findLeaveAdjustmentByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentLeaveAdjustmentRecord | null>>;
 
 	adjustLeaveEntitlement(
 		record: LeaveAdjustmentCreateRecord,

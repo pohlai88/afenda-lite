@@ -68,9 +68,9 @@ export type DocumentReferencePort = {
 };
 
 /**
- * Optional existence / policy resolver injected at composition root when a
- * document platform exists. Without it, DocumentReferencePort validates
- * reference shape only.
+ * Platform-owned object-policy hook. HR stores only canonical immutable
+ * references; binary storage, scanning, ACL, retention, and signature state
+ * remain outside the HR package.
  */
 export type DocumentObjectResolverPort = {
 	assertObjectAcceptable(input: {
@@ -84,6 +84,42 @@ export type CurrencyLookupPort = {
 	exists(currencyCode: string): Promise<Result<boolean>>;
 };
 
+export const HUMAN_RESOURCES_ORGANIZATION_DIMENSION_KINDS = [
+	"legal_entity",
+	"business_unit",
+	"location",
+	"cost_centre",
+	"project",
+] as const;
+
+export type HumanResourcesOrganizationDimensionKind =
+	(typeof HUMAN_RESOURCES_ORGANIZATION_DIMENSION_KINDS)[number];
+
+export type HumanResourcesOrganizationDimensionSnapshot = {
+	id: string;
+	kind: HumanResourcesOrganizationDimensionKind;
+	key: string;
+	name: string;
+};
+
+export type HumanResourcesOrganizationDimensions = Record<
+	HumanResourcesOrganizationDimensionKind,
+	HumanResourcesOrganizationDimensionSnapshot
+>;
+
+/**
+ * App-composed read boundary to governed `@afenda/master-data` dimensions.
+ * Implementations must scope every lookup by organization and effective date.
+ */
+export type OrganizationDimensionDirectoryPort = {
+	resolveRequiredAsOf(input: {
+		organizationId: string;
+		actorUserId: string;
+		asOf: string;
+		keys: Record<HumanResourcesOrganizationDimensionKind, string>;
+	}): Promise<Result<HumanResourcesOrganizationDimensions>>;
+};
+
 export type {
 	ApprovedLeaveFact,
 	ApprovedLeaveQueryPort,
@@ -91,4 +127,4 @@ export type {
 	AttendanceSourceEvent,
 	AttendanceSourcePort,
 } from "./time/handoff/ports";
-export type { WorkCalendarPort } from "./work-calendar";
+export type { WorkCalendarPort } from "./time/work-calendar";

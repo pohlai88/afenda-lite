@@ -29,12 +29,12 @@
 			"default": "./src/resolve-store.ts"
 		},
 		"./schemas": {
-			"types": "./src/schemas.ts",
-			"default": "./src/schemas.ts"
+			"types": "./src/schemas/index.ts",
+			"default": "./src/schemas/index.ts"
 		},
 		"./store": {
-			"types": "./src/store.ts",
-			"default": "./src/store.ts"
+			"types": "./src/store/index.ts",
+			"default": "./src/store/index.ts"
 		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
@@ -62,6 +62,7 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@afenda/testing": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:"
 	}

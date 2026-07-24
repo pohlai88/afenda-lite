@@ -1,6 +1,6 @@
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 
-import type { AttendanceExceptionType } from "../src/types";
+import type { AttendanceExceptionType } from "../../src/types";
 import type { WorkforceStoreAdapter } from "./hr-parity-harness";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();

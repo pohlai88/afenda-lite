@@ -1,8 +1,8 @@
 import { selectEffectiveLineageRecord } from "../shared/effective-lineage";
 import type { LeavePolicy } from "../types";
 
-function isPublishedLeavePolicyEligible(policy: LeavePolicy): boolean {
-	return policy.status === "published";
+function isPublishedLeavePolicyLineageEligible(policy: LeavePolicy): boolean {
+	return policy.status === "published" || policy.status === "superseded";
 }
 
 /**
@@ -14,27 +14,30 @@ export function resolvePublishedLeavePolicyByCodeLineageAsOf(input: {
 	code: string;
 	asOf: string;
 }): LeavePolicy | null {
-	const published = input.policies.filter(
+	const lineagePolicies = input.policies.filter(
 		(policy) =>
-			policy.code === input.code && isPublishedLeavePolicyEligible(policy),
+			policy.code === input.code &&
+			isPublishedLeavePolicyLineageEligible(policy),
 	);
-	if (published.length === 0) {
+	if (lineagePolicies.length === 0) {
 		return null;
 	}
 
-	const leaves = published.filter(
+	const leaves = lineagePolicies.filter(
 		(leaf) =>
-			!published.some((candidate) => candidate.supersedesPolicyId === leaf.id),
+			!lineagePolicies.some(
+				(candidate) => candidate.supersedesPolicyId === leaf.id,
+			),
 	);
 
 	const effectivePolicies: LeavePolicy[] = [];
 	for (const leaf of leaves) {
 		const effective = selectEffectiveLineageRecord({
 			assignedId: leaf.id,
-			records: published,
+			records: lineagePolicies,
 			asOf: input.asOf,
 			getPredecessorId: (record) => record.supersedesPolicyId,
-			isEligible: isPublishedLeavePolicyEligible,
+			isEligible: isPublishedLeavePolicyLineageEligible,
 		});
 		if (effective !== null) {
 			effectivePolicies.push(effective);

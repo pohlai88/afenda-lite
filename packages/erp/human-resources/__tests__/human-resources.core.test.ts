@@ -20,7 +20,11 @@ import {
 } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+import {
+	createMemoryHumanResourcesStore,
+	createMemoryOrganizationDimensionDirectory,
+} from "../src/testing";
+import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -36,7 +40,12 @@ function harness() {
 	const authorization = createGrantingHumanResourcesAuthorization([
 		...HUMAN_RESOURCES_PERMISSION_CODES,
 	]);
-	return { store, ports, authorization };
+	return {
+		store,
+		ports,
+		authorization,
+		organizationDimensions: createMemoryOrganizationDimensionDirectory(),
+	};
 }
 
 describe("@afenda/human-resources core operations", () => {
@@ -1115,6 +1124,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-4",
 					employmentId: employment.data.id,
 					positionId: position.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 					endsOn: null,
 				},
@@ -1185,6 +1195,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-4",
 					employmentId: employment.data.id,
 					positionId: position.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 					endsOn: null,
 				},
@@ -1199,6 +1210,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-5",
 					employmentId: employment.data.id,
 					positionId: position.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-06-01",
 					endsOn: null,
 				},
@@ -1271,6 +1283,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-4",
 					employmentId: employment.data.id,
 					positionId: position.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 					endsOn: null,
 				},
@@ -1345,6 +1358,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-4",
 					employmentId: employment.data.id,
 					positionId: position.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 					endsOn: null,
 				},
@@ -1430,6 +1444,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-4",
 					employmentId: employment.data.id,
 					positionId: position.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 					endsOn: null,
 				},
@@ -1531,6 +1546,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-super-5",
 					employmentId: employment.data.id,
 					positionId: positionA.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-01-01",
 					endsOn: null,
 				},
@@ -1559,6 +1575,7 @@ describe("@afenda/human-resources core operations", () => {
 					correlationId: "corr-super-7",
 					employmentId: employment.data.id,
 					positionId: positionB.data.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
 					startsOn: "2025-07-01",
 					endsOn: null,
 				},

@@ -11,6 +11,7 @@ import {
 } from "./permissions";
 
 const MASTER_DATA_MUTATION_TABLES = [
+	"md_organization_dimension",
 	"md_party",
 	"md_item_group",
 	"md_item",
@@ -88,6 +89,7 @@ export const masterDataModuleManifest = {
 	activationMode: "core",
 	owns: {
 		aggregates: [
+			"organization_dimension",
 			"party",
 			"item",
 			"item_group",

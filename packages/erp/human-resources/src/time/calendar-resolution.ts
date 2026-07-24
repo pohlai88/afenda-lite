@@ -4,7 +4,7 @@ import type {
 	WorkCalendarDayResolution,
 	WorkCalendarHoliday,
 	WorkWeekDayPattern,
-} from "../work-calendar";
+} from "./work-calendar";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 

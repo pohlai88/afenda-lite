@@ -70,7 +70,7 @@ Person → Worker → Employee specialization
 
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **104** `hr_*` hard-tenant roots of **177** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
+**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **106** `hr_*` hard-tenant roots of **179** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
 ## Public surfaces
 

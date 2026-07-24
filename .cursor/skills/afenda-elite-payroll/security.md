@@ -1,0 +1,15 @@
+# Payroll security and privacy
+
+- Treat compensation, tax, deductions, bank-routing references, statutory identifiers, payslips, and payroll results as highly sensitive.
+- Never add real employee data to source control, prompts, tests, screenshots, logs, comments, examples, snapshots, or error messages.
+- Redact or tokenize employee identifiers in operational logs. Do not log full input or result payloads.
+- Require explicit authorization at every command/query boundary; do not rely solely on UI checks.
+- Keep `payroll.payslip.read-own` and `payroll.payslip.read-all` as distinct permissions.
+- Keep compensation read/manage permissions separate from ordinary employee-directory access.
+- Apply least privilege to ports and stores. Read-only queries must not receive mutation-capable adapters.
+- Validate all external inputs at package boundaries.
+- Use stable error codes for clients and safe messages for logs; do not expose sensitive internal values.
+- Include actor, organization, command/request ID, timestamp, and reason in audit records for calculation, finalization, reversal, adjustment, payslip publication, and reconciliation changes.
+- Do not let AI-generated migrations, shell commands, or destructive database operations execute without human review.
+
+See also: [boundaries.md](boundaries.md) · [domain.md](domain.md)

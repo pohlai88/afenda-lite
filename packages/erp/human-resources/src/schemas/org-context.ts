@@ -15,9 +15,11 @@ export const employeeOrgContextAsOfSchema = z
 		positionId: humanResourcesPositionIdSchema.nullable(),
 		departmentId: z.string().uuid().nullable(),
 		managerEmployeeId: humanResourcesEmployeeIdSchema.nullable(),
-		locationKey: z.string().trim().min(1).nullable(),
-		legalEntityKey: z.string().trim().min(1).nullable(),
-		costCentreKey: z.string().trim().min(1).nullable(),
+		locationKey: z.string().trim().min(1),
+		legalEntityKey: z.string().trim().min(1),
+		businessUnitKey: z.string().trim().min(1),
+		costCentreKey: z.string().trim().min(1),
+		projectKey: z.string().trim().min(1),
 		workCalendarId: humanResourcesWorkCalendarIdSchema.nullable(),
 	})
 	.strict();
