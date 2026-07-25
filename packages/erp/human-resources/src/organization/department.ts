@@ -9,18 +9,23 @@ import {
 	HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
 	HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
+	HUMAN_RESOURCES_QUERY_DEPARTMENT_AS_OF,
 	HUMAN_RESOURCES_QUERY_DEPARTMENT_GET,
 	HUMAN_RESOURCES_QUERY_DEPARTMENT_LIST,
 	HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE,
+	HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE_AS_OF,
 } from "../module-ids";
 import {
 	createDepartmentInputSchema,
 	departmentStatusTransitionInputSchema,
+	getDepartmentAsOfInputSchema,
 	getDepartmentInputSchema,
 	listDepartmentsInputSchema,
+	organizationTreeAsOfInputSchema,
 	organizationTreeInputSchema,
 	updateDepartmentInputSchema,
 } from "../schemas/organization";
+import type { DepartmentStructureAtAsOf } from "./organization-structure-lineage";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runOrganizationCommand,
@@ -75,6 +80,9 @@ export async function updateDepartment(
 					departmentId: data.departmentId,
 					name: data.name?.trim(),
 					parentDepartmentId: data.parentDepartmentId,
+					effectiveOn: data.effectiveOn,
+					reasonCode: data.reasonCode,
+					evidenceRef: data.evidenceRef,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -201,6 +209,55 @@ export async function getOrganizationTree(
 		execute: async (data, { store }) => {
 			return store.getOrganizationTree({
 				organizationId: data.organizationId,
+				rootDepartmentId: data.rootDepartmentId ?? null,
+				maxDepth: data.maxDepth,
+				maxNodes: data.maxNodes,
+			});
+		},
+	});
+}
+
+export async function getDepartmentAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<DepartmentStructureAtAsOf>> {
+	return runOrganizationQuery(input, options, {
+		schema: getDepartmentAsOfInputSchema,
+		invalidMessage: "Invalid department as-of input",
+		query: HUMAN_RESOURCES_QUERY_DEPARTMENT_AS_OF,
+		execute: async (data, { store }) => {
+			const department = await store.findDepartmentAsOf({
+				organizationId: data.organizationId,
+				departmentId: data.departmentId,
+				asOf: data.asOf,
+			});
+			if (!department.ok) {
+				return department;
+			}
+			if (department.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Department not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(department.data);
+		},
+	});
+}
+
+export async function getOrganizationTreeAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<OrganizationTreePage>> {
+	return runOrganizationQuery(input, options, {
+		schema: organizationTreeAsOfInputSchema,
+		invalidMessage: "Invalid organization tree as-of input",
+		query: HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE_AS_OF,
+		execute: async (data, { store }) => {
+			return store.getOrganizationTreeAsOf({
+				organizationId: data.organizationId,
+				asOf: data.asOf,
 				rootDepartmentId: data.rootDepartmentId ?? null,
 				maxDepth: data.maxDepth,
 				maxNodes: data.maxNodes,

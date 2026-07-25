@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
 	createOrganizationDimension,
+	getOrganizationDimensionEffective,
 	ORGANIZATION_DIMENSION_KINDS,
 	resolveOrganizationDimensionsAsOf,
 } from "../src";
@@ -150,5 +151,138 @@ describe("organization dimension domain", () => {
 
 		expect(result.ok).toBe(false);
 		if (!result.ok) expect(result.code).toBe("CONFLICT");
+	});
+
+	it("gets one effective legal_entity dimension by id or key", async () => {
+		const store = createMemoryOrganizationDimensionStore();
+		await seedRequired(store);
+
+		const created = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "lookup-seed",
+				kind: "legal_entity",
+				key: "LE-LOOKUP",
+				name: "Lookup Entity",
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const byId = await getOrganizationDimensionEffective(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				kind: "legal_entity",
+				id: created.data.id,
+				asOf: "2025-06-01",
+			},
+			{ store, authorization },
+		);
+		expect(byId.ok).toBe(true);
+		if (!byId.ok) return;
+		expect(byId.data?.key).toBe("LE-LOOKUP");
+
+		const byKey = await getOrganizationDimensionEffective(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				kind: "legal_entity",
+				key: "le-lookup",
+				asOf: "2025-06-01",
+			},
+			{ store, authorization },
+		);
+		expect(byKey.ok).toBe(true);
+		if (!byKey.ok) return;
+		expect(byKey.data?.id).toBe(created.data.id);
+	});
+
+	it("returns null when legal_entity is not effective as-of", async () => {
+		const store = createMemoryOrganizationDimensionStore();
+		const created = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "future-only",
+				kind: "legal_entity",
+				key: "LE-FUTURE",
+				name: "Future Entity",
+				effectiveFrom: "2026-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const result = await getOrganizationDimensionEffective(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				kind: "legal_entity",
+				id: created.data.id,
+				asOf: "2025-06-01",
+			},
+			{ store, authorization },
+		);
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.data).toBeNull();
+	});
+
+	it("keeps the focused legal-entity query tenant-safe and rejects ambiguity", async () => {
+		const store = createMemoryOrganizationDimensionStore();
+		const created = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "focused-lookup",
+				kind: "legal_entity",
+				key: "LE-FOCUSED",
+				name: "Focused Entity",
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const foreign = await getOrganizationDimensionEffective(
+			{
+				organizationId: ORG_B,
+				actorUserId: ACTOR,
+				kind: "legal_entity",
+				id: created.data.id,
+				asOf: "2025-06-01",
+			},
+			{ store, authorization },
+		);
+		expect(foreign).toEqual({ ok: true, data: null });
+
+		store.seed({
+			...created.data,
+			id: randomUUID(),
+			name: "Corrupt focused duplicate",
+		});
+		const ambiguous = await getOrganizationDimensionEffective(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				kind: "legal_entity",
+				key: "LE-FOCUSED",
+				asOf: "2025-06-01",
+			},
+			{ store, authorization },
+		);
+		expect(ambiguous.ok).toBe(false);
+		if (!ambiguous.ok) {
+			expect(ambiguous.code).toBe("CONFLICT");
+			expect(ambiguous.details).toMatchObject({
+				reason: "MASTER_DIMENSION_AMBIGUOUS",
+			});
+		}
 	});
 });

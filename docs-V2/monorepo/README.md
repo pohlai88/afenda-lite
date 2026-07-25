@@ -5,14 +5,14 @@
 | Surface | `docs-V2/monorepo/README.md` |
 | Authority | **Operative** (docs-V2 Scratch pack) — coding-standards · monorepo-discipline + disk `packages/*/*` · `apps/web` |
 | Purpose | Lean import / layer / workspace rules + ERP expansion governance baseline |
-| Updated | 2026-07-20 |
-| Version | `monorepo-governance/2026-07-20` |
+| Updated | 2026-07-25 |
+| Version | `monorepo-governance/2026-07-25` |
 | Promoted from | [`packages_refactor_v2.3.md`](../_scratch/packages_refactor_v2.3.md) (historical stamp) · consolidated: [`packages_governance.md`](../_scratch/packages_governance.md) |
 | Companion | [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) · [packages/README.md](../../packages/README.md) · [WORKSPACE-EDGE-REGISTER.yaml](../modules/WORKSPACE-EDGE-REGISTER.yaml) |
 
 Re-probe after package add/rename or DAG change. Controlled Living `docs/` remains dormant until Docs-lane reopen — this pack + LAYERS.md are the named promotion targets.
 
-### Phase status (2026-07-20)
+### Phase status (2026-07-25)
 
 | Phase | Meaning | Status |
 |-------|---------|--------|
@@ -27,7 +27,8 @@ Re-probe after package add/rename or DAG change. Controlled Living `docs/` remai
 | **4.6** | `@afenda/payables` P0 transactional package | **Done** — nest under `packages/erp/payables`; sole mutator of supplier invoice/line/credit-note/allocation/balance-projection/three-way-match result; dual-control edges + manifest + permission catalog. |
 | **4.7** | `@afenda/payments` P0 transactional package | **Done** — nest under `packages/erp/payments`; sole mutator of payment/allocation/reversal; refunds use `payment.direction = refund` with no separate refund table; dual-control edges + manifest + permission catalog. |
 | **4.8** | `@afenda/accounting` P0 transactional package | **Done** — nest under `packages/erp/accounting`; sole mutator of chart-of-account / ledger-account / account-role-mapping / posting-profile(+lines) / journal / journal-line / ledger-posting / accounting-period / source-posting-link / financial-posting-exception; period open→soft_closed→closed+reopen; 17 fine permissions; dual-control edges + manifest + permission catalog; Scratch [erp/accounting.md](../_scratch/erp/accounting.md) CLOSED 9.4/10. |
-| **4** | New ERP packages from MODULE-ROADMAP | **Done — Phase 4 complete.** All authorized roadmap ERP packages were promoted package-by-package ([packages_governance.md](../_scratch/packages_governance.md)). |
+| **4.9** | `@afenda/corporate-administration` incremental package | **CA-0 approved / scaffolded** — identity, ownership, and dependency governance accepted; `active` promotion requires verified CA-1 vertical acceptance. |
+| **4** | New ERP packages from MODULE-ROADMAP | **Open for Corporate Administration incremental slices.** Previously authorized packages were promoted package-by-package; CA remains on the roadmap until its promotion gate passes. |
 
 Still out of scope for this pack (separate missions): `@afenda/module-catalog` runtime · `@afenda/authorization` extraction · `@afenda/jobs` · new transaction-core packages.
 

@@ -9,17 +9,26 @@
 import { and, db, eq, platformAuditLog, platformDomainEvent } from "@afenda/db";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
-import { createAssignment, endAssignment } from "../src/core/assignment";
+import { createAssignment, endAssignment, getAssignmentAsOf } from "../src/core/assignment";
 import { createEmployee, updateEmployee } from "../src/core/employee";
 import {
 	amendEmployment,
+	correctEmployment,
 	createEmployment,
 	getEmployment,
+	getEmploymentAsOf,
+	listEmploymentStatusHistory,
 } from "../src/core/employment";
-import { createEmploymentContract } from "../src/core/employment-contract";
+import {
+	correctEmploymentContract,
+	createEmploymentContract,
+	getEmploymentContractAsOf,
+	supersedeEmploymentContract,
+} from "../src/core/employment-contract";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -30,6 +39,7 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import { createPosition } from "../src/organization/position";
+import { transferAssignment } from "../src/lifecycle/transfer";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
@@ -504,7 +514,8 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				referenceCode: code,
 				startsOn: "2025-01-01",
-				endsOn: null,
+				endsOn: "2025-06-30",
+				reasonCode: "initial",
 			},
 			ready,
 		);
@@ -517,8 +528,9 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-ctr-4-${suffix}`,
 				employmentId: employment.data.id,
 				referenceCode: code,
-				startsOn: "2025-01-01",
+				startsOn: "2025-07-01",
 				endsOn: null,
+				reasonCode: "renewal",
 			},
 			ready,
 		);
@@ -641,6 +653,514 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (current.ok) {
 			expect(current.data.status).toBe("active");
 			expect(current.data.version).toBe(1);
+		}
+	});
+
+	it("employment historical truth parity: as-of, overlap, correction, status history", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-emp-${suffix}`,
+				idempotencyKey: `idem-s43-emp-${suffix}`,
+				employeeNumber: `E-S43-${suffix}`,
+				legalName: "Slice 4.3",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const future = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-future-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(future.ok).toBe(true);
+		if (!future.ok) return;
+
+		const beforeStart = await getEmploymentAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-before-${suffix}`,
+				employeeId: employee.data.id,
+				asOf: "2025-12-31",
+			},
+			ready,
+		);
+		expect(beforeStart.ok).toBe(true);
+		if (beforeStart.ok) {
+			expect(beforeStart.data).toBeNull();
+		}
+
+		const overlapCreate = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-overlap-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-12-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(overlapCreate.ok).toBe(false);
+		if (!overlapCreate.ok) {
+			expect(humanResourcesCodeFromResult(overlapCreate)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+
+		const terminated = await amendEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-term-${suffix}`,
+				employmentId: future.data.id,
+				status: "terminated",
+				endsOn: "2026-06-30",
+				expectedVersion: 1,
+			},
+			ready,
+		);
+		expect(terminated.ok).toBe(true);
+		if (!terminated.ok) return;
+
+		if (adapter === "memory") {
+			ready.ports.outbox.calls.length = 0;
+		}
+
+		const rehire = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-rehire-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-07-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(rehire.ok).toBe(true);
+		if (!rehire.ok) return;
+
+		if (adapter === "memory") {
+			expect(
+				ready.ports.outbox.calls.some(
+					(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
+				),
+			).toBe(true);
+		}
+
+		const corrected = await correctEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-correct-${suffix}`,
+				employmentId: rehire.data.id,
+				startsOn: "2026-07-15",
+				reason: "Contract evidence",
+				effectiveOn: "2026-07-15",
+				expectedVersion: 1,
+			},
+			ready,
+		);
+		expect(corrected.ok).toBe(true);
+		if (!corrected.ok) return;
+		expect(corrected.data.startsOn).toBe("2026-07-15");
+
+		const overlappingCorrect = await correctEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-overlap-correct-${suffix}`,
+				employmentId: rehire.data.id,
+				startsOn: "2026-06-15",
+				reason: "Would overlap prior tenure",
+				expectedVersion: 2,
+			},
+			ready,
+		);
+		expect(overlappingCorrect.ok).toBe(false);
+		if (!overlappingCorrect.ok) {
+			expect(humanResourcesCodeFromResult(overlappingCorrect)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+
+		const notice = await amendEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-notice-${suffix}`,
+				employmentId: rehire.data.id,
+				status: "notice",
+				effectiveOn: "2026-08-01",
+				expectedVersion: 2,
+			},
+			ready,
+		);
+		expect(notice.ok).toBe(true);
+		if (!notice.ok) return;
+
+		const history = await listEmploymentStatusHistory(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s43-history-${suffix}`,
+				employmentId: rehire.data.id,
+				asOf: "2026-08-15",
+			},
+			ready,
+		);
+		expect(history.ok).toBe(true);
+		if (!history.ok) return;
+		expect(history.data.statusAsOf?.status).toBe("notice");
+		expect(
+			history.data.history.some((row) => row.changeKind === "correction"),
+		).toBe(true);
+	});
+
+	it("employment contract historical truth parity: as-of, overlap, correction, supersession", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-emp-${suffix}`,
+				idempotencyKey: `idem-s44-emp-${suffix}`,
+				employeeNumber: `E-S44-${suffix}`,
+				legalName: "Slice 4.4",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const future = await createEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-future-${suffix}`,
+				employmentId: employment.data.id,
+				referenceCode: `CONTRACT-FUTURE-${suffix}`,
+				startsOn: "2026-06-01",
+				endsOn: null,
+				reasonCode: "initial",
+			},
+			ready,
+		);
+		expect(future.ok).toBe(true);
+		if (!future.ok) return;
+
+		const beforeStart = await getEmploymentContractAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-before-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2026-05-31",
+			},
+			ready,
+		);
+		expect(beforeStart.ok).toBe(true);
+		if (beforeStart.ok) {
+			expect(beforeStart.data).toBeNull();
+		}
+
+		const overlapCreate = await createEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-overlap-${suffix}`,
+				employmentId: employment.data.id,
+				referenceCode: `CONTRACT-OVERLAP-${suffix}`,
+				startsOn: "2026-06-15",
+				endsOn: null,
+				reasonCode: "initial",
+			},
+			ready,
+		);
+		expect(overlapCreate.ok).toBe(false);
+		if (!overlapCreate.ok) {
+			expect(humanResourcesCodeFromResult(overlapCreate)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+
+		const corrected = await correctEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-correct-${suffix}`,
+				employmentContractId: future.data.id,
+				startsOn: "2026-06-15",
+				reasonCode: "date.correction",
+				sourceReference: "HR-EVID-S44",
+				expectedVersion: 1,
+			},
+			ready,
+		);
+		expect(corrected.ok).toBe(true);
+		if (!corrected.ok) return;
+		expect(corrected.data.startsOn).toBe("2026-06-15");
+		expect(corrected.data.version).toBe(2);
+
+		const superseded = await supersedeEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-supersede-${suffix}`,
+				employmentContractId: corrected.data.id,
+				startsOn: "2027-01-01",
+				endsOn: "2027-12-31",
+				reasonCode: "renewal",
+				sourceReference: "CONTRACT-2027",
+				expectedVersion: 2,
+			},
+			ready,
+		);
+		expect(superseded.ok).toBe(true);
+		if (!superseded.ok) return;
+		expect(superseded.data.superseded.lineageStatus).toBe("superseded");
+		expect(superseded.data.superseded.endsOn).toBe("2026-12-31");
+		expect(superseded.data.successor.lineageStatus).toBe("active");
+
+		const atStart = await getEmploymentContractAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-asof-start-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2026-06-15",
+			},
+			ready,
+		);
+		expect(atStart.ok).toBe(true);
+		if (atStart.ok) {
+			expect(atStart.data?.id).toBe(corrected.data.id);
+		}
+
+		const atEnd = await getEmploymentContractAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s44-asof-end-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2026-12-31",
+			},
+			ready,
+		);
+		expect(atEnd.ok).toBe(true);
+		if (atEnd.ok) {
+			expect(atEnd.data?.id).toBe(corrected.data.id);
+		}
+	});
+
+	it("assignment historical truth parity: as-of, overlap, transfer lineage", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-emp-${suffix}`,
+				idempotencyKey: `idem-s45-emp-${suffix}`,
+				employeeNumber: `E-S45-${suffix}`,
+				legalName: "Slice 4.5",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const seeded = await seedDepartmentAndJob(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+		});
+		expect(seeded).not.toBeNull();
+		if (!seeded) return;
+
+		const positionA = await createPosition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-pos-a-${suffix}`,
+				code: `POS-S45-A-${suffix}`,
+				title: "Role A",
+				status: "active",
+				...seeded,
+			},
+			ready,
+		);
+		expect(positionA.ok).toBe(true);
+		if (!positionA.ok) return;
+
+		const positionB = await createPosition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-pos-b-${suffix}`,
+				code: `POS-S45-B-${suffix}`,
+				title: "Role B",
+				status: "active",
+				...seeded,
+			},
+			ready,
+		);
+		expect(positionB.ok).toBe(true);
+		if (!positionB.ok) return;
+
+		const closed = await createAssignment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-closed-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: positionA.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				startsOn: "2026-01-01",
+				endsOn: "2026-05-31",
+			},
+			ready,
+		);
+		expect(closed.ok).toBe(true);
+		if (!closed.ok) return;
+
+		const future = await createAssignment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-future-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: positionA.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				startsOn: "2026-06-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(future.ok).toBe(true);
+		if (!future.ok) return;
+
+		const beforeFuture = await getAssignmentAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-before-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2026-05-15",
+			},
+			ready,
+		);
+		expect(beforeFuture.ok).toBe(true);
+		if (beforeFuture.ok) {
+			expect(beforeFuture.data?.id).toBe(closed.data.id);
+		}
+
+		const overlap = await createAssignment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-overlap-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: positionA.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				startsOn: "2026-06-15",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(overlap.ok).toBe(false);
+		if (!overlap.ok) {
+			expect(humanResourcesCodeFromResult(overlap)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+
+		const transfer = await transferAssignment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-transfer-${suffix}`,
+				idempotencyKey: `idem-s45-transfer-${suffix}`,
+				employmentId: employment.data.id,
+				toPositionId: positionB.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				effectiveOn: "2026-08-01",
+				reason: "Parity transfer",
+			},
+			ready,
+		);
+		expect(transfer.ok).toBe(true);
+		if (!transfer.ok) return;
+
+		const predecessor = await ready.store.getAssignmentById({
+			organizationId: ORG_A,
+			assignmentId: transfer.data.fromAssignmentId,
+		});
+		const successor = await ready.store.getAssignmentById({
+			organizationId: ORG_A,
+			assignmentId: transfer.data.toAssignmentId,
+		});
+		expect(predecessor.ok).toBe(true);
+		expect(successor.ok).toBe(true);
+		if (!predecessor.ok || !successor.ok || !predecessor.data || !successor.data) {
+			return;
+		}
+		expect(predecessor.data.successorAssignmentId).toBe(successor.data.id);
+		expect(predecessor.data.transferMovementId).toBe(transfer.data.id);
+		expect(successor.data.predecessorAssignmentId).toBe(predecessor.data.id);
+		expect(successor.data.transferMovementId).toBe(transfer.data.id);
+
+		const onTransferDay = await getAssignmentAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s45-transfer-day-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2026-08-01",
+			},
+			ready,
+		);
+		expect(onTransferDay.ok).toBe(true);
+		if (onTransferDay.ok) {
+			expect(onTransferDay.data?.id).toBe(successor.data.id);
 		}
 	});
 }

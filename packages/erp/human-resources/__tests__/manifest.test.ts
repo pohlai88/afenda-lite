@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { HARD_TENANT_ROOT_TABLE_NAMES } from "@afenda/db";
 import { HUMAN_RESOURCES_EVENT_IDS } from "@afenda/events";
 import { describe, expect, it } from "vitest";
-
+import { validateEffectiveTruthClassificationRegister } from "../src/effective-truth-classification";
 import {
 	HUMAN_RESOURCES_ERROR_CODE_LIST,
 	HUMAN_RESOURCES_ERROR_CODES,
@@ -17,16 +17,23 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_IDS,
 	HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
 	HUMAN_RESOURCES_QUERY_ASSIGNMENT_GET,
+	HUMAN_RESOURCES_QUERY_ASSIGNMENT_AS_OF,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_AS_OF,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_AS_OF,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_STATUS_HISTORY_LIST,
 	HUMAN_RESOURCES_QUERY_IDS,
 	HUMAN_RESOURCES_QUERY_POSITION_GET,
 	HUMAN_RESOURCES_QUERY_POSITION_LIST,
@@ -97,7 +104,22 @@ describe("humanResourcesModuleManifest", () => {
 		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE);
 		expect(
 			humanResourcesModuleManifest.authorization.commands[
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE);
+		expect(
+			humanResourcesModuleManifest.authorization.commands[
 				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE);
+		expect(
+			humanResourcesModuleManifest.authorization.commands[
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE);
+		expect(
+			humanResourcesModuleManifest.authorization.commands[
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE
 			],
 		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE);
 		expect(
@@ -132,7 +154,22 @@ describe("humanResourcesModuleManifest", () => {
 		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
 		expect(
 			humanResourcesModuleManifest.authorization.queries[
+				HUMAN_RESOURCES_QUERY_EMPLOYMENT_AS_OF
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
+		expect(
+			humanResourcesModuleManifest.authorization.queries[
+				HUMAN_RESOURCES_QUERY_EMPLOYMENT_STATUS_HISTORY_LIST
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
+		expect(
+			humanResourcesModuleManifest.authorization.queries[
 				HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
+		expect(
+			humanResourcesModuleManifest.authorization.queries[
+				HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_AS_OF
 			],
 		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
 		expect(
@@ -148,6 +185,11 @@ describe("humanResourcesModuleManifest", () => {
 		expect(
 			humanResourcesModuleManifest.authorization.queries[
 				HUMAN_RESOURCES_QUERY_ASSIGNMENT_GET
+			],
+		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
+		expect(
+			humanResourcesModuleManifest.authorization.queries[
+				HUMAN_RESOURCES_QUERY_ASSIGNMENT_AS_OF
 			],
 		).toBe(HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ);
 		expect(
@@ -191,5 +233,9 @@ describe("humanResourcesModuleManifest", () => {
 			name.startsWith("hr_"),
 		);
 		expect(hrRoots).toEqual([...HUMAN_RESOURCES_MUTATION_TABLES]);
+	});
+
+	it("classifies every mutation table in the effective-truth register", () => {
+		expect(validateEffectiveTruthClassificationRegister()).toEqual([]);
 	});
 });

@@ -15,7 +15,11 @@ import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
 	Person,
+	PersonIdentityAtAsOf,
+	PersonIdentityVersion,
 	Worker,
+	WorkerClassificationAtAsOf,
+	WorkerClassificationVersion,
 } from "../workforce-foundation/types";
 
 export type PersonCreateRecord = {
@@ -61,11 +65,43 @@ export type IdempotentWorkerRecord = {
 	createRequestFingerprint: string;
 };
 
+type PersonNameCorrectionInput = {
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+	legalName: string;
+	effectiveOn: string;
+	reasonCode: string;
+	evidenceRef: string | null;
+	expectedVersion: number;
+	actorUserId: string;
+};
+
+type WorkerClassificationChangeBase = {
+	organizationId: string;
+	workerId: HumanResourcesWorkerId;
+	effectiveOn: string;
+	reasonCode: string;
+	evidenceRef: string | null;
+	expectedVersion: number;
+	actorUserId: string;
+};
+
 export type HumanResourcesWorkforceFoundationStore = {
 	getPersonById(input: {
 		organizationId: string;
 		personId: HumanResourcesPersonId;
 	}): Promise<Result<Person | null>>;
+
+	findPersonAsOf(input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+		asOf: string;
+	}): Promise<Result<PersonIdentityAtAsOf | null>>;
+
+	listPersonIdentityVersions(input: {
+		organizationId: string;
+		personId: HumanResourcesPersonId;
+	}): Promise<Result<readonly PersonIdentityVersion[]>>;
 
 	findPersonByIdempotencyKey(input: {
 		organizationId: string;
@@ -79,13 +115,7 @@ export type HumanResourcesWorkforceFoundationStore = {
 	): Promise<Result<Person>>;
 
 	updatePersonName(
-		input: {
-			organizationId: string;
-			personId: HumanResourcesPersonId;
-			legalName: string;
-			expectedVersion: number;
-			actorUserId: string;
-		},
+		input: PersonNameCorrectionInput,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Person>>;
@@ -94,6 +124,17 @@ export type HumanResourcesWorkforceFoundationStore = {
 		organizationId: string;
 		workerId: HumanResourcesWorkerId;
 	}): Promise<Result<Worker | null>>;
+
+	findWorkerAsOf(input: {
+		organizationId: string;
+		workerId: HumanResourcesWorkerId;
+		asOf: string;
+	}): Promise<Result<WorkerClassificationAtAsOf | null>>;
+
+	listWorkerClassificationVersions(input: {
+		organizationId: string;
+		workerId: HumanResourcesWorkerId;
+	}): Promise<Result<readonly WorkerClassificationVersion[]>>;
 
 	findWorkerByPersonId(input: {
 		organizationId: string;
@@ -118,36 +159,21 @@ export type HumanResourcesWorkforceFoundationStore = {
 
 	changeWorkerType(
 		input:
-			| {
-					organizationId: string;
-					workerId: HumanResourcesWorkerId;
+			| (WorkerClassificationChangeBase & {
 					workerType: "employee";
 					employeeId: HumanResourcesEmployeeId | null;
-					effectiveOn: string;
-					expectedVersion: number;
-					actorUserId: string;
-			  }
-			| {
-					organizationId: string;
-					workerId: HumanResourcesWorkerId;
+			  })
+			| (WorkerClassificationChangeBase & {
 					workerType: NonEmployeeWorkerType;
 					employeeId: null;
-					effectiveOn: string;
-					expectedVersion: number;
-					actorUserId: string;
-			  },
+			  }),
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeWorker | NonEmployeeWorker>>;
 
 	changeWorkerStatus(
-		input: {
-			organizationId: string;
-			workerId: HumanResourcesWorkerId;
+		input: WorkerClassificationChangeBase & {
 			status: WorkerStatus;
-			effectiveOn: string;
-			expectedVersion: number;
-			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,

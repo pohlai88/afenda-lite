@@ -18,8 +18,8 @@ import {
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(198);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(198);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(228);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(228);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);

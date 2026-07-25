@@ -2,11 +2,15 @@ import { HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT } from "@afenda/events
 import { describe, expect, it } from "vitest";
 
 import { composeHumanResourcesEmissionRegistry } from "../src/emissions/compose-registry";
-import { HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS } from "../src/emissions/domains/core-organization";
+import { HUMAN_RESOURCES_COMPENSATION_EMISSIONS } from "../src/emissions/domains/compensation";
 import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "../src/emissions/domains/compliance";
+import { HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS } from "../src/emissions/domains/core-organization";
 import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "../src/emissions/domains/employee-relations";
+import { HUMAN_RESOURCES_LEARNING_EMISSIONS } from "../src/emissions/domains/learning";
 import { HUMAN_RESOURCES_LEAVE_EMISSIONS } from "../src/emissions/domains/leave";
 import { HUMAN_RESOURCES_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/lifecycle";
+import { HUMAN_RESOURCES_PERFORMANCE_EMISSIONS } from "../src/emissions/domains/performance";
+import { HUMAN_RESOURCES_PRIVACY_EMISSIONS } from "../src/emissions/domains/privacy";
 import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "../src/emissions/domains/recruitment";
 import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/emissions/domains/talent";
 import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/emissions/domains/workforce-foundation";
@@ -20,9 +24,12 @@ import { validateHumanResourcesMutationEmissionRegistry } from "../src/emissions
 import {
 	HUMAN_RESOURCES_COMMAND_IDS,
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
-	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
+	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
+	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
+	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
 } from "../src/module-ids";
@@ -34,43 +41,47 @@ import { buildMutationMeta } from "../src/shared/mutation-meta";
 import mutationInventoryFixture from "./fixtures/mutation-inventory.json";
 
 describe("emission registry infrastructure", () => {
-	it("validates classified registry entries without structural issues", () => {
+	it("validates the full registry without structural issues", () => {
 		const issues = validateHumanResourcesMutationEmissionRegistry();
-		const classifiedIds = new Set(
-			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		);
-		const structuralIssues = issues.filter(
-			(issue) =>
-				issue.code !== "missing_command" &&
-				(issue.commandId === undefined || classifiedIds.has(issue.commandId)),
-		);
-		expect(structuralIssues).toEqual([]);
+		expect(issues).toEqual([]);
 	});
 
-	it("preserves 228 / 63 / 18 / 5 / 23 / 27 / 14 / 15 / 19 / 31 / 13 classification counts", () => {
+	it("validates domain_event types have event catalog entries", () => {
+		const issues = validateHumanResourcesMutationEmissionRegistry();
+		const catalogIssues = issues.filter(
+			(issue) => issue.code === "missing_catalog_entry",
+		);
+		expect(catalogIssues).toEqual([]);
+	});
+
+	it("preserves 290 / 63 / 18 / 5 / 23 / 27 / 14 / 15 / 19 / 31 / 13 / 18 / 30 / 11 / 3 classification counts", () => {
 		expect(
 			Object.keys(HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS),
 		).toHaveLength(63);
 		expect(Object.keys(HUMAN_RESOURCES_LEAVE_EMISSIONS)).toHaveLength(18);
-		expect(Object.keys(HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS)).toHaveLength(
-			5,
-		);
-		expect(Object.keys(HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS)).toHaveLength(
-			23,
-		);
+		expect(
+			Object.keys(HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS),
+		).toHaveLength(5);
+		expect(
+			Object.keys(HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS),
+		).toHaveLength(23);
 		expect(Object.keys(HUMAN_RESOURCES_RECRUITMENT_EMISSIONS)).toHaveLength(27);
 		expect(Object.keys(HUMAN_RESOURCES_LIFECYCLE_EMISSIONS)).toHaveLength(14);
-		expect(Object.keys(HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS)).toHaveLength(
-			15,
-		);
+		expect(
+			Object.keys(HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS),
+		).toHaveLength(15);
 		expect(Object.keys(HUMAN_RESOURCES_COMPLIANCE_EMISSIONS)).toHaveLength(19);
 		expect(Object.keys(HUMAN_RESOURCES_TALENT_EMISSIONS)).toHaveLength(31);
-		expect(Object.keys(HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS)).toHaveLength(
-			13,
-		);
+		expect(
+			Object.keys(HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS),
+		).toHaveLength(13);
+		expect(Object.keys(HUMAN_RESOURCES_COMPENSATION_EMISSIONS)).toHaveLength(18);
+		expect(Object.keys(HUMAN_RESOURCES_PERFORMANCE_EMISSIONS)).toHaveLength(30);
+		expect(Object.keys(HUMAN_RESOURCES_LEARNING_EMISSIONS)).toHaveLength(11);
+		expect(Object.keys(HUMAN_RESOURCES_PRIVACY_EMISSIONS)).toHaveLength(3);
 		expect(
 			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		).toHaveLength(228);
+		).toHaveLength(290);
 	});
 
 	it("keeps leave commands out of legacy classifications", () => {
@@ -123,6 +134,22 @@ describe("emission registry infrastructure", () => {
 		}
 	});
 
+	it("keeps Slice 3.6 classified commands out of legacy classifications", () => {
+		const slice36CommandIds = [
+			...HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
+			...HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
+			...HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
+			...Object.keys(HUMAN_RESOURCES_PRIVACY_EMISSIONS),
+		];
+		for (const commandId of slice36CommandIds) {
+			expect(
+				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				],
+			).toBeUndefined();
+		}
+	});
+
 	it("throws when duplicate command ids overlap during compose", () => {
 		expect(() =>
 			composeHumanResourcesEmissionRegistry(
@@ -157,9 +184,9 @@ describe("emission registry infrastructure", () => {
 		expect(mutationInventoryFixture.totalCommandIds).toBe(
 			HUMAN_RESOURCES_COMMAND_IDS.length,
 		);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(228);
-		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(62);
-		expect(mutationInventoryFixture.unclassified).toHaveLength(62);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(290);
+		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
+		expect(mutationInventoryFixture.unclassified).toEqual([]);
 	});
 
 	it("resolves domain event types from the registry", () => {

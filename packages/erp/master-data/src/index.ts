@@ -151,6 +151,8 @@ export {
 	createDrizzleOrganizationDimensionStore,
 	createOrganizationDimension,
 	createOrganizationDimensionInputSchema,
+	getOrganizationDimensionEffective,
+	getOrganizationDimensionEffectiveInputSchema,
 	ORGANIZATION_DIMENSION_KINDS,
 	type OrganizationDimension,
 	type OrganizationDimensionKind,

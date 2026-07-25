@@ -13,16 +13,17 @@
 | Band | `R1-F` |
 | Activation | `organization_toggle` |
 | Table prefix | `ca_*` |
+| CA-0 lifecycle | `scaffolded` until CA-1 vertical acceptance is verified |
 | Quality posture | Enterprise production; no stubs, shims, TODO paths, fake adapters, or partial-completion claims |
-| Status of this document | Implementation-ready authority and repair mission |
+| Status of this document | Approved implementation authority; CA-0 governance baseline |
 
 ---
 
 ## 1. Executive verdict
 
-The attached draft has the correct strategic direction: Afenda needs a dedicated organization-scoped bounded context for legal companies, corporate records, ownership, governance, premises, property, non-stock corporate assets, licences, charges, banking administration, group structure, documents, and statutory filings.
+The superseded draft had the correct strategic direction: Afenda needs a dedicated organization-scoped bounded context for legal companies, corporate records, ownership, governance, premises, property, non-stock corporate assets, licences, charges, banking administration, group structure, documents, and statutory filings.
 
-It is **not yet safe to implement unchanged**. The following repairs are mandatory:
+This authority resolves the draft's open questions. The superseded draft must not be implemented unchanged; the following repairs are binding:
 
 1. Use existing manifest category `erp`; do not introduce a new `governance` catalog category for a business-domain package.
 2. Close overlap with `@afenda/master-data` for legal-entity dimensions, organization parties, party addresses, party relationships, external identifiers, and tax registrations.
@@ -35,9 +36,9 @@ It is **not yet safe to implement unchanged**. The following repairs are mandato
 9. Include a minimum production UI in CA-1. Package plus Actions without a usable route is not an end-to-end full-stack slice.
 10. Add a strict plan-to-code completeness ledger. The module must not be called complete merely because its package compiles.
 
-### Runtime completion at the reviewed baseline
+### Runtime completion at the historical review baseline
 
-The current repository contains no executable Corporate Administration boundary: no package, manifest, schema, migration, events, permission catalog entries, Actions, feature route, or tests. The current executable implementation completion is therefore **0 of 12 required runtime boundaries**. The attached document is planning evidence, not implementation evidence.
+At review baseline `d07f6751fe31da07a2c27814313f15ef7ff90f76`, the repository contained no executable Corporate Administration boundary: no package, manifest, schema, migration, events, permission catalog entries, Actions, feature route, or tests. Executable implementation completion at that baseline was therefore **0 of 12 required runtime boundaries**. Later working-tree artifacts require slice-specific verification and do not change the historical baseline.
 
 ---
 
@@ -827,13 +828,13 @@ Only shipped capabilities appear. Do not render non-working placeholder tabs.
 
 ### 11.1 Control-plane files
 
-- `docs-V2/_scratch/erp/corporate-administration/corporate-administration.md` — replace draft/open questions with this approved authority.
+- `docs-V2/_scratch/erp/corporate-administration/corporate-administration.md` — retain only a concise supersession pointer to this approved authority; no duplicate contract.
 - `docs-V2/modules/MODULE-ROADMAP.yaml` — add candidate/approved row before scaffolding; remove it only when promoted according to repository governance.
 - `packages/erp/README.md` — add Corporate Administration under `erp`.
 - `packages/README.md` — add package catalog entry.
 - `scripts/validate-modules/checks.mjs` — add `LIVING_ERP_MANIFEST_PACKAGES` entry and every CA schema symbol/table mapping.
 - `docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml` — approve CA edges to DB, errors, audit, events, and master data; add app dependency edge where governance requires it.
-- `docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml` — register every BA-owned mutation table.
+- `docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml` — register every CA-owned mutation table.
 - Generated module, dependency, event, permission, and table registers — regenerate; never hand-edit generated files.
 
 ### 11.2 DB and event files
@@ -1089,7 +1090,7 @@ The completion percentage is calculated from `DONE` rows only. `PARTIAL`, skippe
 
 ### Mission ID
 
-`BA-ENTERPRISE-INTEGRATED-01`
+`CA-ENTERPRISE-INTEGRATED-01`
 
 ### Objective
 

@@ -1,10 +1,15 @@
-import type { Result } from "@afenda/errors/result";
+import { fail, type Result } from "@afenda/errors/result";
 import {
 	type HumanResourcesCommandOptions,
 	requireOrganizationDimensionDirectory,
 } from "../command-options";
+import {
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 import { HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER } from "../module-ids";
 import { transferAssignmentInputSchema } from "../schemas/lifecycle";
+import { resolveAssignmentContextSnapshots } from "../shared/assignment-snapshots";
 import { runLifecycleCommand } from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentMovement } from "../types";
@@ -37,12 +42,42 @@ export async function transferAssignment(
 				},
 			});
 			if (!dimensions.ok) return dimensions;
+
+			const employment = await store.getEmploymentById({
+				organizationId: data.organizationId,
+				employmentId: data.employmentId,
+			});
+			if (!employment.ok) return employment;
+			if (employment.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employment not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const snapshots = await resolveAssignmentContextSnapshots({
+				organizationId: data.organizationId,
+				employeeId: employment.data.employeeId,
+				employmentId: data.employmentId,
+				positionId: data.toPositionId,
+				organizationDimensions: dimensions.data,
+				asOf: data.effectiveOn,
+				store,
+				calendarStore: store,
+			});
+			if (!snapshots.ok) {
+				return snapshots;
+			}
+
 			return store.transferAssignment(
 				{
 					organizationId: data.organizationId,
 					employmentId: data.employmentId,
 					toPositionId: data.toPositionId,
 					organizationDimensions: dimensions.data,
+					managerEmployeeIdSnapshot: snapshots.data.managerEmployeeIdSnapshot,
+					workCalendarIdSnapshot: snapshots.data.workCalendarIdSnapshot,
 					effectiveOn: data.effectiveOn,
 					reason: data.reason,
 					idempotencyKey: data.idempotencyKey,

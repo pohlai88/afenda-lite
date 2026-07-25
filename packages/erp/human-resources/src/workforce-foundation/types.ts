@@ -19,6 +19,69 @@ export type Person = WorkforceFoundationRecord & {
 	legalName: string;
 };
 
+export type LineageSegmentStatus = "active" | "superseded";
+
+export type PersonIdentityVersion = {
+	id: string;
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+	legalName: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	supersedesIdentityVersionId: string | null;
+	lineageStatus: LineageSegmentStatus;
+	reasonCode: string;
+	evidenceRef: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PersonIdentityAtAsOf = {
+	personId: HumanResourcesPersonId;
+	organizationId: string;
+	legalName: string;
+	asOf: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	identityVersionId: string;
+};
+
+export type WorkerClassificationVersion = {
+	id: string;
+	organizationId: string;
+	workerId: HumanResourcesWorkerId;
+	workerType: "employee" | NonEmployeeWorkerType;
+	employeeId: HumanResourcesEmployeeId | null;
+	workerStatus: WorkerStatus;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	supersedesClassificationVersionId: string | null;
+	lineageStatus: LineageSegmentStatus;
+	reasonCode: string;
+	evidenceRef: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type WorkerClassificationAtAsOf = {
+	workerId: HumanResourcesWorkerId;
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+	workerType: "employee" | NonEmployeeWorkerType;
+	employeeId: HumanResourcesEmployeeId | null;
+	status: WorkerStatus;
+	asOf: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	classificationVersionId: string;
+};
+
 type WorkerBase = WorkforceFoundationRecord & {
 	id: HumanResourcesWorkerId;
 	personId: HumanResourcesPersonId;

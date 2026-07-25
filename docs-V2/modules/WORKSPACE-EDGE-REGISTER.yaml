@@ -1,11 +1,11 @@
 # Authorized @afenda workspace edges
 # Dual control: package.json realizes; this file authorizes; CI reconciles (Phase 2).
-# Version: workspace-edges/2026-07-20
-# Authority: docs-V2/monorepo · LAYERS.md · packages_refactor_v2.3 promotion
+# Version: workspace-edges/2026-07-25
+# Authority: docs-V2/monorepo · LAYERS.md · package-specific approved authorities
 
-version: "workspace-edges/2026-07-20"
-authority: packages_refactor_v2.3
-updated: "2026-07-20"
+version: "workspace-edges/2026-07-25"
+authority: docs-V2/monorepo
+updated: "2026-07-25"
 
 edges:
   - from: "@afenda/auth"
@@ -433,6 +433,37 @@ edges:
     authority: ARCH-006
     reason: "FK + snapshots; masters via public API only"
     effectiveDate: "2026-07-21"
+
+  - from: "@afenda/corporate-administration"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "ca_* schema access"
+    effectiveDate: "2026-07-25"
+  - from: "@afenda/corporate-administration"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Corporate Administration error codes"
+    effectiveDate: "2026-07-25"
+  - from: "@afenda/corporate-administration"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Corporate Administration mutation audit"
+    effectiveDate: "2026-07-25"
+  - from: "@afenda/corporate-administration"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Corporate Administration outbox events"
+    effectiveDate: "2026-07-25"
+  - from: "@afenda/corporate-administration"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "Legal entity dimension and party lookups via public API only"
+    effectiveDate: "2026-07-25"
 
   - from: "@afenda/payroll"
     to: "@afenda/db"

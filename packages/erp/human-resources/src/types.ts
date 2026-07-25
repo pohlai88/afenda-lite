@@ -205,6 +205,10 @@ export type Employment = {
 	updatedAt: Date;
 };
 
+export type { EmploymentStatusHistory } from "./shared/employment-history";
+
+export type EmploymentContractLineageStatus = "active" | "superseded";
+
 export type EmploymentContract = {
 	id: HumanResourcesEmploymentContractId;
 	organizationId: string;
@@ -213,6 +217,11 @@ export type EmploymentContract = {
 	referenceCode: string;
 	startsOn: string;
 	endsOn: string | null;
+	lineageStatus: EmploymentContractLineageStatus;
+	supersedesContractId: HumanResourcesEmploymentContractId | null;
+	supersededByContractId: HumanResourcesEmploymentContractId | null;
+	reasonCode: string;
+	sourceReference: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -270,6 +279,11 @@ export type WorkAssignment = {
 	positionId: HumanResourcesPositionId;
 	/** Null only for rows created before governed organization dimensions. */
 	organizationDimensions: HumanResourcesOrganizationDimensions | null;
+	predecessorAssignmentId: HumanResourcesAssignmentId | null;
+	successorAssignmentId: HumanResourcesAssignmentId | null;
+	transferMovementId: HumanResourcesEmploymentMovementId | null;
+	managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
+	workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
 	startsOn: string;
 	endsOn: string | null;
 	version: number;
@@ -294,6 +308,8 @@ export type ReportingLine = {
 	relationshipKind: ReportingRelationshipKind;
 	startsOn: string;
 	endsOn: string | null;
+	supersedesReportingLineId: HumanResourcesReportingLineId | null;
+	supersededByReportingLineId: HumanResourcesReportingLineId | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;

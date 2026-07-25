@@ -1,9 +1,17 @@
-# Module roadmap (planning only — no workspace packages)
-# Version: module-roadmap/2026-07-20
-# Authority: packages_refactor_v2.3 promotion · docs-V2/monorepo
-# Living (removed from roadmap): master-data · sales · purchasing · inventory · receiving · fulfillment · receivables · payables · payments · accounting
+# Module roadmap (planning and incremental promotion authority)
+# Version: module-roadmap/2026-07-25
+# Authority: docs-V2/monorepo · Corporate Administration integrated implementation authority
+# Promoted (removed from roadmap): master-data · sales · purchasing · inventory · receiving · fulfillment · receivables · payables · payments · accounting · human-resources · payroll
 
-version: "module-roadmap/2026-07-20"
-updated: "2026-07-20"
+version: "module-roadmap/2026-07-25"
+updated: "2026-07-25"
 
-modules: []
+modules:
+  - id: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    category: erp
+    band: R1-F
+    status: approved
+    activationMode: organization_toggle
+    tablePrefix: ca_
+    authority: docs-V2/_scratch/erp/corporate-administration/corporate-administration-integrated-implementation-authority.md

@@ -81,6 +81,20 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 					.map(clone),
 			);
 		},
+		async findEffectiveById(input) {
+			return ok(
+				[...records.values()]
+					.filter(
+						(record) =>
+							record.organizationId === input.organizationId &&
+							record.id === input.id &&
+							record.kind === input.kind &&
+							record.effectiveFrom <= input.asOf &&
+							(record.effectiveTo === null || record.effectiveTo >= input.asOf),
+					)
+					.map(clone),
+			);
+		},
 		seed(record) {
 			records.set(record.id, {
 				...clone(record),

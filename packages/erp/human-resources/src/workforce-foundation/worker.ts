@@ -8,18 +8,25 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
 	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
+	HUMAN_RESOURCES_QUERY_WORKER_AS_OF,
 	HUMAN_RESOURCES_QUERY_WORKER_GET,
 } from "../module-ids";
 import {
 	changeWorkerStatusInputSchema,
 	changeWorkerTypeInputSchema,
 	createWorkerInputSchema,
+	getWorkerAsOfInputSchema,
 	getWorkerInputSchema,
 } from "../schemas/workforce-foundation";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { fingerprintWorkerCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { EmployeeWorker, NonEmployeeWorker, Worker } from "./types";
+import type {
+	EmployeeWorker,
+	NonEmployeeWorker,
+	Worker,
+	WorkerClassificationAtAsOf,
+} from "./types";
 
 export async function createWorker(
 	input: unknown,
@@ -105,25 +112,26 @@ export async function changeWorkerType(
 		invalidMessage: "Invalid worker type change input",
 		command: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
 		execute: async (data, { store, ports }) => {
+			const shared = {
+				organizationId: data.organizationId,
+				workerId: data.workerId,
+				effectiveOn: data.effectiveOn,
+				reasonCode: data.reasonCode,
+				evidenceRef: data.evidenceRef ?? null,
+				expectedVersion: data.expectedVersion,
+				actorUserId: data.actorUserId,
+			};
 			const payload =
 				data.workerType === "employee"
 					? {
-							organizationId: data.organizationId,
-							workerId: data.workerId,
+							...shared,
 							workerType: "employee" as const,
 							employeeId: data.employeeId ?? null,
-							effectiveOn: data.effectiveOn,
-							expectedVersion: data.expectedVersion,
-							actorUserId: data.actorUserId,
 						}
 					: {
-							organizationId: data.organizationId,
-							workerId: data.workerId,
+							...shared,
 							workerType: data.workerType,
 							employeeId: null,
-							effectiveOn: data.effectiveOn,
-							expectedVersion: data.expectedVersion,
-							actorUserId: data.actorUserId,
 						};
 
 			return store.changeWorkerType(
@@ -153,6 +161,8 @@ export async function changeWorkerStatus(
 					workerId: data.workerId,
 					status: data.status,
 					effectiveOn: data.effectiveOn,
+					reasonCode: data.reasonCode,
+					evidenceRef: data.evidenceRef ?? null,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -184,6 +194,34 @@ export async function getWorkerById(
 			}
 			if (result.data === null) {
 				return fail("NOT_FOUND", "Worker not found");
+			}
+			return ok(result.data);
+		},
+	});
+}
+
+export async function getWorkerAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkerClassificationAtAsOf>> {
+	return runCoreQuery(input, options, {
+		schema: getWorkerAsOfInputSchema,
+		invalidMessage: "Invalid worker as-of input",
+		query: HUMAN_RESOURCES_QUERY_WORKER_AS_OF,
+		execute: async (data, { store }) => {
+			const result = await store.findWorkerAsOf({
+				organizationId: data.organizationId,
+				workerId: data.workerId,
+				asOf: data.asOf,
+			});
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Worker classification not found for as-of date",
+				);
 			}
 			return ok(result.data);
 		},

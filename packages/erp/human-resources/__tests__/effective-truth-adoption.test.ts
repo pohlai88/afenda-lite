@@ -5,6 +5,10 @@ import {
 	HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION,
 	validateEffectiveTruthAdoptionMatrix,
 } from "../src/effective-truth-adoption";
+import {
+	adoptionDecisionToClassificationCategory,
+	HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION,
+} from "../src/effective-truth-classification";
 
 describe("HR effective-truth adoption matrix", () => {
 	it("classifies every inventoried mutable definition and assignment", () => {
@@ -55,5 +59,17 @@ describe("HR effective-truth adoption matrix", () => {
 			kind: "missing-adoption",
 			table: removed.table,
 		});
+	});
+
+	it("remains bridged to the Slice 4.1 classification register", () => {
+		for (const adoption of HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION) {
+			const classification =
+				HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION.find(
+					(entry) => entry.table === adoption.table,
+				);
+			expect(classification?.category).toBe(
+				adoptionDecisionToClassificationCategory(adoption.decision),
+			);
+		}
 	});
 });

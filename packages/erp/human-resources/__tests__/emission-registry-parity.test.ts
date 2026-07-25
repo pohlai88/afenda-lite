@@ -2,11 +2,14 @@ import { HumanResourcesEventSchemas } from "@afenda/events";
 import { describe, expect, it } from "vitest";
 import { humanResourcesModuleManifest } from "../src/module.manifest";
 import {
+	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
+	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
 	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
@@ -14,6 +17,21 @@ import {
 	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
 } from "../src/module-ids";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
+
+const SLICE_36_CLASSIFIED_PACKS = [
+	{
+		label: "compensation-benefits",
+		commandIds: HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
+	},
+	{
+		label: "performance",
+		commandIds: HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
+	},
+	{
+		label: "learning",
+		commandIds: HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
+	},
+] as const;
 
 describe("mutation emission registry parity", () => {
 	it("every manifest emit type has a Zod schema entry", () => {
@@ -198,4 +216,20 @@ describe("mutation emission registry parity", () => {
 			HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS.length,
 		);
 	});
+
+	it.each(SLICE_36_CLASSIFIED_PACKS)(
+		"registers every classified $label command in the emission registry",
+		({ commandIds }) => {
+			const registryCommands = new Set(
+				HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+			);
+			for (const command of commandIds) {
+				expect(registryCommands.has(command)).toBe(true);
+			}
+			const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+				(commandIds as readonly string[]).includes(entry.command),
+			);
+			expect(rows).toHaveLength(commandIds.length);
+		},
+	);
 });

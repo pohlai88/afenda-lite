@@ -17,6 +17,7 @@
 		"@afenda/ai-the-machine": "workspace:*",
 		"@afenda/audit": "workspace:*",
 		"@afenda/auth": "workspace:*",
+		"@afenda/corporate-administration": "workspace:*",
 		"@afenda/db": "workspace:*",
 		"@afenda/env": "workspace:*",
 		"@afenda/errors": "workspace:*",

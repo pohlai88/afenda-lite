@@ -17,6 +17,7 @@ export const EVENT_SOURCE_MODULES = [
 	"receivables",
 	"human-resources",
 	"payroll",
+	"corporate-administration",
 ] as const;
 
 export type EventSourceModule = (typeof EVENT_SOURCE_MODULES)[number];

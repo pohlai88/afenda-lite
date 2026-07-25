@@ -7,8 +7,11 @@ import {
 	eq,
 	gte,
 	hrDepartment,
+	hrDepartmentStructureVersion,
 	hrJob,
+	hrJobDefinitionVersion,
 	hrPosition,
+	hrPositionDefinitionVersion,
 	hrReportingLine,
 	isNull,
 	lte,
@@ -50,11 +53,14 @@ import {
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import { humanResourcesEntityEventPayloadJson } from "../../shared/audit-facts";
+import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
+	invalidInput,
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import { previousIsoDate } from "../../shared/effective-dates";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
@@ -89,6 +95,24 @@ import type {
 	PositionCreateRecord,
 	ReportingLineCreateRecord,
 } from "../../store";
+import {
+	findOpenDepartmentStructureVersion,
+	findOpenJobDefinitionVersion,
+	findOpenPositionDefinitionVersion,
+	resolveDepartmentStructureAsOf,
+	resolveJobDefinitionAsOf,
+	resolvePositionDefinitionAsOf,
+	type DepartmentStructureAtAsOf,
+	type DepartmentStructureVersion,
+	type JobDefinitionAtAsOf,
+	type JobDefinitionVersion,
+	type PositionDefinitionAtAsOf,
+	type PositionDefinitionVersion,
+} from "../../organization/organization-structure-lineage";
+import {
+	assertLineageSegmentMutable,
+	validateLineageSegmentEffectiveOn,
+} from "../../workforce-foundation/lineage-segment";
 import type {
 	Department,
 	Job,
@@ -212,6 +236,16 @@ function mapReportingLine(
 	if (!id.ok) return id;
 	if (!employeeId.ok) return employeeId;
 	if (!managerEmployeeId.ok) return managerEmployeeId;
+	const supersedesReportingLineId =
+		row.supersedesReportingLineId === null
+			? ok(null)
+			: parseHumanResourcesReportingLineId(row.supersedesReportingLineId);
+	if (!supersedesReportingLineId.ok) return supersedesReportingLineId;
+	const supersededByReportingLineId =
+		row.supersededByReportingLineId === null
+			? ok(null)
+			: parseHumanResourcesReportingLineId(row.supersededByReportingLineId);
+	if (!supersededByReportingLineId.ok) return supersededByReportingLineId;
 	const relationshipKind = reportingRelationshipKindSchema.safeParse(
 		row.relationshipKind,
 	);
@@ -230,6 +264,8 @@ function mapReportingLine(
 		relationshipKind: relationshipKind.data,
 		startsOn: row.startsOn,
 		endsOn: row.endsOn,
+		supersedesReportingLineId: supersedesReportingLineId.data,
+		supersededByReportingLineId: supersededByReportingLineId.data,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -336,6 +372,8 @@ type ReportingLineSqlRow = {
 	relationship_kind: string;
 	starts_on: string;
 	ends_on: string | null;
+	supersedes_reporting_line_id: string | null;
+	superseded_by_reporting_line_id: string | null;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -354,12 +392,245 @@ function mapReportingLineSqlRow(
 		relationshipKind: row.relationship_kind,
 		startsOn: row.starts_on,
 		endsOn: row.ends_on,
+		supersedesReportingLineId: row.supersedes_reporting_line_id,
+		supersededByReportingLineId: row.superseded_by_reporting_line_id,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	});
+}
+
+type DepartmentStructureVersionSqlRow = {
+	id: string;
+	organization_id: string;
+	department_id: string;
+	name: string;
+	parent_department_id: string | null;
+	effective_from: string;
+	effective_to: string | null;
+	supersedes_structure_version_id: string | null;
+	lineage_status: string;
+	reason_code: string;
+	evidence_ref: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+function mapDepartmentStructureVersionRow(
+	row: DepartmentStructureVersionSqlRow,
+): Result<DepartmentStructureVersion> {
+	const departmentId = parseHumanResourcesDepartmentId(row.department_id);
+	if (!departmentId.ok) return departmentId;
+	const parentDepartmentId = mapNullableDepartmentId(row.parent_department_id);
+	if (!parentDepartmentId.ok) return parentDepartmentId;
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		departmentId: departmentId.data,
+		name: row.name,
+		parentDepartmentId: parentDepartmentId.data,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		supersedesStructureVersionId: row.supersedes_structure_version_id,
+		lineageStatus:
+			row.lineage_status === "superseded" ? "superseded" : "active",
+		reasonCode: row.reason_code,
+		evidenceRef: row.evidence_ref,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+type JobDefinitionVersionSqlRow = {
+	id: string;
+	organization_id: string;
+	job_id: string;
+	title: string;
+	effective_from: string;
+	effective_to: string | null;
+	supersedes_definition_version_id: string | null;
+	lineage_status: string;
+	reason_code: string;
+	evidence_ref: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+function mapJobDefinitionVersionRow(
+	row: JobDefinitionVersionSqlRow,
+): Result<JobDefinitionVersion> {
+	const jobId = parseHumanResourcesJobId(row.job_id);
+	if (!jobId.ok) return jobId;
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		jobId: jobId.data,
+		title: row.title,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		supersedesDefinitionVersionId: row.supersedes_definition_version_id,
+		lineageStatus:
+			row.lineage_status === "superseded" ? "superseded" : "active",
+		reasonCode: row.reason_code,
+		evidenceRef: row.evidence_ref,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+type PositionDefinitionVersionSqlRow = {
+	id: string;
+	organization_id: string;
+	position_id: string;
+	title: string;
+	department_id: string | null;
+	job_id: string | null;
+	effective_from: string;
+	effective_to: string | null;
+	supersedes_definition_version_id: string | null;
+	lineage_status: string;
+	reason_code: string;
+	evidence_ref: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+function mapPositionDefinitionVersionRow(
+	row: PositionDefinitionVersionSqlRow,
+): Result<PositionDefinitionVersion> {
+	const positionId = parseHumanResourcesPositionId(row.position_id);
+	if (!positionId.ok) return positionId;
+	const departmentId = mapNullableDepartmentId(row.department_id);
+	if (!departmentId.ok) return departmentId;
+	const jobId = mapNullableJobId(row.job_id);
+	if (!jobId.ok) return jobId;
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		positionId: positionId.data,
+		title: row.title,
+		departmentId: departmentId.data,
+		jobId: jobId.data,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		supersedesDefinitionVersionId: row.supersedes_definition_version_id,
+		lineageStatus:
+			row.lineage_status === "superseded" ? "superseded" : "active",
+		reasonCode: row.reason_code,
+		evidenceRef: row.evidence_ref,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+async function listDepartmentStructureVersions(input: {
+	organizationId: string;
+	departmentId: HumanResourcesDepartmentId;
+}): Promise<Result<DepartmentStructureVersion[]>> {
+	try {
+		const rows = await db
+			.select()
+			.from(hrDepartmentStructureVersion)
+			.where(
+				and(
+					eq(hrDepartmentStructureVersion.organizationId, input.organizationId),
+					eq(hrDepartmentStructureVersion.departmentId, input.departmentId),
+				),
+			);
+		const versions: DepartmentStructureVersion[] = [];
+		for (const row of rows) {
+			const mapped = mapDepartmentStructureVersionRow(
+				row as unknown as DepartmentStructureVersionSqlRow,
+			);
+			if (!mapped.ok) return mapped;
+			versions.push(mapped.data);
+		}
+		return ok(versions);
+	} catch (error) {
+		return mapPersistenceFailure(
+			error,
+			"Failed to list department structure versions",
+		);
+	}
+}
+
+async function listJobDefinitionVersions(input: {
+	organizationId: string;
+	jobId: HumanResourcesJobId;
+}): Promise<Result<JobDefinitionVersion[]>> {
+	try {
+		const rows = await db
+			.select()
+			.from(hrJobDefinitionVersion)
+			.where(
+				and(
+					eq(hrJobDefinitionVersion.organizationId, input.organizationId),
+					eq(hrJobDefinitionVersion.jobId, input.jobId),
+				),
+			);
+		const versions: JobDefinitionVersion[] = [];
+		for (const row of rows) {
+			const mapped = mapJobDefinitionVersionRow(
+				row as unknown as JobDefinitionVersionSqlRow,
+			);
+			if (!mapped.ok) return mapped;
+			versions.push(mapped.data);
+		}
+		return ok(versions);
+	} catch (error) {
+		return mapPersistenceFailure(error, "Failed to list job definition versions");
+	}
+}
+
+async function listPositionDefinitionVersions(input: {
+	organizationId: string;
+	positionId: HumanResourcesPositionId;
+}): Promise<Result<PositionDefinitionVersion[]>> {
+	try {
+		const rows = await db
+			.select()
+			.from(hrPositionDefinitionVersion)
+			.where(
+				and(
+					eq(hrPositionDefinitionVersion.organizationId, input.organizationId),
+					eq(hrPositionDefinitionVersion.positionId, input.positionId),
+				),
+			);
+		const versions: PositionDefinitionVersion[] = [];
+		for (const row of rows) {
+			const mapped = mapPositionDefinitionVersionRow(
+				row as unknown as PositionDefinitionVersionSqlRow,
+			);
+			if (!mapped.ok) return mapped;
+			versions.push(mapped.data);
+		}
+		return ok(versions);
+	} catch (error) {
+		return mapPersistenceFailure(
+			error,
+			"Failed to list position definition versions",
+		);
+	}
 }
 
 type DrizzleOrganizationHost = Pick<
@@ -400,6 +671,10 @@ export type DrizzleOrganizationMethods = Pick<
 	| "closeReportingLine"
 	| "replacePrimaryReportingLine"
 	| "getOrganizationTree"
+	| "findDepartmentAsOf"
+	| "findJobAsOf"
+	| "findPositionAsOf"
+	| "getOrganizationTreeAsOf"
 >;
 
 async function assertReportingLineAssignable(
@@ -564,6 +839,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const brandedId = parseHumanResourcesDepartmentId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const structureVersionId = randomUUID();
+		const effectiveFrom = new Date().toISOString().slice(0, 10);
 		const parentId = record.parentDepartmentId;
 		try {
 			const [rows] = await runNeonHttpTransaction<[DepartmentSqlRow[]]>(
@@ -580,6 +857,19 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									)
 									RETURNING *
 								),
+								lineage AS (
+									INSERT INTO hr_department_structure_version (
+										id, organization_id, department_id, name, parent_department_id,
+										effective_from, effective_to, supersedes_structure_version_id,
+										lineage_status, reason_code, evidence_ref, version, created_by, updated_by
+									)
+									SELECT
+										${structureVersionId}, organization_id, id, name, parent_department_id,
+										${effectiveFrom}, NULL, NULL, 'active', 'initial_record', NULL, 1,
+										created_by, created_by
+									FROM mutated
+									RETURNING id
+								),
 								audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -591,7 +881,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									FROM mutated
 									RETURNING id
 								)
-								SELECT mutated.* FROM mutated, audited
+								SELECT mutated.* FROM mutated, lineage, audited
 							`
 						: sql`
 								WITH parent AS (
@@ -612,6 +902,19 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									FROM parent
 									RETURNING *
 								),
+								lineage AS (
+									INSERT INTO hr_department_structure_version (
+										id, organization_id, department_id, name, parent_department_id,
+										effective_from, effective_to, supersedes_structure_version_id,
+										lineage_status, reason_code, evidence_ref, version, created_by, updated_by
+									)
+									SELECT
+										${structureVersionId}, organization_id, id, name, parent_department_id,
+										${effectiveFrom}, NULL, NULL, 'active', 'initial_record', NULL, 1,
+										created_by, created_by
+									FROM mutated
+									RETURNING id
+								),
 								audited AS (
 									INSERT INTO platform_audit_log (
 										id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -623,7 +926,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									FROM mutated
 									RETURNING id
 								)
-								SELECT mutated.* FROM mutated, audited
+								SELECT mutated.* FROM mutated, lineage, audited
 							`,
 				],
 			);
@@ -668,6 +971,9 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			departmentId: HumanResourcesDepartmentId;
 			name?: string;
 			parentDepartmentId?: HumanResourcesDepartmentId | null;
+			effectiveOn: string;
+			reasonCode: string;
+			evidenceRef?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -683,76 +989,117 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return notFound("Department not found");
 		}
 
-		if (input.parentDepartmentId !== undefined) {
-			if (input.parentDepartmentId !== null) {
-				const parent = await this.getDepartmentById({
-					organizationId: input.organizationId,
-					departmentId: input.parentDepartmentId,
-				});
-				if (!parent.ok) return parent;
-				if (parent.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Parent department not found",
-						humanResourcesErrorDetails(
-							HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-						),
-					);
-				}
-				const parentActive = assertActiveDepartment(parent.data.status);
-				if (!parentActive.ok) return parentActive;
-			}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
 
-			// Prefetch parent chain with sequential queries to match memory semantics.
-			const parentCache = new Map<
-				string,
-				HumanResourcesDepartmentId | null | undefined
-			>();
-			if (input.parentDepartmentId !== null) {
-				let current: HumanResourcesDepartmentId | null =
-					input.parentDepartmentId;
-				while (current !== null) {
-					if (parentCache.has(current)) {
-						break;
-					}
-					const loaded: Result<Department | null> =
-						await this.getDepartmentById({
-							organizationId: input.organizationId,
-							departmentId: current,
-						});
-					if (!loaded.ok) return loaded;
-					if (loaded.data === null) {
-						parentCache.set(current, undefined);
-						break;
-					}
-					parentCache.set(current, loaded.data.parentDepartmentId);
-					current = loaded.data.parentDepartmentId;
-				}
-			}
-			const acyclic = assertDepartmentParentAcyclic({
-				departmentId: input.departmentId,
-				proposedParentId: input.parentDepartmentId,
-				getParentId: (id) => parentCache.get(id),
-			});
-			if (!acyclic.ok) return acyclic;
+		const nextName =
+			input.name !== undefined ? input.name : existing.data.name;
+		const nextParent =
+			input.parentDepartmentId !== undefined
+				? input.parentDepartmentId
+				: existing.data.parentDepartmentId;
+
+		if (
+			nextName === existing.data.name &&
+			nextParent === existing.data.parentDepartmentId
+		) {
+			return fail(
+				"CONFLICT",
+				"Department structure correction must change name or parent",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
 		}
 
+		const versionsResult = await listDepartmentStructureVersions({
+			organizationId: input.organizationId,
+			departmentId: input.departmentId,
+		});
+		if (!versionsResult.ok) return versionsResult;
+		const openSegment = findOpenDepartmentStructureVersion(
+			versionsResult.data,
+			input.organizationId,
+			input.departmentId,
+		);
+		if (openSegment === null) {
+			return fail(
+				"CONFLICT",
+				"Department structure lineage is missing an open segment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+		const mutableCheck = assertLineageSegmentMutable(openSegment);
+		if (!mutableCheck.ok) return mutableCheck;
+		const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+			openEffectiveFrom: openSegment.effectiveFrom,
+			effectiveOn: input.effectiveOn,
+		});
+		if (!effectiveOnCheck.ok) return effectiveOnCheck;
+
+		if (nextParent !== null) {
+			const parent = await this.getDepartmentById({
+				organizationId: input.organizationId,
+				departmentId: nextParent,
+			});
+			if (!parent.ok) return parent;
+			if (parent.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Parent department not found",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+					),
+				);
+			}
+			const parentActive = assertActiveDepartment(parent.data.status);
+			if (!parentActive.ok) return parentActive;
+		}
+
+		const parentCache = new Map<
+			string,
+			HumanResourcesDepartmentId | null | undefined
+		>();
+		if (nextParent !== null) {
+			let current: HumanResourcesDepartmentId | null = nextParent;
+			while (current !== null) {
+				if (parentCache.has(current)) {
+					break;
+				}
+				const loaded = await this.getDepartmentById({
+					organizationId: input.organizationId,
+					departmentId: current,
+				});
+				if (!loaded.ok) return loaded;
+				if (loaded.data === null) {
+					parentCache.set(current, undefined);
+					break;
+				}
+				parentCache.set(current, loaded.data.parentDepartmentId);
+				current = loaded.data.parentDepartmentId;
+			}
+		}
+		const acyclic = assertDepartmentParentAcyclic({
+			departmentId: input.departmentId,
+			proposedParentId: nextParent,
+			getParentId: (id) => parentCache.get(id),
+		});
+		if (!acyclic.ok) return acyclic;
+
 		const auditId = randomUUID();
+		const successorId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const nameValue = input.name ?? null;
-		const parentProvided = input.parentDepartmentId !== undefined ? 1 : 0;
-		const parentValue = input.parentDepartmentId ?? null;
+		const predecessorEnd = previousIsoDate(input.effectiveOn);
+		const parentValue = nextParent;
 		try {
 			const [rows] = await runNeonHttpTransaction<[DepartmentSqlRow[]]>(
 				(sql) => [
 					sql`
 							WITH mutated AS (
 								UPDATE hr_department
-								SET name = COALESCE(${nameValue}::text, name),
-									parent_department_id = CASE
-										WHEN ${parentProvided}::int = 1 THEN ${parentValue}::uuid
-										ELSE parent_department_id
-									END,
+								SET name = ${nextName},
+									parent_department_id = ${parentValue},
 									version = ${nextVersion},
 									updated_by = ${input.actorUserId},
 									updated_at = now()
@@ -760,6 +1107,34 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									AND organization_id = ${input.organizationId}
 									AND version = ${input.expectedVersion}
 								RETURNING *
+							),
+							closed AS (
+								UPDATE hr_department_structure_version
+								SET effective_to = ${predecessorEnd},
+									lineage_status = 'superseded',
+									version = version + 1,
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE organization_id = ${input.organizationId}
+									AND department_id = ${input.departmentId}
+									AND id = ${openSegment.id}
+									AND effective_to IS NULL
+									AND lineage_status = 'active'
+								RETURNING id
+							),
+							successor AS (
+								INSERT INTO hr_department_structure_version (
+									id, organization_id, department_id, name, parent_department_id,
+									effective_from, effective_to, supersedes_structure_version_id,
+									lineage_status, reason_code, evidence_ref, version, created_by, updated_by
+								)
+								SELECT
+									${successorId}, organization_id, id, ${nextName}, ${parentValue},
+									${input.effectiveOn}, NULL, ${openSegment.id}, 'active',
+									${input.reasonCode}, ${input.evidenceRef ?? null}, 1,
+									${input.actorUserId}, ${input.actorUserId}
+								FROM mutated, closed
+								RETURNING id
 							),
 							audited AS (
 								INSERT INTO platform_audit_log (
@@ -772,7 +1147,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								FROM mutated
 								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, closed, successor, audited
 						`,
 				],
 			);
@@ -1088,6 +1463,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const brandedId = parseHumanResourcesJobId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const definitionVersionId = randomUUID();
+		const effectiveFrom = new Date().toISOString().slice(0, 10);
 		try {
 			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>((sql) => [
 				sql`
@@ -1101,6 +1478,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							)
 							RETURNING *
 						),
+						lineage AS (
+							INSERT INTO hr_job_definition_version (
+								id, organization_id, job_id, title, effective_from,
+								effective_to, supersedes_definition_version_id, lineage_status,
+								reason_code, evidence_ref, version, created_by, updated_by
+							)
+							SELECT
+								${definitionVersionId}, organization_id, id, title, ${effectiveFrom},
+								NULL, NULL, 'active', 'initial_record', NULL, 1, created_by, created_by
+							FROM mutated
+							RETURNING id
+						),
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -1112,7 +1501,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, lineage, audited
 					`,
 			]);
 			const row = rows[0];
@@ -1137,14 +1526,67 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			organizationId: string;
 			jobId: HumanResourcesJobId;
 			title: string;
+			effectiveOn: string;
+			reasonCode: string;
+			evidenceRef?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Job>> {
+		const existing = await this.getJobById({
+			organizationId: input.organizationId,
+			jobId: input.jobId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Job not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		if (input.title === existing.data.title) {
+			return fail(
+				"CONFLICT",
+				"Job definition correction must change title",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+
+		const versionsResult = await listJobDefinitionVersions({
+			organizationId: input.organizationId,
+			jobId: input.jobId,
+		});
+		if (!versionsResult.ok) return versionsResult;
+		const openSegment = findOpenJobDefinitionVersion(
+			versionsResult.data,
+			input.organizationId,
+			input.jobId,
+		);
+		if (openSegment === null) {
+			return fail(
+				"CONFLICT",
+				"Job definition lineage is missing an open segment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+		const mutableCheck = assertLineageSegmentMutable(openSegment);
+		if (!mutableCheck.ok) return mutableCheck;
+		const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+			openEffectiveFrom: openSegment.effectiveFrom,
+			effectiveOn: input.effectiveOn,
+		});
+		if (!effectiveOnCheck.ok) return effectiveOnCheck;
+
 		const auditId = randomUUID();
+		const successorId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const predecessorEnd = previousIsoDate(input.effectiveOn);
 		try {
 			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>((sql) => [
 				sql`
@@ -1159,6 +1601,33 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								AND version = ${input.expectedVersion}
 							RETURNING *
 						),
+						closed AS (
+							UPDATE hr_job_definition_version
+							SET effective_to = ${predecessorEnd},
+								lineage_status = 'superseded',
+								version = version + 1,
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE organization_id = ${input.organizationId}
+								AND job_id = ${input.jobId}
+								AND id = ${openSegment.id}
+								AND effective_to IS NULL
+								AND lineage_status = 'active'
+							RETURNING id
+						),
+						successor AS (
+							INSERT INTO hr_job_definition_version (
+								id, organization_id, job_id, title, effective_from,
+								effective_to, supersedes_definition_version_id, lineage_status,
+								reason_code, evidence_ref, version, created_by, updated_by
+							)
+							SELECT
+								${successorId}, organization_id, id, ${input.title}, ${input.effectiveOn},
+								NULL, ${openSegment.id}, 'active', ${input.reasonCode},
+								${input.evidenceRef ?? null}, 1, ${input.actorUserId}, ${input.actorUserId}
+							FROM mutated, closed
+							RETURNING id
+						),
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -1170,18 +1639,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, closed, successor, audited
 					`,
 			]);
 			const row = rows[0];
 			if (!row) {
-				const existing = await this.getJobById({
+				const again = await this.getJobById({
 					organizationId: input.organizationId,
 					jobId: input.jobId,
 				});
-				if (!existing.ok) return existing;
+				if (!again.ok) return again;
 				return missAfterOptimisticUpdate({
-					found: existing.data !== null,
+					found: again.data !== null,
 					entityLabel: "Job",
 				});
 			}
@@ -1423,6 +1892,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const brandedId = parseHumanResourcesPositionId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const definitionVersionId = randomUUID();
+		const effectiveFrom = new Date().toISOString().slice(0, 10);
 		try {
 			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>((sql) => [
 				sql`
@@ -1451,6 +1922,19 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							FROM department, job
 							RETURNING *
 						),
+						lineage AS (
+							INSERT INTO hr_position_definition_version (
+								id, organization_id, position_id, title, department_id, job_id,
+								effective_from, effective_to, supersedes_definition_version_id,
+								lineage_status, reason_code, evidence_ref, version, created_by, updated_by
+							)
+							SELECT
+								${definitionVersionId}, organization_id, id, title, department_id, job_id,
+								${effectiveFrom}, NULL, NULL, 'active', 'initial_record', NULL, 1,
+								created_by, created_by
+							FROM mutated
+							RETURNING id
+						),
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -1462,7 +1946,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, lineage, audited
 					`,
 			]);
 			const row = rows[0];
@@ -1514,12 +1998,80 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			title?: string;
 			departmentId?: HumanResourcesDepartmentId;
 			jobId?: HumanResourcesJobId;
+			effectiveOn: string;
+			reasonCode: string;
+			evidenceRef?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Position>> {
+		const existing = await this.getPositionById({
+			organizationId: input.organizationId,
+			positionId: input.positionId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Position not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const nextTitle =
+			input.title !== undefined ? input.title : existing.data.title;
+		const nextDepartmentId =
+			input.departmentId !== undefined
+				? input.departmentId
+				: existing.data.departmentId;
+		const nextJobId =
+			input.jobId !== undefined ? input.jobId : existing.data.jobId;
+
+		if (nextDepartmentId === null || nextJobId === null) {
+			return invalidInput("Position requires department and job");
+		}
+
+		if (
+			nextTitle === existing.data.title &&
+			nextDepartmentId === existing.data.departmentId &&
+			nextJobId === existing.data.jobId
+		) {
+			return fail(
+				"CONFLICT",
+				"Position definition correction must change title, department, or job",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+
+		const versionsResult = await listPositionDefinitionVersions({
+			organizationId: input.organizationId,
+			positionId: input.positionId,
+		});
+		if (!versionsResult.ok) return versionsResult;
+		const openSegment = findOpenPositionDefinitionVersion(
+			versionsResult.data,
+			input.organizationId,
+			input.positionId,
+		);
+		if (openSegment === null) {
+			return fail(
+				"CONFLICT",
+				"Position definition lineage is missing an open segment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+		const mutableCheck = assertLineageSegmentMutable(openSegment);
+		if (!mutableCheck.ok) return mutableCheck;
+		const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+			openEffectiveFrom: openSegment.effectiveFrom,
+			effectiveOn: input.effectiveOn,
+		});
+		if (!effectiveOnCheck.ok) return effectiveOnCheck;
+
 		if (input.departmentId !== undefined) {
 			const department = await this.getDepartmentById({
 				organizationId: input.organizationId,
@@ -1558,26 +2110,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 
 		const auditId = randomUUID();
+		const successorId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const titleValue = input.title ?? null;
-		const departmentProvided = input.departmentId !== undefined ? 1 : 0;
-		const departmentValue = input.departmentId ?? null;
-		const jobProvided = input.jobId !== undefined ? 1 : 0;
-		const jobValue = input.jobId ?? null;
+		const predecessorEnd = previousIsoDate(input.effectiveOn);
 		try {
 			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>((sql) => [
 				sql`
 						WITH mutated AS (
 							UPDATE hr_position
-							SET title = COALESCE(${titleValue}::text, title),
-								department_id = CASE
-									WHEN ${departmentProvided}::int = 1 THEN ${departmentValue}::uuid
-									ELSE department_id
-								END,
-								job_id = CASE
-									WHEN ${jobProvided}::int = 1 THEN ${jobValue}::uuid
-									ELSE job_id
-								END,
+							SET title = ${nextTitle},
+								department_id = ${nextDepartmentId},
+								job_id = ${nextJobId},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -1585,6 +2128,34 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
 							RETURNING *
+						),
+						closed AS (
+							UPDATE hr_position_definition_version
+							SET effective_to = ${predecessorEnd},
+								lineage_status = 'superseded',
+								version = version + 1,
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE organization_id = ${input.organizationId}
+								AND position_id = ${input.positionId}
+								AND id = ${openSegment.id}
+								AND effective_to IS NULL
+								AND lineage_status = 'active'
+							RETURNING id
+						),
+						successor AS (
+							INSERT INTO hr_position_definition_version (
+								id, organization_id, position_id, title, department_id, job_id,
+								effective_from, effective_to, supersedes_definition_version_id,
+								lineage_status, reason_code, evidence_ref, version, created_by, updated_by
+							)
+							SELECT
+								${successorId}, organization_id, id, ${nextTitle}, ${nextDepartmentId}, ${nextJobId},
+								${input.effectiveOn}, NULL, ${openSegment.id}, 'active',
+								${input.reasonCode}, ${input.evidenceRef ?? null}, 1,
+								${input.actorUserId}, ${input.actorUserId}
+							FROM mutated, closed
+							RETURNING id
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -1597,18 +2168,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, closed, successor, audited
 					`,
 			]);
 			const row = rows[0];
 			if (!row) {
-				const existing = await this.getPositionById({
+				const again = await this.getPositionById({
 					organizationId: input.organizationId,
 					positionId: input.positionId,
 				});
-				if (!existing.ok) return existing;
+				if (!again.ok) return again;
 				return missAfterOptimisticUpdate({
-					found: existing.data !== null,
+					found: again.data !== null,
 					entityLabel: "Position",
 				});
 			}
@@ -2100,11 +2671,13 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							mutated AS (
 								INSERT INTO hr_reporting_line (
 									id, organization_id, employee_id, manager_employee_id,
-									relationship_kind, starts_on, ends_on, version, created_by, updated_by
+									relationship_kind, starts_on, ends_on,
+									supersedes_reporting_line_id, superseded_by_reporting_line_id,
+									version, created_by, updated_by
 								)
 								SELECT
 									${brandedId.data}, employee.organization_id, employee.id, manager.id,
-									'primary', ${record.startsOn}, ${record.endsOn}, 1,
+									'primary', ${record.startsOn}, ${record.endsOn}, NULL, NULL, 1,
 									${record.createdBy}, ${record.createdBy}
 								FROM employee, manager
 								WHERE NOT EXISTS (
@@ -2281,10 +2854,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		);
 		if (!closeDateCheck.ok) return closeDateCheck;
 		if (input.closePriorOn > input.startsOn) {
-			return fail(
-				"BAD_REQUEST",
-				"Prior reporting line close date must be on or before new start date",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			return invalidInput(
+				"closePriorOn must be on or before the new reporting line start date",
 			);
 		}
 
@@ -2319,6 +2890,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							WITH closed AS (
 								UPDATE hr_reporting_line
 								SET ends_on = ${input.closePriorOn},
+									superseded_by_reporting_line_id = ${brandedId.data},
 									version = ${nextPriorVersion},
 									updated_by = ${input.createdBy},
 									updated_at = now()
@@ -2354,11 +2926,14 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 							mutated AS (
 								INSERT INTO hr_reporting_line (
 									id, organization_id, employee_id, manager_employee_id,
-									relationship_kind, starts_on, ends_on, version, created_by, updated_by
+									relationship_kind, starts_on, ends_on,
+									supersedes_reporting_line_id, superseded_by_reporting_line_id,
+									version, created_by, updated_by
 								)
 								SELECT
 									${brandedId.data}, employee.organization_id, employee.id, manager.id,
-									'primary', ${input.startsOn}, ${input.endsOn}, 1,
+									'primary', ${input.startsOn}, ${input.endsOn},
+									${priorLine.id}, NULL, 1,
 									${input.createdBy}, ${input.createdBy}
 								FROM employee, manager, closed
 								RETURNING *

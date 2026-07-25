@@ -8,6 +8,7 @@ import {
 	hrEmployee,
 	hrEmployment,
 	hrEmploymentContract,
+	hrEmploymentStatusHistory,
 	hrWorkAssignment,
 	isNull,
 	lte,
@@ -24,6 +25,8 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import {
@@ -43,6 +46,7 @@ import {
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
@@ -53,6 +57,13 @@ import {
 } from "../../shared/audit-facts";
 import { missAfterOptimisticUpdate } from "../../shared/domain-guards";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
+import { mapAssignmentLineageFields } from "../../shared/assignment-lineage-map";
+import {
+	assertAssignmentWithinEmployment,
+	assertNoAssignmentOverlap,
+} from "../../shared/assignment-guards";
+import type { EmploymentStatusChangeKind } from "../../shared/employment-history";
+import type { EmploymentStatus } from "../../shared/employment-status";
 import {
 	assertValidDateRange,
 	employmentStatusSchema,
@@ -69,6 +80,7 @@ import type {
 	EmployeeCreateRecord,
 	EmploymentContractCreateRecord,
 	EmploymentCreateRecord,
+	EmploymentStatusHistoryAppendRecord,
 	HumanResourcesStore,
 	IdempotentEmployeeRecord,
 } from "../../store";
@@ -77,6 +89,7 @@ import type {
 	EmployeeListPage,
 	Employment,
 	EmploymentContract,
+	EmploymentStatusHistory,
 	PositionOccupancyAsOf,
 	WorkAssignment,
 } from "../../types";
@@ -179,6 +192,52 @@ function mapEmployment(
 	});
 }
 
+function mapEmploymentStatusHistory(
+	row: typeof hrEmploymentStatusHistory.$inferSelect,
+): Result<EmploymentStatusHistory> {
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
+	if (!employmentId.ok) return employmentId;
+	if (!employeeId.ok) return employeeId;
+	const toStatus = employmentStatusSchema.safeParse(row.toStatus);
+	if (!toStatus.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employment status history in persistence",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	const fromStatus =
+		row.fromStatus === null
+			? null
+			: employmentStatusSchema.safeParse(row.fromStatus);
+	if (fromStatus !== null && !fromStatus.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employment status history in persistence",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	const changeKind = row.changeKind as EmploymentStatusChangeKind;
+	return ok({
+		id: row.id,
+		organizationId: row.organizationId,
+		employmentId: employmentId.data,
+		employeeId: employeeId.data,
+		fromStatus: fromStatus === null ? null : fromStatus.data,
+		toStatus: toStatus.data,
+		startsOnSnapshot: row.startsOnSnapshot,
+		endsOnSnapshot: row.endsOnSnapshot,
+		effectiveOn: row.effectiveOn,
+		changeKind,
+		reason: row.reason,
+		evidenceReference: row.evidenceReference,
+		correlationId: row.correlationId,
+		actorUserId: row.actorUserId,
+		createdAt: row.createdAt,
+	});
+}
+
 function mapEmploymentContract(
 	row: typeof hrEmploymentContract.$inferSelect,
 ): Result<EmploymentContract> {
@@ -188,6 +247,26 @@ function mapEmploymentContract(
 	if (!id.ok) return id;
 	if (!employmentId.ok) return employmentId;
 	if (!employeeId.ok) return employeeId;
+	let supersedesContractId =
+		null as EmploymentContract["supersedesContractId"];
+	if (row.supersedesContractId !== null) {
+		const parsed = parseHumanResourcesEmploymentContractId(
+			row.supersedesContractId,
+		);
+		if (!parsed.ok) return parsed;
+		supersedesContractId = parsed.data;
+	}
+	let supersededByContractId =
+		null as EmploymentContract["supersededByContractId"];
+	if (row.supersededByContractId !== null) {
+		const parsed = parseHumanResourcesEmploymentContractId(
+			row.supersededByContractId,
+		);
+		if (!parsed.ok) return parsed;
+		supersededByContractId = parsed.data;
+	}
+	const lineageStatus =
+		row.lineageStatus === "superseded" ? "superseded" : "active";
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -196,6 +275,11 @@ function mapEmploymentContract(
 		referenceCode: row.referenceCode,
 		startsOn: row.startsOn,
 		endsOn: row.endsOn,
+		lineageStatus,
+		supersedesContractId,
+		supersededByContractId,
+		reasonCode: row.reasonCode,
+		sourceReference: row.sourceReference,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -215,6 +299,8 @@ function mapAssignment(
 	if (!employmentId.ok) return employmentId;
 	if (!employeeId.ok) return employeeId;
 	if (!positionId.ok) return positionId;
+	const lineage = mapAssignmentLineageFields(row);
+	if (!lineage.ok) return lineage;
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -270,6 +356,7 @@ function mapAssignment(
 						},
 					}
 				: null,
+		...lineage.data,
 		startsOn: row.startsOn,
 		endsOn: row.endsOn,
 		version: row.version,
@@ -301,6 +388,11 @@ type AssignmentSqlRow = {
 	project_dimension_id: string | null;
 	project_key_snapshot: string | null;
 	project_name_snapshot: string | null;
+	predecessor_assignment_id: string | null;
+	successor_assignment_id: string | null;
+	transfer_movement_id: string | null;
+	manager_employee_id_snapshot: string | null;
+	work_calendar_id_snapshot: string | null;
 	starts_on: string;
 	ends_on: string | null;
 	version: number;
@@ -320,6 +412,8 @@ function mapAssignmentSqlRow(
 	if (!employmentId.ok) return employmentId;
 	if (!employeeId.ok) return employeeId;
 	if (!positionId.ok) return positionId;
+	const lineage = mapAssignmentLineageFields(row);
+	if (!lineage.ok) return lineage;
 	return ok({
 		id,
 		organizationId: row.organization_id,
@@ -375,6 +469,7 @@ function mapAssignmentSqlRow(
 						},
 					}
 				: null,
+		...lineage.data,
 		startsOn: row.starts_on,
 		endsOn: row.ends_on,
 		version: row.version,
@@ -385,7 +480,10 @@ function mapAssignmentSqlRow(
 	});
 }
 
-type DrizzleCoreHost = Pick<HumanResourcesStore, "getPositionById">;
+type DrizzleCoreHost = Pick<
+	HumanResourcesStore,
+	"getPositionById" | "findPositionAsOf"
+>;
 
 export type DrizzleCoreMethods = Pick<
 	HumanResourcesStore,
@@ -397,16 +495,25 @@ export type DrizzleCoreMethods = Pick<
 	| "getEmploymentById"
 	| "findOpenEmploymentByEmployee"
 	| "findEmploymentByEmployeeAsOf"
+	| "listEmploymentsByEmployee"
+	| "listEmploymentStatusHistory"
+	| "appendEmploymentStatusHistory"
 	| "createEmployment"
 	| "amendEmployment"
+	| "correctEmployment"
 	| "getEmploymentContractById"
 	| "findContractByEmploymentAndCode"
+	| "listActiveContractsByEmployment"
+	| "findEmploymentContractByEmploymentAsOf"
 	| "createEmploymentContract"
+	| "correctEmploymentContract"
+	| "supersedeEmploymentContract"
 	| "countOpenAssignmentsForPosition"
 	| "resolvePositionOccupancyAsOf"
 	| "getAssignmentById"
 	| "findOpenAssignmentByEmployment"
 	| "findAssignmentByEmploymentAsOf"
+	| "listAssignmentsByEmployment"
 	| "createAssignment"
 	| "endAssignment"
 >;
@@ -806,6 +913,115 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 	},
 
+	async listEmploymentsByEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}) {
+		try {
+			const rows = await db
+				.select({
+					id: hrEmployment.id,
+					startsOn: hrEmployment.startsOn,
+					endsOn: hrEmployment.endsOn,
+				})
+				.from(hrEmployment)
+				.where(
+					and(
+						eq(hrEmployment.organizationId, input.organizationId),
+						eq(hrEmployment.employeeId, input.employeeId),
+					),
+				);
+			const employments: Array<{
+				id: HumanResourcesEmploymentId;
+				startsOn: string;
+				endsOn: string | null;
+			}> = [];
+			for (const row of rows) {
+				const id = parseHumanResourcesEmploymentId(row.id);
+				if (!id.ok) return id;
+				employments.push({
+					id: id.data,
+					startsOn: row.startsOn,
+					endsOn: row.endsOn,
+				});
+			}
+			return ok(employments);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to list employments");
+		}
+	},
+
+	async listEmploymentStatusHistory(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<EmploymentStatusHistory[]>> {
+		try {
+			const rows = await db
+				.select()
+				.from(hrEmploymentStatusHistory)
+				.where(
+					and(
+						eq(hrEmploymentStatusHistory.organizationId, input.organizationId),
+						eq(hrEmploymentStatusHistory.employmentId, input.employmentId),
+					),
+				)
+				.orderBy(
+					hrEmploymentStatusHistory.effectiveOn,
+					hrEmploymentStatusHistory.createdAt,
+				);
+			const history: EmploymentStatusHistory[] = [];
+			for (const row of rows) {
+				const mapped = mapEmploymentStatusHistory(row);
+				if (!mapped.ok) return mapped;
+				history.push(mapped.data);
+			}
+			return ok(history);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list employment status history",
+			);
+		}
+	},
+
+	async appendEmploymentStatusHistory(
+		record: EmploymentStatusHistoryAppendRecord,
+	): Promise<Result<EmploymentStatusHistory>> {
+		try {
+			const [row] = await db
+				.insert(hrEmploymentStatusHistory)
+				.values({
+					organizationId: record.organizationId,
+					employmentId: record.employmentId,
+					employeeId: record.employeeId,
+					fromStatus: record.fromStatus,
+					toStatus: record.toStatus,
+					startsOnSnapshot: record.startsOnSnapshot,
+					endsOnSnapshot: record.endsOnSnapshot,
+					effectiveOn: record.effectiveOn,
+					changeKind: record.changeKind,
+					reason: record.reason,
+					evidenceReference: record.evidenceReference,
+					correlationId: record.correlationId,
+					actorUserId: record.actorUserId,
+				})
+				.returning();
+			if (!row) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to append employment status history",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+				);
+			}
+			return mapEmploymentStatusHistory(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to append employment status history",
+			);
+		}
+	},
+
 	async createEmployment(
 		record: EmploymentCreateRecord,
 		_ports: MutationPorts,
@@ -820,6 +1036,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const historyId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[
@@ -874,6 +1091,19 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 							FROM mutated
 							RETURNING id
 						),
+						history_inserted AS (
+							INSERT INTO hr_employment_status_history (
+								id, organization_id, employment_id, employee_id, from_status, to_status,
+								starts_on_snapshot, ends_on_snapshot, effective_on, change_kind,
+								reason, evidence_reference, correlation_id, actor_user_id
+							)
+							SELECT
+								${historyId}, organization_id, id, employee_id, NULL, status,
+								starts_on, ends_on, starts_on, 'create',
+								NULL, NULL, ${meta.correlationId}, created_by
+							FROM mutated
+							RETURNING id
+						),
 						outboxed AS (
 							INSERT INTO platform_domain_event (
 								id, organization_id, type, source_module, correlation_id, actor_user_id,
@@ -906,7 +1136,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited, outboxed
+						SELECT mutated.* FROM mutated, audited, history_inserted, outboxed
 					`,
 			]);
 			const row = rows[0];
@@ -966,15 +1196,29 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			status?: string;
 			startsOn?: string;
 			endsOn?: string | null;
+			lifecycleEffectiveOn?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Employment>> {
+		const existing = await this.getEmploymentById({
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return fail(
+				"NOT_FOUND",
+				"Employment not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const terminatedEventId = randomUUID();
+		const historyId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		const payloadJson = eventPayloadJson({
 			organizationId: input.organizationId,
@@ -989,6 +1233,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			const endsOnProvidedFlag = input.endsOn !== undefined ? 1 : 0;
 			const endsOnValue = input.endsOn ?? null;
 			const emitTerminatedFlag = input.status === "terminated" ? 1 : 0;
+			const lifecycleEffectiveOn = input.lifecycleEffectiveOn ?? null;
+			const fromStatus = existing.data.status;
 
 			const [rows] = await runNeonHttpTransaction<
 				[
@@ -1044,6 +1290,21 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 								${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT}, 'human-resources',
 								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
 							FROM mutated
+							RETURNING id
+						),
+						history_inserted AS (
+							INSERT INTO hr_employment_status_history (
+								id, organization_id, employment_id, employee_id, from_status, to_status,
+								starts_on_snapshot, ends_on_snapshot, effective_on, change_kind,
+								reason, evidence_reference, correlation_id, actor_user_id
+							)
+							SELECT
+								${historyId}, organization_id, id, employee_id, ${fromStatus}, status,
+								starts_on, ends_on, ${lifecycleEffectiveOn}::date, 'lifecycle',
+								NULL, NULL, ${meta.correlationId}, ${input.actorUserId}
+							FROM mutated
+							WHERE ${lifecycleEffectiveOn}::text IS NOT NULL
+								AND status <> ${fromStatus}
 							RETURNING id
 						),
 						outboxed_terminated AS (
@@ -1110,6 +1371,161 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 	},
 
+	async correctEmployment(
+		input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			status?: EmploymentStatus;
+			startsOn?: string;
+			endsOn?: string | null;
+			reason: string;
+			evidenceReference: string | null;
+			effectiveOn?: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Employment>> {
+		const existing = await this.getEmploymentById({
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return fail(
+				"NOT_FOUND",
+				"Employment not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const historyId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		const payloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employment",
+			entityId: input.employmentId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
+		const effectiveOn = input.effectiveOn ?? existing.data.startsOn;
+		const fromStatus = existing.data.status;
+		try {
+			const statusValue = input.status ?? null;
+			const startsOnValue = input.startsOn ?? null;
+			const endsOnProvidedFlag = input.endsOn !== undefined ? 1 : 0;
+			const endsOnValue = input.endsOn ?? null;
+
+			const [rows] = await runNeonHttpTransaction<
+				[
+					{
+						id: string;
+						organization_id: string;
+						employee_id: string;
+						status: string;
+						starts_on: string;
+						ends_on: string | null;
+						version: number;
+						created_by: string;
+						updated_by: string;
+						created_at: Date;
+						updated_at: Date;
+					}[],
+				]
+			>((sql) => [
+				sql`
+						WITH mutated AS (
+							UPDATE hr_employment
+							SET status = COALESCE(${statusValue}::text, status),
+								starts_on = COALESCE(${startsOnValue}::date, starts_on),
+								ends_on = CASE
+									WHEN ${endsOnProvidedFlag}::int = 1 THEN ${endsOnValue}::date
+									ELSE ends_on
+								END,
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.employmentId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_employment', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						history_inserted AS (
+							INSERT INTO hr_employment_status_history (
+								id, organization_id, employment_id, employee_id, from_status, to_status,
+								starts_on_snapshot, ends_on_snapshot, effective_on, change_kind,
+								reason, evidence_reference, correlation_id, actor_user_id
+							)
+							SELECT
+								${historyId}, organization_id, id, employee_id, ${fromStatus}, status,
+								starts_on, ends_on, ${effectiveOn}::date, 'correction',
+								${input.reason}, ${input.evidenceReference}, ${meta.correlationId},
+								${input.actorUserId}
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT}, 'human-resources',
+								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, history_inserted, outboxed
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Employment",
+				});
+			}
+			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
+			if (!employeeId.ok) return employeeId;
+			const status = employmentStatusSchema.safeParse(row.status);
+			if (!status.success) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Invalid employment status in persistence",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+				);
+			}
+			return ok({
+				id: input.employmentId,
+				organizationId: row.organization_id,
+				employeeId: employeeId.data,
+				status: status.data,
+				startsOn: row.starts_on,
+				endsOn: row.ends_on,
+				version: row.version,
+				createdBy: row.created_by,
+				updatedBy: row.updated_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to correct employment");
+		}
+	},
+
 	async getEmploymentContractById(input: {
 		organizationId: string;
 		employmentContractId: HumanResourcesEmploymentContractId;
@@ -1147,6 +1563,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						eq(hrEmploymentContract.organizationId, input.organizationId),
 						eq(hrEmploymentContract.employmentId, input.employmentId),
 						eq(hrEmploymentContract.referenceCode, input.referenceCode),
+						eq(hrEmploymentContract.lineageStatus, "active"),
 					),
 				)
 				.limit(1);
@@ -1155,6 +1572,88 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			return mapEmploymentContract(contract);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find employment contract");
+		}
+	},
+
+	async listActiveContractsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}) {
+		try {
+			const rows = await db
+				.select({
+					id: hrEmploymentContract.id,
+					startsOn: hrEmploymentContract.startsOn,
+					endsOn: hrEmploymentContract.endsOn,
+				})
+				.from(hrEmploymentContract)
+				.where(
+					and(
+						eq(hrEmploymentContract.organizationId, input.organizationId),
+						eq(hrEmploymentContract.employmentId, input.employmentId),
+						eq(hrEmploymentContract.lineageStatus, "active"),
+					),
+				);
+			const mapped = [];
+			for (const row of rows) {
+				const id = parseHumanResourcesEmploymentContractId(row.id);
+				if (!id.ok) return id;
+				mapped.push({
+					id: id.data,
+					startsOn: row.startsOn,
+					endsOn: row.endsOn,
+				});
+			}
+			return ok(mapped);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list active employment contracts",
+			);
+		}
+	},
+
+	async findEmploymentContractByEmploymentAsOf(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}): Promise<Result<EmploymentContract | null>> {
+		try {
+			const rows = await db
+				.select()
+				.from(hrEmploymentContract)
+				.where(
+					and(
+						eq(hrEmploymentContract.organizationId, input.organizationId),
+						eq(hrEmploymentContract.employmentId, input.employmentId),
+					),
+				);
+			const contracts: EmploymentContract[] = [];
+			for (const row of rows) {
+				const mapped = mapEmploymentContract(row);
+				if (!mapped.ok) return mapped;
+				contracts.push(mapped.data);
+			}
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: contracts,
+				asOf: input.asOf,
+				getId: (contract) => contract.id,
+				getEffectiveFrom: (contract) => contract.startsOn,
+				getEffectiveTo: (contract) => contract.endsOn,
+			});
+			if (!resolution.ok) {
+				return fail(
+					"CONFLICT",
+					"Multiple employment contracts are effective for the as-of date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			return ok(resolution.record);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to resolve employment contract as-of",
+			);
 		}
 	},
 
@@ -1190,6 +1689,11 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						reference_code: string;
 						starts_on: string;
 						ends_on: string | null;
+						lineage_status: string;
+						supersedes_contract_id: string | null;
+						superseded_by_contract_id: string | null;
+						reason_code: string;
+						source_reference: string | null;
 						version: number;
 						created_by: string;
 						updated_by: string;
@@ -1209,11 +1713,13 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						mutated AS (
 							INSERT INTO hr_employment_contract (
 								id, organization_id, employment_id, employee_id, reference_code,
-								starts_on, ends_on, version, created_by, updated_by
+								starts_on, ends_on, lineage_status, reason_code, source_reference,
+								version, created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, parent.organization_id, parent.id, parent.employee_id,
-								${record.referenceCode}, ${record.startsOn}, ${record.endsOn}, 1,
+								${record.referenceCode}, ${record.startsOn}, ${record.endsOn}, 'active',
+								${record.reasonCode}, ${record.sourceReference}, 1,
 								${record.createdBy}, ${record.createdBy}
 							FROM parent
 							RETURNING *
@@ -1253,18 +1759,19 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					),
 				);
 			}
-			const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
-			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
-			if (!employmentId.ok) return employmentId;
-			if (!employeeId.ok) return employeeId;
-			return ok({
-				id: brandedId.data,
+			return mapEmploymentContract({
+				id: row.id,
 				organizationId: row.organization_id,
-				employmentId: employmentId.data,
-				employeeId: employeeId.data,
+				employmentId: row.employment_id,
+				employeeId: row.employee_id,
 				referenceCode: row.reference_code,
 				startsOn: row.starts_on,
 				endsOn: row.ends_on,
+				lineageStatus: row.lineage_status,
+				supersedesContractId: row.supersedes_contract_id,
+				supersededByContractId: row.superseded_by_contract_id,
+				reasonCode: row.reason_code,
+				sourceReference: row.source_reference,
 				version: row.version,
 				createdBy: row.created_by,
 				updatedBy: row.updated_by,
@@ -1275,6 +1782,245 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			return mapPersistenceFailure(
 				error,
 				"Failed to create employment contract",
+			);
+		}
+	},
+
+	async correctEmploymentContract(
+		input: {
+			organizationId: string;
+			employmentContractId: HumanResourcesEmploymentContractId;
+			referenceCode: string;
+			startsOn: string;
+			endsOn: string | null;
+			reasonCode: string;
+			sourceReference: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<EmploymentContract>> {
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employment_contract",
+			entityId: input.employmentContractId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[typeof hrEmploymentContract.$inferSelect[]]
+			>((sql) => [
+				sql`
+					WITH updated AS (
+						UPDATE hr_employment_contract
+						SET
+							reference_code = ${input.referenceCode},
+							starts_on = ${input.startsOn},
+							ends_on = ${input.endsOn},
+							reason_code = ${input.reasonCode},
+							source_reference = ${input.sourceReference},
+							version = version + 1,
+							updated_by = ${input.actorUserId},
+							updated_at = NOW()
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.employmentContractId}
+							AND lineage_status = 'active'
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_employment_contract', id, 'UPDATE', '[]'::jsonb
+						FROM updated
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT}, 'human-resources',
+							${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+						FROM updated
+						RETURNING id
+					)
+					SELECT * FROM updated, audited, outboxed
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Employment contract",
+				});
+			}
+			return mapEmploymentContract(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to correct employment contract",
+			);
+		}
+	},
+
+	async supersedeEmploymentContract(
+		input: {
+			organizationId: string;
+			employmentContractId: HumanResourcesEmploymentContractId;
+			referenceCode: string;
+			startsOn: string;
+			endsOn: string | null;
+			reasonCode: string;
+			sourceReference: string;
+			predecessorEffectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<
+		Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
+	> {
+		const successorId = randomUUID();
+		const brandedSuccessorId =
+			parseHumanResourcesEmploymentContractId(successorId);
+		if (!brandedSuccessorId.ok) return brandedSuccessorId;
+		const predecessorAuditId = randomUUID();
+		const successorAuditId = randomUUID();
+		const supersededEventId = randomUUID();
+		const createdEventId = randomUUID();
+		const supersededPayloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employment_contract",
+			entityId: input.employmentContractId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
+		const createdPayloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employment_contract",
+			entityId: brandedSuccessorId.data,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[
+					{
+						predecessor: typeof hrEmploymentContract.$inferSelect;
+						successor: typeof hrEmploymentContract.$inferSelect;
+					}[],
+				]
+			>((sql) => [
+				sql`
+					WITH predecessor AS (
+						UPDATE hr_employment_contract
+						SET
+							lineage_status = 'superseded',
+							ends_on = ${input.predecessorEffectiveTo},
+							superseded_by_contract_id = ${brandedSuccessorId.data},
+							version = version + 1,
+							updated_by = ${input.actorUserId},
+							updated_at = NOW()
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.employmentContractId}
+							AND lineage_status = 'active'
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					successor AS (
+						INSERT INTO hr_employment_contract (
+							id, organization_id, employment_id, employee_id, reference_code,
+							starts_on, ends_on, lineage_status, supersedes_contract_id,
+							reason_code, source_reference, version, created_by, updated_by
+						)
+						SELECT
+							${brandedSuccessorId.data}, organization_id, employment_id, employee_id,
+							${input.referenceCode}, ${input.startsOn}, ${input.endsOn}, 'active',
+							id, ${input.reasonCode}, ${input.sourceReference}, 1,
+							${input.actorUserId}, ${input.actorUserId}
+						FROM predecessor
+						RETURNING *
+					),
+					predecessor_audit AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${predecessorAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_employment_contract', id, 'UPDATE', '[]'::jsonb
+						FROM predecessor
+						RETURNING id
+					),
+					superseded_outbox AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${supersededEventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT}, 'human-resources',
+							${meta.correlationId}, ${input.actorUserId}, ${supersededPayloadJson}::jsonb, 'pending', 0
+						FROM predecessor
+						RETURNING id
+					),
+					successor_audit AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${successorAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_employment_contract', id, 'CREATE', '[]'::jsonb
+						FROM successor
+						RETURNING id
+					),
+					created_outbox AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${createdEventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT}, 'human-resources',
+							${meta.correlationId}, ${input.actorUserId}, ${createdPayloadJson}::jsonb, 'pending', 0
+						FROM successor
+						RETURNING id
+					)
+					SELECT
+						(SELECT row_to_json(predecessor) FROM predecessor) AS predecessor,
+						(SELECT row_to_json(successor) FROM successor) AS successor
+					FROM predecessor, successor, predecessor_audit, superseded_outbox, successor_audit, created_outbox
+				`,
+			]);
+			const row = rows[0];
+			if (!row?.predecessor || !row?.successor) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Employment contract",
+				});
+			}
+			const superseded = mapEmploymentContract(row.predecessor);
+			if (!superseded.ok) return superseded;
+			const successor = mapEmploymentContract(row.successor);
+			if (!successor.ok) return successor;
+			return ok({
+				superseded: superseded.data,
+				successor: successor.data,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to supersede employment contract",
 			);
 		}
 	},
@@ -1308,14 +2054,31 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		positionId: HumanResourcesPositionId;
 		asOf: string;
 	}): Promise<Result<PositionOccupancyAsOf | null>> {
-		const position = await this.getPositionById({
+		const current = await this.getPositionById({
 			organizationId: input.organizationId,
 			positionId: input.positionId,
 		});
-		if (!position.ok) {
-			return position;
+		if (!current.ok) {
+			return current;
 		}
-		if (position.data === null) return ok(null);
+		if (current.data === null) return ok(null);
+
+		const asOfDefinition = await this.findPositionAsOf({
+			organizationId: input.organizationId,
+			positionId: input.positionId,
+			asOf: input.asOf,
+		});
+		if (!asOfDefinition.ok) {
+			return asOfDefinition;
+		}
+		if (asOfDefinition.data === null) return ok(null);
+
+		const position: Position = {
+			...current.data,
+			title: asOfDefinition.data.title,
+			departmentId: asOfDefinition.data.departmentId,
+			jobId: asOfDefinition.data.jobId,
+		};
 
 		try {
 			const rows = await db
@@ -1344,7 +2107,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			const row = rows[0];
 			if (!row) {
 				return ok({
-					position: position.data,
+					position,
 					asOf: input.asOf,
 					assignment: null,
 					state: "vacant",
@@ -1355,7 +2118,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				return assignment;
 			}
 			return ok({
-				position: position.data,
+				position,
 				asOf: input.asOf,
 				assignment: assignment.data,
 				state: "occupied",
@@ -1455,6 +2218,37 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 	},
 
+	async listAssignmentsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<WorkAssignment[]>> {
+		try {
+			const result = await db
+				.select()
+				.from(hrWorkAssignment)
+				.where(
+					and(
+						eq(hrWorkAssignment.organizationId, input.organizationId),
+						eq(hrWorkAssignment.employmentId, input.employmentId),
+					),
+				);
+			const mapped: WorkAssignment[] = [];
+			for (const row of result) {
+				const assignment = mapAssignment(row);
+				if (!assignment.ok) {
+					return assignment;
+				}
+				mapped.push(assignment.data);
+			}
+			return ok(mapped);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list assignments for employment",
+			);
+		}
+	},
+
 	async createAssignment(
 		record: AssignmentCreateRecord,
 		_ports: MutationPorts,
@@ -1464,6 +2258,47 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		if (!dateCheck.ok) {
 			return dateCheck;
 		}
+
+		const employment = await this.getEmploymentById({
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+		});
+		if (!employment.ok) return employment;
+		if (employment.data === null) {
+			return fail(
+				"NOT_FOUND",
+				"Employment not found",
+				humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				),
+			);
+		}
+
+		const withinEmployment = assertAssignmentWithinEmployment({
+			assignmentStartsOn: record.startsOn,
+			assignmentEndsOn: record.endsOn,
+			employmentStartsOn: employment.data.startsOn,
+			employmentEndsOn: employment.data.endsOn,
+		});
+		if (!withinEmployment.ok) {
+			return withinEmployment;
+		}
+
+		const siblings = await this.listAssignmentsByEmployment({
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+		});
+		if (!siblings.ok) return siblings;
+
+		const overlap = assertNoAssignmentOverlap({
+			candidateStartsOn: record.startsOn,
+			candidateEndsOn: record.endsOn,
+			existing: siblings.data,
+		});
+		if (!overlap.ok) {
+			return overlap;
+		}
+
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesAssignmentId(entityId);
 		if (!brandedId.ok) return brandedId;
@@ -1580,6 +2415,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 								cost_centre_dimension_id, cost_centre_key_snapshot,
 								cost_centre_name_snapshot, project_dimension_id,
 								project_key_snapshot, project_name_snapshot,
+								predecessor_assignment_id, successor_assignment_id,
+								transfer_movement_id, manager_employee_id_snapshot,
+								work_calendar_id_snapshot,
 								starts_on, ends_on, version, created_by, updated_by
 							)
 							SELECT
@@ -1590,17 +2428,15 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 								location.id, location.key, location.name,
 								cost_centre.id, cost_centre.key, cost_centre.name,
 								project.id, project.key, project.name,
+								${record.predecessorAssignmentId ?? null},
+								${record.successorAssignmentId ?? null},
+								${record.transferMovementId ?? null},
+								${record.managerEmployeeIdSnapshot},
+								${record.workCalendarIdSnapshot},
 								${record.startsOn},
 								${record.endsOn}, 1, ${record.createdBy}, ${record.createdBy}
 							FROM employment, position, legal_entity, business_unit, location,
 								cost_centre, project
-							WHERE NOT EXISTS (
-								SELECT 1
-								FROM hr_work_assignment open_assignment
-								WHERE open_assignment.organization_id = employment.organization_id
-									AND open_assignment.employment_id = employment.id
-									AND open_assignment.ends_on IS NULL
-							)
 							RETURNING *
 						),
 						audited AS (
@@ -1669,7 +2505,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				}
 				return fail(
 					"CONFLICT",
-					"Employment already has an open assignment",
+					"Assignment could not be created for this employment",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}

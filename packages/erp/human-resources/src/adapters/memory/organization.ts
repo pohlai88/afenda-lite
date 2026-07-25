@@ -69,6 +69,23 @@ import type {
 	Position,
 	ReportingLine,
 } from "../../types";
+import {
+	findOpenDepartmentStructureVersion,
+	findOpenJobDefinitionVersion,
+	findOpenPositionDefinitionVersion,
+	resolveDepartmentStructureAsOf,
+	resolveJobDefinitionAsOf,
+	resolvePositionDefinitionAsOf,
+	type DepartmentStructureVersion,
+	type JobDefinitionVersion,
+	type PositionDefinitionAtAsOf,
+	type PositionDefinitionVersion,
+} from "../../organization/organization-structure-lineage";
+import { previousIsoDate } from "../../shared/effective-dates";
+import {
+	assertLineageSegmentMutable,
+	validateLineageSegmentEffectiveOn,
+} from "../../workforce-foundation/lineage-segment";
 import type { CoreMemoryState } from "./core";
 
 export type OrganizationMemoryState = {
@@ -76,6 +93,9 @@ export type OrganizationMemoryState = {
 	jobs: Map<HumanResourcesJobId, Job>;
 	positions: Map<HumanResourcesPositionId, Position>;
 	reportingLines: Map<HumanResourcesReportingLineId, ReportingLine>;
+	departmentStructureVersions: Map<string, DepartmentStructureVersion>;
+	jobDefinitionVersions: Map<string, JobDefinitionVersion>;
+	positionDefinitionVersions: Map<string, PositionDefinitionVersion>;
 };
 
 export type MemoryOrganizationMethods = Pick<
@@ -111,6 +131,10 @@ export type MemoryOrganizationMethods = Pick<
 	| "closeReportingLine"
 	| "replacePrimaryReportingLine"
 	| "getOrganizationTree"
+	| "findDepartmentAsOf"
+	| "findJobAsOf"
+	| "findPositionAsOf"
+	| "getOrganizationTreeAsOf"
 >;
 
 export type OrganizationMemoryHost = Pick<
@@ -124,6 +148,9 @@ export function createOrganizationMemoryState(): OrganizationMemoryState {
 		jobs: new Map(),
 		positions: new Map(),
 		reportingLines: new Map(),
+		departmentStructureVersions: new Map(),
+		jobDefinitionVersions: new Map(),
+		positionDefinitionVersions: new Map(),
 	};
 }
 
@@ -134,6 +161,9 @@ export function resetOrganizationMemoryState(
 	state.jobs.clear();
 	state.positions.clear();
 	state.reportingLines.clear();
+	state.departmentStructureVersions.clear();
+	state.jobDefinitionVersions.clear();
+	state.positionDefinitionVersions.clear();
 }
 
 async function appendOrganizationDomainEvent(
@@ -238,6 +268,7 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const now = new Date();
+			const effectiveFrom = now.toISOString().slice(0, 10);
 			const department: Department = {
 				id: idResult.data,
 				organizationId: record.organizationId,
@@ -252,7 +283,30 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
+			const structureVersion: DepartmentStructureVersion = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				departmentId: department.id,
+				name: department.name,
+				parentDepartmentId: department.parentDepartmentId,
+				effectiveFrom,
+				effectiveTo: null,
+				supersedesStructureVersionId: null,
+				lineageStatus: "active",
+				reasonCode: "initial_record",
+				evidenceRef: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			state.departments.set(department.id, department);
+			state.departmentStructureVersions.set(
+				structureVersion.id,
+				structureVersion,
+			);
 
 			const audit = await ports.audit.record({
 				organizationId: department.organizationId,
@@ -265,6 +319,7 @@ export function createMemoryOrganizationMethods(
 			});
 			if (!audit.ok) {
 				state.departments.delete(department.id);
+				state.departmentStructureVersions.delete(structureVersion.id);
 				return audit;
 			}
 
@@ -277,6 +332,9 @@ export function createMemoryOrganizationMethods(
 				departmentId: HumanResourcesDepartmentId;
 				name?: string;
 				parentDepartmentId?: HumanResourcesDepartmentId | null;
+				effectiveOn: string;
+				reasonCode: string;
+				evidenceRef?: string;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -301,6 +359,43 @@ export function createMemoryOrganizationMethods(
 				input.parentDepartmentId !== undefined
 					? input.parentDepartmentId
 					: department.parentDepartmentId;
+
+			if (
+				nextName === department.name &&
+				nextParent === department.parentDepartmentId
+			) {
+				return fail(
+					"CONFLICT",
+					"Department structure correction must change name or parent",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const openSegment = findOpenDepartmentStructureVersion(
+				[...state.departmentStructureVersions.values()],
+				input.organizationId,
+				input.departmentId,
+			);
+			if (openSegment === null) {
+				return fail(
+					"CONFLICT",
+					"Department structure lineage is missing an open segment",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const mutableCheck = assertLineageSegmentMutable(openSegment);
+			if (!mutableCheck.ok) {
+				return mutableCheck;
+			}
+
+			const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+				openEffectiveFrom: openSegment.effectiveFrom,
+				effectiveOn: input.effectiveOn,
+			});
+			if (!effectiveOnCheck.ok) {
+				return effectiveOnCheck;
+			}
 
 			if (nextParent !== null) {
 				const parent = state.departments.get(nextParent);
@@ -332,6 +427,33 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const now = new Date();
+			const predecessorEnd = previousIsoDate(input.effectiveOn);
+			const closedPredecessor: DepartmentStructureVersion = {
+				...openSegment,
+				effectiveTo: predecessorEnd,
+				lineageStatus: "superseded",
+				version: openSegment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const successor: DepartmentStructureVersion = {
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				departmentId: input.departmentId,
+				name: nextName,
+				parentDepartmentId: nextParent,
+				effectiveFrom: input.effectiveOn,
+				effectiveTo: null,
+				supersedesStructureVersionId: openSegment.id,
+				lineageStatus: "active",
+				reasonCode: input.reasonCode,
+				evidenceRef: input.evidenceRef ?? null,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
 			const updated: Department = {
 				...department,
 				name: nextName,
@@ -341,6 +463,8 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
+			state.departmentStructureVersions.set(closedPredecessor.id, closedPredecessor);
+			state.departmentStructureVersions.set(successor.id, successor);
 			state.departments.set(input.departmentId, updated);
 
 			const audit = await ports.audit.record({
@@ -353,6 +477,8 @@ export function createMemoryOrganizationMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
+				state.departmentStructureVersions.set(openSegment.id, openSegment);
+				state.departmentStructureVersions.delete(successor.id);
 				state.departments.set(input.departmentId, department);
 				return audit;
 			}
@@ -563,6 +689,7 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const now = new Date();
+			const effectiveFrom = now.toISOString().slice(0, 10);
 			const job: Job = {
 				id: idResult.data,
 				organizationId: record.organizationId,
@@ -576,7 +703,26 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
+			const definitionVersion: JobDefinitionVersion = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				jobId: job.id,
+				title: job.title,
+				effectiveFrom,
+				effectiveTo: null,
+				supersedesDefinitionVersionId: null,
+				lineageStatus: "active",
+				reasonCode: "initial_record",
+				evidenceRef: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			state.jobs.set(job.id, job);
+			state.jobDefinitionVersions.set(definitionVersion.id, definitionVersion);
 
 			const audit = await ports.audit.record({
 				organizationId: job.organizationId,
@@ -600,6 +746,9 @@ export function createMemoryOrganizationMethods(
 				organizationId: string;
 				jobId: HumanResourcesJobId;
 				title: string;
+				effectiveOn: string;
+				reasonCode: string;
+				evidenceRef?: string;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -619,7 +768,67 @@ export function createMemoryOrganizationMethods(
 				return versionCheck;
 			}
 
+			if (input.title === job.title) {
+				return fail(
+					"CONFLICT",
+					"Job definition correction must change title",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const openSegment = findOpenJobDefinitionVersion(
+				[...state.jobDefinitionVersions.values()],
+				input.organizationId,
+				input.jobId,
+			);
+			if (openSegment === null) {
+				return fail(
+					"CONFLICT",
+					"Job definition lineage is missing an open segment",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const mutableCheck = assertLineageSegmentMutable(openSegment);
+			if (!mutableCheck.ok) {
+				return mutableCheck;
+			}
+
+			const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+				openEffectiveFrom: openSegment.effectiveFrom,
+				effectiveOn: input.effectiveOn,
+			});
+			if (!effectiveOnCheck.ok) {
+				return effectiveOnCheck;
+			}
+
 			const now = new Date();
+			const predecessorEnd = previousIsoDate(input.effectiveOn);
+			const closedPredecessor: JobDefinitionVersion = {
+				...openSegment,
+				effectiveTo: predecessorEnd,
+				lineageStatus: "superseded",
+				version: openSegment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const successor: JobDefinitionVersion = {
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				jobId: input.jobId,
+				title: input.title,
+				effectiveFrom: input.effectiveOn,
+				effectiveTo: null,
+				supersedesDefinitionVersionId: openSegment.id,
+				lineageStatus: "active",
+				reasonCode: input.reasonCode,
+				evidenceRef: input.evidenceRef ?? null,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
 			const updated: Job = {
 				...job,
 				title: input.title,
@@ -628,6 +837,8 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
+			state.jobDefinitionVersions.set(closedPredecessor.id, closedPredecessor);
+			state.jobDefinitionVersions.set(successor.id, successor);
 			state.jobs.set(input.jobId, updated);
 
 			const audit = await ports.audit.record({
@@ -640,6 +851,8 @@ export function createMemoryOrganizationMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
+				state.jobDefinitionVersions.set(openSegment.id, openSegment);
+				state.jobDefinitionVersions.delete(successor.id);
 				state.jobs.set(input.jobId, job);
 				return audit;
 			}
@@ -848,6 +1061,7 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const now = new Date();
+			const effectiveFrom = now.toISOString().slice(0, 10);
 			const position: Position = {
 				id: idResult.data,
 				organizationId: record.organizationId,
@@ -863,7 +1077,31 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
+			const definitionVersion: PositionDefinitionVersion = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				positionId: position.id,
+				title: position.title,
+				departmentId: position.departmentId,
+				jobId: position.jobId,
+				effectiveFrom,
+				effectiveTo: null,
+				supersedesDefinitionVersionId: null,
+				lineageStatus: "active",
+				reasonCode: "initial_record",
+				evidenceRef: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			state.positions.set(position.id, position);
+			state.positionDefinitionVersions.set(
+				definitionVersion.id,
+				definitionVersion,
+			);
 
 			const audit = await ports.audit.record({
 				organizationId: position.organizationId,
@@ -876,6 +1114,7 @@ export function createMemoryOrganizationMethods(
 			});
 			if (!audit.ok) {
 				state.positions.delete(position.id);
+				state.positionDefinitionVersions.delete(definitionVersion.id);
 				return audit;
 			}
 
@@ -889,6 +1128,9 @@ export function createMemoryOrganizationMethods(
 				title?: string;
 				departmentId?: HumanResourcesDepartmentId;
 				jobId?: HumanResourcesJobId;
+				effectiveOn: string;
+				reasonCode: string;
+				evidenceRef?: string;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -921,6 +1163,44 @@ export function createMemoryOrganizationMethods(
 				return invalidInput("Position requires department and job");
 			}
 
+			if (
+				nextTitle === position.title &&
+				nextDepartmentId === position.departmentId &&
+				nextJobId === position.jobId
+			) {
+				return fail(
+					"CONFLICT",
+					"Position definition correction must change title, department, or job",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const openSegment = findOpenPositionDefinitionVersion(
+				[...state.positionDefinitionVersions.values()],
+				input.organizationId,
+				input.positionId,
+			);
+			if (openSegment === null) {
+				return fail(
+					"CONFLICT",
+					"Position definition lineage is missing an open segment",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const mutableCheck = assertLineageSegmentMutable(openSegment);
+			if (!mutableCheck.ok) {
+				return mutableCheck;
+			}
+
+			const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+				openEffectiveFrom: openSegment.effectiveFrom,
+				effectiveOn: input.effectiveOn,
+			});
+			if (!effectiveOnCheck.ok) {
+				return effectiveOnCheck;
+			}
+
 			if (input.departmentId !== undefined) {
 				const department = state.departments.get(input.departmentId);
 				if (!department || department.organizationId !== input.organizationId) {
@@ -950,6 +1230,34 @@ export function createMemoryOrganizationMethods(
 			}
 
 			const now = new Date();
+			const predecessorEnd = previousIsoDate(input.effectiveOn);
+			const closedPredecessor: PositionDefinitionVersion = {
+				...openSegment,
+				effectiveTo: predecessorEnd,
+				lineageStatus: "superseded",
+				version: openSegment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const successor: PositionDefinitionVersion = {
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				positionId: input.positionId,
+				title: nextTitle,
+				departmentId: nextDepartmentId,
+				jobId: nextJobId,
+				effectiveFrom: input.effectiveOn,
+				effectiveTo: null,
+				supersedesDefinitionVersionId: openSegment.id,
+				lineageStatus: "active",
+				reasonCode: input.reasonCode,
+				evidenceRef: input.evidenceRef ?? null,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
 			const updated: Position = {
 				...position,
 				title: nextTitle,
@@ -960,6 +1268,11 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
+			state.positionDefinitionVersions.set(
+				closedPredecessor.id,
+				closedPredecessor,
+			);
+			state.positionDefinitionVersions.set(successor.id, successor);
 			state.positions.set(input.positionId, updated);
 
 			const audit = await ports.audit.record({
@@ -972,6 +1285,8 @@ export function createMemoryOrganizationMethods(
 				changes: [],
 			});
 			if (!audit.ok) {
+				state.positionDefinitionVersions.set(openSegment.id, openSegment);
+				state.positionDefinitionVersions.delete(successor.id);
 				state.positions.set(input.positionId, position);
 				return audit;
 			}
@@ -1355,6 +1670,8 @@ export function createMemoryOrganizationMethods(
 				relationshipKind: "primary",
 				startsOn: record.startsOn,
 				endsOn: record.endsOn,
+				supersedesReportingLineId: null,
+				supersededByReportingLineId: null,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -1594,6 +1911,7 @@ export function createMemoryOrganizationMethods(
 			const closedPrior: ReportingLine = {
 				...prior,
 				endsOn: input.closePriorOn,
+				supersededByReportingLineId: idResult.data,
 				version: prior.version + 1,
 				updatedBy: input.createdBy,
 				updatedAt: now,
@@ -1606,6 +1924,8 @@ export function createMemoryOrganizationMethods(
 				relationshipKind: "primary",
 				startsOn: input.startsOn,
 				endsOn: input.endsOn,
+				supersedesReportingLineId: prior.id,
+				supersededByReportingLineId: null,
 				version: 1,
 				createdBy: input.createdBy,
 				updatedBy: input.createdBy,
@@ -1677,6 +1997,167 @@ export function createMemoryOrganizationMethods(
 
 			const tree = buildOrganizationTree({
 				departments: departments.data,
+				rootDepartmentId: input.rootDepartmentId,
+				maxDepth: input.maxDepth,
+				maxNodes: input.maxNodes,
+			});
+
+			return ok({
+				nodes: tree.nodes,
+				truncated: tree.truncated,
+			});
+		},
+
+		async findDepartmentAsOf(input: {
+			organizationId: string;
+			departmentId: HumanResourcesDepartmentId;
+			asOf: string;
+		}) {
+			const department = state.departments.get(input.departmentId);
+			if (!department || department.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+
+			const resolved = resolveDepartmentStructureAsOf({
+				versions: [...state.departmentStructureVersions.values()],
+				departmentId: input.departmentId,
+				asOf: input.asOf,
+			});
+			if (!resolved.ok) {
+				return fail(
+					"CONFLICT",
+					`Department structure is not deterministic for as-of date (${resolved.reason})`,
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			if (resolved.record === null) {
+				return ok(null);
+			}
+
+			return ok({
+				departmentId: input.departmentId,
+				organizationId: input.organizationId,
+				name: resolved.record.name,
+				parentDepartmentId: resolved.record.parentDepartmentId,
+				asOf: input.asOf,
+				effectiveFrom: resolved.record.effectiveFrom,
+				effectiveTo: resolved.record.effectiveTo,
+				structureVersionId: resolved.record.id,
+			});
+		},
+
+		async findJobAsOf(input: {
+			organizationId: string;
+			jobId: HumanResourcesJobId;
+			asOf: string;
+		}) {
+			const job = state.jobs.get(input.jobId);
+			if (!job || job.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+
+			const resolved = resolveJobDefinitionAsOf({
+				versions: [...state.jobDefinitionVersions.values()],
+				jobId: input.jobId,
+				asOf: input.asOf,
+			});
+			if (!resolved.ok) {
+				return fail(
+					"CONFLICT",
+					`Job definition is not deterministic for as-of date (${resolved.reason})`,
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			if (resolved.record === null) {
+				return ok(null);
+			}
+
+			return ok({
+				jobId: input.jobId,
+				organizationId: input.organizationId,
+				title: resolved.record.title,
+				asOf: input.asOf,
+				effectiveFrom: resolved.record.effectiveFrom,
+				effectiveTo: resolved.record.effectiveTo,
+				definitionVersionId: resolved.record.id,
+			});
+		},
+
+		async findPositionAsOf(input: {
+			organizationId: string;
+			positionId: HumanResourcesPositionId;
+			asOf: string;
+		}): Promise<Result<PositionDefinitionAtAsOf | null>> {
+			const position = state.positions.get(input.positionId);
+			if (!position || position.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+
+			const resolved = resolvePositionDefinitionAsOf({
+				versions: [...state.positionDefinitionVersions.values()],
+				positionId: input.positionId,
+				asOf: input.asOf,
+			});
+			if (!resolved.ok) {
+				return fail(
+					"CONFLICT",
+					`Position definition is not deterministic for as-of date (${resolved.reason})`,
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			if (resolved.record === null) {
+				return ok(null);
+			}
+
+			return ok({
+				positionId: input.positionId,
+				organizationId: input.organizationId,
+				title: resolved.record.title,
+				departmentId: resolved.record.departmentId,
+				jobId: resolved.record.jobId,
+				asOf: input.asOf,
+				effectiveFrom: resolved.record.effectiveFrom,
+				effectiveTo: resolved.record.effectiveTo,
+				definitionVersionId: resolved.record.id,
+			});
+		},
+
+		async getOrganizationTreeAsOf(input: {
+			organizationId: string;
+			asOf: string;
+			rootDepartmentId: HumanResourcesDepartmentId | null;
+			maxDepth: number;
+			maxNodes: number;
+		}): Promise<Result<OrganizationTreePage>> {
+			const departments = await this.listAllDepartments({
+				organizationId: input.organizationId,
+			});
+			if (!departments.ok) {
+				return departments;
+			}
+
+			const historicalDepartments: Department[] = [];
+			for (const department of departments.data) {
+				const asOfStructure = await this.findDepartmentAsOf({
+					organizationId: input.organizationId,
+					departmentId: department.id,
+					asOf: input.asOf,
+				});
+				if (!asOfStructure.ok) {
+					return asOfStructure;
+				}
+				if (asOfStructure.data === null) {
+					continue;
+				}
+				historicalDepartments.push({
+					...department,
+					name: asOfStructure.data.name,
+					parentDepartmentId: asOfStructure.data.parentDepartmentId,
+				});
+			}
+
+			const tree = buildOrganizationTree({
+				departments: historicalDepartments,
 				rootDepartmentId: input.rootDepartmentId,
 				maxDepth: input.maxDepth,
 				maxNodes: input.maxNodes,

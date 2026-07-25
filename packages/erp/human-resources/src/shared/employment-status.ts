@@ -2,10 +2,12 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
 
 import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import { datesOverlap } from "./organization-guards";
 
 export const EMPLOYMENT_STATUSES = ["active", "notice", "terminated"] as const;
 export type EmploymentStatus = (typeof EMPLOYMENT_STATUSES)[number];
@@ -88,6 +90,38 @@ export function assertValidDateRange(
 			"End date must be on or after start date",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 		);
+	}
+	return ok(undefined);
+}
+
+export function assertNoEmploymentOverlap(input: {
+	candidateEmploymentId?: string;
+	candidateStartsOn: string;
+	candidateEndsOn: string | null;
+	existing: readonly {
+		id: string;
+		startsOn: string;
+		endsOn: string | null;
+	}[];
+}): Result<void> {
+	for (const employment of input.existing) {
+		if (employment.id === input.candidateEmploymentId) {
+			continue;
+		}
+		if (
+			datesOverlap({
+				startsOnA: input.candidateStartsOn,
+				endsOnA: input.candidateEndsOn,
+				startsOnB: employment.startsOn,
+				endsOnB: employment.endsOn,
+			})
+		) {
+			return fail(
+				"CONFLICT",
+				"Employment date range overlaps an existing employment for this employee",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
 	}
 	return ok(undefined);
 }

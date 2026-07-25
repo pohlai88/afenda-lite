@@ -19,6 +19,7 @@ import {
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
+import { previousIsoDate } from "../../shared/effective-dates";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
 	HumanResourcesWorkforceFoundationStore,
@@ -27,11 +28,21 @@ import type {
 	PersonCreateRecord,
 	WorkerCreateRecord,
 } from "../../store";
+import {
+	assertLineageSegmentMutable,
+	validateLineageSegmentEffectiveOn,
+} from "../../workforce-foundation/lineage-segment";
+import { resolvePersonIdentityAsOf } from "../../workforce-foundation/person-identity-lineage";
+import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
 import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
 	Person,
+	PersonIdentityAtAsOf,
+	PersonIdentityVersion,
 	Worker,
+	WorkerClassificationAtAsOf,
+	WorkerClassificationVersion,
 } from "../../workforce-foundation/types";
 import type { CoreMemoryState } from "./core";
 import { idempotencyMapKey } from "./shared";
@@ -44,32 +55,96 @@ function cloneWorker(worker: Worker): Worker {
 	return { ...worker };
 }
 
+function clonePersonIdentityVersion(
+	version: PersonIdentityVersion,
+): PersonIdentityVersion {
+	return { ...version };
+}
+
+function cloneWorkerClassificationVersion(
+	version: WorkerClassificationVersion,
+): WorkerClassificationVersion {
+	return { ...version };
+}
+
+function listPersonIdentityVersionsForPerson(
+	state: WorkforceFoundationMemoryState,
+	organizationId: string,
+	personId: HumanResourcesPersonId,
+): PersonIdentityVersion[] {
+	return Array.from(state.personIdentityVersions.values()).filter(
+		(version) =>
+			version.organizationId === organizationId &&
+			version.personId === personId,
+	);
+}
+
+function listWorkerClassificationVersionsForWorker(
+	state: WorkforceFoundationMemoryState,
+	organizationId: string,
+	workerId: HumanResourcesWorkerId,
+): WorkerClassificationVersion[] {
+	return Array.from(state.workerClassificationVersions.values()).filter(
+		(version) =>
+			version.organizationId === organizationId && version.workerId === workerId,
+	);
+}
+
+function findOpenPersonIdentityVersion(
+	state: WorkforceFoundationMemoryState,
+	organizationId: string,
+	personId: HumanResourcesPersonId,
+): PersonIdentityVersion | null {
+	const open = listPersonIdentityVersionsForPerson(
+		state,
+		organizationId,
+		personId,
+	).filter(
+		(version) =>
+			version.lineageStatus === "active" && version.effectiveTo === null,
+	);
+	if (open.length !== 1) {
+		return null;
+	}
+	return open[0] ?? null;
+}
+
+function findOpenWorkerClassificationVersion(
+	state: WorkforceFoundationMemoryState,
+	organizationId: string,
+	workerId: HumanResourcesWorkerId,
+): WorkerClassificationVersion | null {
+	const open = listWorkerClassificationVersionsForWorker(
+		state,
+		organizationId,
+		workerId,
+	).filter(
+		(version) =>
+			version.lineageStatus === "active" && version.effectiveTo === null,
+	);
+	if (open.length !== 1) {
+		return null;
+	}
+	return open[0] ?? null;
+}
+
 export type WorkforceFoundationMemoryState = {
 	persons: Map<HumanResourcesPersonId, Person>;
 	workers: Map<HumanResourcesWorkerId, Worker>;
+	personIdentityVersions: Map<string, PersonIdentityVersion>;
+	workerClassificationVersions: Map<string, WorkerClassificationVersion>;
 	personIdempotencyByKey: Map<string, IdempotentPersonRecord>;
 	workerIdempotencyByKey: Map<string, IdempotentWorkerRecord>;
 };
 
-export type MemoryWorkforceFoundationMethods = Pick<
-	HumanResourcesWorkforceFoundationStore,
-	| "getPersonById"
-	| "findPersonByIdempotencyKey"
-	| "createPerson"
-	| "updatePersonName"
-	| "getWorkerById"
-	| "findWorkerByPersonId"
-	| "findWorkerByEmployeeId"
-	| "findWorkerByIdempotencyKey"
-	| "createWorker"
-	| "changeWorkerType"
-	| "changeWorkerStatus"
->;
+export type MemoryWorkforceFoundationMethods = HumanResourcesWorkforceFoundationStore;
 
 export function createWorkforceFoundationMemoryState(): WorkforceFoundationMemoryState {
 	return {
 		persons: new Map(),
 		workers: new Map(),
+		personIdentityVersions: new Map(),
+		workerClassificationVersions: new Map(),
 		personIdempotencyByKey: new Map(),
 		workerIdempotencyByKey: new Map(),
 	};
@@ -80,6 +155,8 @@ export function resetWorkforceFoundationMemoryState(
 ): void {
 	state.persons.clear();
 	state.workers.clear();
+	state.personIdentityVersions.clear();
+	state.workerClassificationVersions.clear();
 	state.personIdempotencyByKey.clear();
 	state.workerIdempotencyByKey.clear();
 }
@@ -144,9 +221,65 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(clonePerson(person));
 		},
 
-		async findPersonByIdempotencyKey(
-			query,
-		): Promise<Result<IdempotentPersonRecord | null>> {
+		async findPersonAsOf(query): Promise<Result<PersonIdentityAtAsOf | null>> {
+			const person = state.persons.get(query.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== query.organizationId
+			) {
+				return ok(null);
+			}
+
+			const versions = listPersonIdentityVersionsForPerson(
+				state,
+				query.organizationId,
+				query.personId,
+			);
+			const resolution = resolvePersonIdentityAsOf({
+				versions,
+				personId: query.personId,
+				asOf: query.asOf,
+			});
+			if (!resolution.ok) {
+				return fail(
+					"CONFLICT",
+					`Person identity lineage is invalid: ${resolution.reason}`,
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			if (resolution.record === null) {
+				return ok(null);
+			}
+
+			return ok({
+				personId: query.personId,
+				organizationId: query.organizationId,
+				legalName: resolution.record.legalName,
+				asOf: query.asOf,
+				effectiveFrom: resolution.record.effectiveFrom,
+				effectiveTo: resolution.record.effectiveTo,
+				identityVersionId: resolution.record.id,
+			});
+		},
+
+		async listPersonIdentityVersions(query) {
+			const person = state.persons.get(query.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== query.organizationId
+			) {
+				return ok([]);
+			}
+			return ok(
+				listPersonIdentityVersionsForPerson(
+					state,
+					query.organizationId,
+					query.personId,
+				).map(clonePersonIdentityVersion),
+			);
+		},
+
+		async findPersonByIdempotencyKey(query) {
 			const record = state.personIdempotencyByKey.get(
 				idempotencyMapKey(query.organizationId, query.idempotencyKey),
 			);
@@ -159,11 +292,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 		},
 
-		async createPerson(
-			record: PersonCreateRecord,
-			ports: MutationPorts,
-			meta: HumanResourcesMutationMeta,
-		): Promise<Result<Person>> {
+		async createPerson(record, ports, meta) {
 			const existing = await this.findPersonByIdempotencyKey({
 				organizationId: record.organizationId,
 				idempotencyKey: record.createIdempotencyKey,
@@ -181,6 +310,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			}
 
 			const now = new Date();
+			const effectiveFrom = now.toISOString().slice(0, 10);
 			const person: Person = {
 				id: idResult.data,
 				organizationId: record.organizationId,
@@ -192,7 +322,26 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				updatedAt: now,
 			};
 
+			const identityVersion: PersonIdentityVersion = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				personId: person.id,
+				legalName: record.legalName,
+				effectiveFrom,
+				effectiveTo: null,
+				supersedesIdentityVersionId: null,
+				lineageStatus: "active",
+				reasonCode: "initial_record",
+				evidenceRef: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			state.persons.set(person.id, person);
+			state.personIdentityVersions.set(identityVersion.id, identityVersion);
 			state.personIdempotencyByKey.set(
 				idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				{
@@ -212,6 +361,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 			if (!audit.ok) {
 				state.persons.delete(person.id);
+				state.personIdentityVersions.delete(identityVersion.id);
 				state.personIdempotencyByKey.delete(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
@@ -233,6 +383,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 			if (!outbox.ok) {
 				state.persons.delete(person.id);
+				state.personIdentityVersions.delete(identityVersion.id);
 				state.personIdempotencyByKey.delete(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
@@ -242,7 +393,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(clonePerson(person));
 		},
 
-		async updatePersonName(input, ports, meta): Promise<Result<Person>> {
+		async updatePersonName(input, ports, meta) {
 			const person = state.persons.get(input.personId);
 			if (
 				person === undefined ||
@@ -263,58 +414,125 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return versionCheck;
 			}
 
+			const openSegment = findOpenPersonIdentityVersion(
+				state,
+				input.organizationId,
+				input.personId,
+			);
+			if (openSegment === null) {
+				return fail(
+					"CONFLICT",
+					"Person identity lineage is missing an open segment",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const mutableCheck = assertLineageSegmentMutable(openSegment);
+			if (!mutableCheck.ok) {
+				return mutableCheck;
+			}
+
+			const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+				openEffectiveFrom: openSegment.effectiveFrom,
+				effectiveOn: input.effectiveOn,
+			});
+			if (!effectiveOnCheck.ok) {
+				return effectiveOnCheck;
+			}
+
+			if (openSegment.legalName === input.legalName) {
+				return fail(
+					"CONFLICT",
+					"Person identity correction must change legal name",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
 			const now = new Date();
-			const updated: Person = {
+			const predecessorEnd = previousIsoDate(input.effectiveOn);
+			const closedPredecessor: PersonIdentityVersion = {
+				...openSegment,
+				effectiveTo: predecessorEnd,
+				lineageStatus: "superseded",
+				version: openSegment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const successor: PersonIdentityVersion = {
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				personId: input.personId,
+				legalName: input.legalName,
+				effectiveFrom: input.effectiveOn,
+				effectiveTo: null,
+				supersedesIdentityVersionId: openSegment.id,
+				lineageStatus: "active",
+				reasonCode: input.reasonCode,
+				evidenceRef: input.evidenceRef,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const updatedPerson: Person = {
 				...person,
 				legalName: input.legalName,
 				version: person.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
-			state.persons.set(updated.id, updated);
+
+			state.personIdentityVersions.set(closedPredecessor.id, closedPredecessor);
+			state.personIdentityVersions.set(successor.id, successor);
+			state.persons.set(updatedPerson.id, updatedPerson);
 
 			const audit = await ports.audit.record({
-				organizationId: updated.organizationId,
+				organizationId: updatedPerson.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
 				entity: "hr_person",
-				entityId: updated.id,
+				entityId: updatedPerson.id,
 				action: "UPDATE",
 				changes: [
 					{
 						field: "legalName",
 						oldValue: person.legalName,
-						newValue: updated.legalName,
+						newValue: updatedPerson.legalName,
 					},
 				],
 			});
 			if (!audit.ok) {
+				state.personIdentityVersions.set(openSegment.id, openSegment);
+				state.personIdentityVersions.delete(successor.id);
 				state.persons.set(person.id, person);
 				return audit;
 			}
 
 			const outbox = await ports.outbox.append({
-				organizationId: updated.organizationId,
+				organizationId: updatedPerson.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
 				type: HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
 				payload: {
-					organizationId: updated.organizationId,
+					organizationId: updatedPerson.organizationId,
 					entityType: "hr_person",
-					entityId: updated.id,
+					entityId: updatedPerson.id,
 					actorId: input.actorUserId,
 					correlationId: meta.correlationId,
 				},
 			});
 			if (!outbox.ok) {
+				state.personIdentityVersions.set(openSegment.id, openSegment);
+				state.personIdentityVersions.delete(successor.id);
 				state.persons.set(person.id, person);
 				return outbox;
 			}
 
-			return ok(clonePerson(updated));
+			return ok(clonePerson(updatedPerson));
 		},
 
-		async getWorkerById(query): Promise<Result<Worker | null>> {
+		async getWorkerById(query) {
 			const worker = state.workers.get(query.workerId);
 			if (
 				worker === undefined ||
@@ -325,7 +543,68 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(cloneWorker(worker));
 		},
 
-		async findWorkerByPersonId(query): Promise<Result<Worker | null>> {
+		async findWorkerAsOf(query): Promise<Result<WorkerClassificationAtAsOf | null>> {
+			const worker = state.workers.get(query.workerId);
+			if (
+				worker === undefined ||
+				worker.organizationId !== query.organizationId
+			) {
+				return ok(null);
+			}
+
+			const versions = listWorkerClassificationVersionsForWorker(
+				state,
+				query.organizationId,
+				query.workerId,
+			);
+			const resolution = resolveWorkerClassificationAsOf({
+				versions,
+				workerId: query.workerId,
+				asOf: query.asOf,
+			});
+			if (!resolution.ok) {
+				return fail(
+					"CONFLICT",
+					`Worker classification lineage is invalid: ${resolution.reason}`,
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			if (resolution.record === null) {
+				return ok(null);
+			}
+
+			return ok({
+				workerId: query.workerId,
+				organizationId: query.organizationId,
+				personId: worker.personId,
+				workerType: resolution.record.workerType,
+				employeeId: resolution.record.employeeId,
+				status: resolution.record.workerStatus,
+				asOf: query.asOf,
+				effectiveFrom: resolution.record.effectiveFrom,
+				effectiveTo: resolution.record.effectiveTo,
+				classificationVersionId: resolution.record.id,
+			});
+		},
+
+		async listWorkerClassificationVersions(query) {
+			const worker = state.workers.get(query.workerId);
+			if (
+				worker === undefined ||
+				worker.organizationId !== query.organizationId
+			) {
+				return ok([]);
+			}
+			return ok(
+				listWorkerClassificationVersionsForWorker(
+					state,
+					query.organizationId,
+					query.workerId,
+				).map(cloneWorkerClassificationVersion),
+			);
+		},
+
+		async findWorkerByPersonId(query) {
 			for (const worker of state.workers.values()) {
 				if (
 					worker.organizationId === query.organizationId &&
@@ -337,9 +616,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(null);
 		},
 
-		async findWorkerByEmployeeId(
-			query,
-		): Promise<Result<EmployeeWorker | null>> {
+		async findWorkerByEmployeeId(query) {
 			for (const worker of state.workers.values()) {
 				if (
 					worker.organizationId === query.organizationId &&
@@ -352,9 +629,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(null);
 		},
 
-		async findWorkerByIdempotencyKey(
-			query,
-		): Promise<Result<IdempotentWorkerRecord | null>> {
+		async findWorkerByIdempotencyKey(query) {
 			const record = state.workerIdempotencyByKey.get(
 				idempotencyMapKey(query.organizationId, query.idempotencyKey),
 			);
@@ -367,11 +642,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 		},
 
-		async createWorker(
-			record: WorkerCreateRecord,
-			ports: MutationPorts,
-			meta: HumanResourcesMutationMeta,
-		): Promise<Result<Worker>> {
+		async createWorker(record, ports, meta) {
 			const existing = await this.findWorkerByIdempotencyKey({
 				organizationId: record.organizationId,
 				idempotencyKey: record.createIdempotencyKey,
@@ -477,7 +748,31 @@ export function createMemoryWorkforceFoundationMethods(input: {
 							updatedAt: now,
 						};
 
+			const classificationVersion: WorkerClassificationVersion = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				workerId: worker.id,
+				workerType: worker.workerType,
+				employeeId: worker.workerType === "employee" ? worker.employeeId : null,
+				workerStatus: worker.status,
+				effectiveFrom: worker.effectiveFrom,
+				effectiveTo: null,
+				supersedesClassificationVersionId: null,
+				lineageStatus: "active",
+				reasonCode: "initial_record",
+				evidenceRef: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			state.workers.set(worker.id, worker);
+			state.workerClassificationVersions.set(
+				classificationVersion.id,
+				classificationVersion,
+			);
 			state.workerIdempotencyByKey.set(
 				idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				{
@@ -497,6 +792,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 			if (!audit.ok) {
 				state.workers.delete(worker.id);
+				state.workerClassificationVersions.delete(classificationVersion.id);
 				state.workerIdempotencyByKey.delete(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
@@ -518,6 +814,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			});
 			if (!outbox.ok) {
 				state.workers.delete(worker.id);
+				state.workerClassificationVersions.delete(classificationVersion.id);
 				state.workerIdempotencyByKey.delete(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
@@ -527,11 +824,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(cloneWorker(worker));
 		},
 
-		async changeWorkerType(
-			input,
-			ports,
-			meta,
-		): Promise<Result<EmployeeWorker | NonEmployeeWorker>> {
+		async changeWorkerType(input, ports, meta) {
 			const worker = state.workers.get(input.workerId);
 			if (
 				worker === undefined ||
@@ -550,6 +843,32 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
+			}
+
+			const openSegment = findOpenWorkerClassificationVersion(
+				state,
+				input.organizationId,
+				input.workerId,
+			);
+			if (openSegment === null) {
+				return fail(
+					"CONFLICT",
+					"Worker classification lineage is missing an open segment",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const mutableCheck = assertLineageSegmentMutable(openSegment);
+			if (!mutableCheck.ok) {
+				return mutableCheck;
+			}
+
+			const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+				openEffectiveFrom: openSegment.effectiveFrom,
+				effectiveOn: input.effectiveOn,
+			});
+			if (!effectiveOnCheck.ok) {
+				return effectiveOnCheck;
 			}
 
 			if (input.workerType === "employee" && input.employeeId !== null) {
@@ -583,13 +902,56 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				}
 			}
 
+			const nextWorkerType = input.workerType;
+			const nextEmployeeId =
+				input.workerType === "employee" ? input.employeeId : null;
+			if (
+				openSegment.workerType === nextWorkerType &&
+				openSegment.employeeId === nextEmployeeId
+			) {
+				return fail(
+					"CONFLICT",
+					"Worker type change must alter classification",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
 			const now = new Date();
+			const closedPredecessor: WorkerClassificationVersion = {
+				...openSegment,
+				effectiveTo: previousIsoDate(input.effectiveOn),
+				lineageStatus: "superseded",
+				version: openSegment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const successor: WorkerClassificationVersion = {
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				workerId: input.workerId,
+				workerType: nextWorkerType,
+				employeeId: nextEmployeeId,
+				workerStatus: openSegment.workerStatus,
+				effectiveFrom: input.effectiveOn,
+				effectiveTo: null,
+				supersedesClassificationVersionId: openSegment.id,
+				lineageStatus: "active",
+				reasonCode: input.reasonCode,
+				evidenceRef: input.evidenceRef,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			const updated: Worker =
 				input.workerType === "employee"
 					? {
 							...(worker as EmployeeWorker),
 							workerType: "employee",
 							employeeId: input.employeeId,
+							status: openSegment.workerStatus,
 							effectiveFrom: input.effectiveOn,
 							version: worker.version + 1,
 							updatedBy: input.actorUserId,
@@ -599,17 +961,23 @@ export function createMemoryWorkforceFoundationMethods(input: {
 							...(worker as NonEmployeeWorker),
 							workerType: input.workerType,
 							employeeId: null,
+							status: openSegment.workerStatus,
 							effectiveFrom: input.effectiveOn,
 							version: worker.version + 1,
 							updatedBy: input.actorUserId,
 							updatedAt: now,
 						};
 
+			state.workerClassificationVersions.set(
+				closedPredecessor.id,
+				closedPredecessor,
+			);
+			state.workerClassificationVersions.set(successor.id, successor);
 			state.workers.set(updated.id, updated);
 			return emitWorkerChanged(updated, worker, input.actorUserId, ports, meta);
 		},
 
-		async changeWorkerStatus(input, ports, meta): Promise<Result<Worker>> {
+		async changeWorkerStatus(input, ports, meta) {
 			const worker = state.workers.get(input.workerId);
 			if (
 				worker === undefined ||
@@ -630,7 +998,69 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return versionCheck;
 			}
 
+			const openSegment = findOpenWorkerClassificationVersion(
+				state,
+				input.organizationId,
+				input.workerId,
+			);
+			if (openSegment === null) {
+				return fail(
+					"CONFLICT",
+					"Worker classification lineage is missing an open segment",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const mutableCheck = assertLineageSegmentMutable(openSegment);
+			if (!mutableCheck.ok) {
+				return mutableCheck;
+			}
+
+			const effectiveOnCheck = validateLineageSegmentEffectiveOn({
+				openEffectiveFrom: openSegment.effectiveFrom,
+				effectiveOn: input.effectiveOn,
+			});
+			if (!effectiveOnCheck.ok) {
+				return effectiveOnCheck;
+			}
+
+			if (openSegment.workerStatus === input.status) {
+				return fail(
+					"CONFLICT",
+					"Worker status change must alter classification",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
 			const now = new Date();
+			const closedPredecessor: WorkerClassificationVersion = {
+				...openSegment,
+				effectiveTo: previousIsoDate(input.effectiveOn),
+				lineageStatus: "superseded",
+				version: openSegment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const successor: WorkerClassificationVersion = {
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				workerId: input.workerId,
+				workerType: openSegment.workerType,
+				employeeId: openSegment.employeeId,
+				workerStatus: input.status,
+				effectiveFrom: input.effectiveOn,
+				effectiveTo: null,
+				supersedesClassificationVersionId: openSegment.id,
+				lineageStatus: "active",
+				reasonCode: input.reasonCode,
+				evidenceRef: input.evidenceRef,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			const updated: Worker = {
 				...worker,
 				status: input.status,
@@ -639,6 +1069,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
+
+			state.workerClassificationVersions.set(
+				closedPredecessor.id,
+				closedPredecessor,
+			);
+			state.workerClassificationVersions.set(successor.id, successor);
 			state.workers.set(updated.id, updated);
 			return emitWorkerChanged(updated, worker, input.actorUserId, ports, meta);
 		},

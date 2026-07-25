@@ -14,6 +14,7 @@ import {
 } from "@afenda/events/schemas";
 import {
 	type HumanResourcesClearanceId,
+	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentConfirmationId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesEmploymentMovementId,
@@ -25,6 +26,7 @@ import {
 	type HumanResourcesPositionId,
 	type HumanResourcesProbationReviewId,
 	type HumanResourcesTerminationId,
+	type HumanResourcesWorkCalendarId,
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesClearanceId,
 	parseHumanResourcesEmploymentConfirmationId,
@@ -51,6 +53,10 @@ import {
 	notFound,
 } from "../../shared/domain-guards";
 import { previousIsoDate } from "../../shared/effective-dates";
+import {
+	assertAssignmentWithinEmployment,
+	assertNoAssignmentOverlap,
+} from "../../shared/assignment-guards";
 import { assertValidDateRange } from "../../shared/employment-status";
 import { fingerprintTransfer } from "../../shared/fingerprint";
 import {
@@ -101,6 +107,7 @@ import type {
 	WorkAssignment,
 } from "../../types";
 import type { CoreMemoryState } from "./core";
+import { appendEmploymentHistoryToState } from "./core";
 import type { OrganizationMemoryState } from "./organization";
 import type { RecruitmentMemoryState } from "./recruitment";
 import { idempotencyMapKey } from "./shared";
@@ -230,7 +237,10 @@ export type MemoryLifecycleMethods = Pick<
 
 export type LifecycleMemoryHost = Pick<
 	HumanResourcesStore,
-	"getEmploymentById" | "getPositionById" | "findOpenAssignmentByEmployment"
+	| "getEmploymentById"
+	| "getPositionById"
+	| "findOpenAssignmentByEmployment"
+	| "listAssignmentsByEmployment"
 >;
 
 export function createLifecycleMemoryState(): LifecycleMemoryState {
@@ -1100,6 +1110,8 @@ export function createMemoryLifecycleMethods(
 				employmentId: HumanResourcesEmploymentId;
 				toPositionId: HumanResourcesPositionId;
 				organizationDimensions: HumanResourcesOrganizationDimensions;
+				managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
+				workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
 				effectiveOn: string;
 				reason: string;
 				idempotencyKey: string;
@@ -1176,6 +1188,53 @@ export function createMemoryLifecycleMethods(
 				return dateCheck;
 			}
 
+			const withinEmployment = assertAssignmentWithinEmployment({
+				assignmentStartsOn: openAssignment.data.startsOn,
+				assignmentEndsOn: previousIsoDate(input.effectiveOn),
+				employmentStartsOn: employment.startsOn,
+				employmentEndsOn: employment.endsOn,
+			});
+			if (!withinEmployment.ok) {
+				return withinEmployment;
+			}
+
+			const successorWithinEmployment = assertAssignmentWithinEmployment({
+				assignmentStartsOn: input.effectiveOn,
+				assignmentEndsOn: null,
+				employmentStartsOn: employment.startsOn,
+				employmentEndsOn: employment.endsOn,
+			});
+			if (!successorWithinEmployment.ok) {
+				return successorWithinEmployment;
+			}
+
+			const siblings = await this.listAssignmentsByEmployment({
+				organizationId: input.organizationId,
+				employmentId: input.employmentId,
+			});
+			if (!siblings.ok) {
+				return siblings;
+			}
+
+			const endedOverlap = assertNoAssignmentOverlap({
+				candidateAssignmentId: openAssignment.data.id,
+				candidateStartsOn: openAssignment.data.startsOn,
+				candidateEndsOn: previousIsoDate(input.effectiveOn),
+				existing: siblings.data,
+			});
+			if (!endedOverlap.ok) {
+				return endedOverlap;
+			}
+
+			const successorOverlap = assertNoAssignmentOverlap({
+				candidateStartsOn: input.effectiveOn,
+				candidateEndsOn: null,
+				existing: siblings.data,
+			});
+			if (!successorOverlap.ok) {
+				return successorOverlap;
+			}
+
 			const newAssignmentIdResult = parseHumanResourcesAssignmentId(
 				randomUUID(),
 			);
@@ -1195,6 +1254,7 @@ export function createMemoryLifecycleMethods(
 			const endedAssignment: WorkAssignment = {
 				...openAssignment.data,
 				endsOn: previousIsoDate(input.effectiveOn),
+				successorAssignmentId: newAssignmentIdResult.data,
 				version: openAssignment.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1206,6 +1266,11 @@ export function createMemoryLifecycleMethods(
 				employeeId: employment.employeeId,
 				positionId: input.toPositionId,
 				organizationDimensions: structuredClone(input.organizationDimensions),
+				predecessorAssignmentId: endedAssignment.id,
+				successorAssignmentId: null,
+				transferMovementId: movementIdResult.data,
+				managerEmployeeIdSnapshot: input.managerEmployeeIdSnapshot,
+				workCalendarIdSnapshot: input.workCalendarIdSnapshot,
 				startsOn: input.effectiveOn,
 				endsOn: null,
 				version: 1,
@@ -1214,6 +1279,7 @@ export function createMemoryLifecycleMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
+			endedAssignment.transferMovementId = movementIdResult.data;
 			const movement: EmploymentMovement = {
 				id: movementIdResult.data,
 				organizationId: input.organizationId,
@@ -1396,6 +1462,21 @@ export function createMemoryLifecycleMethods(
 
 			state.terminations.set(termination.id, termination);
 			deps.core.employments.set(employment.id, updatedEmployment);
+			appendEmploymentHistoryToState(deps.core, {
+				organizationId: updatedEmployment.organizationId,
+				employmentId: updatedEmployment.id,
+				employeeId: updatedEmployment.employeeId,
+				fromStatus: employment.status,
+				toStatus: "terminated",
+				startsOnSnapshot: updatedEmployment.startsOn,
+				endsOnSnapshot: updatedEmployment.endsOn,
+				effectiveOn: record.effectiveOn,
+				changeKind: "lifecycle",
+				reason: record.reasonCode,
+				evidenceReference: record.reasonDetail,
+				correlationId: meta.correlationId,
+				actorUserId: record.createdBy,
+			});
 			const idemKey = idempotencyMapKey(
 				record.organizationId,
 				record.idempotencyKey,

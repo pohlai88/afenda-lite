@@ -204,6 +204,8 @@ export type MasterCommandId = (typeof MASTER_DATA_COMMAND_IDS)[number];
 
 export const MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF =
 	"master_data.organization_dimension.resolve_as_of" as const;
+export const MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE =
+	"master_data.organization_dimension.get_effective" as const;
 export const MASTER_QUERY_PARTY_GET_BY_ID =
 	"master_data.party.get_by_id" as const;
 export const MASTER_QUERY_PARTY_GET_BY_CODE =
@@ -292,6 +294,7 @@ export const MASTER_QUERY_SEARCH_QUERY = "master_data.search.query" as const;
 
 export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE,
 	MASTER_QUERY_PARTY_GET_BY_ID,
 	MASTER_QUERY_PARTY_GET_BY_CODE,
 	MASTER_QUERY_PARTY_LIST,

@@ -153,6 +153,130 @@ export const hrWorker = pgTable(
 	],
 );
 
+/** Non-destructive person identity lineage — historical legal-name segments. */
+export const hrPersonIdentityVersion = pgTable(
+	"hr_person_identity_version",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		personId: uuid("person_id").notNull(),
+		legalName: text("legal_name").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		supersedesIdentityVersionId: uuid("supersedes_identity_version_id").references(
+			(): AnyPgColumn => hrPersonIdentityVersion.id,
+		),
+		lineageStatus: text("lineage_status").notNull(),
+		reasonCode: text("reason_code").notNull(),
+		evidenceRef: text("evidence_ref"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_person_identity_version_org_person_idx").on(
+			t.organizationId,
+			t.personId,
+		),
+		index("hr_person_identity_version_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_person_identity_version_org_person_open_uidx")
+			.on(t.organizationId, t.personId)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.personId],
+			foreignColumns: [hrPerson.organizationId, hrPerson.id],
+			name: "hr_person_identity_version_org_person_fk",
+		}),
+		check(
+			"hr_person_identity_version_lineage_status_check",
+			sql`${t.lineageStatus} IN ('active', 'superseded')`,
+		),
+		check(
+			"hr_person_identity_version_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+/** Non-destructive worker classification lineage — type/status history segments. */
+export const hrWorkerClassificationVersion = pgTable(
+	"hr_worker_classification_version",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		workerId: uuid("worker_id").notNull(),
+		workerType: text("worker_type").notNull(),
+		employeeId: uuid("employee_id"),
+		workerStatus: text("worker_status").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		supersedesClassificationVersionId: uuid(
+			"supersedes_classification_version_id",
+		).references((): AnyPgColumn => hrWorkerClassificationVersion.id),
+		lineageStatus: text("lineage_status").notNull(),
+		reasonCode: text("reason_code").notNull(),
+		evidenceRef: text("evidence_ref"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_worker_classification_version_org_worker_idx").on(
+			t.organizationId,
+			t.workerId,
+		),
+		index("hr_worker_classification_version_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("hr_worker_classification_version_org_worker_open_uidx")
+			.on(t.organizationId, t.workerId)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.workerId],
+			foreignColumns: [hrWorker.organizationId, hrWorker.id],
+			name: "hr_worker_classification_version_org_worker_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.employeeId],
+			foreignColumns: [hrEmployee.organizationId, hrEmployee.id],
+			name: "hr_worker_classification_version_org_employee_fk",
+		}),
+		check(
+			"hr_worker_classification_version_type_check",
+			sql`${t.workerType} IN ('employee', 'contractor', 'contingent_worker', 'intern')`,
+		),
+		check(
+			"hr_worker_classification_version_worker_status_check",
+			sql`${t.workerStatus} IN ('active', 'inactive', 'former')`,
+		),
+		check(
+			"hr_worker_classification_version_lineage_status_check",
+			sql`${t.lineageStatus} IN ('active', 'superseded')`,
+		),
+		check(
+			"hr_worker_classification_version_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		check(
+			"hr_worker_classification_version_employee_id_check",
+			sql`(${t.workerType} = 'employee') OR (${t.employeeId} IS NULL)`,
+		),
+	],
+);
+
 /** User-to-employee identity mapping for actor resolution and RBAC */
 export const hrUserEmployee = pgTable(
 	"hr_user_employee",
@@ -232,6 +356,59 @@ export const hrDepartment = pgTable(
 		),
 		index("hr_department_org_status_idx").on(t.organizationId, t.status),
 		uniqueIndex("hr_department_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_department_org_id_uidx").on(t.organizationId, t.id),
+	],
+);
+
+/** Non-destructive department structure lineage — name and parent history. */
+export const hrDepartmentStructureVersion = pgTable(
+	"hr_department_structure_version",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		departmentId: uuid("department_id").notNull(),
+		name: text("name").notNull(),
+		parentDepartmentId: uuid("parent_department_id"),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		supersedesStructureVersionId: uuid("supersedes_structure_version_id").references(
+			(): AnyPgColumn => hrDepartmentStructureVersion.id,
+		),
+		lineageStatus: text("lineage_status").notNull(),
+		reasonCode: text("reason_code").notNull(),
+		evidenceRef: text("evidence_ref"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_department_structure_version_org_department_idx").on(
+			t.organizationId,
+			t.departmentId,
+		),
+		index("hr_department_structure_version_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_department_structure_version_org_department_open_uidx")
+			.on(t.organizationId, t.departmentId)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.departmentId],
+			foreignColumns: [hrDepartment.organizationId, hrDepartment.id],
+			name: "hr_department_structure_version_org_department_fk",
+		}),
+		check(
+			"hr_department_structure_version_lineage_status_check",
+			sql`${t.lineageStatus} IN ('active', 'superseded')`,
+		),
+		check(
+			"hr_department_structure_version_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
 	],
 );
 
@@ -258,6 +435,55 @@ export const hrJob = pgTable(
 		index("hr_job_org_id_idx").on(t.organizationId, t.id),
 		index("hr_job_org_status_idx").on(t.organizationId, t.status),
 		uniqueIndex("hr_job_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_job_org_id_uidx").on(t.organizationId, t.id),
+	],
+);
+
+/** Non-destructive job definition lineage — title history. */
+export const hrJobDefinitionVersion = pgTable(
+	"hr_job_definition_version",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		title: text("title").notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		supersedesDefinitionVersionId: uuid("supersedes_definition_version_id").references(
+			(): AnyPgColumn => hrJobDefinitionVersion.id,
+		),
+		lineageStatus: text("lineage_status").notNull(),
+		reasonCode: text("reason_code").notNull(),
+		evidenceRef: text("evidence_ref"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_job_definition_version_org_job_idx").on(t.organizationId, t.jobId),
+		index("hr_job_definition_version_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_job_definition_version_org_job_open_uidx")
+			.on(t.organizationId, t.jobId)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [hrJob.organizationId, hrJob.id],
+			name: "hr_job_definition_version_org_job_fk",
+		}),
+		check(
+			"hr_job_definition_version_lineage_status_check",
+			sql`${t.lineageStatus} IN ('active', 'superseded')`,
+		),
+		check(
+			"hr_job_definition_version_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
 	],
 );
 
@@ -289,6 +515,58 @@ export const hrEmployment = pgTable(
 		uniqueIndex("hr_employment_org_employee_open_uidx")
 			.on(t.organizationId, t.employeeId)
 			.where(sql`${t.endsOn} IS NULL`),
+		check(
+			"hr_employment_effective_range_ck",
+			sql`${t.endsOn} IS NULL OR ${t.startsOn} <= ${t.endsOn}`,
+		),
+	],
+);
+
+/** Append-only employment status and tenure snapshots for historical queries. */
+export const hrEmploymentStatusHistory = pgTable(
+	"hr_employment_status_history",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		fromStatus: text("from_status"),
+		toStatus: text("to_status").notNull(),
+		startsOnSnapshot: date("starts_on_snapshot", { mode: "string" }).notNull(),
+		endsOnSnapshot: date("ends_on_snapshot", { mode: "string" }),
+		effectiveOn: date("effective_on", { mode: "string" }).notNull(),
+		changeKind: text("change_kind").notNull(),
+		reason: text("reason"),
+		evidenceReference: text("evidence_reference"),
+		correlationId: text("correlation_id").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_status_history_org_employment_effective_idx").on(
+			t.organizationId,
+			t.employmentId,
+			t.effectiveOn,
+		),
+		index("hr_employment_status_history_org_employee_effective_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.effectiveOn,
+		),
+		check(
+			"hr_employment_status_history_change_kind_check",
+			sql`${t.changeKind} IN ('create', 'lifecycle', 'correction')`,
+		),
+		check(
+			"hr_employment_status_history_to_status_check",
+			sql`${t.toStatus} IN ('active', 'notice', 'terminated')`,
+		),
 	],
 );
 
@@ -322,6 +600,60 @@ export const hrPosition = pgTable(
 		),
 		index("hr_position_org_job_idx").on(t.organizationId, t.jobId),
 		uniqueIndex("hr_position_org_code_uidx").on(t.organizationId, t.code),
+		uniqueIndex("hr_position_org_id_uidx").on(t.organizationId, t.id),
+	],
+);
+
+/** Non-destructive position definition lineage — title, department, job history. */
+export const hrPositionDefinitionVersion = pgTable(
+	"hr_position_definition_version",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		positionId: uuid("position_id").notNull(),
+		title: text("title").notNull(),
+		departmentId: uuid("department_id"),
+		jobId: uuid("job_id"),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		supersedesDefinitionVersionId: uuid("supersedes_definition_version_id").references(
+			(): AnyPgColumn => hrPositionDefinitionVersion.id,
+		),
+		lineageStatus: text("lineage_status").notNull(),
+		reasonCode: text("reason_code").notNull(),
+		evidenceRef: text("evidence_ref"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_position_definition_version_org_position_idx").on(
+			t.organizationId,
+			t.positionId,
+		),
+		index("hr_position_definition_version_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_position_definition_version_org_position_open_uidx")
+			.on(t.organizationId, t.positionId)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.positionId],
+			foreignColumns: [hrPosition.organizationId, hrPosition.id],
+			name: "hr_position_definition_version_org_position_fk",
+		}),
+		check(
+			"hr_position_definition_version_lineage_status_check",
+			sql`${t.lineageStatus} IN ('active', 'superseded')`,
+		),
+		check(
+			"hr_position_definition_version_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
 	],
 );
 
@@ -339,6 +671,15 @@ export const hrEmploymentContract = pgTable(
 		referenceCode: text("reference_code").notNull(),
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }),
+		lineageStatus: text("lineage_status").notNull(),
+		supersedesContractId: uuid("supersedes_contract_id").references(
+			(): AnyPgColumn => hrEmploymentContract.id,
+		),
+		supersededByContractId: uuid("superseded_by_contract_id").references(
+			(): AnyPgColumn => hrEmploymentContract.id,
+		),
+		reasonCode: text("reason_code").notNull(),
+		sourceReference: text("source_reference"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -355,14 +696,21 @@ export const hrEmploymentContract = pgTable(
 			t.organizationId,
 			t.employmentId,
 		),
-		uniqueIndex("hr_employment_contract_org_employment_ref_uidx").on(
+		index("hr_employment_contract_org_employment_starts_idx").on(
 			t.organizationId,
 			t.employmentId,
-			t.referenceCode,
+			t.startsOn,
 		),
+		uniqueIndex("hr_employment_contract_org_employment_ref_active_uidx")
+			.on(t.organizationId, t.employmentId, t.referenceCode)
+			.where(sql`${t.lineageStatus} = 'active'`),
 		check(
 			"hr_employment_contract_effective_range_ck",
 			sql`${t.endsOn} IS NULL OR ${t.startsOn} <= ${t.endsOn}`,
+		),
+		check(
+			"hr_employment_contract_lineage_status_check",
+			sql`${t.lineageStatus} IN ('active', 'superseded')`,
 		),
 	],
 );
@@ -397,6 +745,21 @@ export const hrWorkAssignment = pgTable(
 		projectDimensionId: uuid("project_dimension_id"),
 		projectKeySnapshot: text("project_key_snapshot"),
 		projectNameSnapshot: text("project_name_snapshot"),
+		predecessorAssignmentId: uuid("predecessor_assignment_id").references(
+			(): AnyPgColumn => hrWorkAssignment.id,
+		),
+		successorAssignmentId: uuid("successor_assignment_id").references(
+			(): AnyPgColumn => hrWorkAssignment.id,
+		),
+		transferMovementId: uuid("transfer_movement_id").references(
+			(): AnyPgColumn => hrEmploymentMovement.id,
+		),
+		managerEmployeeIdSnapshot: uuid("manager_employee_id_snapshot").references(
+			() => hrEmployee.id,
+		),
+		workCalendarIdSnapshot: uuid("work_calendar_id_snapshot").references(
+			(): AnyPgColumn => hrWorkCalendar.id,
+		),
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }),
 		version: integer("version").notNull().default(1),
@@ -438,6 +801,11 @@ export const hrWorkAssignment = pgTable(
 		index("hr_work_assignment_org_project_idx").on(
 			t.organizationId,
 			t.projectDimensionId,
+		),
+		index("hr_work_assignment_org_employment_starts_idx").on(
+			t.organizationId,
+			t.employmentId,
+			t.startsOn,
 		),
 		uniqueIndex("hr_work_assignment_org_employment_open_uidx")
 			.on(t.organizationId, t.employmentId)
@@ -504,6 +872,12 @@ export const hrReportingLine = pgTable(
 		relationshipKind: text("relationship_kind").notNull(),
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }),
+		supersedesReportingLineId: uuid("supersedes_reporting_line_id").references(
+			(): AnyPgColumn => hrReportingLine.id,
+		),
+		supersededByReportingLineId: uuid("superseded_by_reporting_line_id").references(
+			(): AnyPgColumn => hrReportingLine.id,
+		),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),

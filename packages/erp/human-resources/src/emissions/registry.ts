@@ -1,9 +1,13 @@
 import { composeHumanResourcesEmissionRegistry } from "./compose-registry";
+import { HUMAN_RESOURCES_COMPENSATION_EMISSIONS } from "./domains/compensation";
 import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "./domains/compliance";
 import { HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS } from "./domains/core-organization";
 import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "./domains/employee-relations";
+import { HUMAN_RESOURCES_LEARNING_EMISSIONS } from "./domains/learning";
 import { HUMAN_RESOURCES_LEAVE_EMISSIONS } from "./domains/leave";
 import { HUMAN_RESOURCES_LIFECYCLE_EMISSIONS } from "./domains/lifecycle";
+import { HUMAN_RESOURCES_PERFORMANCE_EMISSIONS } from "./domains/performance";
+import { HUMAN_RESOURCES_PRIVACY_EMISSIONS } from "./domains/privacy";
 import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "./domains/recruitment";
 import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "./domains/talent";
 import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "./domains/workforce-foundation";
@@ -23,4 +27,8 @@ export const HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD =
 		HUMAN_RESOURCES_COMPLIANCE_EMISSIONS,
 		HUMAN_RESOURCES_TALENT_EMISSIONS,
 		HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS,
+		HUMAN_RESOURCES_COMPENSATION_EMISSIONS,
+		HUMAN_RESOURCES_PERFORMANCE_EMISSIONS,
+		HUMAN_RESOURCES_LEARNING_EMISSIONS,
+		HUMAN_RESOURCES_PRIVACY_EMISSIONS,
 	) satisfies HumanResourcesEmissionRegistry;

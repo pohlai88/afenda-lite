@@ -9,7 +9,10 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+	HUMAN_RESOURCES_EVENT_IDS,
 	HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 	HumanResourcesEventSchemas,
@@ -60,12 +63,12 @@ describe("@afenda/events human-resources schema compatibility", () => {
 			HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 			HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 		] as const) {
-			expect(HumanResourcesEventSchemas[type].safeParse(withEffectiveOn).success).toBe(
-				true,
-			);
-			expect(HumanResourcesEventSchemas[type].safeParse(goldenPayload).success).toBe(
-				false,
-			);
+			expect(
+				HumanResourcesEventSchemas[type].safeParse(withEffectiveOn).success,
+			).toBe(true);
+			expect(
+				HumanResourcesEventSchemas[type].safeParse(goldenPayload).success,
+			).toBe(false);
 		}
 	});
 
@@ -87,6 +90,8 @@ describe("@afenda/events human-resources schema compatibility", () => {
 			HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 			HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
 			HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+			HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+			HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 			HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
 			HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
 		] as const;
@@ -108,5 +113,17 @@ describe("@afenda/events human-resources schema compatibility", () => {
 		expect(parsed.success).toBe(true);
 		if (!parsed.success) return;
 		expect(parsed.data.correlationId).toBe("corr-trace-1");
+	});
+
+	it("requires organizationId and correlationId on every HR event schema", () => {
+		for (const eventType of HUMAN_RESOURCES_EVENT_IDS) {
+			const schema = HumanResourcesEventSchemas[eventType];
+			expect(
+				schema.safeParse({ ...goldenPayload, organizationId: "" }).success,
+			).toBe(false);
+			expect(
+				schema.safeParse({ ...goldenPayload, correlationId: "" }).success,
+			).toBe(false);
+		}
 	});
 });

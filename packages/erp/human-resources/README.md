@@ -6,7 +6,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
-**Disk inventory (2026-07-25):** **290** commands · **144** queries · **99** permissions · **106** `hr_*` mutation / hard-tenant tables · emission registry **169** / 290 (~58%). Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 3 Slice 3.4 lifecycle emissions **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+**Disk inventory (2026-07-25):** **290** commands · **144** queries · **99** permissions · **106** `hr_*` mutation / hard-tenant tables · **106/106** effective-truth classification register · emission registry **169** / 290 (~58%). Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 3 Slice 3.4 lifecycle emissions **DONE**; Phase 4 Slice 4.1 effective-truth classification **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
 
 ## Consume
 

@@ -2,6 +2,7 @@ import type { Result } from "@afenda/errors/result";
 import type {
 	HumanResourcesAssignmentId,
 	HumanResourcesClearanceId,
+	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentId,
 	HumanResourcesOffboardingCaseId,
@@ -12,6 +13,7 @@ import type {
 	HumanResourcesPositionId,
 	HumanResourcesProbationReviewId,
 	HumanResourcesTerminationId,
+	HumanResourcesWorkCalendarId,
 } from "../brands";
 import type {
 	HumanResourcesOrganizationDimensions,
@@ -254,6 +256,8 @@ export type HumanResourcesLifecycleStore = {
 			employmentId: HumanResourcesEmploymentId;
 			toPositionId: HumanResourcesPositionId;
 			organizationDimensions: HumanResourcesOrganizationDimensions;
+			managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
+			workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
 			effectiveOn: string;
 			reason: string;
 			idempotencyKey: string;

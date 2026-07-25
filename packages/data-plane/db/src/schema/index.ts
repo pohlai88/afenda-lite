@@ -1,4 +1,5 @@
 export * from "./accounting";
+export * from "./corporate-administration";
 export * from "./fulfillment";
 export * from "./human-resources";
 export * from "./inventory";

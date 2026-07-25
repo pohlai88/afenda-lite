@@ -18,7 +18,8 @@ export type HumanResourcesDomain =
 	| "talent"
 	| "compliance"
 	| "employee-relations"
-	| "workforce-planning";
+	| "workforce-planning"
+	| "privacy";
 
 interface HumanResourcesEmissionBase {
 	commandId: HumanResourcesCommandId;

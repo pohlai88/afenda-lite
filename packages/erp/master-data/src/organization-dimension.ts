@@ -21,6 +21,7 @@ import {
 } from "./authorization";
 import {
 	MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE,
 	MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF,
 } from "./module-ids";
 import { normalizeMasterCode } from "./shared/code";
@@ -66,6 +67,12 @@ export type OrganizationDimensionStore = {
 		organizationId: string;
 		kind: OrganizationDimensionKind;
 		normalizedKey: string;
+		asOf: string;
+	}): Promise<Result<OrganizationDimension[]>>;
+	findEffectiveById(input: {
+		organizationId: string;
+		id: string;
+		kind: OrganizationDimensionKind;
 		asOf: string;
 	}): Promise<Result<OrganizationDimension[]>>;
 };
@@ -114,6 +121,18 @@ export const resolveOrganizationDimensionsAsOfInputSchema = context
 			.strict(),
 	})
 	.strict();
+
+export const getOrganizationDimensionEffectiveInputSchema = context
+	.extend({
+		kind: z.literal("legal_entity"),
+		id: z.uuid().optional(),
+		key: z.string().trim().min(1).max(100).optional(),
+		asOf: isoDate,
+	})
+	.strict()
+	.refine((value) => (value.id ? !value.key : Boolean(value.key)), {
+		message: "Provide exactly one of id or key",
+	});
 
 type OrganizationDimensionSqlRow = {
 	id: string;
@@ -287,6 +306,35 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				);
 			}
 		},
+		async findEffectiveById(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(mdOrganizationDimension)
+					.where(
+						and(
+							eq(mdOrganizationDimension.organizationId, input.organizationId),
+							eq(mdOrganizationDimension.id, input.id),
+							eq(mdOrganizationDimension.kind, input.kind),
+							lte(mdOrganizationDimension.effectiveFrom, input.asOf),
+							or(
+								isNull(mdOrganizationDimension.effectiveTo),
+								gte(mdOrganizationDimension.effectiveTo, input.asOf),
+							),
+						),
+					);
+				return ok(rows.map(mapDimension));
+			} catch (error) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to resolve organization dimension by id",
+					{
+						reason: "MASTER_PERSISTENCE_FAILURE",
+						cause: error instanceof Error ? error.message : "unknown",
+					},
+				);
+			}
+		},
 	};
 }
 
@@ -392,4 +440,101 @@ export async function resolveOrganizationDimensionsAsOf(
 		};
 	}
 	return ok(resolved);
+}
+
+async function resolveSingleEffectiveDimension(
+	store: OrganizationDimensionStore,
+	input: {
+		organizationId: string;
+		kind: OrganizationDimensionKind;
+		asOf: string;
+		id?: string;
+		key?: string;
+	},
+): Promise<Result<OrganizationDimensionReference | null>> {
+	if (input.id) {
+		const matches = await store.findEffectiveById({
+			organizationId: input.organizationId,
+			id: input.id,
+			kind: input.kind,
+			asOf: input.asOf,
+		});
+		if (!matches.ok) return matches;
+		if (matches.data.length === 0) {
+			return ok(null);
+		}
+		if (matches.data.length > 1) {
+			return fail("CONFLICT", "Organization dimension is ambiguous", {
+				reason: "MASTER_DIMENSION_AMBIGUOUS",
+				kind: input.kind,
+				id: input.id,
+				asOf: input.asOf,
+			});
+		}
+		const match = matches.data[0];
+		if (!match) {
+			return fail("INTERNAL_ERROR", "Resolved organization dimension missing");
+		}
+		return ok({
+			id: match.id,
+			kind: match.kind,
+			key: match.key,
+			name: match.name,
+		});
+	}
+	const normalized = normalizeMasterCode(input.key ?? "");
+	if (!normalized.ok) return normalized;
+	const matches = await store.findEffective({
+		organizationId: input.organizationId,
+		kind: input.kind,
+		normalizedKey: normalized.data.normalizedCode,
+		asOf: input.asOf,
+	});
+	if (!matches.ok) return matches;
+	if (matches.data.length === 0) {
+		return ok(null);
+	}
+	if (matches.data.length > 1) {
+		return fail("CONFLICT", "Organization dimension is ambiguous", {
+			reason: "MASTER_DIMENSION_AMBIGUOUS",
+			kind: input.kind,
+			key: input.key,
+			asOf: input.asOf,
+		});
+	}
+	const match = matches.data[0];
+	if (!match) {
+		return fail("INTERNAL_ERROR", "Resolved organization dimension missing");
+	}
+	return ok({
+		id: match.id,
+		kind: match.kind,
+		key: match.key,
+		name: match.name,
+	});
+}
+
+export async function getOrganizationDimensionEffective(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimensionReference | null>> {
+	const parsed = getOrganizationDimensionEffectiveInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid organization dimension lookup input", {
+			issues: parsed.error.issues,
+		});
+	}
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE,
+	});
+	if (!authorized.ok) return authorized;
+	return resolveSingleEffectiveDimension(resolveStore(options.store), {
+		organizationId: parsed.data.organizationId,
+		kind: parsed.data.kind,
+		asOf: parsed.data.asOf,
+		id: parsed.data.id,
+		key: parsed.data.key,
+	});
 }

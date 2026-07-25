@@ -18,6 +18,28 @@ modules:
     packageName: "@afenda/accounting"
   - activationMode: organization_toggle
     aggregates:
+      - legal_company
+      - officer_appointment
+      - governance_body
+      - governance_membership
+      - authority_mandate
+      - company_premise
+      - governance_meeting
+      - resolution
+      - share_class
+      - share_transaction
+      - property_holding
+      - licence_permit
+      - bank_account_registration
+      - corporate_document
+      - filing_obligation
+    band: R1-F
+    category: erp
+    id: corporate-administration
+    lifecycle: scaffolded
+    packageName: "@afenda/corporate-administration"
+  - activationMode: organization_toggle
+    aggregates:
       - delivery
     band: R1-F
     category: supply-chain

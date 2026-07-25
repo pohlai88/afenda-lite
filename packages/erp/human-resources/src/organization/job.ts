@@ -9,11 +9,14 @@ import {
 	HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
 	HUMAN_RESOURCES_COMMAND_JOB_CREATE,
 	HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+	HUMAN_RESOURCES_QUERY_JOB_AS_OF,
 	HUMAN_RESOURCES_QUERY_JOB_GET,
 	HUMAN_RESOURCES_QUERY_JOB_LIST,
 } from "../module-ids";
+import type { JobDefinitionAtAsOf } from "./organization-structure-lineage";
 import {
 	createJobInputSchema,
+	getJobAsOfInputSchema,
 	getJobInputSchema,
 	jobStatusTransitionInputSchema,
 	listJobsInputSchema,
@@ -69,6 +72,9 @@ export async function updateJob(
 					organizationId: data.organizationId,
 					jobId: data.jobId,
 					title: data.title.trim(),
+					effectiveOn: data.effectiveOn,
+					reasonCode: data.reasonCode,
+					evidenceRef: data.evidenceRef,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -145,6 +151,35 @@ export async function getJob(
 			const job = await store.getJobById({
 				organizationId: data.organizationId,
 				jobId: data.jobId,
+			});
+			if (!job.ok) {
+				return job;
+			}
+			if (job.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Job not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(job.data);
+		},
+	});
+}
+
+export async function getJobAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<JobDefinitionAtAsOf>> {
+	return runOrganizationQuery(input, options, {
+		schema: getJobAsOfInputSchema,
+		invalidMessage: "Invalid job as-of input",
+		query: HUMAN_RESOURCES_QUERY_JOB_AS_OF,
+		execute: async (data, { store }) => {
+			const job = await store.findJobAsOf({
+				organizationId: data.organizationId,
+				jobId: data.jobId,
+				asOf: data.asOf,
 			});
 			if (!job.ok) {
 				return job;

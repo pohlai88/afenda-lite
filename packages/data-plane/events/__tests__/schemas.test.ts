@@ -14,6 +14,13 @@ describe("@afenda/events schemas", () => {
 			"accounting.journal.posted.v1",
 			"accounting.journal.reversed.v1",
 			"accounting.period.closed.v1",
+			"corporate-administration.company.activated.v1",
+			"corporate-administration.company.archived.v1",
+			"corporate-administration.company.created.v1",
+			"corporate-administration.company.dissolved.v1",
+			"corporate-administration.company.status-changed.v1",
+			"corporate-administration.company.suspended.v1",
+			"corporate-administration.company.updated.v1",
 			"fulfillment.delivery.cancelled.v1",
 			"fulfillment.delivery.closed.v1",
 			"fulfillment.delivery.completed.v1",
@@ -286,6 +293,29 @@ describe("@afenda/events schemas", () => {
 
 	it("registers payroll as an event source module", () => {
 		expect(EVENT_SOURCE_MODULES).toContain("payroll");
+	});
+
+	it("accepts corporate administration events from the production publisher", () => {
+		const parsed = publishEventCommandSchema.safeParse({
+			type: "corporate-administration.company.created.v1",
+			sourceModule: "corporate-administration",
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			correlationId: "corr-1",
+			payload: {
+				organizationId: "org-1",
+				entityType: "legal_company",
+				entityId: "10000000-0000-4000-8000-000000000001",
+				code: "ACME",
+				version: 1,
+				actorId: "user-1",
+				correlationId: "corr-1",
+				status: "draft",
+			},
+		});
+
+		expect(EVENT_SOURCE_MODULES).toContain("corporate-administration");
+		expect(parsed.success).toBe(true);
 	});
 
 	it("accepts a valid publish command", () => {

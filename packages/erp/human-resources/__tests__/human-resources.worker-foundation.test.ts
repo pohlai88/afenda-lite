@@ -91,6 +91,7 @@ describe("@afenda/human-resources worker foundation contracts", () => {
 				workerId: WORKER_ID,
 				status,
 				effectiveOn: "2026-01-01",
+				reasonCode: "status_change",
 				expectedVersion: 1,
 			}).success,
 		).toBe(true);
@@ -138,6 +139,7 @@ describe("@afenda/human-resources worker foundation contracts", () => {
 			workerId: WORKER_ID,
 			expectedVersion: 1,
 			effectiveOn: "2026-01-01",
+			reasonCode: "reclassification",
 			workerType: "employee",
 			employeeId: EMPLOYEE_ID,
 		});
@@ -146,6 +148,7 @@ describe("@afenda/human-resources worker foundation contracts", () => {
 			workerId: WORKER_ID,
 			expectedVersion: 1,
 			effectiveOn: "2026-01-01",
+			reasonCode: "reclassification",
 			workerType: "contractor",
 			employeeId: null,
 		});
@@ -154,6 +157,7 @@ describe("@afenda/human-resources worker foundation contracts", () => {
 			workerId: WORKER_ID,
 			expectedVersion: 1,
 			effectiveOn: "2026-01-01",
+			reasonCode: "reclassification",
 			workerType: "contractor",
 			employeeId: EMPLOYEE_ID,
 		});

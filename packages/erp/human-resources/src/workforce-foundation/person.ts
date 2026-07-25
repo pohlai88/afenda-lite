@@ -7,17 +7,22 @@ import {
 import {
 	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
 	HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+	HUMAN_RESOURCES_QUERY_PERSON_AS_OF,
 	HUMAN_RESOURCES_QUERY_PERSON_GET,
 } from "../module-ids";
 import {
 	createPersonInputSchema,
+	getPersonAsOfInputSchema,
 	getPersonInputSchema,
 	updatePersonNameInputSchema,
 } from "../schemas/workforce-foundation";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { fingerprintPersonCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { Person } from "../workforce-foundation/types";
+import type {
+	Person,
+	PersonIdentityAtAsOf,
+} from "../workforce-foundation/types";
 
 export async function createPerson(
 	input: unknown,
@@ -84,6 +89,9 @@ export async function updatePersonName(
 					organizationId: data.organizationId,
 					personId: data.personId,
 					legalName: data.legalName.trim(),
+					effectiveOn: data.effectiveOn,
+					reasonCode: data.reasonCode,
+					evidenceRef: data.evidenceRef ?? null,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -115,6 +123,31 @@ export async function getPersonById(
 			}
 			if (result.data === null) {
 				return fail("NOT_FOUND", "Person not found");
+			}
+			return ok(result.data);
+		},
+	});
+}
+
+export async function getPersonAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PersonIdentityAtAsOf>> {
+	return runCoreQuery(input, options, {
+		schema: getPersonAsOfInputSchema,
+		invalidMessage: "Invalid person as-of input",
+		query: HUMAN_RESOURCES_QUERY_PERSON_AS_OF,
+		execute: async (data, { store }) => {
+			const result = await store.findPersonAsOf({
+				organizationId: data.organizationId,
+				personId: data.personId,
+				asOf: data.asOf,
+			});
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return fail("NOT_FOUND", "Person identity not found for as-of date");
 			}
 			return ok(result.data);
 		},

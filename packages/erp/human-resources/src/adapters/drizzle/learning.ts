@@ -14,6 +14,7 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
 	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 } from "@afenda/events/schemas";
@@ -2483,6 +2484,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			"expired",
 		);
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employee_certification",
+			entityId: input.certificationId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
 				(sqlTag) => [
@@ -2510,8 +2519,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 								${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);

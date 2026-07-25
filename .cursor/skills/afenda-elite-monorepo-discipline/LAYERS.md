@@ -2,7 +2,7 @@
 
 Authority: ARCH-024 operative (this file + SKILL.md) + ERP expansion governance promoted 2026-07-20 from [`packages_refactor_v2.3.md`](../../../docs-V2/_scratch/packages_refactor_v2.3.md). Living ARCH-024 body dormant. No `architecture-authority` package — enforce by review + typecheck until a forward import-boundary slice lands. Operative Scratch: [`docs-V2/pnpm`](../../../docs-V2/pnpm/README.md) · [`docs-V2/monorepo`](../../../docs-V2/monorepo/README.md) · [`WORKSPACE-EDGE-REGISTER.yaml`](../../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml).
 
-**Version:** `layers-governance/2026-07-20`
+**Version:** `layers-governance/2026-07-25`
 
 ## Full layer diagram
 
@@ -31,7 +31,7 @@ Authority: ARCH-024 operative (this file + SKILL.md) + ERP expansion governance 
 | R1-B | Runtime | `@afenda/logger` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/rate-limit` · `@afenda/cache` |
 | R1-C | Data plane | `@afenda/db` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · `@afenda/notifications` |
 | R1-D | Control plane | `@afenda/auth` · `@afenda/admin` |
-| R1-F | ERP | `@afenda/master-data` · `@afenda/sales` · `@afenda/purchasing` · `@afenda/inventory` · `@afenda/receiving` · `@afenda/fulfillment` · `@afenda/receivables` · `@afenda/payables` · `@afenda/payments` · `@afenda/accounting` |
+| R1-F | ERP | `@afenda/master-data` · `@afenda/sales` · `@afenda/purchasing` · `@afenda/inventory` · `@afenda/receiving` · `@afenda/fulfillment` · `@afenda/receivables` · `@afenda/payables` · `@afenda/payments` · `@afenda/accounting` · `@afenda/human-resources` · `@afenda/payroll` · `@afenda/corporate-administration` |
 | R1-X | Optional capability | `@afenda/ai-the-machine` |
 
 ```text
@@ -51,7 +51,7 @@ package.json realizes; CI reconciles (Phase 2 validator).
 | Surfaces  | ✅† | same-ok‡ | ❌ |
 | Application | ✅ | ✅ | ❌ (apps must not import each other) |
 
-\* Platform same-layer: prefer minimal coupling. Living edges (must match WORKSPACE-EDGE-REGISTER): `@afenda/auth` → `@afenda/env` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/cache` → `@afenda/env` · `@afenda/errors`; `@afenda/audit` → `@afenda/db` · `@afenda/errors`; `@afenda/search` → `@afenda/db` · `@afenda/errors`; `@afenda/notifications` → `@afenda/db` · `@afenda/errors`; `@afenda/events` → `@afenda/db` · `@afenda/errors`; `@afenda/master-data` → `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search`; `@afenda/sales` → `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data`; `@afenda/purchasing` → `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data`; `@afenda/payables` → `@afenda/db` · `@afenda/errors` · `@afenda/events`; `@afenda/ai-the-machine` → `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` · `@afenda/sales` (general activity; RBAC stays `@afenda/admin/audit`). `@afenda/errors`, `@afenda/logger`, `@afenda/http`, `@afenda/security`, `@afenda/metrics`, and `@afenda/openapi` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
+\* Platform same-layer: prefer minimal coupling. Living edges must match WORKSPACE-EDGE-REGISTER. Corporate Administration may import only its approved `@afenda/db`, `@afenda/errors`, `@afenda/audit`, `@afenda/events`, and read-only `@afenda/master-data` contracts. The register remains the exhaustive machine-checked edge list. `@afenda/errors`, `@afenda/logger`, `@afenda/http`, `@afenda/security`, `@afenda/metrics`, and `@afenda/openapi` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
 `@afenda/payments` → `@afenda/db` · `@afenda/errors` · `@afenda/events`; allocation integration is event-only and never a peer ERP import.
 

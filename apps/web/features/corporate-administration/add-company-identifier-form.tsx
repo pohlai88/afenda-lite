@@ -1,0 +1,79 @@
+"use client";
+
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Button,
+	Input,
+	Label,
+} from "@afenda/ui-system";
+import { useActionState } from "react";
+
+import {
+	type AddCompanyIdentifierActionState,
+	addCompanyIdentifierAction,
+} from "@/app/actions/add-company-identifier";
+
+type AddCompanyIdentifierFormProps = {
+	legalCompanyId: string;
+};
+
+export function AddCompanyIdentifierForm({
+	legalCompanyId,
+}: AddCompanyIdentifierFormProps) {
+	const [state, action, pending] = useActionState<
+		AddCompanyIdentifierActionState,
+		FormData
+	>(addCompanyIdentifierAction, null);
+
+	return (
+		<form action={action} className="flex flex-col gap-3">
+			<input type="hidden" name="legalCompanyId" value={legalCompanyId} />
+			<div className="grid gap-2">
+				<Label htmlFor="identifierType">Identifier type</Label>
+				<Input
+					id="identifierType"
+					name="identifierType"
+					required
+					maxLength={64}
+					placeholder="company_registration"
+				/>
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor="identifierValue">Identifier value</Label>
+				<Input
+					id="identifierValue"
+					name="identifierValue"
+					required
+					maxLength={200}
+				/>
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor="jurisdictionCode">Jurisdiction (optional)</Label>
+				<Input id="jurisdictionCode" name="jurisdictionCode" maxLength={16} />
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor="effectiveFrom">Effective from</Label>
+				<Input id="effectiveFrom" name="effectiveFrom" type="date" required />
+			</div>
+			{state && !state.ok ? (
+				<Alert variant="destructive">
+					<AlertTitle>Could not add identifier</AlertTitle>
+					<AlertDescription>{state.message}</AlertDescription>
+				</Alert>
+			) : null}
+			{state?.ok ? (
+				<Alert>
+					<AlertTitle>Identifier added</AlertTitle>
+					<AlertDescription>
+						{state.data.identifier.identifierValue}
+					</AlertDescription>
+				</Alert>
+			) : null}
+			<Button type="submit" disabled={pending}>
+				{pending ? "Adding…" : "Add company identifier"}
+			</Button>
+		</form>
+	);
+}

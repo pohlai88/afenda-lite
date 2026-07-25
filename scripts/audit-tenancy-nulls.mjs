@@ -108,6 +108,35 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"posting_profile_line",
 	"source_posting_link",
 	"financial_posting_exception",
+	"ca_legal_company",
+	"ca_company_name",
+	"ca_company_identifier",
+	"ca_company_status_history",
+	"ca_officer_appointment",
+	"ca_governance_body",
+	"ca_governance_membership",
+	"ca_authority_mandate",
+	"ca_company_premise",
+	"ca_governance_meeting",
+	"ca_resolution",
+	"ca_share_class",
+	"ca_share_transaction",
+	"ca_share_transaction_leg",
+	"ca_share_certificate",
+	"ca_beneficial_owner_disclosure",
+	"ca_property_holding",
+	"ca_corporate_asset",
+	"ca_intellectual_property_right",
+	"ca_insurance_policy",
+	"ca_charge",
+	"ca_licence_permit",
+	"ca_bank_account_registration",
+	"ca_bank_mandate",
+	"ca_group_control_relationship",
+	"ca_material_agreement",
+	"ca_corporate_document",
+	"ca_filing_obligation",
+	"ca_filing_submission",
 	"hr_person",
 	"hr_employee",
 	"hr_worker",
@@ -423,6 +452,64 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM source_posting_link WHERE organization_id IS NULL`,
 	financial_posting_exception: () =>
 		sql`SELECT count(*)::int AS null_count FROM financial_posting_exception WHERE organization_id IS NULL`,
+	ca_legal_company: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_legal_company WHERE organization_id IS NULL`,
+	ca_company_name: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_name WHERE organization_id IS NULL`,
+	ca_company_identifier: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_identifier WHERE organization_id IS NULL`,
+	ca_company_status_history: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_status_history WHERE organization_id IS NULL`,
+	ca_officer_appointment: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_officer_appointment WHERE organization_id IS NULL`,
+	ca_governance_body: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_governance_body WHERE organization_id IS NULL`,
+	ca_governance_membership: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_governance_membership WHERE organization_id IS NULL`,
+	ca_authority_mandate: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_authority_mandate WHERE organization_id IS NULL`,
+	ca_company_premise: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_premise WHERE organization_id IS NULL`,
+	ca_governance_meeting: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_governance_meeting WHERE organization_id IS NULL`,
+	ca_resolution: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_resolution WHERE organization_id IS NULL`,
+	ca_share_class: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_share_class WHERE organization_id IS NULL`,
+	ca_share_transaction: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_share_transaction WHERE organization_id IS NULL`,
+	ca_share_transaction_leg: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_share_transaction_leg WHERE organization_id IS NULL`,
+	ca_share_certificate: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_share_certificate WHERE organization_id IS NULL`,
+	ca_beneficial_owner_disclosure: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_beneficial_owner_disclosure WHERE organization_id IS NULL`,
+	ca_property_holding: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_property_holding WHERE organization_id IS NULL`,
+	ca_corporate_asset: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_corporate_asset WHERE organization_id IS NULL`,
+	ca_intellectual_property_right: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_intellectual_property_right WHERE organization_id IS NULL`,
+	ca_insurance_policy: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_insurance_policy WHERE organization_id IS NULL`,
+	ca_charge: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_charge WHERE organization_id IS NULL`,
+	ca_licence_permit: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_licence_permit WHERE organization_id IS NULL`,
+	ca_bank_account_registration: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_bank_account_registration WHERE organization_id IS NULL`,
+	ca_bank_mandate: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_bank_mandate WHERE organization_id IS NULL`,
+	ca_group_control_relationship: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_group_control_relationship WHERE organization_id IS NULL`,
+	ca_material_agreement: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_material_agreement WHERE organization_id IS NULL`,
+	ca_corporate_document: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_corporate_document WHERE organization_id IS NULL`,
+	ca_filing_obligation: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_filing_obligation WHERE organization_id IS NULL`,
+	ca_filing_submission: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_filing_submission WHERE organization_id IS NULL`,
 	hr_person: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_person WHERE organization_id IS NULL`,
 	hr_employee: () =>

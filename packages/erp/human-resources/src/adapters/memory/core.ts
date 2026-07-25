@@ -8,6 +8,8 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import {
@@ -32,6 +34,10 @@ import {
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { assertActivePosition } from "../../shared/domain-guards";
+import {
+	assertAssignmentWithinEmployment,
+	assertNoAssignmentOverlap,
+} from "../../shared/assignment-guards";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
@@ -45,6 +51,7 @@ import type {
 	EmployeeCreateRecord,
 	EmploymentContractCreateRecord,
 	EmploymentCreateRecord,
+	EmploymentStatusHistoryAppendRecord,
 	HumanResourcesStore,
 	IdempotentEmployeeRecord,
 } from "../../store";
@@ -53,6 +60,7 @@ import type {
 	EmployeeListPage,
 	Employment,
 	EmploymentContract,
+	EmploymentStatusHistory,
 	PositionOccupancyAsOf,
 	WorkAssignment,
 } from "../../types";
@@ -85,6 +93,7 @@ export type CoreMemoryState = {
 	employees: Map<HumanResourcesEmployeeId, Employee>;
 	idempotencyByKey: Map<string, IdempotentEmployeeRecord>;
 	employments: Map<HumanResourcesEmploymentId, Employment>;
+	employmentStatusHistory: Map<string, EmploymentStatusHistory>;
 	contracts: Map<string, EmploymentContract>;
 	assignments: Map<HumanResourcesAssignmentId, WorkAssignment>;
 };
@@ -99,11 +108,19 @@ export type MemoryCoreMethods = Pick<
 	| "getEmploymentById"
 	| "findOpenEmploymentByEmployee"
 	| "findEmploymentByEmployeeAsOf"
+	| "listEmploymentsByEmployee"
+	| "listEmploymentStatusHistory"
+	| "appendEmploymentStatusHistory"
 	| "createEmployment"
 	| "amendEmployment"
+	| "correctEmployment"
 	| "getEmploymentContractById"
 	| "findContractByEmploymentAndCode"
+	| "listActiveContractsByEmployment"
+	| "findEmploymentContractByEmploymentAsOf"
 	| "createEmploymentContract"
+	| "correctEmploymentContract"
+	| "supersedeEmploymentContract"
 	| "countOpenAssignmentsForPosition"
 	| "resolvePositionOccupancyAsOf"
 	| "getAssignmentById"
@@ -120,6 +137,7 @@ export function createCoreMemoryState(): CoreMemoryState {
 		employees: new Map(),
 		idempotencyByKey: new Map(),
 		employments: new Map(),
+		employmentStatusHistory: new Map(),
 		contracts: new Map(),
 		assignments: new Map(),
 	};
@@ -129,8 +147,45 @@ export function resetCoreMemoryState(state: CoreMemoryState): void {
 	state.employees.clear();
 	state.idempotencyByKey.clear();
 	state.employments.clear();
+	state.employmentStatusHistory.clear();
 	state.contracts.clear();
 	state.assignments.clear();
+}
+
+function listEmploymentsForEmployee(
+	state: CoreMemoryState,
+	input: { organizationId: string; employeeId: HumanResourcesEmployeeId },
+): Employment[] {
+	return [...state.employments.values()].filter(
+		(employment) =>
+			employment.organizationId === input.organizationId &&
+			employment.employeeId === input.employeeId,
+	);
+}
+
+export function appendEmploymentHistoryToState(
+	state: CoreMemoryState,
+	record: EmploymentStatusHistoryAppendRecord,
+): EmploymentStatusHistory {
+	const row: EmploymentStatusHistory = {
+		id: randomUUID(),
+		organizationId: record.organizationId,
+		employmentId: record.employmentId,
+		employeeId: record.employeeId,
+		fromStatus: record.fromStatus,
+		toStatus: record.toStatus,
+		startsOnSnapshot: record.startsOnSnapshot,
+		endsOnSnapshot: record.endsOnSnapshot,
+		effectiveOn: record.effectiveOn,
+		changeKind: record.changeKind,
+		reason: record.reason,
+		evidenceReference: record.evidenceReference,
+		correlationId: record.correlationId,
+		actorUserId: record.actorUserId,
+		createdAt: new Date(),
+	};
+	state.employmentStatusHistory.set(row.id, row);
+	return row;
 }
 
 export function createMemoryCoreMethods(
@@ -414,6 +469,46 @@ export function createMemoryCoreMethods(
 			return ok(resolution.record === null ? null : { ...resolution.record });
 		},
 
+		async listEmploymentsByEmployee(input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+		}) {
+			return ok(
+				listEmploymentsForEmployee(state, input).map((employment) => ({
+					id: employment.id,
+					startsOn: employment.startsOn,
+					endsOn: employment.endsOn,
+				})),
+			);
+		},
+
+		async listEmploymentStatusHistory(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+		}): Promise<Result<EmploymentStatusHistory[]>> {
+			const rows = [...state.employmentStatusHistory.values()]
+				.filter(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.employmentId === input.employmentId,
+				)
+				.sort((left, right) => {
+					const byEffective = left.effectiveOn.localeCompare(right.effectiveOn);
+					if (byEffective !== 0) {
+						return byEffective;
+					}
+					return left.createdAt.getTime() - right.createdAt.getTime();
+				})
+				.map((row) => ({ ...row }));
+			return ok(rows);
+		},
+
+		async appendEmploymentStatusHistory(
+			record: EmploymentStatusHistoryAppendRecord,
+		): Promise<Result<EmploymentStatusHistory>> {
+			return ok(appendEmploymentHistoryToState(state, record));
+		},
+
 		async createEmployment(
 			record: EmploymentCreateRecord,
 			ports: MutationPorts,
@@ -450,11 +545,13 @@ export function createMemoryCoreMethods(
 				);
 			}
 
-			const isRehire = [...state.employments.values()].some(
-				(employment) =>
-					employment.organizationId === record.organizationId &&
-					employment.employeeId === record.employeeId &&
-					employment.endsOn !== null,
+			const siblingEmployments = listEmploymentsForEmployee(state, {
+				organizationId: record.organizationId,
+				employeeId: record.employeeId,
+			});
+
+			const isRehire = siblingEmployments.some(
+				(employment) => employment.endsOn !== null,
 			);
 
 			const idResult = parseHumanResourcesEmploymentId(randomUUID());
@@ -478,6 +575,21 @@ export function createMemoryCoreMethods(
 			};
 
 			state.employments.set(employment.id, employment);
+			appendEmploymentHistoryToState(state, {
+				organizationId: employment.organizationId,
+				employmentId: employment.id,
+				employeeId: employment.employeeId,
+				fromStatus: null,
+				toStatus: "active",
+				startsOnSnapshot: employment.startsOn,
+				endsOnSnapshot: employment.endsOn,
+				effectiveOn: employment.startsOn,
+				changeKind: "create",
+				reason: null,
+				evidenceReference: null,
+				correlationId: meta.correlationId,
+				actorUserId: employment.createdBy,
+			});
 
 			const audit = await ports.audit.record({
 				organizationId: employment.organizationId,
@@ -490,6 +602,11 @@ export function createMemoryCoreMethods(
 			});
 			if (!audit.ok) {
 				state.employments.delete(employment.id);
+				for (const [historyId, row] of state.employmentStatusHistory) {
+					if (row.employmentId === employment.id) {
+						state.employmentStatusHistory.delete(historyId);
+					}
+				}
 				return audit;
 			}
 
@@ -524,6 +641,7 @@ export function createMemoryCoreMethods(
 				status?: EmploymentStatus;
 				startsOn?: string;
 				endsOn?: string | null;
+				lifecycleEffectiveOn?: string;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -577,6 +695,27 @@ export function createMemoryCoreMethods(
 			};
 
 			state.employments.set(input.employmentId, updated);
+
+			if (
+				input.lifecycleEffectiveOn !== undefined &&
+				parsedStatus.data !== employment.status
+			) {
+				appendEmploymentHistoryToState(state, {
+					organizationId: updated.organizationId,
+					employmentId: updated.id,
+					employeeId: updated.employeeId,
+					fromStatus: employment.status,
+					toStatus: parsedStatus.data,
+					startsOnSnapshot: updated.startsOn,
+					endsOnSnapshot: updated.endsOn,
+					effectiveOn: input.lifecycleEffectiveOn,
+					changeKind: "lifecycle",
+					reason: null,
+					evidenceReference: null,
+					correlationId: meta.correlationId,
+					actorUserId: input.actorUserId,
+				});
+			}
 
 			const audit = await ports.audit.record({
 				organizationId: updated.organizationId,
@@ -636,6 +775,121 @@ export function createMemoryCoreMethods(
 			return ok({ ...updated });
 		},
 
+		async correctEmployment(
+			input: {
+				organizationId: string;
+				employmentId: HumanResourcesEmploymentId;
+				status?: EmploymentStatus;
+				startsOn?: string;
+				endsOn?: string | null;
+				reason: string;
+				evidenceReference: string | null;
+				effectiveOn?: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Employment>> {
+			const employment = state.employments.get(input.employmentId);
+			if (!employment || employment.organizationId !== input.organizationId) {
+				return fail(
+					"NOT_FOUND",
+					"Employment not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const versionCheck = assertExpectedVersion(
+				employment.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const newStartsOn = input.startsOn ?? employment.startsOn;
+			const newEndsOn =
+				input.endsOn !== undefined ? input.endsOn : employment.endsOn;
+			const nextStatus = input.status ?? employment.status;
+			const parsedStatus = employmentStatusSchema.safeParse(nextStatus);
+			if (!parsedStatus.success) {
+				return fail(
+					"BAD_REQUEST",
+					"Invalid employment status",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+				);
+			}
+
+			const dateCheck = assertValidDateRange(newStartsOn, newEndsOn);
+			if (!dateCheck.ok) {
+				return dateCheck;
+			}
+
+			const now = new Date();
+			const updated: Employment = {
+				...employment,
+				status: parsedStatus.data,
+				startsOn: newStartsOn,
+				endsOn: newEndsOn,
+				version: employment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.employments.set(input.employmentId, updated);
+			appendEmploymentHistoryToState(state, {
+				organizationId: updated.organizationId,
+				employmentId: updated.id,
+				employeeId: updated.employeeId,
+				fromStatus: employment.status,
+				toStatus: parsedStatus.data,
+				startsOnSnapshot: updated.startsOn,
+				endsOnSnapshot: updated.endsOn,
+				effectiveOn:
+					input.effectiveOn ?? updated.startsOn,
+				changeKind: "correction",
+				reason: input.reason,
+				evidenceReference: input.evidenceReference,
+				correlationId: meta.correlationId,
+				actorUserId: input.actorUserId,
+			});
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_employment",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.employments.set(input.employmentId, employment);
+				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_employment",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.employments.set(input.employmentId, employment);
+				return outbox;
+			}
+
+			return ok({ ...updated });
+		},
+
 		// Employment Contract methods
 		async getEmploymentContractById(input: {
 			organizationId: string;
@@ -657,12 +911,61 @@ export function createMemoryCoreMethods(
 				if (
 					contract.organizationId === input.organizationId &&
 					contract.employmentId === input.employmentId &&
-					contract.referenceCode === input.referenceCode
+					contract.referenceCode === input.referenceCode &&
+					contract.lineageStatus === "active"
 				) {
 					return ok({ ...contract });
 				}
 			}
 			return ok(null);
+		},
+
+		async listActiveContractsByEmployment(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+		}) {
+			return ok(
+				[...state.contracts.values()]
+					.filter(
+						(contract) =>
+							contract.organizationId === input.organizationId &&
+							contract.employmentId === input.employmentId &&
+							contract.lineageStatus === "active",
+					)
+					.map((contract) => ({
+						id: contract.id,
+						startsOn: contract.startsOn,
+						endsOn: contract.endsOn,
+					})),
+			);
+		},
+
+		async findEmploymentContractByEmploymentAsOf(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			asOf: string;
+		}): Promise<Result<EmploymentContract | null>> {
+			const resolution = resolveUniqueEffectiveRangeRecordBy({
+				records: [...state.contracts.values()].filter(
+					(contract) =>
+						contract.organizationId === input.organizationId &&
+						contract.employmentId === input.employmentId,
+				),
+				asOf: input.asOf,
+				getId: (contract) => contract.id,
+				getEffectiveFrom: (contract) => contract.startsOn,
+				getEffectiveTo: (contract) => contract.endsOn,
+			});
+			if (!resolution.ok) {
+				return fail(
+					"CONFLICT",
+					"Multiple employment contracts are effective for the as-of date",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+			return ok(
+				resolution.record === null ? null : { ...resolution.record },
+			);
 		},
 
 		async createEmploymentContract(
@@ -724,6 +1027,11 @@ export function createMemoryCoreMethods(
 				referenceCode: record.referenceCode,
 				startsOn: record.startsOn,
 				endsOn: record.endsOn,
+				lineageStatus: "active",
+				supersedesContractId: null,
+				supersededByContractId: null,
+				reasonCode: record.reasonCode,
+				sourceReference: record.sourceReference,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -766,6 +1074,250 @@ export function createMemoryCoreMethods(
 			}
 
 			return ok({ ...contract });
+		},
+
+		async correctEmploymentContract(
+			input: {
+				organizationId: string;
+				employmentContractId: HumanResourcesEmploymentContractId;
+				referenceCode: string;
+				startsOn: string;
+				endsOn: string | null;
+				reasonCode: string;
+				sourceReference: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<EmploymentContract>> {
+			const contract = state.contracts.get(input.employmentContractId);
+			if (!contract || contract.organizationId !== input.organizationId) {
+				return fail(
+					"NOT_FOUND",
+					"Employment contract not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				contract.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (contract.lineageStatus !== "active") {
+				return fail(
+					"CONFLICT",
+					"Superseded contracts cannot be modified",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
+			if (!dateCheck.ok) {
+				return dateCheck;
+			}
+
+			const previous = { ...contract };
+			const now = new Date();
+			contract.referenceCode = input.referenceCode;
+			contract.startsOn = input.startsOn;
+			contract.endsOn = input.endsOn;
+			contract.reasonCode = input.reasonCode;
+			contract.sourceReference = input.sourceReference;
+			contract.version += 1;
+			contract.updatedBy = input.actorUserId;
+			contract.updatedAt = now;
+
+			const audit = await ports.audit.record({
+				organizationId: contract.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_employment_contract",
+				entityId: contract.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.contracts.set(contract.id, previous);
+				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: contract.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+				payload: {
+					organizationId: contract.organizationId,
+					entityType: "hr_employment_contract",
+					entityId: contract.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.contracts.set(contract.id, previous);
+				return outbox;
+			}
+
+			return ok({ ...contract });
+		},
+
+		async supersedeEmploymentContract(
+			input: {
+				organizationId: string;
+				employmentContractId: HumanResourcesEmploymentContractId;
+				referenceCode: string;
+				startsOn: string;
+				endsOn: string | null;
+				reasonCode: string;
+				sourceReference: string;
+				predecessorEffectiveTo: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<
+			Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
+		> {
+			const predecessor = state.contracts.get(input.employmentContractId);
+			if (!predecessor || predecessor.organizationId !== input.organizationId) {
+				return fail(
+					"NOT_FOUND",
+					"Employment contract not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				predecessor.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (predecessor.lineageStatus !== "active") {
+				return fail(
+					"CONFLICT",
+					"Only active contracts can be superseded",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
+			const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
+			if (!dateCheck.ok) {
+				return dateCheck;
+			}
+
+			const successorId = parseHumanResourcesEmploymentContractId(randomUUID());
+			if (!successorId.ok) {
+				return successorId;
+			}
+
+			const previousPredecessor = { ...predecessor };
+			const now = new Date();
+			predecessor.lineageStatus = "superseded";
+			predecessor.endsOn = input.predecessorEffectiveTo;
+			predecessor.supersededByContractId = successorId.data;
+			predecessor.version += 1;
+			predecessor.updatedBy = input.actorUserId;
+			predecessor.updatedAt = now;
+
+			const successor: EmploymentContract = {
+				id: successorId.data,
+				organizationId: predecessor.organizationId,
+				employmentId: predecessor.employmentId,
+				employeeId: predecessor.employeeId,
+				referenceCode: input.referenceCode,
+				startsOn: input.startsOn,
+				endsOn: input.endsOn,
+				lineageStatus: "active",
+				supersedesContractId: predecessor.id,
+				supersededByContractId: null,
+				reasonCode: input.reasonCode,
+				sourceReference: input.sourceReference,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.contracts.set(successor.id, successor);
+
+			const audit = await ports.audit.record({
+				organizationId: predecessor.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_employment_contract",
+				entityId: predecessor.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.contracts.set(predecessor.id, previousPredecessor);
+				state.contracts.delete(successor.id);
+				return audit;
+			}
+
+			const supersededEvent = await ports.outbox.append({
+				organizationId: predecessor.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
+				payload: {
+					organizationId: predecessor.organizationId,
+					entityType: "hr_employment_contract",
+					entityId: predecessor.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!supersededEvent.ok) {
+				state.contracts.set(predecessor.id, previousPredecessor);
+				state.contracts.delete(successor.id);
+				return supersededEvent;
+			}
+
+			const createAudit = await ports.audit.record({
+				organizationId: successor.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_employment_contract",
+				entityId: successor.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!createAudit.ok) {
+				state.contracts.set(predecessor.id, previousPredecessor);
+				state.contracts.delete(successor.id);
+				return createAudit;
+			}
+
+			const createdEvent = await ports.outbox.append({
+				organizationId: successor.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+				payload: {
+					organizationId: successor.organizationId,
+					entityType: "hr_employment_contract",
+					entityId: successor.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!createdEvent.ok) {
+				state.contracts.set(predecessor.id, previousPredecessor);
+				state.contracts.delete(successor.id);
+				return createdEvent;
+			}
+
+			return ok({
+				superseded: { ...predecessor },
+				successor: { ...successor },
+			});
 		},
 
 		// Department methods
@@ -875,6 +1427,20 @@ export function createMemoryCoreMethods(
 			return ok(resolution.record === null ? null : { ...resolution.record });
 		},
 
+		async listAssignmentsByEmployment(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+		}): Promise<Result<WorkAssignment[]>> {
+			const rows = [...state.assignments.values()]
+				.filter(
+					(assignment) =>
+						assignment.organizationId === input.organizationId &&
+						assignment.employmentId === input.employmentId,
+				)
+				.map((assignment) => ({ ...assignment }));
+			return ok(rows);
+		},
+
 		async createAssignment(
 			record: AssignmentCreateRecord,
 			ports: MutationPorts,
@@ -920,19 +1486,30 @@ export function createMemoryCoreMethods(
 				return dateCheck;
 			}
 
-			const existingOpen = await this.findOpenAssignmentByEmployment({
+			const withinEmployment = assertAssignmentWithinEmployment({
+				assignmentStartsOn: record.startsOn,
+				assignmentEndsOn: record.endsOn,
+				employmentStartsOn: employment.startsOn,
+				employmentEndsOn: employment.endsOn,
+			});
+			if (!withinEmployment.ok) {
+				return withinEmployment;
+			}
+
+			const siblings = await this.listAssignmentsByEmployment({
 				organizationId: record.organizationId,
 				employmentId: record.employmentId,
 			});
-			if (!existingOpen.ok) {
-				return existingOpen;
+			if (!siblings.ok) {
+				return siblings;
 			}
-			if (existingOpen.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Employment already has an open assignment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+			const overlap = assertNoAssignmentOverlap({
+				candidateStartsOn: record.startsOn,
+				candidateEndsOn: record.endsOn,
+				existing: siblings.data,
+			});
+			if (!overlap.ok) {
+				return overlap;
 			}
 
 			const idResult = parseHumanResourcesAssignmentId(randomUUID());
@@ -948,6 +1525,11 @@ export function createMemoryCoreMethods(
 				employeeId: record.employeeId,
 				positionId: record.positionId,
 				organizationDimensions: structuredClone(record.organizationDimensions),
+				predecessorAssignmentId: record.predecessorAssignmentId ?? null,
+				successorAssignmentId: record.successorAssignmentId ?? null,
+				transferMovementId: record.transferMovementId ?? null,
+				managerEmployeeIdSnapshot: record.managerEmployeeIdSnapshot,
+				workCalendarIdSnapshot: record.workCalendarIdSnapshot,
 				startsOn: record.startsOn,
 				endsOn: record.endsOn,
 				version: 1,

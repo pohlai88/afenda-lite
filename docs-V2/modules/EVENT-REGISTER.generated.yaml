@@ -8,6 +8,21 @@ events:
     id: accounting.journal.reversed.v1
     moduleId: accounting
   - direction: emits
+    id: corporate-administration.company.created.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.company.activated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.company.suspended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.company.dissolved.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.company.archived.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: fulfillment.delivery.created.v1
     moduleId: fulfillment
   - direction: emits
@@ -59,16 +74,115 @@ events:
     id: human-resources.employee.terminated.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.employment-contract.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.assignment.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.assignment.ended.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.department.activated.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.department.archived.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.job.activated.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.job.archived.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.position.activated.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.position.frozen.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.position.closed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.reporting-line.assigned.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.reporting-line.closed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.reporting-line.replaced.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.requisition.approved.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.requisition.opened.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.requisition.closed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.candidate.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.candidate.consent-withdrawn.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.candidate.retention-changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.application.submitted.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.application.stage-changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.application.rejected.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.application.withdrawn.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.interview.scheduled.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.interview.completed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offer.issued.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.offer.accepted.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offer.rejected.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offer.withdrawn.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offer.expired.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.onboarding.started.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.onboarding.completed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.probation.extended.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.probation.reviewed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee.confirmed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee.rehired.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.clearance.completed.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.offboarding.started.v1
@@ -161,6 +275,9 @@ events:
     id: human-resources.employee-case.opened.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.employee-case.assigned.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.employee-case.interim-measure-issued.v1
     moduleId: human-resources
   - direction: emits
@@ -170,10 +287,16 @@ events:
     id: human-resources.employee-case.action-approved.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.employee-case.appealed.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.employee-case.appeal-resolved.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.employee-case.closed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-case.reopened.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.employee-document.registered.v1
@@ -182,10 +305,25 @@ events:
     id: human-resources.employee-document.verified.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.employee-document.rejected.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee-document.expired.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.employee-document.nearing-expiry.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.work-eligibility.verified.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.work-eligibility.suspended.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.work-eligibility.renewed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.work-eligibility.expired.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.policy-acknowledgement.outstanding.v1
@@ -197,7 +335,13 @@ events:
     id: human-resources.competency.assessed.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.talent-profile.updated.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.talent-pool.membership-approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.talent-pool.member-removed.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.career-plan.acknowledged.v1
@@ -207,6 +351,18 @@ events:
     moduleId: human-resources
   - direction: emits
     id: human-resources.succession.readiness-changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.headcount-plan.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.headcount.reserved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.headcount.reservation-released.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.headcount.reservation-consumed.v1
     moduleId: human-resources
   - direction: emits
     id: inventory.movement.created.v1

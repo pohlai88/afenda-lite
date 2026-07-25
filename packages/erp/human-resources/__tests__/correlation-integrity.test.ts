@@ -39,6 +39,34 @@ import {
 } from "../src/compliance/work-eligibility";
 import { createEmployee } from "../src/core/employee";
 import {
+	enrolBenefit,
+	cancelBenefitEnrollment,
+	endBenefitEnrollment,
+} from "../src/compensation-benefits/benefit-enrollment";
+import {
+	applyApprovedCompensationResult,
+} from "../src/compensation-benefits/compensation-review";
+import {
+	createEmployeeCompensation,
+	endEmployeeCompensation,
+} from "../src/compensation-benefits/employee-compensation";
+import {
+	approvePerformanceGoal,
+} from "../src/performance/goal";
+import {
+	completeImprovementPlan,
+	createImprovementPlan,
+	openImprovementPlan,
+} from "../src/performance/improvement-plan";
+import {
+	openPerformanceCycle,
+} from "../src/performance/performance-cycle";
+import {
+	acknowledgePerformanceReview,
+	finalizePerformanceReview,
+	reopenPerformanceReview,
+} from "../src/performance/review";
+import {
 	approveEmployeeCaseAction,
 	recommendEmployeeCaseAction,
 } from "../src/employee-relations/case-action";
@@ -66,6 +94,10 @@ import {
 	submitLeaveRequest,
 } from "../src/leave/leave-request";
 import {
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
@@ -85,6 +117,8 @@ import {
 	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_INTERVIEWING,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_REJECT,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_WITHDRAW,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
 	HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
 	HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
 	HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
@@ -103,6 +137,8 @@ import {
 	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE,
 	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
@@ -138,6 +174,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
+	HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
@@ -147,8 +184,15 @@ import {
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
 	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
 	HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
@@ -195,10 +239,13 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
 	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
 	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
+	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
 	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
+	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
@@ -381,6 +428,14 @@ import {
 	mapActorToEmployee,
 } from "./helpers/identity-resolver";
 import { seedLifecycleEmploymentWithAssignment } from "./helpers/lifecycle-correlation-seed";
+import { seedCompensationCorrelationFixture, seedFinalizedCompensationReview } from "./helpers/compensation-correlation-seed";
+import {
+	seedDraftPerformanceCycle,
+	seedManagerSubmittedPerformanceReview,
+	seedOpenPerformanceCycleWithParticipant,
+	seedPerformanceCorrelationWorker,
+	seedSubmittedPerformanceGoal,
+} from "./helpers/performance-correlation-seed";
 import { seedLeaveCorrelationFixture } from "./helpers/leave-correlation-seed";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import {
@@ -515,6 +570,12 @@ describe("correlation integrity", () => {
 			...HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
 			...HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 			...HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
+			...HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
+			...HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
+			...HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
+			HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
+			HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+			HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
 		]);
 		for (const entry of HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY) {
 			expect(covered.has(entry.command)).toBe(true);
@@ -572,6 +633,8 @@ describe("correlation integrity", () => {
 				correlationId: nameCorr,
 				personId: person.data.id,
 				legalName: "Workforce Corr Updated",
+				effectiveOn: "2026-08-01",
+				reasonCode: "legal_name_correction",
 				expectedVersion: person.data.version,
 			},
 			ready,
@@ -613,7 +676,9 @@ describe("correlation integrity", () => {
 				correlationId: typeCorr,
 				workerId: worker.data.id,
 				workerType: "intern",
+				employeeId: null,
 				effectiveOn: "2026-02-01",
+				reasonCode: "reclassification",
 				expectedVersion: worker.data.version,
 			},
 			ready,
@@ -635,6 +700,7 @@ describe("correlation integrity", () => {
 				workerId: retyped.data.id,
 				status: "inactive",
 				effectiveOn: "2026-03-01",
+				reasonCode: "status_change",
 				expectedVersion: retyped.data.version,
 			},
 			ready,
@@ -1456,6 +1522,7 @@ describe("correlation integrity", () => {
 				referenceCode: "CONTRACT-CORE-ORG",
 				startsOn: "2026-01-01",
 				endsOn: null,
+				reasonCode: "initial",
 			},
 			ready,
 		);
@@ -2173,7 +2240,7 @@ describe("correlation integrity", () => {
 		expect(expired.ok).toBe(true);
 		if (!expired.ok) return;
 		assertCorrelationPropagated(ready, expireCorr, {
-			expectOutbox: false,
+			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
 		});
 
@@ -5067,6 +5134,479 @@ describe("correlation integrity", () => {
 		assertCorrelationPropagated(ready, consumeCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
+		});
+	});
+
+	it("propagates correlationId across compensation-benefits domain_event mutations", async () => {
+		const ready = harness();
+		const seeded = await seedCompensationCorrelationFixture({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			ready,
+			suffix: "main",
+		});
+
+		clearPorts(ready);
+		const createCorr = "trace-comp-create";
+		const created = await createEmployeeCompensation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: createCorr,
+				idempotencyKey: "idem-comp-corr-create",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				baseAmount: "72000",
+				currencyCode: "USD",
+				effectiveFrom: "2025-01-01",
+				reason: "Correlation create",
+			},
+			seeded.seedReady,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+		assertCorrelationPropagated(ready, createCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
+		});
+
+		clearPorts(ready);
+		const endCorr = "trace-comp-end";
+		const ended = await endEmployeeCompensation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: endCorr,
+				compensationId: created.data.id,
+				endsOn: "2025-12-31",
+				expectedVersion: created.data.version,
+			},
+			seeded.seedReady,
+		);
+		expect(ended.ok).toBe(true);
+		if (!ended.ok) return;
+		assertCorrelationPropagated(ready, endCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
+		});
+
+		const review = await seedFinalizedCompensationReview({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			seedReady: seeded.seedReady,
+			employeeId: seeded.employee.id,
+			employmentId: seeded.employment.id,
+			suffix: "apply",
+		});
+		clearPorts(ready);
+		const applyCorr = "trace-comp-review-apply";
+		const applied = await applyApprovedCompensationResult(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: applyCorr,
+				reviewId: review.id,
+				reason: "Annual review apply",
+				idempotencyKey: "idem-comp-corr-apply",
+			},
+			seeded.seedReady,
+		);
+		expect(applied.ok).toBe(true);
+		if (!applied.ok) return;
+		assertCorrelationPropagated(ready, applyCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
+		});
+
+		clearPorts(ready);
+		const enrolCorr = "trace-benefit-enrol";
+		const enrolled = await enrolBenefit(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: enrolCorr,
+				idempotencyKey: "idem-benefit-corr-enrol",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				planId: seeded.plan.id,
+				effectiveFrom: "2025-01-01",
+			},
+			seeded.seedReady,
+		);
+		expect(enrolled.ok).toBe(true);
+		if (!enrolled.ok) return;
+		assertCorrelationPropagated(ready, enrolCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+		});
+
+		clearPorts(ready);
+		const endEnrolCorr = "trace-benefit-end";
+		const endedEnrollment = await endBenefitEnrollment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: endEnrolCorr,
+				enrollmentId: enrolled.data.id,
+				endsOn: "2025-12-31",
+				expectedVersion: enrolled.data.version,
+			},
+			seeded.seedReady,
+		);
+		expect(endedEnrollment.ok).toBe(true);
+		if (!endedEnrollment.ok) return;
+		assertCorrelationPropagated(ready, endEnrolCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+		});
+
+		const enrolledAgain = await enrolBenefit(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-benefit-cancel",
+				idempotencyKey: "idem-benefit-corr-cancel",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				planId: seeded.plan.id,
+				effectiveFrom: "2026-01-01",
+			},
+			seeded.seedReady,
+		);
+		expect(enrolledAgain.ok).toBe(true);
+		if (!enrolledAgain.ok) return;
+
+		clearPorts(ready);
+		const cancelCorr = "trace-benefit-cancel";
+		const cancelled = await cancelBenefitEnrollment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: cancelCorr,
+				enrollmentId: enrolledAgain.data.id,
+				expectedVersion: enrolledAgain.data.version,
+			},
+			seeded.seedReady,
+		);
+		expect(cancelled.ok).toBe(true);
+		if (!cancelled.ok) return;
+		assertCorrelationPropagated(ready, cancelCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+		});
+	});
+
+	it("propagates correlationId across performance domain_event mutations", async () => {
+		const ready = harness();
+		const worker = await seedPerformanceCorrelationWorker({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			ready,
+			suffix: "worker",
+		});
+		const manager = await seedPerformanceCorrelationWorker({
+			organizationId: ORG,
+			actorUserId: MANAGER,
+			ready,
+			suffix: "manager",
+		});
+
+		const draftCycle = await seedDraftPerformanceCycle({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			suffix: "open",
+		});
+		clearPorts(ready);
+		const openCycleCorr = "trace-perf-cycle-open";
+		const openedCycle = await openPerformanceCycle(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: openCycleCorr,
+				cycleId: draftCycle.id,
+				expectedVersion: draftCycle.version,
+			},
+			worker.perfReady,
+		);
+		expect(openedCycle.ok).toBe(true);
+		if (!openedCycle.ok) return;
+		assertCorrelationPropagated(ready, openCycleCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
+		});
+
+		const opened = await seedOpenPerformanceCycleWithParticipant({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			worker: {
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+			},
+			suffix: "goal",
+		});
+
+		const submittedGoal = await seedSubmittedPerformanceGoal({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			cycleId: opened.cycle.id,
+			employeeId: worker.employee.id,
+			employmentId: worker.employment.id,
+			suffix: "goal",
+		});
+		clearPorts(ready);
+		const approveGoalCorr = "trace-perf-goal-approve";
+		const approvedGoal = await approvePerformanceGoal(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: approveGoalCorr,
+				goalId: submittedGoal.id,
+				expectedVersion: submittedGoal.version,
+			},
+			worker.perfReady,
+		);
+		expect(approvedGoal.ok).toBe(true);
+		if (!approvedGoal.ok) return;
+		assertCorrelationPropagated(ready, approveGoalCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
+		});
+
+		const reviewCycle = await seedOpenPerformanceCycleWithParticipant({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			worker: {
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+			},
+			suffix: "review",
+		});
+		const managerReview = await seedManagerSubmittedPerformanceReview({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			cycleId: reviewCycle.cycle.id,
+			employeeId: worker.employee.id,
+			employmentId: worker.employment.id,
+			managerEmployeeId: manager.employee.id,
+			suffix: "review",
+		});
+		const acknowledged = await acknowledgePerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-perf-review-ack",
+				reviewId: managerReview.id,
+				acknowledgementNote: "Acknowledged for correlation test.",
+				expectedVersion: managerReview.version,
+			},
+			worker.perfReady,
+		);
+		expect(acknowledged.ok).toBe(true);
+		if (!acknowledged.ok) return;
+
+		clearPorts(ready);
+		const finalizeCorr = "trace-perf-review-finalize";
+		const finalized = await finalizePerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: finalizeCorr,
+				reviewId: acknowledged.data.id,
+				overallRating: "meets",
+				idempotencyKey: "idem-perf-review-finalize-corr",
+				expectedVersion: acknowledged.data.version,
+			},
+			worker.perfReady,
+		);
+		expect(finalized.ok).toBe(true);
+		if (!finalized.ok) return;
+		assertCorrelationPropagated(ready, finalizeCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+		});
+
+		clearPorts(ready);
+		const reopenCorr = "trace-perf-review-reopen";
+		const reopened = await reopenPerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: reopenCorr,
+				reviewId: finalized.data.id,
+				reason: "Calibration adjustment",
+				expectedVersion: finalized.data.version,
+			},
+			ready,
+		);
+		expect(reopened.ok).toBe(true);
+		if (!reopened.ok) return;
+		assertCorrelationPropagated(ready, reopenCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
+		});
+
+		const pipCycle = await seedOpenPerformanceCycleWithParticipant({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			worker: {
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+			},
+			suffix: "pip",
+		});
+		const pipReview = await seedManagerSubmittedPerformanceReview({
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			perfReady: worker.perfReady,
+			cycleId: pipCycle.cycle.id,
+			employeeId: worker.employee.id,
+			employmentId: worker.employment.id,
+			managerEmployeeId: manager.employee.id,
+			suffix: "pip-review",
+		});
+		const pipAcknowledged = await acknowledgePerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-perf-pip-ack",
+				reviewId: pipReview.id,
+				acknowledgementNote: "PIP review acknowledged.",
+				expectedVersion: pipReview.version,
+			},
+			worker.perfReady,
+		);
+		expect(pipAcknowledged.ok).toBe(true);
+		if (!pipAcknowledged.ok) return;
+
+		const pipFinalized = await finalizePerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-perf-pip-finalize",
+				reviewId: pipAcknowledged.data.id,
+				overallRating: "meets",
+				idempotencyKey: "idem-perf-pip-finalize",
+				expectedVersion: pipAcknowledged.data.version,
+			},
+			worker.perfReady,
+		);
+		expect(pipFinalized.ok).toBe(true);
+		if (!pipFinalized.ok) return;
+
+		const draftPlan = await createImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-perf-pip-draft",
+				idempotencyKey: "idem-perf-pip-draft",
+				reviewId: pipFinalized.data.id,
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+				performanceGap: "Below expectations",
+				expectedOutcome: "Meet baseline",
+				measurableActions: "Weekly 1:1",
+				supportResources: "Mentor",
+				dueDate: "2025-09-30",
+				accountableManagerEmployeeId: manager.employee.id,
+			},
+			worker.perfReady,
+		);
+		expect(draftPlan.ok).toBe(true);
+		if (!draftPlan.ok) return;
+
+		clearPorts(ready);
+		const openPipCorr = "trace-perf-pip-open";
+		const openedPip = await openImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: openPipCorr,
+				planId: draftPlan.data.id,
+				expectedVersion: draftPlan.data.version,
+			},
+			worker.perfReady,
+		);
+		expect(openedPip.ok).toBe(true);
+		if (!openedPip.ok) return;
+		assertCorrelationPropagated(ready, openPipCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
+		});
+
+		clearPorts(ready);
+		const completePipCorr = "trace-perf-pip-complete";
+		const completedPip = await completeImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: completePipCorr,
+				planId: openedPip.data.id,
+				expectedVersion: openedPip.data.version,
+			},
+			worker.perfReady,
+		);
+		expect(completedPip.ok).toBe(true);
+		if (!completedPip.ok) return;
+		assertCorrelationPropagated(ready, completePipCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
+		});
+	});
+
+	it("propagates correlationId for learning assignment create (domain_event)", async () => {
+		const ready = harness();
+		const emp = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-learning-assign-emp",
+				idempotencyKey: "idem-learning-assign-emp",
+				employeeNumber: "E-LEARN-CORR",
+				legalName: "Learning Corr Worker",
+			},
+			ready,
+		);
+		expect(emp.ok).toBe(true);
+		if (!emp.ok) return;
+
+		const course = await createCourse(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-learning-assign-course",
+				code: "COURSE-LEARN-CORR",
+				title: "Learning Correlation Course",
+				idempotencyKey: "idem-learning-assign-course",
+			},
+			ready,
+		);
+		expect(course.ok).toBe(true);
+		if (!course.ok) return;
+
+		clearPorts(ready);
+		const assignCorr = "trace-learning-assign";
+		const assignment = await assignLearning(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: assignCorr,
+				employeeId: emp.data.id,
+				courseId: course.data.id,
+				dueOn: null,
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+		assertCorrelationPropagated(ready, assignCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
 		});
 	});
 });

@@ -23,6 +23,7 @@ export * from "./core/employment";
 export * from "./core/employment-contract";
 export * from "./core/org-context";
 export * from "./effective-truth-adoption";
+export * from "./effective-truth-classification";
 export * from "./employee-relations/case-action";
 export * from "./employee-relations/case-appeal";
 export * from "./employee-relations/case-event";

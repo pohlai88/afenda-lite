@@ -70,6 +70,7 @@ export const amendEmploymentInputSchema = humanResourcesMutationContextSchema
 		status: employmentStatusSchema.optional(),
 		startsOn: isoDateSchema.optional(),
 		endsOn: isoDateSchema.nullable().optional(),
+		effectiveOn: isoDateSchema.optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -84,6 +85,42 @@ export const getEmploymentInputSchema = humanResourcesMutationContextSchema
 
 export type GetEmploymentInput = z.infer<typeof getEmploymentInputSchema>;
 
+export const correctEmploymentInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		employmentId: humanResourcesEmploymentIdSchema,
+		status: employmentStatusSchema.optional(),
+		startsOn: isoDateSchema.optional(),
+		endsOn: isoDateSchema.nullable().optional(),
+		reason: z.string().trim().min(1).max(500),
+		evidenceReference: z.string().trim().min(1).max(200).optional(),
+		effectiveOn: isoDateSchema.optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type CorrectEmploymentInput = z.infer<typeof correctEmploymentInputSchema>;
+
+export const getEmploymentAsOfInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		employeeId: humanResourcesEmployeeIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetEmploymentAsOfInput = z.infer<typeof getEmploymentAsOfInputSchema>;
+
+export const listEmploymentStatusHistoryInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employmentId: humanResourcesEmploymentIdSchema,
+			asOf: isoDateSchema.optional(),
+		})
+		.strict();
+
+export type ListEmploymentStatusHistoryInput = z.infer<
+	typeof listEmploymentStatusHistoryInputSchema
+>;
+
 // Employment Contract schemas
 export const createEmploymentContractInputSchema =
 	humanResourcesMutationContextSchema
@@ -92,11 +129,47 @@ export const createEmploymentContractInputSchema =
 			referenceCode: z.string().trim().min(1).max(64),
 			startsOn: isoDateSchema,
 			endsOn: isoDateSchema.nullable().optional(),
+			reasonCode: z.string().trim().min(1).max(64),
+			sourceReference: z.string().trim().min(1).max(200).optional(),
 		})
 		.strict();
 
 export type CreateEmploymentContractInput = z.infer<
 	typeof createEmploymentContractInputSchema
+>;
+
+export const correctEmploymentContractInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employmentContractId: humanResourcesEmploymentContractIdSchema,
+			referenceCode: z.string().trim().min(1).max(64).optional(),
+			startsOn: isoDateSchema.optional(),
+			endsOn: isoDateSchema.nullable().optional(),
+			reasonCode: z.string().trim().min(1).max(64),
+			sourceReference: z.string().trim().min(1).max(200),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type CorrectEmploymentContractInput = z.infer<
+	typeof correctEmploymentContractInputSchema
+>;
+
+export const supersedeEmploymentContractInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employmentContractId: humanResourcesEmploymentContractIdSchema,
+			referenceCode: z.string().trim().min(1).max(64).optional(),
+			startsOn: isoDateSchema,
+			endsOn: isoDateSchema.nullable().optional(),
+			reasonCode: z.string().trim().min(1).max(64),
+			sourceReference: z.string().trim().min(1).max(200),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type SupersedeEmploymentContractInput = z.infer<
+	typeof supersedeEmploymentContractInputSchema
 >;
 
 export const getEmploymentContractInputSchema =
@@ -108,4 +181,16 @@ export const getEmploymentContractInputSchema =
 
 export type GetEmploymentContractInput = z.infer<
 	typeof getEmploymentContractInputSchema
+>;
+
+export const getEmploymentContractAsOfInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employmentId: humanResourcesEmploymentIdSchema,
+			asOf: isoDateSchema,
+		})
+		.strict();
+
+export type GetEmploymentContractAsOfInput = z.infer<
+	typeof getEmploymentContractAsOfInputSchema
 >;

@@ -60,6 +60,14 @@ General ledger and period control. `activationMode: organization_toggle`.
 | ------ | -------------- | ---- |
 | [`accounting`](./accounting/README.md) | `@afenda/accounting` | CoA · journal · ledger posting · accounting period · posting profiles · source posting links |
 
+### Corporate administration (`erp`)
+
+Corporate and statutory registers. `activationMode: organization_toggle`.
+
+| Folder | Published name | Role |
+| ------ | -------------- | ---- |
+| [`corporate-administration`](./corporate-administration/README.md) | `@afenda/corporate-administration` | Legal companies · governance · ownership · premises · property · licences · documents · filings (`ca_*`) |
+
 ### People (`erp`)
 
 Workforce and payroll bounded contexts. `activationMode: organization_toggle`.

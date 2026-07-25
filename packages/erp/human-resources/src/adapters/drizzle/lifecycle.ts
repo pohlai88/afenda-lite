@@ -47,6 +47,10 @@ import {
 	parseHumanResourcesTerminationId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
+import {
+	assertAssignmentWithinEmployment,
+	assertNoAssignmentOverlap,
+} from "../../shared/assignment-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	assertActivePosition,
@@ -116,6 +120,7 @@ type LifecycleHost = {
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
 	getPositionById: HumanResourcesStore["getPositionById"];
 	findOpenAssignmentByEmployment: HumanResourcesStore["findOpenAssignmentByEmployment"];
+	listAssignmentsByEmployment: HumanResourcesStore["listAssignmentsByEmployment"];
 };
 
 export type DrizzleLifecycleMethods = Pick<
@@ -1679,6 +1684,55 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		);
 		if (!dateCheck.ok) return dateCheck;
 
+		const employment = await this.getEmploymentById({
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+		});
+		if (!employment.ok) return employment;
+		if (employment.data === null) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const withinEmployment = assertAssignmentWithinEmployment({
+			assignmentStartsOn: openAssignment.data.startsOn,
+			assignmentEndsOn: previousIsoDate(input.effectiveOn),
+			employmentStartsOn: employment.data.startsOn,
+			employmentEndsOn: employment.data.endsOn,
+		});
+		if (!withinEmployment.ok) return withinEmployment;
+
+		const successorWithinEmployment = assertAssignmentWithinEmployment({
+			assignmentStartsOn: input.effectiveOn,
+			assignmentEndsOn: null,
+			employmentStartsOn: employment.data.startsOn,
+			employmentEndsOn: employment.data.endsOn,
+		});
+		if (!successorWithinEmployment.ok) return successorWithinEmployment;
+
+		const siblings = await this.listAssignmentsByEmployment({
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+		});
+		if (!siblings.ok) return siblings;
+
+		const endedOverlap = assertNoAssignmentOverlap({
+			candidateAssignmentId: openAssignment.data.id,
+			candidateStartsOn: openAssignment.data.startsOn,
+			candidateEndsOn: previousIsoDate(input.effectiveOn),
+			existing: siblings.data,
+		});
+		if (!endedOverlap.ok) return endedOverlap;
+
+		const successorOverlap = assertNoAssignmentOverlap({
+			candidateStartsOn: input.effectiveOn,
+			candidateEndsOn: null,
+			existing: siblings.data,
+		});
+		if (!successorOverlap.ok) return successorOverlap;
+
 		const currentAssignment = openAssignment.data;
 		const newAssignmentId = randomUUID();
 		const brandedAssignmentId =
@@ -1779,6 +1833,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								location_dimension_id, location_key_snapshot, location_name_snapshot,
 								cost_centre_dimension_id, cost_centre_key_snapshot, cost_centre_name_snapshot,
 								project_dimension_id, project_key_snapshot, project_name_snapshot,
+								predecessor_assignment_id, successor_assignment_id, transfer_movement_id,
+								manager_employee_id_snapshot, work_calendar_id_snapshot,
 								starts_on, ends_on, version, created_by, updated_by
 							)
 							SELECT
@@ -1789,6 +1845,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								location.id, location.key, location.name,
 								cost_centre.id, cost_centre.key, cost_centre.name,
 								project.id, project.key, project.name,
+								ended.id, NULL, NULL,
+								${input.managerEmployeeIdSnapshot}, ${input.workCalendarIdSnapshot},
 								${input.effectiveOn}, NULL, 1,
 								${input.actorUserId}, ${input.actorUserId}
 							FROM employment, position, legal_entity, business_unit, location,
@@ -1810,6 +1868,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								${input.actorUserId}, ${input.actorUserId}
 							FROM employment, position, ended, created_assignment
 							RETURNING *
+						),
+						linked_predecessor AS (
+							UPDATE hr_work_assignment
+							SET successor_assignment_id = created_assignment.id,
+								transfer_movement_id = mutated.id
+							FROM created_assignment, mutated, ended
+							WHERE hr_work_assignment.id = ended.id
+							RETURNING hr_work_assignment.id
+						),
+						linked_successor AS (
+							UPDATE hr_work_assignment
+							SET transfer_movement_id = mutated.id
+							FROM mutated, created_assignment
+							WHERE hr_work_assignment.id = created_assignment.id
+							RETURNING hr_work_assignment.id
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -1842,7 +1915,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited, outboxed
+						SELECT mutated.* FROM mutated, audited, outboxed, linked_predecessor, linked_successor
 					`,
 				],
 			);
@@ -1956,8 +2029,10 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const historyId = randomUUID();
 		const nextEmploymentVersion = currentEmployment.version + 1;
 		const expectedEmploymentVersion = currentEmployment.version;
+		const fromEmploymentStatus = currentEmployment.status;
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
@@ -2004,7 +2079,21 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							WHERE e.id = mutated.employment_id
 								AND e.organization_id = mutated.organization_id
 								AND e.version = ${expectedEmploymentVersion}
-							RETURNING e.id
+							RETURNING e.*
+						),
+						history_inserted AS (
+							INSERT INTO hr_employment_status_history (
+								id, organization_id, employment_id, employee_id, from_status, to_status,
+								starts_on_snapshot, ends_on_snapshot, effective_on, change_kind,
+								reason, evidence_reference, correlation_id, actor_user_id
+							)
+							SELECT
+								${historyId}, organization_id, id, employee_id, ${fromEmploymentStatus},
+								'terminated', starts_on, ${record.effectiveOn}::date,
+								${record.effectiveOn}::date, 'lifecycle', ${record.reasonCode},
+								${record.reasonDetail}, ${meta.correlationId}, ${record.createdBy}
+							FROM employment_updated
+							RETURNING id
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -2037,7 +2126,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, employment_updated, audited, outboxed
+						SELECT mutated.* FROM mutated, employment_updated, history_inserted, audited, outboxed
 					`,
 				],
 			);

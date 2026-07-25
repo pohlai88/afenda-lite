@@ -2,11 +2,11 @@
 # Dual control: ERP mutationTables in module.manifest.ts must match writeOwner rows.
 # Platform sole-mutator rows are hand-authored here (no ERP manifest).
 # Schema DDL / migrations stay in @afenda/db — hosting a table does not grant write ownership.
-# Version: schema-ownership/2026-07-21
+# Version: schema-ownership/2026-07-25
 # Authority: docs-V2/monorepo · LAYERS.md · packages/README.md · validate:modules
 
-version: "schema-ownership/2026-07-21"
-updated: "2026-07-21"
+version: "schema-ownership/2026-07-25"
+updated: "2026-07-25"
 authority: packages-catalog-production-governance
 
 invariant: |
@@ -114,6 +114,94 @@ tables:
     kind: erp
   - table: sales_order_line
     writeOwner: "@afenda/sales"
+    kind: erp
+
+  - table: ca_legal_company
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_company_name
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_company_identifier
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_company_status_history
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_officer_appointment
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_governance_body
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_governance_membership
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_authority_mandate
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_company_premise
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_governance_meeting
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_resolution
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_share_class
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_share_transaction
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_share_transaction_leg
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_share_certificate
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_beneficial_owner_disclosure
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_property_holding
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_corporate_asset
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_intellectual_property_right
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_insurance_policy
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_charge
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_licence_permit
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_bank_account_registration
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_bank_mandate
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_group_control_relationship
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_material_agreement
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_corporate_document
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_filing_obligation
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_filing_submission
+    writeOwner: "@afenda/corporate-administration"
     kind: erp
 
   - table: purchase_order

@@ -42,6 +42,9 @@ export const updateDepartmentInputSchema = humanResourcesMutationContextSchema
 		departmentId: humanResourcesDepartmentIdSchema,
 		name: z.string().trim().min(1).max(200).optional(),
 		parentDepartmentId: humanResourcesDepartmentIdSchema.nullable().optional(),
+		effectiveOn: isoDateSchema,
+		reasonCode: z.string().trim().min(1).max(64),
+		evidenceRef: z.string().trim().min(1).max(500).optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -67,6 +70,15 @@ export const getDepartmentInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type GetDepartmentInput = z.infer<typeof getDepartmentInputSchema>;
+
+export const getDepartmentAsOfInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		departmentId: humanResourcesDepartmentIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetDepartmentAsOfInput = z.infer<typeof getDepartmentAsOfInputSchema>;
 
 export const listDepartmentsInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -94,6 +106,9 @@ export const updateJobInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		jobId: humanResourcesJobIdSchema,
 		title: z.string().trim().min(1).max(200),
+		effectiveOn: isoDateSchema,
+		reasonCode: z.string().trim().min(1).max(64),
+		evidenceRef: z.string().trim().min(1).max(500).optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -119,6 +134,15 @@ export const getJobInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type GetJobInput = z.infer<typeof getJobInputSchema>;
+
+export const getJobAsOfInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		jobId: humanResourcesJobIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetJobAsOfInput = z.infer<typeof getJobAsOfInputSchema>;
 
 export const listJobsInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -149,6 +173,9 @@ export const updatePositionInputSchema = humanResourcesMutationContextSchema
 		title: z.string().trim().min(1).max(200).optional(),
 		departmentId: humanResourcesDepartmentIdSchema.optional(),
 		jobId: humanResourcesJobIdSchema.optional(),
+		effectiveOn: isoDateSchema,
+		reasonCode: z.string().trim().min(1).max(64),
+		evidenceRef: z.string().trim().min(1).max(500).optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -174,6 +201,15 @@ export const getPositionInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type GetPositionInput = z.infer<typeof getPositionInputSchema>;
+
+export const getPositionAsOfInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		positionId: humanResourcesPositionIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetPositionAsOfInput = z.infer<typeof getPositionAsOfInputSchema>;
 
 export const getPositionOccupancyAsOfInputSchema =
 	humanResourcesMutationContextSchema
@@ -233,6 +269,15 @@ export const getAssignmentInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type GetAssignmentInput = z.infer<typeof getAssignmentInputSchema>;
+
+export const getAssignmentAsOfInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		employmentId: humanResourcesEmploymentIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetAssignmentAsOfInput = z.infer<typeof getAssignmentAsOfInputSchema>;
 
 // Reporting line schemas
 export const assignPrimaryReportingLineInputSchema =
@@ -322,3 +367,29 @@ export const organizationTreeInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type OrganizationTreeInput = z.infer<typeof organizationTreeInputSchema>;
+
+export const organizationTreeAsOfInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			asOf: isoDateSchema,
+			rootDepartmentId: humanResourcesDepartmentIdSchema.optional(),
+			maxDepth: z
+				.number()
+				.int()
+				.positive()
+				.max(ORGANIZATION_TREE_HARD_MAX_DEPTH)
+				.optional()
+				.default(ORGANIZATION_TREE_DEFAULT_MAX_DEPTH),
+			maxNodes: z
+				.number()
+				.int()
+				.positive()
+				.max(ORGANIZATION_TREE_HARD_MAX_NODES)
+				.optional()
+				.default(ORGANIZATION_TREE_DEFAULT_MAX_NODES),
+		})
+		.strict();
+
+export type OrganizationTreeAsOfInput = z.infer<
+	typeof organizationTreeAsOfInputSchema
+>;

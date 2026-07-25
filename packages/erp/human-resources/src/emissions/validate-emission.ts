@@ -1,5 +1,6 @@
 import { HumanResourcesEventSchemas } from "@afenda/events";
 
+import { tryGetEventCatalogEntry } from "../event-catalog/get-event-catalog-entry";
 import { HUMAN_RESOURCES_COMMAND_IDS } from "../module-ids";
 
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "./registry";
@@ -16,7 +17,8 @@ export type HumanResourcesEmissionRegistryIssue = {
 		| "domain_event_without_event"
 		| "missing_correlation"
 		| "missing_audit"
-		| "domain_mismatch";
+		| "domain_mismatch"
+		| "missing_catalog_entry";
 	message: string;
 };
 
@@ -93,6 +95,18 @@ export function validateHumanResourcesMutationEmissionRegistry(): HumanResources
 					eventType,
 					code: "unknown_event",
 					message: `${eventType} is not registered in @afenda/events.`,
+				});
+			}
+
+			if (
+				definition.emissionMode === "domain_event" &&
+				!tryGetEventCatalogEntry(eventType)
+			) {
+				issues.push({
+					commandId,
+					eventType,
+					code: "missing_catalog_entry",
+					message: `${eventType} is classified as domain_event but missing from HUMAN_RESOURCES_EVENT_CATALOG.`,
 				});
 			}
 		}

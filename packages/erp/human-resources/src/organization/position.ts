@@ -10,12 +10,15 @@ import {
 	HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
 	HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
 	HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+	HUMAN_RESOURCES_QUERY_POSITION_AS_OF,
 	HUMAN_RESOURCES_QUERY_POSITION_GET,
 	HUMAN_RESOURCES_QUERY_POSITION_LIST,
 	HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
 } from "../module-ids";
+import type { PositionDefinitionAtAsOf } from "./organization-structure-lineage";
 import {
 	createPositionInputSchema,
+	getPositionAsOfInputSchema,
 	getPositionInputSchema,
 	getPositionOccupancyAsOfInputSchema,
 	listPositionsInputSchema,
@@ -73,6 +76,9 @@ export async function updatePosition(
 					title: data.title?.trim(),
 					departmentId: data.departmentId,
 					jobId: data.jobId,
+					effectiveOn: data.effectiveOn,
+					reasonCode: data.reasonCode,
+					evidenceRef: data.evidenceRef,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -175,6 +181,35 @@ export async function getPosition(
 			const position = await store.getPositionById({
 				organizationId: data.organizationId,
 				positionId: data.positionId,
+			});
+			if (!position.ok) {
+				return position;
+			}
+			if (position.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Position not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(position.data);
+		},
+	});
+}
+
+export async function getPositionAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PositionDefinitionAtAsOf>> {
+	return runOrganizationQuery(input, options, {
+		schema: getPositionAsOfInputSchema,
+		invalidMessage: "Invalid position as-of input",
+		query: HUMAN_RESOURCES_QUERY_POSITION_AS_OF,
+		execute: async (data, { store }) => {
+			const position = await store.findPositionAsOf({
+				organizationId: data.organizationId,
+				positionId: data.positionId,
+				asOf: data.asOf,
 			});
 			if (!position.ok) {
 				return position;

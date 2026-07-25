@@ -294,11 +294,11 @@ describe.skipIf(!hasDatabase)(
 				sql`
 					INSERT INTO hr_employment_contract (
 						id, organization_id, employment_id, employee_id, reference_code,
-						starts_on, ends_on, version, created_by, updated_by
+						starts_on, ends_on, lineage_status, reason_code, version, created_by, updated_by
 					)
 					VALUES (
 						${crypto.randomUUID()}, ${orgId}, ${employmentId}, ${employeeId}, 'CTR-BAD',
-						'2021-06-01', '2021-01-01', 1, ${actor}, ${actor}
+						'2021-06-01', '2021-01-01', 'active', 'test.invalid-range', 1, ${actor}, ${actor}
 					)
 				`,
 			).rejects.toThrow();
@@ -313,11 +313,11 @@ describe.skipIf(!hasDatabase)(
 				sql`
 					INSERT INTO hr_employment_contract (
 						id, organization_id, employment_id, employee_id, reference_code,
-						starts_on, ends_on, version, created_by, updated_by
+						starts_on, ends_on, lineage_status, reason_code, version, created_by, updated_by
 					)
 					VALUES (
 						${contractId}, ${orgId}, ${employmentId}, ${employeeId}, 'CTR-OPEN',
-						'2020-01-01', NULL, 1, ${actor}, ${actor}
+						'2020-01-01', NULL, 'active', 'test.open-ended', 1, ${actor}, ${actor}
 					)
 				`,
 			).resolves.toBeDefined();

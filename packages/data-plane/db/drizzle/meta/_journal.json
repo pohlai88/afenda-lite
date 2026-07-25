@@ -141,6 +141,104 @@
       "when": 1785001200000,
       "tag": "0018_hr_coreorg_db_invariants",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785004800000,
+      "tag": "0019_ca_legal_company_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785008400000,
+      "tag": "0020_ca_governance_premises",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785012000000,
+      "tag": "0021_ca_share_capital",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1785015600000,
+      "tag": "0022_ca_property_assets",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785019200000,
+      "tag": "0023_ca_licences_banking",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785022800000,
+      "tag": "0024_ca_documents_filings",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785026400000,
+      "tag": "0025_ca_slice_self_references",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1785030000000,
+      "tag": "0026_ca_performance_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1785033600000,
+      "tag": "0027_hr_person_worker_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1785037200000,
+      "tag": "0028_hr_employment_status_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1785040800000,
+      "tag": "0029_hr_employment_contract_lineage",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1785044400000,
+      "tag": "0030_ca_legal_company_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1785048000000,
+      "tag": "0031_hr_work_assignment_truth",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1785051600000,
+      "tag": "0032_hr_organization_structure_lineage",
+      "breakpoints": true
     }
   ]
 }

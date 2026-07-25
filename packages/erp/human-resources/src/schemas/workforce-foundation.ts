@@ -55,6 +55,9 @@ export const updatePersonNameInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		personId: humanResourcesPersonIdSchema,
 		legalName: z.string().trim().min(1).max(200),
+		effectiveOn: isoDateSchema,
+		reasonCode: z.string().trim().min(1).max(64),
+		evidenceRef: z.string().trim().min(1).max(500).optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -102,6 +105,8 @@ const changeWorkerTypeCommonShape = {
 	workerId: humanResourcesWorkerIdSchema,
 	expectedVersion: humanResourcesExpectedVersionSchema,
 	effectiveOn: isoDateSchema,
+	reasonCode: z.string().trim().min(1).max(64),
+	evidenceRef: z.string().trim().min(1).max(500).optional(),
 };
 
 const changeToEmployeeWorkerTypeInputSchema = z
@@ -135,6 +140,8 @@ export const changeWorkerStatusInputSchema = humanResourcesMutationContextSchema
 		workerId: humanResourcesWorkerIdSchema,
 		status: workerStatusSchema,
 		effectiveOn: isoDateSchema,
+		reasonCode: z.string().trim().min(1).max(64),
+		evidenceRef: z.string().trim().min(1).max(500).optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -168,3 +175,31 @@ export const getWorkerInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type GetWorkerInput = z.infer<typeof getWorkerInputSchema>;
+
+export const getPersonAsOfInputSchema = humanResourcesMutationContextSchema
+	.pick({
+		organizationId: true,
+		actorUserId: true,
+		correlationId: true,
+	})
+	.extend({
+		personId: humanResourcesPersonIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetPersonAsOfInput = z.infer<typeof getPersonAsOfInputSchema>;
+
+export const getWorkerAsOfInputSchema = humanResourcesMutationContextSchema
+	.pick({
+		organizationId: true,
+		actorUserId: true,
+		correlationId: true,
+	})
+	.extend({
+		workerId: humanResourcesWorkerIdSchema,
+		asOf: isoDateSchema,
+	})
+	.strict();
+
+export type GetWorkerAsOfInput = z.infer<typeof getWorkerAsOfInputSchema>;

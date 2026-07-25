@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
 	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 } from "@afenda/events/schemas";
@@ -1680,6 +1681,24 @@ export function createMemoryLearningMethods(
 			if (!audit.ok) {
 				state.certifications.set(input.certificationId, certification);
 				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_employee_certification",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.certifications.set(input.certificationId, certification);
+				return outbox;
 			}
 
 			return ok({ ...updated });

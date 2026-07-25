@@ -47,6 +47,10 @@ export const HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT =
 	"human-resources.employee.terminated.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT =
 	"human-resources.employment-contract.created.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT =
+	"human-resources.employment-contract.changed.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT =
+	"human-resources.employment-contract.superseded.v1" as const;
 export const HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT =
 	"human-resources.assignment.created.v1" as const;
 export const HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT =
@@ -257,6 +261,10 @@ export const HumanResourcesEventSchemas = {
 		humanResourcesEffectiveDatedEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT]:
@@ -265,8 +273,7 @@ export const HumanResourcesEventSchemas = {
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_JOB_ACTIVATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_JOB_ARCHIVED_EVENT]: humanResourcesEntityPayloadSchema,
-	[HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT]:
-		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_POSITION_FROZEN_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_POSITION_CLOSED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT]:
@@ -277,10 +284,8 @@ export const HumanResourcesEventSchemas = {
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
-	[HUMAN_RESOURCES_REQUISITION_OPENED_EVENT]:
-		humanResourcesEntityPayloadSchema,
-	[HUMAN_RESOURCES_REQUISITION_CLOSED_EVENT]:
-		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REQUISITION_OPENED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REQUISITION_CLOSED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_CANDIDATE_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_CANDIDATE_CONSENT_WITHDRAWN_EVENT]:
 		humanResourcesEntityPayloadSchema,
@@ -420,8 +425,7 @@ export const HumanResourcesEventSchemas = {
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
-	[HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT]:
-		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT]:
@@ -441,6 +445,8 @@ export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT,
 	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,

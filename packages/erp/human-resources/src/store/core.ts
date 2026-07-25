@@ -5,10 +5,17 @@ import type {
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
+	HumanResourcesEmploymentMovementId,
 	HumanResourcesJobId,
 	HumanResourcesPositionId,
 	HumanResourcesReportingLineId,
+	HumanResourcesWorkCalendarId,
 } from "../brands";
+import type {
+	DepartmentStructureAtAsOf,
+	JobDefinitionAtAsOf,
+	PositionDefinitionAtAsOf,
+} from "../organization/organization-structure-lineage";
 import type {
 	HumanResourcesOrganizationDimensions,
 	MutationPorts,
@@ -19,6 +26,7 @@ import type {
 	JobStatus,
 	PositionStatus,
 } from "../shared/employment-status";
+import type { EmploymentStatusChangeKind } from "../shared/employment-history";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	Department,
@@ -26,6 +34,7 @@ import type {
 	EmployeeListPage,
 	Employment,
 	EmploymentContract,
+	EmploymentStatusHistory,
 	Job,
 	OrganizationTreePage,
 	Position,
@@ -63,6 +72,22 @@ export type EmploymentCreateRecord = {
 	createdBy: string;
 };
 
+export type EmploymentStatusHistoryAppendRecord = {
+	organizationId: string;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	fromStatus: EmploymentStatus | null;
+	toStatus: EmploymentStatus;
+	startsOnSnapshot: string;
+	endsOnSnapshot: string | null;
+	effectiveOn: string;
+	changeKind: EmploymentStatusChangeKind;
+	reason: string | null;
+	evidenceReference: string | null;
+	correlationId: string;
+	actorUserId: string;
+};
+
 export type EmploymentContractCreateRecord = {
 	organizationId: string;
 	employmentId: HumanResourcesEmploymentId;
@@ -70,6 +95,8 @@ export type EmploymentContractCreateRecord = {
 	referenceCode: string;
 	startsOn: string;
 	endsOn: string | null;
+	reasonCode: string;
+	sourceReference: string | null;
 	createdBy: string;
 };
 
@@ -106,6 +133,11 @@ export type AssignmentCreateRecord = {
 	employeeId: HumanResourcesEmployeeId;
 	positionId: HumanResourcesPositionId;
 	organizationDimensions: HumanResourcesOrganizationDimensions;
+	managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
+	workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
+	predecessorAssignmentId?: HumanResourcesAssignmentId | null;
+	successorAssignmentId?: HumanResourcesAssignmentId | null;
+	transferMovementId?: HumanResourcesEmploymentMovementId | null;
 	startsOn: string;
 	endsOn: string | null;
 	createdBy: string;
@@ -175,6 +207,28 @@ export type HumanResourcesCoreStore = {
 		asOf: string;
 	}): Promise<Result<Employment | null>>;
 
+	listEmploymentsByEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}): Promise<
+		Result<
+			Array<{
+				id: HumanResourcesEmploymentId;
+				startsOn: string;
+				endsOn: string | null;
+			}>
+		>
+	>;
+
+	listEmploymentStatusHistory(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<EmploymentStatusHistory[]>>;
+
+	appendEmploymentStatusHistory(
+		record: EmploymentStatusHistoryAppendRecord,
+	): Promise<Result<EmploymentStatusHistory>>;
+
 	createEmployment(
 		record: EmploymentCreateRecord,
 		ports: MutationPorts,
@@ -188,6 +242,24 @@ export type HumanResourcesCoreStore = {
 			status?: EmploymentStatus;
 			startsOn?: string;
 			endsOn?: string | null;
+			lifecycleEffectiveOn?: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Employment>>;
+
+	correctEmployment(
+		input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			status?: EmploymentStatus;
+			startsOn?: string;
+			endsOn?: string | null;
+			reason: string;
+			evidenceReference: string | null;
+			effectiveOn?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -206,11 +278,63 @@ export type HumanResourcesCoreStore = {
 		referenceCode: string;
 	}): Promise<Result<EmploymentContract | null>>;
 
+	listActiveContractsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<
+		Result<
+			Array<{
+				id: HumanResourcesEmploymentContractId;
+				startsOn: string;
+				endsOn: string | null;
+			}>
+		>
+	>;
+
+	findEmploymentContractByEmploymentAsOf(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		asOf: string;
+	}): Promise<Result<EmploymentContract | null>>;
+
 	createEmploymentContract(
 		record: EmploymentContractCreateRecord,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmploymentContract>>;
+
+	correctEmploymentContract(
+		input: {
+			organizationId: string;
+			employmentContractId: HumanResourcesEmploymentContractId;
+			referenceCode?: string;
+			startsOn?: string;
+			endsOn?: string | null;
+			reasonCode: string;
+			sourceReference: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<EmploymentContract>>;
+
+	supersedeEmploymentContract(
+		input: {
+			organizationId: string;
+			employmentContractId: HumanResourcesEmploymentContractId;
+			referenceCode: string;
+			startsOn: string;
+			endsOn: string | null;
+			reasonCode: string;
+			sourceReference: string;
+			predecessorEffectiveTo: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<{ superseded: EmploymentContract; successor: EmploymentContract }>>;
 	// Department
 	getDepartmentById(input: {
 		organizationId: string;
@@ -234,12 +358,21 @@ export type HumanResourcesCoreStore = {
 			departmentId: HumanResourcesDepartmentId;
 			name?: string;
 			parentDepartmentId?: HumanResourcesDepartmentId | null;
+			effectiveOn: string;
+			reasonCode: string;
+			evidenceRef?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Department>>;
+
+	findDepartmentAsOf(input: {
+		organizationId: string;
+		departmentId: HumanResourcesDepartmentId;
+		asOf: string;
+	}): Promise<Result<DepartmentStructureAtAsOf | null>>;
 
 	setDepartmentStatus(
 		input: {
@@ -286,12 +419,21 @@ export type HumanResourcesCoreStore = {
 			organizationId: string;
 			jobId: HumanResourcesJobId;
 			title: string;
+			effectiveOn: string;
+			reasonCode: string;
+			evidenceRef?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Job>>;
+
+	findJobAsOf(input: {
+		organizationId: string;
+		jobId: HumanResourcesJobId;
+		asOf: string;
+	}): Promise<Result<JobDefinitionAtAsOf | null>>;
 
 	setJobStatus(
 		input: {
@@ -335,12 +477,21 @@ export type HumanResourcesCoreStore = {
 			title?: string;
 			departmentId?: HumanResourcesDepartmentId;
 			jobId?: HumanResourcesJobId;
+			effectiveOn: string;
+			reasonCode: string;
+			evidenceRef?: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Position>>;
+
+	findPositionAsOf(input: {
+		organizationId: string;
+		positionId: HumanResourcesPositionId;
+		asOf: string;
+	}): Promise<Result<PositionDefinitionAtAsOf | null>>;
 
 	setPositionStatus(
 		input: {
@@ -404,6 +555,11 @@ export type HumanResourcesCoreStore = {
 		employmentId: HumanResourcesEmploymentId;
 		asOf: string;
 	}): Promise<Result<WorkAssignment | null>>;
+
+	listAssignmentsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<WorkAssignment[]>>;
 
 	createAssignment(
 		record: AssignmentCreateRecord,
@@ -486,6 +642,14 @@ export type HumanResourcesCoreStore = {
 
 	getOrganizationTree(input: {
 		organizationId: string;
+		rootDepartmentId: HumanResourcesDepartmentId | null;
+		maxDepth: number;
+		maxNodes: number;
+	}): Promise<Result<OrganizationTreePage>>;
+
+	getOrganizationTreeAsOf(input: {
+		organizationId: string;
+		asOf: string;
 		rootDepartmentId: HumanResourcesDepartmentId | null;
 		maxDepth: number;
 		maxNodes: number;
