@@ -8,6 +8,7 @@ import {
 import {
 	HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
 	HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
+	HUMAN_RESOURCES_COMMAND_OFFER_APPROVE,
 	HUMAN_RESOURCES_COMMAND_OFFER_CREATE,
 	HUMAN_RESOURCES_COMMAND_OFFER_DECLINE,
 	HUMAN_RESOURCES_COMMAND_OFFER_EXPIRE,
@@ -61,6 +62,7 @@ export async function createOffer(
 					applicationId: data.applicationId,
 					termsSummary: data.termsSummary.trim(),
 					expiresOn: data.expiresOn,
+					compensationProposalId: data.compensationProposalId ?? null,
 					createdBy: data.actorUserId,
 				},
 				ports,
@@ -87,6 +89,7 @@ export async function amendOfferDraft(
 					offerId: data.offerId,
 					termsSummary: data.termsSummary?.trim(),
 					expiresOn: data.expiresOn,
+					compensationProposalId: data.compensationProposalId,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -129,6 +132,17 @@ async function transitionOffer(
 					operation: config.command,
 				}),
 			),
+	});
+}
+
+export async function approveOffer(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmploymentOffer>> {
+	return transitionOffer(input, options, {
+		invalidMessage: "Invalid offer approve input",
+		command: HUMAN_RESOURCES_COMMAND_OFFER_APPROVE,
+		status: "approved",
 	});
 }
 

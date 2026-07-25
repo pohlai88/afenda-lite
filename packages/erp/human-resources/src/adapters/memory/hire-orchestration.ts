@@ -1,0 +1,297 @@
+import { randomUUID } from "node:crypto";
+import { ok, type Result } from "@afenda/errors/result";
+import {
+	parseHumanResourcesAssignmentId,
+	parseHumanResourcesEmployeeId,
+	parseHumanResourcesEmploymentId,
+	parseHumanResourcesHireAttemptId,
+	parseHumanResourcesOfferId,
+	parseHumanResourcesOnboardingCaseId,
+	parseHumanResourcesPersonId,
+	parseHumanResourcesWorkerId,
+} from "../../brands";
+import type {
+	HireAttempt,
+	HireCompensationLogEntry,
+} from "../../hire-orchestration/types";
+import type { MutationPorts } from "../../ports";
+import { assertExpectedVersion } from "../../shared/concurrency";
+import { conflict } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import type {
+	HireAttemptCreateRecord,
+	HireAttemptProgressUpdate,
+	HumanResourcesHireOrchestrationStore,
+	IdempotentHireAttemptRecord,
+} from "../../store/hire-orchestration";
+
+export type HireOrchestrationMemoryState = {
+	attemptsById: Map<string, HireAttempt>;
+	idempotencyByKey: Map<string, IdempotentHireAttemptRecord>;
+};
+
+function idempotencyMapKey(organizationId: string, idempotencyKey: string): string {
+	return `${organizationId}:${idempotencyKey}`;
+}
+
+function cloneAttempt(attempt: HireAttempt): HireAttempt {
+	return {
+		...attempt,
+		compensationLog: [...attempt.compensationLog],
+	};
+}
+
+function cloneRecord(record: IdempotentHireAttemptRecord): IdempotentHireAttemptRecord {
+	return {
+		attempt: cloneAttempt(record.attempt),
+		requestFingerprint: record.requestFingerprint,
+	};
+}
+
+export function createHireOrchestrationMemoryState(): HireOrchestrationMemoryState {
+	return {
+		attemptsById: new Map(),
+		idempotencyByKey: new Map(),
+	};
+}
+
+export function resetHireOrchestrationMemoryState(
+	state: HireOrchestrationMemoryState,
+): void {
+	state.attemptsById.clear();
+	state.idempotencyByKey.clear();
+}
+
+export function createMemoryHireOrchestrationMethods(
+	state: HireOrchestrationMemoryState,
+): HumanResourcesHireOrchestrationStore {
+	return {
+		async findHireAttemptByIdempotencyKey(input) {
+			const record = state.idempotencyByKey.get(
+				idempotencyMapKey(input.organizationId, input.idempotencyKey),
+			);
+			if (record === undefined) {
+				return ok(null);
+			}
+			return ok(cloneRecord(record));
+		},
+
+		async findOpenHireAttemptByOfferId(input) {
+			for (const attempt of state.attemptsById.values()) {
+				if (
+					attempt.organizationId === input.organizationId &&
+					attempt.offerId === input.offerId &&
+					(attempt.status === "in_progress" || attempt.status === "completed")
+				) {
+					return ok(cloneAttempt(attempt));
+				}
+			}
+			return ok(null);
+		},
+
+		async createHireAttempt(record, _ports, _meta) {
+			const existing = state.idempotencyByKey.get(
+				idempotencyMapKey(record.organizationId, record.idempotencyKey),
+			);
+			if (existing !== undefined) {
+				return conflict("Hire attempt idempotency key already exists");
+			}
+
+			const open = await this.findOpenHireAttemptByOfferId({
+				organizationId: record.organizationId,
+				offerId: record.offerId,
+			});
+			if (!open.ok) {
+				return open;
+			}
+			if (open.data !== null) {
+				return conflict("An open hire attempt already exists for this offer");
+			}
+
+			const now = new Date();
+			const idParsed = parseHumanResourcesHireAttemptId(randomUUID());
+			if (!idParsed.ok) {
+				return idParsed;
+			}
+
+			const attempt: HireAttempt = {
+				id: idParsed.data,
+				organizationId: record.organizationId,
+				offerId: record.offerId,
+				correlationId: record.correlationId,
+				idempotencyKey: record.idempotencyKey,
+				requestFingerprint: record.requestFingerprint,
+				status: "in_progress",
+				currentStep: null,
+				personId: null,
+				employeeId: null,
+				employmentId: null,
+				workerId: null,
+				assignmentId: null,
+				onboardingCaseId: null,
+				compensationLog: [],
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.attemptsById.set(attempt.id, attempt);
+			state.idempotencyByKey.set(
+				idempotencyMapKey(record.organizationId, record.idempotencyKey),
+				{
+					attempt: cloneAttempt(attempt),
+					requestFingerprint: record.requestFingerprint,
+				},
+			);
+
+			return ok(cloneAttempt(attempt));
+		},
+
+		async updateHireAttemptProgress(input, _ports, _meta) {
+			const existing = state.attemptsById.get(input.attemptId);
+			if (existing === undefined) {
+				return conflict("Hire attempt not found");
+			}
+			if (existing.organizationId !== input.organizationId) {
+				return conflict("Hire attempt organization mismatch");
+			}
+
+			const versionCheck = assertExpectedVersion(
+				existing.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const now = new Date();
+			const updated: HireAttempt = {
+				...existing,
+				currentStep: input.currentStep ?? existing.currentStep,
+				personId: input.personId ?? existing.personId,
+				employeeId: input.employeeId ?? existing.employeeId,
+				employmentId: input.employmentId ?? existing.employmentId,
+				workerId: input.workerId ?? existing.workerId,
+				assignmentId: input.assignmentId ?? existing.assignmentId,
+				onboardingCaseId: input.onboardingCaseId ?? existing.onboardingCaseId,
+				compensationLog: input.compensationLog
+					? [...input.compensationLog]
+					: existing.compensationLog,
+				status: input.status ?? existing.status,
+				version: existing.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.attemptsById.set(updated.id, updated);
+			const idempotent = state.idempotencyByKey.get(
+				idempotencyMapKey(updated.organizationId, updated.idempotencyKey),
+			);
+			if (idempotent !== undefined) {
+				state.idempotencyByKey.set(
+					idempotencyMapKey(updated.organizationId, updated.idempotencyKey),
+					{
+						attempt: cloneAttempt(updated),
+						requestFingerprint: idempotent.requestFingerprint,
+					},
+				);
+			}
+
+			return ok(cloneAttempt(updated));
+		},
+	};
+}
+
+export function mapHireAttemptRow(row: {
+	id: string;
+	organizationId: string;
+	offerId: string;
+	correlationId: string;
+	idempotencyKey: string;
+	requestFingerprint: string;
+	status: string;
+	currentStep: string | null;
+	personId: string | null;
+	employeeId: string | null;
+	employmentId: string | null;
+	workerId: string | null;
+	assignmentId: string | null;
+	onboardingCaseId: string | null;
+	compensationLog: unknown;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+}): Result<HireAttempt> {
+	const id = parseHumanResourcesHireAttemptId(row.id);
+	if (!id.ok) return id;
+	const offerId = parseHumanResourcesOfferId(row.offerId);
+	if (!offerId.ok) return offerId;
+
+	let personId = null;
+	if (row.personId !== null) {
+		const parsed = parseHumanResourcesPersonId(row.personId);
+		if (!parsed.ok) return parsed;
+		personId = parsed.data;
+	}
+	let employeeId = null;
+	if (row.employeeId !== null) {
+		const parsed = parseHumanResourcesEmployeeId(row.employeeId);
+		if (!parsed.ok) return parsed;
+		employeeId = parsed.data;
+	}
+	let employmentId = null;
+	if (row.employmentId !== null) {
+		const parsed = parseHumanResourcesEmploymentId(row.employmentId);
+		if (!parsed.ok) return parsed;
+		employmentId = parsed.data;
+	}
+	let workerId = null;
+	if (row.workerId !== null) {
+		const parsed = parseHumanResourcesWorkerId(row.workerId);
+		if (!parsed.ok) return parsed;
+		workerId = parsed.data;
+	}
+	let assignmentId = null;
+	if (row.assignmentId !== null) {
+		const parsed = parseHumanResourcesAssignmentId(row.assignmentId);
+		if (!parsed.ok) return parsed;
+		assignmentId = parsed.data;
+	}
+	let onboardingCaseId = null;
+	if (row.onboardingCaseId !== null) {
+		const parsed = parseHumanResourcesOnboardingCaseId(row.onboardingCaseId);
+		if (!parsed.ok) return parsed;
+		onboardingCaseId = parsed.data;
+	}
+
+	const compensationLog = Array.isArray(row.compensationLog)
+		? (row.compensationLog as HireCompensationLogEntry[])
+		: [];
+
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		offerId: offerId.data,
+		correlationId: row.correlationId,
+		idempotencyKey: row.idempotencyKey,
+		requestFingerprint: row.requestFingerprint,
+		status: row.status as HireAttempt["status"],
+		currentStep: row.currentStep as HireAttempt["currentStep"],
+		personId,
+		employeeId,
+		employmentId,
+		workerId,
+		assignmentId,
+		onboardingCaseId,
+		compensationLog,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}

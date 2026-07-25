@@ -88,6 +88,13 @@ export type LeavePolicySqlRow = {
 	allows_negative_balance: boolean;
 	allow_self_approval: boolean;
 	allows_partial_day: boolean;
+	accrual_basis: string;
+	accrual_frequency: string | null;
+	accrual_quantity_per_period: string | null;
+	carry_forward_enabled: boolean;
+	carry_forward_max_quantity: string | null;
+	entitlement_expiry_rule: string;
+	entitlement_expiry_days: number | null;
 	effective_from: string;
 	effective_to: string | null;
 	status: string;

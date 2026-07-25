@@ -11,6 +11,7 @@ import {
 	createCaParityHarness,
 	runDrizzleParity,
 } from "./helpers/ca-parity-harness";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { ensureDrizzleCaMasterFixtures } from "./helpers/drizzle-ca-masters";
 import {
 	createMemoryCaMasterLookup,
@@ -48,16 +49,14 @@ describe.runIf(runDrizzleParity)(
 			});
 			const ready = createCaParityHarness("drizzle", masters);
 			const company = await createLegalCompany(
-				{
+				createLegalCompanyTestInput(`create-cc-${tag}`, {
 					organizationId: ORG,
 					actorUserId: "user-cc",
 					correlationId: `corr-cc-${tag}`,
-					idempotencyKey: `create-cc-${tag}`,
-					requestFingerprint: `fp-cc-${tag}`,
 					code: `CO-${tag}`,
 					legalEntityDimensionId: dimensionId,
 					legalPartyId: partyId,
-				},
+				}),
 				ready,
 			);
 			expect(company.ok).toBe(true);

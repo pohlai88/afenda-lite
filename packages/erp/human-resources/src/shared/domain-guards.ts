@@ -11,6 +11,26 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+
+export function alreadyInStatus(entity: string, status: string): Result<never> {
+	return fail(
+		"BAD_REQUEST",
+		`${entity} is already in status '${status}'`,
+		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+	);
+}
+
+export function cannotTransition(
+	entity: string,
+	current: string,
+	next: string,
+): Result<never> {
+	return fail(
+		"BAD_REQUEST",
+		`Cannot transition ${entity} from '${current}' to '${next}'`,
+		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+	);
+}
 import type { EmploymentStatus, PositionStatus } from "./employment-status";
 import { assertValidDateRange } from "./employment-status";
 

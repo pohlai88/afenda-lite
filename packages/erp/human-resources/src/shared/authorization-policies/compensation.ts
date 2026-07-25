@@ -77,6 +77,7 @@ export const compensationPolicy: HumanResourcesAuthorizationPolicy = {
 		"human-resources.salary-band.",
 		"human-resources.employee-compensation.",
 		"human-resources.compensation-review.",
+		"human-resources.compensation-proposal.",
 		"human-resources.benefit-plan.",
 		"human-resources.benefit-enrollment.",
 		"human-resources.approved-compensation-handoff.",

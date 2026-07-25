@@ -11,7 +11,6 @@ import {
 	resolveCommandDeps,
 } from "./command-options";
 import {
-	CA_ERROR_IDEMPOTENCY_CONFLICT,
 	CA_ERROR_SHARE_CERTIFICATE_CONFLICT,
 	CA_ERROR_SHARE_CLASS_CLOSED,
 	CA_ERROR_VERSION_CONFLICT,
@@ -29,6 +28,7 @@ import {
 } from "./module-ids";
 import type { ShareCapitalMutationContext } from "./ports";
 import { normalizeCompanyCode } from "./shared/code";
+import { isInvalidEffectiveDateRange } from "./shared/effective-range";
 import { requireLegalCompany } from "./slice-helpers";
 import type {
 	CaBeneficialOwnerDisclosure,
@@ -473,7 +473,12 @@ export async function endBeneficialOwnerDisclosure(
 	if (current.data.effectiveTo) {
 		return fail("CONFLICT", "Beneficial owner disclosure is already ended");
 	}
-	if (parsed.data.effectiveTo < current.data.effectiveFrom) {
+	if (
+		isInvalidEffectiveDateRange({
+			effectiveFrom: current.data.effectiveFrom,
+			effectiveTo: parsed.data.effectiveTo,
+		})
+	) {
 		return fail("CONFLICT", "Effective end date is before start date");
 	}
 	const ended: CaBeneficialOwnerDisclosure = {

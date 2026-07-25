@@ -15,6 +15,10 @@ export const EMPLOYEE_COMPENSATION_STATUSES = ["active", "ended"] as const;
 export type EmployeeCompensationStatus =
 	(typeof EMPLOYEE_COMPENSATION_STATUSES)[number];
 
+export const COMPENSATION_PROPOSAL_STATUSES = ["draft", "approved"] as const;
+export type CompensationProposalStatus =
+	(typeof COMPENSATION_PROPOSAL_STATUSES)[number];
+
 export const COMPENSATION_REVIEW_STATUSES = [
 	"draft",
 	"recorded",
@@ -41,6 +45,9 @@ export const salaryBandStatusSchema = z.enum(SALARY_BAND_STATUSES);
 export const employeeCompensationStatusSchema = z.enum(
 	EMPLOYEE_COMPENSATION_STATUSES,
 );
+export const compensationProposalStatusSchema = z.enum(
+	COMPENSATION_PROPOSAL_STATUSES,
+);
 export const compensationReviewStatusSchema = z.enum(
 	COMPENSATION_REVIEW_STATUSES,
 );
@@ -63,6 +70,18 @@ export function isEmployeeCompensationActive(
 	status: EmployeeCompensationStatus,
 ): boolean {
 	return status === "active";
+}
+
+export function isCompensationProposalDraft(
+	status: CompensationProposalStatus,
+): boolean {
+	return status === "draft";
+}
+
+export function isCompensationProposalApproved(
+	status: CompensationProposalStatus,
+): boolean {
+	return status === "approved";
 }
 
 export function isCompensationReviewDraft(

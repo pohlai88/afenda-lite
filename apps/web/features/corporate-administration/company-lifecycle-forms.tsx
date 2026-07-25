@@ -1,6 +1,7 @@
 "use client";
 
 import type { CaLegalCompany } from "@afenda/corporate-administration";
+import { canTransitionLegalCompany } from "@afenda/corporate-administration";
 import {
 	Alert,
 	AlertDescription,
@@ -86,17 +87,30 @@ export function CompanyLifecycleForms({
 		FormData
 	>(archiveLegalCompanyAction, null);
 
+	const canSuspendTransition = canTransitionLegalCompany(
+		company.status,
+		"suspended",
+	);
+	const canDissolveTransition = canTransitionLegalCompany(
+		company.status,
+		"dissolved",
+	);
+	const canArchiveTransition = canTransitionLegalCompany(
+		company.status,
+		"archived",
+	);
+
 	if (
-		company.status !== "active" &&
-		company.status !== "suspended" &&
-		company.status !== "dissolved"
+		!(canSuspend && canSuspendTransition) &&
+		!(canDissolve && canDissolveTransition) &&
+		!(canArchive && canArchiveTransition)
 	) {
 		return null;
 	}
 
 	return (
 		<div className="grid gap-6 lg:grid-cols-2">
-			{company.status === "active" && canSuspend ? (
+			{canSuspend && canSuspendTransition ? (
 				<form action={suspendAction} className="space-y-4">
 					<input type="hidden" name="legalCompanyId" value={company.id} />
 					<input type="hidden" name="expectedVersion" value={company.version} />
@@ -122,7 +136,7 @@ export function CompanyLifecycleForms({
 				</form>
 			) : null}
 
-			{canDissolve ? (
+			{canDissolve && canDissolveTransition ? (
 				<form action={dissolveAction} className="space-y-4">
 					<input type="hidden" name="legalCompanyId" value={company.id} />
 					<input type="hidden" name="expectedVersion" value={company.version} />
@@ -151,7 +165,7 @@ export function CompanyLifecycleForms({
 						</Label>
 						<Input
 							id={`dissolve-evidence-${company.id}`}
-							name="evidenceReference"
+							name="evidenceDocumentReference"
 							required
 						/>
 					</div>
@@ -188,7 +202,7 @@ export function CompanyLifecycleForms({
 				</form>
 			) : null}
 
-			{canArchive && company.status === "dissolved" ? (
+			{canArchive && canArchiveTransition ? (
 				<form action={archiveAction} className="space-y-4">
 					<input type="hidden" name="legalCompanyId" value={company.id} />
 					<input type="hidden" name="expectedVersion" value={company.version} />
@@ -198,6 +212,14 @@ export function CompanyLifecycleForms({
 							id={`archive-date-${company.id}`}
 							name="effectiveDate"
 							type="date"
+							required
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor={`archive-reason-${company.id}`}>Reason</Label>
+						<Input
+							id={`archive-reason-${company.id}`}
+							name="reason"
 							required
 						/>
 					</div>

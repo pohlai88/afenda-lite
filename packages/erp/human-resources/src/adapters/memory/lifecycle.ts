@@ -11,6 +11,7 @@ import {
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
 	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
+	HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 import {
 	type HumanResourcesClearanceId,
@@ -19,12 +20,18 @@ import {
 	type HumanResourcesEmploymentId,
 	type HumanResourcesEmploymentMovementId,
 	type HumanResourcesExitInterviewId,
+	type HumanResourcesOffboardingAccessRevocationId,
 	type HumanResourcesOffboardingCaseId,
+	type HumanResourcesOffboardingPayrollHandoffId,
 	type HumanResourcesOffboardingTaskId,
+	type HumanResourcesOnboardingAccessHandoffId,
 	type HumanResourcesOnboardingCaseId,
+	type HumanResourcesOnboardingEquipmentHandoffId,
+	type HumanResourcesOnboardingOrientationId,
 	type HumanResourcesOnboardingTaskId,
 	type HumanResourcesPositionId,
 	type HumanResourcesProbationReviewId,
+	type HumanResourcesProbationAssessmentId,
 	type HumanResourcesTerminationId,
 	type HumanResourcesWorkCalendarId,
 	parseHumanResourcesAssignmentId,
@@ -32,13 +39,24 @@ import {
 	parseHumanResourcesEmploymentConfirmationId,
 	parseHumanResourcesEmploymentMovementId,
 	parseHumanResourcesExitInterviewId,
+	parseHumanResourcesOffboardingAccessRevocationId,
 	parseHumanResourcesOffboardingCaseId,
+	parseHumanResourcesOffboardingPayrollHandoffId,
 	parseHumanResourcesOffboardingTaskId,
+	parseHumanResourcesOnboardingAccessHandoffId,
 	parseHumanResourcesOnboardingCaseId,
+	parseHumanResourcesOnboardingEquipmentHandoffId,
+	parseHumanResourcesOnboardingOrientationId,
 	parseHumanResourcesOnboardingTaskId,
 	parseHumanResourcesProbationReviewId,
+	parseHumanResourcesProbationAssessmentId,
 	parseHumanResourcesTerminationId,
 } from "../../brands";
+import {
+	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
+	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
+	ONBOARDING_TASK_CODE_ORIENTATION,
+} from "../../lifecycle/onboarding-checklist";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type {
 	HumanResourcesOrganizationDimensions,
@@ -63,10 +81,22 @@ import {
 	assertEmploymentActiveForOnboarding,
 	assertEmploymentForOffboarding,
 	assertLatestProbationPassed,
+	assertProbationAssessmentReviewedOn,
+	assertProbationOutcomeRecordedOn,
+	assertConfirmationEffectiveOn,
 	assertLifecycleTaskStatusTransition,
+	assertOffboardingAccessRevocationStatusTransition,
 	assertOffboardingCaseInProgress,
+	assertOffboardingPayrollHandoffStatusTransition,
 	assertOffboardingReadyToComplete,
+	assertTerminationApprovable,
+	assertTerminationFinalizable,
+	assertTerminationStatusTransition,
+	assertOnboardingAccessHandoffStatusTransition,
 	assertOnboardingCaseInProgress,
+	assertOnboardingEquipmentHandoffStatusTransition,
+	assertOnboardingOrientationStatusTransition,
+	assertOnboardingReadyToComplete,
 	assertProbationDateRange,
 	assertProbationExtension,
 	assertProbationOpen,
@@ -87,6 +117,8 @@ import type {
 	IdempotentProbationReviewRecord,
 	IdempotentTerminationRecord,
 	OffboardingCaseCreateRecord,
+	TerminationApproveRecord,
+	TerminationFinalizeRecord,
 	OnboardingCaseCreateRecord,
 	ProbationReviewCreateRecord,
 	TerminationCreateRecord,
@@ -97,10 +129,16 @@ import type {
 	EmploymentConfirmation,
 	EmploymentMovement,
 	ExitInterview,
+	OffboardingAccessRevocation,
 	OffboardingCase,
+	OffboardingPayrollHandoff,
 	OffboardingTask,
+	OnboardingAccessHandoff,
 	OnboardingCase,
+	OnboardingEquipmentHandoff,
+	OnboardingOrientation,
 	OnboardingTask,
+	ProbationAssessment,
 	ProbationReview,
 	Termination,
 	WorkAssignment,
@@ -121,12 +159,109 @@ function cloneOnboardingCase(value: OnboardingCase): OnboardingCase {
 	};
 }
 
+function cloneOnboardingOrientation(
+	value: OnboardingOrientation,
+): OnboardingOrientation {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneOnboardingEquipmentHandoff(
+	value: OnboardingEquipmentHandoff,
+): OnboardingEquipmentHandoff {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneOnboardingAccessHandoff(
+	value: OnboardingAccessHandoff,
+): OnboardingAccessHandoff {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function completeOnboardingTaskByCode(
+	state: LifecycleMemoryState,
+	input: {
+		organizationId: string;
+		caseId: HumanResourcesOnboardingCaseId;
+		code: string;
+		actorUserId: string;
+	},
+): OnboardingTask | null {
+	const task = Array.from(state.onboardingTasks.values()).find(
+		(row) =>
+			row.organizationId === input.organizationId &&
+			row.caseId === input.caseId &&
+			row.code === input.code,
+	);
+	if (task === undefined) {
+		return null;
+	}
+	if (task.status === "completed" || task.status === "waived") {
+		return task;
+	}
+	const now = new Date();
+	const updated: OnboardingTask = {
+		...task,
+		status: "completed",
+		completedAt: now,
+		version: task.version + 1,
+		updatedBy: input.actorUserId,
+		updatedAt: now,
+	};
+	state.onboardingTasks.set(task.id, updated);
+	return updated;
+}
+
 function cloneProbationReview(value: ProbationReview): ProbationReview {
 	return {
 		...value,
 		createdAt: new Date(value.createdAt),
 		updatedAt: new Date(value.updatedAt),
 	};
+}
+
+function cloneProbationAssessment(value: ProbationAssessment): ProbationAssessment {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function probationReviewEventBase(
+	probation: ProbationReview,
+	actorId: string,
+	correlationId: string,
+) {
+	return {
+		organizationId: probation.organizationId,
+		entityType: "hr_probation_review",
+		entityId: probation.id,
+		actorId,
+		correlationId,
+		employmentId: probation.employmentId,
+	};
+}
+
+function withOptionalEvidenceReference<T extends Record<string, unknown>>(
+	payload: T,
+	evidenceReference: string | null,
+): T & { evidenceReference?: string } {
+	if (evidenceReference === null) {
+		return payload;
+	}
+	return { ...payload, evidenceReference };
 }
 
 function cloneEmploymentConfirmation(
@@ -152,7 +287,28 @@ function cloneEmploymentMovement(
 function cloneTermination(value: Termination): Termination {
 	return {
 		...value,
+		approvedAt: value.approvedAt ? new Date(value.approvedAt) : null,
 		finalizedAt: value.finalizedAt ? new Date(value.finalizedAt) : null,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneOffboardingAccessRevocation(
+	value: OffboardingAccessRevocation,
+): OffboardingAccessRevocation {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneOffboardingPayrollHandoff(
+	value: OffboardingPayrollHandoff,
+): OffboardingPayrollHandoff {
+	return {
+		...value,
 		createdAt: new Date(value.createdAt),
 		updatedAt: new Date(value.updatedAt),
 	};
@@ -171,8 +327,24 @@ function cloneOffboardingCase(value: OffboardingCase): OffboardingCase {
 export type LifecycleMemoryState = {
 	onboardingCases: Map<HumanResourcesOnboardingCaseId, OnboardingCase>;
 	onboardingTasks: Map<HumanResourcesOnboardingTaskId, OnboardingTask>;
+	onboardingOrientations: Map<
+		HumanResourcesOnboardingOrientationId,
+		OnboardingOrientation
+	>;
+	onboardingEquipmentHandoffs: Map<
+		HumanResourcesOnboardingEquipmentHandoffId,
+		OnboardingEquipmentHandoff
+	>;
+	onboardingAccessHandoffs: Map<
+		HumanResourcesOnboardingAccessHandoffId,
+		OnboardingAccessHandoff
+	>;
 	onboardingIdempotencyByKey: Map<string, IdempotentOnboardingCaseRecord>;
 	probationReviews: Map<HumanResourcesProbationReviewId, ProbationReview>;
+	probationAssessments: Map<
+		HumanResourcesProbationAssessmentId,
+		ProbationAssessment
+	>;
 	probationIdempotencyByKey: Map<string, IdempotentProbationReviewRecord>;
 	employmentConfirmations: Map<
 		HumanResourcesEmploymentConfirmationId,
@@ -191,6 +363,14 @@ export type LifecycleMemoryState = {
 	terminationIdempotencyByKey: Map<string, IdempotentTerminationRecord>;
 	offboardingCases: Map<HumanResourcesOffboardingCaseId, OffboardingCase>;
 	offboardingTasks: Map<HumanResourcesOffboardingTaskId, OffboardingTask>;
+	offboardingAccessRevocations: Map<
+		HumanResourcesOffboardingAccessRevocationId,
+		OffboardingAccessRevocation
+	>;
+	offboardingPayrollHandoffs: Map<
+		HumanResourcesOffboardingPayrollHandoffId,
+		OffboardingPayrollHandoff
+	>;
 	exitInterviews: Map<HumanResourcesExitInterviewId, ExitInterview>;
 	clearances: Map<HumanResourcesClearanceId, Clearance>;
 	offboardingIdempotencyByKey: Map<string, IdempotentOffboardingCaseRecord>;
@@ -210,10 +390,20 @@ export type MemoryLifecycleMethods = Pick<
 	| "completeOnboardingTask"
 	| "completeOnboarding"
 	| "listOnboardingTasks"
+	| "getOnboardingTask"
+	| "getOnboardingOrientationByCase"
+	| "getOnboardingEquipmentHandoffByCase"
+	| "getOnboardingAccessHandoffByCase"
+	| "recordOnboardingOrientation"
+	| "recordOnboardingEquipmentHandoff"
+	| "recordOnboardingAccessHandoff"
 	| "getProbationReview"
+	| "listProbationReviewsByEmployment"
+	| "listProbationAssessments"
 	| "findProbationByOpenIdempotencyKey"
 	| "openProbation"
 	| "extendProbation"
+	| "recordProbationAssessment"
 	| "recordProbationOutcome"
 	| "getEmploymentConfirmation"
 	| "findConfirmationByIdempotencyKey"
@@ -222,6 +412,8 @@ export type MemoryLifecycleMethods = Pick<
 	| "transferAssignment"
 	| "getTermination"
 	| "findTerminationByIdempotencyKey"
+	| "proposeTermination"
+	| "approveTermination"
 	| "finalizeTermination"
 	| "getOffboardingCase"
 	| "findOffboardingByStartIdempotencyKey"
@@ -232,6 +424,10 @@ export type MemoryLifecycleMethods = Pick<
 	| "completeOffboarding"
 	| "listOffboardingTasks"
 	| "getClearanceByOffboardingCase"
+	| "getOffboardingAccessRevocationByCase"
+	| "getOffboardingPayrollHandoffByCase"
+	| "recordOffboardingAccessRevocation"
+	| "recordOffboardingPayrollHandoff"
 >;
 
 export type LifecycleMemoryHost = Pick<
@@ -246,8 +442,12 @@ export function createLifecycleMemoryState(): LifecycleMemoryState {
 	return {
 		onboardingCases: new Map(),
 		onboardingTasks: new Map(),
+		onboardingOrientations: new Map(),
+		onboardingEquipmentHandoffs: new Map(),
+		onboardingAccessHandoffs: new Map(),
 		onboardingIdempotencyByKey: new Map(),
 		probationReviews: new Map(),
+		probationAssessments: new Map(),
 		probationIdempotencyByKey: new Map(),
 		employmentConfirmations: new Map(),
 		confirmationIdempotencyByKey: new Map(),
@@ -257,6 +457,8 @@ export function createLifecycleMemoryState(): LifecycleMemoryState {
 		terminationIdempotencyByKey: new Map(),
 		offboardingCases: new Map(),
 		offboardingTasks: new Map(),
+		offboardingAccessRevocations: new Map(),
+		offboardingPayrollHandoffs: new Map(),
 		exitInterviews: new Map(),
 		clearances: new Map(),
 		offboardingIdempotencyByKey: new Map(),
@@ -266,8 +468,12 @@ export function createLifecycleMemoryState(): LifecycleMemoryState {
 export function resetLifecycleMemoryState(state: LifecycleMemoryState): void {
 	state.onboardingCases.clear();
 	state.onboardingTasks.clear();
+	state.onboardingOrientations.clear();
+	state.onboardingEquipmentHandoffs.clear();
+	state.onboardingAccessHandoffs.clear();
 	state.onboardingIdempotencyByKey.clear();
 	state.probationReviews.clear();
+	state.probationAssessments.clear();
 	state.probationIdempotencyByKey.clear();
 	state.employmentConfirmations.clear();
 	state.confirmationIdempotencyByKey.clear();
@@ -277,6 +483,8 @@ export function resetLifecycleMemoryState(state: LifecycleMemoryState): void {
 	state.terminationIdempotencyByKey.clear();
 	state.offboardingCases.clear();
 	state.offboardingTasks.clear();
+	state.offboardingAccessRevocations.clear();
+	state.offboardingPayrollHandoffs.clear();
 	state.exitInterviews.clear();
 	state.clearances.clear();
 	state.offboardingIdempotencyByKey.clear();
@@ -418,10 +626,77 @@ export function createMemoryLifecycleMethods(
 				});
 			}
 
+			const orientationIdResult = parseHumanResourcesOnboardingOrientationId(
+				randomUUID(),
+			);
+			if (!orientationIdResult.ok) {
+				return orientationIdResult;
+			}
+			const equipmentHandoffIdResult =
+				parseHumanResourcesOnboardingEquipmentHandoffId(randomUUID());
+			if (!equipmentHandoffIdResult.ok) {
+				return equipmentHandoffIdResult;
+			}
+			const accessHandoffIdResult = parseHumanResourcesOnboardingAccessHandoffId(
+				randomUUID(),
+			);
+			if (!accessHandoffIdResult.ok) {
+				return accessHandoffIdResult;
+			}
+
+			const orientation: OnboardingOrientation = {
+				id: orientationIdResult.data,
+				organizationId: record.organizationId,
+				onboardingCaseId: onboardingCase.id,
+				employmentId: record.employmentId,
+				status: "pending",
+				acknowledgedOn: null,
+				notes: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const equipmentHandoff: OnboardingEquipmentHandoff = {
+				id: equipmentHandoffIdResult.data,
+				organizationId: record.organizationId,
+				onboardingCaseId: onboardingCase.id,
+				employmentId: record.employmentId,
+				status: "pending",
+				handedOverOn: null,
+				summary: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const accessHandoff: OnboardingAccessHandoff = {
+				id: accessHandoffIdResult.data,
+				organizationId: record.organizationId,
+				onboardingCaseId: onboardingCase.id,
+				employmentId: record.employmentId,
+				status: "pending",
+				grantedOn: null,
+				summary: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
 			state.onboardingCases.set(onboardingCase.id, onboardingCase);
 			for (const task of seededTasks) {
 				state.onboardingTasks.set(task.id, task);
 			}
+			state.onboardingOrientations.set(orientation.id, orientation);
+			state.onboardingEquipmentHandoffs.set(
+				equipmentHandoff.id,
+				equipmentHandoff,
+			);
+			state.onboardingAccessHandoffs.set(accessHandoff.id, accessHandoff);
 			const idemKey = idempotencyMapKey(
 				record.organizationId,
 				record.idempotencyKey,
@@ -445,6 +720,9 @@ export function createMemoryLifecycleMethods(
 				for (const task of seededTasks) {
 					state.onboardingTasks.delete(task.id);
 				}
+				state.onboardingOrientations.delete(orientation.id);
+				state.onboardingEquipmentHandoffs.delete(equipmentHandoff.id);
+				state.onboardingAccessHandoffs.delete(accessHandoff.id);
 				state.onboardingIdempotencyByKey.delete(idemKey);
 				return audit;
 			}
@@ -467,6 +745,9 @@ export function createMemoryLifecycleMethods(
 				for (const task of seededTasks) {
 					state.onboardingTasks.delete(task.id);
 				}
+				state.onboardingOrientations.delete(orientation.id);
+				state.onboardingEquipmentHandoffs.delete(equipmentHandoff.id);
+				state.onboardingAccessHandoffs.delete(accessHandoff.id);
 				state.onboardingIdempotencyByKey.delete(idemKey);
 				return outbox;
 			}
@@ -578,14 +859,38 @@ export function createMemoryLifecycleMethods(
 					task.organizationId === input.organizationId &&
 					task.caseId === onboardingCase.id,
 			);
-			const mandatoryIncomplete = tasks.some(
+			const mandatoryTasksComplete = tasks.every(
 				(task) =>
-					task.mandatory &&
-					task.status !== "completed" &&
-					task.status !== "waived",
+					!task.mandatory ||
+					task.status === "completed" ||
+					task.status === "waived",
 			);
-			if (mandatoryIncomplete) {
-				return invalidState("All mandatory tasks must be completed or waived");
+			const orientation =
+				Array.from(state.onboardingOrientations.values()).find(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.onboardingCaseId === onboardingCase.id,
+				) ?? null;
+			const equipmentHandoff =
+				Array.from(state.onboardingEquipmentHandoffs.values()).find(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.onboardingCaseId === onboardingCase.id,
+				) ?? null;
+			const accessHandoff =
+				Array.from(state.onboardingAccessHandoffs.values()).find(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.onboardingCaseId === onboardingCase.id,
+				) ?? null;
+			const ready = assertOnboardingReadyToComplete({
+				mandatoryTasksComplete,
+				orientationStatus: orientation?.status ?? null,
+				equipmentHandoffStatus: equipmentHandoff?.status ?? null,
+				accessHandoffStatus: accessHandoff?.status ?? null,
+			});
+			if (!ready.ok) {
+				return ready;
 			}
 
 			const now = new Date();
@@ -635,6 +940,327 @@ export function createMemoryLifecycleMethods(
 			return ok(cloneOnboardingCase(updated));
 		},
 
+		async listOnboardingTasks(input: {
+			organizationId: string;
+			onboardingCaseId: HumanResourcesOnboardingCaseId;
+		}): Promise<Result<OnboardingTask[]>> {
+			const onboardingCase = state.onboardingCases.get(input.onboardingCaseId);
+			if (
+				!onboardingCase ||
+				onboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Onboarding case not found");
+			}
+			const tasks = Array.from(state.onboardingTasks.values())
+				.filter(
+					(task) =>
+						task.organizationId === input.organizationId &&
+						task.caseId === input.onboardingCaseId,
+				)
+				.map((task) => ({ ...task, completedAt: task.completedAt }));
+			tasks.sort((a, b) => a.code.localeCompare(b.code));
+			return ok(tasks);
+		},
+
+		async getOnboardingTask(input: {
+			organizationId: string;
+			taskId: HumanResourcesOnboardingTaskId;
+		}): Promise<Result<OnboardingTask | null>> {
+			const task = state.onboardingTasks.get(input.taskId);
+			if (!task || task.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+			return ok({ ...task, completedAt: task.completedAt });
+		},
+
+		async getOnboardingOrientationByCase(input: {
+			organizationId: string;
+			onboardingCaseId: HumanResourcesOnboardingCaseId;
+		}): Promise<Result<OnboardingOrientation | null>> {
+			const row = Array.from(state.onboardingOrientations.values()).find(
+				(item) =>
+					item.organizationId === input.organizationId &&
+					item.onboardingCaseId === input.onboardingCaseId,
+			);
+			return ok(row === undefined ? null : cloneOnboardingOrientation(row));
+		},
+
+		async getOnboardingEquipmentHandoffByCase(input: {
+			organizationId: string;
+			onboardingCaseId: HumanResourcesOnboardingCaseId;
+		}): Promise<Result<OnboardingEquipmentHandoff | null>> {
+			const row = Array.from(state.onboardingEquipmentHandoffs.values()).find(
+				(item) =>
+					item.organizationId === input.organizationId &&
+					item.onboardingCaseId === input.onboardingCaseId,
+			);
+			return ok(
+				row === undefined ? null : cloneOnboardingEquipmentHandoff(row),
+			);
+		},
+
+		async getOnboardingAccessHandoffByCase(input: {
+			organizationId: string;
+			onboardingCaseId: HumanResourcesOnboardingCaseId;
+		}): Promise<Result<OnboardingAccessHandoff | null>> {
+			const row = Array.from(state.onboardingAccessHandoffs.values()).find(
+				(item) =>
+					item.organizationId === input.organizationId &&
+					item.onboardingCaseId === input.onboardingCaseId,
+			);
+			return ok(row === undefined ? null : cloneOnboardingAccessHandoff(row));
+		},
+
+		async recordOnboardingOrientation(
+			input: {
+				organizationId: string;
+				orientationId: HumanResourcesOnboardingOrientationId;
+				acknowledgedOn: string;
+				notes: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<OnboardingCase>> {
+			const orientation = state.onboardingOrientations.get(input.orientationId);
+			if (!orientation || orientation.organizationId !== input.organizationId) {
+				return notFound("Onboarding orientation not found");
+			}
+			const onboardingCase = state.onboardingCases.get(
+				orientation.onboardingCaseId,
+			);
+			if (
+				!onboardingCase ||
+				onboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Onboarding case not found");
+			}
+			const caseActive = assertOnboardingCaseInProgress(onboardingCase.status);
+			if (!caseActive.ok) {
+				return caseActive;
+			}
+			const versionCheck = assertExpectedVersion(
+				orientation.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertOnboardingOrientationStatusTransition(
+				orientation.status,
+				"acknowledged",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previous = { ...orientation };
+			const updated: OnboardingOrientation = {
+				...orientation,
+				status: "acknowledged",
+				acknowledgedOn: input.acknowledgedOn,
+				notes: input.notes,
+				version: orientation.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.onboardingOrientations.set(updated.id, updated);
+			completeOnboardingTaskByCode(state, {
+				organizationId: input.organizationId,
+				caseId: onboardingCase.id,
+				code: ONBOARDING_TASK_CODE_ORIENTATION,
+				actorUserId: input.actorUserId,
+			});
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_onboarding_orientation",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.onboardingOrientations.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok(cloneOnboardingCase(onboardingCase));
+		},
+
+		async recordOnboardingEquipmentHandoff(
+			input: {
+				organizationId: string;
+				equipmentHandoffId: HumanResourcesOnboardingEquipmentHandoffId;
+				handedOverOn: string;
+				summary: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<OnboardingCase>> {
+			const equipmentHandoff = state.onboardingEquipmentHandoffs.get(
+				input.equipmentHandoffId,
+			);
+			if (
+				!equipmentHandoff ||
+				equipmentHandoff.organizationId !== input.organizationId
+			) {
+				return notFound("Onboarding equipment handoff not found");
+			}
+			const onboardingCase = state.onboardingCases.get(
+				equipmentHandoff.onboardingCaseId,
+			);
+			if (
+				!onboardingCase ||
+				onboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Onboarding case not found");
+			}
+			const caseActive = assertOnboardingCaseInProgress(onboardingCase.status);
+			if (!caseActive.ok) {
+				return caseActive;
+			}
+			const versionCheck = assertExpectedVersion(
+				equipmentHandoff.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertOnboardingEquipmentHandoffStatusTransition(
+				equipmentHandoff.status,
+				"handed_over",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previous = { ...equipmentHandoff };
+			const updated: OnboardingEquipmentHandoff = {
+				...equipmentHandoff,
+				status: "handed_over",
+				handedOverOn: input.handedOverOn,
+				summary: input.summary,
+				version: equipmentHandoff.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.onboardingEquipmentHandoffs.set(updated.id, updated);
+			completeOnboardingTaskByCode(state, {
+				organizationId: input.organizationId,
+				caseId: onboardingCase.id,
+				code: ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
+				actorUserId: input.actorUserId,
+			});
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_onboarding_equipment_handoff",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.onboardingEquipmentHandoffs.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok(cloneOnboardingCase(onboardingCase));
+		},
+
+		async recordOnboardingAccessHandoff(
+			input: {
+				organizationId: string;
+				accessHandoffId: HumanResourcesOnboardingAccessHandoffId;
+				grantedOn: string;
+				summary: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<OnboardingCase>> {
+			const accessHandoff = state.onboardingAccessHandoffs.get(
+				input.accessHandoffId,
+			);
+			if (
+				!accessHandoff ||
+				accessHandoff.organizationId !== input.organizationId
+			) {
+				return notFound("Onboarding access handoff not found");
+			}
+			const onboardingCase = state.onboardingCases.get(
+				accessHandoff.onboardingCaseId,
+			);
+			if (
+				!onboardingCase ||
+				onboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Onboarding case not found");
+			}
+			const caseActive = assertOnboardingCaseInProgress(onboardingCase.status);
+			if (!caseActive.ok) {
+				return caseActive;
+			}
+			const versionCheck = assertExpectedVersion(
+				accessHandoff.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertOnboardingAccessHandoffStatusTransition(
+				accessHandoff.status,
+				"granted",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previous = { ...accessHandoff };
+			const updated: OnboardingAccessHandoff = {
+				...accessHandoff,
+				status: "granted",
+				grantedOn: input.grantedOn,
+				summary: input.summary,
+				version: accessHandoff.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.onboardingAccessHandoffs.set(updated.id, updated);
+			completeOnboardingTaskByCode(state, {
+				organizationId: input.organizationId,
+				caseId: onboardingCase.id,
+				code: ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
+				actorUserId: input.actorUserId,
+			});
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_onboarding_access_handoff",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.onboardingAccessHandoffs.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok(cloneOnboardingCase(onboardingCase));
+		},
+
 		// --- Lifecycle: probation ---
 
 		async getProbationReview(input: {
@@ -646,6 +1272,40 @@ export function createMemoryLifecycleMethods(
 				return ok(null);
 			}
 			return ok(cloneProbationReview(row));
+		},
+
+		async listProbationReviewsByEmployment(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+		}): Promise<Result<ProbationReview[]>> {
+			const rows = Array.from(state.probationReviews.values())
+				.filter(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.employmentId === input.employmentId,
+				)
+				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.map(cloneProbationReview);
+			return ok(rows);
+		},
+
+		async listProbationAssessments(input: {
+			organizationId: string;
+			probationReviewId: HumanResourcesProbationReviewId;
+		}): Promise<Result<ProbationAssessment[]>> {
+			const probation = state.probationReviews.get(input.probationReviewId);
+			if (!probation || probation.organizationId !== input.organizationId) {
+				return notFound("Probation review not found");
+			}
+			const rows = Array.from(state.probationAssessments.values())
+				.filter(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.probationReviewId === input.probationReviewId,
+				)
+				.sort((a, b) => a.reviewedOn.localeCompare(b.reviewedOn))
+				.map(cloneProbationAssessment);
+			return ok(rows);
 		},
 
 		async findProbationByOpenIdempotencyKey(input: {
@@ -730,6 +1390,10 @@ export function createMemoryLifecycleMethods(
 				outcome: null,
 				outcomeActorId: null,
 				outcomeRecordedOn: null,
+				lastExtensionReason: null,
+				lastExtensionEvidenceReference: null,
+				outcomeReason: null,
+				outcomeEvidenceReference: null,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -770,6 +1434,8 @@ export function createMemoryLifecycleMethods(
 				organizationId: string;
 				probationReviewId: HumanResourcesProbationReviewId;
 				newEndsOn: string;
+				reason: string;
+				evidenceReference: string | null;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -804,6 +1470,8 @@ export function createMemoryLifecycleMethods(
 			const updated: ProbationReview = {
 				...probation,
 				endsOn: input.newEndsOn,
+				lastExtensionReason: input.reason,
+				lastExtensionEvidenceReference: input.evidenceReference,
 				version: probation.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -829,13 +1497,18 @@ export function createMemoryLifecycleMethods(
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
 				type: HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
-				payload: {
-					organizationId: updated.organizationId,
-					entityType: "hr_probation_review",
-					entityId: updated.id,
-					actorId: input.actorUserId,
-					correlationId: meta.correlationId,
-				},
+				payload: withOptionalEvidenceReference(
+					{
+						...probationReviewEventBase(
+							updated,
+							input.actorUserId,
+							meta.correlationId,
+						),
+						newEndsOn: input.newEndsOn,
+						reason: input.reason,
+					},
+					input.evidenceReference,
+				),
 			});
 			if (!outbox.ok) {
 				state.probationReviews.set(updated.id, previous);
@@ -845,12 +1518,126 @@ export function createMemoryLifecycleMethods(
 			return ok(cloneProbationReview(updated));
 		},
 
+		async recordProbationAssessment(
+			input: {
+				organizationId: string;
+				probationReviewId: HumanResourcesProbationReviewId;
+				reviewedOn: string;
+				reason: string;
+				evidenceReference: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<ProbationAssessment>> {
+			const probation = state.probationReviews.get(input.probationReviewId);
+			if (!probation || probation.organizationId !== input.organizationId) {
+				return notFound("Probation review not found");
+			}
+			const openCheck = assertProbationOpen(probation.status);
+			if (!openCheck.ok) {
+				return openCheck;
+			}
+			const versionCheck = assertExpectedVersion(
+				probation.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const reviewedOnCheck = assertProbationAssessmentReviewedOn({
+				startsOn: probation.startsOn,
+				endsOn: probation.endsOn,
+				reviewedOn: input.reviewedOn,
+			});
+			if (!reviewedOnCheck.ok) {
+				return reviewedOnCheck;
+			}
+
+			const idResult = parseHumanResourcesProbationAssessmentId(randomUUID());
+			if (!idResult.ok) {
+				return idResult;
+			}
+			const now = new Date();
+			const previousProbation = { ...probation };
+			const updatedProbation: ProbationReview = {
+				...probation,
+				version: probation.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const assessment: ProbationAssessment = {
+				id: idResult.data,
+				organizationId: input.organizationId,
+				probationReviewId: input.probationReviewId,
+				employmentId: probation.employmentId,
+				employeeId: probation.employeeId,
+				reviewedOn: input.reviewedOn,
+				reason: input.reason,
+				evidenceReference: input.evidenceReference,
+				actorUserId: input.actorUserId,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.probationReviews.set(updatedProbation.id, updatedProbation);
+			state.probationAssessments.set(assessment.id, assessment);
+
+			const audit = await ports.audit.record({
+				organizationId: assessment.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_probation_assessment",
+				entityId: assessment.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.probationReviews.set(updatedProbation.id, previousProbation);
+				state.probationAssessments.delete(assessment.id);
+				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: assessment.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT,
+				payload: withOptionalEvidenceReference(
+					{
+						...probationReviewEventBase(
+							updatedProbation,
+							input.actorUserId,
+							meta.correlationId,
+						),
+						probationReviewId: assessment.probationReviewId,
+						reviewedOn: input.reviewedOn,
+						reason: input.reason,
+					},
+					input.evidenceReference,
+				),
+			});
+			if (!outbox.ok) {
+				state.probationReviews.set(updatedProbation.id, previousProbation);
+				state.probationAssessments.delete(assessment.id);
+				return outbox;
+			}
+
+			return ok(cloneProbationAssessment(assessment));
+		},
+
 		async recordProbationOutcome(
 			input: {
 				organizationId: string;
 				probationReviewId: HumanResourcesProbationReviewId;
 				outcome: ProbationOutcome;
 				concludedOn: string;
+				reason: string;
+				evidenceReference: string | null;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -872,6 +1659,14 @@ export function createMemoryLifecycleMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
+			const outcomeDateCheck = assertProbationOutcomeRecordedOn({
+				startsOn: probation.startsOn,
+				endsOn: probation.endsOn,
+				outcomeRecordedOn: input.concludedOn,
+			});
+			if (!outcomeDateCheck.ok) {
+				return outcomeDateCheck;
+			}
 
 			const now = new Date();
 			const previous = { ...probation };
@@ -881,6 +1676,8 @@ export function createMemoryLifecycleMethods(
 				outcome: input.outcome,
 				outcomeActorId: input.actorUserId,
 				outcomeRecordedOn: input.concludedOn,
+				outcomeReason: input.reason,
+				outcomeEvidenceReference: input.evidenceReference,
 				version: probation.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -906,13 +1703,19 @@ export function createMemoryLifecycleMethods(
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
 				type: HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
-				payload: {
-					organizationId: updated.organizationId,
-					entityType: "hr_probation_review",
-					entityId: updated.id,
-					actorId: input.actorUserId,
-					correlationId: meta.correlationId,
-				},
+				payload: withOptionalEvidenceReference(
+					{
+						...probationReviewEventBase(
+							updated,
+							input.actorUserId,
+							meta.correlationId,
+						),
+						outcome: input.outcome,
+						outcomeRecordedOn: input.concludedOn,
+						reason: input.reason,
+					},
+					input.evidenceReference,
+				),
 			});
 			if (!outbox.ok) {
 				state.probationReviews.set(updated.id, previous);
@@ -1015,6 +1818,16 @@ export function createMemoryLifecycleMethods(
 			if (!probationGate.ok) {
 				return probationGate;
 			}
+			const confirmationDateCheck = assertConfirmationEffectiveOn({
+				confirmedOn: record.confirmedOn,
+				latestPassedOutcomeRecordedOn:
+					latestClosed?.outcome === "passed"
+						? latestClosed.outcomeRecordedOn
+						: null,
+			});
+			if (!confirmationDateCheck.ok) {
+				return confirmationDateCheck;
+			}
 
 			const idResult = parseHumanResourcesEmploymentConfirmationId(
 				randomUUID(),
@@ -1074,6 +1887,8 @@ export function createMemoryLifecycleMethods(
 					entityId: confirmation.employeeId,
 					actorId: record.createdBy,
 					correlationId: meta.correlationId,
+					confirmedOn: record.confirmedOn,
+					evidenceNote: record.evidenceNote,
 				},
 			});
 			if (!outbox.ok) {
@@ -1353,7 +2168,7 @@ export function createMemoryLifecycleMethods(
 			});
 		},
 
-		async finalizeTermination(
+		async proposeTermination(
 			record: TerminationCreateRecord,
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -1393,10 +2208,14 @@ export function createMemoryLifecycleMethods(
 			for (const existing of state.terminations.values()) {
 				if (
 					existing.organizationId === record.organizationId &&
-					existing.employmentId === record.employmentId &&
-					existing.status === "finalized"
+					existing.employmentId === record.employmentId
 				) {
-					return conflict("Employment already has a finalized termination");
+					if (existing.status === "draft") {
+						return conflict("Employment already has an open termination draft");
+					}
+					if (existing.status === "finalized") {
+						return conflict("Employment already has a finalized termination");
+					}
 				}
 			}
 
@@ -1410,44 +2229,22 @@ export function createMemoryLifecycleMethods(
 				organizationId: record.organizationId,
 				employmentId: record.employmentId,
 				employeeId: employment.employeeId,
-				status: "finalized",
+				status: "draft",
 				reasonCode: record.reasonCode,
 				reasonDetail: record.reasonDetail,
 				effectiveOn: record.effectiveOn,
-				finalizedAt: now,
+				approvedAt: null,
+				approvedBy: null,
+				rehireEligible: record.rehireEligible,
+				finalizedAt: null,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
 				createdAt: now,
 				updatedAt: now,
 			};
-			const previousEmployment = { ...employment };
-			const updatedEmployment: Employment = {
-				...employment,
-				status: "terminated",
-				endsOn: record.effectiveOn,
-				version: employment.version + 1,
-				updatedBy: record.createdBy,
-				updatedAt: now,
-			};
 
 			state.terminations.set(termination.id, termination);
-			deps.core.employments.set(employment.id, updatedEmployment);
-			appendEmploymentHistoryToState(deps.core, {
-				organizationId: updatedEmployment.organizationId,
-				employmentId: updatedEmployment.id,
-				employeeId: updatedEmployment.employeeId,
-				fromStatus: employment.status,
-				toStatus: "terminated",
-				startsOnSnapshot: updatedEmployment.startsOn,
-				endsOnSnapshot: updatedEmployment.endsOn,
-				effectiveOn: record.effectiveOn,
-				changeKind: "lifecycle",
-				reason: record.reasonCode,
-				evidenceReference: record.reasonDetail,
-				correlationId: meta.correlationId,
-				actorUserId: record.createdBy,
-			});
 			const idemKey = idempotencyMapKey(
 				record.organizationId,
 				record.idempotencyKey,
@@ -1468,33 +2265,205 @@ export function createMemoryLifecycleMethods(
 			});
 			if (!audit.ok) {
 				state.terminations.delete(termination.id);
-				deps.core.employments.set(employment.id, previousEmployment);
 				state.terminationIdempotencyByKey.delete(idemKey);
 				return audit;
 			}
 
+			return ok(cloneTermination(termination));
+		},
+
+		async approveTermination(
+			record: TerminationApproveRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Termination>> {
+			const termination = state.terminations.get(record.terminationId);
+			if (
+				!termination ||
+				termination.organizationId !== record.organizationId
+			) {
+				return notFound("Termination not found");
+			}
+			const approvable = assertTerminationApprovable({
+				status: termination.status,
+				approvedAt: termination.approvedAt,
+			});
+			if (!approvable.ok) {
+				return approvable;
+			}
+			const versionCheck = assertExpectedVersion(
+				termination.version,
+				record.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const now = new Date();
+			const previous = cloneTermination(termination);
+			const updated: Termination = {
+				...termination,
+				approvedAt: now,
+				approvedBy: record.actorUserId,
+				version: termination.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			};
+			state.terminations.set(updated.id, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: record.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_termination",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.terminations.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok(cloneTermination(updated));
+		},
+
+		async finalizeTermination(
+			record: TerminationFinalizeRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Termination>> {
+			const termination = state.terminations.get(record.terminationId);
+			if (
+				!termination ||
+				termination.organizationId !== record.organizationId
+			) {
+				return notFound("Termination not found");
+			}
+			const finalizable = assertTerminationFinalizable({
+				status: termination.status,
+				approvedAt: termination.approvedAt,
+				approvedBy: termination.approvedBy,
+			});
+			if (!finalizable.ok) {
+				return finalizable;
+			}
+			const versionCheck = assertExpectedVersion(
+				termination.version,
+				record.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const employment = deps.core.employments.get(termination.employmentId);
+			if (!employment || employment.organizationId !== record.organizationId) {
+				return notFound(
+					"Employment not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const effectiveCheck = assertTerminationEffectiveDate({
+				effectiveOn: termination.effectiveOn,
+				employmentStartsOn: employment.startsOn,
+			});
+			if (!effectiveCheck.ok) {
+				return effectiveCheck;
+			}
+
+			for (const existing of state.terminations.values()) {
+				if (
+					existing.organizationId === record.organizationId &&
+					existing.employmentId === termination.employmentId &&
+					existing.status === "finalized" &&
+					existing.id !== termination.id
+				) {
+					return conflict("Employment already has a finalized termination");
+				}
+			}
+
+			const transition = assertTerminationStatusTransition(
+				termination.status,
+				"finalized",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previousTermination = cloneTermination(termination);
+			const updatedTermination: Termination = {
+				...termination,
+				status: "finalized",
+				finalizedAt: now,
+				version: termination.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			};
+			const previousEmployment = { ...employment };
+			const updatedEmployment: Employment = {
+				...employment,
+				status: "terminated",
+				endsOn: termination.effectiveOn,
+				version: employment.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			};
+
+			state.terminations.set(updatedTermination.id, updatedTermination);
+			deps.core.employments.set(employment.id, updatedEmployment);
+			appendEmploymentHistoryToState(deps.core, {
+				organizationId: updatedEmployment.organizationId,
+				employmentId: updatedEmployment.id,
+				employeeId: updatedEmployment.employeeId,
+				fromStatus: employment.status,
+				toStatus: "terminated",
+				startsOnSnapshot: updatedEmployment.startsOn,
+				endsOnSnapshot: updatedEmployment.endsOn,
+				effectiveOn: termination.effectiveOn,
+				changeKind: "lifecycle",
+				reason: termination.reasonCode,
+				evidenceReference: termination.reasonDetail,
+				correlationId: meta.correlationId,
+				actorUserId: record.actorUserId,
+			});
+
+			const audit = await ports.audit.record({
+				organizationId: updatedTermination.organizationId,
+				actorUserId: record.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_termination",
+				entityId: updatedTermination.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.terminations.set(updatedTermination.id, previousTermination);
+				deps.core.employments.set(employment.id, previousEmployment);
+				return audit;
+			}
+
 			const outbox = await ports.outbox.append({
-				organizationId: termination.organizationId,
-				actorUserId: record.createdBy,
+				organizationId: updatedTermination.organizationId,
+				actorUserId: record.actorUserId,
 				correlationId: meta.correlationId,
 				type: HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 				payload: {
-					organizationId: termination.organizationId,
+					organizationId: updatedTermination.organizationId,
 					entityType: "hr_employee",
 					entityId: employment.employeeId,
-					actorId: record.createdBy,
+					actorId: record.actorUserId,
 					correlationId: meta.correlationId,
-					effectiveOn: record.effectiveOn,
+					effectiveOn: termination.effectiveOn,
 				},
 			});
 			if (!outbox.ok) {
-				state.terminations.delete(termination.id);
+				state.terminations.set(updatedTermination.id, previousTermination);
 				deps.core.employments.set(employment.id, previousEmployment);
-				state.terminationIdempotencyByKey.delete(idemKey);
 				return outbox;
 			}
 
-			return ok(cloneTermination(termination));
+			return ok(cloneTermination(updatedTermination));
 		},
 
 		// --- Lifecycle: offboarding ---
@@ -1610,6 +2579,16 @@ export function createMemoryLifecycleMethods(
 			if (!clearanceIdResult.ok) {
 				return clearanceIdResult;
 			}
+			const accessRevocationIdResult =
+				parseHumanResourcesOffboardingAccessRevocationId(randomUUID());
+			if (!accessRevocationIdResult.ok) {
+				return accessRevocationIdResult;
+			}
+			const payrollHandoffIdResult =
+				parseHumanResourcesOffboardingPayrollHandoffId(randomUUID());
+			if (!payrollHandoffIdResult.ok) {
+				return payrollHandoffIdResult;
+			}
 
 			const now = new Date();
 			const offboardingCase: OffboardingCase = {
@@ -1664,12 +2643,45 @@ export function createMemoryLifecycleMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
+			const accessRevocation: OffboardingAccessRevocation = {
+				id: accessRevocationIdResult.data,
+				organizationId: record.organizationId,
+				offboardingCaseId: offboardingCase.id,
+				employmentId: record.employmentId,
+				status: "pending",
+				revokedOn: null,
+				summary: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const payrollHandoff: OffboardingPayrollHandoff = {
+				id: payrollHandoffIdResult.data,
+				organizationId: record.organizationId,
+				offboardingCaseId: offboardingCase.id,
+				employmentId: record.employmentId,
+				status: "pending",
+				readyOn: null,
+				summary: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
 
 			state.offboardingCases.set(offboardingCase.id, offboardingCase);
 			for (const task of seededTasks) {
 				state.offboardingTasks.set(task.id, task);
 			}
 			state.clearances.set(clearance.id, clearance);
+			state.offboardingAccessRevocations.set(
+				accessRevocation.id,
+				accessRevocation,
+			);
+			state.offboardingPayrollHandoffs.set(payrollHandoff.id, payrollHandoff);
 			const idemKey = idempotencyMapKey(
 				record.organizationId,
 				record.idempotencyKey,
@@ -1694,6 +2706,8 @@ export function createMemoryLifecycleMethods(
 					state.offboardingTasks.delete(task.id);
 				}
 				state.clearances.delete(clearance.id);
+				state.offboardingAccessRevocations.delete(accessRevocation.id);
+				state.offboardingPayrollHandoffs.delete(payrollHandoff.id);
 				state.offboardingIdempotencyByKey.delete(idemKey);
 				return audit;
 			}
@@ -1717,6 +2731,8 @@ export function createMemoryLifecycleMethods(
 					state.offboardingTasks.delete(task.id);
 				}
 				state.clearances.delete(clearance.id);
+				state.offboardingAccessRevocations.delete(accessRevocation.id);
+				state.offboardingPayrollHandoffs.delete(payrollHandoff.id);
 				state.offboardingIdempotencyByKey.delete(idemKey);
 				return outbox;
 			}
@@ -2018,10 +3034,24 @@ export function createMemoryLifecycleMethods(
 						row.organizationId === input.organizationId &&
 						row.offboardingCaseId === offboardingCase.id,
 				) ?? null;
+			const accessRevocation =
+				Array.from(state.offboardingAccessRevocations.values()).find(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.offboardingCaseId === offboardingCase.id,
+				) ?? null;
+			const payrollHandoff =
+				Array.from(state.offboardingPayrollHandoffs.values()).find(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.offboardingCaseId === offboardingCase.id,
+				) ?? null;
 			const ready = assertOffboardingReadyToComplete({
 				mandatoryTasksComplete,
 				hasExitInterview,
 				clearanceStatus: clearance?.status ?? null,
+				accessRevocationStatus: accessRevocation?.status ?? null,
+				payrollHandoffStatus: payrollHandoff?.status ?? null,
 			});
 			if (!ready.ok) {
 				return ready;
@@ -2074,28 +3104,6 @@ export function createMemoryLifecycleMethods(
 			return ok(cloneOffboardingCase(updated));
 		},
 
-		async listOnboardingTasks(input: {
-			organizationId: string;
-			onboardingCaseId: HumanResourcesOnboardingCaseId;
-		}): Promise<Result<OnboardingTask[]>> {
-			const onboardingCase = state.onboardingCases.get(input.onboardingCaseId);
-			if (
-				!onboardingCase ||
-				onboardingCase.organizationId !== input.organizationId
-			) {
-				return notFound("Onboarding case not found");
-			}
-			const tasks = Array.from(state.onboardingTasks.values())
-				.filter(
-					(task) =>
-						task.organizationId === input.organizationId &&
-						task.caseId === input.onboardingCaseId,
-				)
-				.map((task) => ({ ...task }));
-			tasks.sort((a, b) => a.code.localeCompare(b.code));
-			return ok(tasks);
-		},
-
 		async listOffboardingTasks(input: {
 			organizationId: string;
 			offboardingCaseId: HumanResourcesOffboardingCaseId;
@@ -2140,6 +3148,212 @@ export function createMemoryLifecycleMethods(
 						row.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
 			return ok(clearance === null ? null : { ...clearance });
+		},
+
+		async getOffboardingAccessRevocationByCase(input: {
+			organizationId: string;
+			offboardingCaseId: HumanResourcesOffboardingCaseId;
+		}): Promise<Result<OffboardingAccessRevocation | null>> {
+			const offboardingCase = state.offboardingCases.get(
+				input.offboardingCaseId,
+			);
+			if (
+				!offboardingCase ||
+				offboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Offboarding case not found");
+			}
+			const row =
+				Array.from(state.offboardingAccessRevocations.values()).find(
+					(revocation) =>
+						revocation.organizationId === input.organizationId &&
+						revocation.offboardingCaseId === input.offboardingCaseId,
+				) ?? null;
+			return ok(row === null ? null : cloneOffboardingAccessRevocation(row));
+		},
+
+		async getOffboardingPayrollHandoffByCase(input: {
+			organizationId: string;
+			offboardingCaseId: HumanResourcesOffboardingCaseId;
+		}): Promise<Result<OffboardingPayrollHandoff | null>> {
+			const offboardingCase = state.offboardingCases.get(
+				input.offboardingCaseId,
+			);
+			if (
+				!offboardingCase ||
+				offboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Offboarding case not found");
+			}
+			const row =
+				Array.from(state.offboardingPayrollHandoffs.values()).find(
+					(handoff) =>
+						handoff.organizationId === input.organizationId &&
+						handoff.offboardingCaseId === input.offboardingCaseId,
+				) ?? null;
+			return ok(row === null ? null : cloneOffboardingPayrollHandoff(row));
+		},
+
+		async recordOffboardingAccessRevocation(
+			input: {
+				organizationId: string;
+				accessRevocationId: HumanResourcesOffboardingAccessRevocationId;
+				revokedOn: string;
+				summary: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<OffboardingCase>> {
+			const accessRevocation = state.offboardingAccessRevocations.get(
+				input.accessRevocationId,
+			);
+			if (
+				!accessRevocation ||
+				accessRevocation.organizationId !== input.organizationId
+			) {
+				return notFound("Offboarding access revocation not found");
+			}
+			const offboardingCase = state.offboardingCases.get(
+				accessRevocation.offboardingCaseId,
+			);
+			if (
+				!offboardingCase ||
+				offboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Offboarding case not found");
+			}
+			const caseActive = assertOffboardingCaseInProgress(
+				offboardingCase.status,
+			);
+			if (!caseActive.ok) {
+				return caseActive;
+			}
+			const versionCheck = assertExpectedVersion(
+				accessRevocation.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertOffboardingAccessRevocationStatusTransition(
+				accessRevocation.status,
+				"revoked",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previous = cloneOffboardingAccessRevocation(accessRevocation);
+			const updated: OffboardingAccessRevocation = {
+				...accessRevocation,
+				status: "revoked",
+				revokedOn: input.revokedOn,
+				summary: input.summary,
+				version: accessRevocation.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.offboardingAccessRevocations.set(updated.id, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_offboarding_access_revocation",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.offboardingAccessRevocations.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok(cloneOffboardingCase(offboardingCase));
+		},
+
+		async recordOffboardingPayrollHandoff(
+			input: {
+				organizationId: string;
+				payrollHandoffId: HumanResourcesOffboardingPayrollHandoffId;
+				readyOn: string;
+				summary: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<OffboardingCase>> {
+			const payrollHandoff = state.offboardingPayrollHandoffs.get(
+				input.payrollHandoffId,
+			);
+			if (
+				!payrollHandoff ||
+				payrollHandoff.organizationId !== input.organizationId
+			) {
+				return notFound("Offboarding payroll handoff not found");
+			}
+			const offboardingCase = state.offboardingCases.get(
+				payrollHandoff.offboardingCaseId,
+			);
+			if (
+				!offboardingCase ||
+				offboardingCase.organizationId !== input.organizationId
+			) {
+				return notFound("Offboarding case not found");
+			}
+			const caseActive = assertOffboardingCaseInProgress(
+				offboardingCase.status,
+			);
+			if (!caseActive.ok) {
+				return caseActive;
+			}
+			const versionCheck = assertExpectedVersion(
+				payrollHandoff.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertOffboardingPayrollHandoffStatusTransition(
+				payrollHandoff.status,
+				"ready",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previous = cloneOffboardingPayrollHandoff(payrollHandoff);
+			const updated: OffboardingPayrollHandoff = {
+				...payrollHandoff,
+				status: "ready",
+				readyOn: input.readyOn,
+				summary: input.summary,
+				version: payrollHandoff.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.offboardingPayrollHandoffs.set(updated.id, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_offboarding_payroll_handoff",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.offboardingPayrollHandoffs.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		// Compensation Grade

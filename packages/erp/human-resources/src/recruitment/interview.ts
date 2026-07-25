@@ -5,6 +5,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_INTERVIEW_ASSIGN_INTERVIEWER,
 	HUMAN_RESOURCES_COMMAND_INTERVIEW_CANCEL,
 	HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
 	HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
@@ -13,6 +14,11 @@ import {
 	HUMAN_RESOURCES_QUERY_INTERVIEW_LIST,
 } from "../module-ids";
 import {
+	HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
+	HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
+} from "../permissions";
+import {
+	assignInterviewInterviewerInputSchema,
 	cancelInterviewInputSchema,
 	getInterviewEvaluationInputSchema,
 	getInterviewInputSchema,
@@ -20,7 +26,9 @@ import {
 	recordInterviewEvaluationInputSchema,
 	scheduleInterviewInputSchema,
 } from "../schemas/recruitment";
+import { actorHoldsAnyPermission } from "../shared/authorization-policy-helpers";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import { assertInterviewInterviewerAssignable } from "../shared/recruitment-guards";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
@@ -30,6 +38,7 @@ import type {
 	InterviewEvaluation,
 	InterviewListPage,
 } from "../types";
+import { projectInterviewEvaluationForReader } from "./interview-field-projection";
 
 export const HUMAN_RESOURCES_AGGREGATE_INTERVIEW = "interview" as const;
 export type HumanResourcesInterviewAggregate =
@@ -86,6 +95,55 @@ export async function cancelInterview(
 	});
 }
 
+export async function assignInterviewInterviewer(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<Interview>> {
+	return runRecruitmentCommand(input, options, {
+		schema: assignInterviewInterviewerInputSchema,
+		invalidMessage: "Invalid interview assign-interviewer input",
+		command: HUMAN_RESOURCES_COMMAND_INTERVIEW_ASSIGN_INTERVIEWER,
+		execute: async (data, { store, ports }) => {
+			const interview = await store.getInterviewById({
+				organizationId: data.organizationId,
+				interviewId: data.interviewId,
+			});
+			if (!interview.ok) {
+				return interview;
+			}
+			if (interview.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Interview not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const assignable = assertInterviewInterviewerAssignable(
+				interview.data.status,
+			);
+			if (!assignable.ok) {
+				return assignable;
+			}
+
+			return store.assignInterviewInterviewer(
+				{
+					organizationId: data.organizationId,
+					interviewId: data.interviewId,
+					interviewerActorId: data.interviewerActorId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_ASSIGN_INTERVIEWER,
+				}),
+			);
+		},
+	});
+}
+
 export async function recordInterviewEvaluation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
@@ -100,6 +158,7 @@ export async function recordInterviewEvaluation(
 					organizationId: data.organizationId,
 					interviewId: data.interviewId,
 					result: data.result,
+					scorecard: data.scorecard,
 					privateNotes: data.privateNotes ?? null,
 					evaluatorActorId: data.actorUserId,
 					expectedVersion: data.expectedVersion,
@@ -183,7 +242,29 @@ export async function getInterviewEvaluation(
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
 				);
 			}
-			return ok(evaluation.data);
+
+			const canReadConfidential = await actorHoldsAnyPermission(
+				{
+					operationId: HUMAN_RESOURCES_QUERY_INTERVIEW_EVALUATION_GET,
+					operationKind: "query",
+					requiredPermission: HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
+					actor: {
+						organizationId: data.organizationId,
+						actorUserId: data.actorUserId,
+						correlationId: data.correlationId,
+					},
+					actorPermissions: [],
+				},
+				options,
+				[HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD],
+			);
+
+			return ok(
+				projectInterviewEvaluationForReader(
+					evaluation.data,
+					canReadConfidential,
+				),
+			);
 		},
 	});
 }

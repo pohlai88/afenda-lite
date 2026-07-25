@@ -2,7 +2,6 @@
 
 import {
 	CA_PERMISSION_COMPANY_SUSPEND,
-	createCorporateAdministrationRequestFingerprint,
 	type CaLegalCompany,
 	suspendLegalCompany,
 } from "@afenda/corporate-administration";
@@ -11,6 +10,10 @@ import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import {
+	caEffectiveAtFromFormDate,
+	caLegalCompanyIdSchema,
+} from "@/lib/erp/corporate-administration-action-schemas";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
 	type ActionResult,
@@ -23,10 +26,10 @@ export type SuspendLegalCompanyActionState =
 	ActionResult<SuspendLegalCompanyActionData> | null;
 
 const suspendLegalCompanyFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
 	expectedVersion: z.coerce.number().int().positive(),
 	effectiveDate: z.string().date(),
-	reason: z.string().trim().min(1).max(500),
+	reason: z.string().trim().min(1).max(2000),
 	evidenceReference: z.string().trim().min(1).max(500).optional(),
 });
 
@@ -54,22 +57,18 @@ export async function suspendLegalCompanyAction(
 					parsed.details,
 				);
 			}
-			const commandPayload = {
-				legalCompanyId: parsed.data.legalCompanyId,
-				expectedVersion: parsed.data.expectedVersion,
-				effectiveDate: parsed.data.effectiveDate,
-				reason: parsed.data.reason,
-				evidenceReference: parsed.data.evidenceReference,
-			};
 			const result = await suspendLegalCompany(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `suspend:${parsed.data.legalCompanyId}:${parsed.data.expectedVersion}`,
-					requestFingerprint:
-						createCorporateAdministrationRequestFingerprint(commandPayload),
-					...commandPayload,
+					legalCompanyId: parsed.data.legalCompanyId,
+					expectedVersion: parsed.data.expectedVersion,
+					effectiveAt: caEffectiveAtFromFormDate(parsed.data.effectiveDate),
+					reasonCode: "operator_suspend",
+					reason: parsed.data.reason,
+					evidenceDocumentReference: parsed.data.evidenceReference,
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

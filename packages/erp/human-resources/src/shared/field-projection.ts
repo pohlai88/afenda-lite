@@ -29,7 +29,17 @@ export interface ProjectedData<T> {
 export const COMPENSATION_FIELD_CLASSES = {
 	public: ["currencyCode", "payFrequency"],
 	manager: ["gradeCode", "bandCode"],
-	confidential: ["baseAmount", "allowances", "benefits", "reviewProposal"],
+	confidential: [
+		"baseAmount",
+		"allowances",
+		"benefits",
+		"reviewProposal",
+		"proposedBaseAmount",
+		"proposedCurrencyCode",
+		"confidentialNote",
+		"proposedGradeId",
+		"proposedSalaryBandId",
+	],
 	payroll: [
 		"baseAmount",
 		"currencyCode",

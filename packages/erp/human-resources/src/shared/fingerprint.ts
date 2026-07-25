@@ -149,11 +149,17 @@ export function fingerprintTransfer(input: {
 
 export function fingerprintTermination(input: {
 	employmentId: string;
+	reasonCode: string;
+	reasonDetail: string;
 	effectiveOn: string;
+	rehireEligible: boolean;
 }): string {
 	return sha256Fingerprint({
 		employmentId: input.employmentId,
+		reasonCode: input.reasonCode.trim(),
+		reasonDetail: input.reasonDetail.trim(),
 		effectiveOn: input.effectiveOn,
+		rehireEligible: input.rehireEligible,
 	});
 }
 
@@ -550,4 +556,38 @@ export function fingerprintPolicyAcknowledgementIssue(input: {
 	policyVersion: string;
 }): string {
 	return sha256Fingerprint(input);
+}
+
+export function fingerprintHireFromAcceptedOffer(input: {
+	offerId: string;
+	employeeNumber: string;
+	startsOn: string;
+	positionId: string | null;
+	legalName: string;
+	preferredName: string | null;
+	legalEntityKey: string;
+	businessUnitKey: string;
+	locationKey: string;
+	costCentreKey: string;
+	projectKey: string;
+	tasks: readonly { code: string; title: string; mandatory: boolean }[];
+}): string {
+	return sha256Fingerprint({
+		offerId: input.offerId,
+		employeeNumber: input.employeeNumber.trim(),
+		startsOn: input.startsOn,
+		positionId: input.positionId,
+		legalName: input.legalName.trim(),
+		preferredName: input.preferredName?.trim() ?? null,
+		legalEntityKey: input.legalEntityKey.trim(),
+		businessUnitKey: input.businessUnitKey.trim(),
+		locationKey: input.locationKey.trim(),
+		costCentreKey: input.costCentreKey.trim(),
+		projectKey: input.projectKey.trim(),
+		tasks: input.tasks.map((task) => ({
+			code: task.code.trim(),
+			title: task.title.trim(),
+			mandatory: task.mandatory,
+		})),
+	});
 }

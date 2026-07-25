@@ -281,6 +281,76 @@
       "when": 1785073200000,
       "tag": "0038_hr_job_requisition_hiring_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1785076800000,
+      "tag": "0039_hr_candidate_application_status_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1785080400000,
+      "tag": "0040_ca_legal_company_registry_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1785084000000,
+      "tag": "0041_ca_company_identifier_drop_legacy_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1785087600000,
+      "tag": "0042_hr_interview_evaluation_scorecard",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1785091200000,
+      "tag": "0043_hr_compensation_proposal",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1785094800000,
+      "tag": "0044_hr_hire_attempt",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1785098400000,
+      "tag": "0045_hr_probation_confirmation_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1785102000000,
+      "tag": "0046_hr_onboarding_completion_facts",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1785105600000,
+      "tag": "0047_hr_termination_offboarding_facts",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1785109200000,
+      "tag": "0048_hr_leave_policy_balance_rules",
+      "breakpoints": true
     }
   ]
 }

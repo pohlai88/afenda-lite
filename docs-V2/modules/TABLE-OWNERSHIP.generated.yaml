@@ -293,6 +293,10 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_candidate_application_status_history
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_interview
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
@@ -302,6 +306,10 @@ tables:
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
     table: hr_employment_offer
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_hire_attempt
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
@@ -414,6 +422,10 @@ tables:
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
     table: hr_compensation_review
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_compensation_proposal
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"

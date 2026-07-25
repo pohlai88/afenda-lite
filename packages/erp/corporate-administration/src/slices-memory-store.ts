@@ -4,7 +4,6 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	CA_ERROR_CODE_CONFLICT,
-	CA_ERROR_IDEMPOTENCY_CONFLICT,
 	CA_ERROR_SHARE_CERTIFICATE_CONFLICT,
 	CA_ERROR_SHARE_CLASS_CLOSED,
 	CA_ERROR_SHARE_INSUFFICIENT_HOLDING,
@@ -12,7 +11,9 @@ import {
 	CA_ERROR_VERSION_CONFLICT,
 	caErrorDetails,
 } from "./error-codes";
+import { idempotencyFingerprintConflict } from "./shared/idempotency-replay";
 import { MemoryGovernanceStore } from "./governance-memory-store";
+import { isEffectiveOnDate } from "./shared/effective-range";
 import type {
 	Ca4MutationContext,
 	ShareCapitalMutationContext,
@@ -971,11 +972,7 @@ export class MemorySlicesStore
 			this.beneficialOwnerDisclosures.values(),
 			organizationId,
 			legalCompanyId,
-		).filter(
-			(row) =>
-				row.effectiveFrom <= asOf &&
-				(row.effectiveTo === null || row.effectiveTo >= asOf),
-		);
+		).filter((row) => isEffectiveOnDate(row, asOf));
 		return ok(rows.map(clone));
 	}
 
@@ -1047,11 +1044,7 @@ export class MemorySlicesStore
 		);
 		if (receipt) {
 			if (receipt.requestFingerprint !== mutation.meta.requestFingerprint) {
-				return fail(
-					"CONFLICT",
-					"Idempotency key was already used for a different request",
-					caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-				);
+				return idempotencyFingerprintConflict();
 			}
 			return ok(undefined);
 		}
@@ -1139,11 +1132,7 @@ export class MemorySlicesStore
 				if (
 					replay.data.requestFingerprint !== record.createRequestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key was already used for a different request",
-						caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-					);
+					return idempotencyFingerprintConflict();
 				}
 				const existing = this.propertyHoldings.get(replay.data.entityId);
 				return existing

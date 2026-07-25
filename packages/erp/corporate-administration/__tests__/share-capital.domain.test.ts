@@ -12,6 +12,7 @@ import {
 	closeShareClass,
 	reverseShareTransaction,
 } from "../src/share-capital-lifecycle";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -41,15 +42,11 @@ function harness() {
 
 async function seedCompany(ready: ReturnType<typeof harness>, tag: string) {
 	const company = await createLegalCompany(
-		{
-			organizationId: ORG_A,
-			actorUserId: "user-1",
+		createLegalCompanyTestInput(`company-${tag}`, {
+			code: `CO-${tag}`,
 			correlationId: `corr-${tag}`,
 			idempotencyKey: `company-${tag}`,
-			requestFingerprint: `fp-${tag}`,
-			code: `CO-${tag}`,
-			legalEntityDimensionId: DIM_A,
-		},
+		}),
 		ready,
 	);
 	expect(company.ok).toBe(true);

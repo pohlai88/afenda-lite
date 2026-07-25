@@ -13,8 +13,8 @@ const EXPECTED_CATEGORY_TOTALS = {
 	"effective-definition": 18,
 	"bounded-assignment": 15,
 	"versioned-current-fact": 29,
-	"append-only-operational-fact": 17,
-	"transactional-state-machine": 32,
+	"append-only-operational-fact": 18,
+	"transactional-state-machine": 34,
 	"derived-projection": 2,
 	"explicit-exclusion": 1,
 } as const;
@@ -31,7 +31,7 @@ describe("HR effective-truth classification register", () => {
 		const totals = summarizeEffectiveTruthClassificationByCategory();
 		expect(totals).toEqual(EXPECTED_CATEGORY_TOTALS);
 		expect(Object.values(totals).reduce((sum, count) => sum + count, 0)).toBe(
-			114,
+			117,
 		);
 	});
 

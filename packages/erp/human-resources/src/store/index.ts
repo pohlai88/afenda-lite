@@ -5,6 +5,7 @@ import type { HumanResourcesComplianceStore } from "./compliance";
 // Import all domain store types locally for composition
 import type { HumanResourcesCoreStore } from "./core";
 import type { HumanResourcesEmployeeRelationsStore } from "./employee-relations";
+import type { HumanResourcesHireOrchestrationStore } from "./hire-orchestration";
 import type { HumanResourcesIdentityStore } from "./identity";
 import type { HumanResourcesLearningStore } from "./learning";
 import type { HumanResourcesLeaveStore } from "./leave";
@@ -20,6 +21,7 @@ import type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning"
 export type HumanResourcesStore = HumanResourcesCoreStore &
 	HumanResourcesRecruitmentStore &
 	HumanResourcesLifecycleStore &
+	HumanResourcesHireOrchestrationStore &
 	HumanResourcesCompensationStore &
 	HumanResourcesLearningStore &
 	HumanResourcesLeaveStore &
@@ -42,6 +44,8 @@ export type { HumanResourcesCoreStore } from "./core";
 export * from "./core";
 export type { HumanResourcesEmployeeRelationsStore } from "./employee-relations";
 export * from "./employee-relations";
+export type { HumanResourcesHireOrchestrationStore } from "./hire-orchestration";
+export * from "./hire-orchestration";
 export type { HumanResourcesIdentityStore } from "./identity";
 export * from "./identity";
 export type { HumanResourcesLearningStore } from "./learning";

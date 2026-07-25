@@ -258,6 +258,14 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		rationale: "Cluster A recruitment workflow — application stage machine",
 	}),
 	row({
+		table: "hr_candidate_application_status_history",
+		category: "append-only-operational-fact",
+		domain: "recruitment",
+		cluster: "A",
+		rationale:
+			"Cluster A recruitment workflow — immutable application stage transition audit",
+	}),
+	row({
 		table: "hr_interview",
 		category: "transactional-state-machine",
 		domain: "recruitment",
@@ -280,6 +288,14 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 			"Cluster A recruitment workflow — offer acceptance state machine",
 	}),
 	row({
+		table: "hr_hire_attempt",
+		category: "transactional-state-machine",
+		domain: "recruitment",
+		cluster: "A",
+		rationale:
+			"Cluster A hire orchestration — durable saga progress with idempotent step replay",
+	}),
+	row({
 		table: "hr_onboarding_case",
 		category: "transactional-state-machine",
 		domain: "lifecycle",
@@ -299,6 +315,13 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		domain: "lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — probation review state",
+	}),
+	row({
+		table: "hr_probation_assessment",
+		category: "transactional-state-machine",
+		domain: "lifecycle",
+		cluster: "A",
+		rationale: "Cluster A lifecycle workflow — interim probation assessment",
 	}),
 	row({
 		table: "hr_employment_confirmation",
@@ -478,6 +501,14 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		domain: "compensation",
 		cluster: "C",
 		rationale: "Cluster C compensation workflow — review decision state",
+	}),
+	row({
+		table: "hr_compensation_proposal",
+		category: "transactional-state-machine",
+		domain: "compensation",
+		cluster: "C",
+		rationale:
+			"Cluster C compensation workflow — offer-linked proposal draft/approve/issue state",
 	}),
 	row({
 		table: "hr_leave_policy",

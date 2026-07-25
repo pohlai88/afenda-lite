@@ -45,7 +45,9 @@ describe("human-resources event catalog parity", () => {
 		expect(Object.keys(HUMAN_RESOURCES_EVENT_CATALOG).sort()).toEqual([
 			...registryTypes,
 		]);
-		expect(CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES).toHaveLength(106);
+		expect(CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES).toHaveLength(
+			registryTypes.length,
+		);
 	});
 
 	it("gives every HR event an owner and consumer disposition", () => {

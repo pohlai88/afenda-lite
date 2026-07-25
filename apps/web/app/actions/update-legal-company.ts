@@ -12,6 +12,10 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
+	caLegalCompanyIdSchema,
+	nullableFormUuidSchema,
+} from "@/lib/erp/corporate-administration-action-schemas";
+import {
 	type ActionResult,
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
@@ -26,14 +30,13 @@ const nullableText = z
 	.transform((value) => (value === "" ? null : value));
 
 const updateLegalCompanyFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
 	expectedVersion: z.coerce.number().int().positive(),
+	code: z.string().trim().min(1).max(100).optional(),
 	legalPartyId: z.string().uuid().optional(),
-	jurisdictionCountryId: z
-		.union([z.string().uuid(), z.literal("")])
-		.optional()
-		.transform((value) => (value === "" ? null : value)),
+	jurisdictionCountryId: nullableFormUuidSchema,
 	legalFormCode: nullableText.optional(),
+	legalFormNameSnapshot: nullableText.optional(),
 	incorporationDate: z
 		.union([z.string().date(), z.literal("")])
 		.optional()
@@ -59,10 +62,13 @@ export async function updateLegalCompanyAction(
 			const parsed = parseSchema(updateLegalCompanyFormSchema, {
 				legalCompanyId: formData.get("legalCompanyId"),
 				expectedVersion: formData.get("expectedVersion"),
+				code: formData.get("code") || undefined,
 				legalPartyId: formData.get("legalPartyId") || undefined,
 				jurisdictionCountryId:
 					formData.get("jurisdictionCountryId") ?? undefined,
 				legalFormCode: formData.get("legalFormCode") ?? undefined,
+				legalFormNameSnapshot:
+					formData.get("legalFormNameSnapshot") ?? undefined,
 				incorporationDate: formData.get("incorporationDate") ?? undefined,
 				commencementDate: formData.get("commencementDate") ?? undefined,
 				fiscalYearEndMonth: formData.get("fiscalYearEndMonth") || undefined,

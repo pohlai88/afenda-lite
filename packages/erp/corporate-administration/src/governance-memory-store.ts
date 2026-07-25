@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 
-import { CA_ERROR_CODE_CONFLICT, caErrorDetails } from "./error-codes";
+import { CA_ERROR_CODE_CONFLICT, CA_ERROR_EFFECTIVE_RANGE_OVERLAP, caErrorDetails } from "./error-codes";
+import {
+	CorporateAdministrationVersionConflictError,
+	mapCorporateAdministrationStoreError,
+} from "./store/store-errors";
 import type { GovernanceStore, MutationPorts } from "./ports";
 import type {
 	CaAuthorityMandate,
@@ -19,6 +23,11 @@ import {
 	type GovernanceMutationMeta,
 	recordGovernanceFacts,
 } from "./shared/governance-mutation-facts";
+import {
+	appointmentEffectiveRange,
+	effectiveRangesOverlap,
+} from "./shared/effective-range";
+import { replayIdempotencyFingerprint } from "./shared/idempotency-replay";
 
 function clone<T>(value: T): T {
 	return structuredClone(value);
@@ -154,18 +163,6 @@ function findByIdempotency<
 	return null;
 }
 
-function rangesOverlap(
-	leftFrom: string,
-	leftTo: string | null,
-	rightFrom: string,
-	rightTo: string | null,
-): boolean {
-	return (
-		(rightTo === null || leftFrom < rightTo) &&
-		(leftTo === null || rightFrom < leftTo)
-	);
-}
-
 export class MemoryGovernanceStore implements GovernanceStore {
 	protected readonly officerAppointments = new Map<
 		string,
@@ -188,19 +185,17 @@ export class MemoryGovernanceStore implements GovernanceStore {
 	>();
 	protected readonly resolutions = new Map<string, CaResolution>();
 
-	private versionConflict() {
-		return fail(
-			"CONFLICT",
-			"Record version is stale",
-			caErrorDetails("corporate-administration.company.version_conflict"),
-		);
-	}
-
-	private fingerprintConflict() {
-		return fail(
-			"CONFLICT",
-			"Idempotency key was already used with a different request",
-			caErrorDetails("corporate-administration.idempotency.conflict"),
+	private versionConflict(input?: {
+		organizationId: string;
+		aggregateId: string;
+		expectedVersion: number;
+	}) {
+		return mapCorporateAdministrationStoreError(
+			new CorporateAdministrationVersionConflictError({
+				organizationId: input?.organizationId ?? "",
+				aggregateId: input?.aggregateId ?? "",
+				expectedVersion: input?.expectedVersion ?? 0,
+			}),
 		);
 	}
 
@@ -208,9 +203,9 @@ export class MemoryGovernanceStore implements GovernanceStore {
 		existing: T,
 		requestFingerprint: string,
 	): Result<T> {
-		return existing.requestFingerprint === requestFingerprint
-			? ok(clone(existing))
-			: this.fingerprintConflict();
+		const replayed = replayIdempotencyFingerprint(existing, requestFingerprint);
+		if (!replayed.ok) return replayed;
+		return ok(clone(replayed.data));
 	}
 
 	private mandateDetail(mandate: CaAuthorityMandate): CaAuthorityMandateDetail {
@@ -262,16 +257,15 @@ export class MemoryGovernanceStore implements GovernanceStore {
 				officer.partyId === record.partyId &&
 				officer.officerRole === record.officerRole &&
 				officer.status === "active" &&
-				rangesOverlap(
-					officer.appointedDate,
-					officer.resignedDate,
-					record.appointedDate,
-					record.resignedDate,
+				effectiveRangesOverlap(
+					appointmentEffectiveRange(officer),
+					appointmentEffectiveRange(record),
 				)
 			) {
 				return fail(
 					"CONFLICT",
 					"Officer appointment overlaps an active appointment",
+					caErrorDetails(CA_ERROR_EFFECTIVE_RANGE_OVERLAP),
 				);
 			}
 		}
@@ -459,14 +453,13 @@ export class MemoryGovernanceStore implements GovernanceStore {
 				membership.organizationId === record.organizationId &&
 				membership.governanceBodyId === record.governanceBodyId &&
 				sameSubject &&
-				rangesOverlap(
-					membership.effectiveFrom,
-					membership.effectiveTo,
-					record.effectiveFrom,
-					record.effectiveTo,
-				)
+				effectiveRangesOverlap(membership, record)
 			) {
-				return fail("CONFLICT", "Governance membership range overlaps");
+				return fail(
+					"CONFLICT",
+					"Governance membership range overlaps",
+					caErrorDetails(CA_ERROR_EFFECTIVE_RANGE_OVERLAP),
+				);
 			}
 		}
 		const now = new Date();
@@ -648,15 +641,14 @@ export class MemoryGovernanceStore implements GovernanceStore {
 					premise.premiseType === "registered_office" &&
 					premise.isPrimary &&
 					premise.status === "active" &&
-					rangesOverlap(
-						premise.effectiveFrom,
-						premise.effectiveTo,
-						record.effectiveFrom,
-						record.effectiveTo,
-					),
+					effectiveRangesOverlap(premise, record),
 			)
 		) {
-			return fail("CONFLICT", "Primary registered office range overlaps");
+			return fail(
+				"CONFLICT",
+				"Primary registered office range overlaps",
+				caErrorDetails(CA_ERROR_EFFECTIVE_RANGE_OVERLAP),
+			);
 		}
 		const now = new Date();
 		const row: CaCompanyPremise = {

@@ -15,6 +15,7 @@ import type {
 	HumanResourcesCertificationId,
 	HumanResourcesClearanceId,
 	HumanResourcesCompensationGradeId,
+	HumanResourcesCompensationProposalId,
 	HumanResourcesCompensationReviewId,
 	HumanResourcesCompetencyAssessmentId,
 	HumanResourcesCompetencyId,
@@ -50,9 +51,14 @@ import type {
 	HumanResourcesLeaveRequestId,
 	HumanResourcesLeaveRequestSegmentId,
 	HumanResourcesOffboardingCaseId,
+	HumanResourcesOffboardingAccessRevocationId,
+	HumanResourcesOffboardingPayrollHandoffId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
 	HumanResourcesOnboardingCaseId,
+	HumanResourcesOnboardingAccessHandoffId,
+	HumanResourcesOnboardingEquipmentHandoffId,
+	HumanResourcesOnboardingOrientationId,
 	HumanResourcesOnboardingTaskId,
 	HumanResourcesOvertimeRequestId,
 	HumanResourcesPerformanceCycleId,
@@ -60,6 +66,7 @@ import type {
 	HumanResourcesPolicyAcknowledgementId,
 	HumanResourcesPositionId,
 	HumanResourcesProbationReviewId,
+	HumanResourcesProbationAssessmentId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
 	HumanResourcesReviewId,
@@ -93,6 +100,7 @@ import type {
 	BenefitEnrollmentStatus,
 	BenefitPlanStatus,
 	CompensationGradeStatus,
+	CompensationProposalStatus,
 	CompensationReviewStatus,
 	EmployeeCompensationStatus,
 	SalaryBandStatus,
@@ -122,6 +130,9 @@ import type {
 	LeaveAdjustmentKind,
 	LeaveAdjustmentStatus,
 	LeaveEntitlementStatus,
+	LeavePolicyAccrualBasis,
+	LeavePolicyAccrualFrequency,
+	LeavePolicyEntitlementExpiryRule,
 	LeavePolicyStatus,
 	LeaveRequestStatus,
 	LeaveType,
@@ -131,8 +142,13 @@ import type {
 	ClearanceStatus,
 	LifecycleTaskStatus,
 	MovementKind,
+	OffboardingAccessRevocationStatus,
 	OffboardingCaseStatus,
+	OffboardingPayrollHandoffStatus,
+	OnboardingAccessHandoffStatus,
 	OnboardingCaseStatus,
+	OnboardingEquipmentHandoffStatus,
+	OnboardingOrientationStatus,
 	ProbationOutcome,
 	ProbationStatus,
 	TerminationStatus,
@@ -206,6 +222,7 @@ export type Employment = {
 };
 
 export type { EmploymentStatusHistory } from "./shared/employment-history";
+export type { ApplicationStatusHistory } from "./shared/application-history";
 
 export type EmploymentContractLineageStatus = "active" | "superseded";
 
@@ -413,11 +430,23 @@ export type Interview = {
 /** Public interview list row — never includes private evaluator notes. */
 export type InterviewListItem = Interview;
 
+export type InterviewScorecardCriterion = {
+	criterionCode: string;
+	label: string;
+	rating: number;
+	comment: string | null;
+};
+
+export type InterviewScorecard = {
+	criteria: InterviewScorecardCriterion[];
+};
+
 export type InterviewEvaluation = {
 	id: HumanResourcesInterviewEvaluationId;
 	organizationId: string;
 	interviewId: HumanResourcesInterviewId;
 	result: InterviewEvaluationResult;
+	scorecard: InterviewScorecard;
 	privateNotes: string | null;
 	evaluatorActorId: string;
 	recordedAt: Date;
@@ -432,6 +461,7 @@ export type EmploymentOffer = {
 	id: HumanResourcesOfferId;
 	organizationId: string;
 	applicationId: HumanResourcesApplicationId;
+	compensationProposalId: HumanResourcesCompensationProposalId | null;
 	status: OfferStatus;
 	termsSummary: string;
 	expiresOn: string;
@@ -526,6 +556,51 @@ export type OnboardingTask = {
 	updatedAt: Date;
 };
 
+export type OnboardingOrientation = {
+	id: HumanResourcesOnboardingOrientationId;
+	organizationId: string;
+	onboardingCaseId: HumanResourcesOnboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	status: OnboardingOrientationStatus;
+	acknowledgedOn: string | null;
+	notes: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OnboardingEquipmentHandoff = {
+	id: HumanResourcesOnboardingEquipmentHandoffId;
+	organizationId: string;
+	onboardingCaseId: HumanResourcesOnboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	status: OnboardingEquipmentHandoffStatus;
+	handedOverOn: string | null;
+	summary: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OnboardingAccessHandoff = {
+	id: HumanResourcesOnboardingAccessHandoffId;
+	organizationId: string;
+	onboardingCaseId: HumanResourcesOnboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	status: OnboardingAccessHandoffStatus;
+	grantedOn: string | null;
+	summary: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type ProbationReview = {
 	id: HumanResourcesProbationReviewId;
 	organizationId: string;
@@ -537,6 +612,27 @@ export type ProbationReview = {
 	outcome: ProbationOutcome | null;
 	outcomeActorId: string | null;
 	outcomeRecordedOn: string | null;
+	lastExtensionReason: string | null;
+	lastExtensionEvidenceReference: string | null;
+	outcomeReason: string | null;
+	outcomeEvidenceReference: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ProbationAssessment = {
+	id: HumanResourcesProbationAssessmentId;
+	organizationId: string;
+	probationReviewId: HumanResourcesProbationReviewId;
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	reviewedOn: string;
+	reason: string;
+	evidenceReference: string | null;
+	actorUserId: string;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -589,6 +685,9 @@ export type Termination = {
 	reasonCode: string;
 	reasonDetail: string;
 	effectiveOn: string;
+	approvedAt: Date | null;
+	approvedBy: string | null;
+	rehireEligible: boolean;
 	finalizedAt: Date | null;
 	version: number;
 	createdBy: string;
@@ -657,6 +756,36 @@ export type Clearance = {
 	updatedAt: Date;
 };
 
+export type OffboardingAccessRevocation = {
+	id: HumanResourcesOffboardingAccessRevocationId;
+	organizationId: string;
+	offboardingCaseId: HumanResourcesOffboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	status: OffboardingAccessRevocationStatus;
+	revokedOn: string | null;
+	summary: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OffboardingPayrollHandoff = {
+	id: HumanResourcesOffboardingPayrollHandoffId;
+	organizationId: string;
+	offboardingCaseId: HumanResourcesOffboardingCaseId;
+	employmentId: HumanResourcesEmploymentId;
+	status: OffboardingPayrollHandoffStatus;
+	readyOn: string | null;
+	summary: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type CompensationGrade = {
 	id: HumanResourcesCompensationGradeId;
 	organizationId: string;
@@ -709,6 +838,30 @@ export type EmployeeCompensation = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type CompensationProposal = {
+	id: HumanResourcesCompensationProposalId;
+	organizationId: string;
+	applicationId: HumanResourcesApplicationId;
+	status: CompensationProposalStatus;
+	proposedBaseAmount: string | null;
+	proposedCurrencyCode: string | null;
+	proposedGradeId: HumanResourcesCompensationGradeId | null;
+	proposedSalaryBandId: HumanResourcesSalaryBandId | null;
+	confidentialNote: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompensationProposalListPage = {
+	proposals: CompensationProposal[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
 };
 
 export type CompensationReview = {
@@ -950,6 +1103,13 @@ export type LeavePolicy = {
 	allowsNegativeBalance: boolean;
 	allowSelfApproval: boolean;
 	allowsPartialDay: boolean;
+	accrualBasis: LeavePolicyAccrualBasis;
+	accrualFrequency: LeavePolicyAccrualFrequency | null;
+	accrualQuantityPerPeriod: string | null;
+	carryForwardEnabled: boolean;
+	carryForwardMaxQuantity: string | null;
+	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
+	entitlementExpiryDays: number | null;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	status: LeavePolicyStatus;

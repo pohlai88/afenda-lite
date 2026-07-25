@@ -449,6 +449,12 @@ tables:
   - table: hr_clearance
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_offboarding_access_revocation
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_offboarding_payroll_handoff
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_learning_course
     writeOwner: "@afenda/human-resources"
     kind: erp
@@ -504,6 +510,9 @@ tables:
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_compensation_review
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_compensation_proposal
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_leave_policy

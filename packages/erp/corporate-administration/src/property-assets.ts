@@ -30,7 +30,6 @@ import {
 	type CorporateAdministrationCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import { CA_ERROR_IDEMPOTENCY_CONFLICT, caErrorDetails } from "./error-codes";
 import {
 	CA_COMMAND_ASSET_DISPOSE,
 	CA_COMMAND_ASSET_REGISTER,
@@ -95,9 +94,19 @@ import {
 	updateIntellectualPropertyInputSchema,
 	updatePropertyInputSchema,
 } from "./property-assets-schemas";
-import { normalizeCompanyCode, normalizeIdentifierValue } from "./shared/code";
+import {
+	normalizeCompanyCode,
+	normalizeCorporateCode,
+	normalizeIdentifierValue,
+} from "./shared/code";
 import { compareDecimal, parseDecimalString } from "./shared/decimal";
-import { createCorporateAdministrationRequestFingerprint } from "./shared/fingerprint";
+import {
+	EFFECTIVE_RANGE_INVALID_MESSAGE,
+	isEffectiveOnDate,
+	isInvalidEffectiveDateRange,
+} from "./shared/effective-range";
+import { deriveCaCommandFingerprint } from "./shared/fingerprint";
+import { idempotencyFingerprintConflict } from "./shared/idempotency-replay";
 import type {
 	Ca4Subject,
 	CaCharge,
@@ -125,24 +134,11 @@ function invalid(message: string, issues: unknown): Result<never> {
 	return fail("BAD_REQUEST", message, { issues });
 }
 
-function normalizeText(value: string): string {
-	return value.normalize("NFC").trim().toUpperCase();
-}
-
 function fingerprint<T extends CommandContext>(
 	commandId: CaCommandId,
 	input: T,
 ) {
-	const {
-		actorUserId: _actorUserId,
-		correlationId: _correlationId,
-		idempotencyKey: _idempotencyKey,
-		...business
-	} = input;
-	return createCorporateAdministrationRequestFingerprint({
-		commandId,
-		...business,
-	});
+	return deriveCaCommandFingerprint({ commandId }, input);
 }
 
 function mutation(
@@ -189,7 +185,7 @@ async function requireCompany(
 	organizationId: string,
 	legalCompanyId: string,
 ) {
-	const company = await store.getById(organizationId, legalCompanyId);
+	const company = await store.getLegalCompany(organizationId, legalCompanyId);
 	if (!company.ok) return company;
 	if (!company.data) return fail("NOT_FOUND", "Legal company not found");
 	return company;
@@ -316,11 +312,7 @@ async function replayConflict(
 	if (!receipt.ok) return receipt;
 	if (!receipt.data) return ok(null);
 	if (receipt.data.requestFingerprint !== requestFingerprint) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key was already used for a different request",
-			caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-		);
+		return idempotencyFingerprintConflict();
 	}
 	return ok(receipt.data.entityId);
 }
@@ -402,7 +394,9 @@ export async function registerProperty(
 			normalizedCode: code.data.normalizedCode,
 			propertyType: parsed.data.propertyType.trim(),
 			titleReference: parsed.data.titleReference.trim(),
-			normalizedTitleReference: normalizeText(parsed.data.titleReference),
+			normalizedTitleReference: normalizeCorporateCode(
+				parsed.data.titleReference,
+			),
 			propertyDescription: parsed.data.propertyDescription.trim(),
 			ownershipPercentage: ownership.data,
 			acquisitionDate: parsed.data.acquisitionDate,
@@ -603,7 +597,7 @@ export async function registerCorporateAsset(
 			assetCategory: parsed.data.assetCategory.trim(),
 			identifier: parsed.data.identifier?.trim() ?? null,
 			normalizedIdentifier: parsed.data.identifier
-				? normalizeText(parsed.data.identifier)
+				? normalizeCorporateCode(parsed.data.identifier)
 				: null,
 			description: parsed.data.description.trim(),
 			custodianPartyId: custodian?.id ?? null,
@@ -862,7 +856,7 @@ export async function registerIntellectualProperty(
 			jurisdictionCode: jurisdiction.data,
 			applicationNumber: parsed.data.applicationNumber?.trim() ?? null,
 			registrationNumber: parsed.data.registrationNumber?.trim() ?? null,
-			normalizedRightNumber: normalizeText(rightNumber),
+			normalizedRightNumber: normalizeCorporateCode(rightNumber),
 			ownerPartyId: owner.data.id,
 			ownerPartyCodeSnapshot: owner.data.code,
 			ownerPartyNameSnapshot: owner.data.name,
@@ -1149,10 +1143,12 @@ export async function registerInsurancePolicy(
 	);
 	if (!company.ok) return company;
 	if (
-		parsed.data.effectiveTo &&
-		parsed.data.effectiveTo < parsed.data.effectiveFrom
+		isInvalidEffectiveDateRange({
+			effectiveFrom: parsed.data.effectiveFrom,
+			effectiveTo: parsed.data.effectiveTo ?? null,
+		})
 	) {
-		return fail("BAD_REQUEST", "Policy end date precedes start date");
+		return fail("BAD_REQUEST", EFFECTIVE_RANGE_INVALID_MESSAGE);
 	}
 	const insurer = await resolveParty(options, {
 		organizationId: parsed.data.organizationId,
@@ -1980,11 +1976,7 @@ export async function listInsurancePoliciesAsOf(
 	);
 	if (!rows.ok) return rows;
 	return ok(
-		rows.data.filter(
-			(row) =>
-				row.effectiveFrom <= parsed.data.asOf &&
-				(!row.effectiveTo || row.effectiveTo >= parsed.data.asOf),
-		),
+		rows.data.filter((row) => isEffectiveOnDate(row, parsed.data.asOf)),
 	);
 }
 export async function listExpiringInsurancePolicies(

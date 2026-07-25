@@ -3,11 +3,13 @@ import type {
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCompensationGradeId,
+	HumanResourcesCompensationProposalId,
 	HumanResourcesCompensationReviewId,
 	HumanResourcesEmployeeCompensationId,
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentId,
 	HumanResourcesSalaryBandId,
+	HumanResourcesApplicationId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
 import type {
@@ -24,6 +26,8 @@ import type {
 	BenefitPlanListPage,
 	CompensationGrade,
 	CompensationGradeListPage,
+	CompensationProposal,
+	CompensationProposalListPage,
 	CompensationReview,
 	CompensationReviewListPage,
 	EmployeeCompensation,
@@ -276,6 +280,60 @@ export type HumanResourcesCompensationStore = {
 		page: number;
 		pageSize: number;
 	}): Promise<Result<CompensationReviewListPage>>;
+	// Compensation Proposal (pre-hire)
+	getCompensationProposal(input: {
+		organizationId: string;
+		proposalId: HumanResourcesCompensationProposalId;
+	}): Promise<Result<CompensationProposal | null>>;
+
+	createCompensationProposal(
+		record: {
+			organizationId: string;
+			applicationId: HumanResourcesApplicationId;
+			proposedBaseAmount: string | null;
+			proposedCurrencyCode: string | null;
+			proposedGradeId: HumanResourcesCompensationGradeId | null;
+			proposedSalaryBandId: HumanResourcesSalaryBandId | null;
+			confidentialNote: string | null;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<CompensationProposal>>;
+
+	amendCompensationProposal(
+		input: {
+			organizationId: string;
+			proposalId: HumanResourcesCompensationProposalId;
+			proposedBaseAmount?: string | null;
+			proposedCurrencyCode?: string | null;
+			proposedGradeId?: HumanResourcesCompensationGradeId | null;
+			proposedSalaryBandId?: HumanResourcesSalaryBandId | null;
+			confidentialNote?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<CompensationProposal>>;
+
+	approveCompensationProposal(
+		input: {
+			organizationId: string;
+			proposalId: HumanResourcesCompensationProposalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<CompensationProposal>>;
+
+	listCompensationProposals(input: {
+		organizationId: string;
+		applicationId?: HumanResourcesApplicationId;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<CompensationProposalListPage>>;
 	// Benefit Plan
 	getBenefitPlan(input: {
 		organizationId: string;

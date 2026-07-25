@@ -33,6 +33,35 @@ export type OffboardingCaseStatus = (typeof OFFBOARDING_CASE_STATUSES)[number];
 export const CLEARANCE_STATUSES = ["pending", "cleared"] as const;
 export type ClearanceStatus = (typeof CLEARANCE_STATUSES)[number];
 
+export const OFFBOARDING_ACCESS_REVOCATION_STATUSES = [
+	"pending",
+	"revoked",
+] as const;
+export type OffboardingAccessRevocationStatus =
+	(typeof OFFBOARDING_ACCESS_REVOCATION_STATUSES)[number];
+
+export const OFFBOARDING_PAYROLL_HANDOFF_STATUSES = ["pending", "ready"] as const;
+export type OffboardingPayrollHandoffStatus =
+	(typeof OFFBOARDING_PAYROLL_HANDOFF_STATUSES)[number];
+
+export const ONBOARDING_ORIENTATION_STATUSES = [
+	"pending",
+	"acknowledged",
+] as const;
+export type OnboardingOrientationStatus =
+	(typeof ONBOARDING_ORIENTATION_STATUSES)[number];
+
+export const ONBOARDING_EQUIPMENT_HANDOFF_STATUSES = [
+	"pending",
+	"handed_over",
+] as const;
+export type OnboardingEquipmentHandoffStatus =
+	(typeof ONBOARDING_EQUIPMENT_HANDOFF_STATUSES)[number];
+
+export const ONBOARDING_ACCESS_HANDOFF_STATUSES = ["pending", "granted"] as const;
+export type OnboardingAccessHandoffStatus =
+	(typeof ONBOARDING_ACCESS_HANDOFF_STATUSES)[number];
+
 export const MOVEMENT_KINDS = ["transfer"] as const;
 export type MovementKind = (typeof MOVEMENT_KINDS)[number];
 
@@ -43,6 +72,21 @@ export const probationOutcomeSchema = z.enum(PROBATION_OUTCOMES);
 export const terminationStatusSchema = z.enum(TERMINATION_STATUSES);
 export const offboardingCaseStatusSchema = z.enum(OFFBOARDING_CASE_STATUSES);
 export const clearanceStatusSchema = z.enum(CLEARANCE_STATUSES);
+export const offboardingAccessRevocationStatusSchema = z.enum(
+	OFFBOARDING_ACCESS_REVOCATION_STATUSES,
+);
+export const offboardingPayrollHandoffStatusSchema = z.enum(
+	OFFBOARDING_PAYROLL_HANDOFF_STATUSES,
+);
+export const onboardingOrientationStatusSchema = z.enum(
+	ONBOARDING_ORIENTATION_STATUSES,
+);
+export const onboardingEquipmentHandoffStatusSchema = z.enum(
+	ONBOARDING_EQUIPMENT_HANDOFF_STATUSES,
+);
+export const onboardingAccessHandoffStatusSchema = z.enum(
+	ONBOARDING_ACCESS_HANDOFF_STATUSES,
+);
 export const movementKindSchema = z.enum(MOVEMENT_KINDS);
 
 export function isOnboardingCaseActive(status: OnboardingCaseStatus): boolean {

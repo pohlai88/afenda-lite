@@ -41,6 +41,7 @@ import {
 import { createLegalCompany } from "../src/legal-company";
 import { createMemoryCorporateAdministrationStore } from "../src/memory-store";
 import { CA_PERMISSION_CODES } from "../src/permissions";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -84,16 +85,12 @@ async function seedCompany(
 	idempotencyKey: string,
 ) {
 	const created = await createLegalCompany(
-		{
-			organizationId: ORG_A,
-			actorUserId: "user-1",
+		createLegalCompanyTestInput(idempotencyKey, {
+			code,
+			legalPartyId: PARTY_A,
 			correlationId: `corr-${idempotencyKey}`,
 			idempotencyKey,
-			requestFingerprint: `fp-${idempotencyKey}`,
-			code,
-			legalEntityDimensionId: DIM_A,
-			legalPartyId: PARTY_A,
-		},
+		}),
 		h,
 	);
 	expect(created.ok).toBe(true);

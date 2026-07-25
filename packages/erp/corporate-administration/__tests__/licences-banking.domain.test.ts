@@ -7,6 +7,7 @@ import {
 } from "../src/licences-banking";
 import { createMemoryCorporateAdministrationStore } from "../src/memory-store";
 import { CA_PERMISSION_CODES } from "../src/permissions";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -32,15 +33,10 @@ describe("@afenda/corporate-administration licences banking", () => {
 	it("masks bank account identity in list responses", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const company = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-lb-1",
-				idempotencyKey: "company-lb-1",
-				requestFingerprint: "fp-lb-1",
+			createLegalCompanyTestInput("company-lb-1", {
 				code: "CO-LB",
-				legalEntityDimensionId: DIM_A,
-			},
+				correlationId: "corr-lb-1",
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(company.ok).toBe(true);

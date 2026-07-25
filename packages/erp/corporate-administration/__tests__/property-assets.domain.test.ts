@@ -30,6 +30,7 @@ import {
 	updateProperty,
 	writeOffCorporateAsset,
 } from "../src/property-assets";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -86,15 +87,10 @@ function command(
 async function seedCompany() {
 	const ready = harness();
 	const company = await createLegalCompany(
-		{
-			organizationId: ORG_A,
-			actorUserId: "user-1",
-			correlationId: "corr-company",
-			idempotencyKey: "company-ca4",
-			requestFingerprint: "company-ca4-fingerprint",
+		createLegalCompanyTestInput("company-ca4", {
 			code: "CO-CA4",
-			legalEntityDimensionId: DIM_A,
-		},
+			correlationId: "corr-company",
+		}),
 		ready.options,
 	);
 	expect(company.ok).toBe(true);

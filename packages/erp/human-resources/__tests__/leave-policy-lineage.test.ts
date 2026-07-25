@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { parseHumanResourcesLeavePolicyId } from "../src/brands";
 import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../src/leave/leave-policy-lineage";
+import { DEFAULT_LEAVE_POLICY_BALANCE_RULES } from "../src/shared/leave-policy-balance-rules";
 import type { LeavePolicy } from "../src/types";
 
 const ORG = "org-leave-policy-lineage";
@@ -35,12 +36,13 @@ function policy(input: {
 		code: input.code,
 		name: input.code,
 		leaveType: "annual",
-		unit: "day",
+		unit: "days",
 		paid: true,
 		sensitive: false,
 		allowsNegativeBalance: false,
 		allowSelfApproval: false,
 		allowsPartialDay: true,
+		...DEFAULT_LEAVE_POLICY_BALANCE_RULES,
 		effectiveFrom: input.effectiveFrom,
 		effectiveTo: input.effectiveTo ?? null,
 		status: input.status ?? "published",

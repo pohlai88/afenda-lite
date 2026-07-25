@@ -9,22 +9,26 @@ import {
 	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_IN_REVIEW,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_INTERVIEWING,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_REJECT,
+	HUMAN_RESOURCES_COMMAND_APPLICATION_REOPEN,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_WITHDRAW,
 	HUMAN_RESOURCES_QUERY_APPLICATION_GET,
 	HUMAN_RESOURCES_QUERY_APPLICATION_LIST,
+	HUMAN_RESOURCES_QUERY_APPLICATION_STATUS_HISTORY_LIST,
 } from "../module-ids";
 import {
 	applicationStatusTransitionInputSchema,
 	createApplicationInputSchema,
 	getApplicationInputSchema,
+	listApplicationStatusHistoryInputSchema,
 	listApplicationsInputSchema,
+	reopenApplicationInputSchema,
 } from "../schemas/recruitment";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
 } from "../shared/recruitment-command";
-import type { ApplicationListPage, CandidateApplication } from "../types";
+import type { ApplicationStatusHistory, ApplicationListPage, CandidateApplication } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_APPLICATION = "application" as const;
 export type HumanResourcesApplicationAggregate =
@@ -80,6 +84,8 @@ async function transitionApplication(
 					status: config.status,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
+					reason: data.reason ?? null,
+					reasonCode: data.reasonCode ?? null,
 				},
 				ports,
 				buildMutationMeta({
@@ -134,6 +140,33 @@ export async function withdrawApplication(
 	});
 }
 
+export async function reopenApplication(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CandidateApplication>> {
+	return runRecruitmentCommand(input, options, {
+		schema: reopenApplicationInputSchema,
+		invalidMessage: "Invalid application reopen input",
+		command: HUMAN_RESOURCES_COMMAND_APPLICATION_REOPEN,
+		execute: (data, { store, ports }) =>
+			store.reopenApplication(
+				{
+					organizationId: data.organizationId,
+					applicationId: data.applicationId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+					reason: data.reason ?? null,
+					reasonCode: data.reasonCode ?? null,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_APPLICATION_REOPEN,
+				}),
+			),
+	});
+}
+
 export async function getApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
@@ -179,5 +212,26 @@ export async function listApplications(
 				candidateId: data.candidateId,
 				requisitionId: data.requisitionId,
 			}),
+	});
+}
+
+export async function listApplicationStatusHistory(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<ApplicationStatusHistory[]>> {
+	return runRecruitmentQuery(input, options, {
+		schema: listApplicationStatusHistoryInputSchema,
+		invalidMessage: "Invalid application status history input",
+		query: HUMAN_RESOURCES_QUERY_APPLICATION_STATUS_HISTORY_LIST,
+		execute: async (data, { store }) => {
+			const history = await store.listApplicationStatusHistory({
+				organizationId: data.organizationId,
+				applicationId: data.applicationId,
+			});
+			if (!history.ok) {
+				return history;
+			}
+			return ok(history.data);
+		},
 	});
 }

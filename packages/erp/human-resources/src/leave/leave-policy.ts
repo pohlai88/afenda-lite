@@ -26,6 +26,7 @@ import {
 } from "../schemas/leave";
 import { fingerprintLeavePolicyCreate } from "../shared/fingerprint";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
+import { resolveLeavePolicyBalanceRulesFromInput } from "../shared/leave-policy-balance-rules";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	LeavePolicy,
@@ -79,6 +80,7 @@ export async function createLeavePolicy(
 					allowsNegativeBalance: data.allowsNegativeBalance ?? false,
 					allowSelfApproval: data.allowSelfApproval ?? false,
 					allowsPartialDay: data.allowsPartialDay ?? false,
+					...resolveLeavePolicyBalanceRulesFromInput(data),
 					effectiveFrom: data.effectiveFrom,
 					effectiveTo: data.effectiveTo ?? null,
 					minTenureDays: data.minTenureDays ?? null,
@@ -114,6 +116,13 @@ export async function updateLeavePolicy(
 					allowsNegativeBalance: data.allowsNegativeBalance,
 					allowSelfApproval: data.allowSelfApproval,
 					allowsPartialDay: data.allowsPartialDay,
+					accrualBasis: data.accrualBasis,
+					accrualFrequency: data.accrualFrequency,
+					accrualQuantityPerPeriod: data.accrualQuantityPerPeriod,
+					carryForwardEnabled: data.carryForwardEnabled,
+					carryForwardMaxQuantity: data.carryForwardMaxQuantity,
+					entitlementExpiryRule: data.entitlementExpiryRule,
+					entitlementExpiryDays: data.entitlementExpiryDays,
 					effectiveTo: data.effectiveTo,
 					minTenureDays: data.minTenureDays,
 					allowedEmploymentStatuses: data.allowedEmploymentStatuses,
@@ -176,6 +185,7 @@ export async function supersedeLeavePolicy(
 					allowsNegativeBalance: data.allowsNegativeBalance ?? false,
 					allowSelfApproval: data.allowSelfApproval ?? false,
 					allowsPartialDay: data.allowsPartialDay ?? false,
+					...resolveLeavePolicyBalanceRulesFromInput(data),
 					effectiveFrom: data.effectiveFrom,
 					effectiveTo: data.effectiveTo ?? null,
 					minTenureDays: data.minTenureDays ?? null,

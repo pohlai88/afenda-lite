@@ -5,9 +5,11 @@ import {
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
 } from "@afenda/events/schemas";
 import {
+	type HumanResourcesApplicationId,
 	type HumanResourcesBenefitEnrollmentId,
 	type HumanResourcesBenefitPlanId,
 	type HumanResourcesCompensationGradeId,
+	type HumanResourcesCompensationProposalId,
 	type HumanResourcesCompensationReviewId,
 	type HumanResourcesEmployeeCompensationId,
 	type HumanResourcesEmployeeId,
@@ -16,10 +18,12 @@ import {
 	parseHumanResourcesBenefitEnrollmentId,
 	parseHumanResourcesBenefitPlanId,
 	parseHumanResourcesCompensationGradeId,
+	parseHumanResourcesCompensationProposalId,
 	parseHumanResourcesCompensationReviewId,
 	parseHumanResourcesEmployeeCompensationId,
 	parseHumanResourcesSalaryBandId,
 } from "../../brands";
+import { appendRegistryGatedOutbox } from "../../emissions/sql-side-effects";
 import {
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -29,6 +33,10 @@ import {
 	compareMoneyOrder,
 	rangesOverlap,
 } from "../../shared/compensation-money";
+import {
+	assertCompensationProposalAmendable,
+	assertCompensationProposalStatusTransition,
+} from "../../shared/compensation-proposal-guards";
 import {
 	isBenefitEnrollmentActive,
 	isCompensationGradeActive,
@@ -49,6 +57,8 @@ import type {
 	BenefitPlanListPage,
 	CompensationGrade,
 	CompensationGradeListPage,
+	CompensationProposal,
+	CompensationProposalListPage,
 	CompensationReview,
 	CompensationReviewListPage,
 	EmployeeCompensation,
@@ -57,6 +67,7 @@ import type {
 	SalaryBandListPage,
 } from "../../types";
 import type { CoreMemoryState } from "./core";
+import type { RecruitmentMemoryState } from "./recruitment";
 import { idempotencyMapKey } from "./shared";
 
 export type CompensationBenefitsMemoryState = {
@@ -70,6 +81,10 @@ export type CompensationBenefitsMemoryState = {
 	compensationReviews: Map<
 		HumanResourcesCompensationReviewId,
 		CompensationReview
+	>;
+	compensationProposals: Map<
+		HumanResourcesCompensationProposalId,
+		CompensationProposal
 	>;
 	reviewIdempotencyByKey: Map<string, CompensationReview>;
 	benefitPlans: Map<HumanResourcesBenefitPlanId, BenefitPlan>;
@@ -104,6 +119,11 @@ export type MemoryCompensationBenefitsMethods = Pick<
 	| "finalizeCompensationReview"
 	| "applyApprovedCompensationResult"
 	| "listCompensationReviewsByEmployee"
+	| "getCompensationProposal"
+	| "createCompensationProposal"
+	| "amendCompensationProposal"
+	| "approveCompensationProposal"
+	| "listCompensationProposals"
 	| "getBenefitPlan"
 	| "findBenefitPlanByCode"
 	| "createBenefitPlan"
@@ -126,6 +146,7 @@ export function createCompensationBenefitsMemoryState(): CompensationBenefitsMem
 		employeeCompensations: new Map(),
 		compensationIdempotencyByKey: new Map(),
 		compensationReviews: new Map(),
+		compensationProposals: new Map(),
 		reviewIdempotencyByKey: new Map(),
 		benefitPlans: new Map(),
 		benefitEnrollments: new Map(),
@@ -141,6 +162,7 @@ export function resetCompensationBenefitsMemoryState(
 	state.employeeCompensations.clear();
 	state.compensationIdempotencyByKey.clear();
 	state.compensationReviews.clear();
+	state.compensationProposals.clear();
 	state.reviewIdempotencyByKey.clear();
 	state.benefitPlans.clear();
 	state.benefitEnrollments.clear();
@@ -150,6 +172,7 @@ export function resetCompensationBenefitsMemoryState(
 export function createMemoryCompensationBenefitsMethods(
 	state: CompensationBenefitsMemoryState,
 	core: CoreMemoryState,
+	recruitment: RecruitmentMemoryState,
 ): MemoryCompensationBenefitsMethods &
 	ThisType<MemoryCompensationBenefitsMethods> {
 	return {
@@ -1420,6 +1443,294 @@ export function createMemoryCompensationBenefitsMethods(
 			const paginated = reviews.slice(offset, offset + input.pageSize);
 			return ok({
 				reviews: paginated.map((r) => ({ ...r })),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		// --- Compensation Proposal ---
+
+		async getCompensationProposal(input: {
+			organizationId: string;
+			proposalId: HumanResourcesCompensationProposalId;
+		}): Promise<Result<CompensationProposal | null>> {
+			const proposal =
+				state.compensationProposals.get(input.proposalId) ?? null;
+			if (proposal && proposal.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+			return ok(proposal === null ? null : { ...proposal });
+		},
+
+		async createCompensationProposal(
+			record: {
+				organizationId: string;
+				applicationId: HumanResourcesApplicationId;
+				proposedBaseAmount: string | null;
+				proposedCurrencyCode: string | null;
+				proposedGradeId: HumanResourcesCompensationGradeId | null;
+				proposedSalaryBandId: HumanResourcesSalaryBandId | null;
+				confidentialNote: string | null;
+				createdBy: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<CompensationProposal>> {
+			const application = recruitment.applications.get(record.applicationId);
+			if (application === undefined) {
+				return notFound("Application not found");
+			}
+			if (application.organizationId !== record.organizationId) {
+				return notFound(
+					"Application not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const idResult = parseHumanResourcesCompensationProposalId(randomUUID());
+			if (!idResult.ok) return idResult;
+			const id = idResult.data;
+
+			const now = new Date();
+			const proposal: CompensationProposal = {
+				id,
+				organizationId: record.organizationId,
+				applicationId: record.applicationId,
+				status: "draft",
+				proposedBaseAmount: record.proposedBaseAmount,
+				proposedCurrencyCode: record.proposedCurrencyCode,
+				proposedGradeId: record.proposedGradeId,
+				proposedSalaryBandId: record.proposedSalaryBandId,
+				confidentialNote: record.confidentialNote,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.compensationProposals.set(id, proposal);
+
+			const audit = await ports.audit.record({
+				organizationId: proposal.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				entity: "hr_compensation_proposal",
+				entityId: proposal.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.compensationProposals.delete(id);
+				return audit;
+			}
+
+			return ok({ ...proposal });
+		},
+
+		async amendCompensationProposal(
+			input: {
+				organizationId: string;
+				proposalId: HumanResourcesCompensationProposalId;
+				proposedBaseAmount?: string | null;
+				proposedCurrencyCode?: string | null;
+				proposedGradeId?: HumanResourcesCompensationGradeId | null;
+				proposedSalaryBandId?: HumanResourcesSalaryBandId | null;
+				confidentialNote?: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<CompensationProposal>> {
+			const proposal = state.compensationProposals.get(input.proposalId);
+			if (!proposal) {
+				return notFound(
+					"Compensation proposal not found",
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				);
+			}
+			if (proposal.organizationId !== input.organizationId) {
+				return notFound(
+					"Compensation proposal not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				proposal.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const amendable = assertCompensationProposalAmendable(proposal.status);
+			if (!amendable.ok) {
+				return amendable;
+			}
+
+			const now = new Date();
+			const previous = { ...proposal };
+			const updated: CompensationProposal = {
+				...proposal,
+				proposedBaseAmount:
+					input.proposedBaseAmount !== undefined
+						? input.proposedBaseAmount
+						: proposal.proposedBaseAmount,
+				proposedCurrencyCode:
+					input.proposedCurrencyCode !== undefined
+						? input.proposedCurrencyCode
+						: proposal.proposedCurrencyCode,
+				proposedGradeId:
+					input.proposedGradeId !== undefined
+						? input.proposedGradeId
+						: proposal.proposedGradeId,
+				proposedSalaryBandId:
+					input.proposedSalaryBandId !== undefined
+						? input.proposedSalaryBandId
+						: proposal.proposedSalaryBandId,
+				confidentialNote:
+					input.confidentialNote !== undefined
+						? input.confidentialNote
+						: proposal.confidentialNote,
+				version: proposal.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.compensationProposals.set(updated.id, updated);
+
+			const rollback: Array<() => void> = [
+				() => state.compensationProposals.set(updated.id, previous),
+			];
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_compensation_proposal",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...updated });
+		},
+
+		async approveCompensationProposal(
+			input: {
+				organizationId: string;
+				proposalId: HumanResourcesCompensationProposalId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<CompensationProposal>> {
+			const proposal = state.compensationProposals.get(input.proposalId);
+			if (!proposal) {
+				return notFound(
+					"Compensation proposal not found",
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				);
+			}
+			if (proposal.organizationId !== input.organizationId) {
+				return notFound(
+					"Compensation proposal not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				proposal.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (!proposal.proposedBaseAmount || !proposal.proposedCurrencyCode) {
+				return invalidState(
+					"Proposal must have proposed base amount and currency before approval",
+				);
+			}
+			const transition = assertCompensationProposalStatusTransition(
+				proposal.status,
+				"approved",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const now = new Date();
+			const previous = { ...proposal };
+			const updated: CompensationProposal = {
+				...proposal,
+				status: "approved",
+				version: proposal.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.compensationProposals.set(updated.id, updated);
+
+			const rollback: Array<() => void> = [
+				() => state.compensationProposals.set(updated.id, previous),
+			];
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_compensation_proposal",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_compensation_proposal",
+			});
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+
+			return ok({ ...updated });
+		},
+
+		async listCompensationProposals(input: {
+			organizationId: string;
+			applicationId?: HumanResourcesApplicationId;
+			page: number;
+			pageSize: number;
+		}): Promise<Result<CompensationProposalListPage>> {
+			let proposals = Array.from(state.compensationProposals.values()).filter(
+				(proposal) => proposal.organizationId === input.organizationId,
+			);
+			if (input.applicationId) {
+				proposals = proposals.filter(
+					(proposal) => proposal.applicationId === input.applicationId,
+				);
+			}
+			proposals.sort((a, b) => {
+				const aDate = a.createdAt.toISOString();
+				const bDate = b.createdAt.toISOString();
+				return bDate.localeCompare(aDate);
+			});
+			const totalCount = proposals.length;
+			const offset = (input.page - 1) * input.pageSize;
+			const paginated = proposals.slice(offset, offset + input.pageSize);
+			return ok({
+				proposals: paginated.map((proposal) => ({ ...proposal })),
 				totalCount,
 				page: input.page,
 				pageSize: input.pageSize,

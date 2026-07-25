@@ -268,6 +268,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrEmployeeCertification: "hr_employee_certification",
 	hrDevelopmentPlan: "hr_development_plan",
 	hrCompensationGrade: "hr_compensation_grade",
+	hrCompensationProposal: "hr_compensation_proposal",
 	hrSalaryBand: "hr_salary_band",
 	hrEmployeeCompensation: "hr_employee_compensation",
 	hrAllowanceEntitlement: "hr_allowance_entitlement",

@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
 	humanResourcesApplicationIdSchema,
 	humanResourcesCandidateIdSchema,
+	humanResourcesCompensationProposalIdSchema,
 	humanResourcesDepartmentIdSchema,
 	humanResourcesEmployeeIdSchema,
 	humanResourcesInterviewIdSchema,
@@ -232,11 +233,30 @@ export const applicationStatusTransitionInputSchema =
 		.extend({
 			applicationId: humanResourcesApplicationIdSchema,
 			expectedVersion: humanResourcesExpectedVersionSchema,
+			reason: z.string().trim().min(1).max(2000).optional(),
+			reasonCode: z.string().trim().min(1).max(64).optional(),
 		})
 		.strict();
 
 export type ApplicationStatusTransitionInput = z.infer<
 	typeof applicationStatusTransitionInputSchema
+>;
+
+export const reopenApplicationInputSchema = applicationStatusTransitionInputSchema;
+
+export type ReopenApplicationInput = z.infer<
+	typeof reopenApplicationInputSchema
+>;
+
+export const listApplicationStatusHistoryInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			applicationId: humanResourcesApplicationIdSchema,
+		})
+		.strict();
+
+export type ListApplicationStatusHistoryInput = z.infer<
+	typeof listApplicationStatusHistoryInputSchema
 >;
 
 export const getApplicationInputSchema = humanResourcesMutationContextSchema
@@ -260,6 +280,38 @@ export const listApplicationsInputSchema = humanResourcesMutationContextSchema
 export type ListApplicationsInput = z.infer<typeof listApplicationsInputSchema>;
 
 // Interview schemas
+export const interviewScorecardCriterionSchema = z
+	.object({
+		criterionCode: z.string().trim().min(1).max(64),
+		label: z.string().trim().min(1).max(200),
+		rating: z.number().int().min(1).max(5),
+		comment: z.string().trim().max(1000).nullable().optional(),
+	})
+	.strict()
+	.transform((value) => ({
+		criterionCode: value.criterionCode,
+		label: value.label,
+		rating: value.rating,
+		comment: value.comment ?? null,
+	}));
+
+export const interviewScorecardSchema = z
+	.object({
+		criteria: z
+			.array(interviewScorecardCriterionSchema)
+			.min(1)
+			.max(20)
+			.refine(
+				(criteria) =>
+					new Set(criteria.map((criterion) => criterion.criterionCode)).size ===
+					criteria.length,
+				{ message: "criterionCode must be unique within scorecard" },
+			),
+	})
+	.strict();
+
+export type InterviewScorecardInput = z.infer<typeof interviewScorecardSchema>;
+
 export const scheduleInterviewInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		applicationId: humanResourcesApplicationIdSchema,
@@ -286,6 +338,7 @@ export const recordInterviewEvaluationInputSchema =
 		.extend({
 			interviewId: humanResourcesInterviewIdSchema,
 			result: interviewEvaluationResultSchema,
+			scorecard: interviewScorecardSchema,
 			privateNotes: z.string().trim().max(4000).nullable().optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
@@ -293,6 +346,19 @@ export const recordInterviewEvaluationInputSchema =
 
 export type RecordInterviewEvaluationInput = z.infer<
 	typeof recordInterviewEvaluationInputSchema
+>;
+
+export const assignInterviewInterviewerInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			interviewId: humanResourcesInterviewIdSchema,
+			interviewerActorId: humanResourcesActorUserIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type AssignInterviewInterviewerInput = z.infer<
+	typeof assignInterviewInterviewerInputSchema
 >;
 
 export const getInterviewInputSchema = humanResourcesMutationContextSchema
@@ -330,6 +396,8 @@ export const createOfferInputSchema = humanResourcesMutationContextSchema
 		applicationId: humanResourcesApplicationIdSchema,
 		termsSummary: z.string().trim().min(1).max(2000),
 		expiresOn: isoDateSchema,
+		compensationProposalId:
+			humanResourcesCompensationProposalIdSchema.nullish(),
 	})
 	.strict();
 
@@ -340,6 +408,8 @@ export const amendOfferDraftInputSchema = humanResourcesMutationContextSchema
 		offerId: humanResourcesOfferIdSchema,
 		termsSummary: z.string().trim().min(1).max(2000).optional(),
 		expiresOn: isoDateSchema.optional(),
+		compensationProposalId:
+			humanResourcesCompensationProposalIdSchema.nullish(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();

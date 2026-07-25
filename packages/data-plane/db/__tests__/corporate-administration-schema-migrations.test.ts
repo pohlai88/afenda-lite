@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { getTableColumns, getTableName } from "drizzle-orm";
+import { getTableColumns, getTableName, is, Table } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import { HARD_TENANT_ROOT_TABLE_NAMES } from "../src/hard-tenant-roots";
@@ -43,7 +43,16 @@ const EXPECTED_TABLE_NAMES = [
 	"ca_share_transaction_leg",
 ] as const;
 
-const tables = Object.values(corporateAdministrationSchema);
+const tables = Object.values(corporateAdministrationSchema).filter((value) => {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+	try {
+		return getTableColumns(value as never).organizationId !== undefined;
+	} catch {
+		return false;
+	}
+});
 const migrationSql = Array.from({ length: 8 }, (_, index) => {
 	const number = String(index + 19).padStart(4, "0");
 	const names = [
@@ -79,6 +88,33 @@ const migrationSql = Array.from({ length: 8 }, (_, index) => {
 			"utf8",
 		),
 	)
+	.concat(
+		readFileSync(
+			new URL(
+				"../drizzle/0030_ca_legal_company_hardening.sql",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	)
+	.concat(
+		readFileSync(
+			new URL(
+				"../drizzle/0040_ca_legal_company_registry_hardening.sql",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	)
+	.concat(
+		readFileSync(
+			new URL(
+				"../drizzle/0041_ca_company_identifier_drop_legacy_columns.sql",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	)
 	.join("\n");
 
 describe("@afenda/db corporate-administration schema and migrations", () => {
@@ -107,6 +143,22 @@ describe("@afenda/db corporate-administration schema and migrations", () => {
 		);
 		expect(migrationSql).toContain(
 			'CREATE INDEX IF NOT EXISTS "ca_filing_obligation_org_company_due_idx"',
+		);
+		expect(migrationSql).toContain('"ca_legal_company_status_chk"');
+		expect(migrationSql).toContain(
+			'RENAME COLUMN "normalized_value" TO "normalized_identifier_value"',
+		);
+		expect(migrationSql).toContain(
+			'RENAME COLUMN "effective_date" TO "effective_at"',
+		);
+		expect(migrationSql).toContain(
+			'RENAME COLUMN "supersedes_id" TO "supersedes_company_name_id"',
+		);
+		expect(migrationSql).toContain(
+			'DROP COLUMN IF EXISTS "jurisdiction_code"',
+		);
+		expect(migrationSql).toContain(
+			'DROP COLUMN IF EXISTS "issuing_authority"',
 		);
 	});
 });

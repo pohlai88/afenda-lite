@@ -1,5 +1,6 @@
 import {
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
+	HUMAN_RESOURCES_OFFER_APPROVED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
@@ -21,6 +22,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
 	HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
 	HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
@@ -28,10 +30,16 @@ import {
 } from "../src/permissions";
 import {
 	createApplication,
+	listApplicationStatusHistory,
 	moveApplicationToInReview,
+	moveApplicationToInterviewing,
+	rejectApplication,
+	reopenApplication,
+	withdrawApplication,
 } from "../src/recruitment/application";
 import { createCandidate } from "../src/recruitment/candidate";
 import {
+	assignInterviewInterviewer,
 	getInterviewEvaluation,
 	listInterviews,
 	recordInterviewEvaluation,
@@ -40,9 +48,13 @@ import {
 import {
 	acceptOffer,
 	amendOfferDraft,
+	approveOffer,
 	createOffer,
+	declineOffer,
 	expireOffer,
+	getOffer,
 	issueOffer,
+	listOffers,
 	withdrawOffer,
 } from "../src/recruitment/offer";
 import {
@@ -64,10 +76,19 @@ import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-auth
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
+	ALTERNATE_INTERVIEW_SCORECARD,
+	SAMPLE_INTERVIEW_SCORECARD,
+} from "./helpers/recruitment-interview-fixture";
+import {
 	seedActiveEmployee,
 	seedDefaultHiringManager,
 	seedRequisitionPipeline,
 } from "./helpers/recruitment-requisition-fixture";
+import {
+	createAndIssueOffer,
+	seedApprovedCompensationProposal,
+	withOfferLifecycleDeps,
+} from "./helpers/offer-lifecycle-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG_A = "org-recruit-a";
@@ -227,6 +248,7 @@ describe("@afenda/human-resources recruitment", () => {
 				correlationId: "corr-eval",
 				interviewId: interview.data.id,
 				result: "advance",
+				scorecard: SAMPLE_INTERVIEW_SCORECARD,
 				privateNotes: "strong communicator",
 				expectedVersion: interview.data.version,
 			},
@@ -251,30 +273,14 @@ describe("@afenda/human-resources recruitment", () => {
 			).toBe(false);
 		}
 
-		const offer = await createOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-offer",
-				applicationId: seeded.application.id,
-				termsSummary: "Full-time offer",
-				expiresOn: "2030-12-31",
-			},
-			ready,
-		);
-		expect(offer.ok).toBe(true);
-		if (!offer.ok) return;
-
-		const issued = await issueOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-issue",
-				offerId: offer.data.id,
-				expectedVersion: offer.data.version,
-			},
-			ready,
-		);
+		const issued = await createAndIssueOffer(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			applicationId: seeded.application.id,
+			termsSummary: "Full-time offer",
+			expiresOn: "2030-12-31",
+			correlationPrefix: "corr-happy",
+		});
 		expect(issued.ok).toBe(true);
 		if (!issued.ok) return;
 
@@ -510,29 +516,14 @@ describe("@afenda/human-resources recruitment", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
-		const offer = await createOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-term-offer",
-				applicationId: seeded.application.id,
-				termsSummary: "Expiring",
-				expiresOn: "2020-01-01",
-			},
-			ready,
-		);
-		expect(offer.ok).toBe(true);
-		if (!offer.ok) return;
-		const issued = await issueOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-term-issue",
-				offerId: offer.data.id,
-				expectedVersion: offer.data.version,
-			},
-			ready,
-		);
+		const issued = await createAndIssueOffer(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			applicationId: seeded.application.id,
+			termsSummary: "Expiring",
+			expiresOn: "2020-01-01",
+			correlationPrefix: "corr-term",
+		});
 		expect(issued.ok).toBe(true);
 		if (!issued.ok) return;
 
@@ -574,29 +565,14 @@ describe("@afenda/human-resources recruitment", () => {
 		});
 		expect(seeded2.ok).toBe(true);
 		if (!seeded2.ok) return;
-		const offer2 = await createOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-wd-offer",
-				applicationId: seeded2.application.id,
-				termsSummary: "Withdraw me",
-				expiresOn: "2030-12-31",
-			},
-			ready,
-		);
-		expect(offer2.ok).toBe(true);
-		if (!offer2.ok) return;
-		const issued2 = await issueOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-wd-issue",
-				offerId: offer2.data.id,
-				expectedVersion: offer2.data.version,
-			},
-			ready,
-		);
+		const issued2 = await createAndIssueOffer(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			applicationId: seeded2.application.id,
+			termsSummary: "Withdraw me",
+			expiresOn: "2030-12-31",
+			correlationPrefix: "corr-wd",
+		});
 		expect(issued2.ok).toBe(true);
 		if (!issued2.ok) return;
 		const withdrawn = await withdrawOffer(
@@ -667,13 +643,14 @@ describe("@afenda/human-resources recruitment", () => {
 		}
 	});
 
-	it("forbids confidential evaluation reads without interview.record", async () => {
+	it("projects confidential evaluation notes by permission", async () => {
 		const writer = harness([
 			HUMAN_RESOURCES_PERMISSION_REQUISITION_CREATE,
 			HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
 			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
 			HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
 			HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
 			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
@@ -706,6 +683,7 @@ describe("@afenda/human-resources recruitment", () => {
 				correlationId: "corr-priv-eval",
 				interviewId: interview.data.id,
 				result: "hold",
+				scorecard: SAMPLE_INTERVIEW_SCORECARD,
 				privateNotes: "confidential notes",
 				expectedVersion: interview.data.version,
 			},
@@ -720,21 +698,56 @@ describe("@afenda/human-resources recruitment", () => {
 				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 			]),
 		};
-		const read = await getInterviewEvaluation(
+		const forbidden = await getInterviewEvaluation(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-priv-forbidden",
+				interviewId: interview.data.id,
+			},
+			denied,
+		);
+		expect(forbidden.ok).toBe(false);
+		if (!forbidden.ok) {
+			expect(humanResourcesCodeFromResult(forbidden)).toBe(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			);
+		}
+
+		const reader = {
+			store: writer.store,
+			ports: writer.ports,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
+			]),
+		};
+		const masked = await getInterviewEvaluation(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-priv-masked",
+				interviewId: interview.data.id,
+			},
+			reader,
+		);
+		expect(masked.ok).toBe(true);
+		if (!masked.ok) return;
+		expect(masked.data.result).toBe("hold");
+		expect(masked.data.scorecard).toEqual(SAMPLE_INTERVIEW_SCORECARD);
+		expect(masked.data.privateNotes).toBeNull();
+
+		const full = await getInterviewEvaluation(
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				correlationId: "corr-priv-read",
 				interviewId: interview.data.id,
 			},
-			denied,
+			writer,
 		);
-		expect(read.ok).toBe(false);
-		if (!read.ok) {
-			expect(humanResourcesCodeFromResult(read)).toBe(
-				HUMAN_RESOURCES_ERROR_FORBIDDEN,
-			);
-		}
+		expect(full.ok).toBe(true);
+		if (!full.ok) return;
+		expect(full.data.privateNotes).toBe("confidential notes");
 	});
 
 	it("rejects stale version on requisition amend", async () => {
@@ -782,29 +795,14 @@ describe("@afenda/human-resources recruitment", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
-		const offer = await createOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-tx-offer",
-				applicationId: seeded.application.id,
-				termsSummary: "TX",
-				expiresOn: "2030-12-31",
-			},
-			ready,
-		);
-		expect(offer.ok).toBe(true);
-		if (!offer.ok) return;
-		const issued = await issueOffer(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-tx-issue",
-				offerId: offer.data.id,
-				expectedVersion: offer.data.version,
-			},
-			ready,
-		);
+		const issued = await createAndIssueOffer(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			applicationId: seeded.application.id,
+			termsSummary: "TX",
+			expiresOn: "2030-12-31",
+			correlationPrefix: "corr-tx",
+		});
 		expect(issued.ok).toBe(true);
 		if (!issued.ok) return;
 
@@ -925,6 +923,7 @@ describe("@afenda/human-resources recruitment", () => {
 				correlationId: "corr-eval-dup-1",
 				interviewId: interview.data.id,
 				result: "advance",
+				scorecard: SAMPLE_INTERVIEW_SCORECARD,
 				expectedVersion: interview.data.version,
 			},
 			ready,
@@ -938,6 +937,7 @@ describe("@afenda/human-resources recruitment", () => {
 				correlationId: "corr-eval-dup-2",
 				interviewId: interview.data.id,
 				result: "reject",
+				scorecard: ALTERNATE_INTERVIEW_SCORECARD,
 				expectedVersion: interview.data.version + 1,
 			},
 			ready,
@@ -1240,5 +1240,692 @@ describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
 		if (cancelled.ok) {
 			expect(cancelled.data.status).toBe("cancelled");
 		}
+	});
+});
+
+describe("Slice 6.3 — Application lifecycle", () => {
+	it("records reason history across create, stage moves, reject, and reopen", async () => {
+		const ready = harness();
+		const requisition = await seedOpenRequisition(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S63-HIST",
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+		const candidate = await seedCandidate(ready, {
+			organizationId: ORG_A,
+			email: "s63-history@example.com",
+		});
+		expect(candidate.ok).toBe(true);
+		if (!candidate.ok) return;
+
+		const application = await createApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-create",
+				candidateId: candidate.data.id,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(application.ok).toBe(true);
+		if (!application.ok) return;
+
+		const inReview = await moveApplicationToInReview(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-review",
+				applicationId: application.data.id,
+				expectedVersion: application.data.version,
+			},
+			ready,
+		);
+		expect(inReview.ok).toBe(true);
+		if (!inReview.ok) return;
+
+		const interviewing = await moveApplicationToInterviewing(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-interview",
+				applicationId: inReview.data.id,
+				expectedVersion: inReview.data.version,
+			},
+			ready,
+		);
+		expect(interviewing.ok).toBe(true);
+		if (!interviewing.ok) return;
+
+		const rejected = await rejectApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-reject",
+				applicationId: interviewing.data.id,
+				expectedVersion: interviewing.data.version,
+				reason: "Insufficient experience",
+			},
+			ready,
+		);
+		expect(rejected.ok).toBe(true);
+		if (!rejected.ok) return;
+		expect(rejected.data.status).toBe("rejected");
+
+		const reopened = await reopenApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-reopen",
+				applicationId: rejected.data.id,
+				expectedVersion: rejected.data.version,
+				reasonCode: "candidate_returned",
+			},
+			ready,
+		);
+		expect(reopened.ok).toBe(true);
+		if (!reopened.ok) return;
+		expect(reopened.data.status).toBe("submitted");
+
+		const history = await listApplicationStatusHistory(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-history-list",
+				applicationId: application.data.id,
+			},
+			ready,
+		);
+		expect(history.ok).toBe(true);
+		if (!history.ok) return;
+		expect(history.data).toHaveLength(5);
+		expect(history.data.map((row) => row.toStatus)).toEqual([
+			"submitted",
+			"in_review",
+			"interviewing",
+			"rejected",
+			"submitted",
+		]);
+		expect(history.data[3]?.reason).toBe("Insufficient experience");
+		expect(history.data[4]?.reasonCode).toBe("candidate_returned");
+	});
+
+	it("withdraw stores reasonCode and blocks duplicate open application after reopen", async () => {
+		const ready = harness();
+		const requisition = await seedOpenRequisition(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S63-ONEOPEN",
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+		const candidate = await seedCandidate(ready, {
+			organizationId: ORG_A,
+			email: "s63-oneopen@example.com",
+		});
+		expect(candidate.ok).toBe(true);
+		if (!candidate.ok) return;
+
+		const application = await createApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-w-create",
+				candidateId: candidate.data.id,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(application.ok).toBe(true);
+		if (!application.ok) return;
+
+		const withdrawn = await withdrawApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-w-withdraw",
+				applicationId: application.data.id,
+				expectedVersion: application.data.version,
+				reasonCode: "candidate_declined",
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+
+		const reopened = await reopenApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-w-reopen",
+				applicationId: withdrawn.data.id,
+				expectedVersion: withdrawn.data.version,
+			},
+			ready,
+		);
+		expect(reopened.ok).toBe(true);
+		if (!reopened.ok) return;
+
+		const duplicate = await createApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-w-dup",
+				candidateId: candidate.data.id,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(duplicate.ok).toBe(false);
+		if (!duplicate.ok) {
+			expect(humanResourcesCodeFromResult(duplicate)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+	});
+
+	it("rejects reopen from non-terminal status", async () => {
+		const ready = harness();
+		const requisition = await seedOpenRequisition(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S63-NOREOPEN",
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+		const candidate = await seedCandidate(ready, {
+			organizationId: ORG_A,
+			email: "s63-noreopen@example.com",
+		});
+		expect(candidate.ok).toBe(true);
+		if (!candidate.ok) return;
+
+		const application = await createApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-nr-create",
+				candidateId: candidate.data.id,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(application.ok).toBe(true);
+		if (!application.ok) return;
+
+		const denied = await reopenApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-nr-reopen",
+				applicationId: application.data.id,
+				expectedVersion: application.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			expect(humanResourcesCodeFromResult(denied)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+	});
+
+	it("blocks reopen when another open application exists for the same candidate and requisition", async () => {
+		const ready = harness();
+		const requisition = await seedOpenRequisition(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S63-REOPEN-BLOCK",
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+		const candidate = await seedCandidate(ready, {
+			organizationId: ORG_A,
+			email: "s63-reopen-block@example.com",
+		});
+		expect(candidate.ok).toBe(true);
+		if (!candidate.ok) return;
+
+		const withdrawnApplication = await createApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-rb-withdraw-create",
+				candidateId: candidate.data.id,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(withdrawnApplication.ok).toBe(true);
+		if (!withdrawnApplication.ok) return;
+
+		const withdrawn = await withdrawApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-rb-withdraw",
+				applicationId: withdrawnApplication.data.id,
+				expectedVersion: withdrawnApplication.data.version,
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+
+		const activeApplication = await createApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-rb-active-create",
+				candidateId: candidate.data.id,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(activeApplication.ok).toBe(true);
+		if (!activeApplication.ok) return;
+
+		const deniedReopen = await reopenApplication(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s63-rb-reopen-denied",
+				applicationId: withdrawn.data.id,
+				expectedVersion: withdrawn.data.version,
+			},
+			ready,
+		);
+		expect(deniedReopen.ok).toBe(false);
+		if (!deniedReopen.ok) {
+			expect(humanResourcesCodeFromResult(deniedReopen)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+	});
+
+	describe("Slice 6.4 — Interview", () => {
+		it("assigns and reassigns interviewer while scheduled", async () => {
+			const ready = harness();
+			const seeded = await seedOfferReadyApplication(ready, {
+				organizationId: ORG_A,
+				code: "REQ-S64-ASSIGN",
+				email: "s64-assign@example.com",
+			});
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const interview = await scheduleInterview(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-schedule",
+					applicationId: seeded.application.id,
+					scheduledAt: "2030-04-01T10:00:00.000Z",
+					interviewerActorId: "actor-original",
+				},
+				ready,
+			);
+			expect(interview.ok).toBe(true);
+			if (!interview.ok) return;
+			expect(interview.data.interviewerActorId).toBe("actor-original");
+
+			const reassigned = await assignInterviewInterviewer(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-reassign",
+					interviewId: interview.data.id,
+					interviewerActorId: "actor-replacement",
+					expectedVersion: interview.data.version,
+				},
+				ready,
+			);
+			expect(reassigned.ok).toBe(true);
+			if (!reassigned.ok) return;
+			expect(reassigned.data.interviewerActorId).toBe("actor-replacement");
+			expect(reassigned.data.version).toBe(interview.data.version + 1);
+
+			const denied = await assignInterviewInterviewer(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-reassign-denied",
+					interviewId: interview.data.id,
+					interviewerActorId: "actor-late",
+					expectedVersion: interview.data.version,
+				},
+				ready,
+			);
+			expect(denied.ok).toBe(false);
+			if (!denied.ok) {
+				expect(humanResourcesCodeFromResult(denied)).toBe(
+					HUMAN_RESOURCES_ERROR_STALE_VERSION,
+				);
+			}
+		});
+
+		it("persists scorecard and decision result on completed interviews", async () => {
+			const ready = harness();
+			const seeded = await seedOfferReadyApplication(ready, {
+				organizationId: ORG_A,
+				code: "REQ-S64-SCORE",
+				email: "s64-score@example.com",
+			});
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const interview = await scheduleInterview(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-score-int",
+					applicationId: seeded.application.id,
+					scheduledAt: "2030-04-02T10:00:00.000Z",
+					interviewerActorId: ACTOR,
+				},
+				ready,
+			);
+			expect(interview.ok).toBe(true);
+			if (!interview.ok) return;
+
+			const evaluation = await recordInterviewEvaluation(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-score-eval",
+					interviewId: interview.data.id,
+					result: "advance",
+					scorecard: SAMPLE_INTERVIEW_SCORECARD,
+					privateNotes: "decision notes",
+					expectedVersion: interview.data.version,
+				},
+				ready,
+			);
+			expect(evaluation.ok).toBe(true);
+			if (!evaluation.ok) return;
+			expect(evaluation.data.result).toBe("advance");
+			expect(evaluation.data.scorecard).toEqual(SAMPLE_INTERVIEW_SCORECARD);
+
+			const loaded = await getInterviewEvaluation(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-score-get",
+					interviewId: interview.data.id,
+				},
+				ready,
+			);
+			expect(loaded.ok).toBe(true);
+			if (!loaded.ok) return;
+			expect(loaded.data.result).toBe("advance");
+			expect(loaded.data.scorecard).toEqual(SAMPLE_INTERVIEW_SCORECARD);
+			expect(loaded.data.privateNotes).toBe("decision notes");
+		});
+
+		it("rejects interviewer assignment after completion", async () => {
+			const ready = harness();
+			const seeded = await seedOfferReadyApplication(ready, {
+				organizationId: ORG_A,
+				code: "REQ-S64-COMPLETE",
+				email: "s64-complete@example.com",
+			});
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const interview = await scheduleInterview(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-complete-int",
+					applicationId: seeded.application.id,
+					scheduledAt: "2030-04-03T10:00:00.000Z",
+					interviewerActorId: ACTOR,
+				},
+				ready,
+			);
+			expect(interview.ok).toBe(true);
+			if (!interview.ok) return;
+
+			const evaluation = await recordInterviewEvaluation(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-complete-eval",
+					interviewId: interview.data.id,
+					result: "reject",
+					scorecard: SAMPLE_INTERVIEW_SCORECARD,
+					expectedVersion: interview.data.version,
+				},
+				ready,
+			);
+			expect(evaluation.ok).toBe(true);
+			if (!evaluation.ok) return;
+
+			const denied = await assignInterviewInterviewer(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s64-complete-assign",
+					interviewId: interview.data.id,
+					interviewerActorId: "actor-too-late",
+					expectedVersion: evaluation.data.version,
+				},
+				ready,
+			);
+			expect(denied.ok).toBe(false);
+			if (!denied.ok) {
+				expect(humanResourcesCodeFromResult(denied)).toBe(
+					HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+				);
+			}
+		});
+	});
+});
+
+describe("Slice 6.5 — Offer + compensation proposal", () => {
+	it("requires approved compensation proposal before offer approval and issue", async () => {
+		const ready = harness();
+		const seeded = await seedOfferReadyApplication(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S65-GATE",
+			email: "s65-gate@example.com",
+		});
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const draftOffer = await createOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-draft",
+				applicationId: seeded.application.id,
+				termsSummary: "Gate test",
+				expiresOn: "2030-12-31",
+			},
+			withOfferLifecycleDeps(ready),
+		);
+		expect(draftOffer.ok).toBe(true);
+		if (!draftOffer.ok) return;
+
+		const issueFromDraft = await issueOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-issue-draft",
+				offerId: draftOffer.data.id,
+				expectedVersion: draftOffer.data.version,
+			},
+			ready,
+		);
+		expect(issueFromDraft.ok).toBe(false);
+		if (!issueFromDraft.ok) {
+			expect(humanResourcesCodeFromResult(issueFromDraft)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+
+		const approveWithoutProposal = await approveOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-approve-no-prop",
+				offerId: draftOffer.data.id,
+				expectedVersion: draftOffer.data.version,
+			},
+			ready,
+		);
+		expect(approveWithoutProposal.ok).toBe(false);
+		if (!approveWithoutProposal.ok) {
+			expect(humanResourcesCodeFromResult(approveWithoutProposal)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+
+		const proposal = await seedApprovedCompensationProposal(
+			withOfferLifecycleDeps(ready),
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				applicationId: seeded.application.id,
+				tag: "s65-gate",
+			},
+		);
+		expect(proposal.ok).toBe(true);
+		if (!proposal.ok) return;
+
+		const amended = await amendOfferDraft(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-amend",
+				offerId: draftOffer.data.id,
+				compensationProposalId: proposal.data.id,
+				expectedVersion: draftOffer.data.version,
+			},
+			withOfferLifecycleDeps(ready),
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+
+		const approved = await approveOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-approve",
+				offerId: amended.data.id,
+				expectedVersion: amended.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+		expect(approved.data.status).toBe("approved");
+		expect(approved.data.compensationProposalId).toBe(proposal.data.id);
+		expect(
+			ready.ports.outbox.calls.some(
+				(c) => c.type === HUMAN_RESOURCES_OFFER_APPROVED_EVENT,
+			),
+		).toBe(true);
+
+		const issued = await issueOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-issue",
+				offerId: approved.data.id,
+				expectedVersion: approved.data.version,
+			},
+			ready,
+		);
+		expect(issued.ok).toBe(true);
+		if (!issued.ok) return;
+		expect(issued.data.status).toBe("issued");
+	});
+
+	it("surfaces compensation proposal reference on get/list offers", async () => {
+		const ready = harness();
+		const seeded = await seedOfferReadyApplication(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S65-REF",
+			email: "s65-ref@example.com",
+		});
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const issued = await createAndIssueOffer(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			applicationId: seeded.application.id,
+			termsSummary: "Reference offer",
+			expiresOn: "2030-12-31",
+			correlationPrefix: "corr-s65-ref",
+		});
+		expect(issued.ok).toBe(true);
+		if (!issued.ok) return;
+		expect(issued.data.compensationProposalId).not.toBeNull();
+
+		const loaded = await getOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-get",
+				offerId: issued.data.id,
+			},
+			ready,
+		);
+		expect(loaded.ok).toBe(true);
+		if (!loaded.ok) return;
+		expect(loaded.data.compensationProposalId).toBe(
+			issued.data.compensationProposalId,
+		);
+
+		const listed = await listOffers(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-list",
+				applicationId: seeded.application.id,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.offers).toHaveLength(1);
+		expect(listed.data.offers[0]?.compensationProposalId).toBe(
+			issued.data.compensationProposalId,
+		);
+	});
+
+	it("does not consume headcount reservation on decline, withdraw, or expire", async () => {
+		const ready = harness();
+		const seeded = await seedOfferReadyApplication(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S65-NOCON",
+			email: "s65-nocon@example.com",
+		});
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const issued = await createAndIssueOffer(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			applicationId: seeded.application.id,
+			termsSummary: "Non-consume paths",
+			expiresOn: "2030-12-31",
+			correlationPrefix: "corr-s65-nocon",
+		});
+		expect(issued.ok).toBe(true);
+		if (!issued.ok) return;
+
+		const declined = await declineOffer(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s65-decline",
+				offerId: issued.data.id,
+				expectedVersion: issued.data.version,
+			},
+			ready,
+		);
+		expect(declined.ok).toBe(true);
 	});
 });

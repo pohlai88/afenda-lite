@@ -20,7 +20,8 @@ import {
 	moveApplicationToInReview,
 } from "../src/recruitment/application";
 import { createCandidate } from "../src/recruitment/candidate";
-import { acceptOffer, createOffer, issueOffer } from "../src/recruitment/offer";
+import { acceptOffer, declineOffer, expireOffer, withdrawOffer } from "../src/recruitment/offer";
+import { createAndIssueOffer } from "./helpers/offer-lifecycle-fixture";
 import {
 	approveRequisition,
 	cancelRequisition,
@@ -118,6 +119,108 @@ async function createDraftPlanWithLine(
 	}
 
 	return { ok: true as const, data: { plan: plan.data, line: line.data } };
+}
+
+async function seedReservedIssuedOffer(
+	ready: ReturnType<typeof createHrParityHarness>,
+	tag: string,
+) {
+	const approved = await approvePlanPipeline(ready, {
+		organizationId: ORG,
+		actorUserId: ACTOR,
+		tag,
+	});
+	if (!approved.ok) {
+		return approved;
+	}
+
+	const requisition = await seedRequisitionPipeline(ready, {
+		organizationId: ORG,
+		actorUserId: ACTOR,
+		tag,
+		targetStatus: "open",
+	});
+	if (!requisition.ok) {
+		return requisition;
+	}
+
+	const reserved = await reserveHeadcount(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-s65-res-${tag}`,
+			idempotencyKey: `idem-s65-res-${tag}`,
+			planLineId: approved.data.line.id,
+			requisitionId: requisition.data.id,
+			reservedFte: "1.0000",
+			reservedHeadcount: 1,
+		},
+		ready,
+	);
+	if (!reserved.ok) {
+		return reserved;
+	}
+
+	const candidate = await createCandidate(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-s65-cand-${tag}`,
+			idempotencyKey: `idem-s65-cand-${tag}`,
+			displayName: "Candidate",
+			email: `s65-${tag}@example.com`,
+			...candidateConsentFixture(),
+		},
+		ready,
+	);
+	if (!candidate.ok) {
+		return candidate;
+	}
+
+	const application = await createApplication(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-s65-app-${tag}`,
+			candidateId: candidate.data.id,
+			requisitionId: requisition.data.id,
+		},
+		ready,
+	);
+	if (!application.ok) {
+		return application;
+	}
+
+	const inReview = await moveApplicationToInReview(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-s65-review-${tag}`,
+			applicationId: application.data.id,
+			expectedVersion: application.data.version,
+		},
+		ready,
+	);
+	if (!inReview.ok) {
+		return inReview;
+	}
+
+	const issued = await createAndIssueOffer(ready, {
+		organizationId: ORG,
+		actorUserId: ACTOR,
+		applicationId: inReview.data.id,
+		termsSummary: "Slice 6.5 reservation gate",
+		expiresOn: "2030-12-31",
+		correlationPrefix: `corr-s65-offer-${tag}`,
+	});
+	if (!issued.ok) {
+		return issued;
+	}
+
+	return {
+		ok: true as const,
+		data: { reserved: reserved.data, issued: issued.data },
+	};
 }
 
 async function approvePlanPipeline(
@@ -518,30 +621,14 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(inReview.ok).toBe(true);
 		if (!inReview.ok) return;
 
-		const offerDraft = await createOffer(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-offer-${tag}`,
-				applicationId: inReview.data.id,
-				termsSummary: "Standard offer terms",
-				expiresOn: "2026-12-31",
-			},
-			ready,
-		);
-		expect(offerDraft.ok).toBe(true);
-		if (!offerDraft.ok) return;
-
-		const issued = await issueOffer(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-issue-${tag}`,
-				offerId: offerDraft.data.id,
-				expectedVersion: offerDraft.data.version,
-			},
-			ready,
-		);
+		const issued = await createAndIssueOffer(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			applicationId: inReview.data.id,
+			termsSummary: "Standard offer terms",
+			expiresOn: "2026-12-31",
+			correlationPrefix: `corr-offer-${tag}`,
+		});
 		expect(issued.ok).toBe(true);
 		if (!issued.ok) return;
 
@@ -574,6 +661,111 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 			expect(listed.data.reservations).toHaveLength(1);
 			expect(listed.data.reservations[0]?.id).toBe(reserved.data.id);
 			expect(listed.data.reservations[0]?.status).toBe("consumed");
+		}
+	});
+
+	it("Slice 6.5 — decline leaves reservation active", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const seeded = await seedReservedIssuedOffer(ready, tag);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const declined = await declineOffer(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s65-decline-${tag}`,
+				offerId: seeded.data.issued.id,
+				expectedVersion: seeded.data.issued.version,
+			},
+			ready,
+		);
+		expect(declined.ok).toBe(true);
+		if (!declined.ok) return;
+
+		const listed = await listHeadcountReservations(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s65-list-decline-${tag}`,
+				requisitionId: seeded.data.reserved.requisitionId,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (listed.ok) {
+			expect(listed.data.reservations[0]?.status).toBe("active");
+		}
+	});
+
+	it("Slice 6.5 — withdraw leaves reservation active", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const seeded = await seedReservedIssuedOffer(ready, tag);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const withdrawn = await withdrawOffer(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s65-withdraw-${tag}`,
+				offerId: seeded.data.issued.id,
+				expectedVersion: seeded.data.issued.version,
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+
+		const listed = await listHeadcountReservations(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s65-list-withdraw-${tag}`,
+				requisitionId: seeded.data.reserved.requisitionId,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (listed.ok) {
+			expect(listed.data.reservations[0]?.status).toBe("active");
+		}
+	});
+
+	it("Slice 6.5 — expire leaves reservation active", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const seeded = await seedReservedIssuedOffer(ready, tag);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const expired = await expireOffer(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s65-expire-${tag}`,
+				offerId: seeded.data.issued.id,
+				expectedVersion: seeded.data.issued.version,
+			},
+			ready,
+		);
+		expect(expired.ok).toBe(true);
+		if (!expired.ok) return;
+
+		const listed = await listHeadcountReservations(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s65-list-expire-${tag}`,
+				requisitionId: seeded.data.reserved.requisitionId,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (listed.ok) {
+			expect(listed.data.reservations[0]?.status).toBe("active");
 		}
 	});
 

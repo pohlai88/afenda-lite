@@ -811,53 +811,6 @@ export function buildStatusTransitionSql(params: {
 }
 
 /**
- * Build entitlement status transition transaction SQL (carry-forward, expire)
- */
-export function buildEntitlementStatusTransitionSql(params: {
-	entitlementId: string;
-	organizationId: string;
-	expectedVersion: number;
-	actorUserId: string;
-	correlationId: string;
-	nextStatus: string;
-}): string {
-	const { auditId } = generateTransactionIds();
-
-	const changesJson = fieldChangeJson("status", null, params.nextStatus);
-
-	return `
-		WITH updated_entitlement AS (
-			UPDATE hr_leave_entitlement 
-			SET 
-				status = '${params.nextStatus}',
-				version = version + 1,
-				updated_by = '${params.actorUserId}',
-				updated_at = NOW()
-			WHERE id = '${params.entitlementId}'
-			AND organization_id = '${params.organizationId}'
-			AND version = ${params.expectedVersion}
-			RETURNING *
-		),
-		${buildAuditCte({
-			auditId,
-			module: "human-resources",
-			entity: "hr_leave_entitlement",
-			action: "UPDATE",
-			correlationId: params.correlationId,
-			changes: `'${changesJson}'`,
-			fromCte: "updated_entitlement",
-			selectFields: {
-				organizationId: "organization_id",
-				entityId: "id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
-		}).replace(/^[\s]*audited AS/, "audited AS")}
-		SELECT updated_entitlement.*
-		FROM updated_entitlement, audited
-	`;
-}
-
-/**
  * Build carry-forward entitlement transaction SQL
  */
 export function buildCarryForwardEntitlementSql(params: {
@@ -870,14 +823,15 @@ export function buildCarryForwardEntitlementSql(params: {
 	newPeriodStart: string;
 	newPeriodEnd: string;
 	carriedQuantity: string;
+	sourceCarryOutDelta: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
-	carryAdjustmentId: string;
+	sourceCarryOutAdjustmentId: string;
 	eventType: OutboxFactInput["type"];
 }): string {
 	const { auditId: sourceAuditId, eventId } = generateTransactionIds();
 	const { auditId: newAuditId } = generateTransactionIds();
-	const { auditId: carryAuditId } = generateTransactionIds();
+	const { auditId: carryOutAuditId } = generateTransactionIds();
 
 	const sourceChangesJson = fieldChangeJson(
 		"status",
@@ -889,10 +843,10 @@ export function buildCarryForwardEntitlementSql(params: {
 		periodEnd: params.newPeriodEnd,
 		openingQuantity: params.carriedQuantity,
 	});
-	const carryValueJson = valueSnapshotJson({
+	const carryOutValueJson = valueSnapshotJson({
 		kind: "carry_forward",
-		delta: params.carriedQuantity,
-		reason: `Carry forward from entitlement ${params.sourceEntitlementId}`,
+		delta: params.sourceCarryOutDelta,
+		reason: `Carry forward to new period ${params.newPeriodStart}–${params.newPeriodEnd}`,
 		source: "system",
 	});
 
@@ -901,7 +855,23 @@ export function buildCarryForwardEntitlementSql(params: {
 			SELECT * FROM hr_leave_entitlement
 			WHERE id = '${params.sourceEntitlementId}'
 			AND organization_id = '${params.organizationId}'
+			AND status = 'active'
+			AND version = ${params.expectedVersion}
 			FOR UPDATE
+		),
+		source_carry_out AS (
+			INSERT INTO hr_leave_adjustment (
+				id, organization_id, entitlement_id, source_request_id, kind, delta,
+				reason, source, status, create_idempotency_key, create_request_fingerprint,
+				version, created_by, updated_by
+			)
+			SELECT
+				'${params.sourceCarryOutAdjustmentId}', organization_id, id, NULL, 'carry_forward',
+				'${params.sourceCarryOutDelta}', 'Carry forward to new period ${params.newPeriodStart}–${params.newPeriodEnd}', 'system', 'posted',
+				'${params.createIdempotencyKey}:carry-out', '${params.createRequestFingerprint}',
+				1, '${params.actorUserId}', '${params.actorUserId}'
+			FROM source_entitlement
+			RETURNING *
 		),
 		updated_source AS (
 			UPDATE hr_leave_entitlement 
@@ -913,7 +883,6 @@ export function buildCarryForwardEntitlementSql(params: {
 			FROM source_entitlement
 			WHERE hr_leave_entitlement.id = '${params.sourceEntitlementId}'
 			AND hr_leave_entitlement.organization_id = '${params.organizationId}'
-			AND hr_leave_entitlement.version = ${params.expectedVersion}
 			RETURNING hr_leave_entitlement.*
 		),
 		new_entitlement AS (
@@ -929,20 +898,6 @@ export function buildCarryForwardEntitlementSql(params: {
 				'${params.createIdempotencyKey}', '${params.createRequestFingerprint}',
 				1, '${params.actorUserId}', '${params.actorUserId}'
 			FROM updated_source
-			RETURNING *
-		),
-		carry_adjustment AS (
-			INSERT INTO hr_leave_adjustment (
-				id, organization_id, entitlement_id, source_request_id, kind, delta,
-				reason, source, status, create_idempotency_key, create_request_fingerprint,
-				version, created_by, updated_by
-			)
-			SELECT 
-				'${params.carryAdjustmentId}', organization_id, id, NULL, 'carry_forward',
-				'${params.carriedQuantity}', 'Carry forward from entitlement ${params.sourceEntitlementId}', 'system', 'posted',
-				'${params.createIdempotencyKey}:carry', '${params.createRequestFingerprint}',
-				1, '${params.actorUserId}', '${params.actorUserId}'
-			FROM new_entitlement
 			RETURNING *
 		),
 		${buildAuditCte({
@@ -974,19 +929,19 @@ export function buildCarryForwardEntitlementSql(params: {
 			},
 		}).replace(/^[\s]*audited AS/, "new_audited AS")},
 		${buildAuditCte({
-			auditId: carryAuditId,
+			auditId: carryOutAuditId,
 			module: "human-resources",
 			entity: "hr_leave_adjustment",
 			action: "CREATE",
 			correlationId: params.correlationId,
-			newValue: `'${carryValueJson}'`,
-			fromCte: "carry_adjustment",
+			newValue: `'${carryOutValueJson}'`,
+			fromCte: "source_carry_out",
 			selectFields: {
 				organizationId: "organization_id",
 				entityId: "id",
 				actorUserId: "created_by",
 			},
-		}).replace(/^[\s]*audited AS/, "carry_audited AS")},
+		}).replace(/^[\s]*audited AS/, "carry_out_audited AS")},
 		${buildOutboxCte({
 			eventId,
 			eventType: params.eventType,
@@ -999,14 +954,157 @@ export function buildCarryForwardEntitlementSql(params: {
 				actorId: params.actorUserId,
 				correlationId: params.correlationId,
 			})}'`,
-			fromCte: "carry_adjustment",
+			fromCte: "new_entitlement",
 			selectFields: {
 				organizationId: "organization_id",
 				actorUserId: "created_by",
 			},
 		}).replace(/^[\s]*outboxed AS/, "outboxed AS")}
 		SELECT new_entitlement.*
-		FROM new_entitlement, carry_adjustment, source_audited, new_audited, carry_audited, outboxed
+		FROM new_entitlement, source_carry_out, source_audited, new_audited, carry_out_audited, outboxed
+	`;
+}
+
+/**
+ * Build expire entitlement transaction SQL (wipe balance while active, then expire)
+ */
+export function buildExpireEntitlementSql(params: {
+	entitlementId: string;
+	organizationId: string;
+	expectedVersion: number;
+	actorUserId: string;
+	correlationId: string;
+	expiryAdjustmentId: string;
+	createRequestFingerprint: string;
+	eventType?: OutboxFactInput["type"];
+}): string {
+	const { auditId: entitlementAuditId, eventId } = generateTransactionIds();
+	const { auditId: expiryAuditId } = generateTransactionIds();
+
+	const changesJson = fieldChangeJson("status", "active", "expired");
+	const expiryValueJson = valueSnapshotJson({
+		kind: "expiry",
+		reason: "Entitlement expired",
+		source: "system",
+	});
+
+	const outboxCte = params.eventType
+		? buildOutboxCte({
+				eventId,
+				eventType: params.eventType,
+				sourceModule: "human-resources",
+				correlationId: params.correlationId,
+			payload: `'${eventPayloadJson({
+				organizationId: params.organizationId,
+				entityType: "hr_leave_entitlement",
+				entityId: params.entitlementId,
+				actorId: params.actorUserId,
+				correlationId: params.correlationId,
+			})}'`,
+			fromCte: "updated_entitlement",
+			selectFields: {
+				organizationId: "organization_id",
+				actorUserId: `'${params.actorUserId}'`,
+			},
+		})
+		: "";
+
+	return `
+		WITH locked_entitlement AS (
+			SELECT * FROM hr_leave_entitlement
+			WHERE id = '${params.entitlementId}'
+			AND organization_id = '${params.organizationId}'
+			AND status = 'active'
+			AND version = ${params.expectedVersion}
+			FOR UPDATE
+		),
+		balance_snapshot AS (
+			SELECT
+				le.*,
+				(
+					CAST(le.opening_quantity AS numeric) + COALESCE((
+						SELECT SUM(CAST(a.delta AS numeric))
+						FROM hr_leave_adjustment a
+						WHERE a.entitlement_id = le.id
+							AND a.organization_id = le.organization_id
+							AND a.status = 'posted'
+					), 0)
+				) AS current_balance
+			FROM locked_entitlement le
+		),
+		expiry_adjustment AS (
+			INSERT INTO hr_leave_adjustment (
+				id, organization_id, entitlement_id, source_request_id, kind, delta,
+				reason, source, status, create_idempotency_key, create_request_fingerprint,
+				version, created_by, updated_by
+			)
+			SELECT
+				'${params.expiryAdjustmentId}',
+				organization_id,
+				id,
+				NULL,
+				'expiry',
+				(0 - current_balance)::text,
+				'Entitlement expired',
+				'system',
+				'posted',
+				'${params.entitlementId}:expiry',
+				'${params.createRequestFingerprint}',
+				1,
+				'${params.actorUserId}',
+				'${params.actorUserId}'
+			FROM balance_snapshot
+			WHERE current_balance <> 0
+			RETURNING *
+		),
+		updated_entitlement AS (
+			UPDATE hr_leave_entitlement
+			SET
+				status = 'expired',
+				version = hr_leave_entitlement.version + 1,
+				updated_by = '${params.actorUserId}',
+				updated_at = NOW()
+			FROM balance_snapshot
+			WHERE hr_leave_entitlement.id = balance_snapshot.id
+			AND hr_leave_entitlement.organization_id = balance_snapshot.organization_id
+			RETURNING hr_leave_entitlement.*
+		),
+		${buildAuditCte({
+			auditId: entitlementAuditId,
+			module: "human-resources",
+			entity: "hr_leave_entitlement",
+			action: "UPDATE",
+			correlationId: params.correlationId,
+			changes: `'${changesJson}'`,
+			fromCte: "updated_entitlement",
+			selectFields: {
+				organizationId: "organization_id",
+				entityId: "id",
+				actorUserId: `'${params.actorUserId}'`,
+			},
+		}).replace(/^[\s]*audited AS/, "entitlement_audited AS")},
+		${buildAuditCte({
+			auditId: expiryAuditId,
+			module: "human-resources",
+			entity: "hr_leave_adjustment",
+			action: "CREATE",
+			correlationId: params.correlationId,
+			newValue: `'${expiryValueJson}'`,
+			fromCte: "expiry_adjustment",
+			selectFields: {
+				organizationId: "organization_id",
+				entityId: "id",
+				actorUserId: "created_by",
+			},
+		}).replace(/^[\s]*audited AS/, "expiry_audited AS")}${
+			params.eventType
+				? `,
+		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+				: ""
+		}
+		SELECT updated_entitlement.*
+		FROM updated_entitlement
+		CROSS JOIN entitlement_audited
 	`;
 }
 
@@ -1025,6 +1123,13 @@ export function buildCreateLeavePolicySql(params: {
 	allowsNegativeBalance: boolean;
 	allowSelfApproval: boolean;
 	allowsPartialDay: boolean;
+	accrualBasis: string;
+	accrualFrequency: string | null;
+	accrualQuantityPerPeriod: string | null;
+	carryForwardEnabled: boolean;
+	carryForwardMaxQuantity: string | null;
+	entitlementExpiryRule: string;
+	entitlementExpiryDays: number | null;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	createdBy: string;
@@ -1050,11 +1155,20 @@ export function buildCreateLeavePolicySql(params: {
 			INSERT INTO hr_leave_policy (
 				id, organization_id, code, name, leave_type, unit, paid, sensitive,
 				allows_negative_balance, allow_self_approval, allows_partial_day,
+				accrual_basis, accrual_frequency, accrual_quantity_per_period,
+				carry_forward_enabled, carry_forward_max_quantity,
+				entitlement_expiry_rule, entitlement_expiry_days,
 				effective_from, effective_to, status, version, created_by, updated_by
 			) VALUES (
 				'${params.policyId}', '${params.organizationId}', '${params.code}', '${params.name}',
 				'${params.leaveType}', '${params.unit}', ${params.paid}, ${params.sensitive},
 				${params.allowsNegativeBalance}, ${params.allowSelfApproval}, ${params.allowsPartialDay},
+				'${params.accrualBasis}', ${params.accrualFrequency ? `'${params.accrualFrequency}'` : "NULL"},
+				${params.accrualQuantityPerPeriod ? `'${params.accrualQuantityPerPeriod}'` : "NULL"},
+				${params.carryForwardEnabled},
+				${params.carryForwardMaxQuantity ? `'${params.carryForwardMaxQuantity}'` : "NULL"},
+				'${params.entitlementExpiryRule}',
+				${params.entitlementExpiryDays ?? "NULL"},
 				'${params.effectiveFrom}', ${params.effectiveTo ? `'${params.effectiveTo}'` : "NULL"},
 				'draft', 1, '${params.createdBy}', '${params.createdBy}'
 			)

@@ -9,7 +9,8 @@ import {
 } from "../error-codes";
 import { effectiveRangeOverlap, invalidInput, invalidState } from "./domain-guards";
 import type { EmploymentStatus } from "./employment-status";
-import { compareLeaveQuantity } from "./leave-balance";
+import { compareLeaveQuantity, computeLeaveBalance } from "./leave-balance";
+import type { ResolvedLeavePolicyBalanceRules } from "./leave-policy-balance-rules";
 import type {
 	ApprovalDecision,
 	LeavePolicyStatus,
@@ -137,6 +138,71 @@ export function assertSufficientLeaveBalance(input: {
 		return invalidInput("Insufficient leave balance");
 	}
 	return ok(undefined);
+}
+
+export function assertLeaveAccrualAllowed(input: {
+	balanceRules: ResolvedLeavePolicyBalanceRules;
+	quantity: string;
+}): Result<void> {
+	if (input.balanceRules.accrualBasis === "none") {
+		return invalidState("Leave policy does not allow accrual");
+	}
+	if (input.balanceRules.accrualQuantityPerPeriod === null) {
+		return invalidState(
+			"Leave policy accrual quantity per period is not configured",
+		);
+	}
+	if (
+		compareLeaveQuantity(
+			input.quantity,
+			input.balanceRules.accrualQuantityPerPeriod,
+		) !== 0
+	) {
+		return invalidInput(
+			"Accrual quantity must match the policy accrual quantity per period",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertLeaveCarryForwardAllowed(input: {
+	balanceRules: ResolvedLeavePolicyBalanceRules;
+	carriedQuantity: string;
+	sourceBalance: string;
+}): Result<void> {
+	if (!input.balanceRules.carryForwardEnabled) {
+		return invalidState("Leave policy does not allow carry forward");
+	}
+	if (compareLeaveQuantity(input.carriedQuantity, input.sourceBalance) > 0) {
+		return invalidInput("Carried quantity exceeds available balance");
+	}
+	if (
+		input.balanceRules.carryForwardMaxQuantity !== null &&
+		compareLeaveQuantity(
+			input.carriedQuantity,
+			input.balanceRules.carryForwardMaxQuantity,
+		) > 0
+	) {
+		return invalidInput("Carried quantity exceeds policy carry-forward maximum");
+	}
+	return ok(undefined);
+}
+
+export function assertLeaveAdjustmentBalanceAllowed(input: {
+	openingQuantity: string;
+	adjustments: { delta: string }[];
+	delta: string;
+	allowsNegativeBalance: boolean;
+}): Result<void> {
+	const projected = computeLeaveBalance(input.openingQuantity, [
+		...input.adjustments,
+		{ delta: input.delta },
+	]);
+	return assertSufficientLeaveBalance({
+		balance: projected,
+		requestedQuantity: "0",
+		allowsNegativeBalance: input.allowsNegativeBalance,
+	});
 }
 
 export const ACTIVE_LEAVE_OVERLAP_STATUSES = [

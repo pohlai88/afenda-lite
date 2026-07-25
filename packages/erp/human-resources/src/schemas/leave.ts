@@ -9,6 +9,9 @@ import {
 import { employmentStatusSchema } from "../shared/employment-status";
 import {
 	dayPortionSchema,
+	leavePolicyAccrualBasisSchema,
+	leavePolicyAccrualFrequencySchema,
+	leavePolicyEntitlementExpiryRuleSchema,
 	leavePolicyStatusSchema,
 	leaveRequestStatusSchema,
 	leaveTypeSchema,
@@ -26,6 +29,123 @@ const leaveQuantitySchema = z
 	.trim()
 	.regex(/^\d+(\.\d+)?$/);
 
+const signedLeaveQuantitySchema = z
+	.string()
+	.trim()
+	.regex(/^-?\d+(\.\d+)?$/)
+	.refine((value) => {
+		const normalized = value.startsWith("-") ? value.slice(1) : value;
+		return normalized !== "0" && normalized !== "0.0";
+	}, "Adjustment delta must be non-zero");
+
+const leavePolicyBalanceRuleFields = {
+	accrualBasis: leavePolicyAccrualBasisSchema.optional(),
+	accrualFrequency: leavePolicyAccrualFrequencySchema.nullable().optional(),
+	accrualQuantityPerPeriod: leaveQuantitySchema.nullable().optional(),
+	carryForwardEnabled: z.boolean().optional(),
+	carryForwardMaxQuantity: leaveQuantitySchema.nullable().optional(),
+	entitlementExpiryRule: leavePolicyEntitlementExpiryRuleSchema.optional(),
+	entitlementExpiryDays: z.number().int().nonnegative().nullable().optional(),
+};
+
+function refineLeavePolicyBalanceRules(
+	data: {
+		accrualBasis?: "none" | "periodic" | "anniversary";
+		accrualFrequency?: "monthly" | "annual" | null;
+		accrualQuantityPerPeriod?: string | null;
+		carryForwardEnabled?: boolean;
+		carryForwardMaxQuantity?: string | null;
+		entitlementExpiryRule?: "none" | "period_end" | "days_after_period_end";
+		entitlementExpiryDays?: number | null;
+	},
+	ctx: z.RefinementCtx,
+): void {
+	const accrualBasis = data.accrualBasis ?? "none";
+	const carryForwardEnabled = data.carryForwardEnabled ?? false;
+	const entitlementExpiryRule = data.entitlementExpiryRule ?? "none";
+
+	if (accrualBasis === "none") {
+		if (
+			data.accrualFrequency !== undefined &&
+			data.accrualFrequency !== null
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message:
+					"Accrual frequency must be null when accrual basis is none",
+				path: ["accrualFrequency"],
+			});
+		}
+		if (
+			data.accrualQuantityPerPeriod !== undefined &&
+			data.accrualQuantityPerPeriod !== null
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message:
+					"Accrual quantity must be null when accrual basis is none",
+				path: ["accrualQuantityPerPeriod"],
+			});
+		}
+	} else {
+		if (data.accrualFrequency === undefined || data.accrualFrequency === null) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Accrual frequency is required when accrual basis is set",
+				path: ["accrualFrequency"],
+			});
+		}
+		if (
+			data.accrualQuantityPerPeriod === undefined ||
+			data.accrualQuantityPerPeriod === null
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Accrual quantity is required when accrual basis is set",
+				path: ["accrualQuantityPerPeriod"],
+			});
+		}
+	}
+
+	if (!carryForwardEnabled) {
+		if (
+			data.carryForwardMaxQuantity !== undefined &&
+			data.carryForwardMaxQuantity !== null
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message:
+					"Carry-forward max quantity must be null when carry-forward is disabled",
+				path: ["carryForwardMaxQuantity"],
+			});
+		}
+	}
+
+	if (entitlementExpiryRule === "days_after_period_end") {
+		if (
+			data.entitlementExpiryDays === undefined ||
+			data.entitlementExpiryDays === null
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message:
+					"Entitlement expiry days are required for days_after_period_end rule",
+				path: ["entitlementExpiryDays"],
+			});
+		}
+	} else if (
+		data.entitlementExpiryDays !== undefined &&
+		data.entitlementExpiryDays !== null
+	) {
+		ctx.addIssue({
+			code: "custom",
+			message:
+				"Entitlement expiry days must be null unless using days_after_period_end rule",
+			path: ["entitlementExpiryDays"],
+		});
+	}
+}
+
 export const createLeavePolicyInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		code: z.string().trim().min(1).max(50),
@@ -41,8 +161,10 @@ export const createLeavePolicyInputSchema = humanResourcesMutationContextSchema
 		effectiveTo: isoDateSchema.nullable().optional(),
 		minTenureDays: z.number().int().nonnegative().nullable().optional(),
 		allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1),
+		...leavePolicyBalanceRuleFields,
 	})
-	.strict();
+	.strict()
+	.superRefine(refineLeavePolicyBalanceRules);
 
 export const updateLeavePolicyInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -59,9 +181,23 @@ export const updateLeavePolicyInputSchema = humanResourcesMutationContextSchema
 			.array(employmentStatusSchema)
 			.min(1)
 			.optional(),
+		...leavePolicyBalanceRuleFields,
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
-	.strict();
+	.strict()
+	.superRefine((data, ctx) => {
+		const hasBalanceRuleField =
+			data.accrualBasis !== undefined ||
+			data.accrualFrequency !== undefined ||
+			data.accrualQuantityPerPeriod !== undefined ||
+			data.carryForwardEnabled !== undefined ||
+			data.carryForwardMaxQuantity !== undefined ||
+			data.entitlementExpiryRule !== undefined ||
+			data.entitlementExpiryDays !== undefined;
+		if (hasBalanceRuleField) {
+			refineLeavePolicyBalanceRules(data, ctx);
+		}
+	});
 
 export const publishLeavePolicyInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -87,9 +223,11 @@ export const supersedeLeavePolicyInputSchema =
 			effectiveTo: isoDateSchema.nullable().optional(),
 			minTenureDays: z.number().int().nonnegative().nullable().optional(),
 			allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1),
+			...leavePolicyBalanceRuleFields,
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
-		.strict();
+		.strict()
+		.superRefine(refineLeavePolicyBalanceRules);
 
 export const archiveLeavePolicyInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -168,7 +306,7 @@ export const adjustLeaveEntitlementInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			entitlementId: humanResourcesLeaveEntitlementIdSchema,
-			delta: leaveQuantitySchema,
+			delta: signedLeaveQuantitySchema,
 			reason: z.string().trim().min(1).max(500),
 			idempotencyKey: humanResourcesIdempotencyKeySchema,
 		})

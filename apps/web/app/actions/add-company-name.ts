@@ -3,7 +3,6 @@
 import {
 	addCompanyName,
 	CA_PERMISSION_COMPANY_NAME_MANAGE,
-	createCorporateAdministrationRequestFingerprint,
 	type CaCompanyName,
 } from "@afenda/corporate-administration";
 import { revalidatePath } from "next/cache";
@@ -12,6 +11,10 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
+import {
+	caLegalCompanyIdSchema,
+	CA_COMPANY_NAME_TYPE_VALUES,
+} from "@/lib/erp/corporate-administration-action-schemas";
 import {
 	type ActionResult,
 	actionFail,
@@ -23,9 +26,9 @@ export type AddCompanyNameActionState =
 	ActionResult<AddCompanyNameActionData> | null;
 
 const addCompanyNameFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
-	nameType: z.enum(["legal", "former", "trading"]),
-	displayName: z.string().trim().min(1).max(300),
+	legalCompanyId: caLegalCompanyIdSchema,
+	nameType: z.enum(CA_COMPANY_NAME_TYPE_VALUES),
+	displayName: z.string().trim().min(1).max(500),
 	effectiveFrom: z.string().date(),
 });
 
@@ -51,12 +54,6 @@ export async function addCompanyNameAction(
 					parsed.details,
 				);
 			}
-			const commandPayload = {
-				legalCompanyId: parsed.data.legalCompanyId,
-				nameType: parsed.data.nameType,
-				displayName: parsed.data.displayName,
-				effectiveFrom: parsed.data.effectiveFrom,
-			};
 			const idempotencyKey = `name:${parsed.data.legalCompanyId}:${parsed.data.nameType}:${parsed.data.displayName}`;
 			const result = await addCompanyName(
 				{
@@ -64,9 +61,10 @@ export async function addCompanyNameAction(
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey,
-					requestFingerprint:
-						createCorporateAdministrationRequestFingerprint(commandPayload),
-					...commandPayload,
+					legalCompanyId: parsed.data.legalCompanyId,
+					nameType: parsed.data.nameType,
+					displayName: parsed.data.displayName,
+					effectiveFrom: parsed.data.effectiveFrom,
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

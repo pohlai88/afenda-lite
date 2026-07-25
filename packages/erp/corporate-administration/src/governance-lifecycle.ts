@@ -20,11 +20,7 @@ import {
 	type CorporateAdministrationCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import {
-	CA_ERROR_IDEMPOTENCY_CONFLICT,
-	CA_ERROR_VERSION_CONFLICT,
-	caErrorDetails,
-} from "./error-codes";
+import { CA_ERROR_VERSION_CONFLICT, caErrorDetails } from "./error-codes";
 import {
 	CA_COMMAND_AUTHORITY_MANDATE_AMEND,
 	CA_COMMAND_AUTHORITY_MANDATE_REVOKE,
@@ -63,7 +59,12 @@ import {
 	updateCompanyPremiseInputSchema,
 	updateGovernanceBodyInputSchema,
 } from "./schemas";
-import { createCorporateAdministrationRequestFingerprint } from "./shared/fingerprint";
+import {
+	appointmentEffectiveRange,
+	isInvalidEffectiveDateRange,
+} from "./shared/effective-range";
+import { deriveCaCommandFingerprint } from "./shared/fingerprint";
+import { replayIdempotencyFingerprint } from "./shared/idempotency-replay";
 
 type ExistingContext = {
 	organizationId: string;
@@ -91,16 +92,7 @@ async function authorize(
 }
 
 function fingerprint(command: string, input: ExistingContext) {
-	const {
-		actorUserId: _actor,
-		correlationId: _correlation,
-		idempotencyKey: _key,
-		...business
-	} = input;
-	return createCorporateAdministrationRequestFingerprint({
-		command,
-		...business,
-	});
+	return deriveCaCommandFingerprint({ command }, input);
 }
 
 function stale() {
@@ -119,14 +111,6 @@ function requireVersion<T extends { version: number; legalCompanyId: string }>(
 		return fail("NOT_FOUND", "Governance record not found");
 	}
 	return record.version === input.expectedVersion ? ok(record) : stale();
-}
-
-function replayConflict() {
-	return fail(
-		"CONFLICT",
-		"Idempotency key was already used with a different request",
-		caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-	);
 }
 
 async function resolveHolders(
@@ -318,10 +302,9 @@ export async function amendOfficer(
 		parsed.data.idempotencyKey,
 	);
 	if (!replay.ok) return replay;
-	if (replay.data)
-		return replay.data.requestFingerprint === requestFingerprint
-			? ok(replay.data)
-			: replayConflict();
+	if (replay.data) {
+		return replayIdempotencyFingerprint(replay.data, requestFingerprint);
+	}
 	return deps.store.supersedeOfficerAppointment(
 		{
 			...current.data,
@@ -386,7 +369,12 @@ export async function endOfficer(
 	if (!current.ok) return current;
 	if (
 		current.data.status !== "active" ||
-		parsed.data.effectiveTo < current.data.appointedDate
+		isInvalidEffectiveDateRange(
+			appointmentEffectiveRange({
+				appointedDate: current.data.appointedDate,
+				resignedDate: parsed.data.effectiveTo,
+			}),
+		)
 	)
 		return fail("CONFLICT", "Officer cannot be ended");
 	return deps.store.endOfficerAppointment(
@@ -525,7 +513,10 @@ export async function endGovernanceMembership(
 	if (!current.ok) return current;
 	if (
 		current.data.effectiveTo ||
-		parsed.data.effectiveTo < current.data.effectiveFrom
+		isInvalidEffectiveDateRange({
+			effectiveFrom: current.data.effectiveFrom,
+			effectiveTo: parsed.data.effectiveTo,
+		})
 	)
 		return fail("CONFLICT", "Membership cannot be ended");
 	return deps.store.endGovernanceMembership(
@@ -658,7 +649,10 @@ export async function revokeAuthorityMandate(
 	if (!current.ok) return current;
 	if (
 		current.data.status !== "active" ||
-		parsed.data.effectiveTo < current.data.effectiveFrom
+		isInvalidEffectiveDateRange({
+			effectiveFrom: current.data.effectiveFrom,
+			effectiveTo: parsed.data.effectiveTo,
+		})
 	)
 		return fail("CONFLICT", "Mandate cannot be revoked");
 	return deps.store.revokeAuthorityMandate(
@@ -711,7 +705,7 @@ export async function updateCompanyPremise(
 		parsed.data.effectiveFrom <= current.data.effectiveFrom
 	)
 		return fail("CONFLICT", "Premise update range is invalid");
-	const company = await deps.store.getById(
+	const company = await deps.store.getLegalCompany(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
 	);
@@ -779,7 +773,10 @@ export async function retireCompanyPremise(
 	if (!current.ok) return current;
 	if (
 		current.data.status !== "active" ||
-		parsed.data.effectiveTo < current.data.effectiveFrom
+		isInvalidEffectiveDateRange({
+			effectiveFrom: current.data.effectiveFrom,
+			effectiveTo: parsed.data.effectiveTo,
+		})
 	)
 		return fail("CONFLICT", "Premise cannot be retired");
 	return deps.store.retireCompanyPremise(

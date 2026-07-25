@@ -5,6 +5,23 @@ export {
 	requireCaCommandPermission,
 	requireCaQueryPermission,
 } from "./authorization";
+export type {
+	CorporateAdministrationAggregateType,
+	CorporateAdministrationAuditFact,
+	CorporateAdministrationOutboxEvent,
+	CorporateAdministrationUnitOfWork,
+	CorporateAdministrationUnitOfWorkContext,
+} from "./unit-of-work";
+export { CorporateAdministrationUnitOfWorkError } from "./unit-of-work";
+export {
+	CORPORATE_ADMINISTRATION_STORE_ERROR_CODES,
+	CorporateAdministrationIdempotencyConflictError,
+	CorporateAdministrationStoreError,
+	CorporateAdministrationVersionConflictError,
+	isCorporateAdministrationStoreError,
+	mapCorporateAdministrationStoreError,
+	type CorporateAdministrationStoreErrorCode,
+} from "./store/store-errors";
 export type { CorporateAdministrationCommandOptions } from "./command-options";
 export {
 	createCorporateDocument,
@@ -162,25 +179,59 @@ export {
 	updateProperty,
 	writeOffCorporateAsset,
 } from "./property-assets";
-export { ca4SubjectSchema } from "./property-assets-schemas";
+export {
+	caCompanyIdentifierIdSchema,
+	caCompanyNameIdSchema,
+	caLegalCompanyIdSchema,
+	type CaCompanyIdentifierId,
+	type CaCompanyNameId,
+	type CaLegalCompanyId,
+	parseCaCompanyIdentifierId,
+	parseCaCompanyNameId,
+	parseCaLegalCompanyId,
+} from "./brands";
 export type {
 	CaAuthorityMandate,
 	CaAuthorityMandateDetail,
 	CaAuthorityMandateHolder,
+	CaActivationReadinessMissing,
+	CaCompanyActivationReadiness,
 	CaCompanyIdentifier,
+	CaCompanyIdentifierStatus,
 	CaCompanyName,
+	CaCompanyNameType,
 	CaCompanyPremise,
-	CaCompanyStatus,
 	CaCompanyStatusHistory,
 	CaGovernanceBody,
 	CaGovernanceMeeting,
 	CaGovernanceMembership,
 	CaLegalCompany,
+	CaLegalCompanyAsOf,
 	CaLegalCompanyDetail,
+	CaLegalCompanyListPage,
+	CaLegalCompanyStatus,
 	CaOfficerAppointment,
 	CaResolution,
 } from "./schemas";
-export { CA_COMPANY_STATUSES } from "./schemas";
+export {
+	CA_ACTIVATION_READINESS_MISSING,
+	CA_COMPANY_IDENTIFIER_STATUS_VALUES,
+	CA_COMPANY_NAME_TYPE_VALUES,
+	CA_LEGAL_COMPANY_STATUS_VALUES,
+} from "./schemas";
+export {
+	evaluateCompanyActivationReadiness,
+	isEffectivePrimaryLegalName,
+	isEffectivePrimaryRegistrationIdentifier,
+} from "./shared/activation-readiness";
+export { buildLegalCompanyAsOfView } from "./shared/as-of";
+export {
+	CA_LEGAL_COMPANY_TRANSITIONS,
+	canTransitionLegalCompany,
+	canUpdateLegalCompanyProfile,
+	isTerminalLegalCompanyStatus,
+} from "./shared/lifecycle";
+export { ca4SubjectSchema } from "./property-assets-schemas";
 export {
 	listDueFilings,
 	listOverdueFilings,
@@ -212,7 +263,10 @@ export {
 	updateBeneficialOwnerDisclosure,
 	updateShareClass,
 } from "./share-capital-lifecycle";
-export { createCorporateAdministrationRequestFingerprint } from "./shared/fingerprint";
+export {
+	canonicalSerialize,
+	createCorporateAdministrationRequestFingerprint,
+} from "./shared/fingerprint";
 export type {
 	Ca4Subject,
 	CaBankAccountRegistrationPublic,

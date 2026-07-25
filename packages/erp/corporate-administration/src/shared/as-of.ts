@@ -1,39 +1,67 @@
 import type {
-	CaCompanyStatus,
+	CaCompanyName,
 	CaCompanyStatusHistory,
+	CaLegalCompanyAsOf,
 	CaLegalCompanyDetail,
-} from "../schemas";
+	CaLegalCompanyStatus,
+} from "../types";
 
 import { filterEffectiveAsOf } from "./effective-range";
 
+function statusHistoryAsOfDate(row: CaCompanyStatusHistory): string {
+	return row.effectiveAt.toISOString().slice(0, 10);
+}
+
 export function resolveStatusAsOf(
-	history: CaCompanyStatusHistory[],
+	history: readonly CaCompanyStatusHistory[],
 	asOf: string,
-	fallback: CaCompanyStatus,
-): CaCompanyStatus {
+	fallback: CaLegalCompanyStatus,
+): CaLegalCompanyStatus {
 	const applicable = [...history]
-		.filter((row) => row.effectiveDate <= asOf)
-		.sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate));
+		.filter((row) => statusHistoryAsOfDate(row) <= asOf)
+		.sort((a, b) => b.effectiveAt.getTime() - a.effectiveAt.getTime());
 	if (applicable[0]) {
 		return applicable[0].toStatus;
 	}
 	const future = [...history]
-		.filter((row) => row.effectiveDate > asOf)
-		.sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+		.filter((row) => statusHistoryAsOfDate(row) > asOf)
+		.sort((a, b) => a.effectiveAt.getTime() - b.effectiveAt.getTime());
 	if (future[0]?.fromStatus) {
 		return future[0].fromStatus;
 	}
 	return fallback;
 }
 
+function selectEffectiveLegalName(
+	names: readonly CaCompanyName[],
+	asOf: string,
+): CaCompanyName | null {
+	const effective = filterEffectiveAsOf([...names], asOf);
+	return (
+		effective.find((name) => name.nameType === "legal" && name.isPrimary) ??
+		effective.find((name) => name.nameType === "legal") ??
+		null
+	);
+}
+
 export function buildLegalCompanyAsOfView(
 	detail: CaLegalCompanyDetail,
 	asOf: string,
-): CaLegalCompanyDetail {
+): CaLegalCompanyAsOf {
+	const status = resolveStatusAsOf(detail.statusHistory, asOf, detail.status);
+	const effectiveIdentifiers = filterEffectiveAsOf(
+		[...detail.identifiers],
+		asOf,
+	).filter((identifier) => identifier.status === "active");
+
 	return {
-		...detail,
-		status: resolveStatusAsOf(detail.statusHistory, asOf, detail.status),
-		names: filterEffectiveAsOf(detail.names, asOf),
-		identifiers: filterEffectiveAsOf(detail.identifiers, asOf),
+		company: {
+			...detail,
+			status,
+		},
+		status,
+		effectiveName: selectEffectiveLegalName(detail.names, asOf),
+		effectiveIdentifiers,
+		asOf,
 	};
 }

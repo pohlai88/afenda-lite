@@ -24,6 +24,10 @@ import type {
 	CaOfficerAppointment,
 	CaResolution,
 } from "./schemas";
+import {
+	appointmentEffectiveRange,
+	isEffectiveOnDate,
+} from "./shared/effective-range";
 
 type AsOfInput = {
 	organizationId: string;
@@ -85,9 +89,6 @@ async function loadAsOf<T extends { legalCompanyId: string }>(
 	return ok(loaded.data);
 }
 
-const dateInRange = (from: string, to: string | null, asOf: string) =>
-	from <= asOf && (to === null || asOf < to);
-
 const instantEndOfDay = (asOf: string) => new Date(`${asOf}T23:59:59.999Z`);
 
 export function getOfficerAppointmentAsOf(
@@ -101,7 +102,7 @@ export function getOfficerAppointmentAsOf(
 		(store, value) =>
 			store.getOfficerAppointmentById(value.organizationId, value.id),
 		(record, asOf) =>
-			dateInRange(record.appointedDate, record.resignedDate, asOf),
+			isEffectiveOnDate(appointmentEffectiveRange(record), asOf),
 	);
 }
 
@@ -131,8 +132,7 @@ export function getGovernanceMembershipAsOf(
 		CA_QUERY_GOVERNANCE_MEMBERSHIP_GET_AS_OF,
 		(store, value) =>
 			store.getGovernanceMembershipById(value.organizationId, value.id),
-		(record, asOf) =>
-			dateInRange(record.effectiveFrom, record.effectiveTo, asOf),
+		(record, asOf) => isEffectiveOnDate(record, asOf),
 	);
 }
 
@@ -146,8 +146,7 @@ export function getAuthorityMandateAsOf(
 		CA_QUERY_AUTHORITY_MANDATE_GET_AS_OF,
 		(store, value) =>
 			store.getAuthorityMandateById(value.organizationId, value.id),
-		(record, asOf) =>
-			dateInRange(record.effectiveFrom, record.effectiveTo, asOf),
+		(record, asOf) => isEffectiveOnDate(record, asOf),
 	);
 }
 
@@ -161,8 +160,7 @@ export function getCompanyPremiseAsOf(
 		CA_QUERY_PREMISE_GET_AS_OF,
 		(store, value) =>
 			store.getCompanyPremiseById(value.organizationId, value.id),
-		(record, asOf) =>
-			dateInRange(record.effectiveFrom, record.effectiveTo, asOf),
+		(record, asOf) => isEffectiveOnDate(record, asOf),
 	);
 }
 

@@ -1,11 +1,11 @@
 {
-  "totalCommandIds": 290,
-  "totalQueryIds": 144,
-  "totalMutationCommandIds": 290,
-  "classifiedMutationIds": 290,
+  "totalCommandIds": 310,
+  "totalQueryIds": 164,
+  "totalMutationCommandIds": 310,
+  "classifiedMutationIds": 310,
   "unclassifiedMutationIds": 0,
-  "auditOnlyCount": 179,
-  "domainEventCount": 111,
-  "generatedAt": "2026-07-25T10:14:10.488Z",
+  "auditOnlyCount": 184,
+  "domainEventCount": 126,
+  "generatedAt": "2026-07-25T19:16:23.759Z",
   "unclassified": []
 }

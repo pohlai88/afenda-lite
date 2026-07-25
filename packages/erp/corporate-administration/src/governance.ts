@@ -18,11 +18,7 @@ import {
 	type CorporateAdministrationCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import {
-	CA_ERROR_IDEMPOTENCY_CONFLICT,
-	CA_ERROR_PARTY_INVALID,
-	caErrorDetails,
-} from "./error-codes";
+import { CA_ERROR_PARTY_INVALID, caErrorDetails } from "./error-codes";
 import {
 	CA_COMMAND_AUTHORITY_MANDATE_GRANT,
 	CA_COMMAND_GOVERNANCE_BODY_CREATE,
@@ -79,7 +75,12 @@ import {
 	listResolutionsInputSchema,
 } from "./schemas";
 import { normalizeCompanyCode } from "./shared/code";
-import { createCorporateAdministrationRequestFingerprint } from "./shared/fingerprint";
+import {
+	appointmentEffectiveRange,
+	isEffectiveOnDate,
+} from "./shared/effective-range";
+import { deriveCaCommandFingerprint } from "./shared/fingerprint";
+import { replayIdempotencyFingerprint } from "./shared/idempotency-replay";
 
 async function requireCompany(
 	store: CorporateAdministrationCommandOptions["store"],
@@ -87,7 +88,10 @@ async function requireCompany(
 	legalCompanyId: string,
 ): Promise<Result<{ id: string; legalPartyId: string }>> {
 	const resolved = resolveCommandDeps({ store });
-	const company = await resolved.store.getById(organizationId, legalCompanyId);
+	const company = await resolved.store.getLegalCompany(
+		organizationId,
+		legalCompanyId,
+	);
 	if (!company.ok) return company;
 	if (!company.data) return fail("NOT_FOUND", "Legal company not found");
 	if (!company.data.legalPartyId) {
@@ -100,36 +104,7 @@ function governanceFingerprint(
 	command: string,
 	input: Record<string, unknown>,
 ) {
-	const {
-		actorUserId: _actorUserId,
-		correlationId: _correlationId,
-		idempotencyKey: _idempotencyKey,
-		...business
-	} = input;
-	return createCorporateAdministrationRequestFingerprint({
-		command,
-		...business,
-	});
-}
-
-function replayOrConflict<T extends { requestFingerprint: string }>(
-	existing: T,
-	requestFingerprint: string,
-): Result<T> {
-	if (existing.requestFingerprint === requestFingerprint) return ok(existing);
-	return fail(
-		"CONFLICT",
-		"Idempotency key was already used with a different request",
-		caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-	);
-}
-
-function isEffectiveDate(
-	effectiveFrom: string,
-	effectiveTo: string | null,
-	asOf: string,
-) {
-	return effectiveFrom <= asOf && (effectiveTo === null || asOf < effectiveTo);
+	return deriveCaCommandFingerprint({ command }, input);
 }
 
 async function requireMasters(
@@ -202,7 +177,8 @@ export async function appointOfficer(
 		CA_COMMAND_OFFICER_APPOINT,
 		parsed.data,
 	);
-	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (existing.data)
+		return replayIdempotencyFingerprint(existing.data, requestFingerprint);
 
 	const party = await resolvePartySnapshot(masters, {
 		organizationId: parsed.data.organizationId,
@@ -308,7 +284,7 @@ export async function listOfficerAppointments(
 	const asOf = parsed.data.asOf;
 	return ok(
 		listed.data.filter((row) =>
-			isEffectiveDate(row.appointedDate, row.resignedDate, asOf),
+			isEffectiveOnDate(appointmentEffectiveRange(row), asOf),
 		),
 	);
 }
@@ -347,7 +323,8 @@ export async function createGovernanceBody(
 		CA_COMMAND_GOVERNANCE_BODY_CREATE,
 		parsed.data,
 	);
-	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (existing.data)
+		return replayIdempotencyFingerprint(existing.data, requestFingerprint);
 
 	const code = normalizeCompanyCode(parsed.data.code);
 	if (!code.ok) return code;
@@ -470,7 +447,8 @@ export async function appointGovernanceMembership(
 		CA_COMMAND_GOVERNANCE_MEMBERSHIP_APPOINT,
 		parsed.data,
 	);
-	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (existing.data)
+		return replayIdempotencyFingerprint(existing.data, requestFingerprint);
 
 	let memberPartyCode: string | null = null;
 	let memberPartyName: string | null = null;
@@ -582,11 +560,7 @@ export async function listGovernanceMemberships(
 	);
 	if (!listed.ok || !parsed.data.asOf) return listed;
 	const asOf = parsed.data.asOf;
-	return ok(
-		listed.data.filter((row) =>
-			isEffectiveDate(row.effectiveFrom, row.effectiveTo, asOf),
-		),
-	);
+	return ok(listed.data.filter((row) => isEffectiveOnDate(row, asOf)));
 }
 
 export async function grantAuthorityMandate(
@@ -657,7 +631,10 @@ export async function grantAuthorityMandate(
 		parsed.data,
 	);
 	if (existing.data) {
-		const replayed = replayOrConflict(existing.data, requestFingerprint);
+		const replayed = replayIdempotencyFingerprint(
+			existing.data,
+			requestFingerprint,
+		);
 		if (!replayed.ok) return replayed;
 		const detail = await store.getAuthorityMandateById(
 			parsed.data.organizationId,
@@ -819,11 +796,7 @@ export async function listAuthorityMandates(
 	);
 	if (!listed.ok || !parsed.data.asOf) return listed;
 	const asOf = parsed.data.asOf;
-	return ok(
-		listed.data.filter((row) =>
-			isEffectiveDate(row.effectiveFrom, row.effectiveTo, asOf),
-		),
-	);
+	return ok(listed.data.filter((row) => isEffectiveOnDate(row, asOf)));
 }
 
 export async function registerCompanyPremise(
@@ -860,7 +833,8 @@ export async function registerCompanyPremise(
 		CA_COMMAND_PREMISE_REGISTER,
 		parsed.data,
 	);
-	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (existing.data)
+		return replayIdempotencyFingerprint(existing.data, requestFingerprint);
 
 	const masterPort = await requireMasters(masters);
 	if (!masterPort.ok) return masterPort;
@@ -997,11 +971,7 @@ export async function listCompanyPremises(
 	);
 	if (!listed.ok || !parsed.data.asOf) return listed;
 	const asOf = parsed.data.asOf;
-	return ok(
-		listed.data.filter((row) =>
-			isEffectiveDate(row.effectiveFrom, row.effectiveTo, asOf),
-		),
-	);
+	return ok(listed.data.filter((row) => isEffectiveOnDate(row, asOf)));
 }
 
 export async function recordGovernanceMeeting(
@@ -1038,7 +1008,8 @@ export async function recordGovernanceMeeting(
 		CA_COMMAND_GOVERNANCE_MEETING_RECORD,
 		parsed.data,
 	);
-	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (existing.data)
+		return replayIdempotencyFingerprint(existing.data, requestFingerprint);
 	if (parsed.data.mode === "correction") {
 		const corrected = await store.getGovernanceMeetingById(
 			parsed.data.organizationId,
@@ -1178,7 +1149,8 @@ export async function recordResolution(
 		CA_COMMAND_RESOLUTION_RECORD,
 		parsed.data,
 	);
-	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (existing.data)
+		return replayIdempotencyFingerprint(existing.data, requestFingerprint);
 	if (parsed.data.mode === "superseding") {
 		const predecessor = await store.getResolutionById(
 			parsed.data.organizationId,

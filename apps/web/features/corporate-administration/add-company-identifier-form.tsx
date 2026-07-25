@@ -36,7 +36,7 @@ export function AddCompanyIdentifierForm({
 					id="identifierType"
 					name="identifierType"
 					required
-					maxLength={64}
+					maxLength={100}
 					placeholder="company_registration"
 				/>
 			</div>
@@ -46,12 +46,26 @@ export function AddCompanyIdentifierForm({
 					id="identifierValue"
 					name="identifierValue"
 					required
-					maxLength={200}
+					maxLength={500}
 				/>
 			</div>
 			<div className="grid gap-2">
-				<Label htmlFor="jurisdictionCode">Jurisdiction (optional)</Label>
-				<Input id="jurisdictionCode" name="jurisdictionCode" maxLength={16} />
+				<Label htmlFor="jurisdictionCountryId">
+					Jurisdiction country id (optional)
+				</Label>
+				<Input
+					id="jurisdictionCountryId"
+					name="jurisdictionCountryId"
+					placeholder="uuid"
+				/>
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor="authorityPartyId">Authority party id (optional)</Label>
+				<Input
+					id="authorityPartyId"
+					name="authorityPartyId"
+					placeholder="uuid"
+				/>
 			</div>
 			<div className="grid gap-2">
 				<Label htmlFor="effectiveFrom">Effective from</Label>

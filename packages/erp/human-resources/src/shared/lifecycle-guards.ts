@@ -10,8 +10,13 @@ import { assertValidDateRange } from "./employment-status";
 import type {
 	ClearanceStatus,
 	LifecycleTaskStatus,
+	OffboardingAccessRevocationStatus,
 	OffboardingCaseStatus,
+	OffboardingPayrollHandoffStatus,
+	OnboardingAccessHandoffStatus,
 	OnboardingCaseStatus,
+	OnboardingEquipmentHandoffStatus,
+	OnboardingOrientationStatus,
 	ProbationStatus,
 	TerminationStatus,
 } from "./lifecycle-status";
@@ -102,6 +107,50 @@ export function assertProbationExtension(input: {
 	return ok(undefined);
 }
 
+export function assertProbationOutcomeRecordedOn(input: {
+	startsOn: string;
+	endsOn: string;
+	outcomeRecordedOn: string;
+}): Result<void> {
+	if (
+		input.outcomeRecordedOn < input.startsOn ||
+		input.outcomeRecordedOn > input.endsOn
+	) {
+		return invalidInput(
+			"Outcome recorded date must fall within the probation period",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertProbationAssessmentReviewedOn(input: {
+	startsOn: string;
+	endsOn: string;
+	reviewedOn: string;
+}): Result<void> {
+	if (input.reviewedOn < input.startsOn || input.reviewedOn > input.endsOn) {
+		return invalidInput(
+			"Assessment review date must fall within the probation period",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertConfirmationEffectiveOn(input: {
+	confirmedOn: string;
+	latestPassedOutcomeRecordedOn: string | null;
+}): Result<void> {
+	if (
+		input.latestPassedOutcomeRecordedOn !== null &&
+		input.confirmedOn < input.latestPassedOutcomeRecordedOn
+	) {
+		return invalidInput(
+			"Confirmation date must be on or after the latest passed probation outcome",
+		);
+	}
+	return ok(undefined);
+}
+
 export function assertLatestProbationPassed(input: {
 	hasAnyProbation: boolean;
 	latestClosedProbation: { outcome: string | null } | null;
@@ -138,6 +187,33 @@ export function assertTerminationStatusTransition(
 	}
 	if (!canTransitionTerminationStatus(current, next)) {
 		return cannotTransition("termination", current, next);
+	}
+	return ok(undefined);
+}
+
+export function assertTerminationApprovable(input: {
+	status: TerminationStatus;
+	approvedAt: Date | null;
+}): Result<void> {
+	if (input.status !== "draft") {
+		return invalidState("Termination must be draft to approve");
+	}
+	if (input.approvedAt !== null) {
+		return invalidState("Termination is already approved");
+	}
+	return ok(undefined);
+}
+
+export function assertTerminationFinalizable(input: {
+	status: TerminationStatus;
+	approvedAt: Date | null;
+	approvedBy: string | null;
+}): Result<void> {
+	if (input.status !== "draft") {
+		return invalidState("Termination must be draft to finalize");
+	}
+	if (input.approvedAt === null || input.approvedBy === null) {
+		return invalidState("Termination must be approved before finalize");
 	}
 	return ok(undefined);
 }
@@ -183,6 +259,8 @@ export function assertOffboardingReadyToComplete(input: {
 	mandatoryTasksComplete: boolean;
 	hasExitInterview: boolean;
 	clearanceStatus: ClearanceStatus | null;
+	accessRevocationStatus: OffboardingAccessRevocationStatus | null;
+	payrollHandoffStatus: OffboardingPayrollHandoffStatus | null;
 }): Result<void> {
 	if (!input.mandatoryTasksComplete) {
 		return invalidState("All mandatory tasks must be completed or waived");
@@ -192,6 +270,60 @@ export function assertOffboardingReadyToComplete(input: {
 	}
 	if (input.clearanceStatus !== "cleared") {
 		return invalidState("Clearance must be completed");
+	}
+	if (input.accessRevocationStatus !== "revoked") {
+		return invalidState("Access revocation must be completed");
+	}
+	if (input.payrollHandoffStatus !== "ready") {
+		return invalidState("Final payroll handoff must be ready");
+	}
+	return ok(undefined);
+}
+
+export function canTransitionOffboardingAccessRevocationStatus(
+	current: OffboardingAccessRevocationStatus,
+	next: OffboardingAccessRevocationStatus,
+): boolean {
+	if (current === next) return false;
+	if (current === "pending" && next === "revoked") {
+		return true;
+	}
+	return false;
+}
+
+export function assertOffboardingAccessRevocationStatusTransition(
+	current: OffboardingAccessRevocationStatus,
+	next: OffboardingAccessRevocationStatus,
+): Result<void> {
+	if (current === next) {
+		return alreadyInStatus("Offboarding access revocation", next);
+	}
+	if (!canTransitionOffboardingAccessRevocationStatus(current, next)) {
+		return cannotTransition("offboarding access revocation", current, next);
+	}
+	return ok(undefined);
+}
+
+export function canTransitionOffboardingPayrollHandoffStatus(
+	current: OffboardingPayrollHandoffStatus,
+	next: OffboardingPayrollHandoffStatus,
+): boolean {
+	if (current === next) return false;
+	if (current === "pending" && next === "ready") {
+		return true;
+	}
+	return false;
+}
+
+export function assertOffboardingPayrollHandoffStatusTransition(
+	current: OffboardingPayrollHandoffStatus,
+	next: OffboardingPayrollHandoffStatus,
+): Result<void> {
+	if (current === next) {
+		return alreadyInStatus("Offboarding payroll handoff", next);
+	}
+	if (!canTransitionOffboardingPayrollHandoffStatus(current, next)) {
+		return cannotTransition("offboarding payroll handoff", current, next);
 	}
 	return ok(undefined);
 }
@@ -216,6 +348,90 @@ export function assertClearanceStatusTransition(
 	}
 	if (!canTransitionClearanceStatus(current, next)) {
 		return cannotTransition("clearance", current, next);
+	}
+	return ok(undefined);
+}
+
+export function assertOnboardingReadyToComplete(input: {
+	mandatoryTasksComplete: boolean;
+	orientationStatus: OnboardingOrientationStatus | null;
+	equipmentHandoffStatus: OnboardingEquipmentHandoffStatus | null;
+	accessHandoffStatus: OnboardingAccessHandoffStatus | null;
+}): Result<void> {
+	if (!input.mandatoryTasksComplete) {
+		return invalidState("All mandatory tasks must be completed or waived");
+	}
+	if (input.orientationStatus !== "acknowledged") {
+		return invalidState("Orientation must be acknowledged");
+	}
+	if (input.equipmentHandoffStatus !== "handed_over") {
+		return invalidState("Equipment handoff must be completed");
+	}
+	if (input.accessHandoffStatus !== "granted") {
+		return invalidState("Access handoff must be completed");
+	}
+	return ok(undefined);
+}
+
+export function canTransitionOnboardingOrientationStatus(
+	current: OnboardingOrientationStatus,
+	next: OnboardingOrientationStatus,
+): boolean {
+	if (current === next) return false;
+	return current === "pending" && next === "acknowledged";
+}
+
+export function assertOnboardingOrientationStatusTransition(
+	current: OnboardingOrientationStatus,
+	next: OnboardingOrientationStatus,
+): Result<void> {
+	if (current === next) {
+		return alreadyInStatus("Onboarding orientation", next);
+	}
+	if (!canTransitionOnboardingOrientationStatus(current, next)) {
+		return cannotTransition("onboarding orientation", current, next);
+	}
+	return ok(undefined);
+}
+
+export function canTransitionOnboardingEquipmentHandoffStatus(
+	current: OnboardingEquipmentHandoffStatus,
+	next: OnboardingEquipmentHandoffStatus,
+): boolean {
+	if (current === next) return false;
+	return current === "pending" && next === "handed_over";
+}
+
+export function assertOnboardingEquipmentHandoffStatusTransition(
+	current: OnboardingEquipmentHandoffStatus,
+	next: OnboardingEquipmentHandoffStatus,
+): Result<void> {
+	if (current === next) {
+		return alreadyInStatus("Onboarding equipment handoff", next);
+	}
+	if (!canTransitionOnboardingEquipmentHandoffStatus(current, next)) {
+		return cannotTransition("onboarding equipment handoff", current, next);
+	}
+	return ok(undefined);
+}
+
+export function canTransitionOnboardingAccessHandoffStatus(
+	current: OnboardingAccessHandoffStatus,
+	next: OnboardingAccessHandoffStatus,
+): boolean {
+	if (current === next) return false;
+	return current === "pending" && next === "granted";
+}
+
+export function assertOnboardingAccessHandoffStatusTransition(
+	current: OnboardingAccessHandoffStatus,
+	next: OnboardingAccessHandoffStatus,
+): Result<void> {
+	if (current === next) {
+		return alreadyInStatus("Onboarding access handoff", next);
+	}
+	if (!canTransitionOnboardingAccessHandoffStatus(current, next)) {
+		return cannotTransition("onboarding access handoff", current, next);
 	}
 	return ok(undefined);
 }

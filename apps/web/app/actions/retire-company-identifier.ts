@@ -12,6 +12,10 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
+	caCompanyIdentifierIdSchema,
+	caLegalCompanyIdSchema,
+} from "@/lib/erp/corporate-administration-action-schemas";
+import {
 	type ActionResult,
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
@@ -24,10 +28,11 @@ export type RetireCompanyIdentifierActionState =
 	ActionResult<RetireCompanyIdentifierActionData> | null;
 
 const retireCompanyIdentifierFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
-	companyIdentifierId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
+	companyIdentifierId: caCompanyIdentifierIdSchema,
 	expectedVersion: z.coerce.number().int().positive(),
 	effectiveTo: z.string().date(),
+	reason: z.string().trim().min(1).max(2000),
 });
 
 export async function retireCompanyIdentifierAction(
@@ -45,27 +50,25 @@ export async function retireCompanyIdentifierAction(
 				companyIdentifierId: formData.get("companyIdentifierId"),
 				expectedVersion: formData.get("expectedVersion"),
 				effectiveTo: formData.get("effectiveTo"),
+				reason: formData.get("reason"),
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid retirement date for the identifier.",
+					"Enter a valid retirement date and reason for the identifier.",
 					parsed.details,
 				);
 			}
-			const commandPayload = {
-				legalCompanyId: parsed.data.legalCompanyId,
-				companyIdentifierId: parsed.data.companyIdentifierId,
-				expectedVersion: parsed.data.expectedVersion,
-				effectiveTo: parsed.data.effectiveTo,
-			};
 			const result = await retireCompanyIdentifier(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `retire-id:${parsed.data.companyIdentifierId}:${parsed.data.expectedVersion}`,
-					...commandPayload,
+					companyIdentifierId: parsed.data.companyIdentifierId,
+					expectedVersion: parsed.data.expectedVersion,
+					effectiveTo: parsed.data.effectiveTo,
+					reason: parsed.data.reason,
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

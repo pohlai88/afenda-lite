@@ -63,6 +63,16 @@ export function computeLeaveBalance(
 	return fromScaled(total, scale);
 }
 
+export function sortLeaveAdjustmentsForLedger<
+	T extends { id: string; createdAt: Date },
+>(adjustments: readonly T[]): T[] {
+	return [...adjustments].sort(
+		(left, right) =>
+			left.createdAt.getTime() - right.createdAt.getTime() ||
+			left.id.localeCompare(right.id),
+	);
+}
+
 export function compareLeaveQuantity(left: string, right: string): number {
 	const scale = resolveScale(left, right);
 	const leftScaled = toScaled(left, scale);

@@ -30,6 +30,8 @@ import { planLeaveMutationOutboxEventType } from "../../emissions/sql-side-effec
 import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../../leave/leave-policy-lineage";
 import {
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
@@ -58,6 +60,7 @@ import {
 	assertLeavePolicyEditable,
 	assertLeaveRequestAmendable,
 } from "../../shared/leave-guards";
+import { mergeLeavePolicyBalanceRules } from "../../shared/leave-policy-balance-rules";
 import {
 	dayPortionSchema,
 	type LeavePolicyStatus,
@@ -65,6 +68,9 @@ import {
 	leaveAdjustmentKindSchema,
 	leaveAdjustmentStatusSchema,
 	leaveEntitlementStatusSchema,
+	leavePolicyAccrualBasisSchema,
+	leavePolicyAccrualFrequencySchema,
+	leavePolicyEntitlementExpiryRuleSchema,
 	leavePolicyStatusSchema,
 	leaveRequestStatusSchema,
 	leaveTypeSchema,
@@ -107,7 +113,7 @@ import {
 	buildCreateLeaveEntitlementSql,
 	buildCreateLeavePolicySql,
 	buildCreateLeaveRequestSql,
-	buildEntitlementStatusTransitionSql,
+	buildExpireEntitlementSql,
 	buildPolicyStatusTransitionSql,
 	buildSubmitLeaveRequestSql,
 	buildStatusTransitionSql,
@@ -190,28 +196,7 @@ async function transitionLeavePolicyStatus(input: {
 					eq(hrLeavePolicy.version, input.expectedVersion),
 				),
 			)
-			.returning({
-				id: hrLeavePolicy.id,
-				organizationId: hrLeavePolicy.organizationId,
-				code: hrLeavePolicy.code,
-				name: hrLeavePolicy.name,
-				leaveType: hrLeavePolicy.leaveType,
-				unit: hrLeavePolicy.unit,
-				paid: hrLeavePolicy.paid,
-				sensitive: hrLeavePolicy.sensitive,
-				allowsNegativeBalance: hrLeavePolicy.allowsNegativeBalance,
-				allowSelfApproval: hrLeavePolicy.allowSelfApproval,
-				allowsPartialDay: hrLeavePolicy.allowsPartialDay,
-				supersedesPolicyId: hrLeavePolicy.supersedesPolicyId,
-				status: hrLeavePolicy.status,
-				effectiveFrom: hrLeavePolicy.effectiveFrom,
-				effectiveTo: hrLeavePolicy.effectiveTo,
-				version: hrLeavePolicy.version,
-				createdBy: hrLeavePolicy.createdBy,
-				updatedBy: hrLeavePolicy.updatedBy,
-				createdAt: hrLeavePolicy.createdAt,
-				updatedAt: hrLeavePolicy.updatedAt,
-			});
+			.returning();
 
 		if (result.length === 0) {
 			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
@@ -253,29 +238,7 @@ async function transitionLeavePolicyStatus(input: {
 			return emission;
 		}
 
-		return ok({
-			id: policy.id as HumanResourcesLeavePolicyId,
-			organizationId: policy.organizationId,
-			code: policy.code,
-			name: policy.name,
-			leaveType: policy.leaveType as LeavePolicy["leaveType"],
-			unit: policy.unit as LeavePolicy["unit"],
-			paid: policy.paid,
-			sensitive: policy.sensitive,
-			allowsNegativeBalance: policy.allowsNegativeBalance,
-			allowSelfApproval: policy.allowSelfApproval,
-			allowsPartialDay: policy.allowsPartialDay,
-			supersedesPolicyId:
-				policy.supersedesPolicyId as HumanResourcesLeavePolicyId | null,
-			status: policy.status as LeavePolicyStatus,
-			effectiveFrom: policy.effectiveFrom,
-			effectiveTo: policy.effectiveTo,
-			version: policy.version,
-			createdBy: policy.createdBy,
-			updatedBy: policy.updatedBy,
-			createdAt: policy.createdAt,
-			updatedAt: policy.updatedAt,
-		});
+		return mapLeavePolicy(policy);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,
@@ -382,6 +345,25 @@ function mapLeavePolicy(
 	if (!unit.success) return invalidState("Invalid leave policy unit");
 	const status = leavePolicyStatusSchema.safeParse(row.status);
 	if (!status.success) return invalidState("Invalid leave policy status");
+	const accrualBasis = leavePolicyAccrualBasisSchema.safeParse(row.accrualBasis);
+	if (!accrualBasis.success) {
+		return invalidState("Invalid leave policy accrual basis");
+	}
+	let accrualFrequency: LeavePolicy["accrualFrequency"] = null;
+	if (row.accrualFrequency !== null) {
+		const parsed = leavePolicyAccrualFrequencySchema.safeParse(
+			row.accrualFrequency,
+		);
+		if (!parsed.success) {
+			return invalidState("Invalid leave policy accrual frequency");
+		}
+		accrualFrequency = parsed.data;
+	}
+	const entitlementExpiryRule =
+		leavePolicyEntitlementExpiryRuleSchema.safeParse(row.entitlementExpiryRule);
+	if (!entitlementExpiryRule.success) {
+		return invalidState("Invalid leave policy entitlement expiry rule");
+	}
 	let supersedesPolicyId: LeavePolicy["supersedesPolicyId"] = null;
 	if (row.supersedesPolicyId !== null) {
 		const parsed = parseHumanResourcesLeavePolicyId(row.supersedesPolicyId);
@@ -400,6 +382,13 @@ function mapLeavePolicy(
 		allowsNegativeBalance: row.allowsNegativeBalance,
 		allowSelfApproval: row.allowSelfApproval,
 		allowsPartialDay: row.allowsPartialDay,
+		accrualBasis: accrualBasis.data,
+		accrualFrequency,
+		accrualQuantityPerPeriod: row.accrualQuantityPerPeriod,
+		carryForwardEnabled: row.carryForwardEnabled,
+		carryForwardMaxQuantity: row.carryForwardMaxQuantity,
+		entitlementExpiryRule: entitlementExpiryRule.data,
+		entitlementExpiryDays: row.entitlementExpiryDays,
 		effectiveFrom: row.effectiveFrom,
 		effectiveTo: row.effectiveTo,
 		status: status.data,
@@ -409,6 +398,38 @@ function mapLeavePolicy(
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
+	});
+}
+
+function mapLeavePolicySqlRow(row: LeavePolicySqlRow): Result<LeavePolicy> {
+	return mapLeavePolicy({
+		id: row.id,
+		organizationId: row.organization_id,
+		code: row.code,
+		name: row.name,
+		leaveType: row.leave_type,
+		unit: row.unit,
+		paid: row.paid,
+		sensitive: row.sensitive,
+		allowsNegativeBalance: row.allows_negative_balance,
+		allowSelfApproval: row.allow_self_approval,
+		allowsPartialDay: row.allows_partial_day,
+		accrualBasis: row.accrual_basis,
+		accrualFrequency: row.accrual_frequency,
+		accrualQuantityPerPeriod: row.accrual_quantity_per_period,
+		carryForwardEnabled: row.carry_forward_enabled,
+		carryForwardMaxQuantity: row.carry_forward_max_quantity,
+		entitlementExpiryRule: row.entitlement_expiry_rule,
+		entitlementExpiryDays: row.entitlement_expiry_days,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		status: row.status,
+		supersedesPolicyId: row.supersedes_policy_id,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
 	});
 }
 
@@ -640,7 +661,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					and(
 						eq(hrLeavePolicy.organizationId, input.organizationId),
 						eq(hrLeavePolicy.code, input.policyCode),
-						eq(hrLeavePolicy.status, "published"),
+						inArray(hrLeavePolicy.status, ["published", "superseded"]),
 					),
 				);
 			const policies: LeavePolicy[] = [];
@@ -771,6 +792,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				allowsNegativeBalance: record.allowsNegativeBalance,
 				allowSelfApproval: record.allowSelfApproval,
 				allowsPartialDay: record.allowsPartialDay,
+				accrualBasis: record.accrualBasis,
+				accrualFrequency: record.accrualFrequency,
+				accrualQuantityPerPeriod: record.accrualQuantityPerPeriod,
+				carryForwardEnabled: record.carryForwardEnabled,
+				carryForwardMaxQuantity: record.carryForwardMaxQuantity,
+				entitlementExpiryRule: record.entitlementExpiryRule,
+				entitlementExpiryDays: record.entitlementExpiryDays,
 				effectiveFrom: record.effectiveFrom,
 				effectiveTo: record.effectiveTo,
 				createdBy: record.createdBy,
@@ -789,28 +817,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return notFound("Leave policy creation failed");
 			}
 
-			return mapLeavePolicy({
-				id: row.id,
-				organizationId: row.organization_id,
-				code: row.code,
-				name: row.name,
-				leaveType: row.leave_type,
-				unit: row.unit,
-				paid: row.paid,
-				sensitive: row.sensitive,
-				allowsNegativeBalance: row.allows_negative_balance,
-				allowSelfApproval: row.allow_self_approval,
-				allowsPartialDay: row.allows_partial_day,
-				effectiveFrom: row.effective_from,
-				effectiveTo: row.effective_to,
-				status: row.status,
-				supersedesPolicyId: row.supersedes_policy_id,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapLeavePolicySqlRow(row);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
 				return conflict("Leave policy code already exists for effective date");
@@ -834,6 +841,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const editable = assertLeavePolicyEditable(existing.data.status);
 		if (!editable.ok) return editable;
 
+		const balanceRules = mergeLeavePolicyBalanceRules(existing.data, input);
 		const nextVersion = input.expectedVersion + 1;
 		try {
 			const updated = await db
@@ -848,6 +856,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 						input.allowSelfApproval ?? existing.data.allowSelfApproval,
 					allowsPartialDay:
 						input.allowsPartialDay ?? existing.data.allowsPartialDay,
+					...balanceRules,
 					effectiveTo:
 						input.effectiveTo !== undefined
 							? input.effectiveTo
@@ -957,28 +966,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return notFound("Leave policy publication failed");
 			}
 
-			return mapLeavePolicy({
-				id: row.id,
-				organizationId: row.organization_id,
-				code: row.code,
-				name: row.name,
-				leaveType: row.leave_type,
-				unit: row.unit,
-				paid: row.paid,
-				sensitive: row.sensitive,
-				allowsNegativeBalance: row.allows_negative_balance,
-				allowSelfApproval: row.allow_self_approval,
-				allowsPartialDay: row.allows_partial_day,
-				effectiveFrom: row.effective_from,
-				effectiveTo: row.effective_to,
-				status: row.status,
-				supersedesPolicyId: row.supersedes_policy_id,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapLeavePolicySqlRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to publish leave policy");
 		}
@@ -1012,28 +1000,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return notFound("Leave policy archival failed");
 			}
 
-			return mapLeavePolicy({
-				id: row.id,
-				organizationId: row.organization_id,
-				code: row.code,
-				name: row.name,
-				leaveType: row.leave_type,
-				unit: row.unit,
-				paid: row.paid,
-				sensitive: row.sensitive,
-				allowsNegativeBalance: row.allows_negative_balance,
-				allowSelfApproval: row.allow_self_approval,
-				allowsPartialDay: row.allows_partial_day,
-				effectiveFrom: row.effective_from,
-				effectiveTo: row.effective_to,
-				status: row.status,
-				supersedesPolicyId: row.supersedes_policy_id,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapLeavePolicySqlRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to archive leave policy");
 		}
@@ -1066,6 +1033,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				allowsNegativeBalance: input.allowsNegativeBalance,
 				allowSelfApproval: input.allowSelfApproval,
 				allowsPartialDay: input.allowsPartialDay,
+				accrualBasis: input.accrualBasis,
+				accrualFrequency: input.accrualFrequency,
+				accrualQuantityPerPeriod: input.accrualQuantityPerPeriod,
+				carryForwardEnabled: input.carryForwardEnabled,
+				carryForwardMaxQuantity: input.carryForwardMaxQuantity,
+				entitlementExpiryRule: input.entitlementExpiryRule,
+				entitlementExpiryDays: input.entitlementExpiryDays,
 				effectiveFrom: input.effectiveFrom,
 				effectiveTo: input.effectiveTo,
 				minTenureDays: input.minTenureDays,
@@ -1310,31 +1284,31 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		);
 		if (!newEntitlementId.ok) return newEntitlementId;
 
-		const carryAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
+		const sourceCarryOutAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
 			randomUUID(),
 		);
-		if (!carryAdjustmentId.ok) return carryAdjustmentId;
+		if (!sourceCarryOutAdjustmentId.ok) return sourceCarryOutAdjustmentId;
 
 		const carryEventType = planLeaveMutationOutboxEventType({
-			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
 			meta,
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
 			aggregateId: newEntitlementId.data,
 			audit: {
-				entity: "hr_leave_adjustment",
-				entityId: carryAdjustmentId.data,
+				entity: "hr_leave_entitlement",
+				entityId: newEntitlementId.data,
 				action: "CREATE",
 				changes: [],
 			},
 			eventType: getRegistryDomainEventType(
-				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
 			),
 			eventEntityId: newEntitlementId.data,
 			eventEntityType: "hr_leave_entitlement",
 		});
 		if (carryEventType === undefined) {
-			return invalidState("Carry-forward adjustment requires a domain event");
+			return invalidState("Carry-forward requires a domain event");
 		}
 
 		try {
@@ -1348,9 +1322,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				newPeriodStart: input.newPeriodStart,
 				newPeriodEnd: input.newPeriodEnd,
 				carriedQuantity: input.carriedQuantity,
+				sourceCarryOutDelta: negateLeaveQuantity(input.carriedQuantity),
 				createIdempotencyKey: input.createIdempotencyKey,
 				createRequestFingerprint: input.createRequestFingerprint,
-				carryAdjustmentId: carryAdjustmentId.data,
+				sourceCarryOutAdjustmentId: sourceCarryOutAdjustmentId.data,
 				eventType: carryEventType,
 			});
 
@@ -1390,7 +1365,6 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	},
 
 	async expireLeaveEntitlement(input, _ports, meta) {
-		// Validate transaction inputs
 		const validation = validateTransactionInput({
 			organizationId: input.organizationId,
 			correlationId: meta.correlationId,
@@ -1398,14 +1372,49 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 		if (!validation.ok) return validation;
 
+		const existing = await this.getLeaveEntitlementById({
+			organizationId: input.organizationId,
+			entitlementId: input.entitlementId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Leave entitlement not found");
+		}
+
+		const expiryAdjustmentId = parseHumanResourcesLeaveAdjustmentId(
+			randomUUID(),
+		);
+		if (!expiryAdjustmentId.ok) return expiryAdjustmentId;
+
+		const expiryEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.entitlementId,
+			audit: {
+				entity: "hr_leave_entitlement",
+				entityId: input.entitlementId,
+				action: "UPDATE",
+				changes: [],
+			},
+			eventType: getRegistryDomainEventType(
+				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+			),
+			eventEntityId: input.entitlementId,
+			eventEntityType: "hr_leave_entitlement",
+		});
+
 		try {
-			const sql = buildEntitlementStatusTransitionSql({
+			const sql = buildExpireEntitlementSql({
 				entitlementId: input.entitlementId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
-				nextStatus: "expired",
+				expiryAdjustmentId: expiryAdjustmentId.data,
+				createRequestFingerprint: existing.data.fingerprint,
+				eventType: expiryEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
@@ -1417,8 +1426,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return notFound("Leave entitlement expiry failed");
 			}
 
-			// Handle expiry adjustment if there's remaining balance
-			const entitlement = mapLeaveEntitlement({
+			return mapLeaveEntitlement({
 				id: row.id,
 				organizationId: row.organization_id,
 				employeeId: row.employee_id,
@@ -1436,34 +1444,6 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				createdAt: row.created_at,
 				updatedAt: row.updated_at,
 			});
-			if (!entitlement.ok) return entitlement;
-
-			// Check if we need to create an expiry adjustment for remaining balance
-			const balance = await this.getLeaveBalance({
-				organizationId: input.organizationId,
-				entitlementId: input.entitlementId,
-			});
-			if (balance.ok && balance.data !== null && balance.data.balance !== "0") {
-				const expiryAdjustment = await this.adjustLeaveEntitlement(
-					{
-						organizationId: input.organizationId,
-						entitlementId: input.entitlementId,
-						sourceRequestId: null,
-						kind: "expiry",
-						delta: negateLeaveQuantity(balance.data.balance),
-						reason: "Entitlement expired",
-						source: "system",
-						createIdempotencyKey: `${input.entitlementId}:expiry`,
-						createRequestFingerprint: entitlement.data.fingerprint,
-						createdBy: input.actorUserId,
-					},
-					_ports,
-					meta,
-				);
-				if (!expiryAdjustment.ok) return expiryAdjustment;
-			}
-
-			return entitlement;
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to expire leave entitlement");
 		}

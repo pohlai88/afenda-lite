@@ -8,6 +8,7 @@ import type {
 } from "@afenda/master-data";
 
 import type { CorporateAdministrationMasterLookupPort } from "../../src/ports";
+import { isEffectiveOnDate } from "../../src/shared/effective-range";
 
 type MemoryLegalEntityDimension = OrganizationDimensionReference & {
 	organizationId: string;
@@ -90,8 +91,7 @@ export function createMemoryCaMasterLookup(input: {
 					row.organizationId === organizationId &&
 					row.id === id &&
 					row.kind === "legal_entity" &&
-					row.effectiveFrom <= asOf &&
-					(row.effectiveTo === null || row.effectiveTo >= asOf),
+					isEffectiveOnDate(row, asOf),
 			);
 			return ok(match ?? null);
 		},

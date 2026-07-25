@@ -38,9 +38,9 @@ import { fail, failFromUnknown, ok } from "@afenda/errors/result";
 
 import {
 	CA_ERROR_CODE_CONFLICT,
-	CA_ERROR_IDEMPOTENCY_CONFLICT,
 	caErrorDetails,
 } from "../../error-codes";
+import { idempotencyFingerprintConflict } from "../../shared/idempotency-replay";
 import type { Ca4MutationContext, SlicesStore } from "../../ports";
 import {
 	addDecimal,
@@ -49,6 +49,7 @@ import {
 	negateDecimal,
 	sumDecimals,
 } from "../../shared/decimal";
+import { normalizeCorporateCode } from "../../shared/code";
 import type {
 	Ca4Subject,
 	CaBankAccountRegistration,
@@ -1175,9 +1176,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					}
 				}
 				const transactionId = randomUUID();
-				const normalizedReference = record.transactionReference
-					.trim()
-					.toUpperCase();
+				const normalizedReference = normalizeCorporateCode(
+					record.transactionReference,
+				);
 				const correlationId =
 					mutation?.meta.correlationId ?? record.createIdempotencyKey;
 				const auditId = randomUUID();
@@ -1379,9 +1380,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					}
 				}
 				const reversalId = randomUUID();
-				const normalizedReference = input.reversalReference
-					.trim()
-					.toUpperCase();
+				const normalizedReference = normalizeCorporateCode(
+					input.reversalReference,
+				);
 				const auditId = randomUUID();
 				const eventId = randomUUID();
 				const lockKeys = shareCapitalHolderLockKeys(
@@ -1932,7 +1933,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 							lte(caBeneficialOwnerDisclosure.effectiveFrom, asOf),
 							or(
 								sql`${caBeneficialOwnerDisclosure.effectiveTo} IS NULL`,
-								sql`${caBeneficialOwnerDisclosure.effectiveTo} >= ${asOf}`,
+								sql`${caBeneficialOwnerDisclosure.effectiveTo} > ${asOf}`,
 							),
 						),
 					);
@@ -1984,11 +1985,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						existing[0].createRequestFingerprint !==
 						record.createRequestFingerprint
 					) {
-						return fail(
-							"CONFLICT",
-							"Idempotency key was already used for a different request",
-							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-						);
+								return idempotencyFingerprintConflict();
 					}
 					return ok(mapPropertyHolding(existing[0]));
 				}
@@ -2046,11 +2043,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 							byIdempotency[0].createRequestFingerprint !==
 							record.createRequestFingerprint
 						) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used for a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						return ok(mapPropertyHolding(byIdempotency[0]));
 					}
@@ -2169,11 +2162,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						existing[0].createRequestFingerprint !==
 						record.createRequestFingerprint
 					) {
-						return fail(
-							"CONFLICT",
-							"Idempotency key was already used for a different request",
-							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-						);
+								return idempotencyFingerprintConflict();
 					}
 					return ok(mapCorporateAsset(existing[0]));
 				}
@@ -2232,11 +2221,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 							byIdempotency[0].createRequestFingerprint !==
 							record.createRequestFingerprint
 						) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used for a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						return ok(mapCorporateAsset(byIdempotency[0]));
 					}
@@ -2366,11 +2351,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						existing[0].createRequestFingerprint !==
 						record.createRequestFingerprint
 					) {
-						return fail(
-							"CONFLICT",
-							"Idempotency key was already used for a different request",
-							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-						);
+								return idempotencyFingerprintConflict();
 					}
 					return ok(mapIntellectualPropertyRight(existing[0]));
 				}
@@ -2438,11 +2419,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 							byIdempotency[0].createRequestFingerprint !==
 							record.createRequestFingerprint
 						) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used for a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						return ok(mapIntellectualPropertyRight(byIdempotency[0]));
 					}
@@ -2612,11 +2589,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						existing[0].createRequestFingerprint !==
 						record.createRequestFingerprint
 					) {
-						return fail(
-							"CONFLICT",
-							"Idempotency key was already used for a different request",
-							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-						);
+								return idempotencyFingerprintConflict();
 					}
 					return ok(mapInsurancePolicy(existing[0]));
 				}
@@ -2681,11 +2654,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 							byIdempotency[0].createRequestFingerprint !==
 							record.createRequestFingerprint
 						) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used for a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						return ok(mapInsurancePolicy(byIdempotency[0]));
 					}
@@ -2836,11 +2805,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						existing[0].createRequestFingerprint !==
 						record.createRequestFingerprint
 					) {
-						return fail(
-							"CONFLICT",
-							"Idempotency key was already used for a different request",
-							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-						);
+								return idempotencyFingerprintConflict();
 					}
 					return ok(mapCharge(existing[0]));
 				}
@@ -2903,11 +2868,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 							byIdempotency[0].createRequestFingerprint !==
 							record.createRequestFingerprint
 						) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used for a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						return ok(mapCharge(byIdempotency[0]));
 					}
@@ -4153,7 +4114,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 		},
 		async searchCorporateRecords(organizationId, query, limit, legalCompanyId) {
 			try {
-				const normalizedQuery = query.trim().toUpperCase();
+				const normalizedQuery = normalizeCorporateCode(query);
 				if (!normalizedQuery) {
 					return ok([]);
 				}

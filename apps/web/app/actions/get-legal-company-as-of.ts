@@ -2,7 +2,7 @@
 
 import {
 	CA_PERMISSION_COMPANY_READ,
-	type CaLegalCompanyDetail,
+	type CaLegalCompanyAsOf,
 	getLegalCompanyAsOf,
 } from "@afenda/corporate-administration";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
+import { caEffectiveAtFromFormDate, caLegalCompanyIdSchema } from "@/lib/erp/corporate-administration-action-schemas";
 import {
 	type ActionResult,
 	actionFail,
@@ -17,14 +18,14 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const getLegalCompanyAsOfActionSchema = z.object({
-	legalCompanyId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
 	asOf: z.string().date(),
 });
 
 export async function getLegalCompanyAsOfAction(input: {
 	legalCompanyId: string;
 	asOf: string;
-}): Promise<ActionResult<{ company: CaLegalCompanyDetail }>> {
+}): Promise<ActionResult<{ company: CaLegalCompanyAsOf }>> {
 	return runOperatorPermissionAction({
 		path: "getLegalCompanyAsOfAction",
 		permission: CA_PERMISSION_COMPANY_READ,
@@ -44,7 +45,7 @@ export async function getLegalCompanyAsOfAction(input: {
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					legalCompanyId: parsed.data.legalCompanyId,
-					asOf: parsed.data.asOf,
+					asOf: caEffectiveAtFromFormDate(parsed.data.asOf),
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

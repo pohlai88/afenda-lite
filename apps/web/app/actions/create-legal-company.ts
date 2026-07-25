@@ -3,7 +3,6 @@
 import {
 	CA_PERMISSION_COMPANY_CREATE,
 	type CaLegalCompany,
-	createCorporateAdministrationRequestFingerprint,
 	createLegalCompany,
 } from "@afenda/corporate-administration";
 import { revalidatePath } from "next/cache";
@@ -11,6 +10,7 @@ import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { optionalFormUuidSchema } from "@/lib/erp/corporate-administration-action-schemas";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
 	type ActionResult,
@@ -23,14 +23,9 @@ export type CreateLegalCompanyActionState =
 	ActionResult<CreateLegalCompanyActionData> | null;
 
 const createLegalCompanyFormSchema = z.object({
-	code: z.string().trim().min(1).max(64),
+	code: z.string().trim().min(1).max(100),
 	legalEntityDimensionId: z.string().uuid(),
-	legalPartyId: z
-		.union([z.string().uuid(), z.literal("")])
-		.optional()
-		.transform((value) =>
-			value === undefined || value === "" ? undefined : value,
-		),
+	legalPartyId: optionalFormUuidSchema,
 });
 
 export async function createLegalCompanyAction(
@@ -62,9 +57,6 @@ export async function createLegalCompanyAction(
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey,
-					requestFingerprint: createCorporateAdministrationRequestFingerprint(
-						parsed.data,
-					),
 					code: parsed.data.code,
 					legalEntityDimensionId: parsed.data.legalEntityDimensionId,
 					legalPartyId: parsed.data.legalPartyId,

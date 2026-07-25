@@ -157,6 +157,9 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"hr_employment_offer",
 	"hr_onboarding_case",
 	"hr_onboarding_task",
+	"hr_onboarding_orientation",
+	"hr_onboarding_equipment_handoff",
+	"hr_onboarding_access_handoff",
 	"hr_probation_review",
 	"hr_employment_confirmation",
 	"hr_termination",
@@ -164,6 +167,8 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"hr_offboarding_task",
 	"hr_exit_interview",
 	"hr_clearance",
+	"hr_offboarding_access_revocation",
+	"hr_offboarding_payroll_handoff",
 	"hr_learning_course",
 	"hr_learning_program",
 	"hr_learning_session",
@@ -551,6 +556,12 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_case WHERE organization_id IS NULL`,
 	hr_onboarding_task: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_task WHERE organization_id IS NULL`,
+	hr_onboarding_orientation: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_orientation WHERE organization_id IS NULL`,
+	hr_onboarding_equipment_handoff: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_equipment_handoff WHERE organization_id IS NULL`,
+	hr_onboarding_access_handoff: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_access_handoff WHERE organization_id IS NULL`,
 	hr_probation_review: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_probation_review WHERE organization_id IS NULL`,
 	hr_employment_confirmation: () =>
@@ -565,6 +576,10 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_exit_interview WHERE organization_id IS NULL`,
 	hr_clearance: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_clearance WHERE organization_id IS NULL`,
+	hr_offboarding_access_revocation: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_offboarding_access_revocation WHERE organization_id IS NULL`,
+	hr_offboarding_payroll_handoff: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_offboarding_payroll_handoff WHERE organization_id IS NULL`,
 	hr_learning_course: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_learning_course WHERE organization_id IS NULL`,
 	hr_learning_program: () =>

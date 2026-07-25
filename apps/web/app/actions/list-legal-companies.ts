@@ -1,7 +1,6 @@
 "use server";
 
 import {
-	CA_COMPANY_STATUSES,
 	CA_PERMISSION_COMPANY_LIST,
 	type CaLegalCompany,
 	listLegalCompanies,
@@ -10,6 +9,7 @@ import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { CA_LEGAL_COMPANY_STATUS_VALUES } from "@/lib/erp/corporate-administration-action-schemas";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
 	type ActionResult,
@@ -19,17 +19,25 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 
 const listLegalCompaniesActionSchema = z
 	.object({
-		status: z.enum(CA_COMPANY_STATUSES).optional(),
-		page: z.number().int().positive().optional(),
-		pageSize: z.number().int().positive().max(100).optional(),
+		status: z.enum(CA_LEGAL_COMPANY_STATUS_VALUES).optional(),
+		query: z.string().trim().max(300).optional(),
+		cursor: z.string().trim().min(1).optional(),
+		limit: z.number().int().positive().max(100).optional(),
 	})
 	.optional();
 
 export async function listLegalCompaniesAction(input?: {
 	status?: CaLegalCompany["status"];
-	page?: number;
-	pageSize?: number;
-}): Promise<ActionResult<{ companies: CaLegalCompany[]; total: number }>> {
+	query?: string;
+	cursor?: string;
+	limit?: number;
+}): Promise<
+	ActionResult<{
+		companies: readonly CaLegalCompany[];
+		total: number;
+		nextCursor: string | null;
+	}>
+> {
 	return runOperatorPermissionAction({
 		path: "listLegalCompaniesAction",
 		permission: CA_PERMISSION_COMPANY_LIST,
@@ -59,6 +67,7 @@ export async function listLegalCompaniesAction(input?: {
 				data: {
 					companies: mapped.data.items,
 					total: mapped.data.total,
+					nextCursor: mapped.data.nextCursor,
 				},
 			};
 		},

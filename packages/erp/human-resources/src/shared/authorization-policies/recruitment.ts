@@ -13,6 +13,7 @@ export const recruitmentPolicy = createScopedPolicy({
 		"human-resources.interview.",
 		"human-resources.interview-evaluation.",
 		"human-resources.offer.",
+		"human-resources.hire.",
 		"human-resources.recruitment.",
 	],
 });

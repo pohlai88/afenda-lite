@@ -9,6 +9,7 @@ import {
 import { createLegalCompany } from "../src/legal-company";
 import { createMemoryCorporateAdministrationStore } from "../src/memory-store";
 import { CA_PERMISSION_CODES } from "../src/permissions";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -34,15 +35,11 @@ describe("@afenda/corporate-administration documents filings", () => {
 	it("creates document, filing obligation, and append-only submission", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const company = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			createLegalCompanyTestInput("company-df-1", {
+				code: "CO-DF",
 				correlationId: "corr-df-1",
 				idempotencyKey: "company-df-1",
-				requestFingerprint: "fp-df-1",
-				code: "CO-DF",
-				legalEntityDimensionId: DIM_A,
-			},
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(company.ok).toBe(true);

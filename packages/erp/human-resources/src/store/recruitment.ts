@@ -2,6 +2,7 @@ import type { Result } from "@afenda/errors/result";
 import type {
 	HumanResourcesApplicationId,
 	HumanResourcesCandidateId,
+	HumanResourcesCompensationProposalId,
 	HumanResourcesDepartmentId,
 	HumanResourcesEmployeeId,
 	HumanResourcesInterviewId,
@@ -11,6 +12,7 @@ import type {
 	HumanResourcesRequisitionId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { ApplicationStatusChangeKind } from "../shared/application-history";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	ApplicationStatus,
@@ -26,10 +28,12 @@ import type {
 	CandidateApplication,
 	CandidateDuplicateMatch,
 	CandidateListPage,
+	ApplicationStatusHistory,
 	EmploymentOffer,
 	Interview,
 	InterviewEvaluation,
 	InterviewListPage,
+	InterviewScorecard,
 	JobRequisition,
 	OfferAcceptanceHandoff,
 	OfferListPage,
@@ -92,6 +96,20 @@ export type ApplicationCreateRecord = {
 	createdBy: string;
 };
 
+export type ApplicationStatusHistoryAppendRecord = {
+	organizationId: string;
+	applicationId: HumanResourcesApplicationId;
+	candidateId: HumanResourcesCandidateId;
+	requisitionId: HumanResourcesRequisitionId;
+	fromStatus: ApplicationStatus | null;
+	toStatus: ApplicationStatus;
+	changeKind: ApplicationStatusChangeKind;
+	reason: string | null;
+	reasonCode: string | null;
+	correlationId: string;
+	actorUserId: string;
+};
+
 export type InterviewScheduleRecord = {
 	organizationId: string;
 	applicationId: HumanResourcesApplicationId;
@@ -104,6 +122,7 @@ export type InterviewEvaluationCreateRecord = {
 	organizationId: string;
 	interviewId: HumanResourcesInterviewId;
 	result: InterviewEvaluationResult;
+	scorecard: InterviewScorecard;
 	privateNotes: string | null;
 	evaluatorActorId: string;
 	expectedVersion: number;
@@ -115,6 +134,7 @@ export type OfferCreateRecord = {
 	applicationId: HumanResourcesApplicationId;
 	termsSummary: string;
 	expiresOn: string;
+	compensationProposalId?: HumanResourcesCompensationProposalId | null;
 	createdBy: string;
 };
 
@@ -297,10 +317,34 @@ export type HumanResourcesRecruitmentStore = {
 			status: ApplicationStatus;
 			expectedVersion: number;
 			actorUserId: string;
+			reason?: string | null;
+			reasonCode?: string | null;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CandidateApplication>>;
+
+	reopenApplication(
+		input: {
+			organizationId: string;
+			applicationId: HumanResourcesApplicationId;
+			expectedVersion: number;
+			actorUserId: string;
+			reason?: string | null;
+			reasonCode?: string | null;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<CandidateApplication>>;
+
+	listApplicationStatusHistory(input: {
+		organizationId: string;
+		applicationId: HumanResourcesApplicationId;
+	}): Promise<Result<ApplicationStatusHistory[]>>;
+
+	appendApplicationStatusHistory(
+		record: ApplicationStatusHistoryAppendRecord,
+	): Promise<Result<ApplicationStatusHistory>>;
 
 	listApplications(input: {
 		organizationId: string;
@@ -326,6 +370,18 @@ export type HumanResourcesRecruitmentStore = {
 		input: {
 			organizationId: string;
 			interviewId: HumanResourcesInterviewId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Interview>>;
+
+	assignInterviewInterviewer(
+		input: {
+			organizationId: string;
+			interviewId: HumanResourcesInterviewId;
+			interviewerActorId: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -378,6 +434,7 @@ export type HumanResourcesRecruitmentStore = {
 			offerId: HumanResourcesOfferId;
 			termsSummary?: string;
 			expiresOn?: string;
+			compensationProposalId?: HumanResourcesCompensationProposalId | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},

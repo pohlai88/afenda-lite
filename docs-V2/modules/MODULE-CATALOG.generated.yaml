@@ -63,6 +63,7 @@ modules:
       - application
       - interview
       - offer
+      - hire_attempt
       - onboarding
       - probation
       - confirmation

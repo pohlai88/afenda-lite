@@ -12,6 +12,10 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
+	caCompanyNameIdSchema,
+	caLegalCompanyIdSchema,
+} from "@/lib/erp/corporate-administration-action-schemas";
+import {
 	type ActionResult,
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
@@ -22,10 +26,11 @@ export type EndCompanyNameActionState =
 	ActionResult<EndCompanyNameActionData> | null;
 
 const endCompanyNameFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
-	companyNameId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
+	companyNameId: caCompanyNameIdSchema,
 	expectedVersion: z.coerce.number().int().positive(),
 	effectiveTo: z.string().date(),
+	reason: z.string().trim().min(1).max(2000),
 });
 
 export async function endCompanyNameAction(
@@ -42,27 +47,25 @@ export async function endCompanyNameAction(
 				companyNameId: formData.get("companyNameId"),
 				expectedVersion: formData.get("expectedVersion"),
 				effectiveTo: formData.get("effectiveTo"),
+				reason: formData.get("reason"),
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid end date for the company name.",
+					"Enter a valid end date and reason for the company name.",
 					parsed.details,
 				);
 			}
-			const commandPayload = {
-				legalCompanyId: parsed.data.legalCompanyId,
-				companyNameId: parsed.data.companyNameId,
-				expectedVersion: parsed.data.expectedVersion,
-				effectiveTo: parsed.data.effectiveTo,
-			};
 			const result = await endCompanyName(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `end-name:${parsed.data.companyNameId}:${parsed.data.expectedVersion}`,
-					...commandPayload,
+					companyNameId: parsed.data.companyNameId,
+					expectedVersion: parsed.data.expectedVersion,
+					effectiveTo: parsed.data.effectiveTo,
+					reason: parsed.data.reason,
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

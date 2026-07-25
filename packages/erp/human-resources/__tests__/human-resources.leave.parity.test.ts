@@ -5,10 +5,20 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
-import { grantLeaveEntitlement } from "../src/leave/entitlement";
+import {
+	accrueLeaveEntitlement,
+	carryForwardLeaveEntitlement,
+	expireLeaveEntitlement,
+	getLeaveBalance,
+	grantLeaveEntitlement,
+	reconcileLeaveBalance,
+} from "../src/leave/entitlement";
 import {
 	createLeavePolicy,
+	getLeavePolicy,
 	publishLeavePolicy,
+	resolveApplicableLeavePolicy,
+	supersedeLeavePolicy,
 } from "../src/leave/leave-policy";
 import {
 	approveLeaveRequest,
@@ -569,6 +579,312 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(humanResourcesCodeFromResult(approved)).toBe(
 			HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
 		);
+	}, 120_000);
+
+	it("policy supersede lineage and balance-rule config parity", async () => {
+		const ready = createHrParityHarness(adapter);
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-lineage-emp-${suffix}`,
+				idempotencyKey: `idem-policy-lineage-emp-${suffix}`,
+				employeeNumber: `E-LINEAGE-${suffix}`,
+				legalName: `Lineage Worker ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: ACTOR,
+			employeeId: employee.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-lineage-employ-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const v1 = await createLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-v1-${suffix}`,
+				code: `LINEAGE-${suffix}`,
+				name: "Lineage v1",
+				leaveType: "annual",
+				unit: "days",
+				paid: true,
+				effectiveFrom: "2025-01-01",
+				effectiveTo: "2025-06-30",
+				minTenureDays: 0,
+				allowedEmploymentStatuses: ["active"],
+			},
+			ready,
+		);
+		expect(v1.ok).toBe(true);
+		if (!v1.ok) return;
+
+		const v1Published = await publishLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-v1-pub-${suffix}`,
+				policyId: v1.data.id,
+				expectedVersion: v1.data.version,
+			},
+			ready,
+		);
+		expect(v1Published.ok).toBe(true);
+		if (!v1Published.ok) return;
+
+		const v2 = await supersedeLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-v2-${suffix}`,
+				policyId: v1Published.data.id,
+				expectedVersion: v1Published.data.version,
+				code: `LINEAGE-${suffix}`,
+				name: "Lineage v2",
+				leaveType: "annual",
+				unit: "days",
+				paid: true,
+				effectiveFrom: "2025-07-01",
+				minTenureDays: 0,
+				allowedEmploymentStatuses: ["active"],
+				accrualBasis: "periodic",
+				accrualFrequency: "monthly",
+				accrualQuantityPerPeriod: "2",
+				carryForwardEnabled: true,
+				carryForwardMaxQuantity: "3",
+				entitlementExpiryRule: "period_end",
+			},
+			ready,
+		);
+		expect(v2.ok).toBe(true);
+		if (!v2.ok) return;
+		expect(v2.data.supersedesPolicyId).toBe(v1Published.data.id);
+		expect(v2.data.accrualQuantityPerPeriod).toBe("2");
+
+		const loaded = await getLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-v2-get-${suffix}`,
+				policyId: v2.data.id,
+			},
+			ready,
+		);
+		expect(loaded.ok).toBe(true);
+		if (!loaded.ok || loaded.data === null) return;
+		expect(loaded.data.carryForwardMaxQuantity).toBe("3");
+		expect(loaded.data.entitlementExpiryRule).toBe("period_end");
+
+		const before = await resolveApplicableLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-before-${suffix}`,
+				policyCode: `LINEAGE-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				asOfDate: "2025-03-01",
+			},
+			ready,
+		);
+		expect(before.ok).toBe(true);
+		if (!before.ok) return;
+		expect(before.data?.policy.id).toBe(v1Published.data.id);
+
+		const after = await resolveApplicableLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-after-${suffix}`,
+				policyCode: `LINEAGE-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				asOfDate: "2025-08-01",
+			},
+			ready,
+		);
+		expect(after.ok).toBe(true);
+		if (!after.ok) return;
+		expect(after.data?.policy.id).toBe(v2.data.id);
+	}, 120_000);
+
+	it("entitlement ledger parity: grant, accrue, carry-forward, expire, reconcile", async () => {
+		const ready = createHrParityHarness(adapter);
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-emp-${suffix}`,
+				idempotencyKey: `idem-ledger-emp-${suffix}`,
+				employeeNumber: `E-LEDGER-${suffix}`,
+				legalName: `Ledger Worker ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-employ-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const policy = await createLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-policy-${suffix}`,
+				code: `LEDGER-${suffix}`,
+				name: "Ledger Parity",
+				leaveType: "annual",
+				unit: "days",
+				paid: true,
+				allowSelfApproval: true,
+				effectiveFrom: "2025-01-01",
+				allowedEmploymentStatuses: ["active"],
+				accrualBasis: "periodic",
+				accrualFrequency: "monthly",
+				accrualQuantityPerPeriod: "1",
+				carryForwardEnabled: true,
+				carryForwardMaxQuantity: "5",
+			},
+			ready,
+		);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+		const published = await publishLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-pub-${suffix}`,
+				policyId: policy.data.id,
+				expectedVersion: policy.data.version,
+			},
+			ready,
+		);
+		expect(published.ok).toBe(true);
+		if (!published.ok) return;
+
+		const entitlement = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-grant-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				policyId: published.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "4",
+				idempotencyKey: `idem-ledger-grant-${suffix}`,
+			},
+			ready,
+		);
+		expect(entitlement.ok).toBe(true);
+		if (!entitlement.ok) return;
+
+		const accrued = await accrueLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-accrue-${suffix}`,
+				entitlementId: entitlement.data.id,
+				quantity: "1",
+				accrualPeriodStart: "2025-01-01",
+				accrualPeriodEnd: "2025-01-31",
+				reason: "January accrual",
+				idempotencyKey: `idem-ledger-accrue-${suffix}`,
+			},
+			ready,
+		);
+		expect(accrued.ok).toBe(true);
+		if (!accrued.ok) return;
+
+		const carried = await carryForwardLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-cf-${suffix}`,
+				entitlementId: entitlement.data.id,
+				newPeriodStart: "2026-01-01",
+				newPeriodEnd: "2026-12-31",
+				carriedQuantity: "2",
+				idempotencyKey: `idem-ledger-cf-${suffix}`,
+				expectedVersion: entitlement.data.version,
+			},
+			ready,
+		);
+		expect(carried.ok).toBe(true);
+		if (!carried.ok) return;
+
+		const targetBalance = await getLeaveBalance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-target-${suffix}`,
+				entitlementId: carried.data.id,
+			},
+			ready,
+		);
+		expect(targetBalance.ok).toBe(true);
+		if (!targetBalance.ok) return;
+		expect(targetBalance.data?.balance).toBe("2");
+
+		const expired = await expireLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-expire-${suffix}`,
+				entitlementId: carried.data.id,
+				expectedVersion: carried.data.version,
+			},
+			ready,
+		);
+		expect(expired.ok).toBe(true);
+		if (!expired.ok) return;
+
+		const reconciliation = await reconcileLeaveBalance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ledger-reconcile-${suffix}`,
+				entitlementId: carried.data.id,
+			},
+			ready,
+		);
+		expect(reconciliation.ok).toBe(true);
+		if (!reconciliation.ok) return;
+		expect(reconciliation.data?.balance).toBe("0");
+		expect(reconciliation.data?.adjustments.at(-1)?.kind).toBe("expiry");
 	}, 120_000);
 }
 

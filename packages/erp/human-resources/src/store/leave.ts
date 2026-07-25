@@ -11,6 +11,9 @@ import type { EmploymentStatus } from "../shared/employment-status";
 import type {
 	DayPortion,
 	LeaveAdjustmentKind,
+	LeavePolicyAccrualBasis,
+	LeavePolicyAccrualFrequency,
+	LeavePolicyEntitlementExpiryRule,
 	LeavePolicyStatus,
 	LeaveRequestStatus,
 	LeaveType,
@@ -50,6 +53,13 @@ export type LeavePolicyCreateRecord = {
 	allowsNegativeBalance: boolean;
 	allowSelfApproval: boolean;
 	allowsPartialDay: boolean;
+	accrualBasis: LeavePolicyAccrualBasis;
+	accrualFrequency: LeavePolicyAccrualFrequency | null;
+	accrualQuantityPerPeriod: string | null;
+	carryForwardEnabled: boolean;
+	carryForwardMaxQuantity: string | null;
+	entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
+	entitlementExpiryDays: number | null;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	minTenureDays: number | null;
@@ -185,6 +195,13 @@ export type HumanResourcesLeaveStore = {
 			allowsNegativeBalance?: boolean;
 			allowSelfApproval?: boolean;
 			allowsPartialDay?: boolean;
+			accrualBasis?: LeavePolicyAccrualBasis;
+			accrualFrequency?: LeavePolicyAccrualFrequency | null;
+			accrualQuantityPerPeriod?: string | null;
+			carryForwardEnabled?: boolean;
+			carryForwardMaxQuantity?: string | null;
+			entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule;
+			entitlementExpiryDays?: number | null;
 			effectiveTo?: string | null;
 			minTenureDays?: number | null;
 			allowedEmploymentStatuses?: EmploymentStatus[];
@@ -219,6 +236,13 @@ export type HumanResourcesLeaveStore = {
 			allowsNegativeBalance: boolean;
 			allowSelfApproval: boolean;
 			allowsPartialDay: boolean;
+			accrualBasis: LeavePolicyAccrualBasis;
+			accrualFrequency: LeavePolicyAccrualFrequency | null;
+			accrualQuantityPerPeriod: string | null;
+			carryForwardEnabled: boolean;
+			carryForwardMaxQuantity: string | null;
+			entitlementExpiryRule: LeavePolicyEntitlementExpiryRule;
+			entitlementExpiryDays: number | null;
 			effectiveFrom: string;
 			effectiveTo: string | null;
 			minTenureDays: number | null;

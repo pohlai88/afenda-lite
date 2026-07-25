@@ -10,6 +10,7 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
+import { caLegalCompanyIdSchema } from "@/lib/erp/corporate-administration-action-schemas";
 import {
 	type ActionResult,
 	actionFail,
@@ -17,7 +18,7 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const getLegalCompanyActionSchema = z.object({
-	legalCompanyId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
 });
 
 export async function getLegalCompanyAction(input: {

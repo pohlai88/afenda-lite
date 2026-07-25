@@ -1,4 +1,3 @@
-import type { Change } from "@afenda/audit";
 import type { Result } from "@afenda/errors/result";
 import type { CorporateAdministrationEventType } from "@afenda/events/schemas";
 import type {
@@ -13,15 +12,10 @@ import type {
 	CaAuthorityMandate,
 	CaAuthorityMandateDetail,
 	CaAuthorityMandateHolder,
-	CaCompanyIdentifier,
-	CaCompanyName,
 	CaCompanyPremise,
-	CaCompanyStatusHistory,
 	CaGovernanceBody,
 	CaGovernanceMeeting,
 	CaGovernanceMembership,
-	CaLegalCompany,
-	CaLegalCompanyDetail,
 	CaOfficerAppointment,
 	CaResolution,
 } from "./schemas";
@@ -53,43 +47,15 @@ import type {
 	CaShareTransactionDetail,
 	CaShareTransactionLeg,
 } from "./slice-types";
+import type { CorporateAdministrationCompanyStore } from "./store";
 
-export type AuditFactInput = {
-	organizationId: string;
-	actorUserId: string;
-	correlationId: string;
-	entity: string;
-	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
-	newValue?: Record<string, unknown> | null;
-};
-
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
-	organizationId: string;
-	actorUserId: string;
-	correlationId: string;
-	type: CorporateAdministrationEventType;
-	payload: Record<string, unknown>;
-};
-
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type MutationPorts = {
-	audit: AuditFactPort;
-	outbox: OutboxPort;
-	record(input: {
-		audit: AuditFactInput;
-		outbox: OutboxFactInput;
-	}): Promise<Result<{ auditId: string; eventId: string }>>;
-};
+export type {
+	AuditFactInput,
+	AuditFactPort,
+	MutationPorts,
+	OutboxFactInput,
+	OutboxPort,
+} from "./mutation-ports";
 
 export type ShareCapitalMutationMeta = {
 	correlationId: string;
@@ -154,22 +120,14 @@ export type CorporateAdministrationGovernancePolicyPort = {
 	}): Promise<Result<void>>;
 };
 
-export type LegalCompanyCreateRecord = Omit<
-	CaLegalCompany,
-	| "id"
-	| "version"
-	| "activatedAt"
-	| "activatedBy"
-	| "suspendedAt"
-	| "suspendedBy"
-	| "dissolvedAt"
-	| "dissolvedBy"
-	| "archivedAt"
-	| "archivedBy"
-	| "createdAt"
-	| "updatedAt"
->;
+export type {
+	CorporateAdministrationCompanyStore,
+	CorporateAdministrationMutationMeta,
+	CorporateAdministrationMutationReceipt,
+	LegalCompanyCreateRecord,
+} from "./store";
 
+import type { MutationPorts } from "./mutation-ports";
 import type { GovernanceMutationMeta } from "./shared/governance-mutation-facts";
 
 export type { GovernanceMutationMeta };
@@ -822,118 +780,3 @@ export type SlicesStore = {
 export type CorporateAdministrationStore = CorporateAdministrationCompanyStore &
 	GovernanceStore &
 	SlicesStore;
-
-export type CorporateAdministrationCompanyStore = {
-	getByCreateIdempotencyKey(
-		organizationId: string,
-		idempotencyKey: string,
-	): Promise<Result<CaLegalCompany | null>>;
-	getById(
-		organizationId: string,
-		legalCompanyId: string,
-	): Promise<Result<CaLegalCompany | null>>;
-	list(
-		organizationId: string,
-		filter: {
-			status?: CaLegalCompany["status"];
-			page: number;
-			pageSize: number;
-		},
-	): Promise<Result<{ items: CaLegalCompany[]; total: number }>>;
-	getDetail(
-		organizationId: string,
-		legalCompanyId: string,
-	): Promise<Result<CaLegalCompanyDetail | null>>;
-	createCompany(
-		record: LegalCompanyCreateRecord,
-		ports: MutationPorts,
-		meta: {
-			correlationId: string;
-			eventType: CorporateAdministrationEventType;
-		},
-	): Promise<Result<CaLegalCompany>>;
-	updateCompany(
-		record: CaLegalCompany,
-		ports: MutationPorts,
-		meta: {
-			correlationId: string;
-			eventType: CorporateAdministrationEventType;
-			statusHistory?: Omit<CaCompanyStatusHistory, "id" | "createdAt">;
-			statusChangedEventType?: CorporateAdministrationEventType;
-		},
-	): Promise<Result<CaLegalCompany>>;
-	appendStatusHistory(
-		record: Omit<CaCompanyStatusHistory, "id" | "createdAt">,
-	): Promise<Result<CaCompanyStatusHistory>>;
-	getStatusHistoryByIdempotencyKey(
-		organizationId: string,
-		idempotencyKey: string,
-	): Promise<Result<CaCompanyStatusHistory | null>>;
-	getNameByIdempotencyKey(
-		organizationId: string,
-		idempotencyKey: string,
-	): Promise<Result<CaCompanyName | null>>;
-	getIdentifierByIdempotencyKey(
-		organizationId: string,
-		idempotencyKey: string,
-	): Promise<Result<CaCompanyIdentifier | null>>;
-	addName(
-		record: Omit<CaCompanyName, "id" | "version" | "createdAt" | "updatedAt">,
-		ports: MutationPorts,
-		meta: {
-			correlationId: string;
-			eventType: CorporateAdministrationEventType;
-			legalCompanyCode: string;
-		},
-	): Promise<Result<CaCompanyName>>;
-	listNames(
-		organizationId: string,
-		legalCompanyId: string,
-	): Promise<Result<CaCompanyName[]>>;
-	addIdentifier(
-		record: Omit<
-			CaCompanyIdentifier,
-			"id" | "version" | "createdAt" | "updatedAt"
-		>,
-		ports: MutationPorts,
-		meta: {
-			correlationId: string;
-			eventType: CorporateAdministrationEventType;
-			legalCompanyCode: string;
-		},
-	): Promise<Result<CaCompanyIdentifier>>;
-	listIdentifiers(
-		organizationId: string,
-		legalCompanyId: string,
-	): Promise<Result<CaCompanyIdentifier[]>>;
-	listStatusHistory(
-		organizationId: string,
-		legalCompanyId: string,
-	): Promise<Result<CaCompanyStatusHistory[]>>;
-	endName(
-		record: CaCompanyName,
-		ports: MutationPorts,
-		meta: {
-			correlationId: string;
-			eventType: CorporateAdministrationEventType;
-			legalCompanyCode: string;
-		},
-	): Promise<Result<CaCompanyName>>;
-	updateIdentifier(
-		record: CaCompanyIdentifier,
-		ports: MutationPorts,
-		meta: {
-			correlationId: string;
-			eventType: CorporateAdministrationEventType;
-			legalCompanyCode: string;
-		},
-	): Promise<Result<CaCompanyIdentifier>>;
-	getNameById(
-		organizationId: string,
-		companyNameId: string,
-	): Promise<Result<CaCompanyName | null>>;
-	getIdentifierById(
-		organizationId: string,
-		companyIdentifierId: string,
-	): Promise<Result<CaCompanyIdentifier | null>>;
-};

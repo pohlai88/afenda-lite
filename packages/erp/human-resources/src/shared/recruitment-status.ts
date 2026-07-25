@@ -55,6 +55,7 @@ export type InterviewEvaluationResult =
 
 export const OFFER_STATUSES = [
 	"draft",
+	"approved",
 	"issued",
 	"accepted",
 	"declined",
@@ -65,6 +66,7 @@ export type OfferStatus = (typeof OFFER_STATUSES)[number];
 
 export const OFFER_ACTIVE_STATUSES = [
 	"draft",
+	"approved",
 	"issued",
 ] as const satisfies readonly OfferStatus[];
 
@@ -85,7 +87,7 @@ export function isApplicationTerminal(status: ApplicationStatus): boolean {
 }
 
 export function isOfferActive(status: OfferStatus): boolean {
-	return status === "draft" || status === "issued";
+	return status === "draft" || status === "approved" || status === "issued";
 }
 
 export function isOfferTerminal(status: OfferStatus): boolean {

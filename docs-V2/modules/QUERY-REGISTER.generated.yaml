@@ -364,21 +364,27 @@ queries:
   - id: human-resources.candidate.list
     moduleId: human-resources
     permission: human-resources.candidate.manage
+  - id: human-resources.candidate.duplicates.detect
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
   - id: human-resources.application.get
     moduleId: human-resources
     permission: human-resources.candidate.manage
   - id: human-resources.application.list
     moduleId: human-resources
     permission: human-resources.candidate.manage
+  - id: human-resources.application.status-history.list
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
   - id: human-resources.interview.get
     moduleId: human-resources
-    permission: human-resources.interview.record
+    permission: human-resources.interview.read
   - id: human-resources.interview.list
     moduleId: human-resources
-    permission: human-resources.interview.record
+    permission: human-resources.interview.read
   - id: human-resources.interview-evaluation.get
     moduleId: human-resources
-    permission: human-resources.interview.record
+    permission: human-resources.interview.read
   - id: human-resources.offer.get
     moduleId: human-resources
     permission: human-resources.offer.approve
@@ -442,6 +448,12 @@ queries:
   - id: human-resources.approved-compensation-handoff.get
     moduleId: human-resources
     permission: human-resources.compensation.read
+  - id: human-resources.compensation-proposal.get
+    moduleId: human-resources
+    permission: human-resources.compensation-proposal.read
+  - id: human-resources.compensation-proposal.list
+    moduleId: human-resources
+    permission: human-resources.compensation-proposal.read
   - id: human-resources.leave-policy.get
     moduleId: human-resources
     permission: human-resources.leave-policy.read

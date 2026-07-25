@@ -21,10 +21,16 @@ import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 
 import {
 	CA_ERROR_CODE_CONFLICT,
-	CA_ERROR_IDEMPOTENCY_CONFLICT,
-	CA_ERROR_VERSION_CONFLICT,
 	caErrorDetails,
 } from "../../error-codes";
+import {
+	CorporateAdministrationVersionConflictError,
+	mapCorporateAdministrationStoreError,
+} from "../../store/store-errors";
+import {
+	idempotencyFingerprintConflict,
+	replayIdempotencyFingerprintMapped,
+} from "../../shared/idempotency-replay";
 import type { GovernanceMutationMeta, GovernanceStore } from "../../ports";
 import type {
 	CaAuthorityMandate,
@@ -266,26 +272,17 @@ function mapResolution(row: ResolutionRow): CaResolution {
 	};
 }
 
-function replayOrConflict<Row extends { requestFingerprint: string }, Value>(
-	row: Row,
-	requestFingerprint: string,
-	mapper: (row: Row) => Value,
-): Result<Value> {
-	if (row.requestFingerprint !== requestFingerprint) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key was already used with a different request",
-			caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-		);
-	}
-	return ok(mapper(row));
-}
-
-function versionConflict<Value>(): Result<Value> {
-	return fail(
-		"CONFLICT",
-		"Record version changed",
-		caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+function versionConflict<Value>(input?: {
+	organizationId: string;
+	aggregateId: string;
+	expectedVersion: number;
+}): Result<Value> {
+	return mapCorporateAdministrationStoreError(
+		new CorporateAdministrationVersionConflictError({
+			organizationId: input?.organizationId ?? "",
+			aggregateId: input?.aggregateId ?? "",
+			expectedVersion: input?.expectedVersion ?? 0,
+		}),
 	);
 }
 
@@ -464,7 +461,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					)
 					.limit(1);
 				if (existing[0]) {
-					return replayOrConflict(
+					return replayIdempotencyFingerprintMapped(
 						existing[0],
 						record.requestFingerprint,
 						mapOfficerAppointment,
@@ -520,7 +517,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replay[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replay[0],
 							record.requestFingerprint,
 							mapOfficerAppointment,
@@ -547,7 +544,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (rows[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							rows[0],
 							record.requestFingerprint,
 							mapOfficerAppointment,
@@ -806,7 +803,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					)
 					.limit(1);
 				if (existing[0]) {
-					return replayOrConflict(
+					return replayIdempotencyFingerprintMapped(
 						existing[0],
 						record.requestFingerprint,
 						mapGovernanceBody,
@@ -864,7 +861,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							byIdempotency[0],
 							record.requestFingerprint,
 							mapGovernanceBody,
@@ -893,7 +890,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							byIdempotency[0],
 							record.requestFingerprint,
 							mapGovernanceBody,
@@ -1055,7 +1052,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					)
 					.limit(1);
 				if (existing[0]) {
-					return replayOrConflict(
+					return replayIdempotencyFingerprintMapped(
 						existing[0],
 						record.requestFingerprint,
 						mapGovernanceMembership,
@@ -1112,7 +1109,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replay[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replay[0],
 							record.requestFingerprint,
 							mapGovernanceMembership,
@@ -1143,7 +1140,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replayRows[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replayRows[0],
 							record.requestFingerprint,
 							mapGovernanceMembership,
@@ -1281,11 +1278,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					.limit(1);
 				if (existing[0]) {
 					if (existing[0].requestFingerprint !== record.requestFingerprint) {
-						return fail(
-							"CONFLICT",
-							"Idempotency key was already used with a different request",
-							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-						);
+								return idempotencyFingerprintConflict();
 					}
 					const existingHolders = await db
 						.select()
@@ -1376,11 +1369,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						.limit(1);
 					if (replay[0]) {
 						if (replay[0].requestFingerprint !== record.requestFingerprint) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used with a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						const holderRows = await db
 							.select()
@@ -1442,11 +1431,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						.limit(1);
 					if (rows[0]) {
 						if (rows[0].requestFingerprint !== record.requestFingerprint) {
-							return fail(
-								"CONFLICT",
-								"Idempotency key was already used with a different request",
-								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
-							);
+							return idempotencyFingerprintConflict();
 						}
 						const holderRows = await db
 							.select()
@@ -1805,7 +1790,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					)
 					.limit(1);
 				if (existing[0]) {
-					return replayOrConflict(
+					return replayIdempotencyFingerprintMapped(
 						existing[0],
 						record.requestFingerprint,
 						mapCompanyPremise,
@@ -1903,7 +1888,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replay[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replay[0],
 							record.requestFingerprint,
 							mapCompanyPremise,
@@ -1928,7 +1913,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replayRows[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replayRows[0],
 							record.requestFingerprint,
 							mapCompanyPremise,
@@ -2190,7 +2175,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					)
 					.limit(1);
 				if (existing[0]) {
-					return replayOrConflict(
+					return replayIdempotencyFingerprintMapped(
 						existing[0],
 						record.requestFingerprint,
 						mapGovernanceMeeting,
@@ -2243,7 +2228,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replay[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replay[0],
 							record.requestFingerprint,
 							mapGovernanceMeeting,
@@ -2268,7 +2253,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (replayRows[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							replayRows[0],
 							record.requestFingerprint,
 							mapGovernanceMeeting,
@@ -2407,7 +2392,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 					)
 					.limit(1);
 				if (existing[0]) {
-					return replayOrConflict(
+					return replayIdempotencyFingerprintMapped(
 						existing[0],
 						record.requestFingerprint,
 						mapResolution,
@@ -2472,7 +2457,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							byIdempotency[0],
 							record.requestFingerprint,
 							mapResolution,
@@ -2501,7 +2486,7 @@ export function createDrizzleGovernanceStore(): GovernanceStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
-						return replayOrConflict(
+						return replayIdempotencyFingerprintMapped(
 							byIdempotency[0],
 							record.requestFingerprint,
 							mapResolution,

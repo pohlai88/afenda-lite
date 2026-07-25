@@ -1,244 +1,319 @@
 import { z } from "zod";
 
-export const CA_COMPANY_STATUSES = [
-	"draft",
-	"active",
-	"suspended",
-	"dissolved",
-	"archived",
-] as const;
+import {
+	caCompanyIdentifierIdSchema,
+	caCompanyNameIdSchema,
+	caLegalCompanyIdSchema,
+} from "./brands";
+import {
+	CA_COMPANY_IDENTIFIER_STATUS_VALUES,
+	CA_COMPANY_NAME_TYPE_VALUES,
+	CA_LEGAL_COMPANY_STATUS_VALUES,
+} from "./types";
 
-export type CaCompanyStatus = (typeof CA_COMPANY_STATUSES)[number];
+export type {
+	CaActivationReadinessMissing,
+	CaCompanyActivationReadiness,
+	CaCompanyIdentifier,
+	CaCompanyIdentifierStatus,
+	CaCompanyName,
+	CaCompanyNameType,
+	CaCompanyStatusHistory,
+	CaLegalCompany,
+	CaLegalCompanyAsOf,
+	CaLegalCompanyDetail,
+	CaLegalCompanyListPage,
+	CaLegalCompanyStatus,
+} from "./types";
 
-export const CA_NAME_TYPES = ["legal", "former", "trading"] as const;
+export {
+	CA_ACTIVATION_READINESS_MISSING,
+	CA_COMPANY_IDENTIFIER_STATUS_VALUES,
+	CA_COMPANY_NAME_TYPE_VALUES,
+	CA_LEGAL_COMPANY_STATUS_VALUES,
+} from "./types";
 
-export type CaNameType = (typeof CA_NAME_TYPES)[number];
+const CA_TEXT_MAX_CODE = 100;
+const CA_TEXT_MAX_LEGAL_FORM_CODE = 100;
+const CA_TEXT_MAX_LEGAL_FORM_NAME = 300;
+const CA_TEXT_MAX_DISPLAY_NAME = 500;
+const CA_TEXT_MAX_IDENTIFIER_TYPE = 100;
+const CA_TEXT_MAX_IDENTIFIER_VALUE = 500;
+const CA_TEXT_MAX_REASON = 2_000;
+const CA_TEXT_MAX_REASON_CODE = 100;
+const CA_TEXT_MAX_REFERENCE = 500;
+const CA_IDEMPOTENCY_KEY_MIN = 8;
+const CA_IDEMPOTENCY_KEY_MAX = 200;
+const CA_LIST_LIMIT_DEFAULT = 50;
+const CA_LIST_LIMIT_MAX = 100;
+const CA_LIST_QUERY_MAX = 300;
 
-export type CaLegalCompany = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	legalEntityDimensionId: string;
-	legalEntityKeySnapshot: string;
-	legalEntityNameSnapshot: string;
-	legalPartyId: string | null;
-	legalPartyCodeSnapshot: string | null;
-	legalPartyNameSnapshot: string | null;
-	jurisdictionCountryId: string | null;
-	legalFormCode: string | null;
-	legalFormNameSnapshot: string | null;
-	incorporationDate: string | null;
-	commencementDate: string | null;
-	fiscalYearEndMonth: number | null;
-	fiscalYearEndDay: number | null;
-	status: CaCompanyStatus;
-	version: number;
-	createIdempotencyKey: string;
-	createRequestFingerprint: string;
-	createdBy: string;
-	updatedBy: string;
-	activatedAt: Date | null;
-	activatedBy: string | null;
-	suspendedAt: Date | null;
-	suspendedBy: string | null;
-	dissolvedAt: Date | null;
-	dissolvedBy: string | null;
-	archivedAt: Date | null;
-	archivedBy: string | null;
-	createdAt: Date;
-	updatedAt: Date;
-};
+const nonBlankTextSchema = z.string().trim().min(1);
 
-export type CaCompanyName = {
-	id: string;
-	organizationId: string;
-	legalCompanyId: string;
-	nameType: CaNameType;
-	displayName: string;
-	normalizedName: string;
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	supersedesId: string | null;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
+const isoDateSchema = z.iso.date();
 
-export type CaCompanyIdentifier = {
-	id: string;
-	organizationId: string;
-	legalCompanyId: string;
-	identifierType: string;
-	jurisdictionCode: string | null;
-	issuingAuthority: string | null;
-	identifierValue: string;
-	normalizedValue: string;
-	status: "active" | "retired";
-	effectiveFrom: string;
-	effectiveTo: string | null;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
+const utcInstantSchema = z.iso.datetime();
 
-export type CaCompanyStatusHistory = {
-	id: string;
-	organizationId: string;
-	legalCompanyId: string;
-	fromStatus: CaCompanyStatus | null;
-	toStatus: CaCompanyStatus;
-	effectiveDate: string;
-	reason: string | null;
-	evidenceReference: string | null;
-	correlationId: string;
-	actorUserId: string;
-	idempotencyKey: string;
-	requestFingerprint: string;
-	createdAt: Date;
-};
+const expectedVersionSchema = z.number().int().positive();
 
-export type CaLegalCompanyDetail = CaLegalCompany & {
-	names: CaCompanyName[];
-	identifiers: CaCompanyIdentifier[];
-	statusHistory: CaCompanyStatusHistory[];
-};
+const idempotencyKeySchema = z
+	.string()
+	.trim()
+	.min(CA_IDEMPOTENCY_KEY_MIN)
+	.max(CA_IDEMPOTENCY_KEY_MAX);
 
-const commandContext = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-	correlationId: z.string().trim().min(1),
-	idempotencyKey: z.string().trim().min(1),
+const commonMutationContextSchema = z.object({
+	organizationId: nonBlankTextSchema,
+	actorUserId: nonBlankTextSchema,
+	correlationId: nonBlankTextSchema,
+	causationId: nonBlankTextSchema.nullish(),
+	idempotencyKey: idempotencyKeySchema,
 });
 
-export const createLegalCompanyInputSchema = commandContext
+export const caLegalCompanyStatusSchema = z.enum(
+	CA_LEGAL_COMPANY_STATUS_VALUES,
+);
+
+export const caCompanyNameTypeSchema = z.enum(CA_COMPANY_NAME_TYPE_VALUES);
+
+export const caCompanyIdentifierStatusSchema = z.enum(
+	CA_COMPANY_IDENTIFIER_STATUS_VALUES,
+);
+
+export const createLegalCompanyInputSchema = commonMutationContextSchema
 	.extend({
-		code: z.string().trim().min(1).max(64),
+		code: nonBlankTextSchema.max(CA_TEXT_MAX_CODE),
 		legalEntityDimensionId: z.uuid(),
-		legalPartyId: z.uuid().optional(),
-		jurisdictionCountryId: z.uuid().optional(),
-		legalFormCode: z.string().trim().min(1).max(64).optional(),
-		incorporationDate: z.iso.date().optional(),
-		commencementDate: z.iso.date().optional(),
-		fiscalYearEndMonth: z.number().int().min(1).max(12).optional(),
-		fiscalYearEndDay: z.number().int().min(1).max(31).optional(),
-		requestFingerprint: z.string().trim().min(1),
+		legalPartyId: z.uuid().nullish(),
+		jurisdictionCountryId: z.uuid().nullish(),
+		legalFormCode: nonBlankTextSchema
+			.max(CA_TEXT_MAX_LEGAL_FORM_CODE)
+			.nullish(),
+		legalFormNameSnapshot: nonBlankTextSchema
+			.max(CA_TEXT_MAX_LEGAL_FORM_NAME)
+			.nullish(),
+		incorporationDate: isoDateSchema.nullish(),
+		commencementDate: isoDateSchema.nullish(),
+		fiscalYearEndMonth: z.number().int().min(1).max(12).nullish(),
+		fiscalYearEndDay: z.number().int().min(1).max(31).nullish(),
 	})
 	.strict();
 
-export const updateLegalCompanyInputSchema = commandContext
+export type CreateLegalCompanyInput = z.infer<
+	typeof createLegalCompanyInputSchema
+>;
+
+export const updateLegalCompanyInputSchema = commonMutationContextSchema
 	.extend({
-		legalCompanyId: z.uuid(),
-		expectedVersion: z.number().int().positive(),
-		legalPartyId: z.uuid().optional(),
+		legalCompanyId: caLegalCompanyIdSchema,
+		expectedVersion: expectedVersionSchema,
+		code: nonBlankTextSchema.max(CA_TEXT_MAX_CODE).optional(),
+		legalPartyId: z.uuid().nullable().optional(),
 		jurisdictionCountryId: z.uuid().nullable().optional(),
-		legalFormCode: z.string().trim().min(1).max(64).nullable().optional(),
-		incorporationDate: z.iso.date().nullable().optional(),
-		commencementDate: z.iso.date().nullable().optional(),
+		legalFormCode: nonBlankTextSchema
+			.max(CA_TEXT_MAX_LEGAL_FORM_CODE)
+			.nullable()
+			.optional(),
+		legalFormNameSnapshot: nonBlankTextSchema
+			.max(CA_TEXT_MAX_LEGAL_FORM_NAME)
+			.nullable()
+			.optional(),
+		incorporationDate: isoDateSchema.nullable().optional(),
+		commencementDate: isoDateSchema.nullable().optional(),
 		fiscalYearEndMonth: z.number().int().min(1).max(12).nullable().optional(),
 		fiscalYearEndDay: z.number().int().min(1).max(31).nullable().optional(),
 	})
 	.strict();
 
-export const lifecycleLegalCompanyInputSchema = commandContext
+export type UpdateLegalCompanyInput = z.infer<
+	typeof updateLegalCompanyInputSchema
+>;
+
+const lifecycleMutationSchema = commonMutationContextSchema
 	.extend({
-		legalCompanyId: z.uuid(),
-		expectedVersion: z.number().int().positive(),
-		effectiveDate: z.iso.date(),
-		reason: z.string().trim().min(1).max(500).optional(),
-		evidenceReference: z.string().trim().min(1).max(500).optional(),
-		requestFingerprint: z.string().trim().min(1),
+		legalCompanyId: caLegalCompanyIdSchema,
+		expectedVersion: expectedVersionSchema,
+		effectiveAt: utcInstantSchema,
+		reasonCode: nonBlankTextSchema.max(CA_TEXT_MAX_REASON_CODE),
+		reason: nonBlankTextSchema.max(CA_TEXT_MAX_REASON),
+		resolutionReference: nonBlankTextSchema
+			.max(CA_TEXT_MAX_REFERENCE)
+			.nullish(),
+		evidenceDocumentReference: nonBlankTextSchema
+			.max(CA_TEXT_MAX_REFERENCE)
+			.nullish(),
 	})
 	.strict();
+
+export const activateLegalCompanyInputSchema = commonMutationContextSchema
+	.extend({
+		legalCompanyId: caLegalCompanyIdSchema,
+		expectedVersion: expectedVersionSchema,
+		effectiveAt: utcInstantSchema,
+	})
+	.strict();
+
+export type ActivateLegalCompanyInput = z.infer<
+	typeof activateLegalCompanyInputSchema
+>;
+
+export const suspendLegalCompanyInputSchema = lifecycleMutationSchema;
+
+export type SuspendLegalCompanyInput = z.infer<
+	typeof suspendLegalCompanyInputSchema
+>;
+
+export const dissolveLegalCompanyInputSchema = lifecycleMutationSchema;
+
+export type DissolveLegalCompanyInput = z.infer<
+	typeof dissolveLegalCompanyInputSchema
+>;
+
+export const archiveLegalCompanyInputSchema = lifecycleMutationSchema;
+
+export type ArchiveLegalCompanyInput = z.infer<
+	typeof archiveLegalCompanyInputSchema
+>;
+
+export const addCompanyNameInputSchema = commonMutationContextSchema
+	.extend({
+		legalCompanyId: caLegalCompanyIdSchema,
+		nameType: caCompanyNameTypeSchema,
+		displayName: nonBlankTextSchema.max(CA_TEXT_MAX_DISPLAY_NAME),
+		isPrimary: z.boolean().default(false),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullish(),
+		supersedesCompanyNameId: caCompanyNameIdSchema.nullish(),
+		correctionReason: nonBlankTextSchema.max(CA_TEXT_MAX_REASON).nullish(),
+	})
+	.strict();
+
+export type AddCompanyNameInput = z.infer<typeof addCompanyNameInputSchema>;
+
+export const endCompanyNameInputSchema = commonMutationContextSchema
+	.extend({
+		companyNameId: caCompanyNameIdSchema,
+		expectedVersion: expectedVersionSchema,
+		effectiveTo: isoDateSchema,
+		reason: nonBlankTextSchema.max(CA_TEXT_MAX_REASON),
+	})
+	.strict();
+
+export type EndCompanyNameInput = z.infer<typeof endCompanyNameInputSchema>;
+
+export const addCompanyIdentifierInputSchema = commonMutationContextSchema
+	.extend({
+		legalCompanyId: caLegalCompanyIdSchema,
+		identifierType: nonBlankTextSchema.max(CA_TEXT_MAX_IDENTIFIER_TYPE),
+		jurisdictionCountryId: z.uuid().nullish(),
+		authorityPartyId: z.uuid().nullish(),
+		identifierValue: nonBlankTextSchema.max(CA_TEXT_MAX_IDENTIFIER_VALUE),
+		isPrimary: z.boolean().default(false),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullish(),
+	})
+	.strict();
+
+export type AddCompanyIdentifierInput = z.infer<
+	typeof addCompanyIdentifierInputSchema
+>;
+
+export const updateCompanyIdentifierInputSchema = commonMutationContextSchema
+	.extend({
+		companyIdentifierId: caCompanyIdentifierIdSchema,
+		expectedVersion: expectedVersionSchema,
+		jurisdictionCountryId: z.uuid().nullable().optional(),
+		authorityPartyId: z.uuid().nullable().optional(),
+		identifierValue: nonBlankTextSchema
+			.max(CA_TEXT_MAX_IDENTIFIER_VALUE)
+			.optional(),
+		isPrimary: z.boolean().optional(),
+		effectiveFrom: isoDateSchema.optional(),
+		effectiveTo: isoDateSchema.nullable().optional(),
+	})
+	.strict();
+
+export type UpdateCompanyIdentifierInput = z.infer<
+	typeof updateCompanyIdentifierInputSchema
+>;
+
+export const retireCompanyIdentifierInputSchema = commonMutationContextSchema
+	.extend({
+		companyIdentifierId: caCompanyIdentifierIdSchema,
+		expectedVersion: expectedVersionSchema,
+		effectiveTo: isoDateSchema,
+		reason: nonBlankTextSchema.max(CA_TEXT_MAX_REASON),
+	})
+	.strict();
+
+export type RetireCompanyIdentifierInput = z.infer<
+	typeof retireCompanyIdentifierInputSchema
+>;
 
 export const getLegalCompanyInputSchema = z
 	.object({
-		organizationId: z.string().trim().min(1),
-		actorUserId: z.string().trim().min(1),
-		legalCompanyId: z.uuid(),
+		organizationId: nonBlankTextSchema,
+		actorUserId: nonBlankTextSchema,
+		legalCompanyId: caLegalCompanyIdSchema,
 	})
 	.strict();
 
-export const listLegalCompaniesInputSchema = z
-	.object({
-		organizationId: z.string().trim().min(1),
-		actorUserId: z.string().trim().min(1),
-		status: z.enum(CA_COMPANY_STATUSES).optional(),
-		page: z.number().int().positive().default(1),
-		pageSize: z.number().int().positive().max(100).default(20),
-	})
-	.strict();
-
-export const addCompanyNameInputSchema = commandContext
-	.extend({
-		legalCompanyId: z.uuid(),
-		nameType: z.enum(CA_NAME_TYPES),
-		displayName: z.string().trim().min(1).max(300),
-		effectiveFrom: z.iso.date(),
-		requestFingerprint: z.string().trim().min(1),
-	})
-	.strict();
-
-export const addCompanyIdentifierInputSchema = commandContext
-	.extend({
-		legalCompanyId: z.uuid(),
-		identifierType: z.string().trim().min(1).max(64),
-		jurisdictionCode: z.string().trim().min(1).max(16).optional(),
-		issuingAuthority: z.string().trim().min(1).max(200).optional(),
-		identifierValue: z.string().trim().min(1).max(200),
-		effectiveFrom: z.iso.date(),
-		requestFingerprint: z.string().trim().min(1),
-	})
-	.strict();
-
-export const endCompanyNameInputSchema = commandContext
-	.extend({
-		legalCompanyId: z.uuid(),
-		companyNameId: z.uuid(),
-		expectedVersion: z.number().int().positive(),
-		effectiveTo: z.iso.date(),
-	})
-	.strict();
-
-export const updateCompanyIdentifierInputSchema = commandContext
-	.extend({
-		legalCompanyId: z.uuid(),
-		companyIdentifierId: z.uuid(),
-		expectedVersion: z.number().int().positive(),
-		jurisdictionCode: z.string().trim().min(1).max(16).nullable().optional(),
-		issuingAuthority: z.string().trim().min(1).max(200).nullable().optional(),
-		identifierValue: z.string().trim().min(1).max(200).optional(),
-	})
-	.strict();
-
-export const retireCompanyIdentifierInputSchema = commandContext
-	.extend({
-		legalCompanyId: z.uuid(),
-		companyIdentifierId: z.uuid(),
-		expectedVersion: z.number().int().positive(),
-		effectiveTo: z.iso.date(),
-	})
-	.strict();
+export type GetLegalCompanyInput = z.infer<typeof getLegalCompanyInputSchema>;
 
 export const getLegalCompanyAsOfInputSchema = getLegalCompanyInputSchema
 	.extend({
-		asOf: z.iso.date(),
+		asOf: utcInstantSchema,
 	})
 	.strict();
 
-export const listCompanyNamesInputSchema = getLegalCompanyInputSchema;
+export type GetLegalCompanyAsOfInput = z.infer<
+	typeof getLegalCompanyAsOfInputSchema
+>;
 
-export const listCompanyIdentifiersInputSchema = getLegalCompanyInputSchema;
+export const listLegalCompaniesInputSchema = z
+	.object({
+		organizationId: nonBlankTextSchema,
+		actorUserId: nonBlankTextSchema,
+		status: caLegalCompanyStatusSchema.optional(),
+		query: z.string().trim().max(CA_LIST_QUERY_MAX).optional(),
+		cursor: z.string().trim().min(1).optional(),
+		limit: z
+			.number()
+			.int()
+			.min(1)
+			.max(CA_LIST_LIMIT_MAX)
+			.default(CA_LIST_LIMIT_DEFAULT),
+	})
+	.strict();
+
+export type ListLegalCompaniesInput = z.infer<
+	typeof listLegalCompaniesInputSchema
+>;
+
+export const listCompanyNamesInputSchema = getLegalCompanyInputSchema
+	.extend({
+		asOf: utcInstantSchema.optional(),
+	})
+	.strict();
+
+export type ListCompanyNamesInput = z.infer<typeof listCompanyNamesInputSchema>;
+
+export const listCompanyIdentifiersInputSchema = getLegalCompanyInputSchema
+	.extend({
+		asOf: utcInstantSchema.optional(),
+		status: caCompanyIdentifierStatusSchema.optional(),
+	})
+	.strict();
+
+export type ListCompanyIdentifiersInput = z.infer<
+	typeof listCompanyIdentifiersInputSchema
+>;
 
 export const listCompanyStatusHistoryInputSchema = getLegalCompanyInputSchema;
+
+export type ListCompanyStatusHistoryInput = z.infer<
+	typeof listCompanyStatusHistoryInputSchema
+>;
 
 export const CA_OFFICER_ROLES = [
 	"director",

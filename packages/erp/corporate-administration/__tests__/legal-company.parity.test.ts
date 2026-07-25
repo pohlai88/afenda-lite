@@ -16,6 +16,15 @@ import {
 } from "./helpers/ca-parity-harness";
 import { ensureDrizzleCaMasterFixtures } from "./helpers/drizzle-ca-masters";
 import {
+	activateLegalCompanyTestInput,
+	addCompanyIdentifierTestInput,
+	addCompanyNameTestInput,
+	caEffectiveAtFromDate,
+	createLegalCompanyTestInput,
+	getLegalCompanyAsOfTestInput,
+	suspendLegalCompanyTestInput,
+} from "./helpers/legal-company-test-inputs";
+import {
 	createMemoryCaMasterLookup,
 	seedLegalEntityDimension,
 	seedOrganizationParty,
@@ -76,18 +85,23 @@ async function createParityFixture(
 	};
 }
 
+function parityContext(tag: string) {
+	return {
+		organizationId: ORG,
+		actorUserId: "user-ca",
+		correlationId: `corr-${tag}`,
+		idempotencyKey: tag.length >= 8 ? tag : `idem-${tag}`,
+	};
+}
+
 async function seedDraftCompany(fixture: ParityFixture, tag: string) {
 	return createLegalCompany(
-		{
-			organizationId: ORG,
-			actorUserId: "user-ca",
-			correlationId: `corr-create-${tag}`,
-			idempotencyKey: `create-${tag}`,
-			requestFingerprint: `fp-create-${tag}`,
+		createLegalCompanyTestInput(`create-${tag}`, {
+			...parityContext(`create-${tag}`),
 			code: `CO-${tag}`.slice(0, 64),
 			legalEntityDimensionId: fixture.dimensionId,
 			legalPartyId: fixture.partyId,
-		},
+		}),
 		fixture.ready,
 	);
 }
@@ -96,31 +110,17 @@ async function seedActivationReadyCompany(fixture: ParityFixture, tag: string) {
 	const created = await seedDraftCompany(fixture, tag);
 	if (!created.ok) return created;
 	await addCompanyName(
-		{
-			organizationId: ORG,
-			actorUserId: "user-ca",
-			correlationId: `corr-name-${tag}`,
-			idempotencyKey: `name-${tag}`,
-			requestFingerprint: `fp-name-${tag}`,
-			legalCompanyId: created.data.id,
-			nameType: "legal",
+		addCompanyNameTestInput(`name-${tag}`, created.data.id, {
+			...parityContext(`name-${tag}`),
 			displayName: "Parity Holdings Sdn Bhd",
-			effectiveFrom: "2024-01-01",
-		},
+		}),
 		fixture.ready,
 	);
 	await addCompanyIdentifier(
-		{
-			organizationId: ORG,
-			actorUserId: "user-ca",
-			correlationId: `corr-id-${tag}`,
-			idempotencyKey: `id-${tag}`,
-			requestFingerprint: `fp-id-${tag}`,
-			legalCompanyId: created.data.id,
-			identifierType: "company_registration",
+		addCompanyIdentifierTestInput(`id-${tag}`, created.data.id, {
+			...parityContext(`id-${tag}`),
 			identifierValue: `REG-${tag}`,
-			effectiveFrom: "2024-01-01",
-		},
+		}),
 		fixture.ready,
 	);
 	return created;
@@ -136,15 +136,11 @@ for (const adapter of ["memory", "drizzle"] as const) {
 			it("replays create idempotency with matching fingerprint", async () => {
 				const tag = suffix(adapter);
 				const fixture = await createParityFixture(adapter, tag);
-				const input = {
-					organizationId: ORG,
-					actorUserId: "user-ca",
-					correlationId: `corr-idem-${tag}`,
-					idempotencyKey: `idem-${tag}`,
-					requestFingerprint: `fp-idem-${tag}`,
+				const input = createLegalCompanyTestInput(`idem-${tag}`, {
+					...parityContext(`idem-${tag}`),
 					code: `IDEM-${tag}`.slice(0, 64),
 					legalEntityDimensionId: fixture.dimensionId,
-				};
+				});
 				const first = await createLegalCompany(input, fixture.ready);
 				const second = await createLegalCompany(input, fixture.ready);
 				expect(first.ok).toBe(true);
@@ -161,32 +157,19 @@ for (const adapter of ["memory", "drizzle"] as const) {
 				expect(created.ok).toBe(true);
 				if (!created.ok) return;
 				const first = await addCompanyIdentifier(
-					{
-						organizationId: ORG,
-						actorUserId: "user-ca",
-						correlationId: `corr-id-a-${tag}`,
-						idempotencyKey: `id-a-${tag}`,
-						requestFingerprint: `fp-id-a-${tag}`,
-						legalCompanyId: created.data.id,
-						identifierType: "company_registration",
+					addCompanyIdentifierTestInput(`id-a-${tag}`, created.data.id, {
+						...parityContext(`id-a-${tag}`),
 						identifierValue: `123456-${tag}-A`,
-						effectiveFrom: "2024-01-01",
-					},
+					}),
 					fixture.ready,
 				);
 				expect(first.ok).toBe(true);
 				const second = await addCompanyIdentifier(
-					{
-						organizationId: ORG,
-						actorUserId: "user-ca",
-						correlationId: `corr-id-b-${tag}`,
-						idempotencyKey: `id-b-${tag}`,
-						requestFingerprint: `fp-id-b-${tag}`,
-						legalCompanyId: created.data.id,
-						identifierType: "company_registration",
+					addCompanyIdentifierTestInput(`id-b-${tag}`, created.data.id, {
+						...parityContext(`id-b-${tag}`),
 						identifierValue: `123456-${tag}-a`,
 						effectiveFrom: "2024-06-01",
-					},
+					}),
 					fixture.ready,
 				);
 				expect(second.ok).toBe(false);
@@ -199,44 +182,39 @@ for (const adapter of ["memory", "drizzle"] as const) {
 				expect(created.ok).toBe(true);
 				if (!created.ok) return;
 				const activated = await activateLegalCompany(
-					{
-						organizationId: ORG,
-						actorUserId: "user-ca",
-						correlationId: `corr-act-${tag}`,
-						idempotencyKey: `act-${tag}`,
-						requestFingerprint: `fp-act-${tag}`,
-						legalCompanyId: created.data.id,
-						expectedVersion: created.data.version,
-						effectiveDate: "2024-01-01",
-					},
+					activateLegalCompanyTestInput(`act-${tag}`, created.data, "2024-01-01", {
+						...parityContext(`act-${tag}`),
+					}),
 					fixture.ready,
 				);
 				expect(activated.ok).toBe(true);
 				const asOfDraft = await getLegalCompanyAsOf(
-					{
+					getLegalCompanyAsOfTestInput(created.data.id, "2023-12-31", {
 						organizationId: ORG,
 						actorUserId: "user-ca",
-						legalCompanyId: created.data.id,
-						asOf: "2023-12-31",
-					},
+					}),
 					fixture.ready,
 				);
 				expect(asOfDraft.ok).toBe(true);
 				if (asOfDraft.ok) {
 					expect(asOfDraft.data.status).toBe("draft");
+					expect(asOfDraft.data.asOf).toBe("2023-12-31");
+					expect(asOfDraft.data.effectiveName).toBeDefined();
 				}
 				const asOfActive = await getLegalCompanyAsOf(
-					{
+					getLegalCompanyAsOfTestInput(created.data.id, "2024-01-01", {
 						organizationId: ORG,
 						actorUserId: "user-ca",
-						legalCompanyId: created.data.id,
-						asOf: "2024-01-01",
-					},
+					}),
 					fixture.ready,
 				);
 				expect(asOfActive.ok).toBe(true);
 				if (asOfActive.ok) {
 					expect(asOfActive.data.status).toBe("active");
+					expect(asOfActive.data.company.status).toBe("active");
+					expect(asOfActive.data.effectiveIdentifiers.length).toBeGreaterThan(
+						0,
+					);
 				}
 			});
 
@@ -247,17 +225,12 @@ for (const adapter of ["memory", "drizzle"] as const) {
 				expect(created.ok).toBe(true);
 				if (!created.ok) return;
 				const suspended = await suspendLegalCompany(
-					{
-						organizationId: ORG,
-						actorUserId: "user-ca",
-						correlationId: `corr-sus-${tag}`,
-						idempotencyKey: `sus-${tag}`,
-						requestFingerprint: `fp-sus-${tag}`,
-						legalCompanyId: created.data.id,
-						expectedVersion: created.data.version,
-						effectiveDate: "2024-01-01",
+					suspendLegalCompanyTestInput(`sus-${tag}`, created.data, {
+						...parityContext(`sus-${tag}`),
+						effectiveAt: caEffectiveAtFromDate("2024-01-01"),
+						reasonCode: "invalid_transition",
 						reason: "Invalid",
-					},
+					}),
 					fixture.ready,
 				);
 				expect(suspended.ok).toBe(false);

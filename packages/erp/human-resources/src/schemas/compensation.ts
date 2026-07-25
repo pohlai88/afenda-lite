@@ -1,8 +1,10 @@
 import { z } from "zod";
 import {
+	humanResourcesApplicationIdSchema,
 	humanResourcesBenefitEnrollmentIdSchema,
 	humanResourcesBenefitPlanIdSchema,
 	humanResourcesCompensationGradeIdSchema,
+	humanResourcesCompensationProposalIdSchema,
 	humanResourcesCompensationReviewIdSchema,
 	humanResourcesEmployeeCompensationIdSchema,
 	humanResourcesEmployeeIdSchema,
@@ -279,4 +281,73 @@ export const getApprovedCompensationHandoffInputSchema =
 
 export type GetApprovedCompensationHandoffInput = z.infer<
 	typeof getApprovedCompensationHandoffInputSchema
+>;
+
+export const createCompensationProposalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			applicationId: humanResourcesApplicationIdSchema,
+			proposedBaseAmount: moneyAmountSchema.optional(),
+			proposedCurrencyCode: currencyCodeSchema.optional(),
+			proposedGradeId: humanResourcesCompensationGradeIdSchema.nullish(),
+			proposedSalaryBandId: humanResourcesSalaryBandIdSchema.nullish(),
+			confidentialNote: z.string().trim().max(4000).nullish(),
+		})
+		.strict();
+
+export type CreateCompensationProposalInput = z.infer<
+	typeof createCompensationProposalInputSchema
+>;
+
+export const amendCompensationProposalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			proposalId: humanResourcesCompensationProposalIdSchema,
+			proposedBaseAmount: moneyAmountSchema.optional(),
+			proposedCurrencyCode: currencyCodeSchema.optional(),
+			proposedGradeId: humanResourcesCompensationGradeIdSchema.nullish(),
+			proposedSalaryBandId: humanResourcesSalaryBandIdSchema.nullish(),
+			confidentialNote: z.string().trim().max(4000).nullish(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type AmendCompensationProposalInput = z.infer<
+	typeof amendCompensationProposalInputSchema
+>;
+
+export const approveCompensationProposalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			proposalId: humanResourcesCompensationProposalIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ApproveCompensationProposalInput = z.infer<
+	typeof approveCompensationProposalInputSchema
+>;
+
+export const getCompensationProposalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			proposalId: humanResourcesCompensationProposalIdSchema,
+		})
+		.strict();
+
+export type GetCompensationProposalInput = z.infer<
+	typeof getCompensationProposalInputSchema
+>;
+
+export const listCompensationProposalsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			applicationId: humanResourcesApplicationIdSchema.optional(),
+			page: z.number().int().positive().default(1),
+			pageSize: z.number().int().positive().max(100).default(20),
+		})
+		.strict();
+
+export type ListCompensationProposalsInput = z.infer<
+	typeof listCompensationProposalsInputSchema
 >;

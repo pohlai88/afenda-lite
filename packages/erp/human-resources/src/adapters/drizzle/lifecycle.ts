@@ -2,16 +2,23 @@ import { randomUUID } from "node:crypto";
 
 import {
 	and,
+	asc,
 	db,
 	desc,
 	eq,
 	hrClearance,
 	hrEmploymentConfirmation,
 	hrEmploymentMovement,
+	hrOffboardingAccessRevocation,
 	hrOffboardingCase,
+	hrOffboardingPayrollHandoff,
 	hrOffboardingTask,
+	hrOnboardingAccessHandoff,
 	hrOnboardingCase,
+	hrOnboardingEquipmentHandoff,
+	hrOnboardingOrientation,
 	hrOnboardingTask,
+	hrProbationAssessment,
 	hrProbationReview,
 	hrTermination,
 	runNeonHttpTransaction,
@@ -26,6 +33,7 @@ import {
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT,
 	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
 	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
 } from "@afenda/events/schemas";
@@ -37,12 +45,18 @@ import {
 	parseHumanResourcesEmploymentConfirmationId,
 	parseHumanResourcesEmploymentId,
 	parseHumanResourcesEmploymentMovementId,
+	parseHumanResourcesOffboardingAccessRevocationId,
 	parseHumanResourcesOffboardingCaseId,
+	parseHumanResourcesOffboardingPayrollHandoffId,
 	parseHumanResourcesOffboardingTaskId,
 	parseHumanResourcesOfferId,
+	parseHumanResourcesOnboardingAccessHandoffId,
 	parseHumanResourcesOnboardingCaseId,
+	parseHumanResourcesOnboardingEquipmentHandoffId,
+	parseHumanResourcesOnboardingOrientationId,
 	parseHumanResourcesOnboardingTaskId,
 	parseHumanResourcesPositionId,
+	parseHumanResourcesProbationAssessmentId,
 	parseHumanResourcesProbationReviewId,
 	parseHumanResourcesTerminationId,
 } from "../../brands";
@@ -65,11 +79,23 @@ import { fingerprintTransfer } from "../../shared/fingerprint";
 import {
 	assertEmploymentActiveForOnboarding,
 	assertEmploymentForOffboarding,
+	assertConfirmationEffectiveOn,
 	assertLatestProbationPassed,
+	assertOffboardingAccessRevocationStatusTransition,
 	assertOffboardingCaseInProgress,
+	assertOffboardingPayrollHandoffStatusTransition,
+	assertTerminationApprovable,
+	assertTerminationFinalizable,
+	assertOnboardingAccessHandoffStatusTransition,
+	assertOnboardingCaseInProgress,
+	assertOnboardingEquipmentHandoffStatusTransition,
+	assertOnboardingOrientationStatusTransition,
+	assertOnboardingReadyToComplete,
+	assertProbationAssessmentReviewedOn,
 	assertProbationDateRange,
 	assertProbationExtension,
 	assertProbationOpen,
+	assertProbationOutcomeRecordedOn,
 	assertTerminationEffectiveDate,
 } from "../../shared/lifecycle-guards";
 import type { ProbationOutcome } from "../../shared/lifecycle-status";
@@ -77,8 +103,13 @@ import {
 	clearanceStatusSchema,
 	lifecycleTaskStatusSchema,
 	movementKindSchema,
+	offboardingAccessRevocationStatusSchema,
 	offboardingCaseStatusSchema,
+	offboardingPayrollHandoffStatusSchema,
+	onboardingAccessHandoffStatusSchema,
 	onboardingCaseStatusSchema,
+	onboardingEquipmentHandoffStatusSchema,
+	onboardingOrientationStatusSchema,
 	probationOutcomeSchema,
 	probationStatusSchema,
 	terminationStatusSchema,
@@ -88,15 +119,26 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import {
+	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
+	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
+	ONBOARDING_TASK_CODE_ORIENTATION,
+} from "../../lifecycle/onboarding-checklist";
 import type { HumanResourcesStore } from "../../store";
 import type {
 	Clearance,
 	EmploymentConfirmation,
 	EmploymentMovement,
+	OffboardingAccessRevocation,
 	OffboardingCase,
+	OffboardingPayrollHandoff,
 	OffboardingTask,
+	OnboardingAccessHandoff,
 	OnboardingCase,
+	OnboardingEquipmentHandoff,
+	OnboardingOrientation,
 	OnboardingTask,
+	ProbationAssessment,
 	ProbationReview,
 	Termination,
 } from "../../types";
@@ -115,6 +157,31 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
+function probationReviewEventBase(
+	probation: ProbationReview,
+	actorId: string,
+	correlationId: string,
+) {
+	return {
+		organizationId: probation.organizationId,
+		entityType: "hr_probation_review",
+		entityId: probation.id,
+		actorId,
+		correlationId,
+		employmentId: probation.employmentId,
+	};
+}
+
+function withOptionalEvidenceReference<T extends Record<string, unknown>>(
+	payload: T,
+	evidenceReference: string | null,
+): T & { evidenceReference?: string } {
+	if (evidenceReference === null) {
+		return payload;
+	}
+	return { ...payload, evidenceReference };
+}
+
 type LifecycleHost = {
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
 	getPositionById: HumanResourcesStore["getPositionById"];
@@ -130,10 +197,20 @@ export type DrizzleLifecycleMethods = Pick<
 	| "completeOnboardingTask"
 	| "completeOnboarding"
 	| "listOnboardingTasks"
+	| "getOnboardingTask"
+	| "getOnboardingOrientationByCase"
+	| "getOnboardingEquipmentHandoffByCase"
+	| "getOnboardingAccessHandoffByCase"
+	| "recordOnboardingOrientation"
+	| "recordOnboardingEquipmentHandoff"
+	| "recordOnboardingAccessHandoff"
 	| "getProbationReview"
+	| "listProbationReviewsByEmployment"
+	| "listProbationAssessments"
 	| "findProbationByOpenIdempotencyKey"
 	| "openProbation"
 	| "extendProbation"
+	| "recordProbationAssessment"
 	| "recordProbationOutcome"
 	| "getEmploymentConfirmation"
 	| "findConfirmationByIdempotencyKey"
@@ -142,6 +219,8 @@ export type DrizzleLifecycleMethods = Pick<
 	| "transferAssignment"
 	| "getTermination"
 	| "findTerminationByIdempotencyKey"
+	| "proposeTermination"
+	| "approveTermination"
 	| "finalizeTermination"
 	| "getOffboardingCase"
 	| "findOffboardingByStartIdempotencyKey"
@@ -152,6 +231,10 @@ export type DrizzleLifecycleMethods = Pick<
 	| "completeOffboarding"
 	| "listOffboardingTasks"
 	| "getClearanceByOffboardingCase"
+	| "getOffboardingAccessRevocationByCase"
+	| "getOffboardingPayrollHandoffByCase"
+	| "recordOffboardingAccessRevocation"
+	| "recordOffboardingPayrollHandoff"
 >;
 
 function mapOnboardingCase(
@@ -222,6 +305,41 @@ function mapProbation(
 		outcome,
 		outcomeActorId: row.outcomeActorId,
 		outcomeRecordedOn: row.outcomeRecordedOn,
+		lastExtensionReason: row.lastExtensionReason,
+		lastExtensionEvidenceReference: row.lastExtensionEvidenceReference,
+		outcomeReason: row.outcomeReason,
+		outcomeEvidenceReference: row.outcomeEvidenceReference,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapProbationAssessment(
+	row: typeof hrProbationAssessment.$inferSelect,
+): Result<ProbationAssessment> {
+	const id = parseHumanResourcesProbationAssessmentId(row.id);
+	if (!id.ok) return id;
+	const probationReviewId = parseHumanResourcesProbationReviewId(
+		row.probationReviewId,
+	);
+	if (!probationReviewId.ok) return probationReviewId;
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	if (!employmentId.ok) return employmentId;
+	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
+	if (!employeeId.ok) return employeeId;
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		probationReviewId: probationReviewId.data,
+		employmentId: employmentId.data,
+		employeeId: employeeId.data,
+		reviewedOn: row.reviewedOn,
+		reason: row.reason,
+		evidenceReference: row.evidenceReference,
+		actorUserId: row.actorUserId,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -326,6 +444,9 @@ function mapTermination(
 		reasonCode: row.reasonCode,
 		reasonDetail: row.reasonDetail,
 		effectiveOn: row.effectiveOn,
+		approvedAt: row.approvedAt,
+		approvedBy: row.approvedBy,
+		rehireEligible: row.rehireEligible,
 		finalizedAt: row.finalizedAt,
 		version: row.version,
 		createdBy: row.createdBy,
@@ -455,6 +576,161 @@ function mapClearance(row: typeof hrClearance.$inferSelect): Result<Clearance> {
 	});
 }
 
+function mapOffboardingAccessRevocation(
+	row: typeof hrOffboardingAccessRevocation.$inferSelect,
+): Result<OffboardingAccessRevocation> {
+	const id = parseHumanResourcesOffboardingAccessRevocationId(row.id);
+	if (!id.ok) return id;
+	const offboardingCaseId = parseHumanResourcesOffboardingCaseId(
+		row.offboardingCaseId,
+	);
+	if (!offboardingCaseId.ok) return offboardingCaseId;
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	if (!employmentId.ok) return employmentId;
+	const status = offboardingAccessRevocationStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid offboarding access revocation status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		offboardingCaseId: offboardingCaseId.data,
+		employmentId: employmentId.data,
+		status: status.data,
+		revokedOn: row.revokedOn,
+		summary: row.summary,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapOffboardingPayrollHandoff(
+	row: typeof hrOffboardingPayrollHandoff.$inferSelect,
+): Result<OffboardingPayrollHandoff> {
+	const id = parseHumanResourcesOffboardingPayrollHandoffId(row.id);
+	if (!id.ok) return id;
+	const offboardingCaseId = parseHumanResourcesOffboardingCaseId(
+		row.offboardingCaseId,
+	);
+	if (!offboardingCaseId.ok) return offboardingCaseId;
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	if (!employmentId.ok) return employmentId;
+	const status = offboardingPayrollHandoffStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid offboarding payroll handoff status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		offboardingCaseId: offboardingCaseId.data,
+		employmentId: employmentId.data,
+		status: status.data,
+		readyOn: row.readyOn,
+		summary: row.summary,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapOnboardingOrientation(
+	row: typeof hrOnboardingOrientation.$inferSelect,
+): Result<OnboardingOrientation> {
+	const id = parseHumanResourcesOnboardingOrientationId(row.id);
+	if (!id.ok) return id;
+	const onboardingCaseId = parseHumanResourcesOnboardingCaseId(
+		row.onboardingCaseId,
+	);
+	if (!onboardingCaseId.ok) return onboardingCaseId;
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	if (!employmentId.ok) return employmentId;
+	const status = onboardingOrientationStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid onboarding orientation status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		onboardingCaseId: onboardingCaseId.data,
+		employmentId: employmentId.data,
+		status: status.data,
+		acknowledgedOn: row.acknowledgedOn,
+		notes: row.notes,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapOnboardingEquipmentHandoff(
+	row: typeof hrOnboardingEquipmentHandoff.$inferSelect,
+): Result<OnboardingEquipmentHandoff> {
+	const id = parseHumanResourcesOnboardingEquipmentHandoffId(row.id);
+	if (!id.ok) return id;
+	const onboardingCaseId = parseHumanResourcesOnboardingCaseId(
+		row.onboardingCaseId,
+	);
+	if (!onboardingCaseId.ok) return onboardingCaseId;
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	if (!employmentId.ok) return employmentId;
+	const status = onboardingEquipmentHandoffStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid onboarding equipment handoff status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		onboardingCaseId: onboardingCaseId.data,
+		employmentId: employmentId.data,
+		status: status.data,
+		handedOverOn: row.handedOverOn,
+		summary: row.summary,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapOnboardingAccessHandoff(
+	row: typeof hrOnboardingAccessHandoff.$inferSelect,
+): Result<OnboardingAccessHandoff> {
+	const id = parseHumanResourcesOnboardingAccessHandoffId(row.id);
+	if (!id.ok) return id;
+	const onboardingCaseId = parseHumanResourcesOnboardingCaseId(
+		row.onboardingCaseId,
+	);
+	if (!onboardingCaseId.ok) return onboardingCaseId;
+	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
+	if (!employmentId.ok) return employmentId;
+	const status = onboardingAccessHandoffStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid onboarding access handoff status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		onboardingCaseId: onboardingCaseId.data,
+		employmentId: employmentId.data,
+		status: status.data,
+		grantedOn: row.grantedOn,
+		summary: row.summary,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
 /** Raw Neon HTTP CTE rows use snake_case column names. */
 type OnboardingCaseSqlRow = {
 	id: string;
@@ -485,8 +761,29 @@ type ProbationSqlRow = {
 	outcome: string | null;
 	outcome_actor_id: string | null;
 	outcome_recorded_on: string | null;
+	last_extension_reason: string | null;
+	last_extension_evidence_reference: string | null;
+	outcome_reason: string | null;
+	outcome_evidence_reference: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type ProbationAssessmentSqlRow = {
+	id: string;
+	organization_id: string;
+	probation_review_id: string;
+	employment_id: string;
+	employee_id: string;
+	reviewed_on: string;
+	reason: string;
+	evidence_reference: string | null;
+	actor_user_id: string;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -541,6 +838,9 @@ type TerminationSqlRow = {
 	reason_code: string;
 	reason_detail: string;
 	effective_on: string;
+	approved_at: Date | null;
+	approved_by: string | null;
+	rehire_eligible: boolean;
 	finalized_at: Date | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
@@ -603,8 +903,33 @@ function mapProbationSql(row: ProbationSqlRow): Result<ProbationReview> {
 		outcome: row.outcome,
 		outcomeActorId: row.outcome_actor_id,
 		outcomeRecordedOn: row.outcome_recorded_on,
+		lastExtensionReason: row.last_extension_reason,
+		lastExtensionEvidenceReference: row.last_extension_evidence_reference,
+		outcomeReason: row.outcome_reason,
+		outcomeEvidenceReference: row.outcome_evidence_reference,
 		createIdempotencyKey: row.create_idempotency_key,
 		createRequestFingerprint: row.create_request_fingerprint,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapProbationAssessmentSql(
+	row: ProbationAssessmentSqlRow,
+): Result<ProbationAssessment> {
+	return mapProbationAssessment({
+		id: row.id,
+		organizationId: row.organization_id,
+		probationReviewId: row.probation_review_id,
+		employmentId: row.employment_id,
+		employeeId: row.employee_id,
+		reviewedOn: row.reviewed_on,
+		reason: row.reason,
+		evidenceReference: row.evidence_reference,
+		actorUserId: row.actor_user_id,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -667,6 +992,9 @@ function mapTerminationSql(row: TerminationSqlRow): Result<Termination> {
 		reasonCode: row.reason_code,
 		reasonDetail: row.reason_detail,
 		effectiveOn: row.effective_on,
+		approvedAt: row.approved_at,
+		approvedBy: row.approved_by,
+		rehireEligible: row.rehire_eligible,
 		finalizedAt: row.finalized_at,
 		createIdempotencyKey: row.create_idempotency_key,
 		createRequestFingerprint: row.create_request_fingerprint,
@@ -784,6 +1112,19 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const caseId = randomUUID();
 		const brandedCaseId = parseHumanResourcesOnboardingCaseId(caseId);
 		if (!brandedCaseId.ok) return brandedCaseId;
+		const orientationId = randomUUID();
+		const brandedOrientationId =
+			parseHumanResourcesOnboardingOrientationId(orientationId);
+		if (!brandedOrientationId.ok) return brandedOrientationId;
+		const equipmentHandoffId = randomUUID();
+		const brandedEquipmentHandoffId =
+			parseHumanResourcesOnboardingEquipmentHandoffId(equipmentHandoffId);
+		if (!brandedEquipmentHandoffId.ok) return brandedEquipmentHandoffId;
+		const accessHandoffId = randomUUID();
+		const brandedAccessHandoffId = parseHumanResourcesOnboardingAccessHandoffId(
+			accessHandoffId,
+		);
+		if (!brandedAccessHandoffId.ok) return brandedAccessHandoffId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const taskRows = record.tasks.map((task) => ({
@@ -855,6 +1196,39 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								AS task(id text, code text, title text, mandatory boolean)
 							RETURNING id
 						),
+						orientation AS (
+							INSERT INTO hr_onboarding_orientation (
+								id, organization_id, onboarding_case_id, employment_id, status,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedOrientationId.data}, organization_id, id, employment_id,
+								'pending', 1, ${record.createdBy}, ${record.createdBy}
+							FROM mutated
+							RETURNING id
+						),
+						equipment_handoff AS (
+							INSERT INTO hr_onboarding_equipment_handoff (
+								id, organization_id, onboarding_case_id, employment_id, status,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedEquipmentHandoffId.data}, organization_id, id, employment_id,
+								'pending', 1, ${record.createdBy}, ${record.createdBy}
+							FROM mutated
+							RETURNING id
+						),
+						access_handoff AS (
+							INSERT INTO hr_onboarding_access_handoff (
+								id, organization_id, onboarding_case_id, employment_id, status,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedAccessHandoffId.data}, organization_id, id, employment_id,
+								'pending', 1, ${record.createdBy}, ${record.createdBy}
+							FROM mutated
+							RETURNING id
+						),
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -878,7 +1252,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited, outboxed
+						SELECT mutated.* FROM mutated, tasks, orientation, equipment_handoff,
+							access_handoff, audited, outboxed
 						WHERE EXISTS (SELECT 1 FROM tasks)
 					`,
 				],
@@ -1024,6 +1399,27 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 									AND task.mandatory = true
 									AND task.status NOT IN ('completed', 'waived')
 							)
+							AND EXISTS (
+								SELECT 1
+								FROM hr_onboarding_orientation orientation
+								WHERE orientation.onboarding_case_id = case_row.id
+									AND orientation.organization_id = case_row.organization_id
+									AND orientation.status = 'acknowledged'
+							)
+							AND EXISTS (
+								SELECT 1
+								FROM hr_onboarding_equipment_handoff equipment
+								WHERE equipment.onboarding_case_id = case_row.id
+									AND equipment.organization_id = case_row.organization_id
+									AND equipment.status = 'handed_over'
+							)
+							AND EXISTS (
+								SELECT 1
+								FROM hr_onboarding_access_handoff access_handoff
+								WHERE access_handoff.onboarding_case_id = case_row.id
+									AND access_handoff.organization_id = case_row.organization_id
+									AND access_handoff.status = 'granted'
+							)
 						),
 						mutated AS (
 							UPDATE hr_onboarding_case c
@@ -1078,11 +1474,535 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				if (existing.data.status !== "in_progress") {
 					return invalidState("Onboarding case must be in progress");
 				}
-				return invalidState("All mandatory tasks must be completed or waived");
+				const tasks = await this.listOnboardingTasks({
+					organizationId: input.organizationId,
+					onboardingCaseId: input.onboardingCaseId,
+				});
+				if (!tasks.ok) return tasks;
+				const orientation = await this.getOnboardingOrientationByCase({
+					organizationId: input.organizationId,
+					onboardingCaseId: input.onboardingCaseId,
+				});
+				if (!orientation.ok) return orientation;
+				const equipmentHandoff =
+					await this.getOnboardingEquipmentHandoffByCase({
+						organizationId: input.organizationId,
+						onboardingCaseId: input.onboardingCaseId,
+					});
+				if (!equipmentHandoff.ok) return equipmentHandoff;
+				const accessHandoff = await this.getOnboardingAccessHandoffByCase({
+					organizationId: input.organizationId,
+					onboardingCaseId: input.onboardingCaseId,
+				});
+				if (!accessHandoff.ok) return accessHandoff;
+				const mandatoryTasksComplete = tasks.data.every(
+					(task) =>
+						!task.mandatory ||
+						task.status === "completed" ||
+						task.status === "waived",
+				);
+				const ready = assertOnboardingReadyToComplete({
+					mandatoryTasksComplete,
+					orientationStatus: orientation.data?.status ?? null,
+					equipmentHandoffStatus: equipmentHandoff.data?.status ?? null,
+					accessHandoffStatus: accessHandoff.data?.status ?? null,
+				});
+				if (!ready.ok) return ready;
+				return invalidState("Onboarding is not ready to complete");
 			}
 			return mapOnboardingCaseSql(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to complete onboarding");
+		}
+	},
+
+	async getOnboardingOrientationByCase(input) {
+		try {
+			const caseRow = await this.getOnboardingCase({
+				organizationId: input.organizationId,
+				onboardingCaseId: input.onboardingCaseId,
+			});
+			if (!caseRow.ok) return caseRow;
+			if (caseRow.data === null) {
+				return notFound("Onboarding case not found");
+			}
+			const rows = await db
+				.select()
+				.from(hrOnboardingOrientation)
+				.where(
+					and(
+						eq(hrOnboardingOrientation.organizationId, input.organizationId),
+						eq(
+							hrOnboardingOrientation.onboardingCaseId,
+							input.onboardingCaseId,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapOnboardingOrientation(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to get onboarding orientation",
+			);
+		}
+	},
+
+	async getOnboardingEquipmentHandoffByCase(input) {
+		try {
+			const caseRow = await this.getOnboardingCase({
+				organizationId: input.organizationId,
+				onboardingCaseId: input.onboardingCaseId,
+			});
+			if (!caseRow.ok) return caseRow;
+			if (caseRow.data === null) {
+				return notFound("Onboarding case not found");
+			}
+			const rows = await db
+				.select()
+				.from(hrOnboardingEquipmentHandoff)
+				.where(
+					and(
+						eq(
+							hrOnboardingEquipmentHandoff.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrOnboardingEquipmentHandoff.onboardingCaseId,
+							input.onboardingCaseId,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapOnboardingEquipmentHandoff(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to get onboarding equipment handoff",
+			);
+		}
+	},
+
+	async getOnboardingAccessHandoffByCase(input) {
+		try {
+			const caseRow = await this.getOnboardingCase({
+				organizationId: input.organizationId,
+				onboardingCaseId: input.onboardingCaseId,
+			});
+			if (!caseRow.ok) return caseRow;
+			if (caseRow.data === null) {
+				return notFound("Onboarding case not found");
+			}
+			const rows = await db
+				.select()
+				.from(hrOnboardingAccessHandoff)
+				.where(
+					and(
+						eq(hrOnboardingAccessHandoff.organizationId, input.organizationId),
+						eq(
+							hrOnboardingAccessHandoff.onboardingCaseId,
+							input.onboardingCaseId,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapOnboardingAccessHandoff(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to get onboarding access handoff",
+			);
+		}
+	},
+
+	async recordOnboardingOrientation(input, _ports, meta) {
+		const orientationRows = await db
+			.select()
+			.from(hrOnboardingOrientation)
+			.where(
+				and(
+					eq(hrOnboardingOrientation.organizationId, input.organizationId),
+					eq(hrOnboardingOrientation.id, input.orientationId),
+				),
+			)
+			.limit(1);
+		const orientation = orientationRows[0];
+		if (!orientation) {
+			return notFound("Onboarding orientation not found");
+		}
+		const orientationCaseId = parseHumanResourcesOnboardingCaseId(
+			orientation.onboardingCaseId,
+		);
+		if (!orientationCaseId.ok) return orientationCaseId;
+		const onboardingCase = await this.getOnboardingCase({
+			organizationId: input.organizationId,
+			onboardingCaseId: orientationCaseId.data,
+		});
+		if (!onboardingCase.ok) return onboardingCase;
+		if (onboardingCase.data === null) {
+			return notFound("Onboarding case not found");
+		}
+		const caseActive = assertOnboardingCaseInProgress(onboardingCase.data.status);
+		if (!caseActive.ok) return caseActive;
+		const versionCheck = assertExpectedVersion(
+			orientation.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const parsedStatus = onboardingOrientationStatusSchema.safeParse(
+			orientation.status,
+		);
+		if (!parsedStatus.success) {
+			return fail("INTERNAL_ERROR", "Invalid onboarding orientation status");
+		}
+		const transition = assertOnboardingOrientationStatusTransition(
+			parsedStatus.data,
+			"acknowledged",
+		);
+		if (!transition.ok) return transition;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[{ onboarding_case_id: string }[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_onboarding_orientation o
+							SET status = 'acknowledged',
+								acknowledged_on = ${input.acknowledgedOn},
+								notes = ${input.notes},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM hr_onboarding_case c
+							WHERE o.id = ${input.orientationId}
+								AND o.organization_id = ${input.organizationId}
+								AND o.version = ${input.expectedVersion}
+								AND o.status = 'pending'
+								AND c.id = o.onboarding_case_id
+								AND c.organization_id = o.organization_id
+								AND c.status = 'in_progress'
+							RETURNING o.onboarding_case_id, o.organization_id
+						),
+						task_completed AS (
+							UPDATE hr_onboarding_task t
+							SET status = 'completed',
+								completed_at = now(),
+								version = t.version + 1,
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM mutated
+							WHERE t.case_id = mutated.onboarding_case_id
+								AND t.organization_id = mutated.organization_id
+								AND t.code = ${ONBOARDING_TASK_CODE_ORIENTATION}
+								AND t.status = 'pending'
+							RETURNING t.id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, ${input.organizationId}, ${input.actorUserId},
+								${meta.correlationId}, 'human-resources', 'hr_onboarding_orientation',
+								${input.orientationId}, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Onboarding orientation",
+				});
+			}
+			const caseId = parseHumanResourcesOnboardingCaseId(row.onboarding_case_id);
+			if (!caseId.ok) return caseId;
+			const loaded = await this.getOnboardingCase({
+				organizationId: input.organizationId,
+				onboardingCaseId: caseId.data,
+			});
+			if (!loaded.ok) return loaded;
+			if (loaded.data === null) {
+				return notFound("Onboarding case not found");
+			}
+			return ok(loaded.data);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to record onboarding orientation",
+			);
+		}
+	},
+
+	async recordOnboardingEquipmentHandoff(input, _ports, meta) {
+		const equipmentRows = await db
+			.select()
+			.from(hrOnboardingEquipmentHandoff)
+			.where(
+				and(
+					eq(
+						hrOnboardingEquipmentHandoff.organizationId,
+						input.organizationId,
+					),
+					eq(hrOnboardingEquipmentHandoff.id, input.equipmentHandoffId),
+				),
+			)
+			.limit(1);
+		const equipmentHandoff = equipmentRows[0];
+		if (!equipmentHandoff) {
+			return notFound("Onboarding equipment handoff not found");
+		}
+		const equipmentCaseId = parseHumanResourcesOnboardingCaseId(
+			equipmentHandoff.onboardingCaseId,
+		);
+		if (!equipmentCaseId.ok) return equipmentCaseId;
+		const onboardingCase = await this.getOnboardingCase({
+			organizationId: input.organizationId,
+			onboardingCaseId: equipmentCaseId.data,
+		});
+		if (!onboardingCase.ok) return onboardingCase;
+		if (onboardingCase.data === null) {
+			return notFound("Onboarding case not found");
+		}
+		const caseActive = assertOnboardingCaseInProgress(onboardingCase.data.status);
+		if (!caseActive.ok) return caseActive;
+		const versionCheck = assertExpectedVersion(
+			equipmentHandoff.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const parsedStatus = onboardingEquipmentHandoffStatusSchema.safeParse(
+			equipmentHandoff.status,
+		);
+		if (!parsedStatus.success) {
+			return fail(
+				"INTERNAL_ERROR",
+				"Invalid onboarding equipment handoff status",
+			);
+		}
+		const transition = assertOnboardingEquipmentHandoffStatusTransition(
+			parsedStatus.data,
+			"handed_over",
+		);
+		if (!transition.ok) return transition;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[{ onboarding_case_id: string }[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_onboarding_equipment_handoff e
+							SET status = 'handed_over',
+								handed_over_on = ${input.handedOverOn},
+								summary = ${input.summary},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM hr_onboarding_case c
+							WHERE e.id = ${input.equipmentHandoffId}
+								AND e.organization_id = ${input.organizationId}
+								AND e.version = ${input.expectedVersion}
+								AND e.status = 'pending'
+								AND c.id = e.onboarding_case_id
+								AND c.organization_id = e.organization_id
+								AND c.status = 'in_progress'
+							RETURNING e.onboarding_case_id, e.organization_id
+						),
+						task_completed AS (
+							UPDATE hr_onboarding_task t
+							SET status = 'completed',
+								completed_at = now(),
+								version = t.version + 1,
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM mutated
+							WHERE t.case_id = mutated.onboarding_case_id
+								AND t.organization_id = mutated.organization_id
+								AND t.code = ${ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF}
+								AND t.status = 'pending'
+							RETURNING t.id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, ${input.organizationId}, ${input.actorUserId},
+								${meta.correlationId}, 'human-resources',
+								'hr_onboarding_equipment_handoff', ${input.equipmentHandoffId},
+								'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Onboarding equipment handoff",
+				});
+			}
+			const caseId = parseHumanResourcesOnboardingCaseId(row.onboarding_case_id);
+			if (!caseId.ok) return caseId;
+			const loaded = await this.getOnboardingCase({
+				organizationId: input.organizationId,
+				onboardingCaseId: caseId.data,
+			});
+			if (!loaded.ok) return loaded;
+			if (loaded.data === null) {
+				return notFound("Onboarding case not found");
+			}
+			return ok(loaded.data);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to record onboarding equipment handoff",
+			);
+		}
+	},
+
+	async recordOnboardingAccessHandoff(input, _ports, meta) {
+		const accessRows = await db
+			.select()
+			.from(hrOnboardingAccessHandoff)
+			.where(
+				and(
+					eq(hrOnboardingAccessHandoff.organizationId, input.organizationId),
+					eq(hrOnboardingAccessHandoff.id, input.accessHandoffId),
+				),
+			)
+			.limit(1);
+		const accessHandoff = accessRows[0];
+		if (!accessHandoff) {
+			return notFound("Onboarding access handoff not found");
+		}
+		const accessCaseId = parseHumanResourcesOnboardingCaseId(
+			accessHandoff.onboardingCaseId,
+		);
+		if (!accessCaseId.ok) return accessCaseId;
+		const onboardingCase = await this.getOnboardingCase({
+			organizationId: input.organizationId,
+			onboardingCaseId: accessCaseId.data,
+		});
+		if (!onboardingCase.ok) return onboardingCase;
+		if (onboardingCase.data === null) {
+			return notFound("Onboarding case not found");
+		}
+		const caseActive = assertOnboardingCaseInProgress(onboardingCase.data.status);
+		if (!caseActive.ok) return caseActive;
+		const versionCheck = assertExpectedVersion(
+			accessHandoff.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const parsedStatus = onboardingAccessHandoffStatusSchema.safeParse(
+			accessHandoff.status,
+		);
+		if (!parsedStatus.success) {
+			return fail("INTERNAL_ERROR", "Invalid onboarding access handoff status");
+		}
+		const transition = assertOnboardingAccessHandoffStatusTransition(
+			parsedStatus.data,
+			"granted",
+		);
+		if (!transition.ok) return transition;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[{ onboarding_case_id: string }[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_onboarding_access_handoff a
+							SET status = 'granted',
+								granted_on = ${input.grantedOn},
+								summary = ${input.summary},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM hr_onboarding_case c
+							WHERE a.id = ${input.accessHandoffId}
+								AND a.organization_id = ${input.organizationId}
+								AND a.version = ${input.expectedVersion}
+								AND a.status = 'pending'
+								AND c.id = a.onboarding_case_id
+								AND c.organization_id = a.organization_id
+								AND c.status = 'in_progress'
+							RETURNING a.onboarding_case_id, a.organization_id
+						),
+						task_completed AS (
+							UPDATE hr_onboarding_task t
+							SET status = 'completed',
+								completed_at = now(),
+								version = t.version + 1,
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM mutated
+							WHERE t.case_id = mutated.onboarding_case_id
+								AND t.organization_id = mutated.organization_id
+								AND t.code = ${ONBOARDING_TASK_CODE_ACCESS_HANDOFF}
+								AND t.status = 'pending'
+							RETURNING t.id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, ${input.organizationId}, ${input.actorUserId},
+								${meta.correlationId}, 'human-resources', 'hr_onboarding_access_handoff',
+								${input.accessHandoffId}, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Onboarding access handoff",
+				});
+			}
+			const caseId = parseHumanResourcesOnboardingCaseId(row.onboarding_case_id);
+			if (!caseId.ok) return caseId;
+			const loaded = await this.getOnboardingCase({
+				organizationId: input.organizationId,
+				onboardingCaseId: caseId.data,
+			});
+			if (!loaded.ok) return loaded;
+			if (loaded.data === null) {
+				return notFound("Onboarding case not found");
+			}
+			return ok(loaded.data);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to record onboarding access handoff",
+			);
 		}
 	},
 
@@ -1103,6 +2023,68 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			return mapProbation(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load probation review");
+		}
+	},
+
+	async listProbationReviewsByEmployment(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrProbationReview)
+				.where(
+					and(
+						eq(hrProbationReview.organizationId, input.organizationId),
+						eq(hrProbationReview.employmentId, input.employmentId),
+					),
+				)
+				.orderBy(desc(hrProbationReview.createdAt));
+			const mapped: ProbationReview[] = [];
+			for (const row of rows) {
+				const result = mapProbation(row);
+				if (!result.ok) return result;
+				mapped.push(result.data);
+			}
+			return ok(mapped);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list probation reviews by employment",
+			);
+		}
+	},
+
+	async listProbationAssessments(input) {
+		const probation = await this.getProbationReview({
+			organizationId: input.organizationId,
+			probationReviewId: input.probationReviewId,
+		});
+		if (!probation.ok) return probation;
+		if (probation.data === null) {
+			return notFound("Probation review not found");
+		}
+		try {
+			const rows = await db
+				.select()
+				.from(hrProbationAssessment)
+				.where(
+					and(
+						eq(hrProbationAssessment.organizationId, input.organizationId),
+						eq(
+							hrProbationAssessment.probationReviewId,
+							input.probationReviewId,
+						),
+					),
+				)
+				.orderBy(asc(hrProbationAssessment.reviewedOn));
+			const mapped: ProbationAssessment[] = [];
+			for (const row of rows) {
+				const result = mapProbationAssessment(row);
+				if (!result.ok) return result;
+				mapped.push(result.data);
+			}
+			return ok(mapped);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to list probation assessments");
 		}
 	},
 
@@ -1254,6 +2236,20 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const extendPayloadJson = eventPayloadJson(
+			withOptionalEvidenceReference(
+				{
+					...probationReviewEventBase(
+						existing.data,
+						input.actorUserId,
+						meta.correlationId,
+					),
+					newEndsOn: input.newEndsOn,
+					reason: input.reason,
+				},
+				input.evidenceReference,
+			),
+		);
 		try {
 			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
 				(sqlTag) => [
@@ -1261,6 +2257,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						WITH mutated AS (
 							UPDATE hr_probation_review
 							SET ends_on = ${input.newEndsOn},
+								last_extension_reason = ${input.reason},
+								last_extension_evidence_reference = ${input.evidenceReference},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -1289,13 +2287,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							SELECT
 								${eventId}, organization_id, ${HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT},
 								'human-resources', ${meta.correlationId}, ${input.actorUserId},
-								jsonb_build_object(
-									'organizationId', organization_id,
-									'entityType', 'hr_probation_review',
-									'entityId', id,
-									'actorId', ${input.actorUserId}::text,
-									'correlationId', ${meta.correlationId}::text
-								),
+								${extendPayloadJson}::jsonb,
 								'pending', 0
 							FROM mutated
 							RETURNING id
@@ -1317,6 +2309,124 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
+	async recordProbationAssessment(input, _ports, meta) {
+		const existing = await this.getProbationReview({
+			organizationId: input.organizationId,
+			probationReviewId: input.probationReviewId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Probation review not found");
+		}
+		const openCheck = assertProbationOpen(existing.data.status);
+		if (!openCheck.ok) return openCheck;
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const reviewedOnCheck = assertProbationAssessmentReviewedOn({
+			startsOn: existing.data.startsOn,
+			endsOn: existing.data.endsOn,
+			reviewedOn: input.reviewedOn,
+		});
+		if (!reviewedOnCheck.ok) return reviewedOnCheck;
+
+		const assessmentId = randomUUID();
+		const brandedAssessmentId =
+			parseHumanResourcesProbationAssessmentId(assessmentId);
+		if (!brandedAssessmentId.ok) return brandedAssessmentId;
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const assessmentPayloadJson = eventPayloadJson(
+			withOptionalEvidenceReference(
+				{
+					...probationReviewEventBase(
+						existing.data,
+						input.actorUserId,
+						meta.correlationId,
+					),
+					probationReviewId: input.probationReviewId,
+					reviewedOn: input.reviewedOn,
+					reason: input.reason,
+				},
+				input.evidenceReference,
+			),
+		);
+		try {
+			const [rows] = await runNeonHttpTransaction<[ProbationAssessmentSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH review AS (
+							UPDATE hr_probation_review
+							SET version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.probationReviewId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+								AND status = 'open'
+							RETURNING *
+						),
+						mutated AS (
+							INSERT INTO hr_probation_assessment (
+								id, organization_id, probation_review_id, employment_id, employee_id,
+								reviewed_on, reason, evidence_reference, actor_user_id, version,
+								created_by, updated_by
+							)
+							SELECT
+								${brandedAssessmentId.data}, review.organization_id, review.id,
+								review.employment_id, review.employee_id, ${input.reviewedOn},
+								${input.reason}, ${input.evidenceReference}, ${input.actorUserId}, 1,
+								${input.actorUserId}, ${input.actorUserId}
+							FROM review
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_probation_assessment', id, 'CREATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${assessmentPayloadJson}::jsonb,
+								'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Probation review",
+				});
+			}
+			return mapProbationAssessmentSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to record probation assessment",
+			);
+		}
+	},
+
 	async recordProbationOutcome(input, _ports, meta) {
 		const existing = await this.getProbationReview({
 			organizationId: input.organizationId,
@@ -1333,10 +2443,31 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
+		const outcomeDateCheck = assertProbationOutcomeRecordedOn({
+			startsOn: existing.data.startsOn,
+			endsOn: existing.data.endsOn,
+			outcomeRecordedOn: input.concludedOn,
+		});
+		if (!outcomeDateCheck.ok) return outcomeDateCheck;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const outcomePayloadJson = eventPayloadJson(
+			withOptionalEvidenceReference(
+				{
+					...probationReviewEventBase(
+						existing.data,
+						input.actorUserId,
+						meta.correlationId,
+					),
+					outcome: input.outcome,
+					outcomeRecordedOn: input.concludedOn,
+					reason: input.reason,
+				},
+				input.evidenceReference,
+			),
+		);
 		try {
 			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
 				(sqlTag) => [
@@ -1347,6 +2478,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								outcome = ${input.outcome},
 								outcome_actor_id = ${input.actorUserId},
 								outcome_recorded_on = ${input.concludedOn},
+								outcome_reason = ${input.reason},
+								outcome_evidence_reference = ${input.evidenceReference},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -1375,13 +2508,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							SELECT
 								${eventId}, organization_id, ${HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT},
 								'human-resources', ${meta.correlationId}, ${input.actorUserId},
-								jsonb_build_object(
-									'organizationId', organization_id,
-									'entityType', 'hr_probation_review',
-									'entityId', id,
-									'actorId', ${input.actorUserId}::text,
-									'correlationId', ${meta.correlationId}::text
-								),
+								${outcomePayloadJson}::jsonb,
 								'pending', 0
 							FROM mutated
 							RETURNING id
@@ -1505,12 +2632,29 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				: null,
 		});
 		if (!probationGate.ok) return probationGate;
+		const confirmationDateCheck = assertConfirmationEffectiveOn({
+			confirmedOn: record.confirmedOn,
+			latestPassedOutcomeRecordedOn:
+				latestClosed?.outcome === "passed"
+					? latestClosed.outcomeRecordedOn
+					: null,
+		});
+		if (!confirmationDateCheck.ok) return confirmationDateCheck;
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesEmploymentConfirmationId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const confirmPayloadJson = eventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_employee",
+			entityId: employment.data.employeeId,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+			confirmedOn: record.confirmedOn,
+			evidenceNote: record.evidenceNote,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ConfirmationSqlRow[]]>(
 				(sqlTag) => [
@@ -1556,13 +2700,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							SELECT
 								${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT},
 								'human-resources', ${meta.correlationId}, created_by,
-								jsonb_build_object(
-									'organizationId', organization_id,
-									'entityType', 'hr_employee',
-									'entityId', employee_id::text,
-									'actorId', created_by,
-									'correlationId', ${meta.correlationId}::text
-								),
+								${confirmPayloadJson}::jsonb,
 								'pending', 0
 							FROM mutated
 							RETURNING id
@@ -1967,7 +3105,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		}
 	},
 
-	async finalizeTermination(record, _ports, meta) {
+	async proposeTermination(record, _ports, meta) {
 		const existing = await this.findTerminationByIdempotencyKey({
 			organizationId: record.organizationId,
 			idempotencyKey: record.idempotencyKey,
@@ -2000,43 +3138,43 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		});
 		if (!effectiveCheck.ok) return effectiveCheck;
 
-		const currentEmployment = employment.data;
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesTerminationId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
-		const eventId = randomUUID();
-		const historyId = randomUUID();
-		const nextEmploymentVersion = currentEmployment.version + 1;
-		const expectedEmploymentVersion = currentEmployment.version;
-		const fromEmploymentStatus = currentEmployment.status;
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
 				(sqlTag) => [
 					sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id, starts_on, version
+							SELECT id, organization_id, employee_id, starts_on
 							FROM hr_employment
 							WHERE id = ${record.employmentId}
 								AND organization_id = ${record.organizationId}
-								AND version = ${expectedEmploymentVersion}
 						),
 						mutated AS (
 							INSERT INTO hr_termination (
 								id, organization_id, employment_id, employee_id, status,
-								reason_code, reason_detail, effective_on, finalized_at,
+								reason_code, reason_detail, effective_on, rehire_eligible,
 								create_idempotency_key, create_request_fingerprint, version,
 								created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, employment.organization_id, employment.id,
-								employment.employee_id, 'finalized', ${record.reasonCode},
-								${record.reasonDetail}, ${record.effectiveOn}, now(),
-								${record.idempotencyKey}, ${record.terminationRequestFingerprint},
-								1, ${record.createdBy}, ${record.createdBy}
+								employment.employee_id, 'draft', ${record.reasonCode},
+								${record.reasonDetail}, ${record.effectiveOn},
+								${record.rehireEligible}, ${record.idempotencyKey},
+								${record.terminationRequestFingerprint}, 1,
+								${record.createdBy}, ${record.createdBy}
 							FROM employment
 							WHERE ${record.effectiveOn}::date >= employment.starts_on
+								AND NOT EXISTS (
+									SELECT 1 FROM hr_termination draft
+									WHERE draft.organization_id = employment.organization_id
+										AND draft.employment_id = employment.id
+										AND draft.status = 'draft'
+								)
 								AND NOT EXISTS (
 									SELECT 1 FROM hr_termination finalized
 									WHERE finalized.organization_id = employment.organization_id
@@ -2044,33 +3182,6 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 										AND finalized.status = 'finalized'
 								)
 							RETURNING *
-						),
-						employment_updated AS (
-							UPDATE hr_employment e
-							SET status = 'terminated',
-								ends_on = ${record.effectiveOn},
-								version = ${nextEmploymentVersion},
-								updated_by = ${record.createdBy},
-								updated_at = now()
-							FROM mutated
-							WHERE e.id = mutated.employment_id
-								AND e.organization_id = mutated.organization_id
-								AND e.version = ${expectedEmploymentVersion}
-							RETURNING e.*
-						),
-						history_inserted AS (
-							INSERT INTO hr_employment_status_history (
-								id, organization_id, employment_id, employee_id, from_status, to_status,
-								starts_on_snapshot, ends_on_snapshot, effective_on, change_kind,
-								reason, evidence_reference, correlation_id, actor_user_id
-							)
-							SELECT
-								${historyId}, organization_id, id, employee_id, ${fromEmploymentStatus},
-								'terminated', starts_on, ${record.effectiveOn}::date,
-								${record.effectiveOn}::date, 'lifecycle', ${record.reasonCode},
-								${record.reasonDetail}, ${meta.correlationId}, ${record.createdBy}
-							FROM employment_updated
-							RETURNING id
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -2082,34 +3193,14 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								'human-resources', 'hr_termination', id, 'CREATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
-						),
-						outboxed AS (
-							INSERT INTO platform_domain_event (
-								id, organization_id, type, source_module, correlation_id,
-								actor_user_id, payload, status, attempts
-							)
-							SELECT
-								${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT},
-								'human-resources', ${meta.correlationId}, ${record.createdBy},
-								jsonb_build_object(
-									'organizationId', organization_id,
-									'entityType', 'hr_employee',
-									'entityId', employee_id::text,
-									'actorId', ${record.createdBy}::text,
-									'correlationId', ${meta.correlationId}::text,
-									'effectiveOn', effective_on::text
-								),
-								'pending', 0
-							FROM mutated
-							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, employment_updated, history_inserted, audited, outboxed
+						SELECT mutated.* FROM mutated, audited
 					`,
 				],
 			);
 			const row = rows[0];
 			if (!row) {
-				return conflict("Unable to finalize termination");
+				return conflict("Unable to propose termination");
 			}
 			return mapTerminationSql(row);
 		} catch (error) {
@@ -2131,6 +3222,235 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					}
 					return ok(replay.data.termination);
 				}
+				return conflict("Employment already has an open termination draft");
+			}
+			return mapPersistenceFailure(error, "Failed to propose termination");
+		}
+	},
+
+	async approveTermination(record, _ports, meta) {
+		const existing = await this.getTermination({
+			organizationId: record.organizationId,
+			terminationId: record.terminationId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Termination not found");
+		}
+		const approvable = assertTerminationApprovable({
+			status: existing.data.status,
+			approvedAt: existing.data.approvedAt,
+		});
+		if (!approvable.ok) return approvable;
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			record.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const nextVersion = record.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH mutated AS (
+							UPDATE hr_termination
+							SET approved_at = now(),
+								approved_by = ${record.actorUserId},
+								version = ${nextVersion},
+								updated_by = ${record.actorUserId},
+								updated_at = now()
+							WHERE id = ${record.terminationId}
+								AND organization_id = ${record.organizationId}
+								AND version = ${record.expectedVersion}
+								AND status = 'draft'
+								AND approved_at IS NULL
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_termination', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Termination",
+				});
+			}
+			return mapTerminationSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to approve termination");
+		}
+	},
+
+	async finalizeTermination(record, _ports, meta) {
+		const existing = await this.getTermination({
+			organizationId: record.organizationId,
+			terminationId: record.terminationId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Termination not found");
+		}
+		const finalizable = assertTerminationFinalizable({
+			status: existing.data.status,
+			approvedAt: existing.data.approvedAt,
+			approvedBy: existing.data.approvedBy,
+		});
+		if (!finalizable.ok) return finalizable;
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			record.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const employment = await this.getEmploymentById({
+			organizationId: record.organizationId,
+			employmentId: existing.data.employmentId,
+		});
+		if (!employment.ok) return employment;
+		if (employment.data === null) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+		const effectiveCheck = assertTerminationEffectiveDate({
+			effectiveOn: existing.data.effectiveOn,
+			employmentStartsOn: employment.data.startsOn,
+		});
+		if (!effectiveCheck.ok) return effectiveCheck;
+
+		const currentEmployment = employment.data;
+		const terminationEmploymentId = existing.data.employmentId;
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const historyId = randomUUID();
+		const nextTerminationVersion = record.expectedVersion + 1;
+		const nextEmploymentVersion = currentEmployment.version + 1;
+		const expectedEmploymentVersion = currentEmployment.version;
+		const fromEmploymentStatus = currentEmployment.status;
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[TerminationSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH employment AS (
+							SELECT id, organization_id, employee_id, starts_on, status, version
+							FROM hr_employment
+							WHERE id = ${terminationEmploymentId}
+								AND organization_id = ${record.organizationId}
+								AND version = ${expectedEmploymentVersion}
+						),
+						mutated AS (
+							UPDATE hr_termination t
+							SET status = 'finalized',
+								finalized_at = now(),
+								version = ${nextTerminationVersion},
+								updated_by = ${record.actorUserId},
+								updated_at = now()
+							FROM employment
+							WHERE t.id = ${record.terminationId}
+								AND t.organization_id = ${record.organizationId}
+								AND t.version = ${record.expectedVersion}
+								AND t.status = 'draft'
+								AND t.approved_at IS NOT NULL
+								AND t.approved_by IS NOT NULL
+								AND t.employment_id = employment.id
+								AND t.effective_on::date >= employment.starts_on
+								AND NOT EXISTS (
+									SELECT 1 FROM hr_termination finalized
+									WHERE finalized.organization_id = t.organization_id
+										AND finalized.employment_id = t.employment_id
+										AND finalized.status = 'finalized'
+										AND finalized.id <> t.id
+								)
+							RETURNING t.*
+						),
+						employment_updated AS (
+							UPDATE hr_employment e
+							SET status = 'terminated',
+								ends_on = mutated.effective_on,
+								version = ${nextEmploymentVersion},
+								updated_by = ${record.actorUserId},
+								updated_at = now()
+							FROM mutated
+							WHERE e.id = mutated.employment_id
+								AND e.organization_id = mutated.organization_id
+								AND e.version = ${expectedEmploymentVersion}
+							RETURNING e.*
+						),
+						history_inserted AS (
+							INSERT INTO hr_employment_status_history (
+								id, organization_id, employment_id, employee_id, from_status, to_status,
+								starts_on_snapshot, ends_on_snapshot, effective_on, change_kind,
+								reason, evidence_reference, correlation_id, actor_user_id
+							)
+							SELECT
+								${historyId}, employment_updated.organization_id, employment_updated.id,
+								employment_updated.employee_id, ${fromEmploymentStatus},
+								'terminated', employment_updated.starts_on, mutated.effective_on,
+								mutated.effective_on, 'lifecycle', mutated.reason_code,
+								mutated.reason_detail, ${meta.correlationId}, ${record.actorUserId}
+							FROM employment_updated
+							CROSS JOIN mutated
+							RETURNING id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_termination', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT},
+								'human-resources', ${meta.correlationId}, ${record.actorUserId},
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'hr_employee',
+									'entityId', employee_id::text,
+									'actorId', ${record.actorUserId}::text,
+									'correlationId', ${meta.correlationId}::text,
+									'effectiveOn', effective_on::text
+								),
+								'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, employment_updated, history_inserted, audited, outboxed
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return conflict("Unable to finalize termination");
+			}
+			return mapTerminationSql(row);
+		} catch (error) {
+			if (isPostgresUniqueViolation(error)) {
 				return conflict("Employment already has a finalized termination");
 			}
 			return mapPersistenceFailure(error, "Failed to finalize termination");
@@ -2235,6 +3555,14 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const clearanceId = randomUUID();
 		const brandedClearanceId = parseHumanResourcesClearanceId(clearanceId);
 		if (!brandedClearanceId.ok) return brandedClearanceId;
+		const accessRevocationId = randomUUID();
+		const brandedAccessRevocationId =
+			parseHumanResourcesOffboardingAccessRevocationId(accessRevocationId);
+		if (!brandedAccessRevocationId.ok) return brandedAccessRevocationId;
+		const payrollHandoffId = randomUUID();
+		const brandedPayrollHandoffId =
+			parseHumanResourcesOffboardingPayrollHandoffId(payrollHandoffId);
+		if (!brandedPayrollHandoffId.ok) return brandedPayrollHandoffId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const taskRows = record.tasks.map((task) => ({
@@ -2327,6 +3655,28 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							FROM mutated
 							RETURNING id
 						),
+						access_revocation AS (
+							INSERT INTO hr_offboarding_access_revocation (
+								id, organization_id, offboarding_case_id, employment_id, status,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedAccessRevocationId.data}, organization_id, id, employment_id,
+								'pending', 1, ${record.createdBy}, ${record.createdBy}
+							FROM mutated
+							RETURNING id
+						),
+						payroll_handoff AS (
+							INSERT INTO hr_offboarding_payroll_handoff (
+								id, organization_id, offboarding_case_id, employment_id, status,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedPayrollHandoffId.data}, organization_id, id, employment_id,
+								'pending', 1, ${record.createdBy}, ${record.createdBy}
+							FROM mutated
+							RETURNING id
+						),
 						audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -2350,7 +3700,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, tasks, clearance, audited, outboxed
+						SELECT mutated.* FROM mutated, tasks, clearance, access_revocation, payroll_handoff, audited, outboxed
 					`,
 				],
 			);
@@ -2648,6 +3998,18 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 									AND cl.organization_id = case_row.organization_id
 									AND cl.status = 'cleared'
 							)
+							AND EXISTS (
+								SELECT 1 FROM hr_offboarding_access_revocation ar
+								WHERE ar.offboarding_case_id = case_row.id
+									AND ar.organization_id = case_row.organization_id
+									AND ar.status = 'revoked'
+							)
+							AND EXISTS (
+								SELECT 1 FROM hr_offboarding_payroll_handoff ph
+								WHERE ph.offboarding_case_id = case_row.id
+									AND ph.organization_id = case_row.organization_id
+									AND ph.status = 'ready'
+							)
 						),
 						mutated AS (
 							UPDATE hr_offboarding_case c
@@ -2700,7 +4062,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					return notFound("Offboarding case not found");
 				}
 				return invalidState(
-					"Offboarding cannot be completed until mandatory tasks, exit interview, and clearance are done",
+					"Offboarding cannot be completed until mandatory tasks, exit interview, clearance, access revocation, and payroll handoff are done",
 				);
 			}
 			return mapOffboardingCaseSql(row);
@@ -2738,6 +4100,28 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			return ok(tasks);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list onboarding tasks");
+		}
+	},
+
+	async getOnboardingTask(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrOnboardingTask)
+				.where(
+					and(
+						eq(hrOnboardingTask.organizationId, input.organizationId),
+						eq(hrOnboardingTask.id, input.taskId),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) {
+				return ok(null);
+			}
+			return mapOnboardingTask(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to get onboarding task");
 		}
 	},
 
@@ -2798,6 +4182,208 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			return mapClearance(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to get clearance");
+		}
+	},
+
+	async getOffboardingAccessRevocationByCase(input) {
+		try {
+			const caseRow = await this.getOffboardingCase({
+				organizationId: input.organizationId,
+				offboardingCaseId: input.offboardingCaseId,
+			});
+			if (!caseRow.ok) return caseRow;
+			if (caseRow.data === null) {
+				return notFound("Offboarding case not found");
+			}
+			const rows = await db
+				.select()
+				.from(hrOffboardingAccessRevocation)
+				.where(
+					and(
+						eq(hrOffboardingAccessRevocation.organizationId, input.organizationId),
+						eq(
+							hrOffboardingAccessRevocation.offboardingCaseId,
+							input.offboardingCaseId,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapOffboardingAccessRevocation(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to get offboarding access revocation",
+			);
+		}
+	},
+
+	async getOffboardingPayrollHandoffByCase(input) {
+		try {
+			const caseRow = await this.getOffboardingCase({
+				organizationId: input.organizationId,
+				offboardingCaseId: input.offboardingCaseId,
+			});
+			if (!caseRow.ok) return caseRow;
+			if (caseRow.data === null) {
+				return notFound("Offboarding case not found");
+			}
+			const rows = await db
+				.select()
+				.from(hrOffboardingPayrollHandoff)
+				.where(
+					and(
+						eq(hrOffboardingPayrollHandoff.organizationId, input.organizationId),
+						eq(
+							hrOffboardingPayrollHandoff.offboardingCaseId,
+							input.offboardingCaseId,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapOffboardingPayrollHandoff(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to get offboarding payroll handoff",
+			);
+		}
+	},
+
+	async recordOffboardingAccessRevocation(input, _ports, meta) {
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[{ offboarding_case_id: string }[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_offboarding_access_revocation ar
+							SET status = 'revoked',
+								revoked_on = ${input.revokedOn},
+								summary = ${input.summary},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM hr_offboarding_case oc
+							WHERE ar.id = ${input.accessRevocationId}
+								AND ar.organization_id = ${input.organizationId}
+								AND ar.version = ${input.expectedVersion}
+								AND ar.status = 'pending'
+								AND oc.id = ar.offboarding_case_id
+								AND oc.organization_id = ar.organization_id
+								AND oc.status = 'in_progress'
+							RETURNING ar.offboarding_case_id, ar.organization_id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, ${input.organizationId}, ${input.actorUserId},
+								${meta.correlationId}, 'human-resources', 'hr_offboarding_access_revocation',
+								${input.accessRevocationId}, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Offboarding access revocation",
+				});
+			}
+			const caseId = parseHumanResourcesOffboardingCaseId(row.offboarding_case_id);
+			if (!caseId.ok) return caseId;
+			const loaded = await this.getOffboardingCase({
+				organizationId: input.organizationId,
+				offboardingCaseId: caseId.data,
+			});
+			if (!loaded.ok) return loaded;
+			if (loaded.data === null) {
+				return notFound("Offboarding case not found");
+			}
+			return ok(loaded.data);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to record offboarding access revocation",
+			);
+		}
+	},
+
+	async recordOffboardingPayrollHandoff(input, _ports, meta) {
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[{ offboarding_case_id: string }[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_offboarding_payroll_handoff ph
+							SET status = 'ready',
+								ready_on = ${input.readyOn},
+								summary = ${input.summary},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM hr_offboarding_case oc
+							WHERE ph.id = ${input.payrollHandoffId}
+								AND ph.organization_id = ${input.organizationId}
+								AND ph.version = ${input.expectedVersion}
+								AND ph.status = 'pending'
+								AND oc.id = ph.offboarding_case_id
+								AND oc.organization_id = ph.organization_id
+								AND oc.status = 'in_progress'
+							RETURNING ph.offboarding_case_id, ph.organization_id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, ${input.organizationId}, ${input.actorUserId},
+								${meta.correlationId}, 'human-resources', 'hr_offboarding_payroll_handoff',
+								${input.payrollHandoffId}, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: false,
+					entityLabel: "Offboarding payroll handoff",
+				});
+			}
+			const caseId = parseHumanResourcesOffboardingCaseId(row.offboarding_case_id);
+			if (!caseId.ok) return caseId;
+			const loaded = await this.getOffboardingCase({
+				organizationId: input.organizationId,
+				offboardingCaseId: caseId.data,
+			});
+			if (!loaded.ok) return loaded;
+			if (loaded.data === null) {
+				return notFound("Offboarding case not found");
+			}
+			return ok(loaded.data);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to record offboarding payroll handoff",
+			);
 		}
 	},
 };

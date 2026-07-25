@@ -214,10 +214,14 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to create requisitions.",
 	"human-resources.candidate.manage":
 		"You do not have permission to manage candidates.",
+	"human-resources.interview.read":
+		"You do not have permission to read interviews.",
 	"human-resources.interview.record":
 		"You do not have permission to record interviews.",
 	"human-resources.offer.approve":
 		"You do not have permission to approve offers.",
+	"human-resources.hire.orchestrate":
+		"You do not have permission to orchestrate hires.",
 	"human-resources.onboarding.manage":
 		"You do not have permission to manage onboarding.",
 	"human-resources.offboarding.manage":

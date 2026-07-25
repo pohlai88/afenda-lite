@@ -81,8 +81,14 @@ import {
 	type WorkforceFoundationMemoryState,
 } from "./workforce-foundation";
 import {
-	createMemoryWorkforcePlanningMethods,
+	createHireOrchestrationMemoryState,
+	createMemoryHireOrchestrationMethods,
+	resetHireOrchestrationMemoryState,
+	type HireOrchestrationMemoryState,
+} from "./hire-orchestration";
+import {
 	createWorkforcePlanningMemoryState,
+	createMemoryWorkforcePlanningMethods,
 	resetWorkforcePlanningMemoryState,
 	type WorkforcePlanningMemoryState,
 } from "./workforce-planning";
@@ -102,6 +108,7 @@ export type MemoryHumanResourcesStoreState = {
 	compliance: ComplianceMemoryState;
 	employeeRelations: EmployeeRelationsMemoryState;
 	workforceFoundation: WorkforceFoundationMemoryState;
+	hireOrchestration: HireOrchestrationMemoryState;
 };
 
 export type MemoryHumanResourcesStore = HumanResourcesStore & {
@@ -125,6 +132,7 @@ function createMemoryHumanResourcesStoreState(): MemoryHumanResourcesStoreState 
 		compliance: createComplianceMemoryState(),
 		employeeRelations: createEmployeeRelationsMemoryState(),
 		workforceFoundation: createWorkforceFoundationMemoryState(),
+		hireOrchestration: createHireOrchestrationMemoryState(),
 	};
 }
 
@@ -145,6 +153,7 @@ function resetMemoryHumanResourcesStoreState(
 	resetComplianceMemoryState(state.compliance);
 	resetEmployeeRelationsMemoryState(state.employeeRelations);
 	resetWorkforceFoundationMemoryState(state.workforceFoundation);
+	resetHireOrchestrationMemoryState(state.hireOrchestration);
 }
 
 /** Composition root for Vitest and local harnesses. */
@@ -165,6 +174,7 @@ export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
 		createMemoryCompensationBenefitsMethods(
 			state.compensationBenefits,
 			state.core,
+			state.recruitment,
 		),
 		createMemoryPerformanceMethods(state.performance),
 		createMemoryLearningMethods(state.learning, state.core),
@@ -177,6 +187,7 @@ export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
 			state: state.workforceFoundation,
 			core: state.core,
 		}),
+		createMemoryHireOrchestrationMethods(state.hireOrchestration),
 		createMemoryHumanResourcesIdentityStore(state.organization),
 	) as MemoryHumanResourcesStore;
 

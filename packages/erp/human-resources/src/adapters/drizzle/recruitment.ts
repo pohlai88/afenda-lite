@@ -7,6 +7,7 @@ import {
 	eq,
 	hrCandidate,
 	hrCandidateApplication,
+	hrCandidateApplicationStatusHistory,
 	hrEmploymentOffer,
 	hrInterview,
 	hrInterviewEvaluation,
@@ -20,6 +21,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
+	type HumanResourcesCompensationProposalId,
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesInterviewId,
@@ -29,6 +31,7 @@ import {
 	type HumanResourcesRequisitionId,
 	parseHumanResourcesApplicationId,
 	parseHumanResourcesCandidateId,
+	parseHumanResourcesCompensationProposalId,
 	parseHumanResourcesDepartmentId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesInterviewEvaluationId,
@@ -66,15 +69,19 @@ import {
 	ANONYMIZED_CANDIDATE_DISPLAY_NAME,
 	anonymizedCandidateEmail,
 	assertApplicationEligibleForOffer,
+	assertApplicationReopenable,
 	assertApplicationStatusTransition,
 	assertCandidateActive,
 	assertCandidateAnonymizationEligible,
 	assertCandidateNotAnonymized,
+	assertInterviewInterviewerAssignable,
 	assertInterviewSchedulable,
 	normalizeCandidateEmail,
 	assertInterviewStatusTransition,
 	assertOfferAcceptable,
 	assertOfferAmendable,
+	assertOfferProposalMutable,
+	assertOfferReadyForApproval,
 	assertOfferStatusTransition,
 	assertRequisitionAmendable,
 	assertRequisitionHiringManagerAssignable,
@@ -95,8 +102,11 @@ import {
 	type RequisitionStatus,
 	requisitionStatusSchema,
 } from "../../shared/recruitment-status";
+import { validateOfferCompensationProposalAttachment } from "../../shared/validate-offer-compensation-proposal-attachment";
+import { interviewScorecardSchema } from "../../schemas/recruitment";
 import type {
 	ApplicationCreateRecord,
+	ApplicationStatusHistoryAppendRecord,
 	CandidateCreateRecord,
 	HumanResourcesStore,
 	IdempotentCandidateRecord,
@@ -109,6 +119,7 @@ import type {
 } from "../../store";
 import type {
 	ApplicationListPage,
+	ApplicationStatusHistory,
 	Candidate,
 	CandidateApplication,
 	CandidateDuplicateMatch,
@@ -478,6 +489,99 @@ function mapApplicationSqlRow(
 	});
 }
 
+type ApplicationStatusHistorySqlRow = {
+	id: string;
+	organization_id: string;
+	application_id: string;
+	candidate_id: string;
+	requisition_id: string;
+	from_status: string | null;
+	to_status: string;
+	change_kind: string;
+	reason: string | null;
+	reason_code: string | null;
+	correlation_id: string;
+	actor_user_id: string;
+	created_at: Date;
+};
+
+function mapApplicationStatusHistorySqlRow(
+	row: ApplicationStatusHistorySqlRow,
+): Result<ApplicationStatusHistory> {
+	const applicationId = parseHumanResourcesApplicationId(row.application_id);
+	if (!applicationId.ok) return applicationId;
+	const candidateId = parseHumanResourcesCandidateId(row.candidate_id);
+	if (!candidateId.ok) return candidateId;
+	const requisitionId = parseHumanResourcesRequisitionId(row.requisition_id);
+	if (!requisitionId.ok) return requisitionId;
+	const statusParse = applicationStatusSchema.safeParse(row.to_status);
+	if (!statusParse.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid application status history row",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	let fromStatus: ApplicationStatus | null = null;
+	if (row.from_status !== null) {
+		const parsed = applicationStatusSchema.safeParse(row.from_status);
+		if (!parsed.success) {
+			return fail(
+				"INTERNAL_ERROR",
+				"Invalid application status history row",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			);
+		}
+		fromStatus = parsed.data;
+	}
+	const changeKind =
+		row.change_kind === "create" || row.change_kind === "lifecycle"
+			? row.change_kind
+			: null;
+	if (changeKind === null) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid application status history row",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		applicationId: applicationId.data,
+		candidateId: candidateId.data,
+		requisitionId: requisitionId.data,
+		fromStatus,
+		toStatus: statusParse.data,
+		changeKind,
+		reason: row.reason,
+		reasonCode: row.reason_code,
+		correlationId: row.correlation_id,
+		actorUserId: row.actor_user_id,
+		createdAt: row.created_at,
+	});
+}
+
+function mapApplicationStatusHistory(
+	row: typeof hrCandidateApplicationStatusHistory.$inferSelect,
+): Result<ApplicationStatusHistory> {
+	return mapApplicationStatusHistorySqlRow({
+		id: row.id,
+		organization_id: row.organizationId,
+		application_id: row.applicationId,
+		candidate_id: row.candidateId,
+		requisition_id: row.requisitionId,
+		from_status: row.fromStatus,
+		to_status: row.toStatus,
+		change_kind: row.changeKind,
+		reason: row.reason,
+		reason_code: row.reasonCode,
+		correlation_id: row.correlationId,
+		actor_user_id: row.actorUserId,
+		created_at: row.createdAt,
+	});
+}
+
 function mapApplication(
 	row: typeof hrCandidateApplication.$inferSelect,
 ): Result<CandidateApplication> {
@@ -587,6 +691,7 @@ type InterviewEvaluationSqlRow = {
 	interview_id: string;
 	result: string;
 	private_notes: string | null;
+	scorecard_json: unknown;
 	evaluator_actor_id: string;
 	recorded_at: Date;
 	version: number;
@@ -595,6 +700,20 @@ type InterviewEvaluationSqlRow = {
 	created_at: Date;
 	updated_at: Date;
 };
+
+function parsePersistedInterviewScorecard(
+	value: unknown,
+): Result<InterviewEvaluation["scorecard"]> {
+	const parsed = interviewScorecardSchema.safeParse(value);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid interview scorecard in persistence",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+		);
+	}
+	return ok(parsed.data);
+}
 
 function mapInterviewEvaluationSqlRow(
 	row: InterviewEvaluationSqlRow,
@@ -611,11 +730,14 @@ function mapInterviewEvaluationSqlRow(
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 		);
 	}
+	const scorecard = parsePersistedInterviewScorecard(row.scorecard_json);
+	if (!scorecard.ok) return scorecard;
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		interviewId: interviewId.data,
 		result: result.data,
+		scorecard: scorecard.data,
 		privateNotes: row.private_notes,
 		evaluatorActorId: row.evaluator_actor_id,
 		recordedAt: row.recorded_at,
@@ -642,11 +764,14 @@ function mapInterviewEvaluation(
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 		);
 	}
+	const scorecard = parsePersistedInterviewScorecard(row.scorecardJson);
+	if (!scorecard.ok) return scorecard;
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		interviewId: interviewId.data,
 		result: result.data,
+		scorecard: scorecard.data,
 		privateNotes: row.privateNotes,
 		evaluatorActorId: row.evaluatorActorId,
 		recordedAt: row.recordedAt,
@@ -662,6 +787,7 @@ type OfferSqlRow = {
 	id: string;
 	organization_id: string;
 	application_id: string;
+	compensation_proposal_id: string | null;
 	status: string;
 	terms_summary: string;
 	expires_on: string;
@@ -678,6 +804,7 @@ function mapOfferFields(input: {
 	id: string;
 	organizationId: string;
 	applicationId: string;
+	compensationProposalId: string | null;
 	status: string;
 	termsSummary: string;
 	expiresOn: string;
@@ -693,6 +820,14 @@ function mapOfferFields(input: {
 	if (!id.ok) return id;
 	const applicationId = parseHumanResourcesApplicationId(input.applicationId);
 	if (!applicationId.ok) return applicationId;
+	let compensationProposalId = null as EmploymentOffer["compensationProposalId"];
+	if (input.compensationProposalId !== null) {
+		const parsed = parseHumanResourcesCompensationProposalId(
+			input.compensationProposalId,
+		);
+		if (!parsed.ok) return parsed;
+		compensationProposalId = parsed.data;
+	}
 	const status = offerStatusSchema.safeParse(input.status);
 	if (!status.success) {
 		return fail(
@@ -708,6 +843,7 @@ function mapOfferFields(input: {
 		status: status.data,
 		termsSummary: input.termsSummary,
 		expiresOn: input.expiresOn,
+		compensationProposalId,
 		issuedAt: input.issuedAt,
 		respondedAt: input.respondedAt,
 		version: input.version,
@@ -723,6 +859,7 @@ function mapOfferSqlRow(row: OfferSqlRow): Result<EmploymentOffer> {
 		id: row.id,
 		organizationId: row.organization_id,
 		applicationId: row.application_id,
+		compensationProposalId: row.compensation_proposal_id,
 		status: row.status,
 		termsSummary: row.terms_summary,
 		expiresOn: row.expires_on,
@@ -743,6 +880,7 @@ function mapOffer(
 		id: row.id,
 		organizationId: row.organizationId,
 		applicationId: row.applicationId,
+		compensationProposalId: row.compensationProposalId,
 		status: row.status,
 		termsSummary: row.termsSummary,
 		expiresOn: row.expiresOn,
@@ -839,7 +977,10 @@ function planRecruitmentDrizzleOutbox(input: {
 
 type DrizzleRecruitmentHost = Pick<
 	HumanResourcesStore,
-	"getDepartmentById" | "getJobById" | "getPositionById"
+	| "getDepartmentById"
+	| "getJobById"
+	| "getPositionById"
+	| "getCompensationProposal"
 >;
 
 export type DrizzleRecruitmentMethods = Pick<
@@ -866,10 +1007,14 @@ export type DrizzleRecruitmentMethods = Pick<
 	| "findActiveApplicationByCandidateRequisition"
 	| "createApplication"
 	| "transitionApplicationStatus"
+	| "reopenApplication"
+	| "listApplicationStatusHistory"
+	| "appendApplicationStatusHistory"
 	| "listApplications"
 	| "getInterviewById"
 	| "scheduleInterview"
 	| "cancelInterview"
+	| "assignInterviewInterviewer"
 	| "listInterviews"
 	| "getInterviewEvaluationByInterviewId"
 	| "recordInterviewEvaluation"
@@ -2478,6 +2623,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const historyId = randomUUID();
 		const plannedOutbox = planRecruitmentDrizzleOutbox({
 			commandId: meta.operationId,
 			meta,
@@ -2520,6 +2666,19 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								FROM candidate_ref, requisition_ref
 								RETURNING *
 							),
+							history AS (
+								INSERT INTO hr_candidate_application_status_history (
+									id, organization_id, application_id, candidate_id, requisition_id,
+									from_status, to_status, change_kind, reason, reason_code,
+									correlation_id, actor_user_id
+								)
+								SELECT
+									${historyId}, organization_id, id, candidate_id, requisition_id,
+									NULL, 'submitted', 'create', NULL, NULL,
+									${meta.correlationId}, created_by
+								FROM mutated
+								RETURNING id
+							),
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -2543,7 +2702,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								FROM mutated
 								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited, outboxed
+							SELECT mutated.* FROM mutated, history, audited, outboxed
 						`,
 				],
 			);
@@ -2600,6 +2759,8 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			status: ApplicationStatus;
 			expectedVersion: number;
 			actorUserId: string;
+			reason?: string | null;
+			reasonCode?: string | null;
 		},
 		_ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -2628,7 +2789,11 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		const auditId = randomUUID();
 		const eventId = randomUUID();
+		const historyId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const fromStatus = application.status;
+		const reason = input.reason ?? null;
+		const reasonCode = input.reasonCode ?? null;
 		const plannedOutbox = planRecruitmentDrizzleOutbox({
 			commandId: meta.operationId,
 			meta,
@@ -2656,6 +2821,19 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									AND version = ${input.expectedVersion}
 								RETURNING *
 							),
+							history AS (
+								INSERT INTO hr_candidate_application_status_history (
+									id, organization_id, application_id, candidate_id, requisition_id,
+									from_status, to_status, change_kind, reason, reason_code,
+									correlation_id, actor_user_id
+								)
+								SELECT
+									${historyId}, organization_id, id, candidate_id, requisition_id,
+									${fromStatus}, ${input.status}, 'lifecycle', ${reason}, ${reasonCode},
+									${meta.correlationId}, ${input.actorUserId}
+								FROM mutated
+								RETURNING id
+							),
 							audited AS (
 								INSERT INTO platform_audit_log (
 									id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -2679,7 +2857,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								FROM mutated
 								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited, outboxed
+							SELECT mutated.* FROM mutated, history, audited, outboxed
 						`,
 				],
 			);
@@ -2697,9 +2875,145 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapApplicationSqlRow(row);
 		} catch (error) {
+			if (isPostgresUniqueViolation(error)) {
+				const message = uniqueConstraintMessage(error);
+				if (
+					/hr_candidate_application_org_candidate_requisition_open_uidx/i.test(
+						message,
+					)
+				) {
+					return conflict(
+						"An active application already exists for this candidate and requisition",
+					);
+				}
+			}
 			return mapPersistenceFailure(
 				error,
 				"Failed to transition application status",
+			);
+		}
+	},
+
+	async reopenApplication(
+		input: {
+			organizationId: string;
+			applicationId: HumanResourcesApplicationId;
+			expectedVersion: number;
+			actorUserId: string;
+			reason?: string | null;
+			reasonCode?: string | null;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<CandidateApplication>> {
+		const existing = await this.getApplicationById({
+			organizationId: input.organizationId,
+			applicationId: input.applicationId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Application not found");
+		}
+
+		const reopenable = assertApplicationReopenable(existing.data.status);
+		if (!reopenable.ok) return reopenable;
+
+		const activeDuplicate =
+			await this.findActiveApplicationByCandidateRequisition({
+				organizationId: input.organizationId,
+				candidateId: existing.data.candidateId,
+				requisitionId: existing.data.requisitionId,
+			});
+		if (!activeDuplicate.ok) return activeDuplicate;
+		if (activeDuplicate.data !== null) {
+			return conflict(
+				"An active application already exists for this candidate and requisition",
+			);
+		}
+
+		return this.transitionApplicationStatus(
+			{
+				organizationId: input.organizationId,
+				applicationId: input.applicationId,
+				status: "submitted",
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				reason: input.reason ?? null,
+				reasonCode: input.reasonCode ?? null,
+			},
+			ports,
+			meta,
+		);
+	},
+
+	async listApplicationStatusHistory(input: {
+		organizationId: string;
+		applicationId: HumanResourcesApplicationId;
+	}): Promise<Result<ApplicationStatusHistory[]>> {
+		try {
+			const rows = await db
+				.select()
+				.from(hrCandidateApplicationStatusHistory)
+				.where(
+					and(
+						eq(
+							hrCandidateApplicationStatusHistory.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrCandidateApplicationStatusHistory.applicationId,
+							input.applicationId,
+						),
+					),
+				)
+				.orderBy(asc(hrCandidateApplicationStatusHistory.createdAt));
+			const history: ApplicationStatusHistory[] = [];
+			for (const row of rows) {
+				const mapped = mapApplicationStatusHistory(row);
+				if (!mapped.ok) return mapped;
+				history.push(mapped.data);
+			}
+			return ok(history);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list application status history",
+			);
+		}
+	},
+
+	async appendApplicationStatusHistory(
+		record: ApplicationStatusHistoryAppendRecord,
+	): Promise<Result<ApplicationStatusHistory>> {
+		try {
+			const [row] = await db
+				.insert(hrCandidateApplicationStatusHistory)
+				.values({
+					organizationId: record.organizationId,
+					applicationId: record.applicationId,
+					candidateId: record.candidateId,
+					requisitionId: record.requisitionId,
+					fromStatus: record.fromStatus,
+					toStatus: record.toStatus,
+					changeKind: record.changeKind,
+					reason: record.reason,
+					reasonCode: record.reasonCode,
+					correlationId: record.correlationId,
+					actorUserId: record.actorUserId,
+				})
+				.returning();
+			if (!row) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to append application status history",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+				);
+			}
+			return mapApplicationStatusHistory(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to append application status history",
 			);
 		}
 	},
@@ -2975,6 +3289,90 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 	},
 
+	async assignInterviewInterviewer(
+		input: {
+			organizationId: string;
+			interviewId: HumanResourcesInterviewId;
+			interviewerActorId: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Interview>> {
+		const existing = await this.getInterviewById({
+			organizationId: input.organizationId,
+			interviewId: input.interviewId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Interview not found");
+		}
+		const interview = existing.data;
+
+		const versionCheck = assertExpectedVersion(
+			interview.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const assignable = assertInterviewInterviewerAssignable(interview.status);
+		if (!assignable.ok) return assignable;
+
+		const auditId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		try {
+			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
+				(sql) => [
+					sql`
+							WITH mutated AS (
+								UPDATE hr_interview
+								SET interviewer_actor_id = ${input.interviewerActorId},
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.interviewId}
+									AND organization_id = ${input.organizationId}
+									AND version = ${input.expectedVersion}
+									AND status = 'scheduled'
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_interview', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited
+						`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				const again = await this.getInterviewById({
+					organizationId: input.organizationId,
+					interviewId: input.interviewId,
+				});
+				if (!again.ok) return again;
+				return missAfterOptimisticUpdate({
+					found: again.data !== null,
+					entityLabel: "Interview",
+				});
+			}
+			return mapInterviewSqlRow(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to assign interview interviewer",
+			);
+		}
+	},
+
 	async listInterviews(input: {
 		organizationId: string;
 		page: number;
@@ -3104,6 +3502,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const eventId = randomUUID();
 		const nextInterviewVersion = record.expectedVersion + 1;
 		const recordedAt = new Date();
+		const scorecardJson = JSON.stringify(record.scorecard);
 		const plannedOutbox = planRecruitmentDrizzleOutbox({
 			commandId: meta.operationId,
 			meta,
@@ -3147,12 +3546,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						mutated AS (
 							INSERT INTO hr_interview_evaluation (
 								id, organization_id, interview_id, result, private_notes,
-								evaluator_actor_id, recorded_at, version, created_by, updated_by
+								scorecard_json, evaluator_actor_id, recorded_at, version,
+								created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, completed_interview.organization_id,
 								completed_interview.id, ${record.result}, ${record.privateNotes},
-								${record.evaluatorActorId}, ${recordedAt}, 1,
+								${scorecardJson}::jsonb, ${record.evaluatorActorId}, ${recordedAt}, 1,
 								${record.createdBy}, ${record.createdBy}
 							FROM completed_interview
 							RETURNING *
@@ -3247,7 +3647,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					and(
 						eq(hrEmploymentOffer.organizationId, input.organizationId),
 						eq(hrEmploymentOffer.applicationId, input.applicationId),
-						sql`${hrEmploymentOffer.status} IN ('draft', 'issued')`,
+						sql`${hrEmploymentOffer.status} IN ('draft', 'approved', 'issued')`,
 					),
 				)
 				.limit(1);
@@ -3338,6 +3738,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return conflict("An active offer already exists for this application");
 		}
 
+		const proposalCheck = await validateOfferCompensationProposalAttachment(this, {
+			organizationId: record.organizationId,
+			applicationId: record.applicationId,
+			compensationProposalId: record.compensationProposalId,
+		});
+		if (!proposalCheck.ok) return proposalCheck;
+
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesOfferId(entityId);
 		if (!brandedId.ok) return brandedId;
@@ -3354,12 +3761,14 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 						),
 						mutated AS (
 							INSERT INTO hr_employment_offer (
-								id, organization_id, application_id, status, terms_summary, expires_on,
+								id, organization_id, application_id, compensation_proposal_id,
+								status, terms_summary, expires_on,
 								version, created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, application_ref.organization_id,
-								application_ref.id, 'draft', ${record.termsSummary}, ${record.expiresOn},
+								application_ref.id, ${record.compensationProposalId ?? null},
+								'draft', ${record.termsSummary}, ${record.expiresOn},
 								1, ${record.createdBy}, ${record.createdBy}
 							FROM application_ref
 							RETURNING *
@@ -3416,6 +3825,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			offerId: HumanResourcesOfferId;
 			termsSummary?: string;
 			expiresOn?: string;
+			compensationProposalId?: HumanResourcesCompensationProposalId | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -3447,6 +3857,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				: offer.termsSummary;
 		const nextExpiresOn =
 			input.expiresOn !== undefined ? input.expiresOn : offer.expiresOn;
+		const nextCompensationProposalId =
+			input.compensationProposalId !== undefined
+				? input.compensationProposalId
+				: offer.compensationProposalId;
+		if (input.compensationProposalId !== undefined) {
+			const proposalMutable = assertOfferProposalMutable(offer.status);
+			if (!proposalMutable.ok) return proposalMutable;
+		}
+		const proposalCheck = await validateOfferCompensationProposalAttachment(this, {
+			organizationId: input.organizationId,
+			applicationId: offer.applicationId,
+			compensationProposalId: nextCompensationProposalId,
+		});
+		if (!proposalCheck.ok) return proposalCheck;
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
@@ -3457,6 +3881,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							UPDATE hr_employment_offer
 							SET terms_summary = ${nextTermsSummary},
 								expires_on = ${nextExpiresOn},
+								compensation_proposal_id = ${nextCompensationProposalId},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -3529,7 +3954,34 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const transition = assertOfferStatusTransition(offer.status, input.status);
 		if (!transition.ok) return transition;
 
+		if (input.status === "approved") {
+			const ready = assertOfferReadyForApproval({
+				compensationProposalId: offer.compensationProposalId,
+			});
+			if (!ready.ok) return ready;
+			const proposalCheck = await validateOfferCompensationProposalAttachment(
+				this,
+				{
+					organizationId: input.organizationId,
+					applicationId: offer.applicationId,
+					compensationProposalId: offer.compensationProposalId,
+					offerStatus: "approved",
+				},
+			);
+			if (!proposalCheck.ok) return proposalCheck;
+		}
+
 		if (input.status === "issued") {
+			const proposalCheck = await validateOfferCompensationProposalAttachment(
+				this,
+				{
+					organizationId: input.organizationId,
+					applicationId: offer.applicationId,
+					compensationProposalId: offer.compensationProposalId,
+					offerStatus: "issued",
+				},
+			);
+			if (!proposalCheck.ok) return proposalCheck;
 			const application = await this.getApplicationById({
 				organizationId: input.organizationId,
 				applicationId: offer.applicationId,
@@ -3580,7 +4032,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									WHERE id = ${input.offerId}
 										AND organization_id = ${input.organizationId}
 										AND version = ${input.expectedVersion}
-										AND status = 'draft'
+										AND status = 'approved'
 									RETURNING *
 								),
 								offer_audited AS (

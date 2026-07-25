@@ -48,6 +48,7 @@ import {
 	assertLeaveRequestStatusTransition,
 	assertNoLeaveOverlap,
 } from "../../shared/leave-guards";
+import { mergeLeavePolicyBalanceRules } from "../../shared/leave-policy-balance-rules";
 import type {
 	LeavePolicyStatus,
 	LeaveRequestStatus,
@@ -487,6 +488,30 @@ async function transitionLeaveEntitlementStatus(
 	if (!transition.ok) return transition;
 
 	const previous = { ...entitlement };
+
+	if (input.nextStatus === "expired") {
+		const balance = resolveBalance(state, entitlement);
+		if (balance.balance !== "0") {
+			const expiry = await host.adjustLeaveEntitlement(
+				{
+					organizationId: input.organizationId,
+					entitlementId: entitlement.id,
+					sourceRequestId: null,
+					kind: "expiry",
+					delta: negateLeaveQuantity(balance.balance),
+					reason: "Entitlement expired",
+					source: "system",
+					createIdempotencyKey: `${entitlement.id}:expiry`,
+					createRequestFingerprint: entitlement.fingerprint,
+					createdBy: input.actorUserId,
+				},
+				input.ports,
+				input.meta,
+			);
+			if (!expiry.ok) return expiry;
+		}
+	}
+
 	const now = new Date();
 	const updated: LeaveEntitlement = {
 		...entitlement,
@@ -511,32 +536,6 @@ async function transitionLeaveEntitlementStatus(
 	if (!emission.ok) {
 		state.leaveEntitlements.set(updated.id, previous);
 		return emission;
-	}
-
-	if (input.nextStatus === "expired") {
-		const balance = resolveBalance(state, updated);
-		if (balance.balance !== "0") {
-			const expiry = await host.adjustLeaveEntitlement(
-				{
-					organizationId: input.organizationId,
-					entitlementId: updated.id,
-					sourceRequestId: null,
-					kind: "expiry",
-					delta: negateLeaveQuantity(balance.balance),
-					reason: "Entitlement expired",
-					source: "system",
-					createIdempotencyKey: `${updated.id}:expiry`,
-					createRequestFingerprint: updated.fingerprint,
-					createdBy: input.actorUserId,
-				},
-				input.ports,
-				input.meta,
-			);
-			if (!expiry.ok) {
-				state.leaveEntitlements.set(updated.id, previous);
-				return expiry;
-			}
-		}
 	}
 
 	return ok({ ...updated });
@@ -766,6 +765,13 @@ export function createMemoryLeaveMethods(
 				allowsNegativeBalance: record.allowsNegativeBalance,
 				allowSelfApproval: record.allowSelfApproval,
 				allowsPartialDay: record.allowsPartialDay,
+				accrualBasis: record.accrualBasis,
+				accrualFrequency: record.accrualFrequency,
+				accrualQuantityPerPeriod: record.accrualQuantityPerPeriod,
+				carryForwardEnabled: record.carryForwardEnabled,
+				carryForwardMaxQuantity: record.carryForwardMaxQuantity,
+				entitlementExpiryRule: record.entitlementExpiryRule,
+				entitlementExpiryDays: record.entitlementExpiryDays,
 				effectiveFrom: record.effectiveFrom,
 				effectiveTo: record.effectiveTo,
 				status: "draft",
@@ -821,6 +827,13 @@ export function createMemoryLeaveMethods(
 				allowsNegativeBalance?: boolean;
 				allowSelfApproval?: boolean;
 				allowsPartialDay?: boolean;
+				accrualBasis?: LeavePolicy["accrualBasis"];
+				accrualFrequency?: LeavePolicy["accrualFrequency"];
+				accrualQuantityPerPeriod?: string | null;
+				carryForwardEnabled?: boolean;
+				carryForwardMaxQuantity?: string | null;
+				entitlementExpiryRule?: LeavePolicy["entitlementExpiryRule"];
+				entitlementExpiryDays?: number | null;
 				effectiveTo?: string | null;
 				minTenureDays?: number | null;
 				allowedEmploymentStatuses?: EmploymentStatus[];
@@ -848,6 +861,7 @@ export function createMemoryLeaveMethods(
 
 			const previous = { ...policy };
 			const now = new Date();
+			const balanceRules = mergeLeavePolicyBalanceRules(policy, input);
 			const updated: LeavePolicy = {
 				...policy,
 				name: input.name ?? policy.name,
@@ -857,6 +871,7 @@ export function createMemoryLeaveMethods(
 					input.allowsNegativeBalance ?? policy.allowsNegativeBalance,
 				allowSelfApproval: input.allowSelfApproval ?? policy.allowSelfApproval,
 				allowsPartialDay: input.allowsPartialDay ?? policy.allowsPartialDay,
+				...balanceRules,
 				effectiveTo:
 					input.effectiveTo !== undefined
 						? input.effectiveTo
@@ -944,6 +959,13 @@ export function createMemoryLeaveMethods(
 				allowsNegativeBalance: boolean;
 				allowSelfApproval: boolean;
 				allowsPartialDay: boolean;
+				accrualBasis: LeavePolicy["accrualBasis"];
+				accrualFrequency: LeavePolicy["accrualFrequency"];
+				accrualQuantityPerPeriod: string | null;
+				carryForwardEnabled: boolean;
+				carryForwardMaxQuantity: string | null;
+				entitlementExpiryRule: LeavePolicy["entitlementExpiryRule"];
+				entitlementExpiryDays: number | null;
 				effectiveFrom: string;
 				effectiveTo: string | null;
 				minTenureDays: number | null;
@@ -990,6 +1012,13 @@ export function createMemoryLeaveMethods(
 					allowsNegativeBalance: input.allowsNegativeBalance,
 					allowSelfApproval: input.allowSelfApproval,
 					allowsPartialDay: input.allowsPartialDay,
+					accrualBasis: input.accrualBasis,
+					accrualFrequency: input.accrualFrequency,
+					accrualQuantityPerPeriod: input.accrualQuantityPerPeriod,
+					carryForwardEnabled: input.carryForwardEnabled,
+					carryForwardMaxQuantity: input.carryForwardMaxQuantity,
+					entitlementExpiryRule: input.entitlementExpiryRule,
+					entitlementExpiryDays: input.entitlementExpiryDays,
 					effectiveFrom: input.effectiveFrom,
 					effectiveTo: input.effectiveTo,
 					minTenureDays: input.minTenureDays,
@@ -1186,6 +1215,24 @@ export function createMemoryLeaveMethods(
 			);
 			if (!versionCheck.ok) return versionCheck;
 
+			const sourceDebit = await this.adjustLeaveEntitlement(
+				{
+					organizationId: input.organizationId,
+					entitlementId: source.id,
+					sourceRequestId: null,
+					kind: "carry_forward",
+					delta: negateLeaveQuantity(input.carriedQuantity),
+					reason: `Carry forward to new period ${input.newPeriodStart}–${input.newPeriodEnd}`,
+					source: "system",
+					createIdempotencyKey: `${input.createIdempotencyKey}:carry-out`,
+					createRequestFingerprint: input.createRequestFingerprint,
+					createdBy: input.actorUserId,
+				},
+				ports,
+				meta,
+			);
+			if (!sourceDebit.ok) return sourceDebit;
+
 			const now = new Date();
 			const previous = { ...source };
 			const updated: LeaveEntitlement = {
@@ -1215,29 +1262,8 @@ export function createMemoryLeaveMethods(
 			);
 			if (!granted.ok) {
 				state.leaveEntitlements.set(updated.id, previous);
+				state.leaveAdjustments.delete(sourceDebit.data.id);
 				return granted;
-			}
-
-			const carryAdjustment = await this.adjustLeaveEntitlement(
-				{
-					organizationId: input.organizationId,
-					entitlementId: granted.data.id,
-					sourceRequestId: null,
-					kind: "carry_forward",
-					delta: input.carriedQuantity,
-					reason: `Carry forward from entitlement ${source.id}`,
-					source: "system",
-					createIdempotencyKey: `${input.createIdempotencyKey}:carry`,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.actorUserId,
-				},
-				ports,
-				meta,
-			);
-			if (!carryAdjustment.ok) {
-				state.leaveEntitlements.set(updated.id, previous);
-				state.leaveEntitlements.delete(granted.data.id);
-				return carryAdjustment;
 			}
 
 			return ok({ ...granted.data });

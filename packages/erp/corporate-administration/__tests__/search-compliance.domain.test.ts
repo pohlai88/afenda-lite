@@ -10,6 +10,7 @@ import {
 	searchCorporateRecords,
 } from "../src/search-compliance";
 import { createShareClass } from "../src/share-capital";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -35,15 +36,10 @@ describe("@afenda/corporate-administration search compliance", () => {
 	it("lists due and overdue filings and searches corporate records", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const company = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-scmp-1",
-				idempotencyKey: "company-scmp-1",
-				requestFingerprint: "fp-scmp-1",
+			createLegalCompanyTestInput("company-scmp-1", {
 				code: "CO-SCMP",
-				legalEntityDimensionId: DIM_A,
-			},
+				correlationId: "corr-scmp-1",
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(company.ok).toBe(true);

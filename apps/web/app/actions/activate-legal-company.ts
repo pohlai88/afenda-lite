@@ -3,7 +3,6 @@
 import {
 	activateLegalCompany,
 	CA_PERMISSION_COMPANY_ACTIVATE,
-	createCorporateAdministrationRequestFingerprint,
 	type CaLegalCompany,
 } from "@afenda/corporate-administration";
 import { revalidatePath } from "next/cache";
@@ -11,6 +10,10 @@ import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import {
+	caEffectiveAtFromFormDate,
+	caLegalCompanyIdSchema,
+} from "@/lib/erp/corporate-administration-action-schemas";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import {
 	type ActionResult,
@@ -23,7 +26,7 @@ export type ActivateLegalCompanyActionState =
 	ActionResult<ActivateLegalCompanyActionData> | null;
 
 const activateLegalCompanyFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
 	expectedVersion: z.coerce.number().int().positive(),
 	effectiveDate: z.string().trim().min(1),
 });
@@ -50,20 +53,15 @@ export async function activateLegalCompanyAction(
 					parsed.details,
 				);
 			}
-			const commandPayload = {
-				legalCompanyId: parsed.data.legalCompanyId,
-				expectedVersion: parsed.data.expectedVersion,
-				effectiveDate: parsed.data.effectiveDate,
-			};
 			const result = await activateLegalCompany(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `activate:${parsed.data.legalCompanyId}:${parsed.data.expectedVersion}`,
-					requestFingerprint:
-						createCorporateAdministrationRequestFingerprint(commandPayload),
-					...commandPayload,
+					legalCompanyId: parsed.data.legalCompanyId,
+					expectedVersion: parsed.data.expectedVersion,
+					effectiveAt: caEffectiveAtFromFormDate(parsed.data.effectiveDate),
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

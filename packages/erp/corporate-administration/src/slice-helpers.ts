@@ -11,7 +11,7 @@ export async function requireLegalCompany(
 	legalCompanyId: string,
 ): Promise<Result<CaLegalCompany>> {
 	const { store } = resolveCommandDeps(options);
-	const company = await store.getById(organizationId, legalCompanyId);
+	const company = await store.getLegalCompany(organizationId, legalCompanyId);
 	if (!company.ok) return company;
 	if (!company.data) {
 		return fail("NOT_FOUND", "Legal company not found");
@@ -43,6 +43,8 @@ export async function resolvePartySnapshot(
 	});
 }
 
+import { normalizeCorporateCode } from "./shared/code";
+
 export function normalizeEntityCode(code: string): {
 	code: string;
 	normalizedCode: string;
@@ -50,6 +52,6 @@ export function normalizeEntityCode(code: string): {
 	const trimmed = code.trim();
 	return {
 		code: trimmed,
-		normalizedCode: trimmed.normalize("NFC").trim().toUpperCase(),
+		normalizedCode: normalizeCorporateCode(trimmed),
 	};
 }

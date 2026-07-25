@@ -15,6 +15,8 @@ import {
 	CA_PERMISSION_PROPERTY_ASSETS_READ,
 	CA_PERMISSION_SHARE_CAPITAL_MANAGE,
 	CA_PERMISSION_SHARE_CAPITAL_READ,
+	canTransitionLegalCompany,
+	canUpdateLegalCompanyProfile,
 	getLegalCompany,
 	listAuthorityMandates,
 	listBeneficialOwnerDisclosures,
@@ -128,7 +130,7 @@ export async function CorporateAdministrationShell({
 			{
 				organizationId: session.orgId,
 				actorUserId: session.userId,
-				pageSize: 50,
+				limit: 50,
 			},
 			options,
 		),
@@ -596,7 +598,10 @@ export async function CorporateAdministrationShell({
 				/>
 			) : null}
 
-			{surface === "admin" && canUpdate && selectedDetail ? (
+			{surface === "admin" &&
+			canUpdate &&
+			selectedDetail &&
+			canUpdateLegalCompanyProfile(selectedDetail.status) ? (
 				<Card>
 					<CardHeader>
 						<CardTitle>Edit {selectedDetail.code}</CardTitle>
@@ -656,7 +661,8 @@ export async function CorporateAdministrationShell({
 
 			{surface === "admin" &&
 			canActivate &&
-			selectedDetail?.status === "draft" ? (
+			selectedDetail &&
+			canTransitionLegalCompany(selectedDetail.status, "active") ? (
 				<Card>
 					<CardHeader>
 						<CardTitle>Activate {selectedDetail.code}</CardTitle>

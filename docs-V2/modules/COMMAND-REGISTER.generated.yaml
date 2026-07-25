@@ -421,6 +421,9 @@ commands:
   - id: human-resources.requisition.cancel
     moduleId: human-resources
     permission: human-resources.requisition.create
+  - id: human-resources.requisition.assign-hiring-manager
+    moduleId: human-resources
+    permission: human-resources.requisition.create
   - id: human-resources.candidate.create
     moduleId: human-resources
     permission: human-resources.candidate.manage
@@ -431,6 +434,9 @@ commands:
     moduleId: human-resources
     permission: human-resources.candidate.manage
   - id: human-resources.candidate.change-retention
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
+  - id: human-resources.candidate.anonymize
     moduleId: human-resources
     permission: human-resources.candidate.manage
   - id: human-resources.application.create
@@ -448,7 +454,13 @@ commands:
   - id: human-resources.application.withdraw
     moduleId: human-resources
     permission: human-resources.candidate.manage
+  - id: human-resources.application.reopen
+    moduleId: human-resources
+    permission: human-resources.candidate.manage
   - id: human-resources.interview.schedule
+    moduleId: human-resources
+    permission: human-resources.interview.record
+  - id: human-resources.interview.assign-interviewer
     moduleId: human-resources
     permission: human-resources.interview.record
   - id: human-resources.interview.cancel
@@ -478,6 +490,12 @@ commands:
   - id: human-resources.offer.withdraw
     moduleId: human-resources
     permission: human-resources.offer.approve
+  - id: human-resources.offer.approve
+    moduleId: human-resources
+    permission: human-resources.offer.approve
+  - id: human-resources.hire.from-accepted-offer
+    moduleId: human-resources
+    permission: human-resources.hire.orchestrate
   - id: human-resources.onboarding.start
     moduleId: human-resources
     permission: human-resources.onboarding.manage
@@ -601,6 +619,15 @@ commands:
   - id: human-resources.compensation-review.apply-approved-result
     moduleId: human-resources
     permission: human-resources.compensation.manage
+  - id: human-resources.compensation-proposal.create
+    moduleId: human-resources
+    permission: human-resources.compensation-proposal.create
+  - id: human-resources.compensation-proposal.amend
+    moduleId: human-resources
+    permission: human-resources.compensation-proposal.amend
+  - id: human-resources.compensation-proposal.approve
+    moduleId: human-resources
+    permission: human-resources.compensation-proposal.approve
   - id: human-resources.benefit-plan.create
     moduleId: human-resources
     permission: human-resources.benefits.manage

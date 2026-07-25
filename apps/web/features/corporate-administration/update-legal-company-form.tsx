@@ -30,12 +30,31 @@ export function UpdateLegalCompanyForm({
 		<form action={action} className="grid gap-4 md:grid-cols-2">
 			<input type="hidden" name="legalCompanyId" value={company.id} />
 			<input type="hidden" name="expectedVersion" value={company.version} />
+			<div className="grid gap-2 md:col-span-2">
+				<Label htmlFor={`code-${company.id}`}>Company code</Label>
+				<Input
+					id={`code-${company.id}`}
+					name="code"
+					defaultValue={company.code}
+					required
+				/>
+			</div>
 			<div className="grid gap-2">
-				<Label htmlFor={`legal-form-${company.id}`}>Legal form</Label>
+				<Label htmlFor={`legal-form-${company.id}`}>Legal form code</Label>
 				<Input
 					id={`legal-form-${company.id}`}
 					name="legalFormCode"
 					defaultValue={company.legalFormCode ?? ""}
+				/>
+			</div>
+			<div className="grid gap-2">
+				<Label htmlFor={`legal-form-name-${company.id}`}>
+					Legal form name
+				</Label>
+				<Input
+					id={`legal-form-name-${company.id}`}
+					name="legalFormNameSnapshot"
+					defaultValue={company.legalFormNameSnapshot ?? ""}
 				/>
 			</div>
 			<div className="grid gap-2">

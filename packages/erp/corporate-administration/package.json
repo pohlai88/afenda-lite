@@ -19,6 +19,10 @@
 		"./module-manifest": {
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"
+		},
+		"./normalization": {
+			"types": "./src/shared/normalization.ts",
+			"default": "./src/shared/normalization.ts"
 		}
 	},
 	"scripts": {

@@ -151,7 +151,18 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 	};
 }
 
-async function seedPublishedPolicy(ready: ReturnType<typeof harness>) {
+async function seedPublishedPolicy(
+	ready: ReturnType<typeof harness>,
+	options?: {
+		code?: string;
+		allowsNegativeBalance?: boolean;
+		accrualBasis?: "none" | "periodic" | "anniversary";
+		accrualFrequency?: "monthly" | "annual" | null;
+		accrualQuantityPerPeriod?: string | null;
+		carryForwardEnabled?: boolean;
+		carryForwardMaxQuantity?: string | null;
+	},
+) {
 	const policyReady = {
 		...ready,
 		authorization: createGrantingHumanResourcesAuthorization([
@@ -165,15 +176,20 @@ async function seedPublishedPolicy(ready: ReturnType<typeof harness>) {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			correlationId: "corr-policy-create",
-			code: "ANNUAL",
+			code: options?.code ?? "ANNUAL",
 			name: "Annual Leave",
 			leaveType: "annual",
 			unit: "days",
 			paid: true,
-			allowsNegativeBalance: false,
+			allowsNegativeBalance: options?.allowsNegativeBalance ?? false,
 			allowSelfApproval: false,
 			effectiveFrom: "2025-01-01",
 			allowedEmploymentStatuses: ["active"],
+			accrualBasis: options?.accrualBasis,
+			accrualFrequency: options?.accrualFrequency,
+			accrualQuantityPerPeriod: options?.accrualQuantityPerPeriod,
+			carryForwardEnabled: options?.carryForwardEnabled,
+			carryForwardMaxQuantity: options?.carryForwardMaxQuantity,
 		},
 		policyReady,
 	);
@@ -410,7 +426,11 @@ describe("Leave entitlement", () => {
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
-		const policy = await seedPublishedPolicy(ready);
+		const policy = await seedPublishedPolicy(ready, {
+			accrualBasis: "periodic",
+			accrualFrequency: "monthly",
+			accrualQuantityPerPeriod: "1.5",
+		});
 		expect(policy.ok).toBe(true);
 		if (!policy.ok) return;
 		const granted = await grantLeaveEntitlement(

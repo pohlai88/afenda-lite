@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	index,
 	integer,
@@ -13,7 +15,33 @@ import {
 
 import { mdOrganizationDimension, mdParty } from "./master-data";
 
-/** draft | active | suspended | dissolved | archived */
+export const CA_LEGAL_COMPANY_STATUSES = [
+	"draft",
+	"active",
+	"suspended",
+	"dissolved",
+	"archived",
+] as const;
+
+export type CaLegalCompanyStatus =
+	(typeof CA_LEGAL_COMPANY_STATUSES)[number];
+
+export const CA_COMPANY_NAME_TYPES = [
+	"legal",
+	"former",
+	"trading",
+] as const;
+
+export type CaCompanyNameType = (typeof CA_COMPANY_NAME_TYPES)[number];
+
+export const CA_COMPANY_IDENTIFIER_STATUSES = [
+	"active",
+	"retired",
+] as const;
+
+export type CaCompanyIdentifierStatus =
+	(typeof CA_COMPANY_IDENTIFIER_STATUSES)[number];
+
 export const caLegalCompany = pgTable(
 	"ca_legal_company",
 	{
@@ -23,10 +51,16 @@ export const caLegalCompany = pgTable(
 		normalizedCode: text("normalized_code").notNull(),
 		legalEntityDimensionId: uuid("legal_entity_dimension_id")
 			.notNull()
-			.references(() => mdOrganizationDimension.id),
+			.references(() => mdOrganizationDimension.id, {
+				onDelete: "restrict",
+				onUpdate: "cascade",
+			}),
 		legalEntityKeySnapshot: text("legal_entity_key_snapshot").notNull(),
 		legalEntityNameSnapshot: text("legal_entity_name_snapshot").notNull(),
-		legalPartyId: uuid("legal_party_id").references(() => mdParty.id),
+		legalPartyId: uuid("legal_party_id").references(() => mdParty.id, {
+			onDelete: "restrict",
+			onUpdate: "cascade",
+		}),
 		legalPartyCodeSnapshot: text("legal_party_code_snapshot"),
 		legalPartyNameSnapshot: text("legal_party_name_snapshot"),
 		jurisdictionCountryId: uuid("jurisdiction_country_id"),
@@ -36,12 +70,21 @@ export const caLegalCompany = pgTable(
 		commencementDate: date("commencement_date"),
 		fiscalYearEndMonth: integer("fiscal_year_end_month"),
 		fiscalYearEndDay: integer("fiscal_year_end_day"),
-		status: text("status").notNull().default("draft"),
+		status: text("status")
+			.$type<CaLegalCompanyStatus>()
+			.notNull()
+			.default("draft"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
 		activatedAt: timestamp("activated_at", { withTimezone: true }),
 		activatedBy: text("activated_by"),
 		suspendedAt: timestamp("suspended_at", { withTimezone: true }),
@@ -50,32 +93,169 @@ export const caLegalCompany = pgTable(
 		dissolvedBy: text("dissolved_by"),
 		archivedAt: timestamp("archived_at", { withTimezone: true }),
 		archivedBy: text("archived_by"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow(),
 	},
-	(t) => [
-		index("ca_legal_company_org_id_idx").on(t.organizationId, t.id),
-		index("ca_legal_company_org_status_idx").on(t.organizationId, t.status),
+	(table) => [
 		uniqueIndex("ca_legal_company_org_normalized_code_uidx").on(
-			t.organizationId,
-			t.normalizedCode,
-		),
-		uniqueIndex("ca_legal_company_org_create_idempotency_uidx").on(
-			t.organizationId,
-			t.createIdempotencyKey,
+			table.organizationId,
+			table.normalizedCode,
 		),
 		uniqueIndex("ca_legal_company_org_legal_entity_uidx").on(
-			t.organizationId,
-			t.legalEntityDimensionId,
+			table.organizationId,
+			table.legalEntityDimensionId,
+		),
+		uniqueIndex("ca_legal_company_org_create_idempotency_uidx").on(
+			table.organizationId,
+			table.createIdempotencyKey,
+		),
+		index("ca_legal_company_org_id_idx").on(table.organizationId, table.id),
+		index("ca_legal_company_org_status_idx").on(
+			table.organizationId,
+			table.status,
+			table.normalizedCode,
+			table.id,
+		),
+		index("ca_legal_company_org_party_idx").on(
+			table.organizationId,
+			table.legalPartyId,
+		),
+		check(
+			"ca_legal_company_status_chk",
+			sql`${table.status} IN (
+				'draft',
+				'active',
+				'suspended',
+				'dissolved',
+				'archived'
+			)`,
+		),
+		check("ca_legal_company_version_chk", sql`${table.version} >= 1`),
+		check(
+			"ca_legal_company_code_chk",
+			sql`length(btrim(${table.code})) > 0`,
+		),
+		check(
+			"ca_legal_company_normalized_code_chk",
+			sql`length(btrim(${table.normalizedCode})) > 0`,
+		),
+		check(
+			"ca_legal_company_dimension_key_chk",
+			sql`length(btrim(${table.legalEntityKeySnapshot})) > 0`,
+		),
+		check(
+			"ca_legal_company_dimension_name_chk",
+			sql`length(btrim(${table.legalEntityNameSnapshot})) > 0`,
+		),
+		check(
+			"ca_legal_company_fye_month_chk",
+			sql`
+				${table.fiscalYearEndMonth} IS NULL
+				OR ${table.fiscalYearEndMonth} BETWEEN 1 AND 12
+			`,
+		),
+		check(
+			"ca_legal_company_fye_day_chk",
+			sql`
+				${table.fiscalYearEndDay} IS NULL
+				OR ${table.fiscalYearEndDay} BETWEEN 1 AND 31
+			`,
+		),
+		check(
+			"ca_legal_company_fye_pair_chk",
+			sql`
+				(
+					${table.fiscalYearEndMonth} IS NULL
+					AND ${table.fiscalYearEndDay} IS NULL
+				)
+				OR
+				(
+					${table.fiscalYearEndMonth} IS NOT NULL
+					AND ${table.fiscalYearEndDay} IS NOT NULL
+				)
+			`,
+		),
+		check(
+			"ca_legal_company_date_chronology_chk",
+			sql`
+				${table.incorporationDate} IS NULL
+				OR ${table.commencementDate} IS NULL
+				OR ${table.commencementDate} >= ${table.incorporationDate}
+			`,
+		),
+		check(
+			"ca_legal_company_party_snapshot_chk",
+			sql`
+				(
+					${table.legalPartyId} IS NULL
+					AND ${table.legalPartyCodeSnapshot} IS NULL
+					AND ${table.legalPartyNameSnapshot} IS NULL
+				)
+				OR
+				(
+					${table.legalPartyId} IS NOT NULL
+					AND ${table.legalPartyNameSnapshot} IS NOT NULL
+					AND length(btrim(${table.legalPartyNameSnapshot})) > 0
+				)
+			`,
+		),
+		check(
+			"ca_legal_company_activation_pair_chk",
+			sql`
+				(
+					${table.activatedAt} IS NULL
+					AND ${table.activatedBy} IS NULL
+				)
+				OR
+				(
+					${table.activatedAt} IS NOT NULL
+					AND ${table.activatedBy} IS NOT NULL
+				)
+			`,
+		),
+		check(
+			"ca_legal_company_suspension_pair_chk",
+			sql`
+				(
+					${table.suspendedAt} IS NULL
+					AND ${table.suspendedBy} IS NULL
+				)
+				OR
+				(
+					${table.suspendedAt} IS NOT NULL
+					AND ${table.suspendedBy} IS NOT NULL
+				)
+			`,
+		),
+		check(
+			"ca_legal_company_dissolution_pair_chk",
+			sql`
+				(
+					${table.dissolvedAt} IS NULL
+					AND ${table.dissolvedBy} IS NULL
+				)
+				OR
+				(
+					${table.dissolvedAt} IS NOT NULL
+					AND ${table.dissolvedBy} IS NOT NULL
+				)
+			`,
+		),
+		check(
+			"ca_legal_company_archive_pair_chk",
+			sql`
+				(
+					${table.archivedAt} IS NULL
+					AND ${table.archivedBy} IS NULL
+				)
+				OR
+				(
+					${table.archivedAt} IS NOT NULL
+					AND ${table.archivedBy} IS NOT NULL
+				)
+			`,
 		),
 	],
 );
 
-/** legal | former | trading */
 export const caCompanyName = pgTable(
 	"ca_company_name",
 	{
@@ -83,16 +263,21 @@ export const caCompanyName = pgTable(
 		organizationId: text("organization_id").notNull(),
 		legalCompanyId: uuid("legal_company_id")
 			.notNull()
-			.references(() => caLegalCompany.id),
-		nameType: text("name_type").notNull(),
+			.references(() => caLegalCompany.id, {
+				onDelete: "restrict",
+				onUpdate: "cascade",
+			}),
+		nameType: text("name_type").$type<CaCompanyNameType>().notNull(),
 		displayName: text("display_name").notNull(),
 		normalizedName: text("normalized_name").notNull(),
+		isPrimary: integer("is_primary").notNull().default(0),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
-		supersedesId: uuid("supersedes_id"),
+		supersedesCompanyNameId: uuid("supersedes_company_name_id"),
+		correctionReason: text("correction_reason"),
+		version: integer("version").notNull().default(1),
 		idempotencyKey: text("idempotency_key").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),
-		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -102,19 +287,57 @@ export const caCompanyName = pgTable(
 			.notNull()
 			.defaultNow(),
 	},
-	(t) => [
+	(table) => [
 		index("ca_company_name_org_company_idx").on(
-			t.organizationId,
-			t.legalCompanyId,
+			table.organizationId,
+			table.legalCompanyId,
+			table.id,
 		),
-		index("ca_company_name_org_company_type_idx").on(
-			t.organizationId,
-			t.legalCompanyId,
-			t.nameType,
+		index("ca_company_name_org_company_effective_idx").on(
+			table.organizationId,
+			table.legalCompanyId,
+			table.nameType,
+			table.effectiveFrom,
+			table.effectiveTo,
+		),
+		index("ca_company_name_org_normalized_name_idx").on(
+			table.organizationId,
+			table.normalizedName,
 		),
 		uniqueIndex("ca_company_name_org_idempotency_uidx").on(
-			t.organizationId,
-			t.idempotencyKey,
+			table.organizationId,
+			table.idempotencyKey,
+		),
+		check(
+			"ca_company_name_type_chk",
+			sql`${table.nameType} IN ('legal', 'former', 'trading')`,
+		),
+		check(
+			"ca_company_name_display_name_chk",
+			sql`length(btrim(${table.displayName})) > 0`,
+		),
+		check(
+			"ca_company_name_normalized_name_chk",
+			sql`length(btrim(${table.normalizedName})) > 0`,
+		),
+		check(
+			"ca_company_name_primary_chk",
+			sql`${table.isPrimary} IN (0, 1)`,
+		),
+		check(
+			"ca_company_name_effective_range_chk",
+			sql`
+				${table.effectiveTo} IS NULL
+				OR ${table.effectiveTo} > ${table.effectiveFrom}
+			`,
+		),
+		check("ca_company_name_version_chk", sql`${table.version} >= 1`),
+		check(
+			"ca_company_name_supersession_chk",
+			sql`
+				${table.supersedesCompanyNameId} IS NULL
+				OR ${table.supersedesCompanyNameId} <> ${table.id}
+			`,
 		),
 	],
 );
@@ -126,18 +349,28 @@ export const caCompanyIdentifier = pgTable(
 		organizationId: text("organization_id").notNull(),
 		legalCompanyId: uuid("legal_company_id")
 			.notNull()
-			.references(() => caLegalCompany.id),
+			.references(() => caLegalCompany.id, {
+				onDelete: "restrict",
+				onUpdate: "cascade",
+			}),
 		identifierType: text("identifier_type").notNull(),
-		jurisdictionCode: text("jurisdiction_code"),
-		issuingAuthority: text("issuing_authority"),
+		jurisdictionCountryId: uuid("jurisdiction_country_id"),
+		authorityPartyId: uuid("authority_party_id").references(() => mdParty.id, {
+			onDelete: "restrict",
+			onUpdate: "cascade",
+		}),
 		identifierValue: text("identifier_value").notNull(),
-		normalizedValue: text("normalized_value").notNull(),
-		status: text("status").notNull().default("active"),
+		normalizedIdentifierValue: text("normalized_identifier_value").notNull(),
+		isPrimary: integer("is_primary").notNull().default(0),
+		status: text("status")
+			.$type<CaCompanyIdentifierStatus>()
+			.notNull()
+			.default("active"),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
+		version: integer("version").notNull().default(1),
 		idempotencyKey: text("idempotency_key").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),
-		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -147,19 +380,62 @@ export const caCompanyIdentifier = pgTable(
 			.notNull()
 			.defaultNow(),
 	},
-	(t) => [
+	(table) => [
 		index("ca_company_identifier_org_company_idx").on(
-			t.organizationId,
-			t.legalCompanyId,
+			table.organizationId,
+			table.legalCompanyId,
+			table.id,
+		),
+		index("ca_company_identifier_org_company_effective_idx").on(
+			table.organizationId,
+			table.legalCompanyId,
+			table.identifierType,
+			table.effectiveFrom,
+			table.effectiveTo,
+		),
+		index("ca_company_identifier_org_authority_idx").on(
+			table.organizationId,
+			table.authorityPartyId,
 		),
 		uniqueIndex("ca_company_identifier_org_type_value_uidx").on(
-			t.organizationId,
-			t.identifierType,
-			t.normalizedValue,
+			table.organizationId,
+			table.identifierType,
+			table.normalizedIdentifierValue,
 		),
 		uniqueIndex("ca_company_identifier_org_idempotency_uidx").on(
-			t.organizationId,
-			t.idempotencyKey,
+			table.organizationId,
+			table.idempotencyKey,
+		),
+		check(
+			"ca_company_identifier_type_chk",
+			sql`length(btrim(${table.identifierType})) > 0`,
+		),
+		check(
+			"ca_company_identifier_value_chk",
+			sql`length(btrim(${table.identifierValue})) > 0`,
+		),
+		check(
+			"ca_company_identifier_normalized_value_chk",
+			sql`length(btrim(${table.normalizedIdentifierValue})) > 0`,
+		),
+		check(
+			"ca_company_identifier_primary_chk",
+			sql`${table.isPrimary} IN (0, 1)`,
+		),
+		check(
+			"ca_company_identifier_status_chk",
+			sql`${table.status} IN ('active', 'retired')`,
+		),
+		check(
+			"ca_company_identifier_effective_range_chk",
+			sql`
+				${table.effectiveTo} IS NULL
+				OR ${table.effectiveTo} > ${table.effectiveFrom}
+			`,
+		),
+		check(
+			"ca_company_identifier_version_chk",
+			sql`${table.version} >= 1`,
 		),
 	],
 );
@@ -171,31 +447,87 @@ export const caCompanyStatusHistory = pgTable(
 		organizationId: text("organization_id").notNull(),
 		legalCompanyId: uuid("legal_company_id")
 			.notNull()
-			.references(() => caLegalCompany.id),
-		fromStatus: text("from_status"),
-		toStatus: text("to_status").notNull(),
-		effectiveDate: date("effective_date").notNull(),
+			.references(() => caLegalCompany.id, {
+				onDelete: "restrict",
+				onUpdate: "cascade",
+			}),
+		fromStatus: text("from_status").$type<CaLegalCompanyStatus>(),
+		toStatus: text("to_status").$type<CaLegalCompanyStatus>().notNull(),
+		effectiveAt: timestamp("effective_at", { withTimezone: true }).notNull(),
+		reasonCode: text("reason_code"),
 		reason: text("reason"),
-		evidenceReference: text("evidence_reference"),
-		correlationId: text("correlation_id").notNull(),
+		resolutionReference: text("resolution_reference"),
+		evidenceDocumentReference: text("evidence_document_reference"),
 		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		causationId: text("causation_id"),
 		idempotencyKey: text("idempotency_key").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
 	},
-	(t) => [
+	(table) => [
 		index("ca_company_status_history_org_company_idx").on(
-			t.organizationId,
-			t.legalCompanyId,
+			table.organizationId,
+			table.legalCompanyId,
+			table.effectiveAt,
+			table.id,
 		),
 		uniqueIndex("ca_company_status_history_org_idempotency_uidx").on(
-			t.organizationId,
-			t.idempotencyKey,
+			table.organizationId,
+			table.idempotencyKey,
+		),
+		check(
+			"ca_company_status_history_from_status_chk",
+			sql`
+				${table.fromStatus} IS NULL
+				OR ${table.fromStatus} IN (
+					'draft',
+					'active',
+					'suspended',
+					'dissolved',
+					'archived'
+				)
+			`,
+		),
+		check(
+			"ca_company_status_history_to_status_chk",
+			sql`
+				${table.toStatus} IN (
+					'draft',
+					'active',
+					'suspended',
+					'dissolved',
+					'archived'
+				)
+			`,
+		),
+		check(
+			"ca_company_status_history_transition_chk",
+			sql`
+				${table.fromStatus} IS NULL
+				OR ${table.fromStatus} <> ${table.toStatus}
+			`,
 		),
 	],
 );
+
+export type CaLegalCompanyRow = typeof caLegalCompany.$inferSelect;
+export type NewCaLegalCompanyRow = typeof caLegalCompany.$inferInsert;
+
+export type CaCompanyNameRow = typeof caCompanyName.$inferSelect;
+export type NewCaCompanyNameRow = typeof caCompanyName.$inferInsert;
+
+export type CaCompanyIdentifierRow =
+	typeof caCompanyIdentifier.$inferSelect;
+export type NewCaCompanyIdentifierRow =
+	typeof caCompanyIdentifier.$inferInsert;
+
+export type CaCompanyStatusHistoryRow =
+	typeof caCompanyStatusHistory.$inferSelect;
+export type NewCaCompanyStatusHistoryRow =
+	typeof caCompanyStatusHistory.$inferInsert;
 
 /** CA-2 — governance and premises */
 

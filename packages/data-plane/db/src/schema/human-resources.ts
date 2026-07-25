@@ -1215,6 +1215,53 @@ export const hrCandidateApplication = pgTable(
 	],
 );
 
+/** Append-only candidate application status and reason history. */
+export const hrCandidateApplicationStatusHistory = pgTable(
+	"hr_candidate_application_status_history",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		applicationId: uuid("application_id")
+			.notNull()
+			.references(() => hrCandidateApplication.id),
+		candidateId: uuid("candidate_id")
+			.notNull()
+			.references(() => hrCandidate.id),
+		requisitionId: uuid("requisition_id")
+			.notNull()
+			.references(() => hrJobRequisition.id),
+		fromStatus: text("from_status"),
+		toStatus: text("to_status").notNull(),
+		changeKind: text("change_kind").notNull(),
+		reason: text("reason"),
+		reasonCode: text("reason_code"),
+		correlationId: text("correlation_id").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_candidate_application_status_history_org_application_created_idx").on(
+			t.organizationId,
+			t.applicationId,
+			t.createdAt,
+		),
+		index("hr_candidate_application_status_history_org_candidate_idx").on(
+			t.organizationId,
+			t.candidateId,
+		),
+		check(
+			"hr_candidate_application_status_history_change_kind_check",
+			sql`${t.changeKind} IN ('create', 'lifecycle')`,
+		),
+		check(
+			"hr_candidate_application_status_history_to_status_check",
+			sql`${t.toStatus} IN ('submitted', 'in_review', 'interviewing', 'offered', 'accepted', 'rejected', 'withdrawn')`,
+		),
+	],
+);
+
 export const hrInterview = pgTable(
 	"hr_interview",
 	{
@@ -1258,6 +1305,7 @@ export const hrInterviewEvaluation = pgTable(
 		/** advance | hold | reject */
 		result: text("result").notNull(),
 		privateNotes: text("private_notes"),
+		scorecardJson: jsonb("scorecard_json").notNull(),
 		evaluatorActorId: text("evaluator_actor_id").notNull(),
 		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
 		version: integer("version").notNull().default(1),
@@ -1276,6 +1324,54 @@ export const hrInterviewEvaluation = pgTable(
 			t.organizationId,
 			t.interviewId,
 		),
+		check(
+			"hr_interview_evaluation_scorecard_json_check",
+			sql`jsonb_typeof(${t.scorecardJson}) = 'object'
+				AND jsonb_typeof(${t.scorecardJson}->'criteria') = 'array'
+				AND jsonb_array_length(${t.scorecardJson}->'criteria') BETWEEN 1 AND 20`,
+		),
+	],
+);
+
+export const hrCompensationProposal = pgTable(
+	"hr_compensation_proposal",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		applicationId: uuid("application_id")
+			.notNull()
+			.references(() => hrCandidateApplication.id),
+		/** draft | approved */
+		status: text("status").notNull(),
+		proposedBaseAmount: text("proposed_base_amount"),
+		proposedCurrencyCode: text("proposed_currency_code"),
+		proposedGradeId: uuid("proposed_grade_id").references(
+			() => hrCompensationGrade.id,
+		),
+		proposedSalaryBandId: uuid("proposed_salary_band_id").references(
+			() => hrSalaryBand.id,
+		),
+		confidentialNote: text("confidential_note"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_compensation_proposal_org_id_idx").on(t.organizationId, t.id),
+		index("hr_compensation_proposal_org_application_idx").on(
+			t.organizationId,
+			t.applicationId,
+		),
+		index("hr_compensation_proposal_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
 	],
 );
 
@@ -1287,7 +1383,10 @@ export const hrEmploymentOffer = pgTable(
 		applicationId: uuid("application_id")
 			.notNull()
 			.references(() => hrCandidateApplication.id),
-		/** draft | issued | accepted | declined | expired | withdrawn */
+		compensationProposalId: uuid("compensation_proposal_id").references(
+			() => hrCompensationProposal.id,
+		),
+		/** draft | approved | issued | accepted | declined | expired | withdrawn */
 		status: text("status").notNull(),
 		termsSummary: text("terms_summary").notNull(),
 		expiresOn: date("expires_on", { mode: "string" }).notNull(),
@@ -1308,12 +1407,59 @@ export const hrEmploymentOffer = pgTable(
 	(t) => [
 		index("hr_employment_offer_org_id_idx").on(t.organizationId, t.id),
 		index("hr_employment_offer_org_status_idx").on(t.organizationId, t.status),
-		uniqueIndex("hr_employment_offer_org_application_draft_issued_uidx")
+		uniqueIndex("hr_employment_offer_org_application_active_uidx")
 			.on(t.organizationId, t.applicationId)
-			.where(sql`${t.status} IN ('draft', 'issued')`),
+			.where(sql`${t.status} IN ('draft', 'approved', 'issued')`),
 		uniqueIndex("hr_employment_offer_org_accept_idempotency_uidx")
 			.on(t.organizationId, t.acceptIdempotencyKey)
 			.where(sql`${t.acceptIdempotencyKey} IS NOT NULL`),
+	],
+);
+
+export const hrHireAttempt = pgTable(
+	"hr_hire_attempt",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		offerId: uuid("offer_id")
+			.notNull()
+			.references(() => hrEmploymentOffer.id),
+		correlationId: text("correlation_id").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		/** in_progress | completed | failed_compensated */
+		status: text("status").notNull(),
+		currentStep: text("current_step"),
+		personId: uuid("person_id").references(() => hrPerson.id),
+		employeeId: uuid("employee_id").references(() => hrEmployee.id),
+		employmentId: uuid("employment_id").references(() => hrEmployment.id),
+		workerId: uuid("worker_id").references(() => hrWorker.id),
+		assignmentId: uuid("assignment_id").references(() => hrWorkAssignment.id),
+		onboardingCaseId: uuid("onboarding_case_id").references(
+			() => hrOnboardingCase.id,
+		),
+		compensationLog: jsonb("compensation_log")
+			.notNull()
+			.default(sql`'[]'::jsonb`),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_hire_attempt_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_hire_attempt_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+		uniqueIndex("hr_hire_attempt_org_offer_open_uidx")
+			.on(t.organizationId, t.offerId)
+			.where(sql`${t.status} IN ('in_progress', 'completed')`),
 	],
 );
 
@@ -1398,6 +1544,126 @@ export const hrOnboardingTask = pgTable(
 	],
 );
 
+export const hrOnboardingOrientation = pgTable(
+	"hr_onboarding_orientation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		onboardingCaseId: uuid("onboarding_case_id")
+			.notNull()
+			.references(() => hrOnboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** pending | acknowledged */
+		status: text("status").notNull(),
+		acknowledgedOn: date("acknowledged_on", { mode: "string" }),
+		notes: text("notes"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_onboarding_orientation_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_onboarding_orientation_org_case_uidx").on(
+			t.organizationId,
+			t.onboardingCaseId,
+		),
+		check(
+			"hr_onboarding_orientation_status_check",
+			sql`${t.status} IN ('pending', 'acknowledged')`,
+		),
+	],
+);
+
+export const hrOnboardingEquipmentHandoff = pgTable(
+	"hr_onboarding_equipment_handoff",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		onboardingCaseId: uuid("onboarding_case_id")
+			.notNull()
+			.references(() => hrOnboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** pending | handed_over */
+		status: text("status").notNull(),
+		handedOverOn: date("handed_over_on", { mode: "string" }),
+		summary: text("summary"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_onboarding_equipment_handoff_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("hr_onboarding_equipment_handoff_org_case_uidx").on(
+			t.organizationId,
+			t.onboardingCaseId,
+		),
+		check(
+			"hr_onboarding_equipment_handoff_status_check",
+			sql`${t.status} IN ('pending', 'handed_over')`,
+		),
+	],
+);
+
+export const hrOnboardingAccessHandoff = pgTable(
+	"hr_onboarding_access_handoff",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		onboardingCaseId: uuid("onboarding_case_id")
+			.notNull()
+			.references(() => hrOnboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** pending | granted */
+		status: text("status").notNull(),
+		grantedOn: date("granted_on", { mode: "string" }),
+		summary: text("summary"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_onboarding_access_handoff_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("hr_onboarding_access_handoff_org_case_uidx").on(
+			t.organizationId,
+			t.onboardingCaseId,
+		),
+		check(
+			"hr_onboarding_access_handoff_status_check",
+			sql`${t.status} IN ('pending', 'granted')`,
+		),
+	],
+);
+
 export const hrProbationReview = pgTable(
 	"hr_probation_review",
 	{
@@ -1417,6 +1683,10 @@ export const hrProbationReview = pgTable(
 		outcome: text("outcome"),
 		outcomeActorId: text("outcome_actor_id"),
 		outcomeRecordedOn: date("outcome_recorded_on", { mode: "string" }),
+		lastExtensionReason: text("last_extension_reason"),
+		lastExtensionEvidenceReference: text("last_extension_evidence_reference"),
+		outcomeReason: text("outcome_reason"),
+		outcomeEvidenceReference: text("outcome_evidence_reference"),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		version: integer("version").notNull().default(1),
@@ -1445,6 +1715,47 @@ export const hrProbationReview = pgTable(
 		check(
 			"hr_probation_review_effective_range_ck",
 			sql`${t.startsOn} <= ${t.endsOn}`,
+		),
+		check(
+			"hr_probation_review_outcome_recorded_on_range_ck",
+			sql`${t.outcomeRecordedOn} IS NULL OR (${t.startsOn} <= ${t.outcomeRecordedOn} AND ${t.outcomeRecordedOn} <= ${t.endsOn})`,
+		),
+	],
+);
+
+export const hrProbationAssessment = pgTable(
+	"hr_probation_assessment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		probationReviewId: uuid("probation_review_id")
+			.notNull()
+			.references(() => hrProbationReview.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		reviewedOn: date("reviewed_on", { mode: "string" }).notNull(),
+		reason: text("reason").notNull(),
+		evidenceReference: text("evidence_reference"),
+		actorUserId: text("actor_user_id").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_probation_assessment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_probation_assessment_org_probation_review_idx").on(
+			t.organizationId,
+			t.probationReviewId,
 		),
 	],
 );
@@ -1504,6 +1815,9 @@ export const hrTermination = pgTable(
 		reasonCode: text("reason_code").notNull(),
 		reasonDetail: text("reason_detail").notNull(),
 		effectiveOn: date("effective_on", { mode: "string" }).notNull(),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		approvedBy: text("approved_by"),
+		rehireEligible: boolean("rehire_eligible").notNull().default(true),
 		finalizedAt: timestamp("finalized_at", { withTimezone: true }),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
@@ -1526,6 +1840,9 @@ export const hrTermination = pgTable(
 		uniqueIndex("hr_termination_org_employment_finalized_uidx")
 			.on(t.organizationId, t.employmentId)
 			.where(sql`${t.status} = 'finalized'`),
+		uniqueIndex("hr_termination_org_employment_draft_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'draft'`),
 		uniqueIndex("hr_termination_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -1673,6 +1990,88 @@ export const hrClearance = pgTable(
 		uniqueIndex("hr_clearance_org_case_uidx").on(
 			t.organizationId,
 			t.offboardingCaseId,
+		),
+	],
+);
+
+export const hrOffboardingAccessRevocation = pgTable(
+	"hr_offboarding_access_revocation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		offboardingCaseId: uuid("offboarding_case_id")
+			.notNull()
+			.references(() => hrOffboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** pending | revoked */
+		status: text("status").notNull(),
+		revokedOn: date("revoked_on", { mode: "string" }),
+		summary: text("summary"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_offboarding_access_revocation_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("hr_offboarding_access_revocation_org_case_uidx").on(
+			t.organizationId,
+			t.offboardingCaseId,
+		),
+		check(
+			"hr_offboarding_access_revocation_status_check",
+			sql`${t.status} IN ('pending', 'revoked')`,
+		),
+	],
+);
+
+export const hrOffboardingPayrollHandoff = pgTable(
+	"hr_offboarding_payroll_handoff",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		offboardingCaseId: uuid("offboarding_case_id")
+			.notNull()
+			.references(() => hrOffboardingCase.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** pending | ready */
+		status: text("status").notNull(),
+		readyOn: date("ready_on", { mode: "string" }),
+		summary: text("summary"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_offboarding_payroll_handoff_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("hr_offboarding_payroll_handoff_org_case_uidx").on(
+			t.organizationId,
+			t.offboardingCaseId,
+		),
+		check(
+			"hr_offboarding_payroll_handoff_status_check",
+			sql`${t.status} IN ('pending', 'ready')`,
 		),
 	],
 );
@@ -2256,6 +2655,15 @@ export const hrLeavePolicy = pgTable(
 			.default(false),
 		allowSelfApproval: boolean("allow_self_approval").notNull().default(false),
 		allowsPartialDay: boolean("allows_partial_day").notNull().default(false),
+		accrualBasis: text("accrual_basis").notNull().default("none"),
+		accrualFrequency: text("accrual_frequency"),
+		accrualQuantityPerPeriod: text("accrual_quantity_per_period"),
+		carryForwardEnabled: boolean("carry_forward_enabled").notNull().default(false),
+		carryForwardMaxQuantity: text("carry_forward_max_quantity"),
+		entitlementExpiryRule: text("entitlement_expiry_rule")
+			.notNull()
+			.default("none"),
+		entitlementExpiryDays: integer("entitlement_expiry_days"),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
 		status: text("status").notNull(),
@@ -2292,6 +2700,30 @@ export const hrLeavePolicy = pgTable(
 		check(
 			"hr_leave_policy_date_range_check",
 			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		check(
+			"hr_leave_policy_accrual_basis_check",
+			sql`${t.accrualBasis} IN ('none', 'periodic', 'anniversary')`,
+		),
+		check(
+			"hr_leave_policy_accrual_frequency_check",
+			sql`${t.accrualFrequency} IS NULL OR ${t.accrualFrequency} IN ('monthly', 'annual')`,
+		),
+		check(
+			"hr_leave_policy_entitlement_expiry_rule_check",
+			sql`${t.entitlementExpiryRule} IN ('none', 'period_end', 'days_after_period_end')`,
+		),
+		check(
+			"hr_leave_policy_accrual_config_check",
+			sql`(${t.accrualBasis} = 'none' AND ${t.accrualFrequency} IS NULL AND ${t.accrualQuantityPerPeriod} IS NULL) OR (${t.accrualBasis} <> 'none' AND ${t.accrualFrequency} IS NOT NULL AND ${t.accrualQuantityPerPeriod} IS NOT NULL)`,
+		),
+		check(
+			"hr_leave_policy_carry_forward_check",
+			sql`(${t.carryForwardEnabled} = false AND ${t.carryForwardMaxQuantity} IS NULL) OR (${t.carryForwardEnabled} = true)`,
+		),
+		check(
+			"hr_leave_policy_entitlement_expiry_days_check",
+			sql`(${t.entitlementExpiryRule} = 'days_after_period_end' AND ${t.entitlementExpiryDays} IS NOT NULL) OR (${t.entitlementExpiryRule} <> 'days_after_period_end' AND ${t.entitlementExpiryDays} IS NULL)`,
 		),
 	],
 );

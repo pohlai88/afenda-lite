@@ -6,12 +6,18 @@ import type {
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentId,
 	HumanResourcesOffboardingCaseId,
+	HumanResourcesOffboardingAccessRevocationId,
+	HumanResourcesOffboardingPayrollHandoffId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
+	HumanResourcesOnboardingAccessHandoffId,
 	HumanResourcesOnboardingCaseId,
+	HumanResourcesOnboardingEquipmentHandoffId,
+	HumanResourcesOnboardingOrientationId,
 	HumanResourcesOnboardingTaskId,
 	HumanResourcesPositionId,
 	HumanResourcesProbationReviewId,
+	HumanResourcesProbationAssessmentId,
 	HumanResourcesTerminationId,
 	HumanResourcesWorkCalendarId,
 } from "../brands";
@@ -28,10 +34,16 @@ import type {
 	Clearance,
 	EmploymentConfirmation,
 	EmploymentMovement,
+	OffboardingAccessRevocation,
 	OffboardingCase,
+	OffboardingPayrollHandoff,
 	OffboardingTask,
+	OnboardingAccessHandoff,
 	OnboardingCase,
+	OnboardingEquipmentHandoff,
+	OnboardingOrientation,
 	OnboardingTask,
+	ProbationAssessment,
 	ProbationReview,
 	Termination,
 } from "../types";
@@ -99,9 +111,24 @@ export type TerminationCreateRecord = {
 	reasonCode: string;
 	reasonDetail: string;
 	effectiveOn: string;
+	rehireEligible: boolean;
 	idempotencyKey: string;
 	terminationRequestFingerprint: string;
 	createdBy: string;
+};
+
+export type TerminationApproveRecord = {
+	organizationId: string;
+	terminationId: HumanResourcesTerminationId;
+	expectedVersion: number;
+	actorUserId: string;
+};
+
+export type TerminationFinalizeRecord = {
+	organizationId: string;
+	terminationId: HumanResourcesTerminationId;
+	expectedVersion: number;
+	actorUserId: string;
 };
 
 export type IdempotentTerminationRecord = {
@@ -187,11 +214,80 @@ export type HumanResourcesLifecycleStore = {
 		organizationId: string;
 		onboardingCaseId: HumanResourcesOnboardingCaseId;
 	}): Promise<Result<OnboardingTask[]>>;
+
+	getOnboardingTask(input: {
+		organizationId: string;
+		taskId: HumanResourcesOnboardingTaskId;
+	}): Promise<Result<OnboardingTask | null>>;
+
+	getOnboardingOrientationByCase(input: {
+		organizationId: string;
+		onboardingCaseId: HumanResourcesOnboardingCaseId;
+	}): Promise<Result<OnboardingOrientation | null>>;
+
+	getOnboardingEquipmentHandoffByCase(input: {
+		organizationId: string;
+		onboardingCaseId: HumanResourcesOnboardingCaseId;
+	}): Promise<Result<OnboardingEquipmentHandoff | null>>;
+
+	getOnboardingAccessHandoffByCase(input: {
+		organizationId: string;
+		onboardingCaseId: HumanResourcesOnboardingCaseId;
+	}): Promise<Result<OnboardingAccessHandoff | null>>;
+
+	recordOnboardingOrientation(
+		input: {
+			organizationId: string;
+			orientationId: HumanResourcesOnboardingOrientationId;
+			acknowledgedOn: string;
+			notes: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<OnboardingCase>>;
+
+	recordOnboardingEquipmentHandoff(
+		input: {
+			organizationId: string;
+			equipmentHandoffId: HumanResourcesOnboardingEquipmentHandoffId;
+			handedOverOn: string;
+			summary: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<OnboardingCase>>;
+
+	recordOnboardingAccessHandoff(
+		input: {
+			organizationId: string;
+			accessHandoffId: HumanResourcesOnboardingAccessHandoffId;
+			grantedOn: string;
+			summary: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<OnboardingCase>>;
 	// Probation
 	getProbationReview(input: {
 		organizationId: string;
 		probationReviewId: HumanResourcesProbationReviewId;
 	}): Promise<Result<ProbationReview | null>>;
+
+	listProbationReviewsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<ProbationReview[]>>;
+
+	listProbationAssessments(input: {
+		organizationId: string;
+		probationReviewId: HumanResourcesProbationReviewId;
+	}): Promise<Result<ProbationAssessment[]>>;
 
 	findProbationByOpenIdempotencyKey(input: {
 		organizationId: string;
@@ -209,6 +305,8 @@ export type HumanResourcesLifecycleStore = {
 			organizationId: string;
 			probationReviewId: HumanResourcesProbationReviewId;
 			newEndsOn: string;
+			reason: string;
+			evidenceReference: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -216,12 +314,28 @@ export type HumanResourcesLifecycleStore = {
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<ProbationReview>>;
 
+	recordProbationAssessment(
+		input: {
+			organizationId: string;
+			probationReviewId: HumanResourcesProbationReviewId;
+			reviewedOn: string;
+			reason: string;
+			evidenceReference: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<ProbationAssessment>>;
+
 	recordProbationOutcome(
 		input: {
 			organizationId: string;
 			probationReviewId: HumanResourcesProbationReviewId;
 			outcome: ProbationOutcome;
 			concludedOn: string;
+			reason: string;
+			evidenceReference: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -277,8 +391,20 @@ export type HumanResourcesLifecycleStore = {
 		idempotencyKey: string;
 	}): Promise<Result<IdempotentTerminationRecord | null>>;
 
-	finalizeTermination(
+	proposeTermination(
 		record: TerminationCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Termination>>;
+
+	approveTermination(
+		record: TerminationApproveRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Termination>>;
+
+	finalizeTermination(
+		record: TerminationFinalizeRecord,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Termination>>;
@@ -355,4 +481,40 @@ export type HumanResourcesLifecycleStore = {
 		organizationId: string;
 		offboardingCaseId: HumanResourcesOffboardingCaseId;
 	}): Promise<Result<Clearance | null>>;
+
+	getOffboardingAccessRevocationByCase(input: {
+		organizationId: string;
+		offboardingCaseId: HumanResourcesOffboardingCaseId;
+	}): Promise<Result<OffboardingAccessRevocation | null>>;
+
+	getOffboardingPayrollHandoffByCase(input: {
+		organizationId: string;
+		offboardingCaseId: HumanResourcesOffboardingCaseId;
+	}): Promise<Result<OffboardingPayrollHandoff | null>>;
+
+	recordOffboardingAccessRevocation(
+		input: {
+			organizationId: string;
+			accessRevocationId: HumanResourcesOffboardingAccessRevocationId;
+			revokedOn: string;
+			summary: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<OffboardingCase>>;
+
+	recordOffboardingPayrollHandoff(
+		input: {
+			organizationId: string;
+			payrollHandoffId: HumanResourcesOffboardingPayrollHandoffId;
+			readyOn: string;
+			summary: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<OffboardingCase>>;
 };

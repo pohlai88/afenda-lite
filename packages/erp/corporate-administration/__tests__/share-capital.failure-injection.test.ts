@@ -10,6 +10,7 @@ import {
 	listShareTransactions,
 } from "../src/share-capital";
 import { reverseShareTransaction } from "../src/share-capital-lifecycle";
+import { createLegalCompanyTestInput } from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
@@ -41,15 +42,13 @@ describe("@afenda/corporate-administration share capital failure injection (memo
 	it("does not persist a posted transaction when outbox append fails", async () => {
 		const ready = harness();
 		const company = await createLegalCompany(
-			{
+			createLegalCompanyTestInput("company-fi", {
 				organizationId: ORG,
 				actorUserId: "user-fi",
 				correlationId: "corr-co-fi",
-				idempotencyKey: "co-fi",
-				requestFingerprint: "fp-fi",
 				code: "CO-FI",
 				legalEntityDimensionId: DIM,
-			},
+			}),
 			ready,
 		);
 		expect(company.ok).toBe(true);
@@ -116,15 +115,14 @@ describe("@afenda/corporate-administration share capital failure injection (memo
 	it("does not reverse a posted transaction when outbox append fails", async () => {
 		const ready = harness();
 		const company = await createLegalCompany(
-			{
+			createLegalCompanyTestInput("co-fi-rev", {
 				organizationId: ORG,
 				actorUserId: "user-fi",
 				correlationId: "corr-co-fi-rev",
-				idempotencyKey: "co-fi-rev",
-				requestFingerprint: "fp-fi-rev",
+				idempotencyKey: "company-fi-rev",
 				code: "CO-FI-REV",
 				legalEntityDimensionId: DIM,
-			},
+			}),
 			ready,
 		);
 		expect(company.ok).toBe(true);

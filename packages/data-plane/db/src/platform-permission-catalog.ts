@@ -636,6 +636,12 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
+		code: "human-resources.interview.read",
+		module: "human_resources",
+		description: "Read interviews and evaluation outcomes",
+		sensitive: false,
+	},
+	{
 		code: "human-resources.interview.record",
 		module: "human_resources",
 		description: "Record interviews and evaluations",
@@ -645,6 +651,12 @@ export const PLATFORM_PERMISSION_V1 = [
 		code: "human-resources.offer.approve",
 		module: "human_resources",
 		description: "Approve employment offers",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.hire.orchestrate",
+		module: "human_resources",
+		description: "Orchestrate hire from accepted offer through onboarding",
 		sensitive: true,
 	},
 	{
@@ -922,6 +934,30 @@ export const PLATFORM_PERMISSION_V1 = [
 		code: "human-resources.compensation.manage",
 		module: "human_resources",
 		description: "Manage compensation agreements and reviews",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.compensation-proposal.create",
+		module: "human_resources",
+		description: "Create compensation proposals for recruitment offers",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.compensation-proposal.amend",
+		module: "human_resources",
+		description: "Amend draft compensation proposals",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.compensation-proposal.approve",
+		module: "human_resources",
+		description: "Approve compensation proposals",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.compensation-proposal.read",
+		module: "human_resources",
+		description: "Read compensation proposals",
 		sensitive: true,
 	},
 	{

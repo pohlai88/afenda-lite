@@ -1,4 +1,3 @@
-import { fail } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -13,43 +12,84 @@ import {
 } from "../src/legal-company";
 import { createMemoryCorporateAdministrationStore } from "../src/memory-store";
 import { CA_PERMISSION_CODES } from "../src/permissions";
+import {
+	activateLegalCompanyTestInput,
+	addCompanyIdentifierTestInput,
+	addCompanyNameTestInput,
+	CA_TEST_DIM_A,
+	CA_TEST_ORG_A,
+	CA_TEST_PARTY_A,
+	createLegalCompanyTestInput,
+	suspendLegalCompanyTestInput,
+} from "./helpers/legal-company-test-inputs";
 import { createGrantingCaAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryCaMasterLookup,
 	seedLegalEntityDimension,
 	seedOrganizationParty,
 } from "./helpers/memory-masters";
-import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import {
+	createMemoryMutationPorts,
+	createMemoryUnitOfWork,
+} from "./helpers/memory-ports";
 
-const ORG_A = "org-a";
 const ORG_B = "org-b";
-const DIM_A = "10000000-0000-4000-8000-000000000001";
-const PARTY_A = "20000000-0000-4000-8000-000000000001";
 
 function harness() {
 	const store = createMemoryCorporateAdministrationStore();
 	const ports = createMemoryMutationPorts();
 	const masters = createMemoryCaMasterLookup({
-		dimensions: [seedLegalEntityDimension(DIM_A, "LE-A", "Legal Entity A")],
-		parties: [seedOrganizationParty(ORG_A, PARTY_A, "ORG-A")],
+		dimensions: [
+			seedLegalEntityDimension(CA_TEST_DIM_A, "LE-A", "Legal Entity A"),
+		],
+		parties: [seedOrganizationParty(CA_TEST_ORG_A, CA_TEST_PARTY_A, "ORG-A")],
 	});
 	const authorization = createGrantingCaAuthorization([...CA_PERMISSION_CODES]);
 	return { store, ports, masters, authorization };
 }
 
 describe("@afenda/corporate-administration legal company", () => {
+	it("returns activation readiness gaps when statutory prerequisites are missing", async () => {
+		const { store, ports, masters, authorization } = harness();
+		const created = await createLegalCompany(
+			createLegalCompanyTestInput("create-activation-gap", {
+				code: "CO-GAP",
+				legalPartyId: CA_TEST_PARTY_A,
+			}),
+			{ store, ports, masters, authorization },
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const activated = await activateLegalCompany(
+			activateLegalCompanyTestInput(
+				"activate-gap",
+				created.data,
+				"2024-01-01",
+				{ correlationId: "corr-activation-gap-activate" },
+			),
+			{ store, ports, masters, authorization },
+		);
+		expect(activated.ok).toBe(false);
+		if (!activated.ok) {
+			expect(activated.code).toBe("CONFLICT");
+			expect(activated.details).toMatchObject({
+				reason: "corporate-administration.company.activation_incomplete",
+				missing: expect.arrayContaining([
+					"primary_legal_name",
+					"primary_registration_identifier",
+				]),
+			});
+		}
+	});
+
 	it("creates draft company with idempotency and tenant isolation", async () => {
 		const { store, ports, masters, authorization } = harness();
-		const input = {
-			organizationId: ORG_A,
-			actorUserId: "user-1",
-			correlationId: "corr-1",
-			idempotencyKey: "create-1",
-			requestFingerprint: "fp-1",
+		const input = createLegalCompanyTestInput("create-1", {
 			code: "CO-A",
-			legalEntityDimensionId: DIM_A,
-			legalPartyId: PARTY_A,
-		};
+			legalPartyId: CA_TEST_PARTY_A,
+			correlationId: "corr-1",
+		});
 		const created = await createLegalCompany(input, {
 			store,
 			ports,
@@ -86,15 +126,10 @@ describe("@afenda/corporate-administration legal company", () => {
 
 	it("rejects an idempotency replay with a different request fingerprint", async () => {
 		const { store, ports, masters, authorization } = harness();
-		const input = {
-			organizationId: ORG_A,
-			actorUserId: "user-1",
-			correlationId: "corr-idempotency",
-			idempotencyKey: "create-idempotency",
-			requestFingerprint: "fingerprint-a",
+		const input = createLegalCompanyTestInput("create-idempotency", {
 			code: "CO-IDEMPOTENT",
-			legalEntityDimensionId: DIM_A,
-		};
+			correlationId: "corr-idempotency",
+		});
 		const created = await createLegalCompany(input, {
 			store,
 			ports,
@@ -104,7 +139,7 @@ describe("@afenda/corporate-administration legal company", () => {
 		expect(created.ok).toBe(true);
 
 		const conflict = await createLegalCompany(
-			{ ...input, requestFingerprint: "fingerprint-b" },
+			{ ...input, code: "CO-IDEMPOTENT-B" },
 			{ store, ports, masters, authorization },
 		);
 		expect(conflict.ok).toBe(false);
@@ -119,31 +154,20 @@ describe("@afenda/corporate-administration legal company", () => {
 	it("rejects invalid lifecycle transitions", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const created = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-transition",
-				idempotencyKey: "create-transition",
-				requestFingerprint: "fingerprint-transition",
+			createLegalCompanyTestInput("create-transition", {
 				code: "CO-TRANSITION",
-				legalEntityDimensionId: DIM_A,
-			},
+				correlationId: "corr-transition",
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(created.ok).toBe(true);
 		if (!created.ok) return;
 
 		const suspended = await suspendLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			suspendLegalCompanyTestInput("suspend-draft", created.data, {
 				correlationId: "corr-suspend-draft",
-				idempotencyKey: "suspend-draft",
-				requestFingerprint: "fp-suspend-draft",
-				legalCompanyId: created.data.id,
-				expectedVersion: created.data.version,
-				effectiveDate: "2024-01-01",
-			},
+				effectiveAt: "2024-01-01T00:00:00.000Z",
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(suspended.ok).toBe(false);
@@ -157,61 +181,35 @@ describe("@afenda/corporate-administration legal company", () => {
 	it("activates when primary legal name and registration identifier exist", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const created = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-2",
-				idempotencyKey: "create-2",
-				requestFingerprint: "fp-2",
+			createLegalCompanyTestInput("create-2", {
 				code: "CO-B",
-				legalEntityDimensionId: DIM_A,
-				legalPartyId: PARTY_A,
-			},
+				legalPartyId: CA_TEST_PARTY_A,
+				correlationId: "corr-2",
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(created.ok).toBe(true);
 		if (!created.ok) return;
 
 		await addCompanyName(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			addCompanyNameTestInput("name-1", created.data.id, {
 				correlationId: "corr-3",
-				idempotencyKey: "name-1",
-				requestFingerprint: "fp-name-1",
-				legalCompanyId: created.data.id,
-				nameType: "legal",
 				displayName: "Acme Holdings Sdn Bhd",
-				effectiveFrom: "2024-01-01",
-			},
+			}),
 			{ store, ports, authorization },
 		);
 		await addCompanyIdentifier(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			addCompanyIdentifierTestInput("id-1", created.data.id, {
 				correlationId: "corr-4",
-				idempotencyKey: "id-1",
-				requestFingerprint: "fp-id-1",
-				legalCompanyId: created.data.id,
-				identifierType: "company_registration",
 				identifierValue: "123456-A",
-				effectiveFrom: "2024-01-01",
-			},
+			}),
 			{ store, ports, authorization },
 		);
 
 		const activated = await activateLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			activateLegalCompanyTestInput("activate-1", created.data, "2024-01-01", {
 				correlationId: "corr-5",
-				idempotencyKey: "activate-1",
-				requestFingerprint: "fp-activate-1",
-				legalCompanyId: created.data.id,
-				expectedVersion: created.data.version,
-				effectiveDate: "2024-01-01",
-			},
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(activated.ok).toBe(true);
@@ -221,7 +219,7 @@ describe("@afenda/corporate-administration legal company", () => {
 
 		const listed = await listLegalCompanies(
 			{
-				organizationId: ORG_A,
+				organizationId: CA_TEST_ORG_A,
 				actorUserId: "user-1",
 				status: "active",
 			},
@@ -238,73 +236,45 @@ describe("@afenda/corporate-administration legal company", () => {
 	it("does not mutate company or history when atomic mutation facts fail", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const created = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-atomic-create",
-				idempotencyKey: "atomic-create",
-				requestFingerprint: "atomic-fingerprint",
+			createLegalCompanyTestInput("atomic-create", {
 				code: "CO-ATOMIC",
-				legalEntityDimensionId: DIM_A,
-				legalPartyId: PARTY_A,
-			},
+				legalPartyId: CA_TEST_PARTY_A,
+				correlationId: "corr-atomic-create",
+			}),
 			{ store, ports, masters, authorization },
 		);
 		expect(created.ok).toBe(true);
 		if (!created.ok) return;
 		await addCompanyName(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			addCompanyNameTestInput("atomic-name", created.data.id, {
 				correlationId: "corr-atomic-name",
-				idempotencyKey: "atomic-name",
-				requestFingerprint: "fp-atomic-name",
-				legalCompanyId: created.data.id,
-				nameType: "legal",
 				displayName: "Atomic Company",
-				effectiveFrom: "2024-01-01",
-			},
+			}),
 			{ store, ports, authorization },
 		);
 		await addCompanyIdentifier(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			addCompanyIdentifierTestInput("atomic-identifier", created.data.id, {
 				correlationId: "corr-atomic-identifier",
-				idempotencyKey: "atomic-identifier",
-				requestFingerprint: "fp-atomic-identifier",
-				legalCompanyId: created.data.id,
-				identifierType: "company_registration",
 				identifierValue: "ATOMIC-1",
-				effectiveFrom: "2024-01-01",
-			},
+			}),
 			{ store, ports, authorization },
 		);
-		const failingPorts = {
-			...ports,
-			async record() {
-				return fail("INTERNAL_ERROR", "Injected outbox failure");
-			},
-		};
+		const failingUow = createMemoryUnitOfWork(store, { failOutbox: true });
 
 		const activated = await activateLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-atomic-activate",
-				idempotencyKey: "atomic-activate",
-				requestFingerprint: "fp-atomic-activate",
-				legalCompanyId: created.data.id,
-				expectedVersion: created.data.version,
-				effectiveDate: "2024-01-01",
-			},
-			{ store, ports: failingPorts, masters, authorization },
+			activateLegalCompanyTestInput(
+				"atomic-activate",
+				created.data,
+				"2024-01-01",
+				{ correlationId: "corr-atomic-activate" },
+			),
+			{ store, uow: failingUow, masters, authorization },
 		);
 		expect(activated.ok).toBe(false);
 
 		const current = await getLegalCompany(
 			{
-				organizationId: ORG_A,
+				organizationId: CA_TEST_ORG_A,
 				actorUserId: "user-1",
 				legalCompanyId: created.data.id,
 			},
@@ -317,7 +287,7 @@ describe("@afenda/corporate-administration legal company", () => {
 		}
 		const history = await listCompanyStatusHistory(
 			{
-				organizationId: ORG_A,
+				organizationId: CA_TEST_ORG_A,
 				actorUserId: "user-1",
 				legalCompanyId: created.data.id,
 			},
@@ -327,24 +297,83 @@ describe("@afenda/corporate-administration legal company", () => {
 		if (history.ok) expect(history.data).toHaveLength(0);
 	});
 
+	it("paginates legal companies with cursor, query, and nextCursor", async () => {
+		const store = createMemoryCorporateAdministrationStore();
+		const ports = createMemoryMutationPorts();
+		const pageDimensions = ["alpha", "beta", "gamma"].map((suffix) =>
+			seedLegalEntityDimension(
+				`10000000-0000-4000-8000-0000000000${suffix === "alpha" ? "0a" : suffix === "beta" ? "0b" : "0c"}`,
+				`LE-PAGE-${suffix.toUpperCase()}`,
+				`Legal Entity Page ${suffix}`,
+			),
+		);
+		const masters = createMemoryCaMasterLookup({
+			dimensions: [
+				seedLegalEntityDimension(CA_TEST_DIM_A, "LE-A", "Legal Entity A"),
+				...pageDimensions,
+			],
+			parties: [seedOrganizationParty(CA_TEST_ORG_A, CA_TEST_PARTY_A, "ORG-A")],
+		});
+		const authorization = createGrantingCaAuthorization([...CA_PERMISSION_CODES]);
+
+		for (const [index, suffix] of ["alpha", "beta", "gamma"].entries()) {
+			const created = await createLegalCompany(
+				createLegalCompanyTestInput(`paginate-${suffix}`, {
+					code: `CO-PAGE-${suffix.toUpperCase()}`,
+					legalEntityDimensionId: pageDimensions[index]?.id,
+					legalPartyId: CA_TEST_PARTY_A,
+					idempotencyKey: `company-paginate-${suffix}`,
+				}),
+				{ store, ports, masters, authorization },
+			);
+			expect(created.ok).toBe(true);
+		}
+
+		const firstPage = await listLegalCompanies(
+			{
+				organizationId: CA_TEST_ORG_A,
+				actorUserId: "user-1",
+				query: "co-page",
+				limit: 2,
+			},
+			{ store, authorization },
+		);
+		expect(firstPage.ok).toBe(true);
+		if (!firstPage.ok) return;
+		expect(firstPage.data.items).toHaveLength(2);
+		expect(firstPage.data.total).toBe(3);
+		expect(firstPage.data.nextCursor).toBeTruthy();
+
+		const secondPage = await listLegalCompanies(
+			{
+				organizationId: CA_TEST_ORG_A,
+				actorUserId: "user-1",
+				query: "co-page",
+				limit: 2,
+				cursor: firstPage.data.nextCursor ?? undefined,
+			},
+			{ store, authorization },
+		);
+		expect(secondPage.ok).toBe(true);
+		if (secondPage.ok) {
+			expect(secondPage.data.items).toHaveLength(1);
+			expect(secondPage.data.nextCursor).toBeNull();
+		}
+	});
+
 	it("rejects tax identifier types", async () => {
 		const { store, authorization } = harness();
 		const created = await createLegalCompany(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-6",
-				idempotencyKey: "create-3",
-				requestFingerprint: "fp-3",
+			createLegalCompanyTestInput("create-3", {
 				code: "CO-C",
-				legalEntityDimensionId: DIM_A,
-			},
+				correlationId: "corr-6",
+			}),
 			{
 				store,
 				ports: createMemoryMutationPorts(),
 				masters: createMemoryCaMasterLookup({
 					dimensions: [
-						seedLegalEntityDimension(DIM_A, "LE-A", "Legal Entity A"),
+						seedLegalEntityDimension(CA_TEST_DIM_A, "LE-A", "Legal Entity A"),
 					],
 					parties: [],
 				}),
@@ -355,19 +384,85 @@ describe("@afenda/corporate-administration legal company", () => {
 		if (!created.ok) return;
 
 		const rejected = await addCompanyIdentifier(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
+			addCompanyIdentifierTestInput("id-tax", created.data.id, {
 				correlationId: "corr-7",
-				idempotencyKey: "id-tax",
-				requestFingerprint: "fp-id-tax",
-				legalCompanyId: created.data.id,
 				identifierType: "tin",
 				identifierValue: "TIN-1",
-				effectiveFrom: "2024-01-01",
-			},
+			}),
 			{ store, authorization },
 		);
 		expect(rejected.ok).toBe(false);
+	});
+
+	it("rejects expanded tax identifier aliases", async () => {
+		const { store, authorization } = harness();
+		const created = await createLegalCompany(
+			createLegalCompanyTestInput("create-tax-alias", {
+				code: "CO-TAX-ALIAS",
+				correlationId: "corr-tax-alias",
+			}),
+			{
+				store,
+				ports: createMemoryMutationPorts(),
+				masters: createMemoryCaMasterLookup({
+					dimensions: [
+						seedLegalEntityDimension(CA_TEST_DIM_A, "LE-A", "Legal Entity A"),
+					],
+					parties: [],
+				}),
+				authorization,
+			},
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const rejected = await addCompanyIdentifier(
+			addCompanyIdentifierTestInput("id-vat-reg", created.data.id, {
+				correlationId: "corr-vat-reg",
+				identifierType: "vat_registration",
+				identifierValue: "VAT-1",
+			}),
+			{ store, authorization },
+		);
+		expect(rejected.ok).toBe(false);
+		if (!rejected.ok) {
+			expect(rejected.details).toMatchObject({
+				reason: "corporate-administration.tax_identifier.foreign_owner",
+			});
+		}
+	});
+
+	it("rejects registration identifier anti-recycle when normalized values collide", async () => {
+		const { store, ports, masters, authorization } = harness();
+		const created = await createLegalCompany(
+			createLegalCompanyTestInput("create-reg-strip", {
+				code: "CO-REG-STRIP",
+				legalPartyId: CA_TEST_PARTY_A,
+				correlationId: "corr-reg-strip",
+			}),
+			{ store, ports, masters, authorization },
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const first = await addCompanyIdentifier(
+			addCompanyIdentifierTestInput("id-reg-a", created.data.id, {
+				correlationId: "corr-reg-a",
+				identifierValue: "ABC-123",
+				effectiveFrom: "2024-01-01",
+			}),
+			{ store, ports, authorization },
+		);
+		expect(first.ok).toBe(true);
+
+		const second = await addCompanyIdentifier(
+			addCompanyIdentifierTestInput("id-reg-b", created.data.id, {
+				correlationId: "corr-reg-b",
+				identifierValue: "ABC123",
+				effectiveFrom: "2024-06-01",
+			}),
+			{ store, ports, authorization },
+		);
+		expect(second.ok).toBe(false);
 	});
 });

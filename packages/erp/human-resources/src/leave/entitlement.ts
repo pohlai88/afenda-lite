@@ -29,9 +29,18 @@ import {
 	fingerprintLeaveAdjustment,
 	fingerprintLeaveEntitlementGrant,
 } from "../shared/fingerprint";
-import { computeLeaveBalance } from "../shared/leave-balance";
+import { computeLeaveBalance, sortLeaveAdjustmentsForLedger } from "../shared/leave-balance";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
-import { assertLeavePolicyPublished } from "../shared/leave-guards";
+import {
+	assertLeaveAccrualAllowed,
+	assertLeaveAdjustmentBalanceAllowed,
+	assertLeaveCarryForwardAllowed,
+	assertLeavePolicyPublished,
+} from "../shared/leave-guards";
+import {
+	loadLeaveEntitlementForCommand,
+	loadPublishedLeavePolicyForEntitlement,
+} from "./entitlement-context";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	LeaveAdjustment,
@@ -121,7 +130,25 @@ export async function accrueLeaveEntitlement(
 		schema: accrueLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement accrual input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
-		execute: (data, { store, ports }) => {
+		execute: async (data, { store, ports }) => {
+			const entitlement = await loadLeaveEntitlementForCommand(store, {
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!entitlement.ok) return entitlement;
+
+			const policyContext = await loadPublishedLeavePolicyForEntitlement(store, {
+				organizationId: data.organizationId,
+				entitlement: entitlement.data,
+			});
+			if (!policyContext.ok) return policyContext;
+
+			const accrualAllowed = assertLeaveAccrualAllowed({
+				balanceRules: policyContext.data.balanceRules,
+				quantity: data.quantity,
+			});
+			if (!accrualAllowed.ok) return accrualAllowed;
+
 			const source = `accrual:${data.accrualPeriodStart}:${data.accrualPeriodEnd}`;
 			const fingerprint = fingerprintLeaveAdjustment({
 				entitlementId: data.entitlementId,
@@ -161,11 +188,39 @@ export async function carryForwardLeaveEntitlement(
 		schema: carryForwardLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement carry-forward input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
-		execute: (data, { store, ports }) => {
+		execute: async (data, { store, ports }) => {
+			const source = await loadLeaveEntitlementForCommand(store, {
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!source.ok) return source;
+
+			const policyContext = await loadPublishedLeavePolicyForEntitlement(store, {
+				organizationId: data.organizationId,
+				entitlement: source.data,
+			});
+			if (!policyContext.ok) return policyContext;
+
+			const sourceBalance = await store.getLeaveBalance({
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!sourceBalance.ok) return sourceBalance;
+			if (sourceBalance.data === null) {
+				return fail("NOT_FOUND", "Leave entitlement not found");
+			}
+
+			const carryAllowed = assertLeaveCarryForwardAllowed({
+				balanceRules: policyContext.data.balanceRules,
+				carriedQuantity: data.carriedQuantity,
+				sourceBalance: sourceBalance.data.balance,
+			});
+			if (!carryAllowed.ok) return carryAllowed;
+
 			const fingerprint = fingerprintLeaveEntitlementGrant({
-				employeeId: data.entitlementId,
-				employmentId: data.newPeriodStart,
-				policyId: data.newPeriodEnd,
+				employeeId: source.data.employeeId,
+				employmentId: source.data.employmentId,
+				policyId: source.data.policyId,
 				periodStart: data.newPeriodStart,
 				periodEnd: data.newPeriodEnd,
 				openingQuantity: data.carriedQuantity,
@@ -225,7 +280,33 @@ export async function adjustLeaveEntitlement(
 		schema: adjustLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement adjust input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
-		execute: (data, { store, ports }) => {
+		execute: async (data, { store, ports }) => {
+			const entitlement = await loadLeaveEntitlementForCommand(store, {
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!entitlement.ok) return entitlement;
+
+			const policyContext = await loadPublishedLeavePolicyForEntitlement(store, {
+				organizationId: data.organizationId,
+				entitlement: entitlement.data,
+			});
+			if (!policyContext.ok) return policyContext;
+
+			const posted = await store.listPostedLeaveAdjustments({
+				organizationId: data.organizationId,
+				entitlementId: data.entitlementId,
+			});
+			if (!posted.ok) return posted;
+
+			const balanceAllowed = assertLeaveAdjustmentBalanceAllowed({
+				openingQuantity: entitlement.data.openingQuantity,
+				adjustments: posted.data,
+				delta: data.delta,
+				allowsNegativeBalance: policyContext.data.policy.allowsNegativeBalance,
+			});
+			if (!balanceAllowed.ok) return balanceAllowed;
+
 			const fingerprint = fingerprintLeaveAdjustment({
 				entitlementId: data.entitlementId,
 				kind: "manual",
@@ -311,20 +392,16 @@ export async function reconcileLeaveBalance(
 				entitlementId: data.entitlementId,
 			});
 			if (!posted.ok) return posted;
-			const adjustments = posted.data
-				.map(({ id, kind, delta, reason, source, createdAt }) => ({
+			const adjustments = sortLeaveAdjustmentsForLedger(
+				posted.data.map(({ id, kind, delta, reason, source, createdAt }) => ({
 					id,
 					kind,
 					delta,
 					reason,
 					source,
 					createdAt,
-				}))
-				.sort(
-					(left, right) =>
-						left.createdAt.getTime() - right.createdAt.getTime() ||
-						left.id.localeCompare(right.id),
-				);
+				})),
+			);
 			return ok({
 				entitlementId: entitlement.data.id,
 				openingQuantity: entitlement.data.openingQuantity,

@@ -1,10 +1,16 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
+import {
+	createMemoryCorporateAdministrationUnitOfWork,
+	type MemoryUnitOfWorkOptions,
+} from "../../src/adapters/memory/unit-of-work";
+import type { MemoryCorporateAdministrationStore } from "../../src/memory-store";
 import type {
 	AuditFactInput,
 	MutationPorts,
 	OutboxFactInput,
 } from "../../src/ports";
+import type { CorporateAdministrationUnitOfWork } from "../../src/unit-of-work";
 
 export function createMemoryMutationPorts(): MutationPorts {
 	const auditRecords: AuditFactInput[] = [];
@@ -30,4 +36,30 @@ export function createMemoryMutationPorts(): MutationPorts {
 			return ok({ auditId, eventId });
 		},
 	};
+}
+
+export function createFailingMemoryMutationPorts(options: {
+	readonly failAudit?: boolean;
+	readonly failOutbox?: boolean;
+} = {}): MutationPorts {
+	const base = createMemoryMutationPorts();
+	return {
+		...base,
+		async record(input) {
+			if (options.failAudit) {
+				return fail("INTERNAL_ERROR", "Injected audit failure");
+			}
+			if (options.failOutbox) {
+				return fail("INTERNAL_ERROR", "Injected outbox failure");
+			}
+			return base.record(input);
+		},
+	};
+}
+
+export function createMemoryUnitOfWork(
+	store: MemoryCorporateAdministrationStore,
+	options: MemoryUnitOfWorkOptions = {},
+): CorporateAdministrationUnitOfWork {
+	return createMemoryCorporateAdministrationUnitOfWork(store, options);
 }

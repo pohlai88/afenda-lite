@@ -13,6 +13,7 @@ import { drizzlePerformanceMethods } from "./performance";
 import { drizzleRecruitmentMethods } from "./recruitment";
 import { drizzleTalentMethods } from "./talent";
 import { drizzleTimeMethods } from "./time";
+import { drizzleHireOrchestrationMethods } from "./hire-orchestration";
 import { drizzleWorkforceFoundationMethods } from "./workforce-foundation";
 import { drizzleWorkforcePlanningMethods } from "./workforce-planning";
 
@@ -33,6 +34,7 @@ export function createDrizzleHumanResourcesStore(): HumanResourcesStore {
 		drizzleComplianceMethods,
 		drizzleEmployeeRelationsMethods,
 		drizzleWorkforceFoundationMethods,
+		drizzleHireOrchestrationMethods,
 		drizzleIdentityMethods,
 	);
 

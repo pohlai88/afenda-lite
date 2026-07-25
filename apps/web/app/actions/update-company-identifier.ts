@@ -2,7 +2,6 @@
 
 import {
 	CA_PERMISSION_COMPANY_IDENTIFIER_MANAGE,
-	createCorporateAdministrationRequestFingerprint,
 	type CaCompanyIdentifier,
 	updateCompanyIdentifier,
 } from "@afenda/corporate-administration";
@@ -12,6 +11,11 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
+import {
+	caCompanyIdentifierIdSchema,
+	caLegalCompanyIdSchema,
+	optionalFormUuidSchema,
+} from "@/lib/erp/corporate-administration-action-schemas";
 import {
 	type ActionResult,
 	actionFail,
@@ -25,27 +29,17 @@ export type UpdateCompanyIdentifierActionState =
 	ActionResult<UpdateCompanyIdentifierActionData> | null;
 
 const updateCompanyIdentifierFormSchema = z.object({
-	legalCompanyId: z.string().uuid(),
-	companyIdentifierId: z.string().uuid(),
+	legalCompanyId: caLegalCompanyIdSchema,
+	companyIdentifierId: caCompanyIdentifierIdSchema,
 	expectedVersion: z.coerce.number().int().positive(),
 	identifierValue: z
-		.union([z.string().trim().min(1).max(200), z.literal("")])
+		.union([z.string().trim().min(1).max(500), z.literal("")])
 		.optional()
 		.transform((value) =>
 			value === undefined || value === "" ? undefined : value,
 		),
-	jurisdictionCode: z
-		.union([z.string().trim().min(1).max(16), z.literal("")])
-		.optional()
-		.transform((value) =>
-			value === undefined || value === "" ? undefined : value,
-		),
-	issuingAuthority: z
-		.union([z.string().trim().min(1).max(200), z.literal("")])
-		.optional()
-		.transform((value) =>
-			value === undefined || value === "" ? undefined : value,
-		),
+	jurisdictionCountryId: optionalFormUuidSchema,
+	authorityPartyId: optionalFormUuidSchema,
 });
 
 export async function updateCompanyIdentifierAction(
@@ -63,8 +57,9 @@ export async function updateCompanyIdentifierAction(
 				companyIdentifierId: formData.get("companyIdentifierId"),
 				expectedVersion: formData.get("expectedVersion"),
 				identifierValue: formData.get("identifierValue") ?? undefined,
-				jurisdictionCode: formData.get("jurisdictionCode") ?? undefined,
-				issuingAuthority: formData.get("issuingAuthority") ?? undefined,
+				jurisdictionCountryId:
+					formData.get("jurisdictionCountryId") ?? undefined,
+				authorityPartyId: formData.get("authorityPartyId") ?? undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
@@ -73,14 +68,6 @@ export async function updateCompanyIdentifierAction(
 					parsed.details,
 				);
 			}
-			const commandPayload = {
-				legalCompanyId: parsed.data.legalCompanyId,
-				companyIdentifierId: parsed.data.companyIdentifierId,
-				expectedVersion: parsed.data.expectedVersion,
-				identifierValue: parsed.data.identifierValue,
-				jurisdictionCode: parsed.data.jurisdictionCode,
-				issuingAuthority: parsed.data.issuingAuthority,
-			};
 			const idempotencyKey = `upd-id:${parsed.data.companyIdentifierId}:${parsed.data.expectedVersion}`;
 			const result = await updateCompanyIdentifier(
 				{
@@ -88,9 +75,11 @@ export async function updateCompanyIdentifierAction(
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey,
-					requestFingerprint:
-						createCorporateAdministrationRequestFingerprint(commandPayload),
-					...commandPayload,
+					companyIdentifierId: parsed.data.companyIdentifierId,
+					expectedVersion: parsed.data.expectedVersion,
+					identifierValue: parsed.data.identifierValue,
+					jurisdictionCountryId: parsed.data.jurisdictionCountryId,
+					authorityPartyId: parsed.data.authorityPartyId,
 				},
 				createCorporateAdministrationCommandOptions(),
 			);

@@ -149,6 +149,8 @@ import {
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
 	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
 	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
@@ -243,8 +245,10 @@ import {
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
+	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
+	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
@@ -367,6 +371,8 @@ import {
 } from "../src/recruitment/interview";
 import {
 	acceptOffer,
+	amendOfferDraft,
+	approveOffer,
 	createOffer,
 	declineOffer,
 	expireOffer,
@@ -406,25 +412,49 @@ import {
 	completeOffboarding,
 	completeOffboardingTask,
 	getClearanceByOffboardingCase,
+	getOffboardingAccessRevocationByCase,
+	getOffboardingPayrollHandoffByCase,
 	listOffboardingTasks,
 	recordClearance,
 	recordExitInterview,
+	recordOffboardingAccessRevocation,
+	recordOffboardingPayrollHandoff,
 	startOffboarding,
 } from "../src/lifecycle/offboarding";
 import {
 	completeOnboarding,
 	completeOnboardingTask,
+	getOnboardingAccessHandoffByCase,
+	getOnboardingEquipmentHandoffByCase,
+	getOnboardingOrientationByCase,
 	listOnboardingTasks,
+	recordOnboardingAccessHandoff,
+	recordOnboardingEquipmentHandoff,
+	recordOnboardingOrientation,
 	startOnboarding,
 } from "../src/lifecycle/onboarding";
+import {
+	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
+	ONBOARDING_TASK_CODE_ORIENTATION,
+	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
+} from "../src/lifecycle/onboarding-checklist";
+import {
+	recordWorkEligibility,
+	verifyWorkEligibility,
+} from "../src/compliance/work-eligibility";
 import {
 	extendProbation,
 	openProbation,
 	recordProbationOutcome,
 } from "../src/lifecycle/probation";
-import { finalizeTermination } from "../src/lifecycle/termination";
+import {
+	approveTermination,
+	finalizeTermination,
+	proposeTermination,
+} from "../src/lifecycle/termination";
 import { transferAssignment } from "../src/lifecycle/transfer";
 import { createTestHumanResourcesCommandOptions, TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
+import { SAMPLE_INTERVIEW_SCORECARD } from "./helpers/recruitment-interview-fixture";
 import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
@@ -446,6 +476,11 @@ import {
 	seedOpenRequisitionForCorrelation,
 } from "./helpers/recruitment-correlation-seed";
 import { seedDefaultHiringManager } from "./helpers/recruitment-requisition-fixture";
+import {
+	attachApprovedProposalAndIssueExistingOffer,
+	seedApprovedCompensationProposal,
+	withOfferLifecycleDeps,
+} from "./helpers/offer-lifecycle-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -568,6 +603,7 @@ describe("correlation integrity", () => {
 			...HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
 			...HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 			...HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
+			...HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 			...HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 			...HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
 			...HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
@@ -981,6 +1017,7 @@ describe("correlation integrity", () => {
 				correlationId: evalCorr,
 				interviewId: interview.data.id,
 				result: "advance",
+				scorecard: SAMPLE_INTERVIEW_SCORECARD,
 				privateNotes: "confidential notes must not enter outbox",
 				expectedVersion: interview.data.version,
 			},
@@ -1012,6 +1049,45 @@ describe("correlation integrity", () => {
 		expect(offer.ok).toBe(true);
 		if (!offer.ok) return;
 
+		const proposal = await seedApprovedCompensationProposal(
+			withOfferLifecycleDeps(ready),
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				applicationId: interviewing.data.id,
+				tag: suffix,
+			},
+		);
+		expect(proposal.ok).toBe(true);
+		if (!proposal.ok) return;
+
+		const amended = await amendOfferDraft(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-offer-amend-${suffix}`,
+				offerId: offer.data.id,
+				compensationProposalId: proposal.data.id,
+				expectedVersion: offer.data.version,
+			},
+			withOfferLifecycleDeps(ready),
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+
+		const approvedOffer = await approveOffer(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-offer-approve-${suffix}`,
+				offerId: amended.data.id,
+				expectedVersion: amended.data.version,
+			},
+			ready,
+		);
+		expect(approvedOffer.ok).toBe(true);
+		if (!approvedOffer.ok) return;
+
 		clearPorts(ready);
 		const issueCorr = `trace-offer-issue-${suffix}`;
 		const issued = await issueOffer(
@@ -1019,8 +1095,8 @@ describe("correlation integrity", () => {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: issueCorr,
-				offerId: offer.data.id,
-				expectedVersion: offer.data.version,
+				offerId: approvedOffer.data.id,
+				expectedVersion: approvedOffer.data.version,
 			},
 			ready,
 		);
@@ -1234,15 +1310,15 @@ describe("correlation integrity", () => {
 		);
 		expect(declineOfferEntity.ok).toBe(true);
 		if (!declineOfferEntity.ok) return;
-		const declineIssued = await issueOffer(
+		const declineIssued = await attachApprovedProposalAndIssueExistingOffer(
+			ready,
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
-				correlationId: `corr-decline-issue-${suffix}`,
-				offerId: declineOfferEntity.data.id,
-				expectedVersion: declineOfferEntity.data.version,
+				offer: declineOfferEntity.data,
+				tag: `decline-${suffix}`,
+				correlationPrefix: `corr-decline-${suffix}`,
 			},
-			ready,
 		);
 		expect(declineIssued.ok).toBe(true);
 		if (!declineIssued.ok) return;
@@ -1329,15 +1405,15 @@ describe("correlation integrity", () => {
 		);
 		expect(expireOfferDraft.ok).toBe(true);
 		if (!expireOfferDraft.ok) return;
-		const expireIssued = await issueOffer(
+		const expireIssued = await attachApprovedProposalAndIssueExistingOffer(
+			ready,
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
-				correlationId: `corr-ex-issue-${suffix}`,
-				offerId: expireOfferDraft.data.id,
-				expectedVersion: expireOfferDraft.data.version,
+				offer: expireOfferDraft.data,
+				tag: `expire-${suffix}`,
+				correlationPrefix: `corr-ex-${suffix}`,
 			},
-			ready,
 		);
 		expect(expireIssued.ok).toBe(true);
 		if (!expireIssued.ok) return;
@@ -1427,15 +1503,15 @@ describe("correlation integrity", () => {
 		);
 		expect(withdrawOfferDraft.ok).toBe(true);
 		if (!withdrawOfferDraft.ok) return;
-		const withdrawOfferIssued = await issueOffer(
+		const withdrawOfferIssued = await attachApprovedProposalAndIssueExistingOffer(
+			ready,
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
-				correlationId: `corr-ow-issue-${suffix}`,
-				offerId: withdrawOfferDraft.data.id,
-				expectedVersion: withdrawOfferDraft.data.version,
+				offer: withdrawOfferDraft.data,
+				tag: `withdraw-${suffix}`,
+				correlationPrefix: `corr-ow-${suffix}`,
 			},
-			ready,
 		);
 		expect(withdrawOfferIssued.ok).toBe(true);
 		if (!withdrawOfferIssued.ok) return;
@@ -4305,9 +4381,11 @@ describe("correlation integrity", () => {
 		);
 		expect(onboardingTasks.ok).toBe(true);
 		if (!onboardingTasks.ok) return;
-		const onboardingTask = onboardingTasks.data[0];
-		expect(onboardingTask).toBeDefined();
-		if (!onboardingTask) return;
+		const orientationTask = onboardingTasks.data.find(
+			(row) => row.code === ONBOARDING_TASK_CODE_ORIENTATION,
+		);
+		expect(orientationTask).toBeDefined();
+		if (!orientationTask) return;
 
 		clearPorts(ready);
 		const onboardingTaskCorr = `trace-onboarding-task-${suffix}`;
@@ -4316,9 +4394,9 @@ describe("correlation integrity", () => {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: onboardingTaskCorr,
-				taskId: onboardingTask.id,
+				taskId: orientationTask.id,
 				status: "completed",
-				expectedVersion: onboardingTask.version,
+				expectedVersion: orientationTask.version,
 			},
 			ready,
 		);
@@ -4329,6 +4407,147 @@ describe("correlation integrity", () => {
 			operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
 		});
 
+		const recordedEligibility = await recordWorkEligibility(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-eligibility-${suffix}`,
+				employeeId: seeded.employee.id,
+				countryCode: "US",
+				issuedOn: "2025-01-01",
+				idempotencyKey: `idem-onb-eligibility-${suffix}`,
+			},
+			ready,
+		);
+		expect(recordedEligibility.ok).toBe(true);
+		if (!recordedEligibility.ok) return;
+		const verifiedEligibility = await verifyWorkEligibility(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-eligibility-verify-${suffix}`,
+				eligibilityId: recordedEligibility.data.id,
+				evidenceDate: "2025-01-02",
+				expectedVersion: recordedEligibility.data.version,
+			},
+			ready,
+		);
+		expect(verifiedEligibility.ok).toBe(true);
+		if (!verifiedEligibility.ok) return;
+
+		let onboardingCase = onboardingTaskDone.data;
+		for (const code of [
+			ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
+			ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
+		] as const) {
+			const tasks = await listOnboardingTasks(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-onb-task-${code}-${suffix}`,
+					onboardingCaseId: onboardingCase.id,
+				},
+				ready,
+			);
+			expect(tasks.ok).toBe(true);
+			if (!tasks.ok) return;
+			const task = tasks.data.find((row) => row.code === code);
+			expect(task).toBeDefined();
+			if (!task) return;
+			const done = await completeOnboardingTask(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-onb-task-${code}-done-${suffix}`,
+					taskId: task.id,
+					status: "completed",
+					expectedVersion: task.version,
+				},
+				ready,
+			);
+			expect(done.ok).toBe(true);
+			if (!done.ok) return;
+			onboardingCase = done.data;
+		}
+
+		const orientation = await getOnboardingOrientationByCase(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-orientation-${suffix}`,
+				onboardingCaseId: onboardingCase.id,
+			},
+			ready,
+		);
+		expect(orientation.ok).toBe(true);
+		if (!orientation.ok || orientation.data === null) return;
+		const orientationRecorded = await recordOnboardingOrientation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-orientation-record-${suffix}`,
+				orientationId: orientation.data.id,
+				acknowledgedOn: "2025-01-15",
+				expectedVersion: orientation.data.version,
+			},
+			ready,
+		);
+		expect(orientationRecorded.ok).toBe(true);
+		if (!orientationRecorded.ok) return;
+		onboardingCase = orientationRecorded.data;
+
+		const equipment = await getOnboardingEquipmentHandoffByCase(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-equipment-${suffix}`,
+				onboardingCaseId: onboardingCase.id,
+			},
+			ready,
+		);
+		expect(equipment.ok).toBe(true);
+		if (!equipment.ok || equipment.data === null) return;
+		const equipmentRecorded = await recordOnboardingEquipmentHandoff(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-equipment-record-${suffix}`,
+				equipmentHandoffId: equipment.data.id,
+				handedOverOn: "2025-01-16",
+				expectedVersion: equipment.data.version,
+			},
+			ready,
+		);
+		expect(equipmentRecorded.ok).toBe(true);
+		if (!equipmentRecorded.ok) return;
+		onboardingCase = equipmentRecorded.data;
+
+		const access = await getOnboardingAccessHandoffByCase(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-access-${suffix}`,
+				onboardingCaseId: onboardingCase.id,
+			},
+			ready,
+		);
+		expect(access.ok).toBe(true);
+		if (!access.ok || access.data === null) return;
+		const onboardingAccessRecorded = await recordOnboardingAccessHandoff(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-onb-access-record-${suffix}`,
+				accessHandoffId: access.data.id,
+				grantedOn: "2025-01-17",
+				expectedVersion: access.data.version,
+			},
+			ready,
+		);
+		expect(onboardingAccessRecorded.ok).toBe(true);
+		if (!onboardingAccessRecorded.ok) return;
+		onboardingCase = onboardingAccessRecorded.data;
+
 		clearPorts(ready);
 		const onboardingCompleteCorr = `trace-onboarding-complete-${suffix}`;
 		const onboardingCompleted = await completeOnboarding(
@@ -4336,8 +4555,8 @@ describe("correlation integrity", () => {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: onboardingCompleteCorr,
-				onboardingCaseId: onboardingStarted.data.id,
-				expectedVersion: onboardingStarted.data.version,
+				onboardingCaseId: onboardingCase.id,
+				expectedVersion: onboardingCase.version,
 			},
 			ready,
 		);
@@ -4378,6 +4597,7 @@ describe("correlation integrity", () => {
 				correlationId: probationExtendCorr,
 				probationReviewId: probation.data.id,
 				newEndsOn: "2025-05-01",
+				reason: "Extended review window",
 				expectedVersion: probation.data.version,
 			},
 			ready,
@@ -4399,6 +4619,7 @@ describe("correlation integrity", () => {
 				probationReviewId: probationExtended.data.id,
 				outcome: "passed",
 				outcomeRecordedOn: "2025-03-15",
+				reason: "Probation passed",
 				expectedVersion: probationExtended.data.version,
 			},
 			ready,
@@ -4461,16 +4682,44 @@ describe("correlation integrity", () => {
 		clearPorts(ready);
 		const terminationCorr = `trace-termination-finalize-${suffix}`;
 		const terminationEffectiveOn = "2025-06-01";
-		const termination = await finalizeTermination(
+		const proposed = await proposeTermination(
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
-				correlationId: terminationCorr,
+				correlationId: `${terminationCorr}-propose`,
 				idempotencyKey: `idem-term-${suffix}`,
 				employmentId: seeded.employment.id,
 				reasonCode: "resignation",
 				reasonDetail: "Voluntary resignation",
 				effectiveOn: terminationEffectiveOn,
+				rehireEligible: true,
+			},
+			ready,
+		);
+		expect(proposed.ok).toBe(true);
+		if (!proposed.ok) return;
+
+		const approved = await approveTermination(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `${terminationCorr}-approve`,
+				terminationId: proposed.data.id,
+				expectedVersion: proposed.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		clearPorts(ready);
+		const termination = await finalizeTermination(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: terminationCorr,
+				terminationId: approved.data.id,
+				expectedVersion: approved.data.version,
 			},
 			ready,
 		);
@@ -4595,6 +4844,72 @@ describe("correlation integrity", () => {
 		assertCorrelationPropagated(ready, clearanceCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+		});
+
+		const accessRevocation = await getOffboardingAccessRevocationByCase(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-access-get-${suffix}`,
+				offboardingCaseId: offboarding.data.id,
+			},
+			ready,
+		);
+		expect(accessRevocation.ok).toBe(true);
+		if (!accessRevocation.ok || !accessRevocation.data) return;
+
+		clearPorts(ready);
+		const accessRevocationCorr = `trace-access-revocation-${suffix}`;
+		const accessRecorded = await recordOffboardingAccessRevocation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: accessRevocationCorr,
+				accessRevocationId: accessRevocation.data.id,
+				revokedOn: "2025-06-04",
+				summary: "Access revoked",
+				expectedVersion: accessRevocation.data.version,
+			},
+			ready,
+		);
+		expect(accessRecorded.ok).toBe(true);
+		if (!accessRecorded.ok) return;
+		assertCorrelationPropagated(ready, accessRevocationCorr, {
+			expectOutbox: false,
+			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+		});
+
+		const payrollHandoff = await getOffboardingPayrollHandoffByCase(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-payroll-get-${suffix}`,
+				offboardingCaseId: offboarding.data.id,
+			},
+			ready,
+		);
+		expect(payrollHandoff.ok).toBe(true);
+		if (!payrollHandoff.ok || !payrollHandoff.data) return;
+
+		clearPorts(ready);
+		const payrollHandoffCorr = `trace-payroll-handoff-${suffix}`;
+		const payrollRecorded = await recordOffboardingPayrollHandoff(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: payrollHandoffCorr,
+				payrollHandoffId: payrollHandoff.data.id,
+				readyOn: "2025-06-05",
+				summary: "Final payroll handoff ready",
+				expectedVersion: payrollHandoff.data.version,
+			},
+			ready,
+		);
+		expect(payrollRecorded.ok).toBe(true);
+		if (!payrollRecorded.ok) return;
+		assertCorrelationPropagated(ready, payrollHandoffCorr, {
+			expectOutbox: false,
+			operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
 		});
 
 		clearPorts(ready);

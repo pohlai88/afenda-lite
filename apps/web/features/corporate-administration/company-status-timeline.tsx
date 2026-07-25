@@ -11,7 +11,7 @@ import {
 export function CompanyStatusTimeline({
 	history,
 }: {
-	history: CaCompanyStatusHistory[];
+	history: readonly CaCompanyStatusHistory[];
 }) {
 	return (
 		<Card>
@@ -39,7 +39,7 @@ export function CompanyStatusTimeline({
 									{entry.fromStatus ?? "created"} → {entry.toStatus}
 								</p>
 								<p className="text-foreground-secondary">
-									{entry.effectiveDate}
+									{entry.effectiveAt.toISOString().slice(0, 10)}
 									{entry.reason ? ` · ${entry.reason}` : ""}
 								</p>
 							</li>

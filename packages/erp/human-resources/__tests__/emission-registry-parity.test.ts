@@ -11,6 +11,7 @@ import {
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
+	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
@@ -214,6 +215,23 @@ describe("mutation emission registry parity", () => {
 		);
 		expect(rows).toHaveLength(
 			HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS.length,
+		);
+	});
+
+	it("every hire-orchestration command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(
+				HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS as readonly string[]
+			).includes(entry.command),
+		);
+		expect(rows).toHaveLength(
+			HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS.length,
 		);
 	});
 

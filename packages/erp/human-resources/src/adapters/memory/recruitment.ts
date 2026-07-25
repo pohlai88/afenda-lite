@@ -3,6 +3,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
+	type HumanResourcesCompensationProposalId,
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesInterviewEvaluationId,
@@ -30,20 +31,25 @@ import {
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
+import type { ApplicationStatusHistory } from "../../shared/application-history";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	ANONYMIZED_CANDIDATE_DISPLAY_NAME,
 	anonymizedCandidateEmail,
 	assertApplicationEligibleForOffer,
+	assertApplicationReopenable,
 	assertApplicationStatusTransition,
 	assertCandidateActive,
 	assertCandidateAnonymizationEligible,
 	assertCandidateNotAnonymized,
+	assertInterviewInterviewerAssignable,
 	assertInterviewSchedulable,
 	normalizeCandidateEmail,
 	assertInterviewStatusTransition,
 	assertOfferAcceptable,
 	assertOfferAmendable,
+	assertOfferProposalMutable,
+	assertOfferReadyForApproval,
 	assertOfferStatusTransition,
 	assertRequisitionAmendable,
 	assertRequisitionHiringManagerAssignable,
@@ -58,8 +64,10 @@ import {
 	type OfferStatus,
 	type RequisitionStatus,
 } from "../../shared/recruitment-status";
+import { validateOfferCompensationProposalAttachment } from "../../shared/validate-offer-compensation-proposal-attachment";
 import type {
 	ApplicationCreateRecord,
+	ApplicationStatusHistoryAppendRecord,
 	CandidateCreateRecord,
 	HumanResourcesStore,
 	IdempotentCandidateRecord,
@@ -118,7 +126,14 @@ function cloneInterview(interview: Interview): Interview {
 }
 
 function cloneEvaluation(evaluation: InterviewEvaluation): InterviewEvaluation {
-	return { ...evaluation };
+	return {
+		...evaluation,
+		scorecard: {
+			criteria: evaluation.scorecard.criteria.map((criterion) => ({
+				...criterion,
+			})),
+		},
+	};
 }
 
 function cloneOffer(offer: EmploymentOffer): EmploymentOffer {
@@ -184,6 +199,29 @@ async function validateRequisitionReferences(
 	return ok(undefined);
 }
 
+function appendApplicationHistoryToState(
+	state: RecruitmentMemoryState,
+	record: ApplicationStatusHistoryAppendRecord,
+): ApplicationStatusHistory {
+	const row: ApplicationStatusHistory = {
+		id: randomUUID(),
+		organizationId: record.organizationId,
+		applicationId: record.applicationId,
+		candidateId: record.candidateId,
+		requisitionId: record.requisitionId,
+		fromStatus: record.fromStatus,
+		toStatus: record.toStatus,
+		changeKind: record.changeKind,
+		reason: record.reason,
+		reasonCode: record.reasonCode,
+		correlationId: record.correlationId,
+		actorUserId: record.actorUserId,
+		createdAt: new Date(),
+	};
+	state.applicationStatusHistory.set(row.id, row);
+	return { ...row };
+}
+
 export type RecruitmentMemoryState = {
 	requisitions: Map<HumanResourcesRequisitionId, JobRequisition>;
 	requisitionIdempotencyByKey: Map<string, IdempotentRequisitionRecord>;
@@ -191,6 +229,7 @@ export type RecruitmentMemoryState = {
 	candidateIdempotencyByKey: Map<string, IdempotentCandidateRecord>;
 	candidateByNormalizedEmail: Map<string, string>;
 	applications: Map<HumanResourcesApplicationId, CandidateApplication>;
+	applicationStatusHistory: Map<string, ApplicationStatusHistory>;
 	interviews: Map<HumanResourcesInterviewId, Interview>;
 	interviewEvaluations: Map<
 		HumanResourcesInterviewEvaluationId,
@@ -225,10 +264,14 @@ export type MemoryRecruitmentMethods = Pick<
 	| "findActiveApplicationByCandidateRequisition"
 	| "createApplication"
 	| "transitionApplicationStatus"
+	| "reopenApplication"
+	| "listApplicationStatusHistory"
+	| "appendApplicationStatusHistory"
 	| "listApplications"
 	| "getInterviewById"
 	| "scheduleInterview"
 	| "cancelInterview"
+	| "assignInterviewInterviewer"
 	| "listInterviews"
 	| "getInterviewEvaluationByInterviewId"
 	| "recordInterviewEvaluation"
@@ -247,6 +290,7 @@ export type RecruitmentMemoryHost = Pick<
 	| "getDepartmentById"
 	| "getJobById"
 	| "getPositionById"
+	| "getCompensationProposal"
 	| "releaseActiveHeadcountReservationsForRequisition"
 	| "consumeActiveHeadcountReservationForRequisition"
 >;
@@ -259,6 +303,7 @@ export function createRecruitmentMemoryState(): RecruitmentMemoryState {
 		candidateIdempotencyByKey: new Map(),
 		candidateByNormalizedEmail: new Map(),
 		applications: new Map(),
+		applicationStatusHistory: new Map(),
 		interviews: new Map(),
 		interviewEvaluations: new Map(),
 		interviewEvaluationByInterviewId: new Map(),
@@ -276,6 +321,7 @@ export function resetRecruitmentMemoryState(
 	state.candidateIdempotencyByKey.clear();
 	state.candidateByNormalizedEmail.clear();
 	state.applications.clear();
+	state.applicationStatusHistory.clear();
 	state.interviews.clear();
 	state.interviewEvaluations.clear();
 	state.interviewEvaluationByInterviewId.clear();
@@ -1466,6 +1512,20 @@ export function createMemoryRecruitmentMethods(
 
 			state.applications.set(application.id, application);
 
+			const historyRow = appendApplicationHistoryToState(state, {
+				organizationId: application.organizationId,
+				applicationId: application.id,
+				candidateId: application.candidateId,
+				requisitionId: application.requisitionId,
+				fromStatus: null,
+				toStatus: "submitted",
+				changeKind: "create",
+				reason: null,
+				reasonCode: null,
+				correlationId: meta.correlationId,
+				actorUserId: application.createdBy,
+			});
+
 			const audit = await ports.audit.record({
 				organizationId: application.organizationId,
 				actorUserId: application.createdBy,
@@ -1477,6 +1537,7 @@ export function createMemoryRecruitmentMethods(
 			});
 			if (!audit.ok) {
 				state.applications.delete(application.id);
+				state.applicationStatusHistory.delete(historyRow.id);
 				return audit;
 			}
 
@@ -1490,6 +1551,7 @@ export function createMemoryRecruitmentMethods(
 			});
 			if (!outbox.ok) {
 				state.applications.delete(application.id);
+				state.applicationStatusHistory.delete(historyRow.id);
 				return outbox;
 			}
 
@@ -1503,6 +1565,8 @@ export function createMemoryRecruitmentMethods(
 				status: ApplicationStatus;
 				expectedVersion: number;
 				actorUserId: string;
+				reason?: string | null;
+				reasonCode?: string | null;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -1547,6 +1611,20 @@ export function createMemoryRecruitmentMethods(
 
 			state.applications.set(input.applicationId, updated);
 
+			const historyRow = appendApplicationHistoryToState(state, {
+				organizationId: updated.organizationId,
+				applicationId: updated.id,
+				candidateId: updated.candidateId,
+				requisitionId: updated.requisitionId,
+				fromStatus: application.status,
+				toStatus: input.status,
+				changeKind: "lifecycle",
+				reason: input.reason ?? null,
+				reasonCode: input.reasonCode ?? null,
+				correlationId: meta.correlationId,
+				actorUserId: input.actorUserId,
+			});
+
 			const audit = await ports.audit.record({
 				organizationId: updated.organizationId,
 				actorUserId: input.actorUserId,
@@ -1558,6 +1636,7 @@ export function createMemoryRecruitmentMethods(
 			});
 			if (!audit.ok) {
 				state.applications.set(input.applicationId, application);
+				state.applicationStatusHistory.delete(historyRow.id);
 				return audit;
 			}
 
@@ -1571,10 +1650,102 @@ export function createMemoryRecruitmentMethods(
 			});
 			if (!outbox.ok) {
 				state.applications.set(input.applicationId, application);
+				state.applicationStatusHistory.delete(historyRow.id);
 				return outbox;
 			}
 
 			return ok(cloneApplication(updated));
+		},
+
+		async reopenApplication(
+			input: {
+				organizationId: string;
+				applicationId: HumanResourcesApplicationId;
+				expectedVersion: number;
+				actorUserId: string;
+				reason?: string | null;
+				reasonCode?: string | null;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<CandidateApplication>> {
+			const application = state.applications.get(input.applicationId);
+			if (application === undefined) {
+				return notFound("Application not found");
+			}
+			const orgCheck = assertRecruitmentOrgMatch(
+				application,
+				input.organizationId,
+				"Application",
+			);
+			if (!orgCheck.ok) {
+				return orgCheck;
+			}
+
+			const versionCheck = assertExpectedVersion(
+				application.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const reopenable = assertApplicationReopenable(application.status);
+			if (!reopenable.ok) {
+				return reopenable;
+			}
+
+			const existingActive =
+				await this.findActiveApplicationByCandidateRequisition({
+					organizationId: input.organizationId,
+					candidateId: application.candidateId,
+					requisitionId: application.requisitionId,
+				});
+			if (!existingActive.ok) {
+				return existingActive;
+			}
+			if (existingActive.data !== null) {
+				return conflict(
+					"An active application already exists for this candidate and requisition",
+				);
+			}
+
+			return this.transitionApplicationStatus(
+				{
+					organizationId: input.organizationId,
+					applicationId: input.applicationId,
+					status: "submitted",
+					expectedVersion: input.expectedVersion,
+					actorUserId: input.actorUserId,
+					reason: input.reason ?? null,
+					reasonCode: input.reasonCode ?? null,
+				},
+				ports,
+				meta,
+			);
+		},
+
+		async listApplicationStatusHistory(input: {
+			organizationId: string;
+			applicationId: HumanResourcesApplicationId;
+		}): Promise<Result<ApplicationStatusHistory[]>> {
+			const rows = [...state.applicationStatusHistory.values()]
+				.filter(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.applicationId === input.applicationId,
+				)
+				.sort(
+					(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+				)
+				.map((row) => ({ ...row }));
+			return ok(rows);
+		},
+
+		async appendApplicationStatusHistory(
+			record: ApplicationStatusHistoryAppendRecord,
+		): Promise<Result<ApplicationStatusHistory>> {
+			return ok(appendApplicationHistoryToState(state, record));
 		},
 
 		async listApplications(input: {
@@ -1775,6 +1946,71 @@ export function createMemoryRecruitmentMethods(
 			return ok(cloneInterview(updated));
 		},
 
+		async assignInterviewInterviewer(
+			input: {
+				organizationId: string;
+				interviewId: HumanResourcesInterviewId;
+				interviewerActorId: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Interview>> {
+			const interview = state.interviews.get(input.interviewId);
+			if (interview === undefined) {
+				return notFound("Interview not found");
+			}
+			const orgCheck = assertRecruitmentOrgMatch(
+				interview,
+				input.organizationId,
+				"Interview",
+			);
+			if (!orgCheck.ok) {
+				return notFound("Interview not found");
+			}
+
+			const versionCheck = assertExpectedVersion(
+				interview.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const assignable = assertInterviewInterviewerAssignable(interview.status);
+			if (!assignable.ok) {
+				return assignable;
+			}
+
+			const now = new Date();
+			const updated: Interview = {
+				...interview,
+				interviewerActorId: input.interviewerActorId,
+				version: interview.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.interviews.set(input.interviewId, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_interview",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.interviews.set(input.interviewId, interview);
+				return audit;
+			}
+
+			return ok(cloneInterview(updated));
+		},
+
 		async listInterviews(input: {
 			organizationId: string;
 			page: number;
@@ -1895,6 +2131,11 @@ export function createMemoryRecruitmentMethods(
 				organizationId: record.organizationId,
 				interviewId: record.interviewId,
 				result: record.result,
+				scorecard: {
+					criteria: record.scorecard.criteria.map((criterion) => ({
+						...criterion,
+					})),
+				},
 				privateNotes: record.privateNotes,
 				evaluatorActorId: record.evaluatorActorId,
 				recordedAt: now,
@@ -2048,6 +2289,18 @@ export function createMemoryRecruitmentMethods(
 				return conflict("An active offer already exists for this application");
 			}
 
+			const proposalCheck = await validateOfferCompensationProposalAttachment(
+				this,
+				{
+					organizationId: record.organizationId,
+					applicationId: record.applicationId,
+					compensationProposalId: record.compensationProposalId,
+				},
+			);
+			if (!proposalCheck.ok) {
+				return proposalCheck;
+			}
+
 			const idResult = parseHumanResourcesOfferId(randomUUID());
 			if (!idResult.ok) {
 				return idResult;
@@ -2061,6 +2314,7 @@ export function createMemoryRecruitmentMethods(
 				status: "draft",
 				termsSummary: record.termsSummary,
 				expiresOn: record.expiresOn,
+				compensationProposalId: record.compensationProposalId ?? null,
 				issuedAt: null,
 				respondedAt: null,
 				version: 1,
@@ -2095,6 +2349,7 @@ export function createMemoryRecruitmentMethods(
 				offerId: HumanResourcesOfferId;
 				termsSummary?: string;
 				expiresOn?: string;
+				compensationProposalId?: HumanResourcesCompensationProposalId | null;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -2127,6 +2382,28 @@ export function createMemoryRecruitmentMethods(
 				return amendable;
 			}
 
+			const nextCompensationProposalId =
+				input.compensationProposalId !== undefined
+					? input.compensationProposalId
+					: offer.compensationProposalId;
+			if (input.compensationProposalId !== undefined) {
+				const proposalMutable = assertOfferProposalMutable(offer.status);
+				if (!proposalMutable.ok) {
+					return proposalMutable;
+				}
+			}
+			const proposalCheck = await validateOfferCompensationProposalAttachment(
+				this,
+				{
+					organizationId: input.organizationId,
+					applicationId: offer.applicationId,
+					compensationProposalId: nextCompensationProposalId,
+				},
+			);
+			if (!proposalCheck.ok) {
+				return proposalCheck;
+			}
+
 			const now = new Date();
 			const updated: EmploymentOffer = {
 				...offer,
@@ -2136,6 +2413,7 @@ export function createMemoryRecruitmentMethods(
 						: offer.termsSummary,
 				expiresOn:
 					input.expiresOn !== undefined ? input.expiresOn : offer.expiresOn,
+				compensationProposalId: nextCompensationProposalId,
 				version: offer.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -2200,6 +2478,27 @@ export function createMemoryRecruitmentMethods(
 				return transition;
 			}
 
+			if (input.status === "approved") {
+				const ready = assertOfferReadyForApproval({
+					compensationProposalId: offer.compensationProposalId,
+				});
+				if (!ready.ok) {
+					return ready;
+				}
+				const proposalCheck = await validateOfferCompensationProposalAttachment(
+					this,
+					{
+						organizationId: input.organizationId,
+						applicationId: offer.applicationId,
+						compensationProposalId: offer.compensationProposalId,
+						offerStatus: "approved",
+					},
+				);
+				if (!proposalCheck.ok) {
+					return proposalCheck;
+				}
+			}
+
 			const application = state.applications.get(offer.applicationId);
 			if (application === undefined) {
 				return notFound("Application not found");
@@ -2215,6 +2514,18 @@ export function createMemoryRecruitmentMethods(
 
 			let updatedApplication: CandidateApplication | null = null;
 			if (input.status === "issued") {
+				const proposalCheck = await validateOfferCompensationProposalAttachment(
+					this,
+					{
+						organizationId: input.organizationId,
+						applicationId: offer.applicationId,
+						compensationProposalId: offer.compensationProposalId,
+						offerStatus: "issued",
+					},
+				);
+				if (!proposalCheck.ok) {
+					return proposalCheck;
+				}
 				const applicationTransition = assertApplicationStatusTransition(
 					application.status,
 					"offered",

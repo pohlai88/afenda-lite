@@ -9,6 +9,7 @@ import {
 	hrBenefitEnrollment,
 	hrBenefitPlan,
 	hrCompensationGrade,
+	hrCompensationProposal,
 	hrCompensationReview,
 	hrEmployeeCompensation,
 	hrEmployment,
@@ -25,22 +26,31 @@ import {
 } from "@afenda/events/schemas";
 
 import {
+	parseHumanResourcesApplicationId,
 	parseHumanResourcesBenefitEnrollmentId,
 	parseHumanResourcesBenefitPlanId,
 	parseHumanResourcesCompensationGradeId,
+	parseHumanResourcesCompensationProposalId,
 	parseHumanResourcesCompensationReviewId,
 	parseHumanResourcesEmployeeCompensationId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 	parseHumanResourcesSalaryBandId,
 } from "../../brands";
+import { planCommandMutationOutboxEventType } from "../../emissions/sql-side-effects";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
+import type { HumanResourcesCommandId } from "../../module-ids";
 import { compareMoneyOrder } from "../../shared/compensation-money";
+import {
+	assertCompensationProposalAmendable,
+	assertCompensationProposalStatusTransition,
+} from "../../shared/compensation-proposal-guards";
 import {
 	benefitEnrollmentStatusSchema,
 	benefitPlanStatusSchema,
 	type CompensationReviewStatus,
 	compensationGradeStatusSchema,
+	compensationProposalStatusSchema,
 	compensationReviewStatusSchema,
 	employeeCompensationStatusSchema,
 	isCompensationGradeActive,
@@ -62,6 +72,7 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,
@@ -73,6 +84,7 @@ import type {
 	BenefitEnrollment,
 	BenefitPlan,
 	CompensationGrade,
+	CompensationProposal,
 	CompensationReview,
 	EmployeeCompensation,
 	SalaryBand,
@@ -82,9 +94,56 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
+function planCompensationDrizzleOutbox(input: {
+	commandId: HumanResourcesCommandId;
+	meta: HumanResourcesMutationMeta;
+	organizationId: string;
+	actorUserId: string;
+	aggregateId: string;
+	entityType: string;
+	auditAction: "CREATE" | "UPDATE";
+}):
+	| {
+			eventType: NonNullable<
+				ReturnType<typeof planCommandMutationOutboxEventType>
+			>;
+			payloadJson: string;
+	  }
+	| undefined {
+	const eventType = planCommandMutationOutboxEventType({
+		commandId: input.commandId,
+		meta: input.meta,
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		aggregateId: input.aggregateId,
+		audit: {
+			entity: input.entityType,
+			action: input.auditAction,
+			changes: [],
+		},
+		eventEntityId: input.aggregateId,
+		eventEntityType: input.entityType,
+	});
+	if (eventType === undefined) {
+		return undefined;
+	}
+	return {
+		eventType,
+		payloadJson: eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: input.entityType,
+			entityId: input.aggregateId,
+			actorId: input.actorUserId,
+			correlationId: input.meta.correlationId,
+			operation: input.meta.operationId,
+		}),
+	};
+}
+
 type CompensationBenefitsHost = {
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
+	getApplicationById: HumanResourcesStore["getApplicationById"];
 };
 
 export type DrizzleCompensationBenefitsMethods = Pick<
@@ -114,6 +173,11 @@ export type DrizzleCompensationBenefitsMethods = Pick<
 	| "finalizeCompensationReview"
 	| "applyApprovedCompensationResult"
 	| "listCompensationReviewsByEmployee"
+	| "getCompensationProposal"
+	| "createCompensationProposal"
+	| "amendCompensationProposal"
+	| "approveCompensationProposal"
+	| "listCompensationProposals"
 	| "getBenefitPlan"
 	| "findBenefitPlanByCode"
 	| "createBenefitPlan"
@@ -199,6 +263,23 @@ type CompensationReviewSqlRow = {
 	applied_compensation_id: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type CompensationProposalSqlRow = {
+	id: string;
+	organization_id: string;
+	application_id: string;
+	status: string;
+	proposed_base_amount: string | null;
+	proposed_currency_code: string | null;
+	proposed_grade_id: string | null;
+	proposed_salary_band_id: string | null;
+	confidential_note: string | null;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -518,6 +599,69 @@ function mapEmployeeCompensationSql(
 		sourceReviewId: row.source_review_id,
 		createIdempotencyKey: row.create_idempotency_key,
 		createRequestFingerprint: row.create_request_fingerprint,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapCompensationProposal(
+	row: typeof hrCompensationProposal.$inferSelect,
+): Result<CompensationProposal> {
+	const id = parseHumanResourcesCompensationProposalId(row.id);
+	if (!id.ok) return id;
+	const applicationId = parseHumanResourcesApplicationId(row.applicationId);
+	if (!applicationId.ok) return applicationId;
+	let proposedGradeId = null as CompensationProposal["proposedGradeId"];
+	if (row.proposedGradeId !== null) {
+		const parsed = parseHumanResourcesCompensationGradeId(row.proposedGradeId);
+		if (!parsed.ok) return parsed;
+		proposedGradeId = parsed.data;
+	}
+	let proposedSalaryBandId =
+		null as CompensationProposal["proposedSalaryBandId"];
+	if (row.proposedSalaryBandId !== null) {
+		const parsed = parseHumanResourcesSalaryBandId(row.proposedSalaryBandId);
+		if (!parsed.ok) return parsed;
+		proposedSalaryBandId = parsed.data;
+	}
+	const status = compensationProposalStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid compensation proposal status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		applicationId: applicationId.data,
+		status: status.data,
+		proposedBaseAmount: row.proposedBaseAmount,
+		proposedCurrencyCode: row.proposedCurrencyCode,
+		proposedGradeId,
+		proposedSalaryBandId,
+		confidentialNote: row.confidentialNote,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapCompensationProposalSql(
+	row: CompensationProposalSqlRow,
+): Result<CompensationProposal> {
+	return mapCompensationProposal({
+		id: row.id,
+		organizationId: row.organization_id,
+		applicationId: row.application_id,
+		status: row.status,
+		proposedBaseAmount: row.proposed_base_amount,
+		proposedCurrencyCode: row.proposed_currency_code,
+		proposedGradeId: row.proposed_grade_id,
+		proposedSalaryBandId: row.proposed_salary_band_id,
+		confidentialNote: row.confidential_note,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -2035,6 +2179,331 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return mapPersistenceFailure(
 				error,
 				"Failed to list compensation reviews",
+			);
+		}
+	},
+
+	async getCompensationProposal(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrCompensationProposal)
+				.where(
+					and(
+						eq(hrCompensationProposal.organizationId, input.organizationId),
+						eq(hrCompensationProposal.id, input.proposalId),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapCompensationProposal(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to load compensation proposal",
+			);
+		}
+	},
+
+	async createCompensationProposal(record, _ports, meta) {
+		const application = await this.getApplicationById({
+			organizationId: record.organizationId,
+			applicationId: record.applicationId,
+		});
+		if (!application.ok) return application;
+		if (application.data === null) {
+			return notFound("Application not found");
+		}
+		if (application.data.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Application not found or cross-org reference", {
+				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			});
+		}
+
+		const id = randomUUID();
+		const brandedId = parseHumanResourcesCompensationProposalId(id);
+		if (!brandedId.ok) return brandedId;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[CompensationProposalSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							INSERT INTO hr_compensation_proposal (
+								id, organization_id, application_id, status,
+								proposed_base_amount, proposed_currency_code, proposed_grade_id,
+								proposed_salary_band_id, confidential_note, version,
+								created_by, updated_by
+							)
+							VALUES (
+								${brandedId.data}, ${record.organizationId}, ${record.applicationId},
+								'draft', ${record.proposedBaseAmount}, ${record.proposedCurrencyCode},
+								${record.proposedGradeId}, ${record.proposedSalaryBandId},
+								${record.confidentialNote}, 1, ${record.createdBy}, ${record.createdBy}
+							)
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, created_by, ${meta.correlationId},
+								'human-resources', 'hr_compensation_proposal', id, 'CREATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return conflict("Unable to create compensation proposal");
+			}
+			return mapCompensationProposalSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to create compensation proposal",
+			);
+		}
+	},
+
+	async amendCompensationProposal(input, _ports, meta) {
+		const existing = await this.getCompensationProposal({
+			organizationId: input.organizationId,
+			proposalId: input.proposalId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Compensation proposal not found");
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const amendable = assertCompensationProposalAmendable(existing.data.status);
+		if (!amendable.ok) return amendable;
+
+		const nextProposedBaseAmount =
+			input.proposedBaseAmount !== undefined
+				? input.proposedBaseAmount
+				: existing.data.proposedBaseAmount;
+		const nextProposedCurrencyCode =
+			input.proposedCurrencyCode !== undefined
+				? input.proposedCurrencyCode
+				: existing.data.proposedCurrencyCode;
+		const nextProposedGradeId =
+			input.proposedGradeId !== undefined
+				? input.proposedGradeId
+				: existing.data.proposedGradeId;
+		const nextProposedSalaryBandId =
+			input.proposedSalaryBandId !== undefined
+				? input.proposedSalaryBandId
+				: existing.data.proposedSalaryBandId;
+		const nextConfidentialNote =
+			input.confidentialNote !== undefined
+				? input.confidentialNote
+				: existing.data.confidentialNote;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[CompensationProposalSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_compensation_proposal
+							SET proposed_base_amount = ${nextProposedBaseAmount},
+								proposed_currency_code = ${nextProposedCurrencyCode},
+								proposed_grade_id = ${nextProposedGradeId},
+								proposed_salary_band_id = ${nextProposedSalaryBandId},
+								confidential_note = ${nextConfidentialNote},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.proposalId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+								AND status = 'draft'
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_compensation_proposal', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Compensation proposal",
+				});
+			}
+			return mapCompensationProposalSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to amend compensation proposal",
+			);
+		}
+	},
+
+	async approveCompensationProposal(input, _ports, meta) {
+		const existing = await this.getCompensationProposal({
+			organizationId: input.organizationId,
+			proposalId: input.proposalId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Compensation proposal not found");
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		if (
+			!existing.data.proposedBaseAmount ||
+			!existing.data.proposedCurrencyCode
+		) {
+			return invalidState(
+				"Proposal must have proposed base amount and currency before approval",
+			);
+		}
+		const transition = assertCompensationProposalStatusTransition(
+			existing.data.status,
+			"approved",
+		);
+		if (!transition.ok) return transition;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const plannedOutbox = planCompensationDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.proposalId,
+			entityType: "hr_compensation_proposal",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState(
+				"Compensation proposal approval requires a domain event",
+			);
+		}
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[CompensationProposalSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+						WITH mutated AS (
+							UPDATE hr_compensation_proposal
+							SET status = 'approved',
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.proposalId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+								AND status = 'draft'
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_compensation_proposal', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${plannedOutbox.eventType},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Compensation proposal",
+				});
+			}
+			return mapCompensationProposalSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to approve compensation proposal",
+			);
+		}
+	},
+
+	async listCompensationProposals(input) {
+		try {
+			const filters = [
+				eq(hrCompensationProposal.organizationId, input.organizationId),
+			];
+			if (input.applicationId !== undefined) {
+				filters.push(
+					eq(hrCompensationProposal.applicationId, input.applicationId),
+				);
+			}
+			const allRows = await db
+				.select()
+				.from(hrCompensationProposal)
+				.where(and(...filters))
+				.orderBy(desc(hrCompensationProposal.createdAt));
+			let proposals: CompensationProposal[] = [];
+			for (const row of allRows) {
+				const mapped = mapCompensationProposal(row);
+				if (!mapped.ok) return mapped;
+				proposals.push(mapped.data);
+			}
+			const totalCount = proposals.length;
+			const offset = (input.page - 1) * input.pageSize;
+			proposals = proposals.slice(offset, offset + input.pageSize);
+			return ok({
+				proposals,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list compensation proposals",
 			);
 		}
 	},

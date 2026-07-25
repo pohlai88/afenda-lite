@@ -7,6 +7,7 @@ export * from "./compliance";
 // Domain-specific schemas
 export * from "./core";
 export * from "./employee-relations";
+export * from "./hire-orchestration";
 export * from "./learning";
 export * from "./leave";
 export * from "./lifecycle";

@@ -10,12 +10,20 @@ export const CA_ERROR_ACTIVATION_INCOMPLETE =
 	"corporate-administration.company.activation_incomplete" as const;
 export const CA_ERROR_LEGAL_ENTITY_INVALID =
 	"corporate-administration.company.dimension_not_effective" as const;
+export const CA_ERROR_DIMENSION_ALREADY_BOUND =
+	"corporate-administration.company.dimension_already_bound" as const;
+export const CA_ERROR_IDENTIFIER_CONFLICT =
+	"corporate-administration.identifier.conflict" as const;
+export const CA_ERROR_TRANSACTION_FAILED =
+	"corporate-administration.transaction.failed" as const;
 export const CA_ERROR_PARTY_INVALID =
 	"corporate-administration.company.party_kind_invalid" as const;
 export const CA_ERROR_IDENTIFIER_TAX_TYPE =
 	"corporate-administration.tax_identifier.foreign_owner" as const;
 export const CA_ERROR_IDEMPOTENCY_CONFLICT =
 	"corporate-administration.idempotency.conflict" as const;
+export const CA_IDEMPOTENCY_FINGERPRINT_CONFLICT_MESSAGE =
+	"Idempotency key was already used for a different request" as const;
 export const CA_ERROR_NAME_OVERLAP =
 	"corporate-administration.company_name.range_overlap" as const;
 export const CA_ERROR_SHARE_TRANSACTION_UNBALANCED =

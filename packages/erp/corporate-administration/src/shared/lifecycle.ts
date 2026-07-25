@@ -1,18 +1,35 @@
-import type { CaCompanyStatus } from "../schemas";
+import type { CaLegalCompanyStatus } from "../schemas";
 
-export const ALLOWED_COMPANY_STATUS_TRANSITIONS: Readonly<
-	Record<CaCompanyStatus, readonly CaCompanyStatus[]>
-> = {
+export const CA_LEGAL_COMPANY_TRANSITIONS = {
 	draft: ["active", "archived"],
 	active: ["suspended", "dissolved"],
 	suspended: ["active", "dissolved"],
 	dissolved: ["archived"],
 	archived: [],
-};
+} as const satisfies Record<
+	CaLegalCompanyStatus,
+	readonly CaLegalCompanyStatus[]
+>;
 
-export function isAllowedCompanyStatusTransition(
-	from: CaCompanyStatus,
-	to: CaCompanyStatus,
+export function canTransitionLegalCompany(
+	from: CaLegalCompanyStatus,
+	to: CaLegalCompanyStatus,
 ): boolean {
-	return ALLOWED_COMPANY_STATUS_TRANSITIONS[from].includes(to);
+	const allowed: readonly CaLegalCompanyStatus[] =
+		CA_LEGAL_COMPANY_TRANSITIONS[from];
+	return allowed.includes(to);
+}
+
+export function isTerminalLegalCompanyStatus(
+	status: CaLegalCompanyStatus,
+): boolean {
+	return status === "dissolved" || status === "archived";
+}
+
+export function canUpdateLegalCompanyProfile(
+	status: CaLegalCompanyStatus,
+): boolean {
+	return (
+		status === "draft" || status === "active" || status === "suspended"
+	);
 }

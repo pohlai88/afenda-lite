@@ -5,19 +5,27 @@ import {
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
 	HUMAN_RESOURCES_QUERY_CLEARANCE_GET_BY_OFFBOARDING_CASE,
+	HUMAN_RESOURCES_QUERY_OFFBOARDING_ACCESS_REVOCATION_GET_BY_CASE,
 	HUMAN_RESOURCES_QUERY_OFFBOARDING_CASE_GET,
+	HUMAN_RESOURCES_QUERY_OFFBOARDING_PAYROLL_HANDOFF_GET_BY_CASE,
 	HUMAN_RESOURCES_QUERY_OFFBOARDING_TASKS_LIST,
 } from "../module-ids";
 import {
 	completeOffboardingInputSchema,
 	completeOffboardingTaskInputSchema,
 	getClearanceByOffboardingCaseInputSchema,
+	getOffboardingAccessRevocationByCaseInputSchema,
 	getOffboardingCaseInputSchema,
+	getOffboardingPayrollHandoffByCaseInputSchema,
 	listOffboardingTasksInputSchema,
 	recordClearanceInputSchema,
 	recordExitInterviewInputSchema,
+	recordOffboardingAccessRevocationInputSchema,
+	recordOffboardingPayrollHandoffInputSchema,
 	startOffboardingInputSchema,
 } from "../schemas/lifecycle";
 import { fingerprintOffboardingStart } from "../shared/fingerprint";
@@ -26,7 +34,7 @@ import {
 	runLifecycleQuery,
 } from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { Clearance, OffboardingCase, OffboardingTask } from "../types";
+import type { Clearance, OffboardingAccessRevocation, OffboardingCase, OffboardingPayrollHandoff, OffboardingTask } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_OFFBOARDING = "offboarding" as const;
 export type HumanResourcesOffboardingAggregate =
@@ -143,6 +151,61 @@ export async function recordClearance(
 	});
 }
 
+export async function recordOffboardingAccessRevocation(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<OffboardingCase>> {
+	return runLifecycleCommand(input, options, {
+		schema: recordOffboardingAccessRevocationInputSchema,
+		invalidMessage: "Invalid record offboarding access revocation input",
+		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+		execute: (data, { store, ports }) =>
+			store.recordOffboardingAccessRevocation(
+				{
+					organizationId: data.organizationId,
+					accessRevocationId: data.accessRevocationId,
+					revokedOn: data.revokedOn,
+					summary: data.summary?.trim() ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+				}),
+			),
+	});
+}
+
+export async function recordOffboardingPayrollHandoff(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<OffboardingCase>> {
+	return runLifecycleCommand(input, options, {
+		schema: recordOffboardingPayrollHandoffInputSchema,
+		invalidMessage: "Invalid record offboarding payroll handoff input",
+		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
+		execute: (data, { store, ports }) =>
+			store.recordOffboardingPayrollHandoff(
+				{
+					organizationId: data.organizationId,
+					payrollHandoffId: data.payrollHandoffId,
+					readyOn: data.readyOn,
+					summary: data.summary?.trim() ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
+				}),
+			),
+	});
+}
+
 export async function completeOffboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
@@ -210,6 +273,38 @@ export async function getClearanceByOffboardingCase(
 		query: HUMAN_RESOURCES_QUERY_CLEARANCE_GET_BY_OFFBOARDING_CASE,
 		execute: (data, { store }) =>
 			store.getClearanceByOffboardingCase({
+				organizationId: data.organizationId,
+				offboardingCaseId: data.offboardingCaseId,
+			}),
+	});
+}
+
+export async function getOffboardingAccessRevocationByCase(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<OffboardingAccessRevocation | null>> {
+	return runLifecycleQuery(input, options, {
+		schema: getOffboardingAccessRevocationByCaseInputSchema,
+		invalidMessage: "Invalid get offboarding access revocation input",
+		query: HUMAN_RESOURCES_QUERY_OFFBOARDING_ACCESS_REVOCATION_GET_BY_CASE,
+		execute: (data, { store }) =>
+			store.getOffboardingAccessRevocationByCase({
+				organizationId: data.organizationId,
+				offboardingCaseId: data.offboardingCaseId,
+			}),
+	});
+}
+
+export async function getOffboardingPayrollHandoffByCase(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<OffboardingPayrollHandoff | null>> {
+	return runLifecycleQuery(input, options, {
+		schema: getOffboardingPayrollHandoffByCaseInputSchema,
+		invalidMessage: "Invalid get offboarding payroll handoff input",
+		query: HUMAN_RESOURCES_QUERY_OFFBOARDING_PAYROLL_HANDOFF_GET_BY_CASE,
+		execute: (data, { store }) =>
+			store.getOffboardingPayrollHandoffByCase({
 				organizationId: data.organizationId,
 				offboardingCaseId: data.offboardingCaseId,
 			}),

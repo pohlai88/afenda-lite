@@ -215,6 +215,12 @@ export function canTransitionApplicationStatus(
 	next: ApplicationStatus,
 ): boolean {
 	if (current === next) return false;
+	if (
+		(current === "rejected" || current === "withdrawn") &&
+		next === "submitted"
+	) {
+		return true;
+	}
 	if (isApplicationTerminal(current)) return false;
 	if (current === "submitted" && next === "in_review") return true;
 	if (current === "in_review" && next === "interviewing") return true;
@@ -248,12 +254,34 @@ export function assertApplicationStatusTransition(
 	return ok(undefined);
 }
 
+export function assertApplicationReopenable(
+	current: ApplicationStatus,
+): Result<void> {
+	if (current !== "rejected" && current !== "withdrawn") {
+		return invalidState(
+			"Application can only be reopened from rejected or withdrawn status",
+		);
+	}
+	return ok(undefined);
+}
+
 export function assertApplicationEligibleForOffer(
 	status: ApplicationStatus,
 ): Result<void> {
 	if (status !== "in_review" && status !== "interviewing") {
 		return invalidState(
 			"Offer can only be created for applications in review or interviewing",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertInterviewInterviewerAssignable(
+	status: InterviewStatus,
+): Result<void> {
+	if (status !== "scheduled") {
+		return invalidState(
+			"Interviewer can only be assigned while interview is scheduled",
 		);
 	}
 	return ok(undefined);
@@ -307,7 +335,10 @@ export function canTransitionOfferStatus(
 ): boolean {
 	if (current === next) return false;
 	if (isOfferTerminal(current)) return false;
-	if (current === "draft" && (next === "issued" || next === "withdrawn")) {
+	if (current === "draft" && (next === "approved" || next === "withdrawn")) {
+		return true;
+	}
+	if (current === "approved" && (next === "issued" || next === "withdrawn")) {
 		return true;
 	}
 	if (
@@ -338,6 +369,26 @@ export function assertOfferStatusTransition(
 export function assertOfferAmendable(status: OfferStatus): Result<void> {
 	if (status !== "draft") {
 		return invalidState("Offer can only be amended while draft");
+	}
+	return ok(undefined);
+}
+
+export function assertOfferProposalMutable(status: OfferStatus): Result<void> {
+	if (status !== "draft") {
+		return invalidState(
+			"Compensation proposal reference can only change while offer is draft",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertOfferReadyForApproval(input: {
+	compensationProposalId: string | null;
+}): Result<void> {
+	if (input.compensationProposalId === null) {
+		return invalidState(
+			"Compensation proposal reference is required before offer approval",
+		);
 	}
 	return ok(undefined);
 }

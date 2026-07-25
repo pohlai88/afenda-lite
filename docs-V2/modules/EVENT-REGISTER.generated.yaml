@@ -287,6 +287,9 @@ events:
     id: human-resources.candidate.retention-changed.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.candidate.anonymized.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.application.submitted.v1
     moduleId: human-resources
   - direction: emits
@@ -299,6 +302,9 @@ events:
     id: human-resources.application.withdrawn.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.application.reopened.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.interview.scheduled.v1
     moduleId: human-resources
   - direction: emits
@@ -308,7 +314,13 @@ events:
     id: human-resources.offer.issued.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.offer.approved.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.offer.accepted.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.hire.from-accepted-offer.completed.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.offer.rejected.v1
@@ -348,6 +360,9 @@ events:
     moduleId: human-resources
   - direction: emits
     id: human-resources.compensation.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.compensation-proposal.approved.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.benefit-enrollment.changed.v1

@@ -47,6 +47,25 @@ export type LeaveUnit = (typeof LEAVE_UNITS)[number];
 export const LEAVE_TYPES = ["annual", "sick", "unpaid", "other"] as const;
 export type LeaveType = (typeof LEAVE_TYPES)[number];
 
+export const LEAVE_POLICY_ACCRUAL_BASES = [
+	"none",
+	"periodic",
+	"anniversary",
+] as const;
+export type LeavePolicyAccrualBasis = (typeof LEAVE_POLICY_ACCRUAL_BASES)[number];
+
+export const LEAVE_POLICY_ACCRUAL_FREQUENCIES = ["monthly", "annual"] as const;
+export type LeavePolicyAccrualFrequency =
+	(typeof LEAVE_POLICY_ACCRUAL_FREQUENCIES)[number];
+
+export const LEAVE_POLICY_ENTITLEMENT_EXPIRY_RULES = [
+	"none",
+	"period_end",
+	"days_after_period_end",
+] as const;
+export type LeavePolicyEntitlementExpiryRule =
+	(typeof LEAVE_POLICY_ENTITLEMENT_EXPIRY_RULES)[number];
+
 export const DAY_PORTIONS = ["morning", "afternoon", "full"] as const;
 export type DayPortion = (typeof DAY_PORTIONS)[number];
 
@@ -65,6 +84,13 @@ export const leaveAdjustmentKindSchema = z.enum(LEAVE_ADJUSTMENT_KINDS);
 export const leaveRequestStatusSchema = z.enum(LEAVE_REQUEST_STATUSES);
 export const leaveUnitSchema = z.enum(LEAVE_UNITS);
 export const leaveTypeSchema = z.enum(LEAVE_TYPES);
+export const leavePolicyAccrualBasisSchema = z.enum(LEAVE_POLICY_ACCRUAL_BASES);
+export const leavePolicyAccrualFrequencySchema = z.enum(
+	LEAVE_POLICY_ACCRUAL_FREQUENCIES,
+);
+export const leavePolicyEntitlementExpiryRuleSchema = z.enum(
+	LEAVE_POLICY_ENTITLEMENT_EXPIRY_RULES,
+);
 export const dayPortionSchema = z.enum(DAY_PORTIONS);
 export const approvalDecisionSchema = z.enum(APPROVAL_DECISIONS);
 
