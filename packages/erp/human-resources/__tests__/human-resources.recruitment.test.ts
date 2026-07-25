@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { HumanResourcesPermission } from "../src/authorization";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -17,7 +18,9 @@ import { createPosition } from "../src/organization/position";
 import {
 	HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
 	HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
@@ -45,15 +48,26 @@ import {
 import {
 	amendRequisition,
 	approveRequisition,
+	assignHiringManager,
+	cancelRequisition,
+	closeRequisition,
 	createDraftRequisition,
+	getRequisition,
 	openRequisition,
+	placeRequisitionOnHold,
 	submitRequisition,
 } from "../src/recruitment/requisition";
+import { createEmployee } from "../src/core/employee";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	seedActiveEmployee,
+	seedDefaultHiringManager,
+	seedRequisitionPipeline,
+} from "./helpers/recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG_A = "org-recruit-a";
@@ -98,62 +112,17 @@ async function seedOpenRequisition(
 		return position;
 	}
 
-	const draft = await createDraftRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: ACTOR,
-			correlationId: `corr-req-${input.code}`,
-			idempotencyKey: `idem-req-${input.code}`,
-			code: input.code,
-			title: `Req ${input.code}`,
-			jobId: orgSeed.jobId,
-			positionId: position.data.id,
-			departmentId: orgSeed.departmentId,
-		},
-		ready,
-	);
-	if (!draft.ok) {
-		return draft;
-	}
-
-	const submitted = await submitRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: ACTOR,
-			correlationId: `corr-sub-${input.code}`,
-			requisitionId: draft.data.id,
-			expectedVersion: draft.data.version,
-		},
-		ready,
-	);
-	if (!submitted.ok) {
-		return submitted;
-	}
-
-	const approved = await approveRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: ACTOR,
-			correlationId: `corr-apr-${input.code}`,
-			requisitionId: submitted.data.id,
-			expectedVersion: submitted.data.version,
-		},
-		ready,
-	);
-	if (!approved.ok) {
-		return approved;
-	}
-
-	return openRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: ACTOR,
-			correlationId: `corr-open-${input.code}`,
-			requisitionId: approved.data.id,
-			expectedVersion: approved.data.version,
-		},
-		ready,
-	);
+	return seedRequisitionPipeline(ready, {
+		organizationId: input.organizationId,
+		actorUserId: ACTOR,
+		tag: input.code,
+		targetStatus: "open",
+		code: input.code,
+		title: `Req ${input.code}`,
+		jobId: orgSeed.jobId,
+		positionId: position.data.id,
+		departmentId: orgSeed.departmentId,
+	});
 }
 
 async function seedCandidate(
@@ -702,6 +671,9 @@ describe("@afenda/human-resources recruitment", () => {
 		const writer = harness([
 			HUMAN_RESOURCES_PERMISSION_REQUISITION_CREATE,
 			HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 			HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
 			HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
 			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
@@ -975,6 +947,298 @@ describe("@afenda/human-resources recruitment", () => {
 			expect(humanResourcesCodeFromResult(second)).toBe(
 				HUMAN_RESOURCES_ERROR_CONFLICT,
 			);
+		}
+	});
+});
+
+describe("@afenda/human-resources requisition lifecycle (Slice 6.1)", () => {
+	it("rejects submit without a hiring manager", async () => {
+		const ready = harness();
+		const draft = await createDraftRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-no-hm",
+				idempotencyKey: "idem-s61-no-hm",
+				code: "REQ-S61-NOHM",
+				title: "No manager",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-submit-no-hm",
+				requisitionId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(false);
+		if (!submitted.ok) {
+			expect(humanResourcesCodeFromResult(submitted)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+	});
+
+	it("runs draft through suspend and resume to close", async () => {
+		const ready = harness();
+		const open = await seedOpenRequisition(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S61-LC",
+		});
+		expect(open.ok).toBe(true);
+		if (!open.ok) return;
+
+		const onHold = await placeRequisitionOnHold(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-hold",
+				requisitionId: open.data.id,
+				expectedVersion: open.data.version,
+			},
+			ready,
+		);
+		expect(onHold.ok).toBe(true);
+		if (!onHold.ok) return;
+
+		const resumed = await openRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-resume",
+				requisitionId: onHold.data.id,
+				expectedVersion: onHold.data.version,
+			},
+			ready,
+		);
+		expect(resumed.ok).toBe(true);
+		if (!resumed.ok) return;
+
+		const closed = await closeRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-close",
+				requisitionId: resumed.data.id,
+				expectedVersion: resumed.data.version,
+			},
+			ready,
+		);
+		expect(closed.ok).toBe(true);
+		if (closed.ok) {
+			expect(closed.data.status).toBe("closed");
+		}
+	});
+
+	it("assigns and reads hiring manager; rejects inactive employee", async () => {
+		const ready = harness();
+		const manager = await seedDefaultHiringManager(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			tag: "s61-hm",
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const draft = await createDraftRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-draft-hm",
+				idempotencyKey: "idem-s61-draft-hm",
+				code: "REQ-S61-HM",
+				title: "HM req",
+				hiringManagerEmployeeId: manager.employeeId,
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-submit-hm",
+				requisitionId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const approved = await approveRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-approve-hm",
+				requisitionId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const replacement = await seedActiveEmployee(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			employeeNumber: `HM-REPL-${Date.now()}`,
+			legalName: "Replacement Manager",
+		});
+		expect(replacement.ok).toBe(true);
+		if (!replacement.ok) return;
+
+		const opened = await openRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-open-hm",
+				requisitionId: approved.data.id,
+				expectedVersion: approved.data.version,
+			},
+			ready,
+		);
+		expect(opened.ok).toBe(true);
+		if (!opened.ok) return;
+
+		const reassigned = await assignHiringManager(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-assign-hm",
+				requisitionId: opened.data.id,
+				hiringManagerEmployeeId: replacement.employeeId,
+				expectedVersion: opened.data.version,
+			},
+			ready,
+		);
+		expect(reassigned.ok).toBe(true);
+		if (!reassigned.ok) return;
+
+		const loaded = await getRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-get-hm",
+				requisitionId: reassigned.data.id,
+			},
+			ready,
+		);
+		expect(loaded.ok).toBe(true);
+		if (loaded.ok) {
+			expect(loaded.data.hiringManagerEmployeeId).toBe(replacement.employeeId);
+		}
+
+		const inactive = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-inactive-emp",
+				idempotencyKey: "idem-s61-inactive-emp",
+				employeeNumber: "HM-INACTIVE",
+				legalName: "Inactive Manager",
+			},
+			ready,
+		);
+		expect(inactive.ok).toBe(true);
+		if (!inactive.ok) return;
+
+		const denied = await assignHiringManager(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-assign-inactive",
+				requisitionId: reassigned.data.id,
+				hiringManagerEmployeeId: inactive.data.id,
+				expectedVersion: reassigned.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			expect(humanResourcesCodeFromResult(denied)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+	});
+
+	it("denies cross-org hiring manager assignment", async () => {
+		const ready = harness();
+		const managerB = await seedDefaultHiringManager(ready, {
+			organizationId: ORG_B,
+			actorUserId: ACTOR,
+			tag: "s61-cross",
+		});
+		expect(managerB.ok).toBe(true);
+		if (!managerB.ok) return;
+
+		const draft = await createDraftRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-cross-draft",
+				idempotencyKey: "idem-s61-cross-draft",
+				code: "REQ-S61-CROSS",
+				title: "Cross org",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const denied = await assignHiringManager(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-cross-assign",
+				requisitionId: draft.data.id,
+				hiringManagerEmployeeId: managerB.employeeId,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			const code = humanResourcesCodeFromResult(denied);
+			expect(
+				code === HUMAN_RESOURCES_ERROR_NOT_FOUND ||
+					code === HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE ||
+					code === HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+			).toBe(true);
+		}
+	});
+
+	it("cancels an open requisition", async () => {
+		const ready = harness();
+		const open = await seedOpenRequisition(ready, {
+			organizationId: ORG_A,
+			code: "REQ-S61-CANCEL",
+		});
+		expect(open.ok).toBe(true);
+		if (!open.ok) return;
+
+		const cancelled = await cancelRequisition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-s61-cancel",
+				requisitionId: open.data.id,
+				expectedVersion: open.data.version,
+			},
+			ready,
+		);
+		expect(cancelled.ok).toBe(true);
+		if (cancelled.ok) {
+			expect(cancelled.data.status).toBe("cancelled");
 		}
 	});
 });

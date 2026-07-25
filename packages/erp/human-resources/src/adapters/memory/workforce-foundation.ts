@@ -2,11 +2,17 @@ import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT,
 	HUMAN_RESOURCES_PERSON_CREATED_EVENT,
+	HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT,
+	HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT,
 	HUMAN_RESOURCES_WORKER_CHANGED_EVENT,
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 } from "@afenda/events/schemas";
 import {
+	type HumanResourcesEmployeeId,
 	type HumanResourcesPersonId,
 	type HumanResourcesWorkerId,
 	parseHumanResourcesPersonId,
@@ -23,9 +29,13 @@ import { previousIsoDate } from "../../shared/effective-dates";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
 	HumanResourcesWorkforceFoundationStore,
+	IdempotentPersonContactRecord,
+	IdempotentPersonIdentifierRecord,
 	IdempotentPersonRecord,
 	IdempotentWorkerRecord,
+	PersonContactCreateRecord,
 	PersonCreateRecord,
+	PersonIdentifierCreateRecord,
 	WorkerCreateRecord,
 } from "../../store";
 import {
@@ -38,6 +48,10 @@ import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
 	Person,
+	PersonContact,
+	PersonDuplicateCandidate,
+	PersonDuplicateMatchReason,
+	PersonIdentifier,
 	PersonIdentityAtAsOf,
 	PersonIdentityVersion,
 	Worker,
@@ -46,6 +60,14 @@ import type {
 } from "../../workforce-foundation/types";
 import type { CoreMemoryState } from "./core";
 import { idempotencyMapKey } from "./shared";
+
+function clonePersonContact(contact: PersonContact): PersonContact {
+	return { ...contact };
+}
+
+function clonePersonIdentifier(identifier: PersonIdentifier): PersonIdentifier {
+	return { ...identifier };
+}
 
 function clonePerson(person: Person): Person {
 	return { ...person };
@@ -133,7 +155,11 @@ export type WorkforceFoundationMemoryState = {
 	workers: Map<HumanResourcesWorkerId, Worker>;
 	personIdentityVersions: Map<string, PersonIdentityVersion>;
 	workerClassificationVersions: Map<string, WorkerClassificationVersion>;
+	personContacts: Map<string, PersonContact>;
+	personIdentifiers: Map<string, PersonIdentifier>;
 	personIdempotencyByKey: Map<string, IdempotentPersonRecord>;
+	personContactIdempotencyByKey: Map<string, IdempotentPersonContactRecord>;
+	personIdentifierIdempotencyByKey: Map<string, IdempotentPersonIdentifierRecord>;
 	workerIdempotencyByKey: Map<string, IdempotentWorkerRecord>;
 };
 
@@ -145,7 +171,11 @@ export function createWorkforceFoundationMemoryState(): WorkforceFoundationMemor
 		workers: new Map(),
 		personIdentityVersions: new Map(),
 		workerClassificationVersions: new Map(),
+		personContacts: new Map(),
+		personIdentifiers: new Map(),
 		personIdempotencyByKey: new Map(),
+		personContactIdempotencyByKey: new Map(),
+		personIdentifierIdempotencyByKey: new Map(),
 		workerIdempotencyByKey: new Map(),
 	};
 }
@@ -157,7 +187,11 @@ export function resetWorkforceFoundationMemoryState(
 	state.workers.clear();
 	state.personIdentityVersions.clear();
 	state.workerClassificationVersions.clear();
+	state.personContacts.clear();
+	state.personIdentifiers.clear();
 	state.personIdempotencyByKey.clear();
+	state.personContactIdempotencyByKey.clear();
+	state.personIdentifierIdempotencyByKey.clear();
 	state.workerIdempotencyByKey.clear();
 }
 
@@ -167,12 +201,29 @@ export function createMemoryWorkforceFoundationMethods(input: {
 }): MemoryWorkforceFoundationMethods {
 	const { state, core } = input;
 
+	function rollbackWorkerClassificationLineage(input: {
+		openSegment: WorkerClassificationVersion;
+		successorId: string;
+		previousWorker: Worker;
+	}): void {
+		state.workerClassificationVersions.set(
+			input.openSegment.id,
+			input.openSegment,
+		);
+		state.workerClassificationVersions.delete(input.successorId);
+		state.workers.set(input.previousWorker.id, input.previousWorker);
+	}
+
 	async function emitWorkerChanged(
 		updated: Worker,
 		previous: Worker,
 		actorUserId: string,
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
+		lineageRollback?: {
+			openSegment: WorkerClassificationVersion;
+			successorId: string;
+		},
 	): Promise<Result<Worker>> {
 		const audit = await ports.audit.record({
 			organizationId: updated.organizationId,
@@ -184,7 +235,15 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			changes: [],
 		});
 		if (!audit.ok) {
-			state.workers.set(previous.id, previous);
+			if (lineageRollback !== undefined) {
+				rollbackWorkerClassificationLineage({
+					openSegment: lineageRollback.openSegment,
+					successorId: lineageRollback.successorId,
+					previousWorker: previous,
+				});
+			} else {
+				state.workers.set(previous.id, previous);
+			}
 			return audit;
 		}
 
@@ -202,11 +261,61 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			},
 		});
 		if (!outbox.ok) {
-			state.workers.set(previous.id, previous);
+			if (lineageRollback !== undefined) {
+				rollbackWorkerClassificationLineage({
+					openSegment: lineageRollback.openSegment,
+					successorId: lineageRollback.successorId,
+					previousWorker: previous,
+				});
+			} else {
+				state.workers.set(previous.id, previous);
+			}
 			return outbox;
 		}
 
 		return ok(cloneWorker(updated));
+	}
+
+	async function assertEmployeeLinkForWorkerMemory(
+		input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			excludingWorkerId?: HumanResourcesWorkerId;
+		},
+		findWorkerByEmployeeId: HumanResourcesWorkforceFoundationStore["findWorkerByEmployeeId"],
+	): Promise<Result<void>> {
+		const employee = core.employees.get(input.employeeId);
+		if (
+			employee === undefined ||
+			employee.organizationId !== input.organizationId
+		) {
+			return fail(
+				"NOT_FOUND",
+				"Employee not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
+
+		const employeeWorker = await findWorkerByEmployeeId({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+		});
+		if (!employeeWorker.ok) {
+			return employeeWorker;
+		}
+		if (
+			employeeWorker.data !== null &&
+			(input.excludingWorkerId === undefined ||
+				employeeWorker.data.id !== input.excludingWorkerId)
+		) {
+			return fail(
+				"CONFLICT",
+				"Employee is already linked to a worker",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+
+		return ok(undefined);
 	}
 
 	return {
@@ -315,6 +424,8 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				id: idResult.data,
 				organizationId: record.organizationId,
 				legalName: record.legalName,
+				preferredName: record.preferredName,
+				privacyClassification: record.privacyClassification,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -532,6 +643,715 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(clonePerson(updatedPerson));
 		},
 
+		async updatePersonPreferredName(input, ports, meta) {
+			const person = state.persons.get(input.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== input.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				person.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (person.preferredName === input.preferredName) {
+				return ok(clonePerson(person));
+			}
+			const previous = clonePerson(person);
+			const now = new Date();
+			const updated: Person = {
+				...person,
+				preferredName: input.preferredName,
+				version: person.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.persons.set(updated.id, updated);
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_person",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [
+					{
+						field: "preferredName",
+						oldValue: previous.preferredName,
+						newValue: updated.preferredName,
+					},
+				],
+			});
+			if (!audit.ok) {
+				state.persons.set(previous.id, previous);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_person",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.persons.set(previous.id, previous);
+				return outbox;
+			}
+			return ok(clonePerson(updated));
+		},
+
+		async setPersonPrivacyClassification(input, ports, meta) {
+			const person = state.persons.get(input.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== input.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				person.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (person.privacyClassification === input.privacyClassification) {
+				return ok(clonePerson(person));
+			}
+			const previous = clonePerson(person);
+			const now = new Date();
+			const updated: Person = {
+				...person,
+				privacyClassification: input.privacyClassification,
+				version: person.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.persons.set(updated.id, updated);
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_person",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [
+					{
+						field: "privacyClassification",
+						oldValue: previous.privacyClassification,
+						newValue: updated.privacyClassification,
+					},
+				],
+			});
+			if (!audit.ok) {
+				state.persons.set(previous.id, previous);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_person",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.persons.set(previous.id, previous);
+				return outbox;
+			}
+			return ok(clonePerson(updated));
+		},
+
+		async findPersonContactByIdempotencyKey(input) {
+			const existing = state.personContactIdempotencyByKey.get(
+				idempotencyMapKey(input.organizationId, input.idempotencyKey),
+			);
+			if (existing === undefined) {
+				return ok(null);
+			}
+			return ok({
+				contact: clonePersonContact(existing.contact),
+				createRequestFingerprint: existing.createRequestFingerprint,
+			});
+		},
+
+		async addPersonContact(record, ports, meta) {
+			const person = state.persons.get(record.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== record.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			if (record.isPrimary) {
+				for (const contact of state.personContacts.values()) {
+					if (
+						contact.organizationId === record.organizationId &&
+						contact.personId === record.personId &&
+						contact.contactType === record.contactType &&
+						contact.status === "active" &&
+						contact.isPrimary
+					) {
+						return fail(
+							"CONFLICT",
+							"Person already has a primary contact for this type",
+							humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+						);
+					}
+				}
+			}
+			const now = new Date();
+			const contact: PersonContact = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				personId: record.personId,
+				contactType: record.contactType,
+				valueText: record.valueText,
+				normalizedValue: record.normalizedValue,
+				isPrimary: record.isPrimary,
+				status: "active",
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.personContacts.set(contact.id, contact);
+			state.personContactIdempotencyByKey.set(
+				idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				{
+					contact: clonePersonContact(contact),
+					createRequestFingerprint: record.createRequestFingerprint,
+				},
+			);
+			const audit = await ports.audit.record({
+				organizationId: contact.organizationId,
+				actorUserId: contact.createdBy,
+				correlationId: meta.correlationId,
+				entity: "hr_person_contact",
+				entityId: contact.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.personContacts.delete(contact.id);
+				state.personContactIdempotencyByKey.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: contact.organizationId,
+				actorUserId: contact.createdBy,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
+				payload: {
+					organizationId: contact.organizationId,
+					entityType: "hr_person_contact",
+					entityId: contact.id,
+					actorId: contact.createdBy,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.personContacts.delete(contact.id);
+				state.personContactIdempotencyByKey.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return outbox;
+			}
+			return ok(clonePersonContact(contact));
+		},
+
+		async updatePersonContact(input, ports, meta) {
+			const contact = state.personContacts.get(input.contactId);
+			if (
+				contact === undefined ||
+				contact.organizationId !== input.organizationId ||
+				contact.personId !== input.personId ||
+				contact.status !== "active"
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person contact not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				contact.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (input.isPrimary === true) {
+				for (const row of state.personContacts.values()) {
+					if (
+						row.organizationId === input.organizationId &&
+						row.personId === input.personId &&
+						row.contactType === contact.contactType &&
+						row.status === "active" &&
+						row.isPrimary &&
+						row.id !== contact.id
+					) {
+						return fail(
+							"CONFLICT",
+							"Person already has a primary contact for this type",
+							humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+						);
+					}
+				}
+			}
+			const previous = clonePersonContact(contact);
+			const now = new Date();
+			const updated: PersonContact = {
+				...contact,
+				valueText: input.valueText,
+				normalizedValue: input.normalizedValue,
+				isPrimary: input.isPrimary ?? contact.isPrimary,
+				version: contact.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.personContacts.set(updated.id, updated);
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_person_contact",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.personContacts.set(previous.id, previous);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_person_contact",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.personContacts.set(previous.id, previous);
+				return outbox;
+			}
+			return ok(clonePersonContact(updated));
+		},
+
+		async retirePersonContact(input, ports, meta) {
+			const contact = state.personContacts.get(input.contactId);
+			if (
+				contact === undefined ||
+				contact.organizationId !== input.organizationId ||
+				contact.personId !== input.personId ||
+				contact.status !== "active"
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person contact not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				contact.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const previous = clonePersonContact(contact);
+			const now = new Date();
+			const updated: PersonContact = {
+				...contact,
+				status: "retired",
+				isPrimary: false,
+				version: contact.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.personContacts.set(updated.id, updated);
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_person_contact",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.personContacts.set(previous.id, previous);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_person_contact",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.personContacts.set(previous.id, previous);
+				return outbox;
+			}
+			return ok(clonePersonContact(updated));
+		},
+
+		async listPersonContacts(input) {
+			const person = state.persons.get(input.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== input.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(
+				Array.from(state.personContacts.values())
+					.filter(
+						(contact) =>
+							contact.organizationId === input.organizationId &&
+							contact.personId === input.personId,
+					)
+					.map(clonePersonContact),
+			);
+		},
+
+		async findPersonIdentifierByIdempotencyKey(input) {
+			const existing = state.personIdentifierIdempotencyByKey.get(
+				idempotencyMapKey(input.organizationId, input.idempotencyKey),
+			);
+			if (existing === undefined) {
+				return ok(null);
+			}
+			return ok({
+				identifier: clonePersonIdentifier(existing.identifier),
+				createRequestFingerprint: existing.createRequestFingerprint,
+			});
+		},
+
+		async addPersonIdentifier(record, ports, meta) {
+			const person = state.persons.get(record.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== record.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			for (const identifier of state.personIdentifiers.values()) {
+				if (
+					identifier.organizationId === record.organizationId &&
+					identifier.identifierType === record.identifierType &&
+					identifier.identifierFingerprint === record.identifierFingerprint &&
+					identifier.status === "active" &&
+					identifier.effectiveTo === null
+				) {
+					return fail(
+						"CONFLICT",
+						"Person identifier already exists for this organization",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+					);
+				}
+			}
+			const now = new Date();
+			const identifier: PersonIdentifier = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				personId: record.personId,
+				identifierType: record.identifierType,
+				identifierFingerprint: record.identifierFingerprint,
+				identifierLast4: record.identifierLast4,
+				documentRef: record.documentRef,
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: null,
+				status: "active",
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.personIdentifiers.set(identifier.id, identifier);
+			state.personIdentifierIdempotencyByKey.set(
+				idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				{
+					identifier: clonePersonIdentifier(identifier),
+					createRequestFingerprint: record.createRequestFingerprint,
+				},
+			);
+			const audit = await ports.audit.record({
+				organizationId: identifier.organizationId,
+				actorUserId: identifier.createdBy,
+				correlationId: meta.correlationId,
+				entity: "hr_person_identifier",
+				entityId: identifier.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.personIdentifiers.delete(identifier.id);
+				state.personIdentifierIdempotencyByKey.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: identifier.organizationId,
+				actorUserId: identifier.createdBy,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT,
+				payload: {
+					organizationId: identifier.organizationId,
+					entityType: "hr_person_identifier",
+					entityId: identifier.id,
+					actorId: identifier.createdBy,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.personIdentifiers.delete(identifier.id);
+				state.personIdentifierIdempotencyByKey.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return outbox;
+			}
+			return ok(clonePersonIdentifier(identifier));
+		},
+
+		async retirePersonIdentifier(input, ports, meta) {
+			const identifier = state.personIdentifiers.get(input.identifierId);
+			if (
+				identifier === undefined ||
+				identifier.organizationId !== input.organizationId ||
+				identifier.personId !== input.personId ||
+				identifier.status !== "active"
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person identifier not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				identifier.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (input.effectiveTo < identifier.effectiveFrom) {
+				return fail(
+					"VALIDATION_ERROR",
+					"Effective end date must be on or after effective start date",
+				);
+			}
+			const previous = clonePersonIdentifier(identifier);
+			const now = new Date();
+			const updated: PersonIdentifier = {
+				...identifier,
+				effectiveTo: input.effectiveTo,
+				status: "retired",
+				version: identifier.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.personIdentifiers.set(updated.id, updated);
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_person_identifier",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.personIdentifiers.set(previous.id, previous);
+				return audit;
+			}
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_person_identifier",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.personIdentifiers.set(previous.id, previous);
+				return outbox;
+			}
+			return ok(clonePersonIdentifier(updated));
+		},
+
+		async listPersonIdentifiers(input) {
+			const person = state.persons.get(input.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== input.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(
+				Array.from(state.personIdentifiers.values())
+					.filter(
+						(identifier) =>
+							identifier.organizationId === input.organizationId &&
+							identifier.personId === input.personId,
+					)
+					.map(clonePersonIdentifier),
+			);
+		},
+
+		async detectPersonDuplicates(input) {
+			const person = state.persons.get(input.personId);
+			if (
+				person === undefined ||
+				person.organizationId !== input.organizationId
+			) {
+				return fail(
+					"NOT_FOUND",
+					"Person not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			const matches = new Map<
+				HumanResourcesPersonId,
+				Set<PersonDuplicateMatchReason>
+			>();
+			const addMatch = (
+				personId: HumanResourcesPersonId,
+				reason: PersonDuplicateMatchReason,
+			) => {
+				if (personId === input.personId) {
+					return;
+				}
+				const existing = matches.get(personId) ?? new Set();
+				existing.add(reason);
+				matches.set(personId, existing);
+			};
+			for (const candidate of state.persons.values()) {
+				if (
+					candidate.organizationId === input.organizationId &&
+					candidate.legalName.trim().toLowerCase() ===
+						person.legalName.trim().toLowerCase()
+				) {
+					addMatch(candidate.id, "legal_name");
+				}
+			}
+			const emails = Array.from(state.personContacts.values()).filter(
+				(contact) =>
+					contact.organizationId === input.organizationId &&
+					contact.personId === input.personId &&
+					contact.contactType === "email" &&
+					contact.status === "active",
+			);
+			for (const email of emails) {
+				for (const contact of state.personContacts.values()) {
+					if (
+						contact.organizationId === input.organizationId &&
+						contact.contactType === "email" &&
+						contact.status === "active" &&
+						contact.normalizedValue === email.normalizedValue
+					) {
+						addMatch(contact.personId, "email");
+					}
+				}
+			}
+			const identifiers = Array.from(state.personIdentifiers.values()).filter(
+				(identifier) =>
+					identifier.organizationId === input.organizationId &&
+					identifier.personId === input.personId &&
+					identifier.status === "active" &&
+					identifier.effectiveTo === null,
+			);
+			for (const identifier of identifiers) {
+				for (const row of state.personIdentifiers.values()) {
+					if (
+						row.organizationId === input.organizationId &&
+						row.identifierType === identifier.identifierType &&
+						row.identifierFingerprint === identifier.identifierFingerprint &&
+						row.status === "active" &&
+						row.effectiveTo === null
+					) {
+						addMatch(row.personId, "identifier_fingerprint");
+					}
+				}
+			}
+			const candidates: PersonDuplicateCandidate[] = [];
+			for (const [personId, reasons] of matches) {
+				const matched = state.persons.get(personId);
+				if (matched === undefined) {
+					continue;
+				}
+				candidates.push({
+					personId,
+					matchReasons: [...reasons],
+					legalName: matched.legalName,
+					preferredName: matched.preferredName,
+				});
+			}
+			return ok(candidates);
+		},
+
 		async getWorkerById(query) {
 			const worker = state.workers.get(query.workerId);
 			if (
@@ -682,30 +1502,15 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			}
 
 			if (record.workerType === "employee" && record.employeeId !== null) {
-				const employee = core.employees.get(record.employeeId);
-				if (
-					employee === undefined ||
-					employee.organizationId !== record.organizationId
-				) {
-					return fail(
-						"NOT_FOUND",
-						"Employee not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
-				}
-				const employeeWorker = await this.findWorkerByEmployeeId({
-					organizationId: record.organizationId,
-					employeeId: record.employeeId,
-				});
-				if (!employeeWorker.ok) {
-					return employeeWorker;
-				}
-				if (employeeWorker.data !== null) {
-					return fail(
-						"CONFLICT",
-						"Employee is already linked to a worker",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+				const employeeLink = await assertEmployeeLinkForWorkerMemory(
+					{
+						organizationId: record.organizationId,
+						employeeId: record.employeeId,
+					},
+					this.findWorkerByEmployeeId.bind(this),
+				);
+				if (!employeeLink.ok) {
+					return employeeLink;
 				}
 			}
 
@@ -872,33 +1677,16 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			}
 
 			if (input.workerType === "employee" && input.employeeId !== null) {
-				const employee = core.employees.get(input.employeeId);
-				if (
-					employee === undefined ||
-					employee.organizationId !== input.organizationId
-				) {
-					return fail(
-						"NOT_FOUND",
-						"Employee not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
-				}
-				const employeeWorker = await this.findWorkerByEmployeeId({
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-				});
-				if (!employeeWorker.ok) {
-					return employeeWorker;
-				}
-				if (
-					employeeWorker.data !== null &&
-					employeeWorker.data.id !== input.workerId
-				) {
-					return fail(
-						"CONFLICT",
-						"Employee is already linked to a worker",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+				const employeeLink = await assertEmployeeLinkForWorkerMemory(
+					{
+						organizationId: input.organizationId,
+						employeeId: input.employeeId,
+						excludingWorkerId: input.workerId,
+					},
+					this.findWorkerByEmployeeId.bind(this),
+				);
+				if (!employeeLink.ok) {
+					return employeeLink;
 				}
 			}
 
@@ -974,7 +1762,14 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			);
 			state.workerClassificationVersions.set(successor.id, successor);
 			state.workers.set(updated.id, updated);
-			return emitWorkerChanged(updated, worker, input.actorUserId, ports, meta);
+			return emitWorkerChanged(
+				updated,
+				worker,
+				input.actorUserId,
+				ports,
+				meta,
+				{ openSegment, successorId: successor.id },
+			);
 		},
 
 		async changeWorkerStatus(input, ports, meta) {
@@ -1076,7 +1871,14 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			);
 			state.workerClassificationVersions.set(successor.id, successor);
 			state.workers.set(updated.id, updated);
-			return emitWorkerChanged(updated, worker, input.actorUserId, ports, meta);
+			return emitWorkerChanged(
+				updated,
+				worker,
+				input.actorUserId,
+				ports,
+				meta,
+				{ openSegment, successorId: successor.id },
+			);
 		},
 	};
 }

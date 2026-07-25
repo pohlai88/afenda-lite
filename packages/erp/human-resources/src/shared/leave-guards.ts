@@ -7,7 +7,7 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import { invalidInput, invalidState } from "./domain-guards";
+import { effectiveRangeOverlap, invalidInput, invalidState } from "./domain-guards";
 import type { EmploymentStatus } from "./employment-status";
 import { compareLeaveQuantity } from "./leave-balance";
 import type {
@@ -139,6 +139,13 @@ export function assertSufficientLeaveBalance(input: {
 	return ok(undefined);
 }
 
+export const ACTIVE_LEAVE_OVERLAP_STATUSES = [
+	"draft",
+	"submitted",
+	"returned",
+	"approved",
+] as const satisfies readonly LeaveRequestStatus[];
+
 export type LeaveOverlapSegment = {
 	segmentDate: string;
 	dayPortion: "morning" | "afternoon" | "full";
@@ -164,7 +171,9 @@ export function assertNoLeaveOverlap(
 	for (const candidateSegment of candidate) {
 		for (const existingSegment of existing) {
 			if (segmentsOverlap(candidateSegment, existingSegment)) {
-				return invalidInput("Leave request overlaps an existing booking");
+				return effectiveRangeOverlap(
+					"Leave request overlaps an existing booking",
+				);
 			}
 		}
 	}

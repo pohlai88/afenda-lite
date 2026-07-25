@@ -8,6 +8,7 @@ import {
 import {
 	HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
+	HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_CANCEL,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_CLOSE,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT,
@@ -20,6 +21,7 @@ import {
 } from "../module-ids";
 import {
 	amendRequisitionInputSchema,
+	assignHiringManagerInputSchema,
 	createDraftRequisitionInputSchema,
 	getRequisitionInputSchema,
 	listRequisitionsInputSchema,
@@ -28,15 +30,49 @@ import {
 import { fingerprintRequisitionCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
+	assertRequisitionHasHiringManager,
+	assertRequisitionHiringManagerAssignable,
+} from "../shared/recruitment-guards";
+import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
 } from "../shared/recruitment-command";
 import type { RequisitionStatus } from "../shared/recruitment-status";
+import type { HumanResourcesStore } from "../store";
 import type { JobRequisition, RequisitionListPage } from "../types";
+import {
+	mutationUtcDate,
+	validateHiringManagerEmployee,
+} from "./hiring-manager-validation";
 
 export const HUMAN_RESOURCES_AGGREGATE_REQUISITION = "requisition" as const;
 export type HumanResourcesRequisitionAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_REQUISITION;
+
+async function ensureRequisitionHasHiringManagerForTransition(
+	store: HumanResourcesStore,
+	input: {
+		organizationId: string;
+		requisitionId: JobRequisition["id"];
+	},
+): Promise<Result<void>> {
+	const requisition = await store.getRequisitionById({
+		organizationId: input.organizationId,
+		requisitionId: input.requisitionId,
+	});
+	if (!requisition.ok) {
+		return requisition;
+	}
+	if (requisition.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Requisition not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+
+	return assertRequisitionHasHiringManager(requisition.data);
+}
 
 export async function createDraftRequisition(
 	input: unknown,
@@ -50,13 +86,25 @@ export async function createDraftRequisition(
 			const jobId = data.jobId ?? null;
 			const positionId = data.positionId ?? null;
 			const departmentId = data.departmentId ?? null;
+			const hiringManagerEmployeeId = data.hiringManagerEmployeeId ?? null;
 			const requestFingerprint = fingerprintRequisitionCreate({
 				code: data.code,
 				title: data.title,
 				jobId,
 				positionId,
 				departmentId,
+				hiringManagerEmployeeId,
 			});
+
+			if (hiringManagerEmployeeId !== null) {
+				const manager = await validateHiringManagerEmployee(store, {
+					organizationId: data.organizationId,
+					hiringManagerEmployeeId,
+				});
+				if (!manager.ok) {
+					return manager;
+				}
+			}
 
 			const existingByKey = await store.findRequisitionByIdempotencyKey({
 				organizationId: data.organizationId,
@@ -86,6 +134,7 @@ export async function createDraftRequisition(
 					jobId,
 					positionId,
 					departmentId,
+					hiringManagerEmployeeId,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -108,8 +157,20 @@ export async function amendRequisition(
 		schema: amendRequisitionInputSchema,
 		invalidMessage: "Invalid requisition amend input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
-		execute: (data, { store, ports }) =>
-			store.amendRequisition(
+		execute: async (data, { store, ports }) => {
+			if (data.hiringManagerEmployeeId !== undefined) {
+				if (data.hiringManagerEmployeeId !== null) {
+					const manager = await validateHiringManagerEmployee(store, {
+						organizationId: data.organizationId,
+						hiringManagerEmployeeId: data.hiringManagerEmployeeId,
+					});
+					if (!manager.ok) {
+						return manager;
+					}
+				}
+			}
+
+			return store.amendRequisition(
 				{
 					organizationId: data.organizationId,
 					requisitionId: data.requisitionId,
@@ -117,6 +178,7 @@ export async function amendRequisition(
 					jobId: data.jobId,
 					positionId: data.positionId,
 					departmentId: data.departmentId,
+					hiringManagerEmployeeId: data.hiringManagerEmployeeId,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -125,7 +187,66 @@ export async function amendRequisition(
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
 				}),
-			),
+			);
+		},
+	});
+}
+
+export async function assignHiringManager(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<JobRequisition>> {
+	return runRecruitmentCommand(input, options, {
+		schema: assignHiringManagerInputSchema,
+		invalidMessage: "Invalid requisition assign-hiring-manager input",
+		command: HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
+		execute: async (data, { store, ports }) => {
+			const requisition = await store.getRequisitionById({
+				organizationId: data.organizationId,
+				requisitionId: data.requisitionId,
+			});
+			if (!requisition.ok) {
+				return requisition;
+			}
+			if (requisition.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Requisition not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const assignable = assertRequisitionHiringManagerAssignable(
+				requisition.data.status,
+			);
+			if (!assignable.ok) {
+				return assignable;
+			}
+
+			const manager = await validateHiringManagerEmployee(store, {
+				organizationId: data.organizationId,
+				hiringManagerEmployeeId: data.hiringManagerEmployeeId,
+				asOfDate: mutationUtcDate(),
+			});
+			if (!manager.ok) {
+				return manager;
+			}
+
+			return store.assignHiringManager(
+				{
+					organizationId: data.organizationId,
+					requisitionId: data.requisitionId,
+					hiringManagerEmployeeId: data.hiringManagerEmployeeId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
+				}),
+			);
+		},
 	});
 }
 
@@ -137,14 +258,28 @@ async function transitionRequisition(
 		command: HumanResourcesCommandId;
 		status: Exclude<RequisitionStatus, "draft">;
 		emitApprovedEvent?: boolean;
+		requireHiringManager?: boolean;
 	},
 ): Promise<Result<JobRequisition>> {
 	return runRecruitmentCommand(input, options, {
 		schema: requisitionStatusTransitionInputSchema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
-		execute: (data, { store, ports }) =>
-			store.transitionRequisitionStatus(
+		execute: async (data, { store, ports }) => {
+			if (config.requireHiringManager) {
+				const guarded = await ensureRequisitionHasHiringManagerForTransition(
+					store,
+					{
+						organizationId: data.organizationId,
+						requisitionId: data.requisitionId,
+					},
+				);
+				if (!guarded.ok) {
+					return guarded;
+				}
+			}
+
+			return store.transitionRequisitionStatus(
 				{
 					organizationId: data.organizationId,
 					requisitionId: data.requisitionId,
@@ -158,7 +293,8 @@ async function transitionRequisition(
 					correlationId: data.correlationId,
 					operation: config.command,
 				}),
-			),
+			);
+		},
 	});
 }
 
@@ -170,6 +306,7 @@ export async function submitRequisition(
 		invalidMessage: "Invalid requisition submit input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_SUBMIT,
 		status: "submitted",
+		requireHiringManager: true,
 	});
 }
 
@@ -182,6 +319,7 @@ export async function approveRequisition(
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
 		status: "approved",
 		emitApprovedEvent: true,
+		requireHiringManager: true,
 	});
 }
 
@@ -193,6 +331,7 @@ export async function openRequisition(
 		invalidMessage: "Invalid requisition open input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_OPEN,
 		status: "open",
+		requireHiringManager: true,
 	});
 }
 

@@ -112,6 +112,12 @@ import {
 	resolveSessionFromEvents,
 } from "../../time/attendance/session-resolution";
 import {
+	filterAttendanceEventsForWorkDay,
+	resolveAttendanceEventSourceSequence,
+	resolveImportRowSourceSequence,
+	sortAttendanceEventsForSession,
+} from "../../time/attendance/event-order";
+import {
 	approvedLeaveMinutesForDate,
 	buildAttendanceTimesheetEntryPlans,
 	encodeAbsenceDetectionRemarks,
@@ -1951,14 +1957,14 @@ export function createMemoryTimeMethods(
 				return published;
 			}
 
-			const events = Array.from(state.attendanceEvents.values())
-				.filter(
-					(event) =>
-						event.organizationId === input.organizationId &&
-						event.employeeId === session.employeeId &&
-						event.localWorkDate === session.localWorkDate,
-				)
-				.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+			const events = filterAttendanceEventsForWorkDay(
+				state.attendanceEvents.values(),
+				{
+					organizationId: input.organizationId,
+					employeeId: session.employeeId,
+					localWorkDate: session.localWorkDate,
+				},
+			);
 
 			const storeHost = this as HumanResourcesTimeStore;
 			const detected = await runAttendanceExceptionDetection(
@@ -2376,6 +2382,7 @@ export function createMemoryTimeMethods(
 						shiftAssignmentId: row.shiftAssignmentId ?? null,
 						eventType: row.eventType,
 						occurredAt: row.occurredAt,
+						sourceSequence: resolveImportRowSourceSequence(row, rowIndex),
 						sourceTimezone: row.sourceTimezone,
 						localWorkDate: row.localWorkDate,
 						source: "import",
@@ -2467,6 +2474,16 @@ export function createMemoryTimeMethods(
 		async recordAttendanceEvent(input: AttendanceEventRecordInput, ports) {
 			const idResult = parseHumanResourcesAttendanceEventId(randomUUID());
 			if (!idResult.ok) return idResult;
+			const existingForDay = Array.from(state.attendanceEvents.values()).filter(
+				(event) =>
+					event.organizationId === input.organizationId &&
+					event.employeeId === input.employeeId &&
+					event.localWorkDate === input.localWorkDate,
+			);
+			const sourceSequence = resolveAttendanceEventSourceSequence({
+				explicit: input.sourceSequence,
+				existingEvents: existingForDay,
+			});
 			const now = new Date();
 			const event: AttendanceEvent = {
 				id: idResult.data,
@@ -2477,6 +2494,7 @@ export function createMemoryTimeMethods(
 				eventType: input.eventType,
 				capturedOccurredAt: input.occurredAt,
 				occurredAt: input.occurredAt,
+				sourceSequence,
 				sourceTimezone: input.sourceTimezone,
 				localWorkDate: input.localWorkDate,
 				source: input.source,
@@ -2707,8 +2725,8 @@ export function createMemoryTimeMethods(
 		},
 
 		async listAttendanceEvents(input) {
-			const rows = Array.from(state.attendanceEvents.values())
-				.filter(
+			const rows = sortAttendanceEventsForSession(
+				Array.from(state.attendanceEvents.values()).filter(
 					(event) =>
 						event.organizationId === input.organizationId &&
 						(input.employeeId === undefined ||
@@ -2719,8 +2737,8 @@ export function createMemoryTimeMethods(
 							event.localWorkDate <= input.toDate) &&
 						(input.eventType === undefined ||
 							event.eventType === input.eventType),
-				)
-				.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+				),
+			);
 			return ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
@@ -2737,14 +2755,14 @@ export function createMemoryTimeMethods(
 			input: AttendanceSessionResolveInput,
 			ports,
 		) {
-			const events = Array.from(state.attendanceEvents.values())
-				.filter(
-					(event) =>
-						event.organizationId === input.organizationId &&
-						event.employeeId === input.employeeId &&
-						event.localWorkDate === input.localWorkDate,
-				)
-				.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+			const events = filterAttendanceEventsForWorkDay(
+				state.attendanceEvents.values(),
+				{
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					localWorkDate: input.localWorkDate,
+				},
+			);
 			const resolved = resolveSessionFromEvents(events);
 			const policyMinutes = applyAutomaticBreakPolicy(
 				resolved,
@@ -2934,17 +2952,14 @@ export function createMemoryTimeMethods(
 					"Break waiver decision already exists for session version",
 				);
 			}
-			const events = Array.from(state.attendanceEvents.values())
-				.filter(
-					(event) =>
-						event.organizationId === input.organizationId &&
-						event.employeeId === session.employeeId &&
-						event.localWorkDate === session.localWorkDate,
-				)
-				.sort(
-					(left, right) =>
-						left.occurredAt.getTime() - right.occurredAt.getTime(),
-				);
+			const events = filterAttendanceEventsForWorkDay(
+				state.attendanceEvents.values(),
+				{
+					organizationId: input.organizationId,
+					employeeId: session.employeeId,
+					localWorkDate: session.localWorkDate,
+				},
+			);
 			const recordedBreakMinutes =
 				resolveSessionFromEvents(events).breakMinutes;
 			if (recordedBreakMinutes >= automaticBreak.minutes) {

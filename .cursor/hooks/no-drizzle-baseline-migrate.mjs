@@ -95,6 +95,9 @@ function isAllowedShellCommand(command) {
 		if (/\bdb:migrate\b/i.test(c)) {
 			return true;
 		}
+		if (/\bdb:sync-migration-ledger\b/i.test(c)) {
+			return true;
+		}
 		if (/\bdb-migrate-guard\.mjs\b/i.test(c) && !/\b--help\b/i.test(c)) {
 			return true;
 		}
@@ -104,6 +107,14 @@ function isAllowedShellCommand(command) {
 		/packages[/\\]data-plane[/\\]db[/\\]scripts[/\\]db-migration-status\.mjs/.test(
 			c,
 		)
+	) {
+		return true;
+	}
+	if (
+		/packages[/\\]data-plane[/\\]db[/\\]scripts[/\\]db-sync-migration-ledger\.mjs/.test(
+			c,
+		) &&
+		hasMigrateOverride(c)
 	) {
 		return true;
 	}

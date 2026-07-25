@@ -11,6 +11,9 @@ events:
     id: corporate-administration.company.created.v1
     moduleId: corporate-administration
   - direction: emits
+    id: corporate-administration.company.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: corporate-administration.company.activated.v1
     moduleId: corporate-administration
   - direction: emits
@@ -21,6 +24,138 @@ events:
     moduleId: corporate-administration
   - direction: emits
     id: corporate-administration.company.archived.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.company.status-changed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.officer.appointed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.officer.amended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.officer.ended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.governance-body.created.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.governance-body.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.governance-body.retired.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.governance-membership.appointed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.governance-membership.ended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.authority-mandate.granted.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.authority-mandate.amended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.authority-mandate.revoked.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.premise.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.premise.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.premise.retired.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.meeting.recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.meeting.corrected.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.meeting.closed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.resolution.recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.resolution.approved.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.resolution.revoked.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.resolution.superseded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.share-transaction.posted.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.share-transaction.reversed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.beneficial-owner.changed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.property.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.property.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.property.disposed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.asset.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.asset.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.asset.disposed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.asset.written-off.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.intellectual-property.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.intellectual-property.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.intellectual-property.renewed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.intellectual-property.expired.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.intellectual-property.disposed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.insurance-policy.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.insurance-policy.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.insurance-policy.renewed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.insurance-policy.cancelled.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.charge.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.charge.amended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate-administration.charge.released.v1
     moduleId: corporate-administration
   - direction: emits
     id: fulfillment.delivery.created.v1
@@ -53,6 +188,21 @@ events:
     id: human-resources.person.changed.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.person.contact.added.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.person.contact.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.person.contact.retired.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.person.identifier.added.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.person.identifier.retired.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.worker.created.v1
     moduleId: human-resources
   - direction: emits
@@ -75,6 +225,12 @@ events:
     moduleId: human-resources
   - direction: emits
     id: human-resources.employment-contract.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employment-contract.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employment-contract.superseded.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.assignment.created.v1

@@ -43,6 +43,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
+	HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_CANCEL,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_CLOSE,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT,
@@ -75,6 +76,9 @@ const EXPECTED_MATRIX: Record<
 		eventTypes: [HUMAN_RESOURCES_REQUISITION_CLOSED_EVENT],
 	},
 	[HUMAN_RESOURCES_COMMAND_REQUISITION_CANCEL]: { emission: "audit_only" },
+	[HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER]: {
+		emission: "audit_only",
+	},
 	[HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE]: {
 		emission: "domain_event",
 		eventTypes: [HUMAN_RESOURCES_CANDIDATE_CREATED_EVENT],
@@ -148,7 +152,7 @@ describe("recruitment emission registry", () => {
 		]);
 	});
 
-	it("matches the locked 27-row mode/eventType matrix", () => {
+	it("matches the locked 28-row mode/eventType matrix", () => {
 		for (const commandId of HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS) {
 			const expected = EXPECTED_MATRIX[commandId];
 			expect(expected).toBeDefined();

@@ -22,7 +22,7 @@ import {
 	listEmploymentStatusHistoryInputSchema,
 } from "../schemas/core";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
-import { resolveAmendEndsOn } from "../shared/domain-guards";
+import { rehireRequiresEndedEmployment, resolveAmendEndsOn } from "../shared/domain-guards";
 import {
 	resolveEmploymentStatusAsOf,
 	resolveLifecycleEffectiveOn,
@@ -46,6 +46,17 @@ export async function createEmployment(
 		invalidMessage: "Invalid employment create input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 		execute: async (data, { store, ports }) => {
+			const openEmployment = await store.findOpenEmploymentByEmployee({
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+			});
+			if (!openEmployment.ok) {
+				return openEmployment;
+			}
+			if (openEmployment.data !== null) {
+				return rehireRequiresEndedEmployment();
+			}
+
 			const siblingEmployments = await store.listEmploymentsByEmployee({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,

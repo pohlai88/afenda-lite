@@ -134,6 +134,7 @@ import {
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import { seedEmploymentWorkCalendar } from "./helpers/seed-employment-work-calendar";
 import { createStoreWorkCalendarLookup } from "./helpers/store-work-calendar-lookup";
 
 const ORG = "org-hr-time-a";
@@ -2419,6 +2420,13 @@ describe("human-resources.time (memory)", () => {
 			const { employee, employment } = await seedEmployeeEmployment(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
+				suffix: "p02-ot",
+			});
+			await seedEmploymentWorkCalendar(ready, {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				employeeId: employee.id,
+				employmentId: employment.id,
 				suffix: "p02-ot",
 			});
 			const requested = await createOvertimeRequest(
@@ -5044,6 +5052,13 @@ describe("human-resources.time (memory)", () => {
 			const { employee, employment } = await seedEmployeeEmployment(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
+				suffix: "p07-ot",
+			});
+			await seedEmploymentWorkCalendar(ready, {
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				employeeId: employee.id,
+				employmentId: employment.id,
 				suffix: "p07-ot",
 			});
 			const requested = await createOvertimeRequest(

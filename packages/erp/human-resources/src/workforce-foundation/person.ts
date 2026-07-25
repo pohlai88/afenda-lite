@@ -35,6 +35,8 @@ export async function createPerson(
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintPersonCreate({
 				legalName: data.legalName,
+				preferredName: data.preferredName ?? null,
+				privacyClassification: data.privacyClassification,
 			});
 
 			const existingByKey = await store.findPersonByIdempotencyKey({
@@ -61,6 +63,8 @@ export async function createPerson(
 				{
 					organizationId: data.organizationId,
 					legalName: data.legalName.trim(),
+					preferredName: data.preferredName?.trim() ?? null,
+					privacyClassification: data.privacyClassification,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,

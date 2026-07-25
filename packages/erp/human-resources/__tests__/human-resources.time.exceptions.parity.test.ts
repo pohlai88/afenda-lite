@@ -15,6 +15,7 @@ import {
 } from "../src/leave/leave-request";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
+import { createStoreApprovedLeaveQuery } from "../src/testing/approved-leave-query";
 import {
 	recordBreakEnd,
 	recordBreakStart,
@@ -827,27 +828,11 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(overlappingCurrent.ok).toBe(true);
-		if (!overlappingCurrent.ok) return;
-		const ambiguous = await recordClockIn(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-employment-as-of-overlap-${suffix}`,
-				idempotencyKey: `idem-employment-as-of-overlap-${suffix}`,
-				employeeId: overlappingEmployee.data.id,
-				occurredAt: "2025-07-15T09:00:00.000Z",
-				sourceTimezone: "UTC",
-				localWorkDate: "2025-07-15",
-			},
-			ready,
+		expect(overlappingCurrent.ok).toBe(false);
+		if (overlappingCurrent.ok) return;
+		expect(humanResourcesCodeFromResult(overlappingCurrent)).toBe(
+			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
-		expect(ambiguous.ok).toBe(false);
-		if (!ambiguous.ok) {
-			expect(humanResourcesCodeFromResult(ambiguous)).toBe(
-				HUMAN_RESOURCES_ERROR_CONFLICT,
-			);
-		}
 	});
 
 	it("suppresses leave-day absence, preserves control-day absence, and hands off paid leave parity", async () => {
@@ -1079,6 +1064,10 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 		const generationPorts = {
 			...ready,
 			workCalendar: createProductionWorkCalendar({ lookup }),
+			approvedLeave: createStoreApprovedLeaveQuery({
+				store: ready.store,
+				lookup,
+			}),
 		};
 		const generated = await generateTimesheetEntries(
 			{

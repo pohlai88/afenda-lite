@@ -163,6 +163,7 @@ export type AttendanceEventSqlRow = {
 	event_type: string;
 	captured_occurred_at: Date | null;
 	occurred_at: Date;
+	source_sequence: number;
 	source_timezone: string;
 	local_work_date: string;
 	source: string;
@@ -420,6 +421,7 @@ export function attendanceEventFromSql(
 		eventType: row.event_type,
 		capturedOccurredAt: parseNullableDate(row.captured_occurred_at),
 		occurredAt: parseDate(row.occurred_at),
+		sourceSequence: row.source_sequence,
 		sourceTimezone: row.source_timezone,
 		localWorkDate: row.local_work_date,
 		source: row.source,

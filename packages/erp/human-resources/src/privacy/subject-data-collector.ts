@@ -1,6 +1,9 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
-import type { HumanResourcesEmployeeId } from "../brands";
+import type {
+	HumanResourcesEmployeeId,
+	HumanResourcesPersonId,
+} from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -98,15 +101,99 @@ export async function collectHumanResourcesSubjectData(
 	}
 
 	const workerIds: string[] = [];
+	let subjectPersonId: HumanResourcesPersonId | null = null;
 	const worker = await input.store.findWorkerByEmployeeId({
 		organizationId: input.organizationId,
 		employeeId: input.subjectEmployeeId,
 	});
 	if (worker.ok && worker.data !== null) {
 		workerIds.push(worker.data.id);
+		subjectPersonId = worker.data.personId;
 	}
 
 	const records: HumanResourcesSubjectExportRecord[] = [];
+
+	if (subjectPersonId !== null) {
+		const person = await input.store.getPersonById({
+			organizationId: input.organizationId,
+			personId: subjectPersonId,
+		});
+		if (!person.ok) {
+			return person;
+		}
+		if (person.data !== null) {
+			records.push(
+				exportRecord({
+					category: "identity",
+					entityType: "hr_person",
+					entityId: person.data.id,
+					classification: "personal",
+					retentionClass: person.data.privacyClassification,
+					data: asExportData(person.data),
+				}),
+			);
+		}
+
+		const identityVersions = await input.store.listPersonIdentityVersions({
+			organizationId: input.organizationId,
+			personId: subjectPersonId,
+		});
+		if (!identityVersions.ok) {
+			return identityVersions;
+		}
+		for (const version of identityVersions.data) {
+			records.push(
+				exportRecord({
+					category: "identity",
+					entityType: "hr_person_identity_version",
+					entityId: version.id,
+					classification: "personal",
+					retentionClass: "workforce_core",
+					data: asExportData(version),
+				}),
+			);
+		}
+
+		const contacts = await input.store.listPersonContacts({
+			organizationId: input.organizationId,
+			personId: subjectPersonId,
+		});
+		if (!contacts.ok) {
+			return contacts;
+		}
+		for (const contact of contacts.data) {
+			records.push(
+				exportRecord({
+					category: "identity",
+					entityType: "hr_person_contact",
+					entityId: contact.id,
+					classification: "personal",
+					retentionClass: "workforce_core",
+					data: asExportData(contact),
+				}),
+			);
+		}
+
+		const identifiers = await input.store.listPersonIdentifiers({
+			organizationId: input.organizationId,
+			personId: subjectPersonId,
+		});
+		if (!identifiers.ok) {
+			return identifiers;
+		}
+		for (const identifier of identifiers.data) {
+			records.push(
+				exportRecord({
+					category: "identity",
+					entityType: "hr_person_identifier",
+					entityId: identifier.id,
+					classification: "sensitive",
+					retentionClass: "workforce_core",
+					data: asExportData(identifier),
+				}),
+			);
+		}
+	}
 
 	records.push(
 		exportRecord({
@@ -576,7 +663,7 @@ export async function collectHumanResourcesSubjectData(
 		generatedAt: input.generatedAt ?? new Date().toISOString(),
 		correlationId: input.correlationId,
 		subject: {
-			personId: input.subjectEmployeeId,
+			personId: subjectPersonId ?? input.subjectEmployeeId,
 			employeeIds: [input.subjectEmployeeId],
 			workerIds,
 		},

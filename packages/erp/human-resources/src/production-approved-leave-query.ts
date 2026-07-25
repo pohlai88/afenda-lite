@@ -21,15 +21,19 @@ type LeaveStoreSlice = Pick<
 	"listLeaveRequests" | "listLeaveRequestSegments" | "getLeavePolicyById"
 >;
 
-async function resolveStandardDayMinutes(input: {
+async function resolveSegmentCalendar(input: {
 	lookup: WorkCalendarLookupPort | undefined;
+	defaultTimezone: string;
 	organizationId: string;
 	employeeId: string;
 	employmentId: string;
 	workDate: string;
-}): Promise<number> {
+}): Promise<Result<{ timezone: string; standardDayMinutes: number }>> {
 	if (input.lookup === undefined) {
-		return DEFAULT_DAY_MINUTES;
+		return ok({
+			timezone: input.defaultTimezone,
+			standardDayMinutes: DEFAULT_DAY_MINUTES,
+		});
 	}
 	const context = await input.lookup.resolveCalendarContext({
 		organizationId: input.organizationId,
@@ -39,9 +43,12 @@ async function resolveStandardDayMinutes(input: {
 		toDate: input.workDate,
 	});
 	if (!context.ok) {
-		return DEFAULT_DAY_MINUTES;
+		return context;
 	}
-	return dayMinutesFromContext(context.data, input.workDate);
+	return ok({
+		timezone: context.data.timezone,
+		standardDayMinutes: dayMinutesFromContext(context.data, input.workDate),
+	});
 }
 
 function dayMinutesFromContext(
@@ -111,20 +118,6 @@ export function createProductionApprovedLeaveQuery(deps: {
 					});
 					if (!segments.ok) return segments;
 
-					let timezone = defaultTimezone;
-					if (lookup !== undefined) {
-						const context = await lookup.resolveCalendarContext({
-							organizationId: input.organizationId,
-							employeeId: request.employeeId,
-							employmentId: request.employmentId,
-							fromDate: input.periodStart,
-							toDate: input.periodEnd,
-						});
-						if (context.ok) {
-							timezone = context.data.timezone;
-						}
-					}
-
 					for (const segment of segments.data) {
 						if (
 							segment.segmentDate < input.periodStart ||
@@ -132,13 +125,19 @@ export function createProductionApprovedLeaveQuery(deps: {
 						) {
 							continue;
 						}
-						const standardDayMinutes = await resolveStandardDayMinutes({
+
+						const segmentCalendar = await resolveSegmentCalendar({
 							lookup,
+							defaultTimezone,
 							organizationId: input.organizationId,
 							employeeId: request.employeeId,
 							employmentId: request.employmentId,
 							workDate: segment.segmentDate,
 						});
+						if (!segmentCalendar.ok) {
+							return segmentCalendar;
+						}
+						const { timezone, standardDayMinutes } = segmentCalendar.data;
 						const approvedMinutes = segmentMinutesFromQuantity({
 							unit: request.unit,
 							quantity: segment.quantity,

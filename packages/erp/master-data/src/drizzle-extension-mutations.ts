@@ -942,6 +942,29 @@ export async function drizzleListPartyAddresses(
 	}
 }
 
+export async function drizzleGetPartyAddressById(
+	organizationId: string,
+	partyId: string,
+	id: string,
+): Promise<Result<PartyAddress | null>> {
+	try {
+		const [row] = await db
+			.select()
+			.from(mdPartyAddress)
+			.where(
+				and(
+					eq(mdPartyAddress.organizationId, organizationId),
+					eq(mdPartyAddress.partyId, partyId),
+					eq(mdPartyAddress.id, id),
+				),
+			)
+			.limit(1);
+		return ok(row ? mapPartyAddress(row) : null);
+	} catch (error) {
+		return failFromUnknown(error, "Failed to get party address");
+	}
+}
+
 export async function drizzleListPartyContacts(
 	filter: ParentListFilter,
 ): Promise<Result<PartyContact[]>> {

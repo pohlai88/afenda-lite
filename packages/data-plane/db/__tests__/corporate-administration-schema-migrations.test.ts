@@ -8,10 +8,12 @@ import * as corporateAdministrationSchema from "../src/schema/corporate-administ
 
 const EXPECTED_TABLE_NAMES = [
 	"ca_authority_mandate",
+	"ca_authority_mandate_holder",
 	"ca_bank_account_registration",
 	"ca_bank_mandate",
 	"ca_beneficial_owner_disclosure",
 	"ca_charge",
+	"ca_charge_variation",
 	"ca_company_identifier",
 	"ca_company_name",
 	"ca_company_premise",
@@ -25,12 +27,15 @@ const EXPECTED_TABLE_NAMES = [
 	"ca_governance_membership",
 	"ca_group_control_relationship",
 	"ca_insurance_policy",
+	"ca_insurance_policy_renewal",
+	"ca_intellectual_property_renewal",
 	"ca_intellectual_property_right",
 	"ca_legal_company",
 	"ca_licence_permit",
 	"ca_material_agreement",
 	"ca_officer_appointment",
 	"ca_property_holding",
+	"ca_property_asset_mutation_receipt",
 	"ca_resolution",
 	"ca_share_certificate",
 	"ca_share_class",
@@ -55,10 +60,29 @@ const migrationSql = Array.from({ length: 8 }, (_, index) => {
 		new URL(`../drizzle/${number}_${names[index]}.sql`, import.meta.url),
 		"utf8",
 	);
-}).join("\n");
+})
+	.concat(
+		readFileSync(
+			new URL(
+				"../drizzle/0033_ca_governance_premises_hardening.sql",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	)
+	.concat(
+		readFileSync(
+			new URL(
+				"../drizzle/0037_ca_property_assets_hardening.sql",
+				import.meta.url,
+			),
+			"utf8",
+		),
+	)
+	.join("\n");
 
 describe("@afenda/db corporate-administration schema and migrations", () => {
-	it("exports exactly the 29 authority tables", () => {
+	it("exports exactly the 34 authority tables", () => {
 		expect(tables.map((table) => getTableName(table)).toSorted()).toEqual(
 			[...EXPECTED_TABLE_NAMES].toSorted(),
 		);

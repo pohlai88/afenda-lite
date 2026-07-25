@@ -9,26 +9,27 @@
 
 This register reports executable behavior, not table or file presence. A slice is
 not `DONE` until its authority-required commands, queries, transaction evidence,
-web surface, and tests are all present.
+web surface, and tests are all present. Slice summary also lives in authority
+§12 and §15.0.
 
-## Runtime boundaries (12)
+## Runtime boundaries (12) — module-wide
 
 | # | Boundary | Status | Evidence / remaining gap |
 | --- | --- | --- | --- |
 | 1 | Approved authority / closed decisions | DONE | Integrated authority §2 |
-| 2 | Module roadmap / registration | PARTIAL | `MODULE-ROADMAP.yaml` present; `pnpm governance:packages` fails on unrelated HR constant `HUMAN_RESOURCES_QUERY_ASSIGNMENT_AS_OF` (2026-07-25 run) |
+| 2 | Module roadmap / registration | DONE | Roadmap + package/manifest registration present; lifecycle remains `scaffolded` |
 | 3 | Package shell / manifest | DONE | `@afenda/corporate-administration`; lifecycle intentionally remains `scaffolded` |
-| 4 | Master-data legal-entity get-effective | DONE | By-id/by-key, as-of, tenant denial, and ambiguity tests |
-| 5 | DB schema / migrations | DONE | Migrations `0019`–`0026` + `0030` applied on Neon (`db:migrate` 2026-07-25); schema migration tests 3/3 |
-| 6 | Ownership / tenancy registration | DONE | Schema ownership manifest + hard-tenant roots; `audit:tenancy-nulls` PASS incl. all 29 `ca_*` roots |
-| 7 | Events / permissions / auth map | PARTIAL | `company.status-changed.v1` wired in manifest; authority event families beyond company lifecycle remain absent |
-| 8 | Domain commands / queries | PARTIAL | CA-1 full command/query set (incl. archive/as-of/end-name/update|retire-identifier); CA-2–CA-6 expose mostly create/get/list |
-| 9 | Memory / Drizzle adapters | DONE | CA-1 name/identifier/lifecycle mutations atomic in memory + Drizzle CTE; memory + Drizzle parity/concurrency green with `REQUIRE_DATABASE_TESTS=1` |
-| 10 | App composition / Actions | PARTIAL | CA-1 Actions complete; later-slice Actions absent |
-| 11 | UI / routes / navigation | PARTIAL | Operator/client CA-1 routes, table, detail, registration, timeline, edit, lifecycle (incl. archive); empty/error state helpers; later-slice panels absent |
-| 12 | Tests / reconciliation / green gates | PARTIAL | CA package 25/25, web Actions 7/7, schema migration 3/3, Playwright CA-1 journey; module-wide `governance:packages` blocked by HR validate-modules |
+| 4 | Master-data legal-entity get-effective | DONE | By-id/by-key, as-of, tenant denial, and ambiguity tests; CA uses public ports only |
+| 5 | DB schema / migrations | DONE | Migrations `0019`–`0026`, `0030`, `0033`, `0037` on disk; schema migration tests cover 34 CA tables |
+| 6 | Ownership / tenancy registration | DONE | Schema ownership manifest + hard-tenant roots include `ca_*` |
+| 7 | Events / permissions / auth map | PARTIAL | CA-1–CA-4 event schemas and permission maps registered; CA-4 Drizzle same-transaction audit/outbox proof and CA-5+ remain open |
+| 8 | Domain commands / queries | PARTIAL | CA-1–CA-4 full command/query sets; CA-5–CA-6 mostly create/get/list; CA-7 search/due queries |
+| 9 | Memory / Drizzle adapters | PARTIAL | CA-1–CA-3 atomic audit/outbox; CA-4 memory atomicity/concurrency green and Drizzle roots/facts implemented, but CA-4 same-Neon-transaction evidence remains blocked |
+| 10 | App composition / Actions | PARTIAL | CA-1–CA-4 Actions complete; CA-5–CA-7 Actions absent |
+| 11 | UI / routes / navigation | PARTIAL | Operator/client CA-1 routes + Governance/Premises + Capital + four CA-4 panels; CA-5+ panels absent |
+| 12 | Tests / reconciliation / green gates | PARTIAL | CA-1–CA-3 closed; CA-4 unit/DB/event/Action/interaction green, fail-closed Neon/L4 exits open; CA-5–CA-8 closeout open |
 
-**Executable completeness:** 6/12 boundaries fully closed; 6/12 partial.
+**Executable completeness:** 6/12 boundaries fully closed; 6/12 partial. Module remains **NO-GO**.
 
 ## Delivery slices
 
@@ -36,33 +37,43 @@ web surface, and tests are all present.
 | ----- | ------ | ----- |
 | CA-0 | DONE | Authority and governance baseline closed |
 | CA-0.5 | DONE | Focused master-data lookup and adverse cases |
-| CA-1 | DONE | Legal-company registry closed end-to-end (see verification evidence) |
-| CA-2 | PARTIAL | Create/get/list scaffold exists; amend/end/retire/close/approve/revoke commands, events, Actions, UI, and parity tests absent |
-| CA-3 | PARTIAL | Initial share-ledger create/read exists; post/reverse/update/close/replace/cancel/end flows and concurrency proof absent |
-| CA-4 | PARTIAL | Register/read scaffold exists; update/dispose/write-off/renew/expire/release lifecycles and full-stack surfaces absent |
-| CA-5 | PARTIAL | Register/read scaffold exists; renew/suspend/revoke/close/amend/end/terminate flows, cycle proof, and full-stack surfaces absent |
-| CA-6 | PARTIAL | Register/read and due/overdue scaffold exists; supersede/retire/extend/waive/acknowledge/reject flows and full-stack surfaces absent |
-| CA-7 | PARTIAL | Search and due/overdue queries exist; projector rebuild, reminders, export/reconciliation, and any approved import slice absent |
+| CA-1 | DONE | Legal-company registry closed end-to-end (same-tx audit/outbox, Actions, UI, parity) |
+| CA-2 | DONE | Governance/premises closed: same-tx audit/outbox, advisory locks, FI/parity/concurrency, L4 journey (authority §15.1A) |
+| CA-3 | DONE | Share capital vertical closed end-to-end |
+| CA-4 | PARTIAL | 10/12 boundaries: all 19 lifecycles, typed subjects, hybrid facts/receipts, `0037`, events, Actions, four tabs, unit/DB/event/Action/interaction evidence; same-Neon-transaction and fail-closed Neon/L4 exits remain |
+| CA-5 | PARTIAL | Register/read + bank mask + self-link deny; renew/suspend/revoke/close/amend/end/terminate, cycle proof, Actions, UI absent |
+| CA-6 | PARTIAL | Register/read scaffold exists; supersede/retire/extend/waive/acknowledge/reject, Actions, due UX absent |
+| CA-7 | PARTIAL | Search and due/overdue queries over live tables; projector rebuild, reminders, export/reconciliation, approved import absent |
 | CA-8 | GAP | Full performance, accessibility, redaction, failure-injection, Neon parity, and E2E closeout not complete |
 
 ## Current verification evidence
 
 | Command | Result |
 | --- | --- |
-| `AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate` | PASS — migrations applied successfully (2026-07-25) |
-| `pnpm --filter @afenda/db db:ensure-permission-catalog` | PASS — 223 permissions |
-| `pnpm audit:tenancy-nulls` | PASS — 228 hard tenant roots incl. 29 `ca_*` |
-| `pnpm --filter @afenda/corporate-administration lint` | PASS |
-| `pnpm --filter @afenda/corporate-administration typecheck` | PASS |
-| `pnpm --filter @afenda/corporate-administration test` | PASS — 11 files, 25 passed (incl. Drizzle parity/concurrency with `REQUIRE_DATABASE_TESTS=1`) |
-| `pnpm --filter @afenda/db test -- corporate-administration-schema-migrations` | PASS — 3 tests |
-| `pnpm --filter @afenda/events test -- corporate-administration` | PASS (no matching filter files; exit 0) |
-| `pnpm --filter @afenda/web test -- corporate-administration` | PASS — 7 tests |
-| `pnpm governance:packages` | FAIL — `validate:modules`: `HUMAN_RESOURCES_QUERY_ASSIGNMENT_AS_OF is not defined` (HR residue; outside CA-1 scope) |
-| `e2e/journey/corporate-administration-legal-company.spec.ts` | Added — operator registry open/list journey |
+| `pnpm --filter @afenda/corporate-administration typecheck` | PASS (2026-07-25 audit) |
+| `pnpm --filter @afenda/corporate-administration test` | PASS — 30 passed, 10 skipped (parity/concurrency need `DATABASE_URL`) |
+| `pnpm --filter @afenda/corporate-administration test -- governance` | PASS — 4 passed, 3 skipped |
+| `pnpm --filter @afenda/web exec vitest run --config ../../testing/vitest.config.ts --project web corporate-administration-governance` | PASS — 5 Actions tests |
+| `pnpm exec vitest run --config testing/vitest.config.ts --project interaction corporate-administration-governance` | PASS — 5 interaction tests |
+| `pnpm test:e2e:journey -- corporate-administration-governance` | Unevaluated without `workerTenant` / `E2E_*` credentials (spec skips explicitly) |
+| Schema/migrations on disk | `0019`–`0026`, `0030`, `0033`, `0037` present; `corporate-administration-schema-migrations` covers 34 CA tables |
+| CA package domain surface | CA-1–CA-4 full; CA-5–CA-7 create/read (plus CA-3 holdings; CA-7 search/due) |
+| CA-1 audit/outbox | Wired in `memory-store.ts` and `adapters/drizzle/store.ts` |
+| CA-2 audit/outbox | Wired in `governance-memory-store.ts` and `adapters/drizzle/governance-store.ts` |
+| Web Actions | CA-1 legal-company; CA-2 governance (19); CA-3 share capital; CA-4 property/assets/IP/insurance/charges (19) |
+| UI | CA-1 shell/table/detail/lifecycle; CA-2 Governance/Premises; CA-3 Capital; CA-4 Property, Corporate assets, Intellectual property, Insurance & charges |
+| Package lifecycle | Remains `scaffolded` |
+
+Re-run exact gate commands before claiming a new slice `DONE`.
 
 ## Verdict
 
-**CA-1: COMPLETE.** Legal-company registry is end-to-end: Neon DDL applied, tenancy audit clean, domain invariants/idempotency, atomic adapters (memory + Drizzle), web Actions/UI, memory↔Drizzle parity + concurrency, and Action tests green.
+**CA-1: COMPLETE.** Legal-company registry is end-to-end.
 
-**Module (CA-8 / overall): NO-GO.** CA-2 through CA-7 remain explicitly partial; package lifecycle stays `scaffolded` per authority until later slices close.
+**CA-2: COMPLETE.** Governance and premises vertical closed with same-tx audit/outbox, advisory locks, FI/parity/concurrency evidence, and authenticated L4 journey.
+
+**CA-3: COMPLETE.** Share capital vertical closed end-to-end.
+
+**CA-4: PARTIAL (10/12).** Application boundaries are implemented; Neon atomicity/concurrency and authenticated L4 proof remain blocking exits.
+
+**Module (CA-8 / overall): NO-GO.** CA-4 through CA-7 remain partial; package lifecycle stays `scaffolded` per authority until CA-8 closeout.

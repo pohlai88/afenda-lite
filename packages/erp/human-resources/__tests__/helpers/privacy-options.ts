@@ -4,11 +4,13 @@ import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_PERSON_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EVALUATE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EXECUTE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_EXPORT,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_RETENTION_EVALUATE,
+	HUMAN_RESOURCES_PERMISSION_WORKER_MANAGE,
 } from "../../src/permissions";
 import type {
 	HumanResourcesPrivacyPort,
@@ -20,12 +22,16 @@ import type {
 	ExportHumanResourcesSubjectDataInput,
 } from "../../src/privacy/operations";
 import { createMemoryHumanResourcesStore } from "../../src/testing";
+import { createPerson } from "../../src/workforce-foundation/person";
+import { createWorker } from "../../src/workforce-foundation/worker";
 import { createTestHumanResourcesCommandOptions } from "./command-options";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 import { createMemoryMutationPorts } from "./memory-ports";
 
 const PRIVACY_SEED_PERMISSIONS = [
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_PERSON_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_WORKER_MANAGE,
 ] as const;
 
 export async function seedPrivacySubjectEmployee(input: {
@@ -45,6 +51,20 @@ export async function seedPrivacySubjectEmployee(input: {
 			...PRIVACY_SEED_PERMISSIONS,
 		]),
 	});
+	const legalName = input.legalName ?? "Privacy Subject";
+	const person = await createPerson(
+		{
+			organizationId: input.organizationId,
+			actorUserId: PRIVACY_TEST_ACTOR_USER_ID,
+			correlationId: `${PRIVACY_TEST_CORRELATION_ID}-person`,
+			idempotencyKey: `idem-person-${input.personId}`,
+			legalName,
+		},
+		commandOptions,
+	);
+	if (!person.ok) {
+		throw new Error(person.message);
+	}
 	const created = await createEmployee(
 		{
 			organizationId: input.organizationId,
@@ -53,14 +73,35 @@ export async function seedPrivacySubjectEmployee(input: {
 			idempotencyKey: `idem-${input.personId}`,
 			employeeNumber:
 				input.employeeNumber ?? `EMP-${input.personId.slice(0, 8)}`,
-			legalName: input.legalName ?? "Privacy Subject",
+			legalName,
 		},
 		commandOptions,
 	);
 	if (!created.ok) {
 		throw new Error(created.message);
 	}
-	return { store, employee: created.data };
+	const worker = await createWorker(
+		{
+			organizationId: input.organizationId,
+			actorUserId: PRIVACY_TEST_ACTOR_USER_ID,
+			correlationId: `${PRIVACY_TEST_CORRELATION_ID}-worker`,
+			idempotencyKey: `idem-worker-${input.personId}`,
+			personId: person.data.id,
+			workerType: "employee",
+			employeeId: created.data.id,
+			effectiveFrom: "2026-01-01",
+		},
+		commandOptions,
+	);
+	if (!worker.ok) {
+		throw new Error(worker.message);
+	}
+	return {
+		store,
+		employee: created.data,
+		person: person.data,
+		worker: worker.data,
+	};
 }
 
 export function createPrivacyTestOptionsWithSubject(

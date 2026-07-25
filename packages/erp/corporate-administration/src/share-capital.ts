@@ -1,4 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	CA_BENEFICIAL_OWNER_CHANGED_EVENT,
+	CA_SHARE_TRANSACTION_POSTED_EVENT,
+} from "@afenda/events/schemas";
 
 import {
 	requireCaCommandPermission,
@@ -15,10 +19,12 @@ import {
 	CA_COMMAND_SHARE_TRANSACTION_CREATE,
 	CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_GET,
 	CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST,
+	CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST_AS_OF,
 	CA_QUERY_SHARE_CERTIFICATE_GET,
 	CA_QUERY_SHARE_CERTIFICATE_LIST,
 	CA_QUERY_SHARE_CLASS_GET,
 	CA_QUERY_SHARE_CLASS_LIST,
+	CA_QUERY_SHARE_HOLDING_GET_AS_OF,
 	CA_QUERY_SHARE_HOLDING_LIST_AS_OF,
 	CA_QUERY_SHARE_TRANSACTION_GET,
 	CA_QUERY_SHARE_TRANSACTION_LIST,
@@ -41,7 +47,9 @@ import {
 	getBeneficialOwnerDisclosureInputSchema,
 	getShareCertificateInputSchema,
 	getShareClassInputSchema,
+	getShareHoldingAsOfInputSchema,
 	getShareTransactionInputSchema,
+	listBeneficialOwnerDisclosuresAsOfInputSchema,
 	listBeneficialOwnerDisclosuresInputSchema,
 	listShareCertificatesInputSchema,
 	listShareClassesInputSchema,
@@ -59,7 +67,7 @@ export async function createShareClass(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, authorization, ports } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -80,20 +88,29 @@ export async function createShareClass(
 	if (existing.data) return ok(existing.data);
 	const code = normalizeCompanyCode(parsed.data.code);
 	if (!code.ok) return code;
-	return store.createShareClass({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		code: code.data.code,
-		normalizedCode: code.data.normalizedCode,
-		classType: parsed.data.classType,
-		currencyCode: parsed.data.currencyCode.toUpperCase(),
-		parValue: parsed.data.parValue,
-		authorizedQuantity: parsed.data.authorizedQuantity,
-		status: "active",
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createShareClass(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			code: code.data.code,
+			normalizedCode: code.data.normalizedCode,
+			classType: parsed.data.classType,
+			currencyCode: parsed.data.currencyCode.toUpperCase(),
+			parValue: parsed.data.parValue,
+			authorizedQuantity: parsed.data.authorizedQuantity,
+			status: "active",
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		{
+			ports,
+			meta: {
+				correlationId: parsed.data.correlationId,
+				eventType: CA_SHARE_TRANSACTION_POSTED_EVENT,
+			},
+		},
+	);
 }
 
 export async function getShareClass(
@@ -155,7 +172,7 @@ export async function createShareTransaction(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, masters, authorization } = resolveCommandDeps(options);
+	const { store, masters, authorization, ports } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -216,6 +233,13 @@ export async function createShareTransaction(
 			createdBy: parsed.data.actorUserId,
 		},
 		legs,
+		{
+			ports,
+			meta: {
+				correlationId: parsed.data.correlationId,
+				eventType: CA_SHARE_TRANSACTION_POSTED_EVENT,
+			},
+		},
 	);
 }
 
@@ -278,7 +302,7 @@ export async function createShareCertificate(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, masters, authorization } = resolveCommandDeps(options);
+	const { store, masters, authorization, ports } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -305,22 +329,31 @@ export async function createShareCertificate(
 		partyId: parsed.data.holderPartyId,
 	});
 	if (!party.ok) return party;
-	return store.createShareCertificate({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		shareClassId: parsed.data.shareClassId,
-		shareTransactionId: parsed.data.shareTransactionId ?? null,
-		certificateNumber: number.data.code,
-		normalizedCertificateNumber: number.data.normalizedCode,
-		holderPartyId: parsed.data.holderPartyId,
-		holderPartyCodeSnapshot: party.data.partyCodeSnapshot,
-		holderPartyNameSnapshot: party.data.partyNameSnapshot,
-		issuedDate: parsed.data.issuedDate,
-		status: "active",
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createShareCertificate(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			shareClassId: parsed.data.shareClassId,
+			shareTransactionId: parsed.data.shareTransactionId ?? null,
+			certificateNumber: number.data.code,
+			normalizedCertificateNumber: number.data.normalizedCode,
+			holderPartyId: parsed.data.holderPartyId,
+			holderPartyCodeSnapshot: party.data.partyCodeSnapshot,
+			holderPartyNameSnapshot: party.data.partyNameSnapshot,
+			issuedDate: parsed.data.issuedDate,
+			status: "active",
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		{
+			ports,
+			meta: {
+				correlationId: parsed.data.correlationId,
+				eventType: CA_SHARE_TRANSACTION_POSTED_EVENT,
+			},
+		},
+	);
 }
 
 export async function getShareCertificate(
@@ -386,7 +419,7 @@ export async function createBeneficialOwnerDisclosure(
 			},
 		);
 	}
-	const { store, masters, authorization } = resolveCommandDeps(options);
+	const { store, masters, authorization, ports } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -411,21 +444,30 @@ export async function createBeneficialOwnerDisclosure(
 		partyId: parsed.data.partyId,
 	});
 	if (!party.ok) return party;
-	return store.createBeneficialOwnerDisclosure({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		partyId: parsed.data.partyId,
-		partyCodeSnapshot: party.data.partyCodeSnapshot,
-		partyNameSnapshot: party.data.partyNameSnapshot,
-		natureOfControlCodes: parsed.data.natureOfControlCodes,
-		effectiveFrom: parsed.data.effectiveFrom,
-		effectiveTo: null,
-		verificationStatus: "pending",
-		evidenceReference: parsed.data.evidenceReference ?? null,
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createBeneficialOwnerDisclosure(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			partyId: parsed.data.partyId,
+			partyCodeSnapshot: party.data.partyCodeSnapshot,
+			partyNameSnapshot: party.data.partyNameSnapshot,
+			natureOfControlCodes: parsed.data.natureOfControlCodes,
+			effectiveFrom: parsed.data.effectiveFrom,
+			effectiveTo: null,
+			verificationStatus: "pending",
+			evidenceReference: parsed.data.evidenceReference ?? null,
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		{
+			ports,
+			meta: {
+				correlationId: parsed.data.correlationId,
+				eventType: CA_BENEFICIAL_OWNER_CHANGED_EVENT,
+			},
+		},
+	);
 }
 
 export async function getBeneficialOwnerDisclosure(
@@ -508,5 +550,64 @@ export async function listShareHoldingsAsOf(
 		parsed.data.legalCompanyId,
 		parsed.data.asOf,
 		parsed.data.shareClassId,
+	);
+}
+
+export async function getShareHoldingAsOf(
+	input: unknown,
+	options: CorporateAdministrationCommandOptions = {},
+): Promise<Result<CaShareHolding>> {
+	const parsed = getShareHoldingAsOfInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid share holding as-of input", {
+			issues: parsed.error.issues,
+		});
+	}
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireCaQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: CA_QUERY_SHARE_HOLDING_GET_AS_OF,
+	});
+	if (!authorized.ok) return authorized;
+	const holdings = await store.listShareHoldingsAsOf(
+		parsed.data.organizationId,
+		parsed.data.legalCompanyId,
+		parsed.data.asOf,
+		parsed.data.shareClassId,
+	);
+	if (!holdings.ok) return holdings;
+	const match = holdings.data.find(
+		(row) => row.holderPartyId === parsed.data.holderPartyId,
+	);
+	if (!match) {
+		return fail("NOT_FOUND", "Share holding not found for as-of date");
+	}
+	return ok(match);
+}
+
+export async function listBeneficialOwnerDisclosuresAsOf(
+	input: unknown,
+	options: CorporateAdministrationCommandOptions = {},
+): Promise<Result<CaBeneficialOwnerDisclosure[]>> {
+	const parsed = listBeneficialOwnerDisclosuresAsOfInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail(
+			"BAD_REQUEST",
+			"Invalid beneficial owner disclosure as-of list input",
+			{ issues: parsed.error.issues },
+		);
+	}
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireCaQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST_AS_OF,
+	});
+	if (!authorized.ok) return authorized;
+	return store.listBeneficialOwnerDisclosuresAsOf(
+		parsed.data.organizationId,
+		parsed.data.legalCompanyId,
+		parsed.data.asOf,
 	);
 }

@@ -3,6 +3,7 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
+import { createEmployee } from "../src/core/employee";
 import { previousIsoDate } from "../src/shared/effective-dates";
 import {
 	createPerson,
@@ -315,6 +316,503 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 		expect(inactiveAsOf.ok).toBe(true);
 		if (!inactiveAsOf.ok) return;
 		expect(inactiveAsOf.data.status).toBe("inactive");
+	});
+
+	it("replays worker create idempotently and rejects fingerprint reuse", async () => {
+		const ready = createHrParityHarness(adapter);
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-idem-person-${suffix}`,
+				idempotencyKey: `idem-worker-idem-person-${suffix}`,
+				legalName: "Idempotent Worker Person",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+
+		const createInput = {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-worker-idem-create-${suffix}`,
+			idempotencyKey: `idem-worker-idem-create-${suffix}`,
+			personId: person.data.id,
+			workerType: "contractor" as const,
+			effectiveFrom: "2026-01-01",
+		};
+		const first = await createWorker(createInput, ready);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const replay = await createWorker(createInput, ready);
+		expect(replay.ok).toBe(true);
+		if (!replay.ok) return;
+		expect(replay.data.id).toBe(first.data.id);
+
+		const conflict = await createWorker(
+			{
+				...createInput,
+				correlationId: `corr-worker-idem-conflict-${suffix}`,
+				workerType: "intern",
+			},
+			ready,
+		);
+		expect(conflict.ok).toBe(false);
+		if (conflict.ok) return;
+		expect(conflict.code).toBe("CONFLICT");
+	});
+
+	it("rejects duplicate worker linkage for the same person", async () => {
+		const ready = createHrParityHarness(adapter);
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-dup-person-${suffix}`,
+				idempotencyKey: `idem-worker-dup-person-${suffix}`,
+				legalName: "Duplicate Worker Person",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+
+		const first = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-dup-first-${suffix}`,
+				idempotencyKey: `idem-worker-dup-first-${suffix}`,
+				personId: person.data.id,
+				workerType: "contractor",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const duplicate = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-dup-second-${suffix}`,
+				idempotencyKey: `idem-worker-dup-second-${suffix}`,
+				personId: person.data.id,
+				workerType: "intern",
+				effectiveFrom: "2026-02-01",
+			},
+			ready,
+		);
+		expect(duplicate.ok).toBe(false);
+		if (duplicate.ok) return;
+		expect(duplicate.code).toBe("CONFLICT");
+	});
+
+	it("rejects worker create when the person does not exist", async () => {
+		const ready = createHrParityHarness(adapter);
+		const missingPerson = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-missing-person-${suffix}`,
+				idempotencyKey: `idem-worker-missing-person-${suffix}`,
+				personId: "10000000-0000-4000-8000-000000000099",
+				workerType: "contractor",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(missingPerson.ok).toBe(false);
+		if (missingPerson.ok) return;
+		expect(missingPerson.code).toBe("NOT_FOUND");
+	});
+
+	it("supports contingent worker create, reclassification, and as-of resolution", async () => {
+		const ready = createHrParityHarness(adapter);
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-contingent-person-${suffix}`,
+				idempotencyKey: `idem-contingent-person-${suffix}`,
+				legalName: "Contingent Worker Person",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+
+		const worker = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-contingent-create-${suffix}`,
+				idempotencyKey: `idem-contingent-create-${suffix}`,
+				personId: person.data.id,
+				workerType: "contingent_worker",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(worker.ok).toBe(true);
+		if (!worker.ok) return;
+		expect(worker.data.workerType).toBe("contingent_worker");
+		expect(worker.data.employeeId).toBeNull();
+
+		const retyped = await changeWorkerType(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-contingent-type-${suffix}`,
+				workerId: worker.data.id,
+				workerType: "contractor",
+				employeeId: null,
+				effectiveOn: "2026-02-01",
+				reasonCode: "reclassification",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(retyped.ok).toBe(true);
+		if (!retyped.ok) return;
+		expect(retyped.data.workerType).toBe("contractor");
+
+		const contingentAsOf = await getWorkerAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-contingent-asof-${suffix}`,
+				workerId: worker.data.id,
+				asOf: "2026-01-15",
+			},
+			ready,
+		);
+		expect(contingentAsOf.ok).toBe(true);
+		if (!contingentAsOf.ok) return;
+		expect(contingentAsOf.data.workerType).toBe("contingent_worker");
+
+		const contractorAsOf = await getWorkerAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-contingent-asof-contractor-${suffix}`,
+				workerId: worker.data.id,
+				asOf: "2026-02-15",
+			},
+			ready,
+		);
+		expect(contractorAsOf.ok).toBe(true);
+		if (!contractorAsOf.ok) return;
+		expect(contractorAsOf.data.workerType).toBe("contractor");
+	});
+
+	it("enforces employee linkage rules and duplicate employee conflicts", async () => {
+		const ready = createHrParityHarness(adapter);
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employee-link-person-${suffix}`,
+				idempotencyKey: `idem-employee-link-person-${suffix}`,
+				legalName: "Employee Link Person",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employee-link-emp-${suffix}`,
+				idempotencyKey: `idem-employee-link-emp-${suffix}`,
+				employeeNumber: `EL-${suffix}`,
+				legalName: "Employee Link Target",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const worker = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employee-link-worker-${suffix}`,
+				idempotencyKey: `idem-employee-link-worker-${suffix}`,
+				personId: person.data.id,
+				workerType: "employee",
+				employeeId: employee.data.id,
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(worker.ok).toBe(true);
+		if (!worker.ok) return;
+		expect(worker.data.workerType).toBe("employee");
+		if (worker.data.workerType !== "employee") return;
+		expect(worker.data.employeeId).toBe(employee.data.id);
+
+		const otherPerson = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employee-link-other-person-${suffix}`,
+				idempotencyKey: `idem-employee-link-other-person-${suffix}`,
+				legalName: "Other Employee Link Person",
+			},
+			ready,
+		);
+		expect(otherPerson.ok).toBe(true);
+		if (!otherPerson.ok) return;
+
+		const duplicateEmployeeLink = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employee-link-dup-${suffix}`,
+				idempotencyKey: `idem-employee-link-dup-${suffix}`,
+				personId: otherPerson.data.id,
+				workerType: "employee",
+				employeeId: employee.data.id,
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(duplicateEmployeeLink.ok).toBe(false);
+		if (duplicateEmployeeLink.ok) return;
+		expect(duplicateEmployeeLink.code).toBe("CONFLICT");
+
+		const unlinked = await changeWorkerType(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employee-link-unlink-${suffix}`,
+				workerId: worker.data.id,
+				workerType: "contractor",
+				employeeId: null,
+				effectiveOn: "2026-03-01",
+				reasonCode: "reclassification",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(unlinked.ok).toBe(true);
+		if (!unlinked.ok) return;
+		expect(unlinked.data.workerType).toBe("contractor");
+		expect(unlinked.data.employeeId).toBeNull();
+	});
+
+	it("rejects optimistic-lock and no-op worker classification changes", async () => {
+		const ready = createHrParityHarness(adapter);
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-conflict-person-${suffix}`,
+				idempotencyKey: `idem-worker-conflict-person-${suffix}`,
+				legalName: "Worker Conflict Person",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+
+		const worker = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-conflict-create-${suffix}`,
+				idempotencyKey: `idem-worker-conflict-create-${suffix}`,
+				personId: person.data.id,
+				workerType: "contractor",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(worker.ok).toBe(true);
+		if (!worker.ok) return;
+
+		const staleType = await changeWorkerType(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-conflict-type-${suffix}`,
+				workerId: worker.data.id,
+				workerType: "intern",
+				employeeId: null,
+				effectiveOn: "2026-02-01",
+				reasonCode: "reclassification",
+				expectedVersion: worker.data.version + 99,
+			},
+			ready,
+		);
+		expect(staleType.ok).toBe(false);
+		if (staleType.ok) return;
+		expect(staleType.code).toBe("CONFLICT");
+
+		const noOpType = await changeWorkerType(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-noop-type-${suffix}`,
+				workerId: worker.data.id,
+				workerType: "contractor",
+				employeeId: null,
+				effectiveOn: "2026-02-01",
+				reasonCode: "reclassification",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(noOpType.ok).toBe(false);
+		if (noOpType.ok) return;
+		expect(noOpType.code).toBe("CONFLICT");
+
+		const statusChanged = await changeWorkerStatus(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-former-${suffix}`,
+				workerId: worker.data.id,
+				status: "former",
+				effectiveOn: "2026-03-01",
+				reasonCode: "status_change",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(statusChanged.ok).toBe(true);
+		if (!statusChanged.ok) return;
+		expect(statusChanged.data.status).toBe("former");
+
+		const staleStatus = await changeWorkerStatus(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-conflict-status-${suffix}`,
+				workerId: statusChanged.data.id,
+				status: "inactive",
+				effectiveOn: "2026-04-01",
+				reasonCode: "status_change",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(staleStatus.ok).toBe(false);
+		if (staleStatus.ok) return;
+		expect(staleStatus.code).toBe("CONFLICT");
+
+		const noOpStatus = await changeWorkerStatus(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-noop-status-${suffix}`,
+				workerId: statusChanged.data.id,
+				status: "former",
+				effectiveOn: "2026-04-01",
+				reasonCode: "status_change",
+				expectedVersion: statusChanged.data.version,
+			},
+			ready,
+		);
+		expect(noOpStatus.ok).toBe(false);
+		if (noOpStatus.ok) return;
+		expect(noOpStatus.code).toBe("CONFLICT");
+	});
+
+	it("resolves worker as-of on classification boundary dates", async () => {
+		const ready = createHrParityHarness(adapter);
+		const person = await createPerson(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-boundary-person-${suffix}`,
+				idempotencyKey: `idem-worker-boundary-person-${suffix}`,
+				legalName: "Worker Boundary Person",
+			},
+			ready,
+		);
+		expect(person.ok).toBe(true);
+		if (!person.ok) return;
+
+		const worker = await createWorker(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-boundary-create-${suffix}`,
+				idempotencyKey: `idem-worker-boundary-create-${suffix}`,
+				personId: person.data.id,
+				workerType: "contractor",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(worker.ok).toBe(true);
+		if (!worker.ok) return;
+
+		const retyped = await changeWorkerType(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-boundary-type-${suffix}`,
+				workerId: worker.data.id,
+				workerType: "intern",
+				employeeId: null,
+				effectiveOn: "2026-02-01",
+				reasonCode: "reclassification",
+				expectedVersion: worker.data.version,
+			},
+			ready,
+		);
+		expect(retyped.ok).toBe(true);
+		if (!retyped.ok) return;
+
+		const dayBefore = await getWorkerAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-boundary-before-${suffix}`,
+				workerId: worker.data.id,
+				asOf: previousIsoDate("2026-02-01"),
+			},
+			ready,
+		);
+		expect(dayBefore.ok).toBe(true);
+		if (!dayBefore.ok) return;
+		expect(dayBefore.data.workerType).toBe("contractor");
+
+		const dayOf = await getWorkerAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-boundary-on-${suffix}`,
+				workerId: worker.data.id,
+				asOf: "2026-02-01",
+			},
+			ready,
+		);
+		expect(dayOf.ok).toBe(true);
+		if (!dayOf.ok) return;
+		expect(dayOf.data.workerType).toBe("intern");
+
+		const dayAfter = await getWorkerAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-worker-boundary-after-${suffix}`,
+				workerId: worker.data.id,
+				asOf: "2026-02-02",
+			},
+			ready,
+		);
+		expect(dayAfter.ok).toBe(true);
+		if (!dayAfter.ok) return;
+		expect(dayAfter.data.workerType).toBe("intern");
 	});
 }
 

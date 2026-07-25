@@ -22,7 +22,9 @@ import {
 	reserveHeadcountInputSchema,
 } from "../schemas/workforce-planning";
 import { fingerprintHeadcountReservation } from "../shared/fingerprint";
+import { conflict } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import { assertRequisitionAllowsHeadcountReservation } from "../shared/recruitment-guards";
 import {
 	runWorkforcePlanningCommand,
 	runWorkforcePlanningQuery,
@@ -120,6 +122,27 @@ export async function reserveHeadcount(
 					"NOT_FOUND",
 					"Requisition not found",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const statusGate = assertRequisitionAllowsHeadcountReservation(
+				requisition.data.status,
+			);
+			if (!statusGate.ok) {
+				return statusGate;
+			}
+
+			const existingActive =
+				await store.findActiveHeadcountReservationForRequisition({
+					organizationId: data.organizationId,
+					requisitionId: data.requisitionId,
+				});
+			if (!existingActive.ok) {
+				return existingActive;
+			}
+			if (existingActive.data !== null) {
+				return conflict(
+					"Requisition already has an active headcount reservation",
 				);
 			}
 

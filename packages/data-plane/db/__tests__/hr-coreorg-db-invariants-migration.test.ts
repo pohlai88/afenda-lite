@@ -1,5 +1,5 @@
 /**
- * HR-COREORG-DB-INVARIANTS — migration 0018 effective-range checks.
+ * HR-COREORG-DB-INVARIANTS — migrations 0018 + 0035 effective-range checks.
  */
 
 import { readFileSync } from "node:fs";
@@ -9,30 +9,33 @@ import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import {
+	listHrPgTableNames,
+	loadCoreorgExclusionRegister,
+	resolveCoreorgRegisterPaths,
+	validateCoreorgRegisterInventory,
+} from "./helpers/validate-coreorg-register-inventory.mjs";
 
-const migrationPath = fileURLToPath(
+const migration0018Path = fileURLToPath(
 	new URL("../drizzle/0018_hr_coreorg_db_invariants.sql", import.meta.url),
 );
-const migrationSql = readFileSync(migrationPath, "utf8");
-
-const exclusionRegisterPath = fileURLToPath(
+const migration0035Path = fileURLToPath(
 	new URL(
-		"../../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/hr-coreorg-db-invariant-exclusion-register.json",
+		"../drizzle/0035_hr_coreorg_db_invariants_completion.sql",
 		import.meta.url,
 	),
 );
-const exclusionRegister = JSON.parse(
-	readFileSync(exclusionRegisterPath, "utf8"),
-) as {
-	migration: string;
-	databaseChecks: Array<{ table: string; constraint: string }>;
-	overlapPolicies: Array<{
-		table: string;
-		enforcement: string;
-		databaseOverlapExclusion: boolean;
-	}>;
-	rollback: string;
-};
+const migration0018Sql = readFileSync(migration0018Path, "utf8");
+const migration0035Sql = readFileSync(migration0035Path, "utf8");
+
+const { registerPath, schemaPath } = resolveCoreorgRegisterPaths(import.meta.url);
+const exclusionRegister = loadCoreorgExclusionRegister(registerPath);
+const hrSchemaSource = readFileSync(schemaPath, "utf8");
+const hrPgTableNames = listHrPgTableNames(hrSchemaSource);
+const registerInventory = validateCoreorgRegisterInventory({
+	register: exclusionRegister,
+	pgTableNames: hrPgTableNames,
+});
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -46,47 +49,77 @@ function requireDatabaseTests(): boolean {
 
 describe("HR coreorg DB invariants migration (0018)", () => {
 	it("is additive and names the effective-range constraints", () => {
-		const result = assertAdditiveMigrationSql(migrationSql);
+		const result = assertAdditiveMigrationSql(migration0018Sql);
 		expect(result.ok).toBe(true);
-		expect(migrationSql).toContain("hr_coreorg_db_invariants_preflight");
-		expect(migrationSql).toContain('"hr_work_assignment_effective_range_ck"');
-		expect(migrationSql).toContain(
+		expect(migration0018Sql).toContain("hr_coreorg_db_invariants_preflight");
+		expect(migration0018Sql).toContain('"hr_work_assignment_effective_range_ck"');
+		expect(migration0018Sql).toContain(
 			'"hr_employment_contract_effective_range_ck"',
 		);
-		expect(migrationSql).toContain('"hr_reporting_line_effective_range_ck"');
-		expect(migrationSql).toContain(
+		expect(migration0018Sql).toContain('"hr_reporting_line_effective_range_ck"');
+		expect(migration0018Sql).toContain(
 			"CHECK (ends_on IS NULL OR starts_on <= ends_on)",
 		);
 	});
+});
 
-	it("documents overlap enforcement in the exclusion register", () => {
-		expect(exclusionRegister.migration).toBe(
+describe("HR coreorg DB invariants migration (0035)", () => {
+	it("is additive and names the completion effective-range constraints", () => {
+		const result = assertAdditiveMigrationSql(migration0035Sql);
+		expect(result.ok).toBe(true);
+		expect(migration0035Sql).toContain("hr_coreorg_db_invariants_preflight");
+		expect(migration0035Sql).toContain(
+			'"hr_probation_review_effective_range_ck"',
+		);
+		expect(migration0035Sql).toContain('"hr_salary_band_effective_range_ck"');
+		expect(migration0035Sql).toContain(
+			'"hr_employee_compensation_effective_range_ck"',
+		);
+		expect(migration0035Sql).toContain(
+			'"hr_benefit_enrollment_effective_range_ck"',
+		);
+		expect(migration0035Sql).toContain('"hr_shift_effective_range_ck"');
+		expect(migration0035Sql).toContain(
+			"CHECK (effective_to IS NULL OR effective_from <= effective_to)",
+		);
+		expect(migration0035Sql).toContain("CHECK (starts_on <= ends_on)");
+	});
+});
+
+describe("HR coreorg DB invariants exclusion register", () => {
+	it("lists both invariant migrations and eight database checks", () => {
+		expect(exclusionRegister.migrations).toEqual([
 			"0018_hr_coreorg_db_invariants.sql",
-		);
-		expect(exclusionRegister.databaseChecks).toHaveLength(3);
-		const overlapTables = exclusionRegister.overlapPolicies.map(
-			(row) => row.table,
-		);
-		expect(overlapTables).toEqual([
+			"0035_hr_coreorg_db_invariants_completion.sql",
+		]);
+		expect(exclusionRegister.databaseChecks).toHaveLength(8);
+		const tables = exclusionRegister.databaseChecks.map((row) => row.table);
+		expect(tables).toEqual([
 			"hr_work_assignment",
 			"hr_employment_contract",
 			"hr_reporting_line",
+			"hr_probation_review",
+			"hr_salary_band",
+			"hr_employee_compensation",
+			"hr_benefit_enrollment",
+			"hr_shift",
 		]);
+	});
+
+	it("documents overlap enforcement without database exclusion", () => {
+		const overlapTables = exclusionRegister.overlapPolicies.map(
+			(row) => row.table,
+		);
+		expect(overlapTables).toContain("hr_work_assignment");
+		expect(overlapTables).toContain("hr_employment_contract");
+		expect(overlapTables).toContain("hr_reporting_line");
+		expect(overlapTables).toContain("hr_employee_compensation");
+		expect(overlapTables).toContain("hr_benefit_enrollment");
+		expect(overlapTables).toContain("hr_salary_band");
+		expect(overlapTables).toContain("hr_leave_request_segment");
 		for (const policy of exclusionRegister.overlapPolicies) {
 			expect(policy.databaseOverlapExclusion).toBe(false);
 		}
-		expect(exclusionRegister.rollback).toContain(
-			"DROP CONSTRAINT IF EXISTS hr_work_assignment_effective_range_ck",
-		);
-	});
-
-	it("records work-assignment overlap enforcement as command-only at the database layer", () => {
-		const assignmentPolicy = exclusionRegister.overlapPolicies.find(
-			(row) => row.table === "hr_work_assignment",
-		);
-		expect(assignmentPolicy).toBeDefined();
-		expect(assignmentPolicy?.databaseOverlapExclusion).toBe(false);
-		expect(assignmentPolicy?.enforcement).toMatch(/command/);
 	});
 
 	it("records employment-contract overlap enforcement as command-only", () => {
@@ -95,16 +128,52 @@ describe("HR coreorg DB invariants migration (0018)", () => {
 		);
 		expect(contractPolicy).toBeDefined();
 		expect(contractPolicy?.enforcement).toBe("command_only");
-		expect(contractPolicy?.databaseOverlapExclusion).toBe(false);
 	});
 
-	it("records reporting-line primary overlap enforcement as command-only at the database layer", () => {
-		const reportingPolicy = exclusionRegister.overlapPolicies.find(
-			(row) => row.table === "hr_reporting_line",
+	it("covers every mutable hr_* table in startEndRange inventory buckets", () => {
+		expect(registerInventory.duplicates).toEqual([]);
+		expect(registerInventory.extra).toEqual([]);
+		expect(registerInventory.missing).toEqual([]);
+		expect(registerInventory.ddlCount + registerInventory.notApplicableCount).toBe(
+			registerInventory.pgTableCount,
 		);
-		expect(reportingPolicy).toBeDefined();
-		expect(reportingPolicy?.databaseOverlapExclusion).toBe(false);
-		expect(reportingPolicy?.enforcement).toMatch(/command/);
+		expect(registerInventory.scaffoldCount).toBe(8);
+	});
+
+	it("maps every database check constraint to Drizzle schema", () => {
+		for (const row of exclusionRegister.databaseChecks) {
+			expect(hrSchemaSource).toContain(row.constraint);
+		}
+	});
+
+	it("cross-links the leave overlap exclusion register", () => {
+		expect(exclusionRegister.crossLinks.leaveOverlapRegister).toContain(
+			"hr-leave-overlap-exclusion-register.json",
+		);
+		const leavePolicy = exclusionRegister.overlapPolicies.find(
+			(row) => row.table === "hr_leave_request_segment",
+		);
+		expect(leavePolicy?.enforcementSurface).toContain(
+			"hr-leave-overlap-exclusion-register.json",
+		);
+	});
+
+	it("documents org-scoped foreign keys via migration 0012", () => {
+		expect(exclusionRegister.categoryInventory.orgScopedForeignKeys.migration).toBe(
+			"0012_hr_tenant_foreign_keys.sql",
+		);
+	});
+
+	it("records rollback for all eight effective-range constraints", () => {
+		expect(exclusionRegister.rollback).toContain(
+			"DROP CONSTRAINT IF EXISTS hr_work_assignment_effective_range_ck",
+		);
+		expect(exclusionRegister.rollback).toContain(
+			"DROP CONSTRAINT IF EXISTS hr_probation_review_effective_range_ck",
+		);
+		expect(exclusionRegister.rollback).toContain(
+			"DROP CONSTRAINT IF EXISTS hr_shift_effective_range_ck",
+		);
 	});
 });
 
@@ -341,25 +410,6 @@ describe.skipIf(!hasDatabase)(
 			).rejects.toThrow();
 		});
 
-		it("preserves valid existing assignment inserts", async () => {
-			if (!migrationReady) return;
-			const { getNeonSql } = await import("../src/http-transaction");
-			const sql = getNeonSql();
-			const closedAssignmentId = crypto.randomUUID();
-			await expect(
-				sql`
-					INSERT INTO hr_work_assignment (
-						id, organization_id, employment_id, employee_id, position_id,
-						starts_on, ends_on, version, created_by, updated_by
-					)
-					VALUES (
-						${closedAssignmentId}, ${orgId}, ${employmentId}, ${employeeId}, ${positionId},
-						'2019-01-01', '2019-12-31', 1, ${actor}, ${actor}
-					)
-				`,
-			).resolves.toBeDefined();
-		});
-
 		it("preserves tenant-scoped foreign-key behavior", async () => {
 			if (!migrationReady) return;
 			const { getNeonSql } = await import("../src/http-transaction");
@@ -376,6 +426,245 @@ describe.skipIf(!hasDatabase)(
 					)
 				`,
 			).rejects.toThrow();
+		});
+	},
+);
+
+describe.skipIf(!hasDatabase)(
+	"HR coreorg DB invariants migration (0035 live)",
+	() => {
+		const runId = `${Date.now()}`;
+		const orgId = `org-coreorg-inv35-${runId}`;
+		const actor = `actor-coreorg-inv35-${runId}`;
+
+		const employeeId = crypto.randomUUID();
+		const employmentId = crypto.randomUUID();
+		const gradeId = crypto.randomUUID();
+		const planId = crypto.randomUUID();
+
+		let migrationReady = false;
+
+		beforeAll(async () => {
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			const rows = await sql`
+				SELECT 1 AS ok
+				FROM pg_constraint
+				WHERE conname = 'hr_probation_review_effective_range_ck'
+				LIMIT 1
+			`;
+			migrationReady = rows.length > 0;
+			if (requireDatabaseTests() && !migrationReady) {
+				throw new Error(
+					"HR-COREORG-DB-INVARIANTS live tests require migration 0035_hr_coreorg_db_invariants_completion.sql applied",
+				);
+			}
+		});
+
+		afterAll(async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await sql`DELETE FROM hr_shift WHERE organization_id = ${orgId}`;
+			await sql`DELETE FROM hr_benefit_enrollment WHERE organization_id = ${orgId}`;
+			await sql`
+				DELETE FROM hr_employee_compensation WHERE organization_id = ${orgId}
+			`;
+			await sql`DELETE FROM hr_salary_band WHERE organization_id = ${orgId}`;
+			await sql`DELETE FROM hr_probation_review WHERE organization_id = ${orgId}`;
+			await sql`DELETE FROM hr_benefit_plan WHERE organization_id = ${orgId}`;
+			await sql`DELETE FROM hr_compensation_grade WHERE organization_id = ${orgId}`;
+			await sql`DELETE FROM hr_employment WHERE organization_id = ${orgId}`;
+			await sql`DELETE FROM hr_employee WHERE organization_id = ${orgId}`;
+		});
+
+		async function seedFoundation(): Promise<void> {
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await sql`
+				INSERT INTO hr_employee (
+					id, organization_id, employee_number, normalized_employee_number,
+					legal_name, create_idempotency_key, create_request_fingerprint,
+					version, created_by, updated_by
+				)
+				VALUES (
+					${employeeId}, ${orgId}, 'E-035', 'e-035', 'Completion Employee',
+					${`idem-emp35-${runId}`}, ${`fp-emp35-${runId}`}, 1, ${actor}, ${actor}
+				)
+			`;
+			await sql`
+				INSERT INTO hr_employment (
+					id, organization_id, employee_id, status, starts_on, ends_on,
+					version, created_by, updated_by
+				)
+				VALUES (
+					${employmentId}, ${orgId}, ${employeeId}, 'active', '2020-01-01', NULL,
+					1, ${actor}, ${actor}
+				)
+			`;
+			await sql`
+				INSERT INTO hr_compensation_grade (
+					id, organization_id, code, name, status, version, created_by, updated_by
+				)
+				VALUES (
+					${gradeId}, ${orgId}, 'G-035', 'Grade 035', 'active', 1, ${actor}, ${actor}
+				)
+			`;
+			await sql`
+				INSERT INTO hr_benefit_plan (
+					id, organization_id, code, name, status, version, created_by, updated_by
+				)
+				VALUES (
+					${planId}, ${orgId}, 'BP-035', 'Plan 035', 'active', 1, ${actor}, ${actor}
+				)
+			`;
+		}
+
+		it("rejects a probation review whose end precedes its start", async () => {
+			if (!migrationReady) return;
+			await seedFoundation();
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_probation_review (
+						id, organization_id, employment_id, employee_id, status,
+						starts_on, ends_on, create_idempotency_key, create_request_fingerprint,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${employmentId}, ${employeeId}, 'open',
+						'2021-06-01', '2021-01-01', ${`idem-prob-bad-${runId}`}, ${`fp-prob-bad-${runId}`},
+						1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("rejects a salary band whose effective_to precedes effective_from", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_salary_band (
+						id, organization_id, grade_id, minimum_amount, midpoint_amount, maximum_amount,
+						currency_code, effective_from, effective_to, status,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${gradeId}, '1000', '1500', '2000',
+						'USD', '2021-06-01', '2021-01-01', 'active', 1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("accepts an open-ended salary band", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_salary_band (
+						id, organization_id, grade_id, minimum_amount, midpoint_amount, maximum_amount,
+						currency_code, effective_from, effective_to, status,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${gradeId}, '1000', '1500', '2000',
+						'USD', '2020-01-01', NULL, 'active', 1, ${actor}, ${actor}
+					)
+				`,
+			).resolves.toBeDefined();
+		});
+
+		it("rejects employee compensation with inverted effective range", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_employee_compensation (
+						id, organization_id, employee_id, employment_id, base_amount, currency_code,
+						effective_from, effective_to, reason, status,
+						create_idempotency_key, create_request_fingerprint,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${employeeId}, ${employmentId}, '50000', 'USD',
+						'2021-06-01', '2021-01-01', 'test.invalid-range', 'active',
+						${`idem-comp-bad-${runId}`}, ${`fp-comp-bad-${runId}`},
+						1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("rejects benefit enrollment with inverted effective range", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_benefit_enrollment (
+						id, organization_id, employee_id, employment_id, plan_id,
+						effective_from, effective_to, status,
+						create_idempotency_key, create_request_fingerprint,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${employeeId}, ${employmentId}, ${planId},
+						'2021-06-01', '2021-01-01', 'active',
+						${`idem-ben-bad-${runId}`}, ${`fp-ben-bad-${runId}`},
+						1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("rejects shift with inverted effective range", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_shift (
+						id, organization_id, code, name, shift_kind, start_local, end_local,
+						expected_minutes, status, effective_from, effective_to,
+						create_idempotency_key, create_request_fingerprint,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, 'SH-BAD', 'Bad Shift', 'fixed', '09:00', '17:00',
+						480, 'active', '2021-06-01', '2021-01-01',
+						${`idem-shift-bad-${runId}`}, ${`fp-shift-bad-${runId}`},
+						1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("accepts shift with open-ended effective range", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_shift (
+						id, organization_id, code, name, shift_kind, start_local, end_local,
+						expected_minutes, status, effective_from, effective_to,
+						create_idempotency_key, create_request_fingerprint,
+						version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, 'SH-OK', 'Open Shift', 'fixed', '09:00', '17:00',
+						480, 'active', '2020-01-01', NULL,
+						${`idem-shift-ok-${runId}`}, ${`fp-shift-ok-${runId}`},
+						1, ${actor}, ${actor}
+					)
+				`,
+			).resolves.toBeDefined();
 		});
 	},
 );

@@ -59,7 +59,7 @@ describe("human-resources privacy operations", () => {
 	});
 
 	it("exports a subject bundle with collector depth", async () => {
-		const { store, employee } = await seedPrivacySubjectEmployee({
+		const { store, employee, person } = await seedPrivacySubjectEmployee({
 			organizationId: PRIVACY_TEST_ORG_A,
 			personId: PRIVACY_TEST_PERSON_A,
 		});
@@ -84,6 +84,11 @@ describe("human-resources privacy operations", () => {
 		expect(
 			result.data.records.some((record) => record.entityType === "hr_employee"),
 		).toBe(true);
+		expect(
+			result.data.records.some((record) => record.entityType === "hr_person"),
+		).toBe(true);
+		expect(result.data.subject.personId).toBe(person.id);
+		expect(result.data.subject.personId).not.toBe(employee.id);
 		expect(result.data.exportReference).toContain("test://");
 		expect(result.data.recordCount).toBe(result.data.records.length);
 	});

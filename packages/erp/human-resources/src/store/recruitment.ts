@@ -3,6 +3,7 @@ import type {
 	HumanResourcesApplicationId,
 	HumanResourcesCandidateId,
 	HumanResourcesDepartmentId,
+	HumanResourcesEmployeeId,
 	HumanResourcesInterviewId,
 	HumanResourcesJobId,
 	HumanResourcesOfferId,
@@ -47,6 +48,7 @@ export type RequisitionCreateRecord = {
 	jobId: HumanResourcesJobId | null;
 	positionId: HumanResourcesPositionId | null;
 	departmentId: HumanResourcesDepartmentId | null;
+	hiringManagerEmployeeId: HumanResourcesEmployeeId | null;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -146,6 +148,19 @@ export type HumanResourcesRecruitmentStore = {
 			jobId?: HumanResourcesJobId | null;
 			positionId?: HumanResourcesPositionId | null;
 			departmentId?: HumanResourcesDepartmentId | null;
+			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<JobRequisition>>;
+
+	assignHiringManager(
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			hiringManagerEmployeeId: HumanResourcesEmployeeId;
 			expectedVersion: number;
 			actorUserId: string;
 		},

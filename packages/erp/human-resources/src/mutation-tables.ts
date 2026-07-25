@@ -1,6 +1,8 @@
 /** Human Resources sole-mutator tables — aligned with SCHEMA-OWNERSHIP-MANIFEST. */
 export const HUMAN_RESOURCES_MUTATION_TABLES = [
 	"hr_person",
+	"hr_person_contact",
+	"hr_person_identifier",
 	"hr_person_identity_version",
 	"hr_employee",
 	"hr_worker",

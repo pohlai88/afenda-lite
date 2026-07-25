@@ -7,15 +7,19 @@ import {
 	caBankMandate,
 	caBeneficialOwnerDisclosure,
 	caCharge,
+	caChargeVariation,
 	caCorporateAsset,
 	caCorporateDocument,
 	caFilingObligation,
 	caFilingSubmission,
 	caGroupControlRelationship,
 	caInsurancePolicy,
+	caInsurancePolicyRenewal,
+	caIntellectualPropertyRenewal,
 	caIntellectualPropertyRight,
 	caLicencePermit,
 	caMaterialAgreement,
+	caPropertyAssetMutationReceipt,
 	caPropertyHolding,
 	caShareCertificate,
 	caShareClass,
@@ -23,27 +27,36 @@ import {
 	caShareTransactionLeg,
 	db,
 	eq,
+	isNull,
 	lte,
+	type NeonHttpSql,
 	or,
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
 import { fail, failFromUnknown, ok } from "@afenda/errors/result";
 
-import { CA_ERROR_CODE_CONFLICT, caErrorDetails } from "../../error-codes";
-import type { SlicesStore } from "../../ports";
+import {
+	CA_ERROR_CODE_CONFLICT,
+	CA_ERROR_IDEMPOTENCY_CONFLICT,
+	caErrorDetails,
+} from "../../error-codes";
+import type { Ca4MutationContext, SlicesStore } from "../../ports";
 import {
 	addDecimal,
 	isNegativeDecimal,
 	isZeroDecimal,
+	negateDecimal,
 	sumDecimals,
 } from "../../shared/decimal";
 import type {
+	Ca4Subject,
 	CaBankAccountRegistration,
 	CaBankAccountRegistrationPublic,
 	CaBankMandate,
 	CaBeneficialOwnerDisclosure,
 	CaCharge,
+	CaChargeVariation,
 	CaCorporateAsset,
 	CaCorporateDocument,
 	CaCorporateRecordSearchHit,
@@ -51,9 +64,12 @@ import type {
 	CaFilingSubmission,
 	CaGroupControlRelationship,
 	CaInsurancePolicy,
+	CaInsurancePolicyRenewal,
+	CaIntellectualPropertyRenewal,
 	CaIntellectualPropertyRight,
 	CaLicencePermit,
 	CaMaterialAgreement,
+	CaPropertyAssetMutationReceipt,
 	CaPropertyHolding,
 	CaShareCertificate,
 	CaShareClass,
@@ -75,6 +91,12 @@ type IntellectualPropertyRightRow =
 	typeof caIntellectualPropertyRight.$inferSelect;
 type InsurancePolicyRow = typeof caInsurancePolicy.$inferSelect;
 type ChargeRow = typeof caCharge.$inferSelect;
+type ChargeVariationRow = typeof caChargeVariation.$inferSelect;
+type IntellectualPropertyRenewalRow =
+	typeof caIntellectualPropertyRenewal.$inferSelect;
+type InsurancePolicyRenewalRow = typeof caInsurancePolicyRenewal.$inferSelect;
+type PropertyAssetMutationReceiptRow =
+	typeof caPropertyAssetMutationReceipt.$inferSelect;
 type LicencePermitRow = typeof caLicencePermit.$inferSelect;
 type BankAccountRegistrationRow = typeof caBankAccountRegistration.$inferSelect;
 type BankMandateRow = typeof caBankMandate.$inferSelect;
@@ -216,13 +238,19 @@ function mapPropertyHolding(row: PropertyHoldingRow): CaPropertyHolding {
 		normalizedCode: row.normalizedCode,
 		propertyType: row.propertyType,
 		titleReference: row.titleReference,
+		normalizedTitleReference: row.normalizedTitleReference,
+		propertyDescription: row.propertyDescription,
 		ownershipPercentage: String(row.ownershipPercentage),
-		acquiredDate: row.acquiredDate,
-		disposedDate: row.disposedDate,
+		acquisitionDate: row.acquisitionDate,
+		disposalDate: row.disposalDate,
 		tenureType: row.tenureType,
+		valuationReference: row.valuationReference,
+		disposalReason: row.disposalReason,
+		disposalEvidenceReference: row.disposalEvidenceReference,
 		status: row.status as CaPropertyHolding["status"],
 		version: row.version,
 		createIdempotencyKey: row.createIdempotencyKey,
+		createRequestFingerprint: row.createRequestFingerprint,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
@@ -239,12 +267,20 @@ function mapCorporateAsset(row: CorporateAssetRow): CaCorporateAsset {
 		normalizedCode: row.normalizedCode,
 		assetCategory: row.assetCategory,
 		identifier: row.identifier,
+		normalizedIdentifier: row.normalizedIdentifier,
 		description: row.description,
-		acquiredDate: row.acquiredDate,
-		disposedDate: row.disposedDate,
+		custodianPartyId: row.custodianPartyId,
+		custodianPartyCodeSnapshot: row.custodianPartyCodeSnapshot,
+		custodianPartyNameSnapshot: row.custodianPartyNameSnapshot,
+		acquisitionDate: row.acquisitionDate,
+		disposalDate: row.disposalDate,
+		writeOffDate: row.writeOffDate,
+		terminalReason: row.terminalReason,
+		terminalEvidenceReference: row.terminalEvidenceReference,
 		status: row.status as CaCorporateAsset["status"],
 		version: row.version,
 		createIdempotencyKey: row.createIdempotencyKey,
+		createRequestFingerprint: row.createRequestFingerprint,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
@@ -263,19 +299,48 @@ function mapIntellectualPropertyRight(
 		normalizedCode: row.normalizedCode,
 		rightType: row.rightType,
 		jurisdictionCode: row.jurisdictionCode,
+		applicationNumber: row.applicationNumber,
 		registrationNumber: row.registrationNumber,
+		normalizedRightNumber: row.normalizedRightNumber,
 		ownerPartyId: row.ownerPartyId,
+		ownerPartyCodeSnapshot: row.ownerPartyCodeSnapshot,
+		ownerPartyNameSnapshot: row.ownerPartyNameSnapshot,
 		filingDate: row.filingDate,
 		grantDate: row.grantDate,
 		expiryDate: row.expiryDate,
+		lastRenewalDate: row.lastRenewalDate,
+		disposalDate: row.disposalDate,
+		terminalReason: row.terminalReason,
+		terminalEvidenceReference: row.terminalEvidenceReference,
 		status: row.status as CaIntellectualPropertyRight["status"],
 		version: row.version,
 		createIdempotencyKey: row.createIdempotencyKey,
+		createRequestFingerprint: row.createRequestFingerprint,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 	};
+}
+
+function mapSubject(
+	kind: string,
+	propertyHoldingId: string | null,
+	corporateAssetId: string | null,
+	intellectualPropertyRightId: string | null,
+	description: string | null,
+): Ca4Subject {
+	if (kind === "property" && propertyHoldingId) {
+		return { kind: "property", propertyHoldingId };
+	}
+	if (kind === "corporate-asset" && corporateAssetId) {
+		return { kind: "corporate-asset", corporateAssetId };
+	}
+	if (kind === "intellectual-property" && intellectualPropertyRightId) {
+		return { kind: "intellectual-property", intellectualPropertyRightId };
+	}
+	if (kind === "other" && description) return { kind: "other", description };
+	return { kind: "company" };
 }
 
 function mapInsurancePolicy(row: InsurancePolicyRow): CaInsurancePolicy {
@@ -286,15 +351,27 @@ function mapInsurancePolicy(row: InsurancePolicyRow): CaInsurancePolicy {
 		policyNumber: row.policyNumber,
 		normalizedPolicyNumber: row.normalizedPolicyNumber,
 		insurerPartyId: row.insurerPartyId,
+		insurerPartyCodeSnapshot: row.insurerPartyCodeSnapshot,
 		insurerPartyNameSnapshot: row.insurerPartyNameSnapshot,
-		coveredSubject: row.coveredSubject,
+		coveredSubject: mapSubject(
+			row.coveredSubjectKind,
+			row.coveredPropertyHoldingId,
+			row.coveredCorporateAssetId,
+			row.coveredIntellectualPropertyRightId,
+			row.coveredSubjectDescription,
+		),
 		effectiveFrom: row.effectiveFrom,
 		effectiveTo: row.effectiveTo,
 		limitAmount: row.limitAmount != null ? String(row.limitAmount) : null,
 		currencyCode: row.currencyCode,
+		documentReference: row.documentReference,
+		cancellationDate: row.cancellationDate,
+		cancellationReason: row.cancellationReason,
+		cancellationEvidenceReference: row.cancellationEvidenceReference,
 		status: row.status as CaInsurancePolicy["status"],
 		version: row.version,
 		createIdempotencyKey: row.createIdempotencyKey,
+		createRequestFingerprint: row.createRequestFingerprint,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
@@ -311,20 +388,110 @@ function mapCharge(row: ChargeRow): CaCharge {
 		normalizedCode: row.normalizedCode,
 		chargeType: row.chargeType,
 		securedPartyId: row.securedPartyId,
+		securedPartyCodeSnapshot: row.securedPartyCodeSnapshot,
 		securedPartyNameSnapshot: row.securedPartyNameSnapshot,
-		affectedSubjectReference: row.affectedSubjectReference,
+		affectedSubject: mapSubject(
+			row.affectedSubjectKind,
+			row.affectedPropertyHoldingId,
+			row.affectedCorporateAssetId,
+			row.affectedIntellectualPropertyRightId,
+			row.affectedSubjectDescription,
+		),
 		amount: row.amount != null ? String(row.amount) : null,
 		currencyCode: row.currencyCode,
+		priorityRank: row.priorityRank,
 		createdDate: row.createdDate,
 		releasedDate: row.releasedDate,
+		creationEvidenceReference: row.creationEvidenceReference,
+		releaseReason: row.releaseReason,
+		releaseEvidenceReference: row.releaseEvidenceReference,
 		status: row.status as CaCharge["status"],
 		version: row.version,
 		createIdempotencyKey: row.createIdempotencyKey,
+		createRequestFingerprint: row.createRequestFingerprint,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 	};
+}
+
+function mapIntellectualPropertyRenewal(
+	row: IntellectualPropertyRenewalRow,
+): CaIntellectualPropertyRenewal {
+	return {
+		...row,
+	};
+}
+
+function mapInsurancePolicyRenewal(
+	row: InsurancePolicyRenewalRow,
+): CaInsurancePolicyRenewal {
+	return {
+		...row,
+		limitAmount: row.limitAmount === null ? null : String(row.limitAmount),
+	};
+}
+
+function mapChargeVariation(row: ChargeVariationRow): CaChargeVariation {
+	return {
+		...row,
+		amount: row.amount === null ? null : String(row.amount),
+	};
+}
+
+function mapPropertyAssetMutationReceipt(
+	row: PropertyAssetMutationReceiptRow,
+): CaPropertyAssetMutationReceipt {
+	const entityType =
+		row.entityType === "property" ||
+		row.entityType === "asset" ||
+		row.entityType === "intellectual-property" ||
+		row.entityType === "insurance-policy" ||
+		row.entityType === "charge"
+			? row.entityType
+			: "property";
+	return { ...row, entityType };
+}
+
+function subjectColumns(subject: Ca4Subject) {
+	return {
+		kind: subject.kind,
+		propertyHoldingId:
+			subject.kind === "property" ? subject.propertyHoldingId : null,
+		corporateAssetId:
+			subject.kind === "corporate-asset" ? subject.corporateAssetId : null,
+		intellectualPropertyRightId:
+			subject.kind === "intellectual-property"
+				? subject.intellectualPropertyRightId
+				: null,
+		description: subject.kind === "other" ? subject.description : null,
+	};
+}
+
+async function insertCa4Receipt(
+	entity: {
+		id: string;
+		organizationId: string;
+		version: number;
+	},
+	entityType: CaPropertyAssetMutationReceipt["entityType"],
+	mutation?: Ca4MutationContext,
+) {
+	if (!mutation) return;
+	await db
+		.insert(caPropertyAssetMutationReceipt)
+		.values({
+			id: randomUUID(),
+			organizationId: entity.organizationId,
+			commandId: mutation.meta.commandId,
+			entityType,
+			entityId: entity.id,
+			resultVersion: entity.version,
+			idempotencyKey: mutation.meta.idempotencyKey,
+			requestFingerprint: mutation.meta.requestFingerprint,
+		})
+		.onConflictDoNothing();
 }
 
 function mapLicencePermit(row: LicencePermitRow): CaLicencePermit {
@@ -555,6 +722,7 @@ async function queryShareHoldingsAsOf(
 		eq(caShareTransaction.organizationId, organizationId),
 		eq(caShareTransaction.legalCompanyId, legalCompanyId),
 		eq(caShareTransaction.status, "posted"),
+		isNull(caShareTransaction.reversalOfId),
 		lte(caShareTransaction.transactionDate, asOf),
 	];
 	if (shareClassId) {
@@ -624,6 +792,79 @@ async function computeHoldingQuantity(
 	return match?.quantity ?? "0";
 }
 
+type ShareCapitalFactsInput = {
+	auditId: string;
+	eventId: string;
+	organizationId: string;
+	actorUserId: string;
+	correlationId: string;
+	eventType: string;
+	entityType: string;
+	entityId: string;
+	legalCompanyId: string;
+	status: string;
+	version?: number | null;
+	reversalOfId?: string | null;
+};
+
+function shareCapitalHolderLockKeys(
+	organizationId: string,
+	legs: ReadonlyArray<{
+		shareClassId: string;
+		holderPartyId: string;
+	}>,
+): string[] {
+	const keys = new Set<string>();
+	for (const leg of legs) {
+		keys.add(`${organizationId}:${leg.shareClassId}:${leg.holderPartyId}`);
+	}
+	return [...keys];
+}
+
+function shareCapitalFactsStatements(
+	neonSql: NeonHttpSql,
+	input: ShareCapitalFactsInput,
+	emitOutbox: boolean,
+) {
+	const statements = [
+		neonSql`
+			INSERT INTO platform_audit_log (
+				id, organization_id, actor_user_id, correlation_id, module,
+				entity, entity_id, action, changes
+			) VALUES (
+				${input.auditId}::uuid, ${input.organizationId}::text, ${input.actorUserId}::text,
+				${input.correlationId}::text, 'corporate-administration', ${input.entityType}::text,
+				${input.entityId}::text, 'CREATE', '[]'::jsonb
+			)
+		`,
+	];
+	if (emitOutbox) {
+		statements.push(
+			neonSql`
+				INSERT INTO platform_domain_event (
+					id, organization_id, type, source_module, correlation_id,
+					actor_user_id, payload, status, attempts
+				) VALUES (
+					${input.eventId}::uuid, ${input.organizationId}::text, ${input.eventType}::text,
+					'corporate-administration', ${input.correlationId}::text, ${input.actorUserId}::text,
+					jsonb_build_object(
+						'organizationId', ${input.organizationId}::text,
+						'legalCompanyId', ${input.legalCompanyId}::uuid,
+						'entityType', ${input.entityType}::text,
+						'entityId', ${input.entityId}::uuid,
+						'version', ${input.version ?? null}::integer,
+						'actorId', ${input.actorUserId}::text,
+						'correlationId', ${input.correlationId}::text,
+						'status', ${input.status}::text,
+						'reversalOfId', ${input.reversalOfId ?? null}::uuid
+					), 'pending', 0
+				)
+			`,
+		);
+	}
+	return statements;
+}
+
 export function createDrizzleSlicesStore(): SlicesStore {
 	return {
 		async getShareClassByIdempotencyKey(organizationId, idempotencyKey) {
@@ -646,7 +887,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createShareClass(record) {
+		async createShareClass(record, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -664,25 +905,51 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				if (existing[0]) {
 					return ok(mapShareClass(existing[0]));
 				}
+				const shareClassId = randomUUID();
+				await runNeonHttpTransaction((neonSql) => [
+					neonSql`
+						INSERT INTO ca_share_class (
+							id, organization_id, legal_company_id, code, normalized_code,
+							class_type, par_value, currency_code, authorized_quantity, status,
+							version, create_idempotency_key, created_by, updated_by
+						) VALUES (
+							${shareClassId}::uuid, ${record.organizationId}::text, ${record.legalCompanyId}::uuid,
+							${record.code}::text, ${record.normalizedCode}::text, ${record.classType}::text,
+							${record.parValue}::numeric, ${record.currencyCode}::text, ${record.authorizedQuantity}::numeric,
+							${record.status}::text, 1, ${record.createIdempotencyKey}::text,
+							${record.createdBy}::text, ${record.updatedBy}::text
+						)
+					`,
+					...(mutation
+						? shareCapitalFactsStatements(
+								neonSql,
+								{
+									auditId: randomUUID(),
+									eventId: randomUUID(),
+									organizationId: record.organizationId,
+									actorUserId: record.createdBy,
+									correlationId: mutation.meta.correlationId,
+									eventType: mutation.meta.eventType,
+									entityType: "share_class",
+									entityId: shareClassId,
+									legalCompanyId: record.legalCompanyId,
+									status: record.status,
+									version: 1,
+								},
+								false,
+							)
+						: []),
+				]);
 				const rows = await db
-					.insert(caShareClass)
-					.values({
-						id: randomUUID(),
-						organizationId: record.organizationId,
-						legalCompanyId: record.legalCompanyId,
-						code: record.code,
-						normalizedCode: record.normalizedCode,
-						classType: record.classType,
-						parValue: record.parValue,
-						currencyCode: record.currencyCode,
-						authorizedQuantity: record.authorizedQuantity,
-						status: record.status,
-						version: 1,
-						createIdempotencyKey: record.createIdempotencyKey,
-						createdBy: record.createdBy,
-						updatedBy: record.updatedBy,
-					})
-					.returning();
+					.select()
+					.from(caShareClass)
+					.where(
+						and(
+							eq(caShareClass.organizationId, record.organizationId),
+							eq(caShareClass.id, shareClassId),
+						),
+					)
+					.limit(1);
 				const row = rows[0];
 				if (!row) {
 					return fail("INTERNAL_ERROR", "Failed to create share class");
@@ -748,6 +1015,63 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				return failFromUnknown(error, "Failed to list share classes");
 			}
 		},
+		async updateShareClass(record, expectedVersion) {
+			try {
+				const rows = await db
+					.update(caShareClass)
+					.set({
+						classType: record.classType,
+						parValue: record.parValue,
+						authorizedQuantity: record.authorizedQuantity,
+						status: record.status,
+						version: record.version,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caShareClass.organizationId, record.organizationId),
+							eq(caShareClass.id, record.id),
+							eq(caShareClass.version, expectedVersion),
+						),
+					)
+					.returning();
+				const row = rows[0];
+				if (!row) {
+					return fail("CONFLICT", "Share class version conflict");
+				}
+				return ok(mapShareClass(row));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to update share class");
+			}
+		},
+		async closeShareClass(record, expectedVersion, _mutation) {
+			try {
+				const rows = await db
+					.update(caShareClass)
+					.set({
+						status: record.status,
+						version: record.version,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caShareClass.organizationId, record.organizationId),
+							eq(caShareClass.id, record.id),
+							eq(caShareClass.version, expectedVersion),
+						),
+					)
+					.returning();
+				const row = rows[0];
+				if (!row) {
+					return fail("CONFLICT", "Share class version conflict");
+				}
+				return ok(mapShareClass(row));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to close share class");
+			}
+		},
 		async getShareTransactionByIdempotencyKey(organizationId, idempotencyKey) {
 			try {
 				const rows = await db
@@ -768,7 +1092,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createShareTransaction(record, legs) {
+		async createShareTransaction(record, legs, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -854,7 +1178,10 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				const normalizedReference = record.transactionReference
 					.trim()
 					.toUpperCase();
-				const correlationId = record.createIdempotencyKey;
+				const correlationId =
+					mutation?.meta.correlationId ?? record.createIdempotencyKey;
+				const auditId = randomUUID();
+				const eventId = randomUUID();
 				const savedLegs: CaShareTransactionLeg[] = legs.map((leg, index) => ({
 					id: randomUUID(),
 					organizationId: leg.organizationId,
@@ -868,8 +1195,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					legSequence: index + 1,
 					createdAt: new Date(),
 				}));
+				const lockKeys = shareCapitalHolderLockKeys(
+					record.organizationId,
+					legs,
+				);
 				try {
 					await runNeonHttpTransaction((neonSql) => [
+						...lockKeys.map(
+							(key) =>
+								neonSql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
+						),
 						neonSql`
 							INSERT INTO ca_share_transaction (
 								id, organization_id, legal_company_id, share_class_id,
@@ -898,6 +1233,25 @@ export function createDrizzleSlicesStore(): SlicesStore {
 								)
 							`,
 						),
+						...(mutation
+							? shareCapitalFactsStatements(
+									neonSql,
+									{
+										auditId,
+										eventId,
+										organizationId: record.organizationId,
+										actorUserId: record.createdBy,
+										correlationId: mutation.meta.correlationId,
+										eventType: mutation.meta.eventType,
+										entityType: "share_transaction",
+										entityId: transactionId,
+										legalCompanyId: record.legalCompanyId,
+										status: record.status,
+										reversalOfId: record.reversalOfId,
+									},
+									true,
+								)
+							: []),
 					]);
 				} catch (error) {
 					if (isUniqueViolation(error)) {
@@ -966,6 +1320,143 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				return ok(rows.map(mapShareTransaction));
 			} catch (error) {
 				return failFromUnknown(error, "Failed to list share transactions");
+			}
+		},
+		async reverseShareTransaction(input) {
+			try {
+				const existing = await db
+					.select()
+					.from(caShareTransaction)
+					.where(
+						and(
+							eq(caShareTransaction.organizationId, input.organizationId),
+							eq(
+								caShareTransaction.createIdempotencyKey,
+								input.createIdempotencyKey,
+							),
+						),
+					)
+					.limit(1);
+				if (existing[0]) {
+					const detail = await fetchShareTransactionDetail(
+						input.organizationId,
+						existing[0].id,
+					);
+					if (!detail) {
+						return fail("NOT_FOUND", "Share transaction not found");
+					}
+					return ok(detail);
+				}
+				const original = await fetchShareTransactionDetail(
+					input.organizationId,
+					input.originalTransactionId,
+				);
+				if (
+					!original ||
+					original.legalCompanyId !== input.legalCompanyId ||
+					original.status !== "posted" ||
+					original.reversalOfId
+				) {
+					return fail("NOT_FOUND", "Share transaction not found");
+				}
+				const reversalLegs = original.legs.map((leg) => ({
+					...leg,
+					quantityDelta: negateDecimal(leg.quantityDelta),
+				}));
+				for (const leg of reversalLegs) {
+					const current = await computeHoldingQuantity(
+						input.organizationId,
+						input.legalCompanyId,
+						leg.shareClassId,
+						leg.holderPartyId,
+						input.reversalDate,
+					);
+					if (isNegativeDecimal(addDecimal(current, leg.quantityDelta))) {
+						return fail(
+							"CONFLICT",
+							"Insufficient share holding for reversal leg",
+						);
+					}
+				}
+				const reversalId = randomUUID();
+				const normalizedReference = input.reversalReference
+					.trim()
+					.toUpperCase();
+				const auditId = randomUUID();
+				const eventId = randomUUID();
+				const lockKeys = shareCapitalHolderLockKeys(
+					input.organizationId,
+					reversalLegs,
+				);
+				await runNeonHttpTransaction((neonSql) => [
+					...lockKeys.map(
+						(key) =>
+							neonSql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
+					),
+					neonSql`
+						UPDATE ca_share_transaction
+						SET status = 'reversed'
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.originalTransactionId}
+							AND status = 'posted'
+					`,
+					neonSql`
+						INSERT INTO ca_share_transaction (
+							id, organization_id, legal_company_id, share_class_id,
+							transaction_reference, normalized_reference, transaction_type,
+							status, transaction_date, reversal_of_id,
+							create_idempotency_key, correlation_id, created_by
+						) VALUES (
+							${reversalId}, ${input.organizationId}, ${input.legalCompanyId},
+							${original.shareClassId}, ${input.reversalReference}, ${normalizedReference},
+							'correction', 'posted', ${input.reversalDate}, ${input.originalTransactionId},
+							${input.createIdempotencyKey}, ${input.correlationId}, ${input.createdBy}
+						)
+					`,
+					...reversalLegs.map(
+						(leg, index) => neonSql`
+							INSERT INTO ca_share_transaction_leg (
+								id, organization_id, legal_company_id, share_transaction_id,
+								share_class_id, holder_party_id, holder_party_code_snapshot,
+								holder_party_name_snapshot, quantity_delta, leg_sequence
+							) VALUES (
+								${randomUUID()}, ${leg.organizationId}, ${leg.legalCompanyId},
+								${reversalId}, ${leg.shareClassId}, ${leg.holderPartyId},
+								${leg.holderPartyCodeSnapshot}, ${leg.holderPartyNameSnapshot},
+								${leg.quantityDelta}, ${index + 1}
+							)
+						`,
+					),
+					...(input.mutation
+						? shareCapitalFactsStatements(
+								neonSql,
+								{
+									auditId,
+									eventId,
+									organizationId: input.organizationId,
+									actorUserId: input.createdBy,
+									correlationId: input.mutation.meta.correlationId,
+									eventType: input.mutation.meta.eventType,
+									entityType: "share_transaction",
+									entityId: reversalId,
+									legalCompanyId: input.legalCompanyId,
+									status: "posted",
+									reversalOfId: input.originalTransactionId,
+								},
+								true,
+							)
+						: []),
+				]);
+				const detail = await fetchShareTransactionDetail(
+					input.organizationId,
+					reversalId,
+				);
+				if (!detail) {
+					return fail("INTERNAL_ERROR", "Failed to reverse share transaction");
+				}
+				return ok(detail);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to reverse share transaction");
 			}
 		},
 		async listShareHoldingsAsOf(
@@ -1109,6 +1600,100 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				return ok(rows.map(mapShareCertificate));
 			} catch (error) {
 				return failFromUnknown(error, "Failed to list share certificates");
+			}
+		},
+		async replaceShareCertificate(input) {
+			try {
+				const existing = await db
+					.select()
+					.from(caShareCertificate)
+					.where(
+						and(
+							eq(
+								caShareCertificate.organizationId,
+								input.replacement.organizationId,
+							),
+							eq(
+								caShareCertificate.createIdempotencyKey,
+								input.replacement.createIdempotencyKey,
+							),
+						),
+					)
+					.limit(1);
+				if (existing[0]) {
+					return ok(mapShareCertificate(existing[0]));
+				}
+				await db
+					.update(caShareCertificate)
+					.set({
+						status: "replaced",
+						version: input.prior.version + 1,
+						updatedBy: input.replacement.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caShareCertificate.organizationId, input.prior.organizationId),
+							eq(caShareCertificate.id, input.prior.id),
+							eq(caShareCertificate.version, input.prior.version),
+						),
+					);
+				const rows = await db
+					.insert(caShareCertificate)
+					.values({
+						id: randomUUID(),
+						organizationId: input.replacement.organizationId,
+						legalCompanyId: input.replacement.legalCompanyId,
+						shareClassId: input.replacement.shareClassId,
+						shareTransactionId: input.replacement.shareTransactionId,
+						certificateNumber: input.replacement.certificateNumber,
+						normalizedCertificateNumber:
+							input.replacement.normalizedCertificateNumber,
+						holderPartyId: input.replacement.holderPartyId,
+						holderPartyCodeSnapshot: input.replacement.holderPartyCodeSnapshot,
+						holderPartyNameSnapshot: input.replacement.holderPartyNameSnapshot,
+						issuedDate: input.replacement.issuedDate,
+						status: input.replacement.status,
+						version: 1,
+						createIdempotencyKey: input.replacement.createIdempotencyKey,
+						createdBy: input.replacement.createdBy,
+						updatedBy: input.replacement.updatedBy,
+					})
+					.returning();
+				const row = rows[0];
+				if (!row) {
+					return fail("INTERNAL_ERROR", "Failed to replace share certificate");
+				}
+				return ok(mapShareCertificate(row));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to replace share certificate");
+			}
+		},
+		async cancelShareCertificate(record, expectedVersion) {
+			try {
+				const rows = await db
+					.update(caShareCertificate)
+					.set({
+						status: record.status,
+						version: record.version,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caShareCertificate.organizationId, record.organizationId),
+							eq(caShareCertificate.id, record.id),
+							eq(caShareCertificate.version, expectedVersion),
+						),
+					)
+					.returning();
+				const row = rows[0];
+				if (!row) {
+					return fail("CONFLICT", "Share certificate version conflict");
+				}
+				return ok(mapShareCertificate(row));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to cancel share certificate");
 			}
 		},
 		async getBeneficialOwnerDisclosureByIdempotencyKey(
@@ -1256,6 +1841,109 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
+		async updateBeneficialOwnerDisclosure(record, expectedVersion) {
+			try {
+				const rows = await db
+					.update(caBeneficialOwnerDisclosure)
+					.set({
+						natureOfControlCodes: record.natureOfControlCodes,
+						evidenceReference: record.evidenceReference,
+						verificationStatus: record.verificationStatus,
+						effectiveTo: record.effectiveTo,
+						version: record.version,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(
+								caBeneficialOwnerDisclosure.organizationId,
+								record.organizationId,
+							),
+							eq(caBeneficialOwnerDisclosure.id, record.id),
+							eq(caBeneficialOwnerDisclosure.version, expectedVersion),
+						),
+					)
+					.returning();
+				const row = rows[0];
+				if (!row) {
+					return fail(
+						"CONFLICT",
+						"Beneficial owner disclosure version conflict",
+					);
+				}
+				return ok(mapBeneficialOwnerDisclosure(row));
+			} catch (error) {
+				return failFromUnknown(
+					error,
+					"Failed to update beneficial owner disclosure",
+				);
+			}
+		},
+		async endBeneficialOwnerDisclosure(record, expectedVersion, _mutation) {
+			try {
+				const rows = await db
+					.update(caBeneficialOwnerDisclosure)
+					.set({
+						effectiveTo: record.effectiveTo,
+						version: record.version,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(
+								caBeneficialOwnerDisclosure.organizationId,
+								record.organizationId,
+							),
+							eq(caBeneficialOwnerDisclosure.id, record.id),
+							eq(caBeneficialOwnerDisclosure.version, expectedVersion),
+						),
+					)
+					.returning();
+				const row = rows[0];
+				if (!row) {
+					return fail(
+						"CONFLICT",
+						"Beneficial owner disclosure version conflict",
+					);
+				}
+				return ok(mapBeneficialOwnerDisclosure(row));
+			} catch (error) {
+				return failFromUnknown(
+					error,
+					"Failed to end beneficial owner disclosure",
+				);
+			}
+		},
+		async listBeneficialOwnerDisclosuresAsOf(
+			organizationId,
+			legalCompanyId,
+			asOf,
+		) {
+			try {
+				const rows = await db
+					.select()
+					.from(caBeneficialOwnerDisclosure)
+					.where(
+						and(
+							eq(caBeneficialOwnerDisclosure.organizationId, organizationId),
+							eq(caBeneficialOwnerDisclosure.legalCompanyId, legalCompanyId),
+							lte(caBeneficialOwnerDisclosure.effectiveFrom, asOf),
+							or(
+								sql`${caBeneficialOwnerDisclosure.effectiveTo} IS NULL`,
+								sql`${caBeneficialOwnerDisclosure.effectiveTo} >= ${asOf}`,
+							),
+						),
+					);
+				return ok(rows.map(mapBeneficialOwnerDisclosure));
+			} catch (error) {
+				return failFromUnknown(
+					error,
+					"Failed to list beneficial owner disclosures as-of",
+				);
+			}
+		},
 		async getPropertyHoldingByIdempotencyKey(organizationId, idempotencyKey) {
 			try {
 				const rows = await db
@@ -1276,7 +1964,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createPropertyHolding(record) {
+		async createPropertyHolding(record, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -1292,6 +1980,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					)
 					.limit(1);
 				if (existing[0]) {
+					if (
+						existing[0].createRequestFingerprint !==
+						record.createRequestFingerprint
+					) {
+						return fail(
+							"CONFLICT",
+							"Idempotency key was already used for a different request",
+							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+						);
+					}
 					return ok(mapPropertyHolding(existing[0]));
 				}
 				const rows = await db
@@ -1304,13 +2002,19 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						normalizedCode: record.normalizedCode,
 						propertyType: record.propertyType,
 						titleReference: record.titleReference,
+						normalizedTitleReference: record.normalizedTitleReference,
+						propertyDescription: record.propertyDescription,
 						ownershipPercentage: record.ownershipPercentage,
-						acquiredDate: record.acquiredDate,
-						disposedDate: record.disposedDate,
+						acquisitionDate: record.acquisitionDate,
+						disposalDate: record.disposalDate,
 						tenureType: record.tenureType,
+						valuationReference: record.valuationReference,
+						disposalReason: record.disposalReason,
+						disposalEvidenceReference: record.disposalEvidenceReference,
 						status: record.status,
 						version: 1,
 						createIdempotencyKey: record.createIdempotencyKey,
+						createRequestFingerprint: record.createRequestFingerprint,
 						createdBy: record.createdBy,
 						updatedBy: record.updatedBy,
 					})
@@ -1319,7 +2023,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				if (!row) {
 					return fail("INTERNAL_ERROR", "Failed to create property holding");
 				}
-				return ok(mapPropertyHolding(row));
+				const mapped = mapPropertyHolding(row);
+				await insertCa4Receipt(mapped, "property", mutation);
+				return ok(mapped);
 			} catch (error) {
 				if (isUniqueViolation(error)) {
 					const byIdempotency = await db
@@ -1336,6 +2042,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
+						if (
+							byIdempotency[0].createRequestFingerprint !==
+							record.createRequestFingerprint
+						) {
+							return fail(
+								"CONFLICT",
+								"Idempotency key was already used for a different request",
+								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+							);
+						}
 						return ok(mapPropertyHolding(byIdempotency[0]));
 					}
 					return fail(
@@ -1345,6 +2061,39 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					);
 				}
 				return failFromUnknown(error, "Failed to create property holding");
+			}
+		},
+		async updatePropertyHolding(record, expectedVersion, mutation) {
+			try {
+				const rows = await db
+					.update(caPropertyHolding)
+					.set({
+						propertyDescription: record.propertyDescription,
+						ownershipPercentage: record.ownershipPercentage,
+						tenureType: record.tenureType,
+						valuationReference: record.valuationReference,
+						disposalDate: record.disposalDate,
+						disposalReason: record.disposalReason,
+						disposalEvidenceReference: record.disposalEvidenceReference,
+						status: record.status,
+						version: expectedVersion + 1,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caPropertyHolding.organizationId, record.organizationId),
+							eq(caPropertyHolding.id, record.id),
+							eq(caPropertyHolding.version, expectedVersion),
+						),
+					)
+					.returning();
+				if (!rows[0]) return fail("CONFLICT", "Property version conflict");
+				const mapped = mapPropertyHolding(rows[0]);
+				await insertCa4Receipt(mapped, "property", mutation);
+				return ok(mapped);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to update property");
 			}
 		},
 		async getPropertyHoldingById(organizationId, propertyHoldingId) {
@@ -1400,7 +2149,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createCorporateAsset(record) {
+		async createCorporateAsset(record, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -1416,6 +2165,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					)
 					.limit(1);
 				if (existing[0]) {
+					if (
+						existing[0].createRequestFingerprint !==
+						record.createRequestFingerprint
+					) {
+						return fail(
+							"CONFLICT",
+							"Idempotency key was already used for a different request",
+							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+						);
+					}
 					return ok(mapCorporateAsset(existing[0]));
 				}
 				const rows = await db
@@ -1428,12 +2187,20 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						normalizedCode: record.normalizedCode,
 						assetCategory: record.assetCategory,
 						identifier: record.identifier,
+						normalizedIdentifier: record.normalizedIdentifier,
 						description: record.description,
-						acquiredDate: record.acquiredDate,
-						disposedDate: record.disposedDate,
+						custodianPartyId: record.custodianPartyId,
+						custodianPartyCodeSnapshot: record.custodianPartyCodeSnapshot,
+						custodianPartyNameSnapshot: record.custodianPartyNameSnapshot,
+						acquisitionDate: record.acquisitionDate,
+						disposalDate: record.disposalDate,
+						writeOffDate: record.writeOffDate,
+						terminalReason: record.terminalReason,
+						terminalEvidenceReference: record.terminalEvidenceReference,
 						status: record.status,
 						version: 1,
 						createIdempotencyKey: record.createIdempotencyKey,
+						createRequestFingerprint: record.createRequestFingerprint,
 						createdBy: record.createdBy,
 						updatedBy: record.updatedBy,
 					})
@@ -1442,7 +2209,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				if (!row) {
 					return fail("INTERNAL_ERROR", "Failed to create corporate asset");
 				}
-				return ok(mapCorporateAsset(row));
+				const mapped = mapCorporateAsset(row);
+				await insertCa4Receipt(mapped, "asset", mutation);
+				return ok(mapped);
 			} catch (error) {
 				if (isUniqueViolation(error)) {
 					const byIdempotency = await db
@@ -1459,6 +2228,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
+						if (
+							byIdempotency[0].createRequestFingerprint !==
+							record.createRequestFingerprint
+						) {
+							return fail(
+								"CONFLICT",
+								"Idempotency key was already used for a different request",
+								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+							);
+						}
 						return ok(mapCorporateAsset(byIdempotency[0]));
 					}
 					return fail(
@@ -1468,6 +2247,41 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					);
 				}
 				return failFromUnknown(error, "Failed to create corporate asset");
+			}
+		},
+		async updateCorporateAsset(record, expectedVersion, mutation) {
+			try {
+				const rows = await db
+					.update(caCorporateAsset)
+					.set({
+						description: record.description,
+						custodianPartyId: record.custodianPartyId,
+						custodianPartyCodeSnapshot: record.custodianPartyCodeSnapshot,
+						custodianPartyNameSnapshot: record.custodianPartyNameSnapshot,
+						disposalDate: record.disposalDate,
+						writeOffDate: record.writeOffDate,
+						terminalReason: record.terminalReason,
+						terminalEvidenceReference: record.terminalEvidenceReference,
+						status: record.status,
+						version: expectedVersion + 1,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caCorporateAsset.organizationId, record.organizationId),
+							eq(caCorporateAsset.id, record.id),
+							eq(caCorporateAsset.version, expectedVersion),
+						),
+					)
+					.returning();
+				if (!rows[0])
+					return fail("CONFLICT", "Corporate asset version conflict");
+				const mapped = mapCorporateAsset(rows[0]);
+				await insertCa4Receipt(mapped, "asset", mutation);
+				return ok(mapped);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to update corporate asset");
 			}
 		},
 		async getCorporateAssetById(organizationId, corporateAssetId) {
@@ -1529,7 +2343,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createIntellectualPropertyRight(record) {
+		async createIntellectualPropertyRight(record, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -1548,6 +2362,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					)
 					.limit(1);
 				if (existing[0]) {
+					if (
+						existing[0].createRequestFingerprint !==
+						record.createRequestFingerprint
+					) {
+						return fail(
+							"CONFLICT",
+							"Idempotency key was already used for a different request",
+							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+						);
+					}
 					return ok(mapIntellectualPropertyRight(existing[0]));
 				}
 				const rows = await db
@@ -1560,14 +2384,23 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						normalizedCode: record.normalizedCode,
 						rightType: record.rightType,
 						jurisdictionCode: record.jurisdictionCode,
+						applicationNumber: record.applicationNumber,
 						registrationNumber: record.registrationNumber,
+						normalizedRightNumber: record.normalizedRightNumber,
 						ownerPartyId: record.ownerPartyId,
+						ownerPartyCodeSnapshot: record.ownerPartyCodeSnapshot,
+						ownerPartyNameSnapshot: record.ownerPartyNameSnapshot,
 						filingDate: record.filingDate,
 						grantDate: record.grantDate,
 						expiryDate: record.expiryDate,
+						lastRenewalDate: record.lastRenewalDate,
+						disposalDate: record.disposalDate,
+						terminalReason: record.terminalReason,
+						terminalEvidenceReference: record.terminalEvidenceReference,
 						status: record.status,
 						version: 1,
 						createIdempotencyKey: record.createIdempotencyKey,
+						createRequestFingerprint: record.createRequestFingerprint,
 						createdBy: record.createdBy,
 						updatedBy: record.updatedBy,
 					})
@@ -1579,7 +2412,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						"Failed to create intellectual property right",
 					);
 				}
-				return ok(mapIntellectualPropertyRight(row));
+				const mapped = mapIntellectualPropertyRight(row);
+				await insertCa4Receipt(mapped, "intellectual-property", mutation);
+				return ok(mapped);
 			} catch (error) {
 				if (isUniqueViolation(error)) {
 					const byIdempotency = await db
@@ -1599,6 +2434,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
+						if (
+							byIdempotency[0].createRequestFingerprint !==
+							record.createRequestFingerprint
+						) {
+							return fail(
+								"CONFLICT",
+								"Idempotency key was already used for a different request",
+								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+							);
+						}
 						return ok(mapIntellectualPropertyRight(byIdempotency[0]));
 					}
 					return fail(
@@ -1611,6 +2456,78 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					error,
 					"Failed to create intellectual property right",
 				);
+			}
+		},
+		async updateIntellectualPropertyRight(
+			record,
+			expectedVersion,
+			renewal,
+			mutation,
+		) {
+			try {
+				const rows = await db
+					.update(caIntellectualPropertyRight)
+					.set({
+						ownerPartyId: record.ownerPartyId,
+						ownerPartyCodeSnapshot: record.ownerPartyCodeSnapshot,
+						ownerPartyNameSnapshot: record.ownerPartyNameSnapshot,
+						grantDate: record.grantDate,
+						expiryDate: record.expiryDate,
+						lastRenewalDate: record.lastRenewalDate,
+						disposalDate: record.disposalDate,
+						terminalReason: record.terminalReason,
+						terminalEvidenceReference: record.terminalEvidenceReference,
+						status: record.status,
+						version: expectedVersion + 1,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(
+								caIntellectualPropertyRight.organizationId,
+								record.organizationId,
+							),
+							eq(caIntellectualPropertyRight.id, record.id),
+							eq(caIntellectualPropertyRight.version, expectedVersion),
+						),
+					)
+					.returning();
+				if (!rows[0]) return fail("CONFLICT", "IP right version conflict");
+				if (renewal) {
+					await db.insert(caIntellectualPropertyRenewal).values({
+						id: randomUUID(),
+						...renewal,
+					});
+				}
+				const mapped = mapIntellectualPropertyRight(rows[0]);
+				await insertCa4Receipt(mapped, "intellectual-property", mutation);
+				return ok(mapped);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to update intellectual property");
+			}
+		},
+		async listIntellectualPropertyRenewals(
+			organizationId,
+			intellectualPropertyRightId,
+		) {
+			try {
+				const rows = await db
+					.select()
+					.from(caIntellectualPropertyRenewal)
+					.where(
+						and(
+							eq(caIntellectualPropertyRenewal.organizationId, organizationId),
+							eq(
+								caIntellectualPropertyRenewal.intellectualPropertyRightId,
+								intellectualPropertyRightId,
+							),
+						),
+					)
+					.orderBy(asc(caIntellectualPropertyRenewal.renewalDate));
+				return ok(rows.map(mapIntellectualPropertyRenewal));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to list IP renewals");
 			}
 		},
 		async getIntellectualPropertyRightById(
@@ -1675,7 +2592,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createInsurancePolicy(record) {
+		async createInsurancePolicy(record, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -1691,8 +2608,19 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					)
 					.limit(1);
 				if (existing[0]) {
+					if (
+						existing[0].createRequestFingerprint !==
+						record.createRequestFingerprint
+					) {
+						return fail(
+							"CONFLICT",
+							"Idempotency key was already used for a different request",
+							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+						);
+					}
 					return ok(mapInsurancePolicy(existing[0]));
 				}
+				const subject = subjectColumns(record.coveredSubject);
 				const rows = await db
 					.insert(caInsurancePolicy)
 					.values({
@@ -1702,15 +2630,26 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						policyNumber: record.policyNumber,
 						normalizedPolicyNumber: record.normalizedPolicyNumber,
 						insurerPartyId: record.insurerPartyId,
+						insurerPartyCodeSnapshot: record.insurerPartyCodeSnapshot,
 						insurerPartyNameSnapshot: record.insurerPartyNameSnapshot,
-						coveredSubject: record.coveredSubject,
+						coveredSubjectKind: subject.kind,
+						coveredPropertyHoldingId: subject.propertyHoldingId,
+						coveredCorporateAssetId: subject.corporateAssetId,
+						coveredIntellectualPropertyRightId:
+							subject.intellectualPropertyRightId,
+						coveredSubjectDescription: subject.description,
 						effectiveFrom: record.effectiveFrom,
 						effectiveTo: record.effectiveTo,
 						limitAmount: record.limitAmount,
 						currencyCode: record.currencyCode,
+						documentReference: record.documentReference,
+						cancellationDate: record.cancellationDate,
+						cancellationReason: record.cancellationReason,
+						cancellationEvidenceReference: record.cancellationEvidenceReference,
 						status: record.status,
 						version: 1,
 						createIdempotencyKey: record.createIdempotencyKey,
+						createRequestFingerprint: record.createRequestFingerprint,
 						createdBy: record.createdBy,
 						updatedBy: record.updatedBy,
 					})
@@ -1719,7 +2658,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				if (!row) {
 					return fail("INTERNAL_ERROR", "Failed to create insurance policy");
 				}
-				return ok(mapInsurancePolicy(row));
+				const mapped = mapInsurancePolicy(row);
+				await insertCa4Receipt(mapped, "insurance-policy", mutation);
+				return ok(mapped);
 			} catch (error) {
 				if (isUniqueViolation(error)) {
 					const byIdempotency = await db
@@ -1736,6 +2677,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
+						if (
+							byIdempotency[0].createRequestFingerprint !==
+							record.createRequestFingerprint
+						) {
+							return fail(
+								"CONFLICT",
+								"Idempotency key was already used for a different request",
+								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+							);
+						}
 						return ok(mapInsurancePolicy(byIdempotency[0]));
 					}
 					return fail(
@@ -1745,6 +2696,74 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					);
 				}
 				return failFromUnknown(error, "Failed to create insurance policy");
+			}
+		},
+		async updateInsurancePolicy(record, expectedVersion, renewal, mutation) {
+			try {
+				const subject = subjectColumns(record.coveredSubject);
+				const rows = await db
+					.update(caInsurancePolicy)
+					.set({
+						insurerPartyId: record.insurerPartyId,
+						insurerPartyCodeSnapshot: record.insurerPartyCodeSnapshot,
+						insurerPartyNameSnapshot: record.insurerPartyNameSnapshot,
+						coveredSubjectKind: subject.kind,
+						coveredPropertyHoldingId: subject.propertyHoldingId,
+						coveredCorporateAssetId: subject.corporateAssetId,
+						coveredIntellectualPropertyRightId:
+							subject.intellectualPropertyRightId,
+						coveredSubjectDescription: subject.description,
+						effectiveFrom: record.effectiveFrom,
+						effectiveTo: record.effectiveTo,
+						limitAmount: record.limitAmount,
+						currencyCode: record.currencyCode,
+						documentReference: record.documentReference,
+						cancellationDate: record.cancellationDate,
+						cancellationReason: record.cancellationReason,
+						cancellationEvidenceReference: record.cancellationEvidenceReference,
+						status: record.status,
+						version: expectedVersion + 1,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caInsurancePolicy.organizationId, record.organizationId),
+							eq(caInsurancePolicy.id, record.id),
+							eq(caInsurancePolicy.version, expectedVersion),
+						),
+					)
+					.returning();
+				if (!rows[0])
+					return fail("CONFLICT", "Insurance policy version conflict");
+				if (renewal) {
+					await db.insert(caInsurancePolicyRenewal).values({
+						id: randomUUID(),
+						...renewal,
+					});
+				}
+				const mapped = mapInsurancePolicy(rows[0]);
+				await insertCa4Receipt(mapped, "insurance-policy", mutation);
+				return ok(mapped);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to update insurance policy");
+			}
+		},
+		async listInsurancePolicyRenewals(organizationId, insurancePolicyId) {
+			try {
+				const rows = await db
+					.select()
+					.from(caInsurancePolicyRenewal)
+					.where(
+						and(
+							eq(caInsurancePolicyRenewal.organizationId, organizationId),
+							eq(caInsurancePolicyRenewal.insurancePolicyId, insurancePolicyId),
+						),
+					)
+					.orderBy(asc(caInsurancePolicyRenewal.renewalDate));
+				return ok(rows.map(mapInsurancePolicyRenewal));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to list insurance renewals");
 			}
 		},
 		async getInsurancePolicyById(organizationId, insurancePolicyId) {
@@ -1800,7 +2819,7 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				);
 			}
 		},
-		async createCharge(record) {
+		async createCharge(record, mutation) {
 			try {
 				const existing = await db
 					.select()
@@ -1813,8 +2832,19 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					)
 					.limit(1);
 				if (existing[0]) {
+					if (
+						existing[0].createRequestFingerprint !==
+						record.createRequestFingerprint
+					) {
+						return fail(
+							"CONFLICT",
+							"Idempotency key was already used for a different request",
+							caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+						);
+					}
 					return ok(mapCharge(existing[0]));
 				}
+				const subject = subjectColumns(record.affectedSubject);
 				const rows = await db
 					.insert(caCharge)
 					.values({
@@ -1825,15 +2855,26 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						normalizedCode: record.normalizedCode,
 						chargeType: record.chargeType,
 						securedPartyId: record.securedPartyId,
+						securedPartyCodeSnapshot: record.securedPartyCodeSnapshot,
 						securedPartyNameSnapshot: record.securedPartyNameSnapshot,
-						affectedSubjectReference: record.affectedSubjectReference,
+						affectedSubjectKind: subject.kind,
+						affectedPropertyHoldingId: subject.propertyHoldingId,
+						affectedCorporateAssetId: subject.corporateAssetId,
+						affectedIntellectualPropertyRightId:
+							subject.intellectualPropertyRightId,
+						affectedSubjectDescription: subject.description,
 						amount: record.amount,
 						currencyCode: record.currencyCode,
+						priorityRank: record.priorityRank,
 						createdDate: record.createdDate,
 						releasedDate: record.releasedDate,
+						creationEvidenceReference: record.creationEvidenceReference,
+						releaseReason: record.releaseReason,
+						releaseEvidenceReference: record.releaseEvidenceReference,
 						status: record.status,
 						version: 1,
 						createIdempotencyKey: record.createIdempotencyKey,
+						createRequestFingerprint: record.createRequestFingerprint,
 						createdBy: record.createdBy,
 						updatedBy: record.updatedBy,
 					})
@@ -1842,7 +2883,9 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				if (!row) {
 					return fail("INTERNAL_ERROR", "Failed to create charge");
 				}
-				return ok(mapCharge(row));
+				const mapped = mapCharge(row);
+				await insertCa4Receipt(mapped, "charge", mutation);
+				return ok(mapped);
 			} catch (error) {
 				if (isUniqueViolation(error)) {
 					const byIdempotency = await db
@@ -1856,6 +2899,16 @@ export function createDrizzleSlicesStore(): SlicesStore {
 						)
 						.limit(1);
 					if (byIdempotency[0]) {
+						if (
+							byIdempotency[0].createRequestFingerprint !==
+							record.createRequestFingerprint
+						) {
+							return fail(
+								"CONFLICT",
+								"Idempotency key was already used for a different request",
+								caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+							);
+						}
 						return ok(mapCharge(byIdempotency[0]));
 					}
 					return fail(
@@ -1865,6 +2918,71 @@ export function createDrizzleSlicesStore(): SlicesStore {
 					);
 				}
 				return failFromUnknown(error, "Failed to create charge");
+			}
+		},
+		async updateCharge(record, expectedVersion, variation, mutation) {
+			try {
+				const subject = subjectColumns(record.affectedSubject);
+				const rows = await db
+					.update(caCharge)
+					.set({
+						securedPartyId: record.securedPartyId,
+						securedPartyCodeSnapshot: record.securedPartyCodeSnapshot,
+						securedPartyNameSnapshot: record.securedPartyNameSnapshot,
+						affectedSubjectKind: subject.kind,
+						affectedPropertyHoldingId: subject.propertyHoldingId,
+						affectedCorporateAssetId: subject.corporateAssetId,
+						affectedIntellectualPropertyRightId:
+							subject.intellectualPropertyRightId,
+						affectedSubjectDescription: subject.description,
+						amount: record.amount,
+						currencyCode: record.currencyCode,
+						priorityRank: record.priorityRank,
+						releasedDate: record.releasedDate,
+						releaseReason: record.releaseReason,
+						releaseEvidenceReference: record.releaseEvidenceReference,
+						status: record.status,
+						version: expectedVersion + 1,
+						updatedBy: record.updatedBy,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(caCharge.organizationId, record.organizationId),
+							eq(caCharge.id, record.id),
+							eq(caCharge.version, expectedVersion),
+						),
+					)
+					.returning();
+				if (!rows[0]) return fail("CONFLICT", "Charge version conflict");
+				if (variation) {
+					await db.insert(caChargeVariation).values({
+						id: randomUUID(),
+						...variation,
+					});
+				}
+				const mapped = mapCharge(rows[0]);
+				await insertCa4Receipt(mapped, "charge", mutation);
+				return ok(mapped);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to update charge");
+			}
+		},
+		async listChargeVariations(organizationId, chargeId) {
+			try {
+				const rows = await db
+					.select()
+					.from(caChargeVariation)
+					.where(
+						and(
+							eq(caChargeVariation.organizationId, organizationId),
+							eq(caChargeVariation.chargeId, chargeId),
+						),
+					)
+					.orderBy(asc(caChargeVariation.variationDate));
+				return ok(rows.map(mapChargeVariation));
+			} catch (error) {
+				return failFromUnknown(error, "Failed to list charge variations");
 			}
 		},
 		async getChargeById(organizationId, chargeId) {
@@ -1898,6 +3016,23 @@ export function createDrizzleSlicesStore(): SlicesStore {
 				return ok(rows.map(mapCharge));
 			} catch (error) {
 				return failFromUnknown(error, "Failed to list charges");
+			}
+		},
+		async getPropertyAssetMutationReceipt(organizationId, idempotencyKey) {
+			try {
+				const rows = await db
+					.select()
+					.from(caPropertyAssetMutationReceipt)
+					.where(
+						and(
+							eq(caPropertyAssetMutationReceipt.organizationId, organizationId),
+							eq(caPropertyAssetMutationReceipt.idempotencyKey, idempotencyKey),
+						),
+					)
+					.limit(1);
+				return ok(rows[0] ? mapPropertyAssetMutationReceipt(rows[0]) : null);
+			} catch (error) {
+				return failFromUnknown(error, "Failed to load CA-4 mutation receipt");
 			}
 		},
 		async getLicencePermitByIdempotencyKey(organizationId, idempotencyKey) {

@@ -98,6 +98,39 @@ export function assertRequisitionOpenForApplication(
 	return ok(undefined);
 }
 
+export function assertRequisitionHasHiringManager(input: {
+	hiringManagerEmployeeId: string | null;
+}): Result<void> {
+	if (input.hiringManagerEmployeeId === null) {
+		return invalidState(
+			"Requisition requires a hiring manager before this transition",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertRequisitionHiringManagerAssignable(
+	status: RequisitionStatus,
+): Result<void> {
+	if (status === "closed" || status === "cancelled") {
+		return invalidState(
+			"Cannot assign a hiring manager on a terminal requisition",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertRequisitionAllowsHeadcountReservation(
+	status: RequisitionStatus,
+): Result<void> {
+	if (status !== "approved" && status !== "open") {
+		return invalidState(
+			"Headcount can only be reserved for approved or open requisitions",
+		);
+	}
+	return ok(undefined);
+}
+
 export function canTransitionCandidateStatus(
 	current: CandidateStatus,
 	next: CandidateStatus,

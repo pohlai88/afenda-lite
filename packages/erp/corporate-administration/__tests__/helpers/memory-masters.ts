@@ -2,6 +2,9 @@ import { ok, type Result } from "@afenda/errors/result";
 import type {
 	OrganizationDimensionReference,
 	Party,
+	PartyAddress,
+	RefCountry,
+	RefCurrency,
 } from "@afenda/master-data";
 
 import type { CorporateAdministrationMasterLookupPort } from "../../src/ports";
@@ -72,6 +75,9 @@ export function seedOrganizationParty(
 export function createMemoryCaMasterLookup(input: {
 	dimensions: MemoryLegalEntityDimension[];
 	parties: Party[];
+	addresses?: PartyAddress[];
+	countries?: RefCountry[];
+	currencies?: RefCurrency[];
 }): CorporateAdministrationMasterLookupPort {
 	return {
 		async getEffectiveLegalEntity({
@@ -92,6 +98,27 @@ export function createMemoryCaMasterLookup(input: {
 		async getPartyById({ organizationId, partyId }) {
 			const match = input.parties.find(
 				(row) => row.organizationId === organizationId && row.id === partyId,
+			);
+			return ok(match ?? null);
+		},
+		async getPartyAddressById({ organizationId, partyId, partyAddressId }) {
+			const match = input.addresses?.find(
+				(row) =>
+					row.organizationId === organizationId &&
+					row.partyId === partyId &&
+					row.id === partyAddressId,
+			);
+			return ok(match ?? null);
+		},
+		async getCountryByCode({ code }) {
+			const match = input.countries?.find(
+				(row) => row.active && row.code === code.toUpperCase(),
+			);
+			return ok(match ?? null);
+		},
+		async getCurrencyByCode({ code }) {
+			const match = input.currencies?.find(
+				(row) => row.active && row.code === code.toUpperCase(),
 			);
 			return ok(match ?? null);
 		},

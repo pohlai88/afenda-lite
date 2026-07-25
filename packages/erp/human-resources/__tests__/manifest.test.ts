@@ -216,6 +216,9 @@ describe("humanResourcesModuleManifest", () => {
 		expect(HUMAN_RESOURCES_ERROR_CODES.MULTIPLE_PRIMARY_ASSIGNMENTS).toBe(
 			"human_resources.multiple_primary_assignments",
 		);
+		expect(HUMAN_RESOURCES_ERROR_CODES.ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE).toBe(
+			"human_resources.assignment_outside_employment_range",
+		);
 		expect(HUMAN_RESOURCES_ERROR_CODES.SENSITIVE_FIELD_ACCESS_DENIED).toBe(
 			"human_resources.sensitive_field_access_denied",
 		);

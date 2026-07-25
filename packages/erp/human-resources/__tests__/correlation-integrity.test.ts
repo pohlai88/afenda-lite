@@ -443,6 +443,7 @@ import {
 	seedCandidateForCorrelation,
 	seedOpenRequisitionForCorrelation,
 } from "./helpers/recruitment-correlation-seed";
+import { seedDefaultHiringManager } from "./helpers/recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -2934,7 +2935,7 @@ describe("correlation integrity", () => {
 				actorUserId: ACTOR,
 				correlationId: calEndCorr,
 				assignmentId: calendarAssignment.data.id,
-				effectiveTo: "2025-12-31",
+				effectiveTo: "2025-06-30",
 				expectedVersion: calendarAssignment.data.version,
 			},
 			ready,
@@ -3528,7 +3529,7 @@ describe("correlation integrity", () => {
 				employeeId: employee.id,
 				employmentId: employment.id,
 				calendarId: auditCalendar.data.id,
-				effectiveFrom: "2025-01-01",
+				effectiveFrom: "2025-07-01",
 			},
 			ready,
 		);
@@ -5025,6 +5026,14 @@ describe("correlation integrity", () => {
 			operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_APPROVE,
 		});
 
+		const manager = await seedDefaultHiringManager(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag: suffix,
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
 		const requisition = await createDraftRequisition(
 			{
 				organizationId: ORG,
@@ -5033,6 +5042,7 @@ describe("correlation integrity", () => {
 				idempotencyKey: `idem-wfp-req-${suffix}`,
 				code: `REQ-${suffix}`.slice(0, 64),
 				title: "Hire",
+				hiringManagerEmployeeId: manager.employeeId,
 			},
 			ready,
 		);

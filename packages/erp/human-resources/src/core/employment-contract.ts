@@ -9,15 +9,21 @@ import {
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_AS_OF,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_CURRENT,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_LIST,
 } from "../module-ids";
 import {
 	correctEmploymentContractInputSchema,
 	createEmploymentContractInputSchema,
+	endEmploymentContractInputSchema,
+	getCurrentEmploymentContractInputSchema,
 	getEmploymentContractAsOfInputSchema,
 	getEmploymentContractInputSchema,
+	listEmploymentContractsInputSchema,
 	supersedeEmploymentContractInputSchema,
 } from "../schemas/core";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
@@ -51,6 +57,77 @@ async function loadEmploymentForContract(
 		);
 	}
 	return ok(employment.data);
+}
+
+async function validateActiveContractMutationRange(
+	store: HumanResourcesCoreStore,
+	input: {
+		organizationId: string;
+		contract: EmploymentContract;
+		startsOn: string;
+		endsOn: string | null;
+	},
+): Promise<Result<Employment>> {
+	const mutable = assertEmploymentContractMutable({
+		lineageStatus: input.contract.lineageStatus,
+	});
+	if (!mutable.ok) {
+		return mutable;
+	}
+
+	const employment = await loadEmploymentForContract(store, {
+		organizationId: input.organizationId,
+		employmentId: input.contract.employmentId,
+	});
+	if (!employment.ok) {
+		return employment;
+	}
+
+	const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
+	if (!dateCheck.ok) {
+		return dateCheck;
+	}
+
+	const withinEmployment = assertContractWithinEmployment({
+		contractStartsOn: input.startsOn,
+		contractEndsOn: input.endsOn,
+		employmentStartsOn: employment.data.startsOn,
+		employmentEndsOn: employment.data.endsOn,
+	});
+	if (!withinEmployment.ok) {
+		return withinEmployment;
+	}
+
+	const siblings = await store.listActiveContractsByEmployment({
+		organizationId: input.organizationId,
+		employmentId: input.contract.employmentId,
+	});
+	if (!siblings.ok) {
+		return siblings;
+	}
+
+	const overlapCheck = assertNoEmploymentContractOverlap({
+		candidateContractId: input.contract.id,
+		candidateStartsOn: input.startsOn,
+		candidateEndsOn: input.endsOn,
+		existing: siblings.data,
+	});
+	if (!overlapCheck.ok) {
+		return overlapCheck;
+	}
+
+	return ok(employment.data);
+}
+
+async function resolveEmploymentContractAsOf(
+	store: HumanResourcesCoreStore,
+	input: {
+		organizationId: string;
+		employmentId: EmploymentContract["employmentId"];
+		asOf: string;
+	},
+): Promise<Result<EmploymentContract | null>> {
+	return store.findEmploymentContractByEmploymentAsOf(input);
 }
 
 export async function createEmploymentContract(
@@ -148,56 +225,19 @@ export async function correctEmploymentContract(
 				);
 			}
 
-			const mutable = assertEmploymentContractMutable({
-				lineageStatus: existing.data.lineageStatus,
-			});
-			if (!mutable.ok) {
-				return mutable;
-			}
-
-			const employment = await loadEmploymentForContract(store, {
-				organizationId: data.organizationId,
-				employmentId: existing.data.employmentId,
-			});
-			if (!employment.ok) {
-				return employment;
-			}
-
 			const startsOn = data.startsOn ?? existing.data.startsOn;
 			const endsOn =
 				data.endsOn !== undefined ? data.endsOn : existing.data.endsOn;
 			const referenceCode = data.referenceCode ?? existing.data.referenceCode;
 
-			const dateCheck = assertValidDateRange(startsOn, endsOn);
-			if (!dateCheck.ok) {
-				return dateCheck;
-			}
-
-			const withinEmployment = assertContractWithinEmployment({
-				contractStartsOn: startsOn,
-				contractEndsOn: endsOn,
-				employmentStartsOn: employment.data.startsOn,
-				employmentEndsOn: employment.data.endsOn,
-			});
-			if (!withinEmployment.ok) {
-				return withinEmployment;
-			}
-
-			const siblings = await store.listActiveContractsByEmployment({
+			const validated = await validateActiveContractMutationRange(store, {
 				organizationId: data.organizationId,
-				employmentId: existing.data.employmentId,
+				contract: existing.data,
+				startsOn,
+				endsOn,
 			});
-			if (!siblings.ok) {
-				return siblings;
-			}
-			const overlapCheck = assertNoEmploymentContractOverlap({
-				candidateContractId: existing.data.id,
-				candidateStartsOn: startsOn,
-				candidateEndsOn: endsOn,
-				existing: siblings.data,
-			});
-			if (!overlapCheck.ok) {
-				return overlapCheck;
+			if (!validated.ok) {
+				return validated;
 			}
 
 			if (referenceCode !== existing.data.referenceCode) {
@@ -364,6 +404,62 @@ export async function supersedeEmploymentContract(
 	});
 }
 
+export async function endEmploymentContract(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmploymentContract>> {
+	return runCoreCommand(input, options, {
+		schema: endEmploymentContractInputSchema,
+		invalidMessage: "Invalid employment contract end input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
+		execute: async (data, { store, ports }) => {
+			const existing = await store.getEmploymentContractById({
+				organizationId: data.organizationId,
+				employmentContractId: data.employmentContractId,
+			});
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Employment contract not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const validated = await validateActiveContractMutationRange(store, {
+				organizationId: data.organizationId,
+				contract: existing.data,
+				startsOn: existing.data.startsOn,
+				endsOn: data.endsOn,
+			});
+			if (!validated.ok) {
+				return validated;
+			}
+
+			return store.correctEmploymentContract(
+				{
+					organizationId: data.organizationId,
+					employmentContractId: data.employmentContractId,
+					referenceCode: existing.data.referenceCode,
+					startsOn: existing.data.startsOn,
+					endsOn: data.endsOn,
+					reasonCode: data.reasonCode,
+					sourceReference: data.sourceReference,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
+				}),
+			);
+		},
+	});
+}
+
 export async function getEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
@@ -400,11 +496,44 @@ export async function getEmploymentContractAsOf(
 		schema: getEmploymentContractAsOfInputSchema,
 		invalidMessage: "Invalid employment contract as-of input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_AS_OF,
-		execute: async (data, { store }) => {
-			return store.findEmploymentContractByEmploymentAsOf({
+		execute: async (data, { store }) =>
+			resolveEmploymentContractAsOf(store, {
 				organizationId: data.organizationId,
 				employmentId: data.employmentId,
 				asOf: data.asOf,
+			}),
+	});
+}
+
+export async function getCurrentEmploymentContract(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmploymentContract | null>> {
+	return runCoreQuery(input, options, {
+		schema: getCurrentEmploymentContractInputSchema,
+		invalidMessage: "Invalid employment contract current input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_CURRENT,
+		execute: async (data, { store }) =>
+			resolveEmploymentContractAsOf(store, {
+				organizationId: data.organizationId,
+				employmentId: data.employmentId,
+				asOf: data.asOf,
+			}),
+	});
+}
+
+export async function listEmploymentContracts(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmploymentContract[]>> {
+	return runCoreQuery(input, options, {
+		schema: listEmploymentContractsInputSchema,
+		invalidMessage: "Invalid employment contract list input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_LIST,
+		execute: async (data, { store }) => {
+			return store.listEmploymentContractsByEmployment({
+				organizationId: data.organizationId,
+				employmentId: data.employmentId,
 			});
 		},
 	});

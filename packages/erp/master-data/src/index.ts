@@ -75,6 +75,7 @@ export {
 	findItemByExternalId,
 	findPartyByExternalId,
 	findWarehouseByExternalId,
+	getPartyAddressById,
 	listItemUoms,
 	listPartyAddresses,
 	listPartyContacts,

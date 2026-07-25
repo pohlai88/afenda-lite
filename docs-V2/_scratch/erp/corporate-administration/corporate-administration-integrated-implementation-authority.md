@@ -13,9 +13,10 @@
 | Band | `R1-F` |
 | Activation | `organization_toggle` |
 | Table prefix | `ca_*` |
-| CA-0 lifecycle | `scaffolded` until CA-1 vertical acceptance is verified |
+| CA-0 lifecycle | Package remains `scaffolded`; CA-1 vertical acceptance verified on disk; module activation still deferred to CA-8 closeout |
 | Quality posture | Enterprise production; no stubs, shims, TODO paths, fake adapters, or partial-completion claims |
-| Status of this document | Approved implementation authority; CA-0 governance baseline |
+| Status of this document | Approved implementation authority; slice status refreshed 2026-07-25 (working tree) |
+| Slice implementation (summary) | CA-0 · CA-0.5 · CA-1 · CA-2 · CA-3 = DONE; CA-4 = PARTIAL (10/12 boundaries implemented; Neon atomicity/concurrency gates blocked); CA-5–CA-7 = PARTIAL; CA-8 = GAP |
 
 ---
 
@@ -218,6 +219,7 @@ create_idempotency_key · create_request_fingerprint
 | `ca_governance_body` | Board or committee | Unique active body code per company; explicit body type and lifecycle. |
 | `ca_governance_membership` | Effective-dated membership | Member party or officer appointment required; no overlapping duplicate membership. |
 | `ca_authority_mandate` | Signing authority/power of attorney | Typed scope, amount/currency limits, single/joint rule, effective range, grant evidence, and revocation evidence. |
+| `ca_authority_mandate_holder` | Effective-dated normalized mandate holder | Exactly one party or officer reference; holder company and tenant match the mandate; single mandates have one holder, joint mandates have at least two, and minimum signatories cannot exceed active holders. |
 | `ca_company_premise` | Registered office/branch/records location | Address reference plus snapshot; no overlapping primary registered office; effective-dated retirement. |
 | `ca_governance_meeting` | Meeting/minutes metadata | Date/time, body, quorum result, status, minutes document; closed meetings are immutable except a correction record. |
 | `ca_resolution` | Resolution and authority evidence | Resolution number unique within company/year; approved resolution cannot be deleted; revoke/supersede explicitly. |
@@ -249,6 +251,13 @@ A `ca_shareholding_balance` projection may be added only after measured need. It
 | `ca_intellectual_property_right` | IP right and renewal register | Right type, jurisdiction, registration/application number, owner, filing/grant/expiry dates, status, renewal facts. |
 | `ca_insurance_policy` | Corporate insurance register | Insurer party, policy number, covered subject, effective range, limit/currency, status, document. |
 | `ca_charge` | Charge/encumbrance/security register | Secured party, affected subject, amount/currency, priority, creation/variation/release, evidence; released charges remain historical. |
+
+CA-4 uses the approved hybrid history model: the five root tables retain current
+register state; `ca_intellectual_property_renewal`,
+`ca_insurance_policy_renewal`, and `ca_charge_variation` are append-only facts;
+`ca_property_asset_mutation_receipt` owns durable command replay fingerprints.
+Insurance and charge subjects are discriminated as company, property,
+corporate asset, intellectual property, or bounded other text.
 
 ### 5.5 Slice CA-5 — licences, banking, group control, and agreements
 
@@ -879,18 +888,18 @@ Only shipped capabilities appear. Do not render non-working placeholder tabs.
 
 Every slice is vertically complete: schema, migration, ownership, package contracts, memory and Drizzle implementations, permissions, events, Actions, UI, tests, and documentation. Shrink scope, never quality.
 
-| Slice | Scope | Exit condition |
-|---|---|---|
-| **CA-0 — Authority and governance** | Resolve decisions; roadmap; package/catalog registration plan; ownership and dependency maps | No open architecture question that changes CA-1; governance accepts the planned package. |
-| **CA-0.5 — Master-data prerequisite** | Focused effective legal-entity query and tests | CA can resolve one legal-entity dimension without direct `md_*` SQL. |
-| **CA-1 — Legal-company registry** | Company, names, identifiers, status history; create/update/activate/suspend/dissolve/get/list/as-of; minimal full UI | Tenant can create and activate a company end-to-end; audit/outbox same transaction; memory/Drizzle parity green. |
-| **CA-2 — Governance and premises** | Officers, bodies, memberships, mandates, premises, meetings, resolutions | Effective-dated governance truth and UI complete. |
-| **CA-3 — Share capital and ownership** | Share classes, transaction ledger/legs, certificates, holdings as-of, UBO disclosures | No negative holdings, unbalanced transfers, direct holding edits, or destructive ledger changes. |
-| **CA-4 — Property and corporate assets** | Property, corporate assets, IP, insurance, charges | Legal/admin asset register complete without inventory/accounting drift. |
-| **CA-5 — Licences, banking, group control, agreements** | Licences, bank registrations/mandates, group control, material agreements | Payments boundary proven; group cycles and sensitive-data leakage prevented. |
-| **CA-6 — Documents and filings** | Document metadata, filing obligations, submissions, due/overdue UX | No binary storage or fake e-filing; compliance history reconstructable. |
-| **CA-7 — Search, reminders, import/export, reconciliation** | Search projection, due/expiry projectors, complete import/export if approved, reconciliation reports | Projections rebuildable; import rows reconciled; no hidden source of truth. |
-| **CA-8 — Enterprise closeout** | Cross-layer audit, performance indexes, accessibility, security/redaction, failure injection, full matrix closure | All planned rows Done with evidence; all required commands exit 0; no omitted/stubbed surface. |
+| Slice | Status (2026-07-25) | Scope | Exit condition / remaining gap |
+|---|---|---|---|
+| **CA-0 — Authority and governance** | **DONE** | Resolve decisions; roadmap; package/catalog registration plan; ownership and dependency maps | Closed. No open architecture question that changes CA-1. |
+| **CA-0.5 — Master-data prerequisite** | **DONE** | Focused effective legal-entity query and tests | Closed. CA resolves legal-entity dimensions through public master-data edges only. |
+| **CA-1 — Legal-company registry** | **DONE** | Company, names, identifiers, status history; create/update/activate/suspend/dissolve/archive/get/list/as-of; minimal full UI | Closed end-to-end: same-transaction audit/outbox, memory/Drizzle parity, Actions, operator/client UI. Package lifecycle remains `scaffolded` until CA-8. |
+| **CA-2 — Governance and premises** | **DONE** | Officers, bodies, memberships, mandates (+ holders), premises, meetings, resolutions; 19 commands; as-of queries; Actions; Governance/Premises UI | Closed: same-tx audit/outbox (memory + Drizzle), advisory-lock concurrency, failure-injection parity, authenticated L4 journey (see §15.1A). |
+| **CA-3 — Share capital and ownership** | **DONE** | Share classes, transactions (create/post/reverse), certificates (create/replace/cancel), holdings/holder as-of, UBO (create/update/end/list-as-of); Capital tab UI; share-capital Actions | Closed: lifecycle commands, memory+Drizzle audit/outbox on tx post/reverse, advisory-lock concurrent transfer proof, domain/parity/concurrency tests + web Action tests green (`pnpm --filter @afenda/corporate-administration test -- share-capital`; `pnpm --filter @afenda/web test -- corporate-administration-share`). Package lifecycle remains `scaffolded` until CA-8. |
+| **CA-4 — Property and corporate assets** | **PARTIAL** | 19 lifecycle commands; get/list/list-as-of plus expiring queries; hybrid renewal/variation facts; migration `0037`; events; 19 Actions; four operator/client tabs; domain, replay, CAS, concurrency, failure-injection, DB, event, Action, and interaction tests | **10/12 boundaries implemented.** Remaining blockers: Drizzle root/fact/audit/outbox/receipt writes are not yet proven in one Neon HTTP transaction; fail-closed Neon parity/concurrency/atomicity and authenticated L4 journey have no green exit. Do not promote. |
+| **CA-5 — Licences, banking, group control, agreements** | **PARTIAL** | Licence/bank/mandate/group/agreement create/get/list; bank masking; group self-link denial | Missing renew/suspend/revoke/close/amend/end/terminate, graph cycle proof, Actions, UI, Payments boundary end-to-end proof, audit/outbox. |
+| **CA-6 — Documents and filings** | **PARTIAL** | Document/obligation/submission create/get/list | Missing supersede/retire/extend/waive/acknowledge/reject, Actions, due/overdue UX, audit/outbox. |
+| **CA-7 — Search, reminders, import/export, reconciliation** | **PARTIAL** | `searchCorporateRecords`, due/overdue filing queries over live tables | Missing rebuildable projectors, reminders, export/reconciliation, approved import slice, Actions/UI. |
+| **CA-8 — Enterprise closeout** | **GAP** | Cross-layer audit, performance indexes, accessibility, security/redaction, failure injection, full matrix closure | Only partial performance indexes (`0026`) exist. Module-wide 12/12 boundary closure and activation not started. |
 
 ### Slice discipline
 
@@ -1025,6 +1034,26 @@ Never report a name-pattern command that matched zero tests as evidence of a pas
 
 ## 15. Plan-to-code completeness matrix
 
+### 15.0 Working-tree slice status — 2026-07-25
+
+Statuses use only `DONE` · `PARTIAL` · `GAP` · `BLOCKED` · `NOT_APPLICABLE`.
+Companion register: [completeness-matrix.md](./completeness-matrix.md).
+
+| Slice | Status | Evidence summary |
+|---|---|---|
+| CA-0 | DONE | Integrated authority decisions closed; roadmap/package registration accepted. |
+| CA-0.5 | DONE | Focused master-data legal-entity effective lookup; CA uses injected public ports only. |
+| CA-1 | DONE | Legal-company registry vertical: schema/`0019`+`0030`, same-tx audit/outbox (memory + Drizzle), Actions, operator/client UI, parity/concurrency/failure-injection tests. |
+| CA-2 | DONE | Governance/premises vertical: schema/`0020`+`0033`, same-tx audit/outbox (memory + Drizzle), advisory locks, 19 Actions, Governance/Premises UI, domain/FI/parity/concurrency + L4 journey (see §15.1A). |
+| CA-3 | DONE | Full lifecycle (class update/close, tx reverse, cert replace/cancel, UBO update/end) + holdings/holder as-of; same-tx audit/outbox on Drizzle tx post/reverse; Capital tab + share-capital Actions; domain/parity/concurrency + web Action tests green. |
+| CA-4 | PARTIAL | 10/12: canonical 19-command lifecycle, typed subjects, normalized hybrid facts/receipts, `0037`, events, generated registers, Actions, four tabs, unit/DB/event/Action/interaction evidence. Blocked on same-Neon-transaction proof and fail-closed Neon/L4 exits. |
+| CA-5 | PARTIAL | Licence/bank/mandate/group/agreement create/get/list + bank mask + self-link deny; no renew/revoke/cycle/web. |
+| CA-6 | PARTIAL | Document/obligation/submission create/get/list; no supersede/waive/ack/reject or due UX. |
+| CA-7 | PARTIAL | Live-table search + due/overdue queries; no rebuildable projectors, import/export, or reminders. |
+| CA-8 | GAP | Closeout not started beyond partial performance indexes (`0026`). |
+
+**Module verdict:** CA-1, CA-2, and CA-3 COMPLETE for their verticals. CA-4 is implemented at **10/12** but remains **PARTIAL** until its Neon atomicity/concurrency and L4 boundaries pass. Overall module **NO-GO** until CA-4–CA-8 reach `DONE`. Package lifecycle remains `scaffolded`.
+
 ### 15.1 Reviewed baseline
 
 | Boundary | Planned | Actual at reviewed baseline | Verdict |
@@ -1042,9 +1071,30 @@ Never report a name-pattern command that matched zero tests as evidence of a pas
 | UI/routes/navigation | 1 | Absent | Gap |
 | Tests/reconciliation/green gates | 1 | Absent | Gap |
 
-**Executable completeness: 0/12.**
+**Executable completeness at historical baseline: 0/12.**
 
-The attached draft provides useful design intent, but it cannot be counted as runtime completion.
+The attached draft provides useful design intent, but it cannot be counted as runtime completion. Later working-tree progress is recorded in §15.0 / §15.1A and does not rewrite this historical baseline.
+
+### 15.1A CA-2 implementation evidence — 2026-07-25
+
+| Boundary | Status | Current evidence |
+|---|---|---|
+| Approved authority/decisions | DONE | CA-2 authority records normalized holders plus standard/correction meeting and standard/superseding resolution variants. |
+| Module roadmap/catalog registration | DONE | All 19 commands, 21 governance queries including seven `.get-as-of` IDs, permissions, events, mutation tables, and holder table are registered. |
+| Package shell/manifest | DONE | Public discriminated contracts, lifecycle functions, governance policy port, fingerprints, and as-of functions compile. |
+| Master-data focused lookup | DONE | Tenant-safe party-address lookup and country/currency reference resolution are public package calls; CA does not read `md_*` directly. |
+| DB schema/migrations | DONE | Append-only `0033_ca_governance_premises_hardening.sql` adds fingerprints, lifecycle evidence, correction/supersession links, holders, constraints, and indexes. |
+| Ownership/tenancy registration | DONE | Holder ownership, hard-root map, and tenancy-null inventory are registered. |
+| Events/permissions/auth map | DONE | Versioned CA-2 schemas and authorization maps registered; package mutations commit audit/outbox facts in the same transaction (memory `ports.record`; Drizzle CTE). |
+| Domain commands/queries | DONE | All 19 commands and seven as-of functions execute with validation/CAS; domain commands pass `MutationPorts` + event meta to store. |
+| Memory/Drizzle adapters | DONE | CAS, advisory locks (Drizzle), holder persistence, multi-record supersession, and same-tx audit/outbox on all CA-2 mutators. |
+| App composition/Actions | DONE | Nineteen session-stamped permission-gated Server Actions use `ActionResult`, durable request IDs, and targeted revalidation. |
+| UI/routes/navigation | DONE | Tenant-safe `companyId` selection, operator Governance/Premises registers and mutation controls, and client read-only registers are shipped and interaction-tested. |
+| Tests/reconciliation/green gates | DONE | `governance.domain` (incl. FI rollback), `governance.parity`, `governance.concurrency` (Drizzle when DB present), web Actions + interaction suites, `e2e/journey/corporate-administration-governance.spec.ts`. |
+
+**CA-2 boundary completeness: 12/12 DONE. Integration status: CLOSED.**
+
+The module lifecycle remains `scaffolded`; this evidence does not activate or promote the module.
 
 ### 15.2 Required final report
 

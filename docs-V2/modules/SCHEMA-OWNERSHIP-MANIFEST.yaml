@@ -182,6 +182,18 @@ tables:
   - table: ca_charge
     writeOwner: "@afenda/corporate-administration"
     kind: erp
+  - table: ca_intellectual_property_renewal
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_insurance_policy_renewal
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_charge_variation
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+  - table: ca_property_asset_mutation_receipt
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
   - table: ca_licence_permit
     writeOwner: "@afenda/corporate-administration"
     kind: erp
@@ -344,13 +356,22 @@ tables:
   - table: hr_person
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_person_identity_version
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_employee
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_worker
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_worker_classification_version
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_employment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment_status_history
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_employment_contract
@@ -362,10 +383,19 @@ tables:
   - table: hr_department
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_department_structure_version
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_job
     writeOwner: "@afenda/human-resources"
     kind: erp
+  - table: hr_job_definition_version
+    writeOwner: "@afenda/human-resources"
+    kind: erp
   - table: hr_position
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_position_definition_version
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_reporting_line

@@ -34,6 +34,7 @@ function mapSourceRows(
 		deviceMetadata?: Record<string, unknown> | null;
 		payloadChecksum?: string | null;
 		notes?: string | null;
+		sourceSequence?: number;
 	}[],
 ): AttendanceImportEventRowInput[] {
 	return rows.map((row) => ({
@@ -52,6 +53,7 @@ function mapSourceRows(
 		deviceMetadata: row.deviceMetadata ?? null,
 		payloadChecksum: row.payloadChecksum ?? null,
 		notes: row.notes ?? null,
+		sourceSequence: row.sourceSequence,
 	}));
 }
 

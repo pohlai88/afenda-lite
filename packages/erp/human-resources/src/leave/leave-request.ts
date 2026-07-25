@@ -489,6 +489,25 @@ export async function approveLeaveRequest(
 			});
 			if (!sufficient.ok) return sufficient;
 
+			const candidateSegments = await store.listLeaveRequestSegments({
+				organizationId: data.organizationId,
+				requestId: request.data.id,
+			});
+			if (!candidateSegments.ok) return candidateSegments;
+
+			const existingSegments = await store.listOverlappingLeaveSegments({
+				organizationId: data.organizationId,
+				employeeId: request.data.employeeId,
+				excludeRequestId: request.data.id,
+			});
+			if (!existingSegments.ok) return existingSegments;
+
+			const overlap = assertNoLeaveOverlap(
+				candidateSegments.data,
+				existingSegments.data,
+			);
+			if (!overlap.ok) return overlap;
+
 			return store.approveLeaveRequest(
 				{
 					organizationId: data.organizationId,

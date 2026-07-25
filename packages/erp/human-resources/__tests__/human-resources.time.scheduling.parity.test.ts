@@ -32,6 +32,7 @@ import {
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import { seedEmploymentWorkCalendar } from "./helpers/seed-employment-work-calendar";
 import {
 	runDrizzleParity,
 	STANDARD_WEEK,
@@ -412,6 +413,13 @@ function defineTimeSchedulingParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(employment.ok).toBe(true);
 		if (!employment.ok) return;
+		await seedEmploymentWorkCalendar(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			employeeId: employee.data.id,
+			employmentId: employment.data.id,
+			suffix,
+		});
 		const requested = await createOvertimeRequest(
 			{
 				organizationId: ORG,

@@ -62,7 +62,7 @@ describe("@afenda/corporate-administration search compliance", () => {
 				parValue: "1.00",
 				authorizedQuantity: "500000",
 			},
-			{ store, authorization },
+			{ store, ports, authorization },
 		);
 
 		await createFilingObligation(

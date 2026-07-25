@@ -246,6 +246,8 @@ export const MASTER_QUERY_PARTY_ROLE_LIST =
 	"master_data.party_role.list" as const;
 export const MASTER_QUERY_PARTY_ADDRESS_LIST =
 	"master_data.party_address.list" as const;
+export const MASTER_QUERY_PARTY_ADDRESS_GET =
+	"master_data.party_address.get" as const;
 export const MASTER_QUERY_PARTY_CONTACT_LIST =
 	"master_data.party_contact.list" as const;
 export const MASTER_QUERY_ITEM_UOM_LIST = "master_data.item_uom.list" as const;
@@ -316,6 +318,7 @@ export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_TAX_REGISTRATION_FIND_BY_PARTY,
 	MASTER_QUERY_PARTY_ROLE_LIST,
 	MASTER_QUERY_PARTY_ADDRESS_LIST,
+	MASTER_QUERY_PARTY_ADDRESS_GET,
 	MASTER_QUERY_PARTY_CONTACT_LIST,
 	MASTER_QUERY_ITEM_UOM_LIST,
 	MASTER_QUERY_ITEM_FIND_BY_ALIAS,

@@ -55,12 +55,14 @@ import {
 	fieldChangeJson,
 	valueSnapshotJson,
 } from "../../shared/audit-facts";
-import { missAfterOptimisticUpdate } from "../../shared/domain-guards";
+import { missAfterOptimisticUpdate, rehireRequiresEndedEmployment } from "../../shared/domain-guards";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
+import { compareEmploymentContractsByLineage } from "../../shared/employment-contract-guards";
 import { mapAssignmentLineageFields } from "../../shared/assignment-lineage-map";
 import {
 	assertAssignmentWithinEmployment,
 	assertNoAssignmentOverlap,
+	multiplePrimaryAssignmentsAtAsOf,
 } from "../../shared/assignment-guards";
 import type { EmploymentStatusChangeKind } from "../../shared/employment-history";
 import type { EmploymentStatus } from "../../shared/employment-status";
@@ -505,6 +507,7 @@ export type DrizzleCoreMethods = Pick<
 	| "getEmploymentContractById"
 	| "findContractByEmploymentAndCode"
 	| "listActiveContractsByEmployment"
+	| "listEmploymentContractsByEmployment"
 	| "findEmploymentContractByEmploymentAsOf"
 	| "createEmploymentContract"
 	| "correctEmploymentContract"
@@ -1156,11 +1159,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						),
 					);
 				}
-				return fail(
-					"CONFLICT",
-					"Employee already has an open employment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return rehireRequiresEndedEmployment();
 			}
 			const employeeId = parseHumanResourcesEmployeeId(row.employee_id);
 			if (!employeeId.ok) return employeeId;
@@ -1610,6 +1609,38 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			return mapPersistenceFailure(
 				error,
 				"Failed to list active employment contracts",
+			);
+		}
+	},
+
+	async listEmploymentContractsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<EmploymentContract[]>> {
+		try {
+			const rows = await db
+				.select()
+				.from(hrEmploymentContract)
+				.where(
+					and(
+						eq(hrEmploymentContract.organizationId, input.organizationId),
+						eq(hrEmploymentContract.employmentId, input.employmentId),
+					),
+				);
+			const mapped: EmploymentContract[] = [];
+			for (const row of rows) {
+				const contract = mapEmploymentContract(row);
+				if (!contract.ok) {
+					return contract;
+				}
+				mapped.push(contract.data);
+			}
+			mapped.sort(compareEmploymentContractsByLineage);
+			return ok(mapped);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list employment contracts",
 			);
 		}
 	},
@@ -2202,11 +2233,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				getEffectiveTo: (assignment) => assignment.endsOn,
 			});
 			if (!resolution.ok) {
-				return fail(
-					"CONFLICT",
-					"Multiple assignments are effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return multiplePrimaryAssignmentsAtAsOf();
 			}
 			return resolution.record === null
 				? ok(null)

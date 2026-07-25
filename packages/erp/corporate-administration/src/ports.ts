@@ -31,6 +31,7 @@ import type {
 	CaBankMandate,
 	CaBeneficialOwnerDisclosure,
 	CaCharge,
+	CaChargeVariation,
 	CaCorporateAsset,
 	CaCorporateDocument,
 	CaCorporateRecordSearchHit,
@@ -38,9 +39,12 @@ import type {
 	CaFilingSubmission,
 	CaGroupControlRelationship,
 	CaInsurancePolicy,
+	CaInsurancePolicyRenewal,
+	CaIntellectualPropertyRenewal,
 	CaIntellectualPropertyRight,
 	CaLicencePermit,
 	CaMaterialAgreement,
+	CaPropertyAssetMutationReceipt,
 	CaPropertyHolding,
 	CaShareCertificate,
 	CaShareClass,
@@ -85,6 +89,27 @@ export type MutationPorts = {
 		audit: AuditFactInput;
 		outbox: OutboxFactInput;
 	}): Promise<Result<{ auditId: string; eventId: string }>>;
+};
+
+export type ShareCapitalMutationMeta = {
+	correlationId: string;
+	eventType: CorporateAdministrationEventType;
+};
+
+export type ShareCapitalMutationContext = {
+	ports: MutationPorts;
+	meta: ShareCapitalMutationMeta;
+};
+
+export type Ca4MutationContext = {
+	ports: MutationPorts;
+	meta: {
+		correlationId: string;
+		eventType: CorporateAdministrationEventType;
+		commandId: string;
+		requestFingerprint: string;
+		idempotencyKey: string;
+	};
 };
 
 export type CorporateAdministrationMasterLookupPort = {
@@ -145,6 +170,10 @@ export type LegalCompanyCreateRecord = Omit<
 	| "updatedAt"
 >;
 
+import type { GovernanceMutationMeta } from "./shared/governance-mutation-facts";
+
+export type { GovernanceMutationMeta };
+
 export type GovernanceStore = {
 	getOfficerByIdempotencyKey(
 		organizationId: string,
@@ -155,6 +184,8 @@ export type GovernanceStore = {
 			CaOfficerAppointment,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaOfficerAppointment>>;
 	getOfficerAppointmentById(
 		organizationId: string,
@@ -164,6 +195,22 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaOfficerAppointment[]>>;
+	supersedeOfficerAppointment(
+		current: CaOfficerAppointment,
+		replacement: Omit<
+			CaOfficerAppointment,
+			"id" | "version" | "createdAt" | "updatedAt"
+		>,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaOfficerAppointment>>;
+	endOfficerAppointment(
+		record: CaOfficerAppointment,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaOfficerAppointment>>;
 	getGovernanceBodyByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -173,6 +220,8 @@ export type GovernanceStore = {
 			CaGovernanceBody,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaGovernanceBody>>;
 	getGovernanceBodyById(
 		organizationId: string,
@@ -182,6 +231,12 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaGovernanceBody[]>>;
+	updateGovernanceBody(
+		record: CaGovernanceBody,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaGovernanceBody>>;
 	getGovernanceMembershipByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -191,6 +246,8 @@ export type GovernanceStore = {
 			CaGovernanceMembership,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaGovernanceMembership>>;
 	getGovernanceMembershipById(
 		organizationId: string,
@@ -200,6 +257,12 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaGovernanceMembership[]>>;
+	endGovernanceMembership(
+		record: CaGovernanceMembership,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaGovernanceMembership>>;
 	getAuthorityMandateByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -210,11 +273,10 @@ export type GovernanceStore = {
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
 		holders: ReadonlyArray<
-			Omit<
-				CaAuthorityMandateHolder,
-				"id" | "authorityMandateId" | "createdAt"
-			>
+			Omit<CaAuthorityMandateHolder, "id" | "authorityMandateId" | "createdAt">
 		>,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaAuthorityMandateDetail>>;
 	getAuthorityMandateById(
 		organizationId: string,
@@ -224,6 +286,25 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaAuthorityMandateDetail[]>>;
+	supersedeAuthorityMandate(
+		current: CaAuthorityMandateDetail,
+		replacement: Omit<
+			CaAuthorityMandate,
+			"id" | "version" | "createdAt" | "updatedAt"
+		>,
+		holders: ReadonlyArray<
+			Omit<CaAuthorityMandateHolder, "id" | "authorityMandateId" | "createdAt">
+		>,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaAuthorityMandateDetail>>;
+	revokeAuthorityMandate(
+		record: CaAuthorityMandateDetail,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaAuthorityMandateDetail>>;
 	getCompanyPremiseByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -233,6 +314,8 @@ export type GovernanceStore = {
 			CaCompanyPremise,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaCompanyPremise>>;
 	getCompanyPremiseById(
 		organizationId: string,
@@ -242,6 +325,22 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaCompanyPremise[]>>;
+	supersedeCompanyPremise(
+		current: CaCompanyPremise,
+		replacement: Omit<
+			CaCompanyPremise,
+			"id" | "version" | "createdAt" | "updatedAt"
+		>,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaCompanyPremise>>;
+	retireCompanyPremise(
+		record: CaCompanyPremise,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaCompanyPremise>>;
 	getGovernanceMeetingByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -251,6 +350,8 @@ export type GovernanceStore = {
 			CaGovernanceMeeting,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaGovernanceMeeting>>;
 	getGovernanceMeetingById(
 		organizationId: string,
@@ -260,12 +361,20 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaGovernanceMeeting[]>>;
+	closeGovernanceMeeting(
+		record: CaGovernanceMeeting,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaGovernanceMeeting>>;
 	getResolutionByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
 	): Promise<Result<CaResolution | null>>;
 	createResolution(
 		record: Omit<CaResolution, "id" | "version" | "createdAt" | "updatedAt">,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
 	): Promise<Result<CaResolution>>;
 	getResolutionById(
 		organizationId: string,
@@ -275,6 +384,20 @@ export type GovernanceStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaResolution[]>>;
+	approveResolution(
+		record: CaResolution,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+		predecessor?: CaResolution,
+		predecessorMeta?: GovernanceMutationMeta,
+	): Promise<Result<CaResolution>>;
+	revokeResolution(
+		record: CaResolution,
+		expectedVersion: number,
+		ports: MutationPorts,
+		meta: GovernanceMutationMeta,
+	): Promise<Result<CaResolution>>;
 };
 
 export type SlicesStore = {
@@ -284,6 +407,7 @@ export type SlicesStore = {
 	): Promise<Result<CaShareClass | null>>;
 	createShareClass(
 		record: Omit<CaShareClass, "id" | "version" | "createdAt" | "updatedAt">,
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaShareClass>>;
 	getShareClassById(
 		organizationId: string,
@@ -293,6 +417,16 @@ export type SlicesStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaShareClass[]>>;
+	updateShareClass(
+		record: CaShareClass,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaShareClass>>;
+	closeShareClass(
+		record: CaShareClass,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaShareClass>>;
 	getShareTransactionByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -303,7 +437,19 @@ export type SlicesStore = {
 			CaShareTransactionLeg,
 			"id" | "createdAt" | "shareTransactionId" | "legSequence"
 		>[],
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaShareTransactionDetail>>;
+	reverseShareTransaction(input: {
+		organizationId: string;
+		legalCompanyId: string;
+		originalTransactionId: string;
+		reversalReference: string;
+		reversalDate: string;
+		createIdempotencyKey: string;
+		createdBy: string;
+		correlationId: string;
+		mutation?: ShareCapitalMutationContext;
+	}): Promise<Result<CaShareTransactionDetail>>;
 	getShareTransactionById(
 		organizationId: string,
 		shareTransactionId: string,
@@ -327,6 +473,20 @@ export type SlicesStore = {
 			CaShareCertificate,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaShareCertificate>>;
+	replaceShareCertificate(input: {
+		prior: CaShareCertificate;
+		replacement: Omit<
+			CaShareCertificate,
+			"id" | "version" | "createdAt" | "updatedAt"
+		>;
+		mutation?: ShareCapitalMutationContext;
+	}): Promise<Result<CaShareCertificate>>;
+	cancelShareCertificate(
+		record: CaShareCertificate,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaShareCertificate>>;
 	getShareCertificateById(
 		organizationId: string,
@@ -345,6 +505,17 @@ export type SlicesStore = {
 			CaBeneficialOwnerDisclosure,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaBeneficialOwnerDisclosure>>;
+	updateBeneficialOwnerDisclosure(
+		record: CaBeneficialOwnerDisclosure,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaBeneficialOwnerDisclosure>>;
+	endBeneficialOwnerDisclosure(
+		record: CaBeneficialOwnerDisclosure,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaBeneficialOwnerDisclosure>>;
 	getBeneficialOwnerDisclosureById(
 		organizationId: string,
@@ -353,6 +524,11 @@ export type SlicesStore = {
 	listBeneficialOwnerDisclosures(
 		organizationId: string,
 		legalCompanyId: string,
+	): Promise<Result<CaBeneficialOwnerDisclosure[]>>;
+	listBeneficialOwnerDisclosuresAsOf(
+		organizationId: string,
+		legalCompanyId: string,
+		asOf: string,
 	): Promise<Result<CaBeneficialOwnerDisclosure[]>>;
 	getPropertyHoldingByIdempotencyKey(
 		organizationId: string,
@@ -363,6 +539,12 @@ export type SlicesStore = {
 			CaPropertyHolding,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaPropertyHolding>>;
+	updatePropertyHolding(
+		record: CaPropertyHolding,
+		expectedVersion: number,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaPropertyHolding>>;
 	getPropertyHoldingById(
 		organizationId: string,
@@ -381,6 +563,12 @@ export type SlicesStore = {
 			CaCorporateAsset,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaCorporateAsset>>;
+	updateCorporateAsset(
+		record: CaCorporateAsset,
+		expectedVersion: number,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaCorporateAsset>>;
 	getCorporateAssetById(
 		organizationId: string,
@@ -399,7 +587,18 @@ export type SlicesStore = {
 			CaIntellectualPropertyRight,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaIntellectualPropertyRight>>;
+	updateIntellectualPropertyRight(
+		record: CaIntellectualPropertyRight,
+		expectedVersion: number,
+		renewal: Omit<CaIntellectualPropertyRenewal, "id" | "createdAt"> | null,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaIntellectualPropertyRight>>;
+	listIntellectualPropertyRenewals(
+		organizationId: string,
+		intellectualPropertyRightId: string,
+	): Promise<Result<CaIntellectualPropertyRenewal[]>>;
 	getIntellectualPropertyRightById(
 		organizationId: string,
 		intellectualPropertyRightId: string,
@@ -417,7 +616,18 @@ export type SlicesStore = {
 			CaInsurancePolicy,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaInsurancePolicy>>;
+	updateInsurancePolicy(
+		record: CaInsurancePolicy,
+		expectedVersion: number,
+		renewal: Omit<CaInsurancePolicyRenewal, "id" | "createdAt"> | null,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaInsurancePolicy>>;
+	listInsurancePolicyRenewals(
+		organizationId: string,
+		insurancePolicyId: string,
+	): Promise<Result<CaInsurancePolicyRenewal[]>>;
 	getInsurancePolicyById(
 		organizationId: string,
 		insurancePolicyId: string,
@@ -432,7 +642,18 @@ export type SlicesStore = {
 	): Promise<Result<CaCharge | null>>;
 	createCharge(
 		record: Omit<CaCharge, "id" | "version" | "createdAt" | "updatedAt">,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaCharge>>;
+	updateCharge(
+		record: CaCharge,
+		expectedVersion: number,
+		variation: Omit<CaChargeVariation, "id" | "createdAt"> | null,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaCharge>>;
+	listChargeVariations(
+		organizationId: string,
+		chargeId: string,
+	): Promise<Result<CaChargeVariation[]>>;
 	getChargeById(
 		organizationId: string,
 		chargeId: string,
@@ -441,6 +662,10 @@ export type SlicesStore = {
 		organizationId: string,
 		legalCompanyId: string,
 	): Promise<Result<CaCharge[]>>;
+	getPropertyAssetMutationReceipt(
+		organizationId: string,
+		idempotencyKey: string,
+	): Promise<Result<CaPropertyAssetMutationReceipt | null>>;
 	getLicencePermitByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,

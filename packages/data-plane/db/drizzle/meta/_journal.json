@@ -246,6 +246,41 @@
       "when": 1785055200000,
       "tag": "0033_ca_governance_premises_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1785058800000,
+      "tag": "0034_hr_attendance_event_source_sequence",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1785062400000,
+      "tag": "0035_hr_coreorg_db_invariants_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1785066000000,
+      "tag": "0036_hr_person_management_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1785069600000,
+      "tag": "0037_ca_property_assets_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1785073200000,
+      "tag": "0038_hr_job_requisition_hiring_manager",
+      "breakpoints": true
     }
   ]
 }

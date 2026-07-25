@@ -28,6 +28,8 @@ modules:
       - resolution
       - share_class
       - share_transaction
+      - share_certificate
+      - beneficial_owner_disclosure
       - property_holding
       - licence_permit
       - bank_account_registration

@@ -35,9 +35,9 @@ export const reportingRelationshipKindSchema = z.enum(
 
 /**
  * Employment status transition table:
- * - active → notice | terminated
- * - notice → terminated
- * - terminated → (terminal state — no transitions)
+ * - active → notice | terminated  (suspend → notice; terminate → terminated)
+ * - notice → active | terminated  (reactivate → active; terminate → terminated)
+ * - terminated → (terminal state — no transitions; return-to-work is rehire via create)
  */
 export function canTransitionEmploymentStatus(
 	current: EmploymentStatus,
@@ -46,7 +46,7 @@ export function canTransitionEmploymentStatus(
 	if (current === "active" && (next === "notice" || next === "terminated")) {
 		return true;
 	}
-	if (current === "notice" && next === "terminated") {
+	if (current === "notice" && (next === "active" || next === "terminated")) {
 		return true;
 	}
 	return false;

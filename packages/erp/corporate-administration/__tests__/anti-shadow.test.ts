@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,46 +12,36 @@ const ROOT = path.resolve(
 	"../../../..",
 );
 
-const PRODUCT_ROOTS = [path.join(ROOT, "packages"), path.join(ROOT, "apps")];
-
-function walk(dir: string, out: string[] = []): string[] {
-	for (const entry of readdirSync(dir)) {
-		if (
-			entry === "node_modules" ||
-			entry === "dist" ||
-			entry === ".next" ||
-			entry === "coverage" ||
-			entry === "__tests__" ||
-			entry === "shadcn-studio"
-		) {
-			continue;
-		}
-		const full = path.join(dir, entry);
-		const st = statSync(full);
-		if (st.isDirectory()) {
-			walk(full, out);
-			continue;
-		}
-		if (!/\.(ts|tsx|sql)$/.test(entry)) {
-			continue;
-		}
-		out.push(full);
-	}
-	return out;
-}
-
 describe("corporate-administration anti-shadow boundary", () => {
 	it("has zero product hits for forbidden shadow table names", () => {
-		const hits: string[] = [];
-		for (const root of PRODUCT_ROOTS) {
-			for (const file of walk(root)) {
-				const relative = path.relative(ROOT, file).replaceAll("\\", "/");
-				const text = readFileSync(file, "utf8");
-				if (SHADOW.test(text)) {
-					hits.push(relative);
-				}
-			}
+		let output = "";
+		try {
+			output = execFileSync(
+				"git",
+				[
+					"grep",
+					"--name-only",
+					"--extended-regexp",
+					SHADOW.source,
+					"--",
+					"packages/**/*.ts",
+					"packages/**/*.tsx",
+					"packages/**/*.sql",
+					"apps/**/*.ts",
+					"apps/**/*.tsx",
+					":(exclude)**/__tests__/**",
+					":(exclude)**/shadcn-studio/**",
+				],
+				{ cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+			);
+		} catch (error) {
+			const status =
+				typeof error === "object" && error !== null && "status" in error
+					? error.status
+					: null;
+			if (status !== 1) throw error;
 		}
+		const hits = output.trim() ? output.trim().split(/\r?\n/) : [];
 		expect(hits).toEqual([]);
 	});
 });

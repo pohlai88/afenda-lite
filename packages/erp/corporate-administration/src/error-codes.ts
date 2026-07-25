@@ -18,6 +18,16 @@ export const CA_ERROR_IDEMPOTENCY_CONFLICT =
 	"corporate-administration.idempotency.conflict" as const;
 export const CA_ERROR_NAME_OVERLAP =
 	"corporate-administration.company_name.range_overlap" as const;
+export const CA_ERROR_SHARE_TRANSACTION_UNBALANCED =
+	"corporate-administration.share.transaction_unbalanced" as const;
+export const CA_ERROR_SHARE_INSUFFICIENT_HOLDING =
+	"corporate-administration.share.insufficient_holding" as const;
+export const CA_ERROR_SHARE_CLASS_CLOSED =
+	"corporate-administration.share.class_closed" as const;
+export const CA_ERROR_SHARE_CERTIFICATE_CONFLICT =
+	"corporate-administration.share.certificate_conflict" as const;
+export const CA_ERROR_EFFECTIVE_RANGE_OVERLAP =
+	"corporate-administration.effective_range.overlap" as const;
 
 export function caErrorDetails(
 	reason: string,

@@ -65,6 +65,10 @@ export const hrPerson = pgTable(
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
 		legalName: text("legal_name").notNull(),
+		preferredName: text("preferred_name"),
+		privacyClassification: text("privacy_classification")
+			.notNull()
+			.default("workforce_core"),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		version: integer("version").notNull().default(1),
@@ -85,6 +89,123 @@ export const hrPerson = pgTable(
 			t.createIdempotencyKey,
 		),
 		uniqueIndex("hr_person_org_id_uidx").on(t.organizationId, t.id),
+		check(
+			"hr_person_privacy_classification_check",
+			sql`${t.privacyClassification} IN ('workforce_core', 'pay_and_benefits', 'medical_and_leave', 'recruitment_and_background', 'employee_relations_and_legal', 'performance_and_talent')`,
+		),
+	],
+);
+
+export const hrPersonContact = pgTable(
+	"hr_person_contact",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		personId: uuid("person_id").notNull(),
+		contactType: text("contact_type").notNull(),
+		valueText: text("value_text").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		isPrimary: boolean("is_primary").notNull().default(false),
+		status: text("status").notNull().default("active"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_person_contact_org_person_idx").on(t.organizationId, t.personId),
+		index("hr_person_contact_org_id_idx").on(t.organizationId, t.id),
+		index("hr_person_contact_org_type_normalized_idx").on(
+			t.organizationId,
+			t.contactType,
+			t.normalizedValue,
+		),
+		uniqueIndex("hr_person_contact_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_person_contact_org_person_type_primary_uidx")
+			.on(t.organizationId, t.personId, t.contactType)
+			.where(sql`${t.status} = 'active' AND ${t.isPrimary} = true`),
+		foreignKey({
+			columns: [t.organizationId, t.personId],
+			foreignColumns: [hrPerson.organizationId, hrPerson.id],
+			name: "hr_person_contact_org_person_fk",
+		}),
+		check(
+			"hr_person_contact_type_check",
+			sql`${t.contactType} IN ('email', 'phone', 'postal_address')`,
+		),
+		check(
+			"hr_person_contact_status_check",
+			sql`${t.status} IN ('active', 'retired')`,
+		),
+	],
+);
+
+export const hrPersonIdentifier = pgTable(
+	"hr_person_identifier",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		personId: uuid("person_id").notNull(),
+		identifierType: text("identifier_type").notNull(),
+		identifierFingerprint: text("identifier_fingerprint").notNull(),
+		identifierLast4: text("identifier_last4").notNull(),
+		documentRef: text("document_ref"),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		status: text("status").notNull().default("active"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_person_identifier_org_person_idx").on(
+			t.organizationId,
+			t.personId,
+		),
+		index("hr_person_identifier_org_id_idx").on(t.organizationId, t.id),
+		index("hr_person_identifier_org_type_fingerprint_idx").on(
+			t.organizationId,
+			t.identifierType,
+			t.identifierFingerprint,
+		),
+		uniqueIndex("hr_person_identifier_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_person_identifier_org_type_fingerprint_open_uidx")
+			.on(t.organizationId, t.identifierType, t.identifierFingerprint)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.status} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.personId],
+			foreignColumns: [hrPerson.organizationId, hrPerson.id],
+			name: "hr_person_identifier_org_person_fk",
+		}),
+		check(
+			"hr_person_identifier_status_check",
+			sql`${t.status} IN ('active', 'retired')`,
+		),
+		check(
+			"hr_person_identifier_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
 	],
 );
 
@@ -972,6 +1093,9 @@ export const hrJobRequisition = pgTable(
 		jobId: uuid("job_id").references(() => hrJob.id),
 		positionId: uuid("position_id").references(() => hrPosition.id),
 		departmentId: uuid("department_id").references(() => hrDepartment.id),
+		hiringManagerEmployeeId: uuid("hiring_manager_employee_id").references(
+			() => hrEmployee.id,
+		),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		version: integer("version").notNull().default(1),
@@ -1317,6 +1441,10 @@ export const hrProbationReview = pgTable(
 		uniqueIndex("hr_probation_review_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+		check(
+			"hr_probation_review_effective_range_ck",
+			sql`${t.startsOn} <= ${t.endsOn}`,
 		),
 	],
 );
@@ -1899,6 +2027,10 @@ export const hrSalaryBand = pgTable(
 		index("hr_salary_band_org_id_idx").on(t.organizationId, t.id),
 		index("hr_salary_band_org_grade_idx").on(t.organizationId, t.gradeId),
 		index("hr_salary_band_org_status_idx").on(t.organizationId, t.status),
+		check(
+			"hr_salary_band_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
 	],
 );
 
@@ -1951,6 +2083,10 @@ export const hrEmployeeCompensation = pgTable(
 		uniqueIndex("hr_employee_compensation_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+		check(
+			"hr_employee_compensation_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
 		),
 	],
 );
@@ -2036,6 +2172,10 @@ export const hrBenefitEnrollment = pgTable(
 		uniqueIndex("hr_benefit_enrollment_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+		check(
+			"hr_benefit_enrollment_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
 		),
 	],
 );
@@ -4389,6 +4529,10 @@ export const hrShift = pgTable(
 			"hr_shift_expected_minutes_check",
 			sql`${t.expectedMinutes} > 0 AND ${t.expectedMinutes} <= 1440`,
 		),
+		check(
+			"hr_shift_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
 	],
 );
 
@@ -4524,6 +4668,7 @@ export const hrAttendanceEvent = pgTable(
 			withTimezone: true,
 		}),
 		occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+		sourceSequence: integer("source_sequence").notNull(),
 		sourceTimezone: text("source_timezone").notNull(),
 		localWorkDate: date("local_work_date", { mode: "string" }).notNull(),
 		source: text("source").notNull(),

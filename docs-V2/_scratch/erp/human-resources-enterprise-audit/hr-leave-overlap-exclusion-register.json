@@ -1,0 +1,29 @@
+{
+	"mission": "HR-OPS-LEAVE-OVERLAP-GUARD",
+	"closedOn": "2026-07-25",
+	"slice": "docs-V2/_scratch/00.hrm.md Slice 4.7",
+	"finding": "HR-OPS-P2-004",
+	"tables": ["hr_leave_request", "hr_leave_request_segment"],
+	"overlapPolicies": [
+		{
+			"table": "hr_leave_request_segment",
+			"policy": "prevent_overlapping_leave_segments_per_employee",
+			"blockingStatuses": ["draft", "submitted", "returned", "approved"],
+			"segmentRule": "same segment_date AND (candidate.day_portion = full OR peer.day_portion = full OR candidate.day_portion = peer.day_portion)",
+			"enforcement": "command_enforced_and_serializable_transaction",
+			"databaseOverlapExclusion": false,
+			"enforcementSurface": [
+				"@afenda/human-resources: ACTIVE_LEAVE_OVERLAP_STATUSES in leave-guards.ts",
+				"@afenda/human-resources: assertNoLeaveOverlap on submitLeaveRequest and approveLeaveRequest (leave-request.ts)",
+				"@afenda/human-resources memory adapter: withLeaveEmployeeBookingLock + adapter re-check on submit/approve",
+				"@afenda/human-resources drizzle adapter: Serializable txn + pg_advisory_xact_lock(org:employee) + buildLeaveOverlapGuardCtes on submit/approve"
+			],
+			"notes": "Half-day semantics (morning/afternoon/full) prevent a naive btree_gist EXCLUDE on date ranges alone; overlap is fail-closed at command and Serializable transaction layers. No PostgreSQL exclusion constraint or constraint trigger in this closure."
+		}
+	],
+	"verification": [
+		"pnpm --filter @afenda/human-resources test -- human-resources.leave leave-concurrency",
+		"pnpm --filter @afenda/db test -- hr-leave-overlap-exclusion-register",
+		"pnpm --filter @afenda/human-resources typecheck"
+	]
+}

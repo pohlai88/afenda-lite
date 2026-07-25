@@ -85,3 +85,14 @@ export function assertEmploymentContractMutable(input: {
 	}
 	return ok(undefined);
 }
+
+export function compareEmploymentContractsByLineage(
+	left: { startsOn: string; id: string },
+	right: { startsOn: string; id: string },
+): number {
+	const byStart = left.startsOn.localeCompare(right.startsOn);
+	if (byStart !== 0) {
+		return byStart;
+	}
+	return left.id.localeCompare(right.id);
+}

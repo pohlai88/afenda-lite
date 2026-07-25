@@ -16,7 +16,7 @@
 | 3 | HR-OPS-TIME-OVERTIME-AUTHORITY | HR-OPS-P1-001 | Authorization gap on approve path |
 | 4 | HR-OPS-LEAVE-HANDOFF-PERMISSION | HR-OPS-P1-002 | Payroll/integration least privilege |
 | 5 | HR-OPS-TIME-TIMEZONE-HANDOFF | HR-OPS-P2-001 | Handoff correctness at timezone boundaries |
-| 6 | HR-OPS-LEAVE-OVERLAP-GUARD | HR-OPS-P2-004 | Data integrity for approved absence windows |
+| 6 | HR-OPS-LEAVE-OVERLAP-GUARD | HR-OPS-P2-004 | **CLOSED** Slice 4.7 — do not reopen |
 | 7 | HR-OPS-TIME-SESSION-DETERMINISM | HR-OPS-P2-003 | Import replay stability |
 | 8 | HR-ENT-03-EFFECTIVE-TRUTH extension (cluster B) | HR-OPS-P1-004, HR-XCUT-P0-002 | Matrix or exclusion register for transactional tables |
 | 9 | HR-ENT-07-PRODUCT-LEAVE-ACTIONS | HR-OPS-P1-003 | Product surface — depends on auth/handoff fixes |

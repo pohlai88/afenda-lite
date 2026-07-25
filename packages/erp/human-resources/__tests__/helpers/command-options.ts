@@ -1,4 +1,5 @@
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
+import { createStoreAssignmentContextQuery } from "../../src/time/store-assignment-context-query";
 import {
 	createMemoryDocumentReferencePort,
 	createMemoryOrganizationDimensionDirectory,
@@ -24,6 +25,11 @@ export function createTestHumanResourcesCommandOptions(
 		(base.store !== undefined
 			? createStoreApprovedLeaveQuery({ store: base.store })
 			: undefined);
+	const assignmentContext =
+		base.assignmentContext ??
+		(base.store !== undefined
+			? createStoreAssignmentContextQuery({ store: base.store })
+			: undefined);
 
 	return {
 		workCalendar,
@@ -33,5 +39,6 @@ export function createTestHumanResourcesCommandOptions(
 			createMemoryOrganizationDimensionDirectory(),
 		...base,
 		approvedLeave: base.approvedLeave ?? approvedLeave,
+		assignmentContext: base.assignmentContext ?? assignmentContext,
 	};
 }

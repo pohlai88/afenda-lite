@@ -297,6 +297,11 @@ export type HumanResourcesCoreStore = {
 		asOf: string;
 	}): Promise<Result<EmploymentContract | null>>;
 
+	listEmploymentContractsByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<EmploymentContract[]>>;
+
 	createEmploymentContract(
 		record: EmploymentContractCreateRecord,
 		ports: MutationPorts,

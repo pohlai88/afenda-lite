@@ -39,6 +39,43 @@ export const caGovernancePayloadSchema = z.object({
 
 export type CaGovernancePayload = z.infer<typeof caGovernancePayloadSchema>;
 
+export const caShareCapitalPayloadSchema = z.object({
+	organizationId: z.string().trim().min(1),
+	legalCompanyId: z.string().uuid(),
+	entityType: z.enum([
+		"share_class",
+		"share_transaction",
+		"share_certificate",
+		"beneficial_owner_disclosure",
+	]),
+	entityId: z.string().uuid(),
+	version: z.number().int().positive().optional(),
+	actorId: z.string().trim().min(1),
+	correlationId: z.string().trim().min(1),
+	status: z.string().trim().min(1),
+	reversalOfId: z.string().uuid().nullable().optional(),
+});
+
+export type CaShareCapitalPayload = z.infer<typeof caShareCapitalPayloadSchema>;
+
+export const caPropertyAssetsPayloadSchema = z
+	.object({
+		organizationId: z.string().trim().min(1),
+		legalCompanyId: z.string().uuid(),
+		entityType: z.enum([
+			"property",
+			"asset",
+			"intellectual-property",
+			"insurance-policy",
+			"charge",
+		]),
+		entityId: z.string().uuid(),
+		version: z.number().int().positive(),
+		actorId: z.string().trim().min(1),
+		correlationId: z.string().trim().min(1),
+	})
+	.strict();
+
 export const CorporateAdministrationEventSchemas = {
 	"corporate-administration.company.created.v1": caCompanyPayloadSchema,
 	"corporate-administration.company.updated.v1": caCompanyPayloadSchema,
@@ -77,6 +114,41 @@ export const CorporateAdministrationEventSchemas = {
 	"corporate-administration.resolution.revoked.v1": caGovernancePayloadSchema,
 	"corporate-administration.resolution.superseded.v1":
 		caGovernancePayloadSchema,
+	"corporate-administration.share-transaction.posted.v1":
+		caShareCapitalPayloadSchema,
+	"corporate-administration.share-transaction.reversed.v1":
+		caShareCapitalPayloadSchema,
+	"corporate-administration.beneficial-owner.changed.v1":
+		caShareCapitalPayloadSchema,
+	"corporate-administration.property.registered.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.property.updated.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.property.disposed.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.asset.registered.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.asset.updated.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.asset.disposed.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.asset.written-off.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.intellectual-property.registered.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.intellectual-property.updated.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.intellectual-property.renewed.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.intellectual-property.expired.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.intellectual-property.disposed.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.insurance-policy.registered.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.insurance-policy.updated.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.insurance-policy.renewed.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.insurance-policy.cancelled.v1":
+		caPropertyAssetsPayloadSchema,
+	"corporate-administration.charge.registered.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.charge.amended.v1": caPropertyAssetsPayloadSchema,
+	"corporate-administration.charge.released.v1": caPropertyAssetsPayloadSchema,
 } as const;
 
 export type CorporateAdministrationEventType =
@@ -138,6 +210,50 @@ export const CA_RESOLUTION_REVOKED_EVENT =
 	"corporate-administration.resolution.revoked.v1" as const;
 export const CA_RESOLUTION_SUPERSEDED_EVENT =
 	"corporate-administration.resolution.superseded.v1" as const;
+export const CA_SHARE_TRANSACTION_POSTED_EVENT =
+	"corporate-administration.share-transaction.posted.v1" as const;
+export const CA_SHARE_TRANSACTION_REVERSED_EVENT =
+	"corporate-administration.share-transaction.reversed.v1" as const;
+export const CA_BENEFICIAL_OWNER_CHANGED_EVENT =
+	"corporate-administration.beneficial-owner.changed.v1" as const;
+export const CA_PROPERTY_REGISTERED_EVENT =
+	"corporate-administration.property.registered.v1" as const;
+export const CA_PROPERTY_UPDATED_EVENT =
+	"corporate-administration.property.updated.v1" as const;
+export const CA_PROPERTY_DISPOSED_EVENT =
+	"corporate-administration.property.disposed.v1" as const;
+export const CA_ASSET_REGISTERED_EVENT =
+	"corporate-administration.asset.registered.v1" as const;
+export const CA_ASSET_UPDATED_EVENT =
+	"corporate-administration.asset.updated.v1" as const;
+export const CA_ASSET_DISPOSED_EVENT =
+	"corporate-administration.asset.disposed.v1" as const;
+export const CA_ASSET_WRITTEN_OFF_EVENT =
+	"corporate-administration.asset.written-off.v1" as const;
+export const CA_INTELLECTUAL_PROPERTY_REGISTERED_EVENT =
+	"corporate-administration.intellectual-property.registered.v1" as const;
+export const CA_INTELLECTUAL_PROPERTY_UPDATED_EVENT =
+	"corporate-administration.intellectual-property.updated.v1" as const;
+export const CA_INTELLECTUAL_PROPERTY_RENEWED_EVENT =
+	"corporate-administration.intellectual-property.renewed.v1" as const;
+export const CA_INTELLECTUAL_PROPERTY_EXPIRED_EVENT =
+	"corporate-administration.intellectual-property.expired.v1" as const;
+export const CA_INTELLECTUAL_PROPERTY_DISPOSED_EVENT =
+	"corporate-administration.intellectual-property.disposed.v1" as const;
+export const CA_INSURANCE_POLICY_REGISTERED_EVENT =
+	"corporate-administration.insurance-policy.registered.v1" as const;
+export const CA_INSURANCE_POLICY_UPDATED_EVENT =
+	"corporate-administration.insurance-policy.updated.v1" as const;
+export const CA_INSURANCE_POLICY_RENEWED_EVENT =
+	"corporate-administration.insurance-policy.renewed.v1" as const;
+export const CA_INSURANCE_POLICY_CANCELLED_EVENT =
+	"corporate-administration.insurance-policy.cancelled.v1" as const;
+export const CA_CHARGE_REGISTERED_EVENT =
+	"corporate-administration.charge.registered.v1" as const;
+export const CA_CHARGE_AMENDED_EVENT =
+	"corporate-administration.charge.amended.v1" as const;
+export const CA_CHARGE_RELEASED_EVENT =
+	"corporate-administration.charge.released.v1" as const;
 
 export const CA_EVENT_IDS = [
 	CA_COMPANY_CREATED_EVENT,
@@ -168,4 +284,26 @@ export const CA_EVENT_IDS = [
 	CA_RESOLUTION_APPROVED_EVENT,
 	CA_RESOLUTION_REVOKED_EVENT,
 	CA_RESOLUTION_SUPERSEDED_EVENT,
+	CA_SHARE_TRANSACTION_POSTED_EVENT,
+	CA_SHARE_TRANSACTION_REVERSED_EVENT,
+	CA_BENEFICIAL_OWNER_CHANGED_EVENT,
+	CA_PROPERTY_REGISTERED_EVENT,
+	CA_PROPERTY_UPDATED_EVENT,
+	CA_PROPERTY_DISPOSED_EVENT,
+	CA_ASSET_REGISTERED_EVENT,
+	CA_ASSET_UPDATED_EVENT,
+	CA_ASSET_DISPOSED_EVENT,
+	CA_ASSET_WRITTEN_OFF_EVENT,
+	CA_INTELLECTUAL_PROPERTY_REGISTERED_EVENT,
+	CA_INTELLECTUAL_PROPERTY_UPDATED_EVENT,
+	CA_INTELLECTUAL_PROPERTY_RENEWED_EVENT,
+	CA_INTELLECTUAL_PROPERTY_EXPIRED_EVENT,
+	CA_INTELLECTUAL_PROPERTY_DISPOSED_EVENT,
+	CA_INSURANCE_POLICY_REGISTERED_EVENT,
+	CA_INSURANCE_POLICY_UPDATED_EVENT,
+	CA_INSURANCE_POLICY_RENEWED_EVENT,
+	CA_INSURANCE_POLICY_CANCELLED_EVENT,
+	CA_CHARGE_REGISTERED_EVENT,
+	CA_CHARGE_AMENDED_EVENT,
+	CA_CHARGE_RELEASED_EVENT,
 ] as const satisfies readonly CorporateAdministrationEventType[];

@@ -4,13 +4,7 @@
 
 import { afterAll, describe, expect, it } from "vitest";
 import { HUMAN_RESOURCES_ERROR_INVALID_INPUT } from "../src/error-codes";
-import {
-	approveRequisition,
-	cancelRequisition,
-	createDraftRequisition,
-	openRequisition,
-	submitRequisition,
-} from "../src/recruitment/requisition";
+import { cancelRequisition } from "../src/recruitment/requisition";
 import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
@@ -29,6 +23,7 @@ import {
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import { seedRequisitionPipeline } from "./helpers/recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
@@ -116,49 +111,6 @@ async function approvePlanWithLine(
 	return { ok: true as const, data: { plan: approved.data, line: line.data } };
 }
 
-async function openRequisitionPipeline(
-	ready: ReturnType<typeof createHrParityHarness>,
-	input: { organizationId: string; actorUserId: string; suffix: string },
-) {
-	const draft = await createDraftRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: `corr-req-${input.suffix}`,
-			idempotencyKey: `idem-req-${input.suffix}`,
-			code: `REQ-${input.suffix}`.slice(0, 64),
-			title: "Parity hire",
-		},
-		ready,
-	);
-	if (!draft.ok) {
-		return draft;
-	}
-
-	let requisition = draft.data;
-	for (const [cmd, corr] of [
-		[submitRequisition, `corr-req-submit-${input.suffix}`],
-		[approveRequisition, `corr-req-approve-${input.suffix}`],
-		[openRequisition, `corr-req-open-${input.suffix}`],
-	] as const) {
-		const next = await cmd(
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: corr,
-				requisitionId: requisition.id,
-				expectedVersion: requisition.version,
-			},
-			ready,
-		);
-		if (!next.ok) {
-			return next;
-		}
-		requisition = next.data;
-	}
-	return { ok: true as const, data: requisition };
-}
-
 function defineWorkforcePlanningParitySuite(
 	adapter: WorkforceStoreAdapter,
 ): void {
@@ -183,10 +135,12 @@ function defineWorkforcePlanningParitySuite(
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
-			suffix,
+			tag: suffix,
+			targetStatus: "open",
+			title: "Parity hire",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -276,10 +230,12 @@ function defineWorkforcePlanningParitySuite(
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
-			suffix: `over-${suffix}`,
+			tag: `over-${suffix}`,
+			targetStatus: "open",
+			title: "Parity hire",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;

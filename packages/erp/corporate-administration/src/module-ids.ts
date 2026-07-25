@@ -62,23 +62,65 @@ export const CA_COMMAND_RESOLUTION_REVOKE =
 
 export const CA_COMMAND_SHARE_CLASS_CREATE =
 	"corporate-administration.share-class.create" as const;
+export const CA_COMMAND_SHARE_CLASS_UPDATE =
+	"corporate-administration.share-class.update" as const;
+export const CA_COMMAND_SHARE_CLASS_CLOSE =
+	"corporate-administration.share-class.close" as const;
 export const CA_COMMAND_SHARE_TRANSACTION_CREATE =
 	"corporate-administration.share-transaction.create" as const;
+export const CA_COMMAND_SHARE_TRANSACTION_REVERSE =
+	"corporate-administration.share-transaction.reverse" as const;
 export const CA_COMMAND_SHARE_CERTIFICATE_CREATE =
 	"corporate-administration.share-certificate.create" as const;
+export const CA_COMMAND_SHARE_CERTIFICATE_REPLACE =
+	"corporate-administration.share-certificate.replace" as const;
+export const CA_COMMAND_SHARE_CERTIFICATE_CANCEL =
+	"corporate-administration.share-certificate.cancel" as const;
 export const CA_COMMAND_BENEFICIAL_OWNER_DISCLOSURE_CREATE =
 	"corporate-administration.beneficial-owner-disclosure.create" as const;
+export const CA_COMMAND_BENEFICIAL_OWNER_DISCLOSURE_UPDATE =
+	"corporate-administration.beneficial-owner-disclosure.update" as const;
+export const CA_COMMAND_BENEFICIAL_OWNER_DISCLOSURE_END =
+	"corporate-administration.beneficial-owner-disclosure.end" as const;
 
-export const CA_COMMAND_PROPERTY_HOLDING_CREATE =
-	"corporate-administration.property-holding.create" as const;
-export const CA_COMMAND_CORPORATE_ASSET_CREATE =
-	"corporate-administration.corporate-asset.create" as const;
-export const CA_COMMAND_INTELLECTUAL_PROPERTY_RIGHT_CREATE =
-	"corporate-administration.intellectual-property-right.create" as const;
-export const CA_COMMAND_INSURANCE_POLICY_CREATE =
-	"corporate-administration.insurance-policy.create" as const;
-export const CA_COMMAND_CHARGE_CREATE =
-	"corporate-administration.charge.create" as const;
+export const CA_COMMAND_PROPERTY_REGISTER =
+	"corporate-administration.property.register" as const;
+export const CA_COMMAND_PROPERTY_UPDATE =
+	"corporate-administration.property.update" as const;
+export const CA_COMMAND_PROPERTY_DISPOSE =
+	"corporate-administration.property.dispose" as const;
+export const CA_COMMAND_ASSET_REGISTER =
+	"corporate-administration.asset.register" as const;
+export const CA_COMMAND_ASSET_UPDATE =
+	"corporate-administration.asset.update" as const;
+export const CA_COMMAND_ASSET_DISPOSE =
+	"corporate-administration.asset.dispose" as const;
+export const CA_COMMAND_ASSET_WRITE_OFF =
+	"corporate-administration.asset.write-off" as const;
+export const CA_COMMAND_INTELLECTUAL_PROPERTY_REGISTER =
+	"corporate-administration.intellectual-property.register" as const;
+export const CA_COMMAND_INTELLECTUAL_PROPERTY_UPDATE =
+	"corporate-administration.intellectual-property.update" as const;
+export const CA_COMMAND_INTELLECTUAL_PROPERTY_RENEW =
+	"corporate-administration.intellectual-property.renew" as const;
+export const CA_COMMAND_INTELLECTUAL_PROPERTY_EXPIRE =
+	"corporate-administration.intellectual-property.expire" as const;
+export const CA_COMMAND_INTELLECTUAL_PROPERTY_DISPOSE =
+	"corporate-administration.intellectual-property.dispose" as const;
+export const CA_COMMAND_INSURANCE_POLICY_REGISTER =
+	"corporate-administration.insurance-policy.register" as const;
+export const CA_COMMAND_INSURANCE_POLICY_UPDATE =
+	"corporate-administration.insurance-policy.update" as const;
+export const CA_COMMAND_INSURANCE_POLICY_RENEW =
+	"corporate-administration.insurance-policy.renew" as const;
+export const CA_COMMAND_INSURANCE_POLICY_CANCEL =
+	"corporate-administration.insurance-policy.cancel" as const;
+export const CA_COMMAND_CHARGE_REGISTER =
+	"corporate-administration.charge.register" as const;
+export const CA_COMMAND_CHARGE_AMEND =
+	"corporate-administration.charge.amend" as const;
+export const CA_COMMAND_CHARGE_RELEASE =
+	"corporate-administration.charge.release" as const;
 
 export const CA_COMMAND_LICENCE_PERMIT_CREATE =
 	"corporate-administration.licence-permit.create" as const;
@@ -130,14 +172,35 @@ export const CA_COMMAND_IDS = [
 	CA_COMMAND_RESOLUTION_APPROVE,
 	CA_COMMAND_RESOLUTION_REVOKE,
 	CA_COMMAND_SHARE_CLASS_CREATE,
+	CA_COMMAND_SHARE_CLASS_UPDATE,
+	CA_COMMAND_SHARE_CLASS_CLOSE,
 	CA_COMMAND_SHARE_TRANSACTION_CREATE,
+	CA_COMMAND_SHARE_TRANSACTION_REVERSE,
 	CA_COMMAND_SHARE_CERTIFICATE_CREATE,
+	CA_COMMAND_SHARE_CERTIFICATE_REPLACE,
+	CA_COMMAND_SHARE_CERTIFICATE_CANCEL,
 	CA_COMMAND_BENEFICIAL_OWNER_DISCLOSURE_CREATE,
-	CA_COMMAND_PROPERTY_HOLDING_CREATE,
-	CA_COMMAND_CORPORATE_ASSET_CREATE,
-	CA_COMMAND_INTELLECTUAL_PROPERTY_RIGHT_CREATE,
-	CA_COMMAND_INSURANCE_POLICY_CREATE,
-	CA_COMMAND_CHARGE_CREATE,
+	CA_COMMAND_BENEFICIAL_OWNER_DISCLOSURE_UPDATE,
+	CA_COMMAND_BENEFICIAL_OWNER_DISCLOSURE_END,
+	CA_COMMAND_PROPERTY_REGISTER,
+	CA_COMMAND_PROPERTY_UPDATE,
+	CA_COMMAND_PROPERTY_DISPOSE,
+	CA_COMMAND_ASSET_REGISTER,
+	CA_COMMAND_ASSET_UPDATE,
+	CA_COMMAND_ASSET_DISPOSE,
+	CA_COMMAND_ASSET_WRITE_OFF,
+	CA_COMMAND_INTELLECTUAL_PROPERTY_REGISTER,
+	CA_COMMAND_INTELLECTUAL_PROPERTY_UPDATE,
+	CA_COMMAND_INTELLECTUAL_PROPERTY_RENEW,
+	CA_COMMAND_INTELLECTUAL_PROPERTY_EXPIRE,
+	CA_COMMAND_INTELLECTUAL_PROPERTY_DISPOSE,
+	CA_COMMAND_INSURANCE_POLICY_REGISTER,
+	CA_COMMAND_INSURANCE_POLICY_UPDATE,
+	CA_COMMAND_INSURANCE_POLICY_RENEW,
+	CA_COMMAND_INSURANCE_POLICY_CANCEL,
+	CA_COMMAND_CHARGE_REGISTER,
+	CA_COMMAND_CHARGE_AMEND,
+	CA_COMMAND_CHARGE_RELEASE,
 	CA_COMMAND_LICENCE_PERMIT_CREATE,
 	CA_COMMAND_BANK_ACCOUNT_REGISTRATION_CREATE,
 	CA_COMMAND_BANK_MANDATE_CREATE,
@@ -224,27 +287,44 @@ export const CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST =
 	"corporate-administration.beneficial-owner-disclosure.list" as const;
 export const CA_QUERY_SHARE_HOLDING_LIST_AS_OF =
 	"corporate-administration.share-holding.list-as-of" as const;
+export const CA_QUERY_SHARE_HOLDING_GET_AS_OF =
+	"corporate-administration.share-holding.get-as-of" as const;
+export const CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST_AS_OF =
+	"corporate-administration.beneficial-owner-disclosure.list-as-of" as const;
 
-export const CA_QUERY_PROPERTY_HOLDING_GET =
-	"corporate-administration.property-holding.get" as const;
-export const CA_QUERY_PROPERTY_HOLDING_LIST =
-	"corporate-administration.property-holding.list" as const;
-export const CA_QUERY_CORPORATE_ASSET_GET =
-	"corporate-administration.corporate-asset.get" as const;
-export const CA_QUERY_CORPORATE_ASSET_LIST =
-	"corporate-administration.corporate-asset.list" as const;
-export const CA_QUERY_INTELLECTUAL_PROPERTY_RIGHT_GET =
-	"corporate-administration.intellectual-property-right.get" as const;
-export const CA_QUERY_INTELLECTUAL_PROPERTY_RIGHT_LIST =
-	"corporate-administration.intellectual-property-right.list" as const;
+export const CA_QUERY_PROPERTY_GET =
+	"corporate-administration.property.get" as const;
+export const CA_QUERY_PROPERTY_LIST =
+	"corporate-administration.property.list" as const;
+export const CA_QUERY_PROPERTY_LIST_AS_OF =
+	"corporate-administration.property.list-as-of" as const;
+export const CA_QUERY_ASSET_GET = "corporate-administration.asset.get" as const;
+export const CA_QUERY_ASSET_LIST =
+	"corporate-administration.asset.list" as const;
+export const CA_QUERY_ASSET_LIST_AS_OF =
+	"corporate-administration.asset.list-as-of" as const;
+export const CA_QUERY_INTELLECTUAL_PROPERTY_GET =
+	"corporate-administration.intellectual-property.get" as const;
+export const CA_QUERY_INTELLECTUAL_PROPERTY_LIST =
+	"corporate-administration.intellectual-property.list" as const;
+export const CA_QUERY_INTELLECTUAL_PROPERTY_LIST_AS_OF =
+	"corporate-administration.intellectual-property.list-as-of" as const;
+export const CA_QUERY_INTELLECTUAL_PROPERTY_LIST_EXPIRING =
+	"corporate-administration.intellectual-property.list-expiring" as const;
 export const CA_QUERY_INSURANCE_POLICY_GET =
 	"corporate-administration.insurance-policy.get" as const;
 export const CA_QUERY_INSURANCE_POLICY_LIST =
 	"corporate-administration.insurance-policy.list" as const;
+export const CA_QUERY_INSURANCE_POLICY_LIST_AS_OF =
+	"corporate-administration.insurance-policy.list-as-of" as const;
+export const CA_QUERY_INSURANCE_POLICY_LIST_EXPIRING =
+	"corporate-administration.insurance-policy.list-expiring" as const;
 export const CA_QUERY_CHARGE_GET =
 	"corporate-administration.charge.get" as const;
 export const CA_QUERY_CHARGE_LIST =
 	"corporate-administration.charge.list" as const;
+export const CA_QUERY_CHARGE_LIST_AS_OF =
+	"corporate-administration.charge.list-as-of" as const;
 
 export const CA_QUERY_LICENCE_PERMIT_GET =
 	"corporate-administration.licence-permit.get" as const;
@@ -324,16 +404,25 @@ export const CA_QUERY_IDS = [
 	CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_GET,
 	CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST,
 	CA_QUERY_SHARE_HOLDING_LIST_AS_OF,
-	CA_QUERY_PROPERTY_HOLDING_GET,
-	CA_QUERY_PROPERTY_HOLDING_LIST,
-	CA_QUERY_CORPORATE_ASSET_GET,
-	CA_QUERY_CORPORATE_ASSET_LIST,
-	CA_QUERY_INTELLECTUAL_PROPERTY_RIGHT_GET,
-	CA_QUERY_INTELLECTUAL_PROPERTY_RIGHT_LIST,
+	CA_QUERY_SHARE_HOLDING_GET_AS_OF,
+	CA_QUERY_BENEFICIAL_OWNER_DISCLOSURE_LIST_AS_OF,
+	CA_QUERY_PROPERTY_GET,
+	CA_QUERY_PROPERTY_LIST,
+	CA_QUERY_PROPERTY_LIST_AS_OF,
+	CA_QUERY_ASSET_GET,
+	CA_QUERY_ASSET_LIST,
+	CA_QUERY_ASSET_LIST_AS_OF,
+	CA_QUERY_INTELLECTUAL_PROPERTY_GET,
+	CA_QUERY_INTELLECTUAL_PROPERTY_LIST,
+	CA_QUERY_INTELLECTUAL_PROPERTY_LIST_AS_OF,
+	CA_QUERY_INTELLECTUAL_PROPERTY_LIST_EXPIRING,
 	CA_QUERY_INSURANCE_POLICY_GET,
 	CA_QUERY_INSURANCE_POLICY_LIST,
+	CA_QUERY_INSURANCE_POLICY_LIST_AS_OF,
+	CA_QUERY_INSURANCE_POLICY_LIST_EXPIRING,
 	CA_QUERY_CHARGE_GET,
 	CA_QUERY_CHARGE_LIST,
+	CA_QUERY_CHARGE_LIST_AS_OF,
 	CA_QUERY_LICENCE_PERMIT_GET,
 	CA_QUERY_LICENCE_PERMIT_LIST,
 	CA_QUERY_BANK_ACCOUNT_REGISTRATION_GET,

@@ -18,12 +18,6 @@ import {
 } from "../src/recruitment/application";
 import { createCandidate } from "../src/recruitment/candidate";
 import { acceptOffer, createOffer, issueOffer } from "../src/recruitment/offer";
-import {
-	approveRequisition,
-	createDraftRequisition,
-	openRequisition,
-	submitRequisition,
-} from "../src/recruitment/requisition";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
@@ -32,63 +26,13 @@ import {
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	expectRequisitionPipeline,
+	seedRequisitionPipeline,
+} from "./helpers/recruitment-requisition-fixture";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-async function openRequisitionPipeline(
-	ready: ReturnType<typeof createHrParityHarness>,
-	input: { organizationId: string; actorUserId: string; suffix: string },
-) {
-	const draft = await createDraftRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: `corr-draft-${input.suffix}`,
-			idempotencyKey: `idem-req-${input.suffix}`,
-			code: `REQ-${input.suffix}`.slice(0, 64),
-			title: "Parity hire",
-		},
-		ready,
-	);
-	if (!draft.ok) {
-		return draft;
-	}
-
-	let requisition = draft.data;
-	for (const [statusCommand, correlation] of [
-		[submitRequisition, `corr-submit-${input.suffix}`],
-		[approveRequisition, `corr-approve-${input.suffix}`],
-		[openRequisition, `corr-open-${input.suffix}`],
-	] as const) {
-		const next = await statusCommand(
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: correlation,
-				requisitionId: requisition.id,
-				expectedVersion: requisition.version,
-			},
-			ready,
-		);
-		if (!next.ok) {
-			return next;
-		}
-		requisition = next.data;
-	}
-
-	return { ok: true as const, data: requisition };
-}
-
-function expectOpenRequisitionPipeline(
-	result: Awaited<ReturnType<typeof openRequisitionPipeline>>,
-) {
-	if (!result.ok) {
-		throw new Error(
-			`openRequisitionPipeline failed: ${result.code} ${result.message} (${humanResourcesCodeFromResult(result) ?? "unknown"})`,
-		);
-	}
 }
 
 function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
@@ -106,12 +50,14 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 
 	it("runs requisition → offer accept with approved/accepted events", async () => {
 		const ready = createHrParityHarness(adapter);
-		const opened = await openRequisitionPipeline(ready, {
+		const opened = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
-			suffix,
+			tag: suffix,
+			targetStatus: "open",
+			title: "Parity hire",
 		});
-		expectOpenRequisitionPipeline(opened);
+		expectRequisitionPipeline(opened);
 
 		const candidate = await createCandidate(
 			{
@@ -236,12 +182,14 @@ function defineRecruitmentParitySuite(adapter: WorkforceStoreAdapter): void {
 
 	it("rejects open application duplicate for same candidate+requisition", async () => {
 		const ready = createHrParityHarness(adapter);
-		const opened = await openRequisitionPipeline(ready, {
+		const opened = await seedRequisitionPipeline(ready, {
 			organizationId: DUP_ORG,
 			actorUserId: ACTOR,
-			suffix: `dup-${suffix}`,
+			tag: `dup-${suffix}`,
+			targetStatus: "open",
+			title: "Parity hire",
 		});
-		expectOpenRequisitionPipeline(opened);
+		expectRequisitionPipeline(opened);
 
 		const candidate = await createCandidate(
 			{

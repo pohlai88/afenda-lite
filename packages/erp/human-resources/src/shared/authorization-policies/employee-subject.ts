@@ -9,7 +9,11 @@ export const employeeSubjectPolicy = createScopedPolicy({
 	operationPrefixes: [
 		"human-resources.person.",
 		"human-resources.worker.",
-		"human-resources.employee.",
+		"human-resources.employee.create",
+		"human-resources.employee.update",
+		"human-resources.employee.get",
+		"human-resources.employee.list",
+		"human-resources.employee.org-context.",
 		"human-resources.employment.",
 		"human-resources.employment-contract.",
 		"human-resources.assignment.",

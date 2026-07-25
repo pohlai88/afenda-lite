@@ -3201,7 +3201,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			role.retiredAt === null
 		) {
 			const party = this.parties.get(role.partyId);
-			if (party?.organizationId === record.organizationId && party.status === "active") {
+			if (
+				party?.organizationId === record.organizationId &&
+				party.status === "active"
+			) {
 				const activeCount = await this.countActivePartyRoles(
 					record.organizationId,
 					role.partyId,
@@ -3265,6 +3268,22 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(
 			paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
 		);
+	}
+
+	async getPartyAddressById(
+		organizationId: string,
+		partyId: string,
+		id: string,
+	): Promise<Result<PartyAddress | null>> {
+		const row = this.partyAddresses.get(id);
+		if (
+			!row ||
+			row.organizationId !== organizationId ||
+			row.partyId !== partyId
+		) {
+			return ok(null);
+		}
+		return ok({ ...row });
 	}
 
 	async createPartyAddress(

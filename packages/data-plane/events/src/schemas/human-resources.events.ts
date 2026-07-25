@@ -31,6 +31,16 @@ export const HUMAN_RESOURCES_PERSON_CREATED_EVENT =
 	"human-resources.person.created.v1" as const;
 export const HUMAN_RESOURCES_PERSON_CHANGED_EVENT =
 	"human-resources.person.changed.v1" as const;
+export const HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT =
+	"human-resources.person.contact.added.v1" as const;
+export const HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT =
+	"human-resources.person.contact.changed.v1" as const;
+export const HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT =
+	"human-resources.person.contact.retired.v1" as const;
+export const HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT =
+	"human-resources.person.identifier.added.v1" as const;
+export const HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT =
+	"human-resources.person.identifier.retired.v1" as const;
 export const HUMAN_RESOURCES_WORKER_CREATED_EVENT =
 	"human-resources.worker.created.v1" as const;
 export const HUMAN_RESOURCES_WORKER_CHANGED_EVENT =
@@ -247,6 +257,15 @@ export const HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT =
 export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_PERSON_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_PERSON_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_WORKER_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_WORKER_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
@@ -437,6 +456,11 @@ export type HumanResourcesEventType = keyof typeof HumanResourcesEventSchemas;
 export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_PERSON_CREATED_EVENT,
 	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT,
+	HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT,
+	HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT,
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 	HUMAN_RESOURCES_WORKER_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,

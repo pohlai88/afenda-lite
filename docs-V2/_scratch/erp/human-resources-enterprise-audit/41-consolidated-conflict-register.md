@@ -81,7 +81,7 @@ Canonical IDs only. **Aliases** absorbed into parent findings.
 | HR-OPS-P2-001 | — | P2 | command/query | HR-ENT-16 | HR-OPS-TIME-TIMEZONE-HANDOFF |
 | HR-OPS-P2-002 | — | P2 | non-blocking hygiene | — | HR-XCUT-HYGIENE |
 | HR-OPS-P2-003 | — | P2 | command/query | HR-ENT-16 | HR-OPS-TIME-SESSION-DETERMINISM |
-| HR-OPS-P2-004 | — | P2 | database defect | HR-ENT-16 | HR-OPS-LEAVE-OVERLAP-GUARD |
+| HR-OPS-P2-004 | — | P2→**closed** | database defect | HR-ENT-16 | HR-OPS-LEAVE-OVERLAP-GUARD (**CLOSED** Slice 4.7) |
 | HR-OPS-P2-005 | — | P2 | missing product capability | HR-ENT-14 | HR-ENT-14-ATTENDANCE-CONNECTOR |
 | HR-OPS-P2-006 | — | P2 | command/query | HR-ENT-06 | HR-OPS-TIME-AUTHORITY-EFFECTIVE-DATE |
 | HR-GOV-P2-001 | — | P2 | architecture decision | HR-ENT-09 | HR-ENT-09-PLATFORM-DOCUMENT-BOUNDARY (doc) |
@@ -122,6 +122,7 @@ Canonical IDs only. **Aliases** absorbed into parent findings.
 | HR-OPS-P1-001 | AUD-02 P1 | **closed** | HR-OPS-OVERTIME-APPROVAL-AUTHORITY COMPLETE; Slice 0.1 confirms not an open/next blocker |
 | HR-COREORG-P0-001 vs P1-001 | P0 + P1 | **closed** (was single P0) | Consent triple drift repaired under HR-COREORG-CANDIDATE-CONSENT-ALIGN; P1-001 remains merged alias — do not reopen as separate finding |
 | HR-COREORG-P2-002 | AUD-01 P2 | **closed** | Slice 1.2 (2026-07-24): `EmploymentMovement.createdAt`/`updatedAt` ISO datetime strings Memory + Drizzle; `human-resources.lifecycle.parity` transfer case green |
+| HR-OPS-P2-004 | AUD-02 P2 | **closed** | Slice 4.7 (2026-07-25): command + Memory/Drizzle Serializable TX overlap guard on submit/approve; `human-resources.leave` + `leave-concurrency` green; DB exclusion documented in `hr-leave-overlap-exclusion-register.json` (intentional no-EXCLUDE) |
 | HR-GOV-P0-002 / P0-003 | P0 | **alias of XCUT P0-003/004** | Do not double-count in scorecard |
 | Cluster A/B "Gap" vs Cluster C "Fail" | Mixed labels | **Gap = Fail** | Normalized to Fail for blocking authorization/privacy/test gaps |
 
@@ -157,12 +158,12 @@ Executed during HR-AUD-04 only where audit findings conflicted.
 | Effective-truth breadth | HR-XCUT-P0-002 · OPEN-DECISION-01 (**RATIFIED**) | — | — | — | — | — | — |
 | Auth layering | HR-XCUT-P0-001 · OPEN-DECISION-02 (**RATIFIED**) | — | — | — | — | — | — |
 | Privacy/DSAR owner | OPEN-DECISION-03 (**RATIFIED**) | — | HR-XCUT-P0-004 **closed** (composition) | — | apps/web wires privacy port; DSAR depth residual | — | — |
-| Org dimensions | OPEN-DECISION-04 (**RATIFIED**) | — | — | — | partial port wired | — | HR-COREORG-P1-004 |
+| Org dimensions | OPEN-DECISION-04 (**RATIFIED**) | — | — | — | port + master-data create/resolve/getEffective (Slice 5.7) | — | HR-COREORG-P1-004 |
 | Payroll money | OPEN-DECISION-05 (**RATIFIED**) | — | HR-XCUT-P1-006 | — | — | — | — |
 | Candidate consent | OPEN-DECISION-A1 (**RATIFIED**; implemented CLOSED; do not reopen) | — (HR-COREORG-P0-001 **closed**) | — | — | — | — | — |
 | Emission registry | — | — | HR-XCUT-P0-003 | — | — | — | — |
 | ER case list ACL | OPEN-DECISION-02 (**RATIFIED**; auth facade implementation → HR-ENT-04-AUTH-PRIVACY) | — | — | ER DB parity evidence residual only (finding **closed**) | — | — | — |
-| Leave overlap | — | HR-OPS-P2-004 | — | — | — | — | — |
+| Leave overlap | — | HR-OPS-P2-004 (**closed** Slice 4.7) | — | — | — | — | — |
 | Assignment date range | — | cluster-a conflicts table | — | command-only guard | — | — | — |
 | Leave/product Actions | — | — | — | — | HR-OPS-P1-003 | HR-ENT-07-PRODUCT-LEAVE-ACTIONS | — |
 | Gov product Actions | — | — | — | — | HR-GOV-P1-004 | HR-ENT-12-GOV-PRODUCT-SLICE | — |

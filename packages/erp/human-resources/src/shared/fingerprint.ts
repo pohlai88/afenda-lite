@@ -14,10 +14,34 @@ export function fingerprintEmployeeCreate(input: {
 	});
 }
 
-export function fingerprintPersonCreate(input: { legalName: string }): string {
+export function fingerprintPersonCreate(input: {
+	legalName: string;
+	preferredName?: string | null;
+	privacyClassification?: string;
+}): string {
 	return sha256Fingerprint({
 		legalName: input.legalName.trim(),
+		preferredName: input.preferredName?.trim() ?? null,
+		privacyClassification: input.privacyClassification ?? "workforce_core",
 	});
+}
+
+export function fingerprintPersonContactAdd(input: {
+	personId: string;
+	contactType: string;
+	normalizedValue: string;
+	isPrimary: boolean;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintPersonIdentifierAdd(input: {
+	personId: string;
+	identifierType: string;
+	identifierFingerprint: string;
+	effectiveFrom: string;
+}): string {
+	return sha256Fingerprint(input);
 }
 
 export function fingerprintWorkerCreate(input: {
@@ -37,6 +61,7 @@ export function fingerprintRequisitionCreate(input: {
 	jobId: string | null;
 	positionId: string | null;
 	departmentId: string | null;
+	hiringManagerEmployeeId?: string | null;
 }): string {
 	return sha256Fingerprint({
 		code: input.code.trim(),
@@ -44,6 +69,7 @@ export function fingerprintRequisitionCreate(input: {
 		jobId: input.jobId,
 		positionId: input.positionId,
 		departmentId: input.departmentId,
+		hiringManagerEmployeeId: input.hiringManagerEmployeeId ?? null,
 	});
 }
 

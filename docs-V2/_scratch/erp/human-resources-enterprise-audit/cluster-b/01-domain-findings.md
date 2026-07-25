@@ -191,6 +191,15 @@ No cluster-specific duplicate utilities beyond shared effective-range/lineage (c
 | **Repair mission** | HR-OPS-LEAVE-OVERLAP-GUARD |
 | **Verification** | Test rejects second approved request overlapping dates |
 
+**CLOSED (2026-07-25)** — Slice 4.7 / `HR-OPS-LEAVE-OVERLAP-GUARD`. Overlap rejected on submit and approve via `assertNoLeaveOverlap` → `human_resources.effective_range_overlap`; Memory per-employee lock + Drizzle Serializable TX + advisory lock + overlap CTE. **HR-OPS-P2-004 closed at command/TX bar**; intentional no Postgres `EXCLUDE` documented in [`hr-leave-overlap-exclusion-register.json`](../hr-leave-overlap-exclusion-register.json).
+
+Verify:
+
+```bash
+pnpm --filter @afenda/human-resources test -- human-resources.leave leave-concurrency
+pnpm --filter @afenda/db test -- hr-leave-overlap-exclusion-register
+```
+
 #### HR-OPS-P2-006
 
 | Field | Value |
@@ -241,7 +250,7 @@ See [`04-repair-readiness.md`](04-repair-readiness.md).
 | HR-OPS-P2-001 | P2 | Timesheet leave entry timezone UTC vs calendar expectation |
 | HR-OPS-P2-002 | P2 | Stale time command count comment in emission registry |
 | HR-OPS-P2-003 | P2 | Session resolution tie order undefined at equal timestamps |
-| HR-OPS-P2-004 | P2 | No DB overlap constraint for approved leave windows |
+| HR-OPS-P2-004 | P2→**closed** | Leave overlap — command + Serializable TX (Slice 4.7); no DB EXCLUDE by design |
 | HR-OPS-P2-005 | P2 | Production attendance source fail-closed by design (HR-ENT-14) |
 | HR-OPS-P2-006 | P2 | Overtime authority `asOf` uses UTC date from stored instant |
 | HR-OPS-P3-001 | P3 | Leave concurrency test cleanup hook timeout |

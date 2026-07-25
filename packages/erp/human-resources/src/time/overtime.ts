@@ -1,9 +1,11 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
+import { resolveAssignmentContext } from "../command-options";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -31,14 +33,26 @@ import {
 import { notFound } from "../shared/domain-guards";
 import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import { resolveActiveTimeEmployment } from "../shared/time-employment";
+import type { HumanResourcesStore } from "../store";
 import type { OvertimeRequest } from "../types";
+import { resolveEmploymentOrganizationLocalWorkDate } from "./org-local-work-date";
 
-/**
- * UTC civil date for approval-authority `asOf` resolution.
- * Residual: HR-OPS-P2-006 — align with organization-local work date when required.
- */
-function overtimeApprovalAuthorityAsOf(requestedStartsAt: Date): string {
-	return requestedStartsAt.toISOString().slice(0, 10);
+async function resolveOvertimeOrganizationLocalWorkDate(
+	input: {
+		organizationId: string;
+		employeeId: string;
+		employmentId: string;
+		instant: Date;
+	},
+	deps: {
+		store: HumanResourcesStore;
+		options: HumanResourcesCommandOptions;
+	},
+): Promise<Result<{ workDate: string; timezone: string }>> {
+	return resolveEmploymentOrganizationLocalWorkDate(input, {
+		store: deps.store,
+		assignmentContext: resolveAssignmentContext(deps.options),
+	});
 }
 
 export async function createOvertimeRequest(
@@ -50,14 +64,34 @@ export async function createOvertimeRequest(
 		invalidMessage: "Invalid overtime request create input",
 		command: HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE,
 		execute: async (data, { store, ports }) => {
-			const employment = await resolveActiveTimeEmployment(store, {
+			const requestedStartsAt = new Date(data.requestedStartsAt);
+			const provisionalWorkDate = data.requestedStartsAt.slice(0, 10);
+			const provisionalEmployment = await resolveActiveTimeEmployment(store, {
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				employmentId: data.employmentId ?? null,
-				workDate: data.requestedStartsAt.slice(0, 10),
+				workDate: provisionalWorkDate,
+			});
+			if (!provisionalEmployment.ok) return provisionalEmployment;
+
+			const orgLocal = await resolveOvertimeOrganizationLocalWorkDate(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+					employmentId: provisionalEmployment.data.id,
+					instant: requestedStartsAt,
+				},
+				{ store, options },
+			);
+			if (!orgLocal.ok) return orgLocal;
+
+			const employment = await resolveActiveTimeEmployment(store, {
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				employmentId: provisionalEmployment.data.id,
+				workDate: orgLocal.data.workDate,
 			});
 			if (!employment.ok) return employment;
-			const requestedStartsAt = new Date(data.requestedStartsAt);
 			const requestedEndsAt = new Date(data.requestedEndsAt);
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
@@ -122,9 +156,24 @@ export async function approveOvertimeRequest(
 			if (existing.data === null) {
 				return notFound("Overtime request not found");
 			}
-			const asOf = overtimeApprovalAuthorityAsOf(
-				existing.data.requestedStartsAt,
+			if (existing.data.employmentId === null) {
+				return fail(
+					"VALIDATION_ERROR",
+					"Overtime request has no employment context",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+				);
+			}
+			const orgLocal = await resolveOvertimeOrganizationLocalWorkDate(
+				{
+					organizationId: data.organizationId,
+					employeeId: existing.data.employeeId,
+					employmentId: existing.data.employmentId,
+					instant: existing.data.requestedStartsAt,
+				},
+				{ store, options },
 			);
+			if (!orgLocal.ok) return orgLocal;
+			const asOf = orgLocal.data.workDate;
 			const resolvedAssignment = await store.resolveTimeApprovalAuthority({
 				organizationId: data.organizationId,
 				actorUserId: data.actorUserId,

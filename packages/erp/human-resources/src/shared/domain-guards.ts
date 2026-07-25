@@ -3,9 +3,11 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	type HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
@@ -45,11 +47,29 @@ export function invalidInput(message: string): Result<never> {
 	);
 }
 
+export function effectiveRangeOverlap(message: string): Result<never> {
+	return fail(
+		"BAD_REQUEST",
+		message,
+		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP),
+	);
+}
+
 export function invalidState(message: string): Result<never> {
 	return fail(
 		"BAD_REQUEST",
 		message,
 		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+	);
+}
+
+export function rehireRequiresEndedEmployment(): Result<never> {
+	return fail(
+		"CONFLICT",
+		"Employee already has an open employment",
+		humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
+		),
 	);
 }
 

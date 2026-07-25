@@ -153,55 +153,57 @@ describe("organization dimension domain", () => {
 		if (!result.ok) expect(result.code).toBe("CONFLICT");
 	});
 
-	it("gets one effective legal_entity dimension by id or key", async () => {
+	it("gets one effective dimension by id or key for every organization dimension kind", async () => {
 		const store = createMemoryOrganizationDimensionStore();
-		await seedRequired(store);
 
-		const created = await createOrganizationDimension(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "lookup-seed",
-				kind: "legal_entity",
-				key: "LE-LOOKUP",
-				name: "Lookup Entity",
-				effectiveFrom: "2025-01-01",
-			},
-			{ store, authorization },
-		);
-		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		for (const kind of ORGANIZATION_DIMENSION_KINDS) {
+			const created = await createOrganizationDimension(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: `lookup-${kind}`,
+					kind,
+					key: `MD-${kind.toUpperCase()}`,
+					name: `${kind} lookup`,
+					effectiveFrom: "2025-01-01",
+				},
+				{ store, authorization },
+			);
+			expect(created.ok).toBe(true);
+			if (!created.ok) return;
 
-		const byId = await getOrganizationDimensionEffective(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				kind: "legal_entity",
-				id: created.data.id,
-				asOf: "2025-06-01",
-			},
-			{ store, authorization },
-		);
-		expect(byId.ok).toBe(true);
-		if (!byId.ok) return;
-		expect(byId.data?.key).toBe("LE-LOOKUP");
+			const byId = await getOrganizationDimensionEffective(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					kind,
+					id: created.data.id,
+					asOf: "2025-06-01",
+				},
+				{ store, authorization },
+			);
+			expect(byId.ok).toBe(true);
+			if (!byId.ok) return;
+			expect(byId.data?.kind).toBe(kind);
+			expect(byId.data?.key).toBe(`MD-${kind.toUpperCase()}`);
 
-		const byKey = await getOrganizationDimensionEffective(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				kind: "legal_entity",
-				key: "le-lookup",
-				asOf: "2025-06-01",
-			},
-			{ store, authorization },
-		);
-		expect(byKey.ok).toBe(true);
-		if (!byKey.ok) return;
-		expect(byKey.data?.id).toBe(created.data.id);
+			const byKey = await getOrganizationDimensionEffective(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					kind,
+					key: `md-${kind.toUpperCase()}`,
+					asOf: "2025-06-01",
+				},
+				{ store, authorization },
+			);
+			expect(byKey.ok).toBe(true);
+			if (!byKey.ok) return;
+			expect(byKey.data?.id).toBe(created.data.id);
+		}
 	});
 
-	it("returns null when legal_entity is not effective as-of", async () => {
+	it("returns null when a dimension kind is not effective as-of", async () => {
 		const store = createMemoryOrganizationDimensionStore();
 		const created = await createOrganizationDimension(
 			{
@@ -233,7 +235,7 @@ describe("organization dimension domain", () => {
 		expect(result.data).toBeNull();
 	});
 
-	it("keeps the focused legal-entity query tenant-safe and rejects ambiguity", async () => {
+	it("keeps the focused dimension query tenant-safe and rejects ambiguity", async () => {
 		const store = createMemoryOrganizationDimensionStore();
 		const created = await createOrganizationDimension(
 			{

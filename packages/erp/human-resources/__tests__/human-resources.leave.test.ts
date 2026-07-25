@@ -14,6 +14,7 @@ import type { HumanResourcesEmployeeId } from "../src/brands";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
+	HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
@@ -693,7 +694,324 @@ describe("Leave request workflow", () => {
 		);
 		expect(secondSubmitted.ok).toBe(false);
 		expect(humanResourcesCodeFromResult(secondSubmitted)).toBe(
-			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
+		);
+	});
+
+	it("rejects approve when an overlapping draft request exists", async () => {
+		const ready = harness([
+			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+		]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-mgr-overlap-approve",
+				idempotencyKey: "idem-mgr-overlap-approve",
+			},
+		);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-overlap-approve",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-overlap-approve",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const submitted = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approve-submit",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-07",
+				endDate: "2025-07-09",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-overlap-approve-submit",
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const submittedRequest = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approve-submit-run",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(submittedRequest.ok).toBe(true);
+		if (!submittedRequest.ok) return;
+
+		const overlappingDraft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approve-draft",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-08",
+				endDate: "2025-07-10",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-overlap-approve-draft",
+			},
+			ready,
+		);
+		expect(overlappingDraft.ok).toBe(true);
+		if (!overlappingDraft.ok) return;
+
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-overlap-approve-blocked",
+				requestId: submittedRequest.data.id,
+				expectedVersion: submittedRequest.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(approved)).toBe(
+			HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
+		);
+	});
+
+	it("allows non-overlapping submitted requests for the same employee", async () => {
+		const ready = harness([
+			HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+		]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-non-overlap",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-non-overlap",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const first = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-non-overlap-1",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-07",
+				endDate: "2025-07-09",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-non-overlap-1",
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const firstSubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-non-overlap-submit-1",
+				requestId: first.data.id,
+				expectedVersion: first.data.version,
+			},
+			ready,
+		);
+		expect(firstSubmitted.ok).toBe(true);
+		if (!firstSubmitted.ok) return;
+
+		const second = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-non-overlap-2",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-14",
+				endDate: "2025-07-16",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-non-overlap-2",
+			},
+			ready,
+		);
+		expect(second.ok).toBe(true);
+		if (!second.ok) return;
+
+		const secondSubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-non-overlap-submit-2",
+				requestId: second.data.id,
+				expectedVersion: second.data.version,
+			},
+			ready,
+		);
+		expect(secondSubmitted.ok).toBe(true);
+	});
+
+	it("rejects overlapping submit after an approved leave window exists", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const seeded = await seedEmployeeEmployment(ready);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) return;
+
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-mgr-overlap-approved",
+				idempotencyKey: "idem-mgr-overlap-approved",
+			},
+		);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const policy = await seedPublishedPolicy(ready);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-ent-overlap-approved",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				policyId: policy.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: "idem-ent-overlap-approved",
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const first = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approved-1",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-07",
+				endDate: "2025-07-09",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-overlap-approved-1",
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const firstSubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approved-submit-1",
+				requestId: first.data.id,
+				expectedVersion: first.data.version,
+			},
+			ready,
+		);
+		expect(firstSubmitted.ok).toBe(true);
+		if (!firstSubmitted.ok) return;
+
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-overlap-approved-approve-1",
+				requestId: firstSubmitted.data.id,
+				expectedVersion: firstSubmitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const second = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approved-2",
+				employeeId: seeded.employee.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-07-08",
+				endDate: "2025-07-10",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-overlap-approved-2",
+			},
+			ready,
+		);
+		expect(second.ok).toBe(true);
+		if (!second.ok) return;
+
+		const secondSubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-overlap-approved-submit-2",
+				requestId: second.data.id,
+				expectedVersion: second.data.version,
+			},
+			ready,
+		);
+		expect(secondSubmitted.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(secondSubmitted)).toBe(
+			HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
 		);
 	});
 

@@ -63,6 +63,11 @@ export const updatePartyAddressInputSchema = orgActorContextSchema.extend({
 	isDefault: z.boolean().optional(),
 });
 
+export const getPartyAddressInputSchema = orgActorContextSchema.extend({
+	partyId: partyIdSchema,
+	id: partyAddressIdSchema,
+});
+
 export const createPartyContactInputSchema = orgActorContextSchema.extend({
 	partyId: partyIdSchema,
 	contactType: z.string().trim().min(1).max(64),

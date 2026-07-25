@@ -17,10 +17,13 @@ export * from "./compliance/policy-acknowledgement";
 export { createVaultDocumentReferenceAdapter } from "./compliance/vault-document-reference-adapter";
 export * from "./compliance/work-eligibility";
 export * from "./core/assignment";
+export * from "./core/assignment-management";
 // Command entry points
 export * from "./core/employee";
 export * from "./core/employment";
+export * from "./core/employment-management";
 export * from "./core/employment-contract";
+export * from "./core/employment-contract-management";
 export * from "./core/org-context";
 export * from "./effective-truth-adoption";
 export * from "./effective-truth-classification";
@@ -102,7 +105,10 @@ export type {
 // Types and brands
 export type * from "./types";
 export * from "./workforce-foundation/classification";
+export * from "./workforce-foundation/employee-management";
+export * from "./workforce-foundation/employee-profile-field-projection";
 export * from "./workforce-foundation/person";
+export * from "./workforce-foundation/person-management";
 export type * from "./workforce-foundation/types";
 export * from "./workforce-foundation/worker";
 export * from "./workforce-planning/availability";

@@ -801,6 +801,7 @@ export const attendanceImportEventRowSchema = z
 		deviceMetadata: z.record(z.string(), z.unknown()).nullable().optional(),
 		payloadChecksum: z.string().trim().min(1).max(128).nullable().optional(),
 		notes: z.string().trim().max(500).nullable().optional(),
+		sourceSequence: z.number().int().nonnegative().optional(),
 	})
 	.strict();
 

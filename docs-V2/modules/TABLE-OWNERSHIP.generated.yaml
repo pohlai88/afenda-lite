@@ -81,6 +81,10 @@ tables:
   - moduleId: corporate-administration
     packageName: "@afenda/corporate-administration"
     schemaOwner: "@afenda/db"
+    table: ca_authority_mandate_holder
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
     table: ca_company_premise
   - moduleId: corporate-administration
     packageName: "@afenda/corporate-administration"
@@ -130,6 +134,22 @@ tables:
     packageName: "@afenda/corporate-administration"
     schemaOwner: "@afenda/db"
     table: ca_charge
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_intellectual_property_renewal
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_insurance_policy_renewal
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_charge_variation
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_property_asset_mutation_receipt
   - moduleId: corporate-administration
     packageName: "@afenda/corporate-administration"
     schemaOwner: "@afenda/db"
@@ -189,6 +209,18 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_person_contact
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_person_identifier
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_person_identity_version
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_employee
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
@@ -197,7 +229,15 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_worker_classification_version
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_employment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employment_status_history
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
@@ -213,11 +253,23 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_department_structure_version
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_job
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_job_definition_version
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_position
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_position_definition_version
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"

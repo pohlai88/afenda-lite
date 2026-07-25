@@ -5,15 +5,23 @@ import {
 	eq,
 	hrEmployee,
 	hrPerson,
+	hrPersonContact,
+	hrPersonIdentifier,
 	hrPersonIdentityVersion,
 	hrWorker,
 	hrWorkerClassificationVersion,
 	runNeonHttpTransaction,
+	sql,
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT,
 	HUMAN_RESOURCES_PERSON_CREATED_EVENT,
+	HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT,
+	HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT,
 	HUMAN_RESOURCES_WORKER_CHANGED_EVENT,
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 } from "@afenda/events/schemas";
@@ -21,6 +29,9 @@ import {
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesPersonId,
 	parseHumanResourcesWorkerId,
+	type HumanResourcesEmployeeId,
+	type HumanResourcesPersonId,
+	type HumanResourcesWorkerId,
 } from "../../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -53,17 +64,62 @@ import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
 	Person,
+	PersonContact,
+	PersonDuplicateCandidate,
+	PersonDuplicateMatchReason,
+	PersonIdentifier,
 	PersonIdentityAtAsOf,
 	PersonIdentityVersion,
 	Worker,
 	WorkerClassificationAtAsOf,
 	WorkerClassificationVersion,
 } from "../../workforce-foundation/types";
+import type { HumanResourcesRetentionClassification } from "../../privacy";
 
 type PersonSqlRow = {
 	id: string;
 	organization_id: string;
 	legal_name: string;
+	preferred_name: string | null;
+	privacy_classification: string;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type PersonContactSqlRow = {
+	id: string;
+	organization_id: string;
+	person_id: string;
+	contact_type: string;
+	value_text: string;
+	normalized_value: string;
+	is_primary: boolean;
+	status: string;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type PersonIdentifierSqlRow = {
+	id: string;
+	organization_id: string;
+	person_id: string;
+	identifier_type: string;
+	identifier_fingerprint: string;
+	identifier_last4: string;
+	document_ref: string | null;
+	effective_from: string;
+	effective_to: string | null;
+	status: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
 	version: number;
@@ -209,6 +265,64 @@ function mapPersonRow(row: PersonSqlRow): Result<Person> {
 		id: id.data,
 		organizationId: row.organization_id,
 		legalName: row.legal_name,
+		preferredName: row.preferred_name,
+		privacyClassification:
+			row.privacy_classification as HumanResourcesRetentionClassification,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapPersonContactRow(row: PersonContactSqlRow): Result<PersonContact> {
+	const personId = parseHumanResourcesPersonId(row.person_id);
+	if (!personId.ok) {
+		return personId;
+	}
+	if (
+		row.contact_type !== "email" &&
+		row.contact_type !== "phone" &&
+		row.contact_type !== "postal_address"
+	) {
+		return fail("INTERNAL_ERROR", "Invalid person contact type in storage");
+	}
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		personId: personId.data,
+		contactType: row.contact_type,
+		valueText: row.value_text,
+		normalizedValue: row.normalized_value,
+		isPrimary: row.is_primary,
+		status: row.status === "retired" ? "retired" : "active",
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapPersonIdentifierRow(
+	row: PersonIdentifierSqlRow,
+): Result<PersonIdentifier> {
+	const personId = parseHumanResourcesPersonId(row.person_id);
+	if (!personId.ok) {
+		return personId;
+	}
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		personId: personId.data,
+		identifierType: row.identifier_type,
+		identifierFingerprint: row.identifier_fingerprint,
+		identifierLast4: row.identifier_last4,
+		documentRef: row.document_ref,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		status: row.status === "retired" ? "retired" : "active",
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -269,6 +383,194 @@ function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 		workerType: row.worker_type,
 		employeeId: null,
 	} satisfies NonEmployeeWorker);
+}
+
+async function updatePersonScalarFieldDrizzle(input: {
+	organizationId: string;
+	personId: HumanResourcesPersonId;
+	expectedVersion: number;
+	actorUserId: string;
+	field: "preferred_name" | "privacy_classification";
+	value: string | null;
+	changeField: "preferredName" | "privacyClassification";
+	meta: { correlationId: string };
+	getPersonById: HumanResourcesWorkforceFoundationStore["getPersonById"];
+}): Promise<Result<Person>> {
+	try {
+		const existing = await input.getPersonById({
+			organizationId: input.organizationId,
+			personId: input.personId,
+		});
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail(
+				"NOT_FOUND",
+				"Person not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+		const currentValue =
+			input.changeField === "preferredName"
+				? existing.data.preferredName
+				: existing.data.privacyClassification;
+		if (currentValue === input.value) {
+			return ok(existing.data);
+		}
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			input.changeField,
+			currentValue,
+			input.value,
+		);
+		const payloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_person",
+			entityId: input.personId,
+			actorId: input.actorUserId,
+			correlationId: input.meta.correlationId,
+		});
+		const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>((sqlTx) => [
+			input.field === "preferred_name"
+				? sqlTx`
+						WITH mutated AS (
+							UPDATE hr_person
+							SET preferred_name = ${input.value},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.personId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${input.meta.correlationId},
+								'human-resources', 'hr_person', id, 'UPDATE', ${changesJson}::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_CHANGED_EVENT}, 'human-resources',
+								${input.meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`
+				: sqlTx`
+						WITH mutated AS (
+							UPDATE hr_person
+							SET privacy_classification = ${input.value},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.personId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${input.meta.correlationId},
+								'human-resources', 'hr_person', id, 'UPDATE', ${changesJson}::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_CHANGED_EVENT}, 'human-resources',
+								${input.meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+		]);
+		const row = rows[0];
+		if (row === undefined) {
+			return fail("CONFLICT", "Person update conflict");
+		}
+		return mapPersonRow(row);
+	} catch (error) {
+		return mapPersistenceFailure(error, "Workforce foundation persistence failed");
+	}
+}
+
+async function validateEmployeeLinkForWorkerDrizzle(
+	input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		excludingWorkerId?: HumanResourcesWorkerId;
+	},
+	findWorkerByEmployeeId: HumanResourcesWorkforceFoundationStore["findWorkerByEmployeeId"],
+): Promise<Result<void>> {
+	const employeeRows = await db
+		.select({ id: hrEmployee.id })
+		.from(hrEmployee)
+		.where(
+			and(
+				eq(hrEmployee.organizationId, input.organizationId),
+				eq(hrEmployee.id, input.employeeId),
+			),
+		)
+		.limit(1);
+	if (employeeRows.length === 0) {
+		return fail(
+			"NOT_FOUND",
+			"Employee not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+
+	const employeeWorker = await findWorkerByEmployeeId({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	});
+	if (!employeeWorker.ok) {
+		return employeeWorker;
+	}
+	if (
+		employeeWorker.data !== null &&
+		(input.excludingWorkerId === undefined ||
+			employeeWorker.data.id !== input.excludingWorkerId)
+	) {
+		return fail(
+			"CONFLICT",
+			"Employee is already linked to a worker",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
+
+	return ok(undefined);
 }
 
 export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundationStore =
@@ -453,10 +755,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					sql`
 						WITH mutated AS (
 							INSERT INTO hr_person (
-								id, organization_id, legal_name, create_idempotency_key,
+								id, organization_id, legal_name, preferred_name,
+								privacy_classification, create_idempotency_key,
 								create_request_fingerprint, version, created_by, updated_by
 							) VALUES (
 								${brandedId.data}, ${record.organizationId}, ${record.legalName},
+								${record.preferredName}, ${record.privacyClassification},
 								${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 								1, ${record.createdBy}, ${record.createdBy}
 							)
@@ -673,6 +977,692 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return fail("CONFLICT", "Person update conflict");
 				}
 				return mapPersonRow(row);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async updatePersonPreferredName(input, _ports, meta): Promise<Result<Person>> {
+			return updatePersonScalarFieldDrizzle({
+				organizationId: input.organizationId,
+				personId: input.personId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				field: "preferred_name",
+				value: input.preferredName,
+				changeField: "preferredName",
+				meta,
+				getPersonById: drizzleWorkforceFoundationMethods.getPersonById,
+			});
+		},
+
+		async setPersonPrivacyClassification(
+			input,
+			_ports,
+			meta,
+		): Promise<Result<Person>> {
+			return updatePersonScalarFieldDrizzle({
+				organizationId: input.organizationId,
+				personId: input.personId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				field: "privacy_classification",
+				value: input.privacyClassification,
+				changeField: "privacyClassification",
+				meta,
+				getPersonById: drizzleWorkforceFoundationMethods.getPersonById,
+			});
+		},
+
+		async findPersonContactByIdempotencyKey(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(hrPersonContact)
+					.where(
+						and(
+							eq(hrPersonContact.organizationId, input.organizationId),
+							eq(hrPersonContact.createIdempotencyKey, input.idempotencyKey),
+						),
+					)
+					.limit(1);
+				const row = rows[0];
+				if (row === undefined) {
+					return ok(null);
+				}
+				const mapped = mapPersonContactRow(row as unknown as PersonContactSqlRow);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				return ok({
+					contact: mapped.data,
+					createRequestFingerprint: row.createRequestFingerprint,
+				});
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async addPersonContact(record, _ports, meta): Promise<Result<PersonContact>> {
+			const entityId = randomUUID();
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const payloadJson = eventPayloadJson({
+				organizationId: record.organizationId,
+				entityType: "hr_person_contact",
+				entityId,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			});
+			try {
+				const [rows] = await runNeonHttpTransaction<[PersonContactSqlRow[]]>(
+					(sqlTx) => [
+						sqlTx`
+							WITH mutated AS (
+								INSERT INTO hr_person_contact (
+									id, organization_id, person_id, contact_type, value_text,
+									normalized_value, is_primary, status, create_idempotency_key,
+									create_request_fingerprint, version, created_by, updated_by
+								) VALUES (
+									${entityId}, ${record.organizationId}, ${record.personId},
+									${record.contactType}, ${record.valueText}, ${record.normalizedValue},
+									${record.isPrimary}, 'active', ${record.createIdempotencyKey},
+									${record.createRequestFingerprint}, 1, ${record.createdBy}, ${record.createdBy}
+								)
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, created_by, ${meta.correlationId},
+									'human-resources', 'hr_person_contact', id, 'CREATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT},
+									'human-resources', ${meta.correlationId}, created_by,
+									${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+					],
+				);
+				const row = rows[0];
+				if (row === undefined) {
+					return fail("INTERNAL_ERROR", "Person contact create returned no row");
+				}
+				return mapPersonContactRow(row);
+			} catch (error) {
+				if (isCreateIdempotencyUniqueViolation(error)) {
+					const existing = await this.findPersonContactByIdempotencyKey({
+						organizationId: record.organizationId,
+						idempotencyKey: record.createIdempotencyKey,
+					});
+					if (!existing.ok) {
+						return existing;
+					}
+					if (existing.data !== null) {
+						return ok(existing.data.contact);
+					}
+				}
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async updatePersonContact(input, _ports, meta): Promise<Result<PersonContact>> {
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const nextVersion = input.expectedVersion + 1;
+			const payloadJson = eventPayloadJson({
+				organizationId: input.organizationId,
+				entityType: "hr_person_contact",
+				entityId: input.contactId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			});
+			try {
+				const [rows] = await runNeonHttpTransaction<[PersonContactSqlRow[]]>(
+					(sqlTx) => [
+						sqlTx`
+							WITH mutated AS (
+								UPDATE hr_person_contact
+								SET value_text = ${input.valueText},
+									normalized_value = ${input.normalizedValue},
+									is_primary = COALESCE(${input.isPrimary ?? null}, is_primary),
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.contactId}
+									AND organization_id = ${input.organizationId}
+									AND person_id = ${input.personId}
+									AND status = 'active'
+									AND version = ${input.expectedVersion}
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_person_contact', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+					],
+				);
+				const row = rows[0];
+				if (row === undefined) {
+					return fail("NOT_FOUND", "Person contact not found");
+				}
+				return mapPersonContactRow(row);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async retirePersonContact(input, _ports, meta): Promise<Result<PersonContact>> {
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const nextVersion = input.expectedVersion + 1;
+			const payloadJson = eventPayloadJson({
+				organizationId: input.organizationId,
+				entityType: "hr_person_contact",
+				entityId: input.contactId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			});
+			try {
+				const [rows] = await runNeonHttpTransaction<[PersonContactSqlRow[]]>(
+					(sqlTx) => [
+						sqlTx`
+							WITH mutated AS (
+								UPDATE hr_person_contact
+								SET status = 'retired',
+									is_primary = false,
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.contactId}
+									AND organization_id = ${input.organizationId}
+									AND person_id = ${input.personId}
+									AND status = 'active'
+									AND version = ${input.expectedVersion}
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_person_contact', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+					],
+				);
+				const row = rows[0];
+				if (row === undefined) {
+					return fail("NOT_FOUND", "Person contact not found");
+				}
+				return mapPersonContactRow(row);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async listPersonContacts(input) {
+			try {
+				const person = await this.getPersonById(input);
+				if (!person.ok) {
+					return person;
+				}
+				if (person.data === null) {
+					return fail(
+						"NOT_FOUND",
+						"Person not found",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+					);
+				}
+				const rows = await db
+					.select()
+					.from(hrPersonContact)
+					.where(
+						and(
+							eq(hrPersonContact.organizationId, input.organizationId),
+							eq(hrPersonContact.personId, input.personId),
+						),
+					);
+				const contacts: PersonContact[] = [];
+				for (const row of rows) {
+					const mapped = mapPersonContactRow(row as unknown as PersonContactSqlRow);
+					if (!mapped.ok) {
+						return mapped;
+					}
+					contacts.push(mapped.data);
+				}
+				return ok(contacts);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async findPersonIdentifierByIdempotencyKey(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(hrPersonIdentifier)
+					.where(
+						and(
+							eq(hrPersonIdentifier.organizationId, input.organizationId),
+							eq(hrPersonIdentifier.createIdempotencyKey, input.idempotencyKey),
+						),
+					)
+					.limit(1);
+				const row = rows[0];
+				if (row === undefined) {
+					return ok(null);
+				}
+				const mapped = mapPersonIdentifierRow(
+					row as unknown as PersonIdentifierSqlRow,
+				);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				return ok({
+					identifier: mapped.data,
+					createRequestFingerprint: row.createRequestFingerprint,
+				});
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async addPersonIdentifier(
+			record,
+			_ports,
+			meta,
+		): Promise<Result<PersonIdentifier>> {
+			const entityId = randomUUID();
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const payloadJson = eventPayloadJson({
+				organizationId: record.organizationId,
+				entityType: "hr_person_identifier",
+				entityId,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			});
+			try {
+				const [rows] = await runNeonHttpTransaction<[PersonIdentifierSqlRow[]]>(
+					(sqlTx) => [
+						sqlTx`
+							WITH mutated AS (
+								INSERT INTO hr_person_identifier (
+									id, organization_id, person_id, identifier_type,
+									identifier_fingerprint, identifier_last4, document_ref,
+									effective_from, effective_to, status, create_idempotency_key,
+									create_request_fingerprint, version, created_by, updated_by
+								) VALUES (
+									${entityId}, ${record.organizationId}, ${record.personId},
+									${record.identifierType}, ${record.identifierFingerprint},
+									${record.identifierLast4}, ${record.documentRef},
+									${record.effectiveFrom}, NULL, 'active', ${record.createIdempotencyKey},
+									${record.createRequestFingerprint}, 1, ${record.createdBy}, ${record.createdBy}
+								)
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, created_by, ${meta.correlationId},
+									'human-resources', 'hr_person_identifier', id, 'CREATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_IDENTIFIER_ADDED_EVENT},
+									'human-resources', ${meta.correlationId}, created_by,
+									${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+					],
+				);
+				const row = rows[0];
+				if (row === undefined) {
+					return fail(
+						"INTERNAL_ERROR",
+						"Person identifier create returned no row",
+					);
+				}
+				return mapPersonIdentifierRow(row);
+			} catch (error) {
+				if (isCreateIdempotencyUniqueViolation(error)) {
+					const existing = await this.findPersonIdentifierByIdempotencyKey({
+						organizationId: record.organizationId,
+						idempotencyKey: record.createIdempotencyKey,
+					});
+					if (!existing.ok) {
+						return existing;
+					}
+					if (existing.data !== null) {
+						return ok(existing.data.identifier);
+					}
+				}
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async retirePersonIdentifier(
+			input,
+			_ports,
+			meta,
+		): Promise<Result<PersonIdentifier>> {
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const nextVersion = input.expectedVersion + 1;
+			const payloadJson = eventPayloadJson({
+				organizationId: input.organizationId,
+				entityType: "hr_person_identifier",
+				entityId: input.identifierId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			});
+			try {
+				const [rows] = await runNeonHttpTransaction<[PersonIdentifierSqlRow[]]>(
+					(sqlTx) => [
+						sqlTx`
+							WITH mutated AS (
+								UPDATE hr_person_identifier
+								SET effective_to = ${input.effectiveTo},
+									status = 'retired',
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.identifierId}
+									AND organization_id = ${input.organizationId}
+									AND person_id = ${input.personId}
+									AND status = 'active'
+									AND version = ${input.expectedVersion}
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_person_identifier', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_IDENTIFIER_RETIRED_EVENT},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+					],
+				);
+				const row = rows[0];
+				if (row === undefined) {
+					return fail("NOT_FOUND", "Person identifier not found");
+				}
+				return mapPersonIdentifierRow(row);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async listPersonIdentifiers(input) {
+			try {
+				const person = await this.getPersonById(input);
+				if (!person.ok) {
+					return person;
+				}
+				if (person.data === null) {
+					return fail(
+						"NOT_FOUND",
+						"Person not found",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+					);
+				}
+				const rows = await db
+					.select()
+					.from(hrPersonIdentifier)
+					.where(
+						and(
+							eq(hrPersonIdentifier.organizationId, input.organizationId),
+							eq(hrPersonIdentifier.personId, input.personId),
+						),
+					);
+				const identifiers: PersonIdentifier[] = [];
+				for (const row of rows) {
+					const mapped = mapPersonIdentifierRow(
+						row as unknown as PersonIdentifierSqlRow,
+					);
+					if (!mapped.ok) {
+						return mapped;
+					}
+					identifiers.push(mapped.data);
+				}
+				return ok(identifiers);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Workforce foundation persistence failed",
+				);
+			}
+		},
+
+		async detectPersonDuplicates(input) {
+			try {
+				const person = await this.getPersonById(input);
+				if (!person.ok) {
+					return person;
+				}
+				if (person.data === null) {
+					return fail(
+						"NOT_FOUND",
+						"Person not found",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+					);
+				}
+				const matches = new Map<
+					string,
+					Set<PersonDuplicateMatchReason>
+				>();
+				const addMatch = (personId: string, reason: PersonDuplicateMatchReason) => {
+					if (personId === input.personId) {
+						return;
+					}
+					const existing = matches.get(personId) ?? new Set();
+					existing.add(reason);
+					matches.set(personId, existing);
+				};
+				const legalNameMatches = await db
+					.select()
+					.from(hrPerson)
+					.where(
+						and(
+							eq(hrPerson.organizationId, input.organizationId),
+							sql`lower(trim(${hrPerson.legalName})) = lower(trim(${person.data.legalName}))`,
+						),
+					);
+				for (const row of legalNameMatches) {
+					addMatch(row.id, "legal_name");
+				}
+				const sourceEmails = await db
+					.select()
+					.from(hrPersonContact)
+					.where(
+						and(
+							eq(hrPersonContact.organizationId, input.organizationId),
+							eq(hrPersonContact.personId, input.personId),
+							eq(hrPersonContact.contactType, "email"),
+							eq(hrPersonContact.status, "active"),
+						),
+					);
+				for (const email of sourceEmails) {
+					const emailMatches = await db
+						.select()
+						.from(hrPersonContact)
+						.where(
+							and(
+								eq(hrPersonContact.organizationId, input.organizationId),
+								eq(hrPersonContact.contactType, "email"),
+								eq(hrPersonContact.status, "active"),
+								eq(hrPersonContact.normalizedValue, email.normalizedValue),
+							),
+						);
+					for (const match of emailMatches) {
+						addMatch(match.personId, "email");
+					}
+				}
+				const sourceIdentifiers = await db
+					.select()
+					.from(hrPersonIdentifier)
+					.where(
+						and(
+							eq(hrPersonIdentifier.organizationId, input.organizationId),
+							eq(hrPersonIdentifier.personId, input.personId),
+							eq(hrPersonIdentifier.status, "active"),
+							sql`${hrPersonIdentifier.effectiveTo} IS NULL`,
+						),
+					);
+				for (const identifier of sourceIdentifiers) {
+					const identifierMatches = await db
+						.select()
+						.from(hrPersonIdentifier)
+						.where(
+							and(
+								eq(hrPersonIdentifier.organizationId, input.organizationId),
+								eq(hrPersonIdentifier.identifierType, identifier.identifierType),
+								eq(
+									hrPersonIdentifier.identifierFingerprint,
+									identifier.identifierFingerprint,
+								),
+								eq(hrPersonIdentifier.status, "active"),
+								sql`${hrPersonIdentifier.effectiveTo} IS NULL`,
+							),
+						);
+					for (const match of identifierMatches) {
+						addMatch(match.personId, "identifier_fingerprint");
+					}
+				}
+				const candidates: PersonDuplicateCandidate[] = [];
+				for (const [personId, reasons] of matches) {
+					const parsed = parseHumanResourcesPersonId(personId);
+					if (!parsed.ok) {
+						return parsed;
+					}
+					const matched = await this.getPersonById({
+						organizationId: input.organizationId,
+						personId: parsed.data,
+					});
+					if (!matched.ok) {
+						return matched;
+					}
+					if (matched.data === null) {
+						continue;
+					}
+					candidates.push({
+						personId: parsed.data,
+						matchReasons: [...reasons],
+						legalName: matched.data.legalName,
+						preferredName: matched.data.preferredName,
+					});
+				}
+				return ok(candidates);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -921,23 +1911,31 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				);
 			}
 
+			const personWorker = await this.findWorkerByPersonId({
+				organizationId: record.organizationId,
+				personId: record.personId,
+			});
+			if (!personWorker.ok) {
+				return personWorker;
+			}
+			if (personWorker.data !== null) {
+				return fail(
+					"CONFLICT",
+					"Person is already linked to a worker",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+				);
+			}
+
 			if (record.workerType === "employee" && record.employeeId !== null) {
-				const employeeRows = await db
-					.select({ id: hrEmployee.id })
-					.from(hrEmployee)
-					.where(
-						and(
-							eq(hrEmployee.organizationId, record.organizationId),
-							eq(hrEmployee.id, record.employeeId),
-						),
-					)
-					.limit(1);
-				if (employeeRows.length === 0) {
-					return fail(
-						"NOT_FOUND",
-						"Employee not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
+				const employeeLink = await validateEmployeeLinkForWorkerDrizzle(
+					{
+						organizationId: record.organizationId,
+						employeeId: record.employeeId,
+					},
+					this.findWorkerByEmployeeId.bind(this),
+				);
+				if (!employeeLink.ok) {
+					return employeeLink;
 				}
 			}
 
@@ -1096,6 +2094,19 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 			const employeeId =
 				input.workerType === "employee" ? input.employeeId : null;
+			if (input.workerType === "employee" && input.employeeId !== null) {
+				const employeeLink = await validateEmployeeLinkForWorkerDrizzle(
+					{
+						organizationId: input.organizationId,
+						employeeId: input.employeeId,
+						excludingWorkerId: input.workerId,
+					},
+					this.findWorkerByEmployeeId.bind(this),
+				);
+				if (!employeeLink.ok) {
+					return employeeLink;
+				}
+			}
 			if (
 				openSegment.workerType === input.workerType &&
 				openSegment.employeeId === employeeId

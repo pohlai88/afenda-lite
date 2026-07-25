@@ -87,20 +87,20 @@ Scope: [`00-cluster-scope.md`](00-cluster-scope.md) · Matrix: [`02-aggregate-ma
 
 ## 4. Standardize
 
-**Assessment:** Commands use `runCoreCommand` / `runLifecycleCommand` / `runRecruitmentCommand` with manifest permission guards. Error codes include `REHIRE_REQUIRES_ENDED_EMPLOYMENT` but it is never emitted.
+**Assessment:** Commands use `runCoreCommand` / `runLifecycleCommand` / `runRecruitmentCommand` with manifest permission guards. `REHIRE_REQUIRES_ENDED_EMPLOYMENT` emitted on open-tenure create (Slice 5.4 / 5.8 — **CLOSED**).
 
-### HR-COREORG-P1-002
+### HR-COREORG-P1-002 — **CLOSED** (2026-07-25, Slice 5.4)
 
 | Field | Value |
 |---|---|
-| **paths/symbols** | `src/error-codes.ts#HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT` · `adapters/memory/core.ts#createEmployment` |
-| **conflicting authorities** | Semantic error code registered vs generic `CONFLICT` for open employment |
-| **observed disk behavior** | `createEmployment` returns `"Employee already has an open employment"` with `HUMAN_RESOURCES_ERROR_CONFLICT`; rehire-specific code never emitted |
+| **paths/symbols** | `src/error-codes.ts#HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT` · `src/core/employment.ts#createEmployment` · `shared/domain-guards.ts#rehireRequiresEndedEmployment` · Memory + Drizzle adapters |
+| **conflicting authorities** | ~~Semantic error code registered vs generic `CONFLICT`~~ resolved |
+| **observed disk behavior** | Open-tenure create returns `REHIRE_REQUIRES_ENDED_EMPLOYMENT`; rehire after terminate succeeds; prior history preserved |
 | **expected contract** | Rehire after termination uses explicit semantic error when prior employment not ended |
-| **production or maintenance consequence** | Callers cannot distinguish rehire violation from other conflicts; no test for rehire path |
-| **canonical recommendation** | Emit `REHIRE_REQUIRES_ENDED_EMPLOYMENT` when creating employment while a non-terminated row exists |
-| **owning repair mission** | HR-COREORG-REHIRE-SEMANTICS |
-| **verification needed for closure** | Unit test: terminated employee can get new employment; active employee cannot; error code asserted |
+| **production or maintenance consequence** | ~~Callers cannot distinguish rehire violation~~ resolved |
+| **canonical recommendation** | ~~Emit `REHIRE_REQUIRES_ENDED_EMPLOYMENT`~~ **done** |
+| **owning repair mission** | HR-COREORG-REHIRE-SEMANTICS — closed via Slice 5.4 |
+| **verification needed for closure** | `pnpm --filter @afenda/human-resources test -- human-resources.core employment-status` green |
 
 ### HR-COREORG-P0-002 (consumes HR-XCUT-P0-003)
 

@@ -347,6 +347,7 @@ export type JobRequisition = {
 	jobId: HumanResourcesJobId | null;
 	positionId: HumanResourcesPositionId | null;
 	departmentId: HumanResourcesDepartmentId | null;
+	hiringManagerEmployeeId: HumanResourcesEmployeeId | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -2185,6 +2186,7 @@ export type AttendanceEvent = {
 	eventType: AttendanceEventType;
 	capturedOccurredAt: Date | null;
 	occurredAt: Date;
+	sourceSequence: number;
 	sourceTimezone: string;
 	localWorkDate: string;
 	source: AttendanceEventSource;
@@ -2515,6 +2517,11 @@ export type OvertimeRequest = {
 	updatedAt: Date;
 };
 
+/**
+ * Approved payroll handoff minute aggregates for a locked timesheet.
+ * Does not carry timezone — read underlying `TimesheetEntry.timezone` / employment calendar for
+ * display timezone. Stored attendance instants remain UTC.
+ */
 export type ApprovedTimeHandoff = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
@@ -2614,6 +2621,7 @@ export type AttendanceEventRecordInput = {
 	deviceMetadata?: Record<string, unknown> | null;
 	payloadChecksum?: string | null;
 	notes?: string | null;
+	sourceSequence?: number;
 	idempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -2633,6 +2641,7 @@ export type AttendanceImportEventRowInput = {
 	deviceMetadata?: Record<string, unknown> | null;
 	payloadChecksum?: string | null;
 	notes?: string | null;
+	sourceSequence?: number;
 };
 
 export type AttendanceImportBatchInput = {

@@ -106,6 +106,22 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 			"Phase 3 adoption effective-lineage — legal-name identity correction history",
 	}),
 	row({
+		table: "hr_person_contact",
+		category: "versioned-current-fact",
+		domain: "workforce-foundation",
+		cluster: "A",
+		rationale:
+			"Person contact facts with active/retired status; primary uniqueness enforced per contact type",
+	}),
+	row({
+		table: "hr_person_identifier",
+		category: "effective-definition",
+		domain: "workforce-foundation",
+		cluster: "A",
+		rationale:
+			"Effective-dated person identifier segments with open fingerprint uniqueness",
+	}),
+	row({
 		table: "hr_employee",
 		category: "versioned-current-fact",
 		domain: "core",

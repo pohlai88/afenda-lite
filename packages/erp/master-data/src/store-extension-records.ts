@@ -169,6 +169,11 @@ export type MasterDataExtensionStore = {
 	): Promise<Result<PartyRole>>;
 
 	listPartyAddresses(filter: ParentListFilter): Promise<Result<PartyAddress[]>>;
+	getPartyAddressById(
+		organizationId: string,
+		partyId: string,
+		id: string,
+	): Promise<Result<PartyAddress | null>>;
 	createPartyAddress(
 		record: PartyAddressCreateRecord,
 		ports: MutationPorts,

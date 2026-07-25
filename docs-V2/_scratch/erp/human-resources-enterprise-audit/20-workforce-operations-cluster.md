@@ -118,7 +118,7 @@ Source matrix: [`02-canonical-definitions.tsv`](../02-canonical-definitions.tsv)
 |---|---|---|
 | Leave balance sufficiency on approve | `hr_leave_adjustment`, `hr_leave_request` | SQL CTE + command guard |
 | Negative balance policy flag | `hr_leave_policy` | Command only |
-| Overlapping approved leave windows | `hr_leave_request` | **Not enforced** (HR-OPS-P2-004) |
+| Overlapping leave segments per employee | `hr_leave_request`, `hr_leave_request_segment` | **Command + Serializable TX** (CLOSED Slice 4.7 · HR-OPS-P2-004) — see [`hr-leave-overlap-exclusion-register.json`](hr-leave-overlap-exclusion-register.json) |
 | Timesheet approval step / authority holder | `hr_timesheet` | Command + `resolveTimeApprovalAuthority` |
 | Overtime approval authority assignment | `hr_overtime_request` | **Not checked at command** (HR-OPS-P1-001) |
 | Attendance event pairing | `hr_attendance_event`, `hr_attendance_session` | Application logic only |
@@ -134,7 +134,6 @@ Source matrix: [`02-canonical-definitions.tsv`](../02-canonical-definitions.tsv)
 | Calendar scope resolution green suite | HR-OPS-P1-005 |
 | Overtime authority negative cases | HR-OPS-P1-001 |
 | Leave handoff permission matrix | HR-OPS-P1-002 |
-| Leave overlap rejection | HR-OPS-P2-004 |
 | Equal-timestamp session stability | HR-OPS-P2-003 |
 | Leave Server Action contract tests | HR-OPS-P1-003 |
 | Neon leave-concurrency cleanup stability | HR-OPS-P3-001 |
@@ -200,7 +199,7 @@ Top three:
 | HR-OPS-P2-001 | P2 | Timesheet leave timezone UTC |
 | HR-OPS-P2-002 | P2 | Stale time command count comment |
 | HR-OPS-P2-003 | P2 | Session tie order undefined |
-| HR-OPS-P2-004 | P2 | No leave overlap DB guard |
+| HR-OPS-P2-004 | P2→**closed** | No leave overlap DB guard — **CLOSED** Slice 4.7 at command/TX bar; exclusion register documents intentional no-EXCLUDE |
 | HR-OPS-P2-005 | P2 | Attendance connector fail-closed (by design) |
 | HR-OPS-P3-001 | P3 | Leave concurrency cleanup timeout |
 

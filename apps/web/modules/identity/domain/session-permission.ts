@@ -180,6 +180,30 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to read employees.",
 	"human-resources.employee.update":
 		"You do not have permission to update employees.",
+	"human-resources.person.read":
+		"You do not have permission to read person records.",
+	"human-resources.person.manage":
+		"You do not have permission to manage person records.",
+	"human-resources.worker.read":
+		"You do not have permission to read worker records.",
+	"human-resources.worker.manage":
+		"You do not have permission to manage worker records.",
+	"human-resources.personal-details.read":
+		"You do not have permission to read personal contact details.",
+	"human-resources.personal-details.manage":
+		"You do not have permission to manage personal contact details.",
+	"human-resources.sensitive-identifiers.read":
+		"You do not have permission to read sensitive identifiers.",
+	"human-resources.sensitive-identifiers.manage":
+		"You do not have permission to manage sensitive identifiers.",
+	"human-resources.assignment.read":
+		"You do not have permission to read work assignments.",
+	"human-resources.assignment.manage":
+		"You do not have permission to manage work assignments.",
+	"human-resources.organization-context.read":
+		"You do not have permission to read organization context.",
+	"human-resources.reporting-line.manage":
+		"You do not have permission to manage reporting lines.",
 	"human-resources.employment.manage":
 		"You do not have permission to manage employments.",
 	"human-resources.organization.read":

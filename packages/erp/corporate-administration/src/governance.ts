@@ -1,4 +1,14 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	CA_AUTHORITY_MANDATE_GRANTED_EVENT,
+	CA_GOVERNANCE_BODY_CREATED_EVENT,
+	CA_GOVERNANCE_MEMBERSHIP_APPOINTED_EVENT,
+	CA_MEETING_CORRECTED_EVENT,
+	CA_MEETING_RECORDED_EVENT,
+	CA_OFFICER_APPOINTED_EVENT,
+	CA_PREMISE_REGISTERED_EVENT,
+	CA_RESOLUTION_RECORDED_EVENT,
+} from "@afenda/events/schemas";
 
 import {
 	requireCaCommandPermission,
@@ -8,7 +18,11 @@ import {
 	type CorporateAdministrationCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import { CA_ERROR_PARTY_INVALID, caErrorDetails } from "./error-codes";
+import {
+	CA_ERROR_IDEMPOTENCY_CONFLICT,
+	CA_ERROR_PARTY_INVALID,
+	caErrorDetails,
+} from "./error-codes";
 import {
 	CA_COMMAND_AUTHORITY_MANDATE_GRANT,
 	CA_COMMAND_GOVERNANCE_BODY_CREATE,
@@ -34,7 +48,8 @@ import {
 } from "./module-ids";
 import type { CorporateAdministrationMasterLookupPort } from "./ports";
 import {
-	type CaAuthorityMandate,
+	type CaAuthorityMandateDetail,
+	type CaAuthorityMandateHolder,
 	type CaCompanyPremise,
 	type CaGovernanceBody,
 	type CaGovernanceMeeting,
@@ -64,17 +79,57 @@ import {
 	listResolutionsInputSchema,
 } from "./schemas";
 import { normalizeCompanyCode } from "./shared/code";
+import { createCorporateAdministrationRequestFingerprint } from "./shared/fingerprint";
 
 async function requireCompany(
 	store: CorporateAdministrationCommandOptions["store"],
 	organizationId: string,
 	legalCompanyId: string,
-): Promise<Result<{ id: string }>> {
+): Promise<Result<{ id: string; legalPartyId: string }>> {
 	const resolved = resolveCommandDeps({ store });
 	const company = await resolved.store.getById(organizationId, legalCompanyId);
 	if (!company.ok) return company;
 	if (!company.data) return fail("NOT_FOUND", "Legal company not found");
-	return ok({ id: company.data.id });
+	if (!company.data.legalPartyId) {
+		return fail("CONFLICT", "Legal company must have a legal party");
+	}
+	return ok({ id: company.data.id, legalPartyId: company.data.legalPartyId });
+}
+
+function governanceFingerprint(
+	command: string,
+	input: Record<string, unknown>,
+) {
+	const {
+		actorUserId: _actorUserId,
+		correlationId: _correlationId,
+		idempotencyKey: _idempotencyKey,
+		...business
+	} = input;
+	return createCorporateAdministrationRequestFingerprint({
+		command,
+		...business,
+	});
+}
+
+function replayOrConflict<T extends { requestFingerprint: string }>(
+	existing: T,
+	requestFingerprint: string,
+): Result<T> {
+	if (existing.requestFingerprint === requestFingerprint) return ok(existing);
+	return fail(
+		"CONFLICT",
+		"Idempotency key was already used with a different request",
+		caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+	);
+}
+
+function isEffectiveDate(
+	effectiveFrom: string,
+	effectiveTo: string | null,
+	asOf: string,
+) {
+	return effectiveFrom <= asOf && (effectiveTo === null || asOf < effectiveTo);
 }
 
 async function requireMasters(
@@ -122,7 +177,8 @@ export async function appointOfficer(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, masters, authorization } = resolveCommandDeps(options);
+	const { store, ports, masters, governancePolicy, authorization } =
+		resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -142,7 +198,11 @@ export async function appointOfficer(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_OFFICER_APPOINT,
+		parsed.data,
+	);
+	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
 
 	const party = await resolvePartySnapshot(masters, {
 		organizationId: parsed.data.organizationId,
@@ -150,22 +210,49 @@ export async function appointOfficer(
 		partyId: parsed.data.partyId,
 	});
 	if (!party.ok) return party;
-
-	return store.createOfficerAppointment({
+	const appointments = await store.listOfficerAppointments(
+		parsed.data.organizationId,
+		parsed.data.legalCompanyId,
+	);
+	if (!appointments.ok) return appointments;
+	const policy = await governancePolicy.validateOfficerAppointment({
 		organizationId: parsed.data.organizationId,
 		legalCompanyId: parsed.data.legalCompanyId,
-		officerRole: parsed.data.officerRole,
 		partyId: parsed.data.partyId,
-		partyCodeSnapshot: party.data.partyCode,
-		partyNameSnapshot: party.data.partyName,
-		appointedDate: parsed.data.appointedDate,
-		resignedDate: null,
-		authorityLimits: parsed.data.authorityLimits ?? null,
-		status: "active",
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
+		officerRole: parsed.data.officerRole,
+		effectiveFrom: parsed.data.appointedDate,
+		effectiveTo: null,
+		existingAppointments: appointments.data,
 	});
+	if (!policy.ok) return policy;
+
+	return store.createOfficerAppointment(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			officerRole: parsed.data.officerRole,
+			partyId: parsed.data.partyId,
+			partyCodeSnapshot: party.data.partyCode,
+			partyNameSnapshot: party.data.partyName,
+			appointedDate: parsed.data.appointedDate,
+			resignedDate: null,
+			authorityLimits: parsed.data.authorityLimits ?? null,
+			status: "active",
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			supersedesOfficerAppointmentId: null,
+			amendmentReason: null,
+			endReason: null,
+			endEvidenceReference: null,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType: CA_OFFICER_APPOINTED_EVENT,
+		},
+	);
 }
 
 export async function getOfficerAppointment(
@@ -178,7 +265,7 @@ export async function getOfficerAppointment(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -206,16 +293,23 @@ export async function listOfficerAppointments(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_OFFICER_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listOfficerAppointments(
+	const listed = await store.listOfficerAppointments(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
+	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const asOf = parsed.data.asOf;
+	return ok(
+		listed.data.filter((row) =>
+			isEffectiveDate(row.appointedDate, row.resignedDate, asOf),
+		),
 	);
 }
 
@@ -229,7 +323,7 @@ export async function createGovernanceBody(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -249,23 +343,38 @@ export async function createGovernanceBody(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_GOVERNANCE_BODY_CREATE,
+		parsed.data,
+	);
+	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
 
 	const code = normalizeCompanyCode(parsed.data.code);
 	if (!code.ok) return code;
 
-	return store.createGovernanceBody({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		code: code.data.code,
-		normalizedCode: code.data.normalizedCode,
-		bodyType: parsed.data.bodyType,
-		displayName: parsed.data.displayName,
-		status: "active",
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createGovernanceBody(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			code: code.data.code,
+			normalizedCode: code.data.normalizedCode,
+			bodyType: parsed.data.bodyType,
+			displayName: parsed.data.displayName,
+			status: "active",
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			retiredAt: null,
+			retiredBy: null,
+			retirementReason: null,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType: CA_GOVERNANCE_BODY_CREATED_EVENT,
+		},
+	);
 }
 
 export async function getGovernanceBody(
@@ -278,7 +387,7 @@ export async function getGovernanceBody(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -306,16 +415,24 @@ export async function listGovernanceBodies(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_GOVERNANCE_BODY_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listGovernanceBodies(
+	const listed = await store.listGovernanceBodies(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
+	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const end = new Date(`${parsed.data.asOf}T23:59:59.999Z`);
+	return ok(
+		listed.data.filter(
+			(row) =>
+				row.createdAt <= end && (row.retiredAt === null || end < row.retiredAt),
+		),
 	);
 }
 
@@ -329,13 +446,7 @@ export async function appointGovernanceMembership(
 			issues: parsed.error.issues,
 		});
 	}
-	if (!parsed.data.memberPartyId && !parsed.data.officerAppointmentId) {
-		return fail(
-			"BAD_REQUEST",
-			"Member party or officer appointment is required",
-		);
-	}
-	const { store, masters, authorization } = resolveCommandDeps(options);
+	const { store, ports, masters, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -355,25 +466,29 @@ export async function appointGovernanceMembership(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_GOVERNANCE_MEMBERSHIP_APPOINT,
+		parsed.data,
+	);
+	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
 
 	let memberPartyCode: string | null = null;
 	let memberPartyName: string | null = null;
-	if (parsed.data.memberPartyId) {
+	if (parsed.data.subject.kind === "party") {
 		const party = await resolvePartySnapshot(masters, {
 			organizationId: parsed.data.organizationId,
 			actorUserId: parsed.data.actorUserId,
-			partyId: parsed.data.memberPartyId,
+			partyId: parsed.data.subject.partyId,
 		});
 		if (!party.ok) return party;
 		memberPartyCode = party.data.partyCode;
 		memberPartyName = party.data.partyName;
 	}
 
-	if (parsed.data.officerAppointmentId) {
+	if (parsed.data.subject.kind === "officer") {
 		const officer = await store.getOfficerAppointmentById(
 			parsed.data.organizationId,
-			parsed.data.officerAppointmentId,
+			parsed.data.subject.officerAppointmentId,
 		);
 		if (!officer.ok) return officer;
 		if (
@@ -384,21 +499,36 @@ export async function appointGovernanceMembership(
 		}
 	}
 
-	return store.createGovernanceMembership({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		governanceBodyId: parsed.data.governanceBodyId,
-		memberPartyId: parsed.data.memberPartyId ?? null,
-		memberPartyCodeSnapshot: memberPartyCode,
-		memberPartyNameSnapshot: memberPartyName,
-		officerAppointmentId: parsed.data.officerAppointmentId ?? null,
-		roleTitle: parsed.data.roleTitle,
-		effectiveFrom: parsed.data.effectiveFrom,
-		effectiveTo: null,
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createGovernanceMembership(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			governanceBodyId: parsed.data.governanceBodyId,
+			memberPartyId:
+				parsed.data.subject.kind === "party"
+					? parsed.data.subject.partyId
+					: null,
+			memberPartyCodeSnapshot: memberPartyCode,
+			memberPartyNameSnapshot: memberPartyName,
+			officerAppointmentId:
+				parsed.data.subject.kind === "officer"
+					? parsed.data.subject.officerAppointmentId
+					: null,
+			roleTitle: parsed.data.roleTitle,
+			effectiveFrom: parsed.data.effectiveFrom,
+			effectiveTo: null,
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			endReason: null,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType: CA_GOVERNANCE_MEMBERSHIP_APPOINTED_EVENT,
+		},
+	);
 }
 
 export async function getGovernanceMembership(
@@ -411,7 +541,7 @@ export async function getGovernanceMembership(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -439,30 +569,70 @@ export async function listGovernanceMemberships(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_GOVERNANCE_MEMBERSHIP_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listGovernanceMemberships(
+	const listed = await store.listGovernanceMemberships(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
+	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const asOf = parsed.data.asOf;
+	return ok(
+		listed.data.filter((row) =>
+			isEffectiveDate(row.effectiveFrom, row.effectiveTo, asOf),
+		),
 	);
 }
 
 export async function grantAuthorityMandate(
 	input: unknown,
 	options: CorporateAdministrationCommandOptions = {},
-): Promise<Result<CaAuthorityMandate>> {
+): Promise<Result<CaAuthorityMandateDetail>> {
 	const parsed = createAuthorityMandateInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return fail("BAD_REQUEST", "Invalid authority mandate input", {
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	if (
+		(parsed.data.amountLimit === undefined) !==
+		(parsed.data.currencyCode === undefined)
+	) {
+		return fail(
+			"BAD_REQUEST",
+			"Amount limit and currency code must be supplied together",
+		);
+	}
+	if (
+		parsed.data.amountLimit !== undefined &&
+		(!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(parsed.data.amountLimit) ||
+			Number(parsed.data.amountLimit) <= 0)
+	) {
+		return fail(
+			"BAD_REQUEST",
+			"Amount limit must be a canonical positive decimal",
+		);
+	}
+	if (
+		(parsed.data.signingRule === "single" &&
+			(parsed.data.holders.length !== 1 ||
+				parsed.data.minimumSignatories !== 1)) ||
+		(parsed.data.signingRule === "joint" &&
+			(parsed.data.holders.length < 2 ||
+				parsed.data.minimumSignatories < 2 ||
+				parsed.data.minimumSignatories > parsed.data.holders.length))
+	) {
+		return fail(
+			"BAD_REQUEST",
+			"Mandate holder and signatory rules are invalid",
+		);
+	}
+	const { store, ports, masters, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -482,38 +652,133 @@ export async function grantAuthorityMandate(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_AUTHORITY_MANDATE_GRANT,
+		parsed.data,
+	);
+	if (existing.data) {
+		const replayed = replayOrConflict(existing.data, requestFingerprint);
+		if (!replayed.ok) return replayed;
+		const detail = await store.getAuthorityMandateById(
+			parsed.data.organizationId,
+			replayed.data.id,
+		);
+		if (!detail.ok) return detail;
+		return detail.data
+			? ok(detail.data)
+			: fail("NOT_FOUND", "Authority mandate not found");
+	}
 
-	return store.createAuthorityMandate({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		mandateType: parsed.data.mandateType,
-		scopeDescription: parsed.data.scopeDescription,
-		amountLimit: parsed.data.amountLimit ?? null,
-		currencyCode: parsed.data.currencyCode ?? null,
-		signingRule: parsed.data.signingRule,
-		effectiveFrom: parsed.data.effectiveFrom,
-		effectiveTo: null,
-		grantEvidenceReference: parsed.data.grantEvidenceReference ?? null,
-		revocationEvidenceReference: null,
-		status: "active",
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	if (parsed.data.currencyCode) {
+		const masterPort = await requireMasters(masters);
+		if (!masterPort.ok) return masterPort;
+		const currency = await masterPort.data.getCurrencyByCode({
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			code: parsed.data.currencyCode,
+		});
+		if (!currency.ok) return currency;
+		if (!currency.data) {
+			return fail("CONFLICT", "Currency is required");
+		}
+	}
+
+	const holders: Array<
+		Omit<CaAuthorityMandateHolder, "id" | "authorityMandateId" | "createdAt">
+	> = [];
+	for (const holder of parsed.data.holders) {
+		if (holder.kind === "party") {
+			const party = await resolvePartySnapshot(masters, {
+				organizationId: parsed.data.organizationId,
+				actorUserId: parsed.data.actorUserId,
+				partyId: holder.partyId,
+			});
+			if (!party.ok) return party;
+			holders.push({
+				organizationId: parsed.data.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				holderKind: "party",
+				partyId: holder.partyId,
+				partyCodeSnapshot: party.data.partyCode,
+				partyNameSnapshot: party.data.partyName,
+				officerAppointmentId: null,
+				effectiveFrom: parsed.data.effectiveFrom,
+				effectiveTo: null,
+				createdBy: parsed.data.actorUserId,
+			});
+			continue;
+		}
+		const officer = await store.getOfficerAppointmentById(
+			parsed.data.organizationId,
+			holder.officerAppointmentId,
+		);
+		if (
+			!officer.ok ||
+			!officer.data ||
+			officer.data.legalCompanyId !== parsed.data.legalCompanyId ||
+			officer.data.status !== "active"
+		) {
+			return officer.ok
+				? fail("NOT_FOUND", "Active officer appointment not found")
+				: officer;
+		}
+		holders.push({
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			holderKind: "officer",
+			partyId: null,
+			partyCodeSnapshot: null,
+			partyNameSnapshot: null,
+			officerAppointmentId: holder.officerAppointmentId,
+			effectiveFrom: parsed.data.effectiveFrom,
+			effectiveTo: null,
+			createdBy: parsed.data.actorUserId,
+		});
+	}
+
+	return store.createAuthorityMandate(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			mandateType: parsed.data.mandateType,
+			scopeDescription: parsed.data.scopeDescription,
+			amountLimit: parsed.data.amountLimit ?? null,
+			currencyCode: parsed.data.currencyCode ?? null,
+			signingRule: parsed.data.signingRule,
+			minimumSignatories: parsed.data.minimumSignatories,
+			effectiveFrom: parsed.data.effectiveFrom,
+			effectiveTo: null,
+			grantEvidenceReference: parsed.data.grantEvidenceReference ?? null,
+			revocationEvidenceReference: null,
+			status: "active",
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			supersedesAuthorityMandateId: null,
+			amendmentReason: null,
+			revocationReason: null,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		holders,
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType: CA_AUTHORITY_MANDATE_GRANTED_EVENT,
+		},
+	);
 }
 
 export async function getAuthorityMandate(
 	input: unknown,
 	options: CorporateAdministrationCommandOptions = {},
-): Promise<Result<CaAuthorityMandate>> {
+): Promise<Result<CaAuthorityMandateDetail>> {
 	const parsed = getAuthorityMandateInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return fail("BAD_REQUEST", "Invalid authority mandate get input", {
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -534,23 +799,30 @@ export async function getAuthorityMandate(
 export async function listAuthorityMandates(
 	input: unknown,
 	options: CorporateAdministrationCommandOptions = {},
-): Promise<Result<CaAuthorityMandate[]>> {
+): Promise<Result<CaAuthorityMandateDetail[]>> {
 	const parsed = listAuthorityMandatesInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return fail("BAD_REQUEST", "Invalid authority mandate list input", {
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_AUTHORITY_MANDATE_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listAuthorityMandates(
+	const listed = await store.listAuthorityMandates(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
+	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const asOf = parsed.data.asOf;
+	return ok(
+		listed.data.filter((row) =>
+			isEffectiveDate(row.effectiveFrom, row.effectiveTo, asOf),
+		),
 	);
 }
 
@@ -564,7 +836,7 @@ export async function registerCompanyPremise(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, masters, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -584,27 +856,94 @@ export async function registerCompanyPremise(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_PREMISE_REGISTER,
+		parsed.data,
+	);
+	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
 
-	return store.createCompanyPremise({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		premiseType: parsed.data.premiseType,
-		partyAddressId: parsed.data.partyAddressId ?? null,
-		addressLine1Snapshot: parsed.data.addressLine1Snapshot,
-		addressLine2Snapshot: parsed.data.addressLine2Snapshot ?? null,
-		citySnapshot: parsed.data.citySnapshot ?? null,
-		regionSnapshot: parsed.data.regionSnapshot ?? null,
-		postalCodeSnapshot: parsed.data.postalCodeSnapshot ?? null,
-		countryCodeSnapshot: parsed.data.countryCodeSnapshot ?? null,
-		isPrimary: parsed.data.isPrimary,
-		effectiveFrom: parsed.data.effectiveFrom,
-		effectiveTo: null,
-		status: "active",
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	const masterPort = await requireMasters(masters);
+	if (!masterPort.ok) return masterPort;
+	let address: {
+		partyAddressId: string | null;
+		line1: string;
+		line2: string | null;
+		city: string | null;
+		region: string | null;
+		postalCode: string | null;
+		countryCode: string | null;
+	};
+	if (parsed.data.addressSource.kind === "master") {
+		const resolvedAddress = await masterPort.data.getPartyAddressById({
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			partyId: company.data.legalPartyId,
+			partyAddressId: parsed.data.addressSource.partyAddressId,
+		});
+		if (!resolvedAddress.ok) return resolvedAddress;
+		if (!resolvedAddress.data)
+			return fail("NOT_FOUND", "Party address not found");
+		address = {
+			partyAddressId: resolvedAddress.data.id,
+			line1: resolvedAddress.data.line1,
+			line2: resolvedAddress.data.line2,
+			city: resolvedAddress.data.city,
+			region: resolvedAddress.data.region,
+			postalCode: resolvedAddress.data.postalCode,
+			countryCode: resolvedAddress.data.countryId,
+		};
+	} else {
+		const countryCode = parsed.data.addressSource.countryCode.toUpperCase();
+		const country = await masterPort.data.getCountryByCode({
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			code: countryCode,
+		});
+		if (!country.ok) return country;
+		if (!country.data) {
+			return fail("CONFLICT", "Country is required");
+		}
+		address = {
+			partyAddressId: null,
+			line1: parsed.data.addressSource.line1,
+			line2: parsed.data.addressSource.line2 ?? null,
+			city: parsed.data.addressSource.city,
+			region: parsed.data.addressSource.region ?? null,
+			postalCode: parsed.data.addressSource.postalCode ?? null,
+			countryCode,
+		};
+	}
+
+	return store.createCompanyPremise(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			premiseType: parsed.data.premiseType,
+			partyAddressId: address.partyAddressId,
+			addressLine1Snapshot: address.line1,
+			addressLine2Snapshot: address.line2,
+			citySnapshot: address.city,
+			regionSnapshot: address.region,
+			postalCodeSnapshot: address.postalCode,
+			countryCodeSnapshot: address.countryCode,
+			isPrimary: parsed.data.isPrimary,
+			effectiveFrom: parsed.data.effectiveFrom,
+			effectiveTo: null,
+			status: "active",
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			supersedesCompanyPremiseId: null,
+			amendmentReason: null,
+			retirementReason: null,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType: CA_PREMISE_REGISTERED_EVENT,
+		},
+	);
 }
 
 export async function getCompanyPremise(
@@ -617,7 +956,7 @@ export async function getCompanyPremise(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -645,16 +984,23 @@ export async function listCompanyPremises(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_PREMISE_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listCompanyPremises(
+	const listed = await store.listCompanyPremises(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
+	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const asOf = parsed.data.asOf;
+	return ok(
+		listed.data.filter((row) =>
+			isEffectiveDate(row.effectiveFrom, row.effectiveTo, asOf),
+		),
 	);
 }
 
@@ -668,7 +1014,7 @@ export async function recordGovernanceMeeting(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -688,20 +1034,60 @@ export async function recordGovernanceMeeting(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_GOVERNANCE_MEETING_RECORD,
+		parsed.data,
+	);
+	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (parsed.data.mode === "correction") {
+		const corrected = await store.getGovernanceMeetingById(
+			parsed.data.organizationId,
+			parsed.data.correctsGovernanceMeetingId,
+		);
+		if (
+			!corrected.ok ||
+			!corrected.data ||
+			corrected.data.legalCompanyId !== parsed.data.legalCompanyId ||
+			corrected.data.status !== "closed"
+		) {
+			return corrected.ok
+				? fail("CONFLICT", "Correction requires an immutable closed meeting")
+				: corrected;
+		}
+	}
 
-	return store.createGovernanceMeeting({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		governanceBodyId: parsed.data.governanceBodyId,
-		meetingAt: new Date(parsed.data.meetingAt),
-		quorumResult: parsed.data.quorumResult,
-		status: parsed.data.status,
-		minutesDocumentReference: parsed.data.minutesDocumentReference ?? null,
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createGovernanceMeeting(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			governanceBodyId: parsed.data.governanceBodyId,
+			meetingAt: new Date(parsed.data.meetingAt),
+			quorumResult: parsed.data.quorumResult,
+			status: parsed.data.mode === "correction" ? "closed" : parsed.data.status,
+			minutesDocumentReference: parsed.data.minutesDocumentReference ?? null,
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			correctsGovernanceMeetingId:
+				parsed.data.mode === "correction"
+					? parsed.data.correctsGovernanceMeetingId
+					: null,
+			correctionReason:
+				parsed.data.mode === "correction" ? parsed.data.correctionReason : null,
+			closedAt: parsed.data.mode === "correction" ? new Date() : null,
+			closedBy:
+				parsed.data.mode === "correction" ? parsed.data.actorUserId : null,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType:
+				parsed.data.mode === "correction"
+					? CA_MEETING_CORRECTED_EVENT
+					: CA_MEETING_RECORDED_EVENT,
+		},
+	);
 }
 
 export async function getGovernanceMeeting(
@@ -714,7 +1100,7 @@ export async function getGovernanceMeeting(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -742,17 +1128,20 @@ export async function listGovernanceMeetings(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_GOVERNANCE_MEETING_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listGovernanceMeetings(
+	const listed = await store.listGovernanceMeetings(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
 	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const end = new Date(`${parsed.data.asOf}T23:59:59.999Z`);
+	return ok(listed.data.filter((row) => row.meetingAt <= end));
 }
 
 export async function recordResolution(
@@ -765,7 +1154,7 @@ export async function recordResolution(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -785,23 +1174,63 @@ export async function recordResolution(
 		parsed.data.idempotencyKey,
 	);
 	if (!existing.ok) return existing;
-	if (existing.data) return ok(existing.data);
+	const requestFingerprint = governanceFingerprint(
+		CA_COMMAND_RESOLUTION_RECORD,
+		parsed.data,
+	);
+	if (existing.data) return replayOrConflict(existing.data, requestFingerprint);
+	if (parsed.data.mode === "superseding") {
+		const predecessor = await store.getResolutionById(
+			parsed.data.organizationId,
+			parsed.data.supersedesResolutionId,
+		);
+		if (
+			!predecessor.ok ||
+			!predecessor.data ||
+			predecessor.data.legalCompanyId !== parsed.data.legalCompanyId ||
+			predecessor.data.status !== "approved"
+		) {
+			return predecessor.ok
+				? fail(
+						"CONFLICT",
+						"Superseding resolution requires an approved predecessor",
+					)
+				: predecessor;
+		}
+	}
 
-	return store.createResolution({
-		organizationId: parsed.data.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		governanceMeetingId: parsed.data.governanceMeetingId ?? null,
-		resolutionNumber: parsed.data.resolutionNumber,
-		resolutionYear: parsed.data.resolutionYear,
-		title: parsed.data.title,
-		description: parsed.data.description ?? null,
-		status: parsed.data.status,
-		approvedDate: parsed.data.approvedDate ?? null,
-		supersededById: null,
-		createIdempotencyKey: parsed.data.idempotencyKey,
-		createdBy: parsed.data.actorUserId,
-		updatedBy: parsed.data.actorUserId,
-	});
+	return store.createResolution(
+		{
+			organizationId: parsed.data.organizationId,
+			legalCompanyId: parsed.data.legalCompanyId,
+			governanceMeetingId: parsed.data.governanceMeetingId ?? null,
+			resolutionNumber: parsed.data.resolutionNumber,
+			resolutionYear: parsed.data.resolutionYear,
+			title: parsed.data.title,
+			description: parsed.data.description ?? null,
+			status: "draft",
+			approvedDate: null,
+			approvalEvidenceReference: null,
+			supersedesResolutionId:
+				parsed.data.mode === "superseding"
+					? parsed.data.supersedesResolutionId
+					: null,
+			supersededById: null,
+			supersededAt: null,
+			revokedDate: null,
+			revocationReason: null,
+			revocationEvidenceReference: null,
+			createIdempotencyKey: parsed.data.idempotencyKey,
+			requestFingerprint,
+			createdBy: parsed.data.actorUserId,
+			updatedBy: parsed.data.actorUserId,
+		},
+		ports,
+		{
+			correlationId: parsed.data.correlationId,
+			eventType: CA_RESOLUTION_RECORDED_EVENT,
+		},
+	);
 }
 
 export async function getResolution(
@@ -814,7 +1243,7 @@ export async function getResolution(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -842,15 +1271,18 @@ export async function listResolutions(
 			issues: parsed.error.issues,
 		});
 	}
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireCaQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: CA_QUERY_RESOLUTION_LIST,
 	});
 	if (!authorized.ok) return authorized;
-	return store.listResolutions(
+	const listed = await store.listResolutions(
 		parsed.data.organizationId,
 		parsed.data.legalCompanyId,
 	);
+	if (!listed.ok || !parsed.data.asOf) return listed;
+	const end = new Date(`${parsed.data.asOf}T23:59:59.999Z`);
+	return ok(listed.data.filter((row) => row.createdAt <= end));
 }

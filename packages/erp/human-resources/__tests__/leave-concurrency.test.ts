@@ -11,6 +11,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { drizzleLeave } from "../src/adapters/drizzle/leave";
+import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
 import { runDrizzleParity } from "./helpers/database-gate";
 import type {
 	TestEmployee,
@@ -21,6 +22,7 @@ import type {
 } from "./helpers/hr-parity-harness";
 import { createTestHarness } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 const neonOrgs = createNeonOrgTracker();
 
@@ -646,6 +648,149 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				// Both should return the same request ID
 				expect(result1.value.data.id).toBe(result2.value.data.id);
 			}
+		});
+	});
+
+	describe("Concurrent Leave Overlap", () => {
+		it("allows only one overlapping submit under concurrent submit", async () => {
+			const request1 = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+				{
+					startDate: "2024-02-05",
+					endDate: "2024-02-07",
+					requestedQuantity: "3",
+				},
+			);
+			const request2 = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+				{
+					startDate: "2024-02-06",
+					endDate: "2024-02-08",
+					requestedQuantity: "3",
+				},
+			);
+
+			const [first, second] = await Promise.all([
+				drizzleLeave.submitLeaveRequest(
+					{
+						organizationId: harness.organizationId,
+						requestId: request1.id,
+						expectedVersion: 1,
+						actorUserId: harness.actorUserId,
+					},
+					harness.ports,
+					harness.meta,
+				),
+				drizzleLeave.submitLeaveRequest(
+					{
+						organizationId: harness.organizationId,
+						requestId: request2.id,
+						expectedVersion: 1,
+						actorUserId: harness.actorUserId,
+					},
+					harness.ports,
+					harness.meta,
+				),
+			]);
+
+			const outcomes = [first, second];
+			const successes = outcomes.filter((result) => result.ok);
+			const failures = outcomes.filter((result) => !result.ok);
+
+			expect(successes).toHaveLength(1);
+			expect(failures).toHaveLength(1);
+			const failure = failures[0];
+			expect(failure).toBeDefined();
+			expect(humanResourcesCodeFromResult(failure)).toBe(
+				HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
+			);
+		});
+
+		it("rejects overlapping re-submit while peer approve is in flight", async () => {
+			const request1 = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+				{
+					startDate: "2024-03-05",
+					endDate: "2024-03-07",
+					requestedQuantity: "3",
+				},
+			);
+			const request2 = await harness.createLeaveRequest(
+				employee,
+				employment,
+				entitlement,
+				policy,
+				{
+					startDate: "2024-03-04",
+					endDate: "2024-03-06",
+					requestedQuantity: "3",
+				},
+			);
+
+			const submitted1 = await drizzleLeave.submitLeaveRequest(
+				{
+					organizationId: harness.organizationId,
+					requestId: request1.id,
+					expectedVersion: 1,
+					actorUserId: harness.actorUserId,
+				},
+				harness.ports,
+				harness.meta,
+			);
+			expect(submitted1.ok).toBe(true);
+			if (!submitted1.ok) return;
+
+			const submitted2 = await drizzleLeave.submitLeaveRequest(
+				{
+					organizationId: harness.organizationId,
+					requestId: request2.id,
+					expectedVersion: 1,
+					actorUserId: harness.actorUserId,
+				},
+				harness.ports,
+				harness.meta,
+			);
+			expect(submitted2.ok).toBe(false);
+			if (submitted2.ok) return;
+
+			const [approve1, approve2Attempt] = await Promise.all([
+				drizzleLeave.approveLeaveRequest(
+					{
+						organizationId: harness.organizationId,
+						requestId: request1.id,
+						expectedVersion: 2,
+						actorUserId: harness.actorUserId,
+						note: "Approved first window",
+					},
+					harness.ports,
+					harness.meta,
+				),
+				drizzleLeave.submitLeaveRequest(
+					{
+						organizationId: harness.organizationId,
+						requestId: request2.id,
+						expectedVersion: 1,
+						actorUserId: harness.actorUserId,
+					},
+					harness.ports,
+					harness.meta,
+				),
+			]);
+
+			expect(approve1.ok).toBe(true);
+			expect(approve2Attempt.ok).toBe(false);
+			expect(humanResourcesCodeFromResult(approve2Attempt)).toBe(
+				HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
+			);
 		});
 	});
 });

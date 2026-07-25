@@ -1,12 +1,36 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
+	HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
 	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_MULTIPLE_PRIMARY_ASSIGNMENTS,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import { previousIsoDate } from "./effective-dates";
 import { datesOverlap } from "./organization-guards";
+
+export const MULTIPLE_PRIMARY_ASSIGNMENTS_AT_ASOF_MESSAGE =
+	"Multiple assignments are effective on the requested date";
+
+export function multiplePrimaryAssignmentsAtAsOf(): Result<never> {
+	return fail(
+		"CONFLICT",
+		MULTIPLE_PRIMARY_ASSIGNMENTS_AT_ASOF_MESSAGE,
+		humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_MULTIPLE_PRIMARY_ASSIGNMENTS,
+		),
+	);
+}
+
+function assignmentOutsideEmploymentRange(message: string): Result<never> {
+	return fail(
+		"VALIDATION_ERROR",
+		message,
+		humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
+		),
+	);
+}
 
 export function assertNoAssignmentOverlap(input: {
 	candidateAssignmentId?: string;
@@ -47,25 +71,19 @@ export function assertAssignmentWithinEmployment(input: {
 	employmentEndsOn: string | null;
 }): Result<void> {
 	if (input.assignmentStartsOn < input.employmentStartsOn) {
-		return fail(
-			"VALIDATION_ERROR",
+		return assignmentOutsideEmploymentRange(
 			"Assignment start date precedes employment start date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 		);
 	}
 	if (input.employmentEndsOn !== null) {
 		if (input.assignmentEndsOn === null) {
-			return fail(
-				"VALIDATION_ERROR",
+			return assignmentOutsideEmploymentRange(
 				"Open-ended assignment exceeds employment tenure",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 			);
 		}
 		if (input.assignmentEndsOn > input.employmentEndsOn) {
-			return fail(
-				"VALIDATION_ERROR",
+			return assignmentOutsideEmploymentRange(
 				"Assignment end date exceeds employment end date",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 			);
 		}
 	}

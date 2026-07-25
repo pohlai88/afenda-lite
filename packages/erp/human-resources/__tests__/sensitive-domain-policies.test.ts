@@ -7,6 +7,7 @@ import {
 	HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
 	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_APPROVED_GET,
 	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
 	type HumanResourcesQueryId,
@@ -19,7 +20,9 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_REGISTER,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_VERIFY,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_IDENTITY_DOCUMENT_SENSITIVE_READ,
+	HUMAN_RESOURCES_PERMISSION_PERSON_READ,
 	HUMAN_RESOURCES_PERMISSION_SUCCESSION_ADMIN,
 	HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
 	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
@@ -82,6 +85,97 @@ describe("sensitive-domain policies", () => {
 				"human-resources.competency.create",
 			).id,
 		).toBe("hr.manifest-only");
+		expect(
+			resolveHumanResourcesAuthorizationPolicy(
+				HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
+			).id,
+		).toBe("hr.employee-profile");
+	});
+
+	it("allows employee profile subject, manager scope, and HR person read; denies outsider", async () => {
+		const auth = grantingAuthorization(
+			new Set([HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ]),
+		);
+		const subjectOk = await authorizeHumanResourcesOperation(
+			{
+				operationId: HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
+				operationKind: "query",
+				requiredPermission: HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+				actor: baseActor(),
+				resource: {
+					organizationId: "org-1",
+					kind: "employee",
+					subjectEmployeeId: "employee-1",
+				},
+			},
+			{ authorization: auth },
+		);
+		expect(subjectOk).toMatchObject({ ok: true });
+
+		const managerOk = await authorizeHumanResourcesOperation(
+			{
+				operationId: HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
+				operationKind: "query",
+				requiredPermission: HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+				actor: baseActor({ actorEmployeeId: "manager-1" }),
+				resource: {
+					organizationId: "org-1",
+					kind: "employee",
+					subjectEmployeeId: "employee-2",
+					managerEmployeeId: "manager-1",
+					attributes: { inManagerScope: true },
+				},
+			},
+			{ authorization: auth },
+		);
+		expect(managerOk).toMatchObject({ ok: true });
+
+		const hrOk = await authorizeHumanResourcesOperation(
+			{
+				operationId: HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
+				operationKind: "query",
+				requiredPermission: HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+				actor: baseActor({ actorEmployeeId: "hr-1" }),
+				actorPermissions: [
+					HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+					HUMAN_RESOURCES_PERMISSION_PERSON_READ,
+				],
+				resource: {
+					organizationId: "org-1",
+					kind: "employee",
+					subjectEmployeeId: "employee-2",
+				},
+			},
+			{
+				authorization: grantingAuthorization(
+					new Set([
+						HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+						HUMAN_RESOURCES_PERMISSION_PERSON_READ,
+					]),
+				),
+			},
+		);
+		expect(hrOk).toMatchObject({ ok: true });
+
+		const deniedScope = await authorizeHumanResourcesOperation(
+			{
+				operationId: HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
+				operationKind: "query",
+				requiredPermission: HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+				actor: baseActor({ actorEmployeeId: "employee-9" }),
+				actorPermissions: [HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ],
+				resource: {
+					organizationId: "org-1",
+					kind: "employee",
+					subjectEmployeeId: "employee-2",
+				},
+			},
+			{ authorization: auth },
+		);
+		expect(deniedScope).toMatchObject({
+			ok: false,
+			details: { denyCode: "subject_scope_denied" },
+		});
 	});
 
 	it("allows talent profile subject and manager scope; denies outsider", async () => {

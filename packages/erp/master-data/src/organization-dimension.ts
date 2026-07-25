@@ -124,7 +124,7 @@ export const resolveOrganizationDimensionsAsOfInputSchema = context
 
 export const getOrganizationDimensionEffectiveInputSchema = context
 	.extend({
-		kind: z.literal("legal_entity"),
+		kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
 		id: z.uuid().optional(),
 		key: z.string().trim().min(1).max(100).optional(),
 		asOf: isoDate,

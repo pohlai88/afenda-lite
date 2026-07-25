@@ -130,7 +130,7 @@ See [`cluster-a/03-cluster-conflicts.md`](cluster-a/03-cluster-conflicts.md). Hi
 6. HR-COREORG-HIRE-ORCHESTRATION  
 7. HR-ENT-03-EFFECTIVE-TRUTH (cluster A tranche)  
 8. HR-COREORG-STRUCTURE-ALIGN  
-9. HR-COREORG-DB-INVARIANTS  
+9. HR-COREORG-DB-INVARIANTS (**CLOSED** Slice 4.10 — migrations 0018 + 0035)  
 10. HR-ENT-07-PRODUCT-OPS (cluster A Actions)
 
 Detail: [`cluster-a/04-repair-readiness.md`](cluster-a/04-repair-readiness.md)

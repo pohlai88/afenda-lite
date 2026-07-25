@@ -118,6 +118,12 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 		fieldClasses: ["succession"],
 	},
 	{
+		operationPrefixes: ["human-resources.employee.profile."],
+		resourceType: "personal_identifiers",
+		subjectPolicy: "subject_manager_or_privileged",
+		fieldClasses: ["personal_identifiers"],
+	},
+	{
 		operationPrefixes: [
 			"human-resources.talent-profile.",
 			"human-resources.talent-profile-assessment.",

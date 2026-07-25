@@ -7,6 +7,7 @@
  */
 
 import type { OutboxFactInput } from "../../ports";
+import { ACTIVE_LEAVE_OVERLAP_STATUSES } from "../../shared/leave-guards";
 import {
 	buildAuditCte,
 	buildCreateRequestWithSegmentsCte,
@@ -18,6 +19,142 @@ import {
 	generateTransactionIds,
 	valueSnapshotJson,
 } from "./leave-transactions";
+
+function activeLeaveOverlapStatusSqlList(): string {
+	return ACTIVE_LEAVE_OVERLAP_STATUSES.map((status) => `'${status}'`).join(", ");
+}
+
+/**
+ * Employee-scoped booking lock and segment overlap detection for submit/approve.
+ * Requires `locked_request` CTE to exist earlier in the same WITH clause.
+ */
+export function buildLeaveOverlapGuardCtes(params: {
+	organizationId: string;
+	requestId: string;
+}): string {
+	const statuses = activeLeaveOverlapStatusSqlList();
+	return `
+		employee_booking_lock AS (
+			SELECT pg_advisory_xact_lock(
+				hashtext(locked_request.organization_id || ':' || locked_request.employee_id)
+			)
+			FROM locked_request
+		),
+		overlap AS (
+			SELECT EXISTS (
+				SELECT 1
+				FROM hr_leave_request_segment candidate
+				INNER JOIN locked_request req
+					ON req.id = candidate.request_id
+					AND req.organization_id = candidate.organization_id
+				INNER JOIN hr_leave_request peer_req
+					ON peer_req.organization_id = candidate.organization_id
+					AND peer_req.employee_id = req.employee_id
+					AND peer_req.id <> req.id
+					AND peer_req.status IN (${statuses})
+				INNER JOIN hr_leave_request_segment peer_seg
+					ON peer_seg.organization_id = peer_req.organization_id
+					AND peer_seg.request_id = peer_req.id
+				WHERE candidate.request_id = '${params.requestId}'
+					AND candidate.organization_id = '${params.organizationId}'
+					AND candidate.segment_date = peer_seg.segment_date
+					AND (
+						candidate.day_portion = 'full'
+						OR peer_seg.day_portion = 'full'
+						OR candidate.day_portion = peer_seg.day_portion
+					)
+			) AS found
+		),
+	`;
+}
+
+/**
+ * Build submit transaction SQL with employee booking lock and overlap guard.
+ */
+export function buildSubmitLeaveRequestSql(params: {
+	requestId: string;
+	organizationId: string;
+	expectedVersion: number;
+	actorUserId: string;
+	correlationId: string;
+	eventType?: OutboxFactInput["type"];
+}): string {
+	const { auditId, eventId } = generateTransactionIds();
+	const changesJson = fieldChangeJson("status", null, "submitted");
+
+	const auditCte = buildAuditCte({
+		auditId,
+		module: "human-resources",
+		entity: "hr_leave_request",
+		action: "UPDATE",
+		correlationId: params.correlationId,
+		changes: `'${changesJson}'`,
+		fromCte: "updated_request",
+		selectFields: {
+			organizationId: "organization_id",
+			entityId: "id",
+			actorUserId: `'${params.actorUserId}'`,
+		},
+	});
+
+	const outboxCte = params.eventType
+		? buildOutboxCte({
+				eventId,
+				eventType: params.eventType,
+				sourceModule: "human-resources",
+				correlationId: params.correlationId,
+				payload: `'${eventPayloadJson({
+					organizationId: params.organizationId,
+					entityType: "hr_leave_request",
+					entityId: params.requestId,
+					actorId: params.actorUserId,
+					correlationId: params.correlationId,
+				})}'`,
+				fromCte: "updated_request",
+				selectFields: {
+					organizationId: "organization_id",
+					actorUserId: `'${params.actorUserId}'`,
+				},
+			})
+		: "";
+
+	return `
+		WITH ${buildLockRequestCte({
+			organizationId: params.organizationId,
+			requestId: params.requestId,
+		}).replace(/^[\s]*WITH\s/, "")},
+		${buildLeaveOverlapGuardCtes({
+			organizationId: params.organizationId,
+			requestId: params.requestId,
+		})}
+		updated_request AS (
+			UPDATE hr_leave_request
+			SET
+				status = 'submitted',
+				version = hr_leave_request.version + 1,
+				updated_by = '${params.actorUserId}',
+				updated_at = NOW()
+			FROM locked_request, overlap
+			WHERE hr_leave_request.id = locked_request.id
+			AND hr_leave_request.organization_id = '${params.organizationId}'
+			AND hr_leave_request.version = ${params.expectedVersion}
+			AND NOT (SELECT found FROM overlap)
+			RETURNING hr_leave_request.*
+		),
+		${auditCte.replace(/^[\s]*audited AS/, "audited AS")}${
+			params.eventType
+				? `,
+		${outboxCte.replace(/^[\s]*outboxed AS/, "outboxed AS")}`
+				: ""
+		}
+		SELECT
+			(SELECT found FROM overlap) AS overlap_detected,
+			updated_request.*
+		FROM overlap
+		LEFT JOIN updated_request ON NOT (SELECT found FROM overlap)
+		${params.eventType ? ", audited, outboxed" : ", audited"}
+	`;
+}
 
 /**
  * Build complete CREATE leave request transaction SQL
@@ -115,6 +252,10 @@ export function buildApproveLeaveRequestSql(params: {
 			organizationId: params.organizationId,
 			requestId: params.requestId,
 		}).replace(/^[\s]*WITH\s/, "")},
+		${buildLeaveOverlapGuardCtes({
+			organizationId: params.organizationId,
+			requestId: params.requestId,
+		})}
 		entitlement_lock AS (
 			SELECT ent.* FROM hr_leave_entitlement ent
 			INNER JOIN locked_request req ON req.entitlement_id = ent.id
@@ -137,8 +278,9 @@ export function buildApproveLeaveRequestSql(params: {
 				'Approved leave request ' || req.id, 'approval', 'posted',
 				req.id || ':consumption', '${params.createRequestFingerprint}',
 				1, '${params.actorUserId}', '${params.actorUserId}'
-			FROM locked_request req
-			WHERE (
+			FROM locked_request req, overlap
+			WHERE NOT (SELECT found FROM overlap)
+			AND (
 				SELECT ent.opening_quantity::numeric + COALESCE(SUM(adj.delta::numeric), 0)
 				FROM entitlement_lock ent
 				LEFT JOIN hr_leave_adjustment adj
@@ -200,8 +342,14 @@ export function buildApproveLeaveRequestSql(params: {
 				actorUserId: `'${params.actorUserId}'`,
 			},
 		}).replace(/^[\s]*outboxed AS/, "outboxed AS")}
-		SELECT updated_request.*
-		FROM updated_request, consumption_adjustment, approval_decision, audited, outboxed
+		SELECT
+			(SELECT found FROM overlap) AS overlap_detected,
+			updated_request.*
+		FROM overlap
+		LEFT JOIN updated_request ON NOT (SELECT found FROM overlap)
+		LEFT JOIN consumption_adjustment ON NOT (SELECT found FROM overlap)
+		LEFT JOIN approval_decision ON NOT (SELECT found FROM overlap)
+		, audited, outboxed
 	`;
 }
 
@@ -561,7 +709,8 @@ export function buildCreateLeaveAdjustmentSql(params: {
 }
 
 /**
- * Build simple status transition transaction SQL (submit, reject, return, withdraw)
+ * Build simple status transition transaction SQL (reject, return, withdraw).
+ * Submit and approve use dedicated builders with overlap guards.
  */
 export function buildStatusTransitionSql(params: {
 	requestId: string;

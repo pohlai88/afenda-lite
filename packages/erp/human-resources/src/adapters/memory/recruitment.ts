@@ -4,6 +4,7 @@ import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
 	type HumanResourcesDepartmentId,
+	type HumanResourcesEmployeeId,
 	type HumanResourcesInterviewEvaluationId,
 	type HumanResourcesInterviewId,
 	type HumanResourcesJobId,
@@ -40,6 +41,7 @@ import {
 	assertOfferAmendable,
 	assertOfferStatusTransition,
 	assertRequisitionAmendable,
+	assertRequisitionHiringManagerAssignable,
 	assertRequisitionOpenForApplication,
 	assertRequisitionStatusTransition,
 } from "../../shared/recruitment-guards";
@@ -199,6 +201,7 @@ export type MemoryRecruitmentMethods = Pick<
 	| "findRequisitionByCode"
 	| "createDraftRequisition"
 	| "amendRequisition"
+	| "assignHiringManager"
 	| "transitionRequisitionStatus"
 	| "listRequisitions"
 	| "findCandidateByIdempotencyKey"
@@ -382,6 +385,7 @@ export function createMemoryRecruitmentMethods(
 				jobId: record.jobId,
 				positionId: record.positionId,
 				departmentId: record.departmentId,
+				hiringManagerEmployeeId: record.hiringManagerEmployeeId,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -426,6 +430,7 @@ export function createMemoryRecruitmentMethods(
 				jobId?: HumanResourcesJobId | null;
 				positionId?: HumanResourcesPositionId | null;
 				departmentId?: HumanResourcesDepartmentId | null;
+				hiringManagerEmployeeId?: HumanResourcesEmployeeId | null;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -470,6 +475,10 @@ export function createMemoryRecruitmentMethods(
 				input.departmentId !== undefined
 					? input.departmentId
 					: requisition.departmentId;
+			const nextHiringManagerEmployeeId =
+				input.hiringManagerEmployeeId !== undefined
+					? input.hiringManagerEmployeeId
+					: requisition.hiringManagerEmployeeId;
 
 			const refs = await validateRequisitionReferences.call(this, {
 				organizationId: input.organizationId,
@@ -488,6 +497,74 @@ export function createMemoryRecruitmentMethods(
 				jobId: nextJobId,
 				positionId: nextPositionId,
 				departmentId: nextDepartmentId,
+				hiringManagerEmployeeId: nextHiringManagerEmployeeId,
+				version: requisition.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.requisitions.set(input.requisitionId, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_job_requisition",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.requisitions.set(input.requisitionId, requisition);
+				return audit;
+			}
+
+			return ok(cloneRequisition(updated));
+		},
+
+		async assignHiringManager(
+			input: {
+				organizationId: string;
+				requisitionId: HumanResourcesRequisitionId;
+				hiringManagerEmployeeId: HumanResourcesEmployeeId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<JobRequisition>> {
+			const requisition = state.requisitions.get(input.requisitionId);
+			if (requisition === undefined) {
+				return notFound("Requisition not found");
+			}
+			const orgCheck = assertRecruitmentOrgMatch(
+				requisition,
+				input.organizationId,
+				"Requisition",
+			);
+			if (!orgCheck.ok) {
+				return notFound("Requisition not found");
+			}
+
+			const versionCheck = assertExpectedVersion(
+				requisition.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const assignable = assertRequisitionHiringManagerAssignable(
+				requisition.status,
+			);
+			if (!assignable.ok) {
+				return assignable;
+			}
+
+			const now = new Date();
+			const updated: JobRequisition = {
+				...requisition,
+				hiringManagerEmployeeId: input.hiringManagerEmployeeId,
 				version: requisition.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,

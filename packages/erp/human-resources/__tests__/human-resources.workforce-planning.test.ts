@@ -24,8 +24,9 @@ import { acceptOffer, createOffer, issueOffer } from "../src/recruitment/offer";
 import {
 	approveRequisition,
 	cancelRequisition,
+	closeRequisition,
 	createDraftRequisition,
-	openRequisition,
+	placeRequisitionOnHold,
 	submitRequisition,
 } from "../src/recruitment/requisition";
 import {
@@ -51,6 +52,7 @@ import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import { seedDefaultHiringManager, seedRequisitionPipeline } from "./helpers/recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG = "org-wfp-test";
@@ -169,48 +171,6 @@ async function approvePlanPipeline(
 	};
 }
 
-async function openRequisitionPipeline(
-	ready: ReturnType<typeof createHrParityHarness>,
-	input: { organizationId: string; actorUserId: string; tag: string },
-) {
-	const draft = await createDraftRequisition(
-		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: `corr-req-${input.tag}`,
-			idempotencyKey: `idem-req-${input.tag}`,
-			code: `REQ-${input.tag}`.slice(0, 64),
-			title: "Hire",
-		},
-		ready,
-	);
-	if (!draft.ok) {
-		return draft;
-	}
-	let requisition = draft.data;
-	for (const [cmd, corr] of [
-		[submitRequisition, `corr-req-submit-${input.tag}`],
-		[approveRequisition, `corr-req-approve-${input.tag}`],
-		[openRequisition, `corr-req-open-${input.tag}`],
-	] as const) {
-		const next = await cmd(
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: corr,
-				requisitionId: requisition.id,
-				expectedVersion: requisition.version,
-			},
-			ready,
-		);
-		if (!next.ok) {
-			return next;
-		}
-		requisition = next.data;
-	}
-	return { ok: true as const, data: requisition };
-}
-
 describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 	it("creates a draft headcount plan with a line", async () => {
 		const ready = createHrParityHarness("memory");
@@ -312,10 +272,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -352,10 +313,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -413,10 +375,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -489,10 +452,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -624,10 +588,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -691,10 +656,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -758,10 +724,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -848,10 +815,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG_B,
 			actorUserId: ACTOR,
 			tag: `b-${tag}`,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -1011,10 +979,11 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
 
-		const requisition = await openRequisitionPipeline(ready, {
+		const requisition = await seedRequisitionPipeline(ready, {
 			organizationId: ORG,
 			actorUserId: ACTOR,
 			tag,
+			targetStatus: "open",
 		});
 		expect(requisition.ok).toBe(true);
 		if (!requisition.ok) return;
@@ -1046,6 +1015,363 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		if (handoff.ok) {
 			expect(handoff.data.activeReservation?.status).toBe("active");
 			expect(handoff.data.approvedPlan?.status).toBe("approved");
+		}
+	});
+});
+
+describe("@afenda/human-resources headcount reservation status gate (Slice 6.1)", () => {
+	it("allows reserve on approved and open requisitions only", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approvedPlan = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approvedPlan.ok).toBe(true);
+		if (!approvedPlan.ok) return;
+
+		const approvedReq = await seedRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag: `appr-${tag}`,
+			targetStatus: "approved",
+			title: "Hire approved",
+			code: `REQ-APPR-${tag}`,
+		});
+		expect(approvedReq.ok).toBe(true);
+		if (!approvedReq.ok) return;
+
+		const onApproved = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-res-appr-${tag}`,
+				idempotencyKey: `idem-res-appr-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: approvedReq.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(onApproved.ok).toBe(true);
+
+		const openReq = await seedRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag: `open-${tag}`,
+			targetStatus: "open",
+		});
+		expect(openReq.ok).toBe(true);
+		if (!openReq.ok) return;
+
+		const onOpen = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-res-open-${tag}`,
+				idempotencyKey: `idem-res-open-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: openReq.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(onOpen.ok).toBe(true);
+	});
+
+	it("rejects reserve on draft, submitted, and on_hold requisitions", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approvedPlan = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approvedPlan.ok).toBe(true);
+		if (!approvedPlan.ok) return;
+
+		const manager = await seedDefaultHiringManager(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag: `gate-${tag}`,
+		});
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const draft = await createDraftRequisition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-draft-gate-${tag}`,
+				idempotencyKey: `idem-draft-gate-${tag}`,
+				code: `REQ-DRAFT-${tag}`.slice(0, 64),
+				title: "Draft gate",
+				hiringManagerEmployeeId: manager.employeeId,
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const draftReserve = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-res-draft-${tag}`,
+				idempotencyKey: `idem-res-draft-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: draft.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(draftReserve.ok).toBe(false);
+		if (!draftReserve.ok) {
+			expect(humanResourcesCodeFromResult(draftReserve)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+
+		const submitted = await submitRequisition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-submit-gate-${tag}`,
+				requisitionId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const submittedReserve = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-res-submitted-${tag}`,
+				idempotencyKey: `idem-res-submitted-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: submitted.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(submittedReserve.ok).toBe(false);
+		if (!submittedReserve.ok) {
+			expect(humanResourcesCodeFromResult(submittedReserve)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+
+		const openReq = await seedRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag: `hold-${tag}`,
+			targetStatus: "open",
+		});
+		expect(openReq.ok).toBe(true);
+		if (!openReq.ok) return;
+
+		const onHold = await placeRequisitionOnHold(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-hold-gate-${tag}`,
+				requisitionId: openReq.data.id,
+				expectedVersion: openReq.data.version,
+			},
+			ready,
+		);
+		expect(onHold.ok).toBe(true);
+		if (!onHold.ok) return;
+
+		const holdReserve = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-res-hold-${tag}`,
+				idempotencyKey: `idem-res-hold-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: onHold.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(holdReserve.ok).toBe(false);
+		if (!holdReserve.ok) {
+			expect(humanResourcesCodeFromResult(holdReserve)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+	});
+
+	it("releases reservation when requisition is closed", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approvedPlan = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approvedPlan.ok).toBe(true);
+		if (!approvedPlan.ok) return;
+
+		const requisition = await seedRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+			targetStatus: "open",
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+
+		const reserved = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-res-close-${tag}`,
+				idempotencyKey: `idem-res-close-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: requisition.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(reserved.ok).toBe(true);
+		if (!reserved.ok) return;
+
+		const closed = await closeRequisition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-close-${tag}`,
+				requisitionId: requisition.data.id,
+				expectedVersion: requisition.data.version,
+			},
+			ready,
+		);
+		expect(closed.ok).toBe(true);
+
+		const listed = await listHeadcountReservations(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-list-close-${tag}`,
+				requisitionId: requisition.data.id,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (listed.ok) {
+			expect(listed.data.reservations[0]?.status).toBe("released");
+		}
+	});
+
+	it("rejects duplicate active reservation for the same requisition", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approvedPlan = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approvedPlan.ok).toBe(true);
+		if (!approvedPlan.ok) return;
+
+		const requisition = await seedRequisitionPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+			targetStatus: "open",
+		});
+		expect(requisition.ok).toBe(true);
+		if (!requisition.ok) return;
+
+		const first = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-dup-1-${tag}`,
+				idempotencyKey: `idem-dup-1-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: requisition.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const duplicate = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-dup-2-${tag}`,
+				idempotencyKey: `idem-dup-2-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: requisition.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(duplicate.ok).toBe(false);
+		if (!duplicate.ok) {
+			expect(humanResourcesCodeFromResult(duplicate)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+	});
+
+	it("denies cross-org headcount reserve against foreign requisition", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approvedPlan = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		expect(approvedPlan.ok).toBe(true);
+		if (!approvedPlan.ok) return;
+
+		const requisitionB = await seedRequisitionPipeline(ready, {
+			organizationId: ORG_B,
+			actorUserId: ACTOR,
+			tag,
+			targetStatus: "open",
+		});
+		expect(requisitionB.ok).toBe(true);
+		if (!requisitionB.ok) return;
+
+		const denied = await reserveHeadcount(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cross-res-${tag}`,
+				idempotencyKey: `idem-cross-res-${tag}`,
+				planLineId: approvedPlan.data.line.id,
+				requisitionId: requisitionB.data.id,
+				reservedFte: "1.0000",
+				reservedHeadcount: 1,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			const code = humanResourcesCodeFromResult(denied);
+			expect(
+				code === HUMAN_RESOURCES_ERROR_NOT_FOUND ||
+					code === HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			).toBe(true);
 		}
 	});
 });

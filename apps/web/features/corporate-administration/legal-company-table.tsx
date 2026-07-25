@@ -1,11 +1,13 @@
 "use client";
 
 import {
+	Button,
 	Code,
 	DataTable,
 	type DataTableColumn,
 	StatusBadge,
 } from "@afenda/ui-system";
+import Link from "next/link";
 
 export type LegalCompanyTableRow = Record<string, unknown> & {
 	id: string;
@@ -41,6 +43,17 @@ const columns: DataTableColumn<LegalCompanyTableRow>[] = [
 	},
 	{ key: "version", title: "Version" },
 	{ key: "updatedAt", title: "Updated" },
+	{
+		key: "id",
+		title: "Open",
+		render: (_value, row) => (
+			<Button asChild size="sm" variant="outline">
+				<Link href={`?companyId=${encodeURIComponent(row.id)}`}>
+					Open {row.code}
+				</Link>
+			</Button>
+		),
+	},
 ];
 
 export function LegalCompanyTable({ rows }: { rows: LegalCompanyTableRow[] }) {

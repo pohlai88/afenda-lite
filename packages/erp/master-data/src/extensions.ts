@@ -24,6 +24,7 @@ import {
 	createWarehouseExternalIdInputSchema,
 	findByExternalIdInputSchema,
 	findItemByAliasInputSchema,
+	getPartyAddressInputSchema,
 	listByParentInputSchema,
 	partyRoleLifecycleInputSchema,
 	updatePartyAddressInputSchema,
@@ -47,6 +48,7 @@ import {
 	MASTER_QUERY_ITEM_FIND_BY_ALIAS,
 	MASTER_QUERY_ITEM_FIND_BY_EXTERNAL_ID,
 	MASTER_QUERY_ITEM_UOM_LIST,
+	MASTER_QUERY_PARTY_ADDRESS_GET,
 	MASTER_QUERY_PARTY_ADDRESS_LIST,
 	MASTER_QUERY_PARTY_CONTACT_LIST,
 	MASTER_QUERY_PARTY_FIND_BY_EXTERNAL_ID,
@@ -311,6 +313,30 @@ export async function listPartyAddresses(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 	});
+}
+
+export async function getPartyAddressById(
+	input: unknown,
+	options: MasterCommandOptions = {},
+): Promise<Result<PartyAddress | null>> {
+	const parsed = parseMasterInput(
+		getPartyAddressInputSchema,
+		input,
+		"Invalid party address get input",
+	);
+	if (!parsed.ok) return parsed;
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireMasterQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_ADDRESS_GET,
+	});
+	if (!authorized.ok) return authorized;
+	return store.getPartyAddressById(
+		parsed.data.organizationId,
+		parsed.data.partyId,
+		parsed.data.id,
+	);
 }
 
 export async function createPartyContact(

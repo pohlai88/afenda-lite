@@ -667,11 +667,12 @@ const standardResolutionRecordSchema = governanceCommandContext.extend({
 	description: z.string().trim().min(1).max(5000).optional(),
 });
 
-const supersedingResolutionRecordSchema =
-	standardResolutionRecordSchema.extend({
+const supersedingResolutionRecordSchema = standardResolutionRecordSchema.extend(
+	{
 		mode: z.literal("superseding"),
 		supersedesResolutionId: z.uuid(),
-	});
+	},
+);
 
 export const createResolutionInputSchema = z.discriminatedUnion("mode", [
 	standardResolutionRecordSchema.strict(),

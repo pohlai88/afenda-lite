@@ -3,6 +3,7 @@ import {
 	humanResourcesApplicationIdSchema,
 	humanResourcesCandidateIdSchema,
 	humanResourcesDepartmentIdSchema,
+	humanResourcesEmployeeIdSchema,
 	humanResourcesInterviewIdSchema,
 	humanResourcesJobIdSchema,
 	humanResourcesOfferIdSchema,
@@ -36,6 +37,7 @@ export const createDraftRequisitionInputSchema =
 			jobId: humanResourcesJobIdSchema.nullable().optional(),
 			positionId: humanResourcesPositionIdSchema.nullable().optional(),
 			departmentId: humanResourcesDepartmentIdSchema.nullable().optional(),
+			hiringManagerEmployeeId: humanResourcesEmployeeIdSchema.nullable().optional(),
 		})
 		.strict();
 
@@ -50,11 +52,24 @@ export const amendRequisitionInputSchema = humanResourcesMutationContextSchema
 		jobId: humanResourcesJobIdSchema.nullable().optional(),
 		positionId: humanResourcesPositionIdSchema.nullable().optional(),
 		departmentId: humanResourcesDepartmentIdSchema.nullable().optional(),
+		hiringManagerEmployeeId: humanResourcesEmployeeIdSchema.nullable().optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
 
 export type AmendRequisitionInput = z.infer<typeof amendRequisitionInputSchema>;
+
+export const assignHiringManagerInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		requisitionId: humanResourcesRequisitionIdSchema,
+		hiringManagerEmployeeId: humanResourcesEmployeeIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type AssignHiringManagerInput = z.infer<
+	typeof assignHiringManagerInputSchema
+>;
 
 export const requisitionStatusTransitionInputSchema =
 	humanResourcesMutationContextSchema

@@ -42,7 +42,8 @@ import {
 } from "../../mutation-emission-registry";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { conflict, invalidState, notFound } from "../../shared/domain-guards";
+import { conflict, effectiveRangeOverlap, invalidState, notFound } from "../../shared/domain-guards";
+import { ACTIVE_LEAVE_OVERLAP_STATUSES } from "../../shared/leave-guards";
 import {
 	type EmploymentStatus,
 	employmentStatusSchema,
@@ -108,6 +109,7 @@ import {
 	buildCreateLeaveRequestSql,
 	buildEntitlementStatusTransitionSql,
 	buildPolicyStatusTransitionSql,
+	buildSubmitLeaveRequestSql,
 	buildStatusTransitionSql,
 } from "./leave-sql-builders";
 import {
@@ -119,6 +121,48 @@ import {
 	runLeaveTransaction,
 	validateTransactionInput,
 } from "./leave-transactions";
+
+type LeaveRequestOverlapSqlRow = LeaveRequestSqlRow & {
+	overlap_detected: boolean;
+};
+
+function mapLeaveRequestOverlapRow(
+	row: LeaveRequestOverlapSqlRow | undefined,
+	failureMessage: string,
+): Result<LeaveRequest> {
+	if (row === undefined) {
+		return notFound(failureMessage);
+	}
+	if (row.overlap_detected) {
+		return effectiveRangeOverlap("Leave request overlaps an existing booking");
+	}
+	if (row.id === undefined) {
+		return notFound(failureMessage);
+	}
+	return mapLeaveRequest({
+		id: row.id,
+		organizationId: row.organization_id,
+		employeeId: row.employee_id,
+		employmentId: row.employment_id,
+		entitlementId: row.entitlement_id,
+		policyId: row.policy_id,
+		startDate: row.start_date,
+		endDate: row.end_date,
+		requestedQuantity: row.requested_quantity,
+		unit: row.unit,
+		status: row.status,
+		isBackdated: row.is_backdated,
+		backdateJustification: row.backdate_justification,
+		approvedAt: row.approved_at,
+		createIdempotencyKey: row.create_idempotency_key,
+		createRequestFingerprint: row.create_request_fingerprint,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
 
 // Simple status transition helper function
 async function transitionLeavePolicyStatus(input: {
@@ -526,8 +570,8 @@ function mapLeaveRequestSegment(
 	});
 }
 
-function activeOverlapStatuses(): LeaveRequestStatus[] {
-	return ["draft", "submitted", "returned", "approved"];
+function activeLeaveOverlapStatuses(): LeaveRequestStatus[] {
+	return [...ACTIVE_LEAVE_OVERLAP_STATUSES];
 }
 
 export const drizzleLeaveMethods: DrizzleLeaveMethods = {
@@ -1764,8 +1808,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				);
 			requests = requests.filter(
 				(row) =>
-					activeOverlapStatuses().includes(row.status as LeaveRequestStatus) &&
-					row.id !== input.excludeRequestId,
+					activeLeaveOverlapStatuses().includes(
+						row.status as LeaveRequestStatus,
+					) && row.id !== input.excludeRequestId,
 			);
 			if (requests.length === 0) return ok([]);
 			const requestIds = requests.map((row) => row.id);
@@ -2012,48 +2057,24 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 
 		try {
-			const sql = buildStatusTransitionSql({
+			const sql = buildSubmitLeaveRequestSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
 				expectedVersion: input.expectedVersion,
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
-				nextStatus: "submitted",
 				eventType: submitEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+			const [rows] = await runLeaveTransaction<[LeaveRequestOverlapSqlRow[]]>(
 				(sqlClient) => [sqlClient.query(sql)],
+				{ isolationLevel: "Serializable" },
 			);
 
-			const row = rows[0];
-			if (row === undefined) {
-				return notFound("Leave request submission failed");
-			}
-
-			return mapLeaveRequest({
-				id: row.id,
-				organizationId: row.organization_id,
-				employeeId: row.employee_id,
-				employmentId: row.employment_id,
-				entitlementId: row.entitlement_id,
-				policyId: row.policy_id,
-				startDate: row.start_date,
-				endDate: row.end_date,
-				requestedQuantity: row.requested_quantity,
-				unit: row.unit,
-				status: row.status,
-				isBackdated: row.is_backdated,
-				backdateJustification: row.backdate_justification,
-				approvedAt: row.approved_at,
-				createIdempotencyKey: row.create_idempotency_key,
-				createRequestFingerprint: row.create_request_fingerprint,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapLeaveRequestOverlapRow(
+				rows[0],
+				"Leave request submission failed",
+			);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to submit leave request");
 		}
@@ -2120,41 +2141,15 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: approveEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
+			const [rows] = await runLeaveTransaction<[LeaveRequestOverlapSqlRow[]]>(
 				(sqlClient) => [sqlClient.query(sql)],
 				{ isolationLevel: "Serializable" },
 			);
 
-			const row = rows[0];
-			if (row === undefined) {
-				return notFound(
-					"Leave request approval failed - insufficient balance or stale version",
-				);
-			}
-
-			return mapLeaveRequest({
-				id: row.id,
-				organizationId: row.organization_id,
-				employeeId: row.employee_id,
-				employmentId: row.employment_id,
-				entitlementId: row.entitlement_id,
-				policyId: row.policy_id,
-				startDate: row.start_date,
-				endDate: row.end_date,
-				requestedQuantity: row.requested_quantity,
-				unit: row.unit,
-				status: row.status,
-				isBackdated: row.is_backdated,
-				backdateJustification: row.backdate_justification,
-				approvedAt: row.approved_at,
-				createIdempotencyKey: row.create_idempotency_key,
-				createRequestFingerprint: row.create_request_fingerprint,
-				version: row.version,
-				createdBy: row.created_by,
-				updatedBy: row.updated_by,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at,
-			});
+			return mapLeaveRequestOverlapRow(
+				rows[0],
+				"Leave request approval failed - insufficient balance or stale version",
+			);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to approve leave request");
 		}

@@ -123,6 +123,12 @@ import {
 	resolveSessionFromEvents,
 } from "../../time/attendance/session-resolution";
 import {
+	filterAttendanceEventsForWorkDay,
+	resolveAttendanceEventSourceSequence,
+	resolveImportRowSourceSequence,
+	sortAttendanceEventsForSession,
+} from "../../time/attendance/event-order";
+import {
 	approvedLeaveMinutesForDate,
 	buildAttendanceTimesheetEntryPlans,
 	encodeAbsenceDetectionRemarks,
@@ -791,6 +797,7 @@ function mapEvent(
 		eventType: row.eventType,
 		capturedOccurredAt: row.capturedOccurredAt,
 		occurredAt: row.occurredAt,
+		sourceSequence: row.sourceSequence,
 		sourceTimezone: row.sourceTimezone,
 		localWorkDate: row.localWorkDate,
 		source: row.source,
@@ -4106,6 +4113,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						shiftAssignmentId: row.shiftAssignmentId ?? null,
 						eventType: row.eventType,
 						occurredAt: row.occurredAt,
+						sourceSequence: resolveImportRowSourceSequence(row, rowIndex),
 						sourceTimezone: row.sourceTimezone,
 						localWorkDate: row.localWorkDate,
 						source: "import",
@@ -4227,6 +4235,24 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 
 	async recordAttendanceEvent(input, ports) {
 		try {
+			const maxRows = await db
+				.select({
+					maxSequence: sql<number>`COALESCE(MAX(${hrAttendanceEvent.sourceSequence}), -1)`,
+				})
+				.from(hrAttendanceEvent)
+				.where(
+					and(
+						eq(hrAttendanceEvent.organizationId, input.organizationId),
+						eq(hrAttendanceEvent.employeeId, input.employeeId),
+						eq(hrAttendanceEvent.localWorkDate, input.localWorkDate),
+					),
+				);
+			const sourceSequence = resolveAttendanceEventSourceSequence({
+				explicit: input.sourceSequence,
+				existingEvents: maxRows.map((row) => ({
+					sourceSequence: row.maxSequence,
+				})),
+			});
 			const id = randomUUID();
 			const now = new Date();
 			const [row] = await db
@@ -4240,6 +4266,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					eventType: input.eventType,
 					capturedOccurredAt: input.occurredAt,
 					occurredAt: input.occurredAt,
+					sourceSequence,
 					sourceTimezone: input.sourceTimezone,
 					localWorkDate: input.localWorkDate,
 					source: input.source,
@@ -4572,6 +4599,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				.select()
 				.from(hrAttendanceEvent)
 				.where(and(...conditions))
+				.orderBy(
+					asc(hrAttendanceEvent.localWorkDate),
+					asc(hrAttendanceEvent.occurredAt),
+					asc(hrAttendanceEvent.sourceSequence),
+					asc(hrAttendanceEvent.id),
+				)
 				.limit(limit)
 				.offset(offset);
 			const mapped: AttendanceEvent[] = [];
@@ -4580,7 +4613,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				if (!item.ok) return item;
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return ok(sortAttendanceEventsForSession(mapped));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list attendance events");
 		}
@@ -4622,6 +4655,11 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						eq(hrAttendanceEvent.employeeId, input.employeeId),
 						eq(hrAttendanceEvent.localWorkDate, input.localWorkDate),
 					),
+				)
+				.orderBy(
+					asc(hrAttendanceEvent.occurredAt),
+					asc(hrAttendanceEvent.sourceSequence),
+					asc(hrAttendanceEvent.id),
 				);
 			const events: AttendanceEvent[] = [];
 			for (const row of eventRows) {
@@ -4629,8 +4667,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				if (!mapped.ok) return mapped;
 				events.push(mapped.data);
 			}
-			events.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
-			const resolved = resolveSessionFromEvents(events);
+			const orderedEvents = filterAttendanceEventsForWorkDay(events, {
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				localWorkDate: input.localWorkDate,
+			});
+			const resolved = resolveSessionFromEvents(orderedEvents);
 			const policyMinutes = applyAutomaticBreakPolicy(
 				resolved,
 				input.automaticBreakPolicy,
@@ -4882,15 +4924,24 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						eq(hrAttendanceEvent.localWorkDate, session.localWorkDate),
 					),
 				)
-				.orderBy(asc(hrAttendanceEvent.occurredAt));
+				.orderBy(
+					asc(hrAttendanceEvent.occurredAt),
+					asc(hrAttendanceEvent.sourceSequence),
+					asc(hrAttendanceEvent.id),
+				);
 			const events: AttendanceEvent[] = [];
 			for (const row of eventRows) {
 				const mapped = mapEvent(row);
 				if (!mapped.ok) return mapped;
 				events.push(mapped.data);
 			}
+			const orderedEvents = filterAttendanceEventsForWorkDay(events, {
+				organizationId: input.organizationId,
+				employeeId: session.employeeId,
+				localWorkDate: session.localWorkDate,
+			});
 			const recordedBreakMinutes =
-				resolveSessionFromEvents(events).breakMinutes;
+				resolveSessionFromEvents(orderedEvents).breakMinutes;
 			if (recordedBreakMinutes >= automaticBreak.minutes) {
 				return invalidState(
 					"Recorded breaks already satisfy the automatic break requirement",

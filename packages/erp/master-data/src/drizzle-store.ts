@@ -45,6 +45,7 @@ import {
 	drizzleFindItemByExternalId,
 	drizzleFindPartyByExternalId,
 	drizzleFindWarehouseByExternalId,
+	drizzleGetPartyAddressById,
 	drizzleListItemUoms,
 	drizzleListPartyAddresses,
 	drizzleListPartyContacts,
@@ -3535,6 +3536,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	createPartyRole = drizzleCreatePartyRole;
 	transitionPartyRole = drizzleTransitionPartyRole;
 	listPartyAddresses = drizzleListPartyAddresses;
+	getPartyAddressById = drizzleGetPartyAddressById;
 	createPartyAddress = drizzleCreatePartyAddress;
 	updatePartyAddress = drizzleUpdatePartyAddress;
 	listPartyContacts = drizzleListPartyContacts;

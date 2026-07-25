@@ -30,9 +30,16 @@
 | HR-OPS-P1-002 | Leave vs time handoff permission asymmetry | **Defect / product** | Add leave handoff.read |
 | HR-OPS-P1-005 | Calendar resolution tests red | **Defect or stale fixtures** | Fix assignment context test wiring |
 | HR-OPS-P2-001 | Timesheet leave timezone UTC | **Defect or contract gap** | Document or derive from calendar |
-| HR-OPS-P2-004 | No leave overlap DB constraint | **Design gap** | Command + optional DB guard |
 | HR-XCUT-P0-002 | Matrix scope vs HR-ENT-05 wording | **Cross-cut OPEN-DECISION** | Extend matrix or exclusion register |
 | HR-XCUT-P1-006 | HR decimal strings vs payroll minor-units at handoff | **Cross-cut OPEN-DECISION** | Payroll architect + HR-AUD-03 boundary |
+
+---
+
+## Closed defects (do not reopen)
+
+| ID | Conflict | Closure |
+|---|---|---|
+| HR-OPS-P2-004 | Leave segment overlap per employee | **CLOSED** Slice 4.7 (2026-07-25): command + Memory/Drizzle Serializable TX; intentional no Postgres EXCLUDE — [`hr-leave-overlap-exclusion-register.json`](../hr-leave-overlap-exclusion-register.json) |
 
 ---
 

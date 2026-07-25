@@ -107,31 +107,32 @@ flowchart TD
 
 | Field | Value |
 |---|---|
-| **Status** | **CLOSED** — migration `0018_hr_coreorg_db_invariants.sql` |
+| **Status** | **CLOSED** — migrations `0018_hr_coreorg_db_invariants.sql` · `0035_hr_coreorg_db_invariants_completion.sql` |
 | **HR-ENT** | HR-ENT-03, HR-ENT-16 |
-| **Outcome** | DDL effective-range checks on `hr_work_assignment`, `hr_employment_contract`, `hr_reporting_line`; overlap policies documented in exclusion register |
+| **Outcome** | Eight effective-range CHECK constraints (core org trio + probation · salary band · employee compensation · benefit enrollment · shift); 8-category invariant inventory in exclusion register; overlap policies command-enforced (no EXCLUDE) |
 | **Allowed paths** | `@afenda/db` schema + migrations; migration tests in `packages/data-plane/db/__tests__/` |
-| **Artifacts** | `packages/data-plane/db/drizzle/0018_hr_coreorg_db_invariants.sql` · `packages/data-plane/db/__tests__/hr-coreorg-db-invariants-migration.test.ts` · [`hr-coreorg-db-invariant-exclusion-register.json`](hr-coreorg-db-invariant-exclusion-register.json) |
-| **Constraints** | `hr_work_assignment_effective_range_ck` · `hr_employment_contract_effective_range_ck` · `hr_reporting_line_effective_range_ck` |
-| **Acceptance** | Migration tests green; invalid ranges rejected at DB; overlap rules in exclusion register (command-enforced where no exclusion constraint) |
+| **Artifacts** | `packages/data-plane/db/drizzle/0018_hr_coreorg_db_invariants.sql` · `packages/data-plane/db/drizzle/0035_hr_coreorg_db_invariants_completion.sql` · `packages/data-plane/db/__tests__/hr-coreorg-db-invariants-migration.test.ts` · [`hr-coreorg-db-invariant-exclusion-register.json`](hr-coreorg-db-invariant-exclusion-register.json) |
+| **Constraints** | `hr_work_assignment_effective_range_ck` · `hr_employment_contract_effective_range_ck` · `hr_reporting_line_effective_range_ck` · `hr_probation_review_effective_range_ck` · `hr_salary_band_effective_range_ck` · `hr_employee_compensation_effective_range_ck` · `hr_benefit_enrollment_effective_range_ck` · `hr_shift_effective_range_ck` |
+| **Acceptance** | Migration tests green; invalid ranges rejected at DB; full mutable `hr_*` inventory in exclusion register; overlap rules command-enforced where no exclusion constraint |
 | **Rollback** | `ALTER TABLE … DROP CONSTRAINT IF EXISTS hr_*_effective_range_ck` (see exclusion register) |
-| **Residual** | Dated assignment/contract overlap remains command-enforced; employment open overlap unchanged |
+| **Residual** | Dated overlap for closed ranges remains command-enforced; salary-band active uniqueness command-only; successor uniqueness command-only; eight scaffold tables N/A until promoted |
 
-### HR-OPS-LEAVE-OVERLAP-GUARD
+### HR-OPS-LEAVE-OVERLAP-GUARD — **CLOSED** (2026-07-25)
 
 | Field | Value |
 |---|---|
+| **Status** | **CLOSED** — Slice 4.7 ([`00.hrm.md`](../../00.hrm.md)); do not reopen |
 | **HR-ENT** | HR-ENT-16 |
-| **Outcome** | Approved leave windows cannot overlap per employee |
-| **Allowed paths** | `src/leave/**`, leave adapters, optional DB exclusion constraint |
+| **Outcome** | Overlapping leave segments per employee rejected on submit and approve |
+| **Allowed paths** | `src/leave/**`, leave adapters, exclusion register |
 | **Prohibited paths** | Time domain unrelated changes |
 | **Prerequisites** | HR-OPS-TIME-CALENDAR-RESOLUTION-FIXTURES (confidence in calendar chain) |
-| **Acceptance** | Unit test rejects overlapping approved requests |
-| **Tests** | New leave overlap test |
-| **Commands** | `pnpm --filter @afenda/human-resources test -- human-resources.leave` |
-| **Migration risk** | **Low–Medium** if DB exclusion added |
-| **Rollback** | Revert command guard / constraint |
-| **Residual** | HR-OPS-P2-004 closed |
+| **Acceptance** | Unit + concurrency tests reject overlapping requests with `EFFECTIVE_RANGE_OVERLAP` |
+| **Tests** | `human-resources.leave` · `leave-concurrency` · `hr-leave-overlap-exclusion-register` |
+| **Commands** | `pnpm --filter @afenda/human-resources test -- human-resources.leave leave-concurrency` · `pnpm --filter @afenda/db test -- hr-leave-overlap-exclusion-register` |
+| **Migration risk** | **None** — no DB DDL; command + Serializable TX only |
+| **Rollback** | Revert command/adapter guards |
+| **Residual** | **HR-OPS-P2-004 closed** at command/TX bar; no Postgres EXCLUDE documented in [`hr-leave-overlap-exclusion-register.json`](hr-leave-overlap-exclusion-register.json) |
 
 ---
 

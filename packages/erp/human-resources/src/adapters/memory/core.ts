@@ -33,12 +33,14 @@ import {
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { assertActivePosition } from "../../shared/domain-guards";
+import { assertActivePosition, rehireRequiresEndedEmployment } from "../../shared/domain-guards";
 import {
 	assertAssignmentWithinEmployment,
 	assertNoAssignmentOverlap,
+	multiplePrimaryAssignmentsAtAsOf,
 } from "../../shared/assignment-guards";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
+import { compareEmploymentContractsByLineage } from "../../shared/employment-contract-guards";
 import {
 	assertValidDateRange,
 	type EmploymentStatus,
@@ -117,6 +119,7 @@ export type MemoryCoreMethods = Pick<
 	| "getEmploymentContractById"
 	| "findContractByEmploymentAndCode"
 	| "listActiveContractsByEmployment"
+	| "listEmploymentContractsByEmployment"
 	| "findEmploymentContractByEmploymentAsOf"
 	| "createEmploymentContract"
 	| "correctEmploymentContract"
@@ -542,11 +545,7 @@ export function createMemoryCoreMethods(
 				return existingOpen;
 			}
 			if (existingOpen.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Employee already has an open employment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return rehireRequiresEndedEmployment();
 			}
 
 			const siblingEmployments = listEmploymentsForEmployee(state, {
@@ -942,6 +941,21 @@ export function createMemoryCoreMethods(
 						endsOn: contract.endsOn,
 					})),
 			);
+		},
+
+		async listEmploymentContractsByEmployment(input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+		}): Promise<Result<EmploymentContract[]>> {
+			const contracts = [...state.contracts.values()]
+				.filter(
+					(contract) =>
+						contract.organizationId === input.organizationId &&
+						contract.employmentId === input.employmentId,
+				)
+				.sort(compareEmploymentContractsByLineage)
+				.map((contract) => ({ ...contract }));
+			return ok(contracts);
 		},
 
 		async findEmploymentContractByEmploymentAsOf(input: {
@@ -1422,11 +1436,7 @@ export function createMemoryCoreMethods(
 				getEffectiveTo: (assignment) => assignment.endsOn,
 			});
 			if (!resolution.ok) {
-				return fail(
-					"CONFLICT",
-					"Multiple assignments are effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return multiplePrimaryAssignmentsAtAsOf();
 			}
 			return ok(resolution.record === null ? null : { ...resolution.record });
 		},

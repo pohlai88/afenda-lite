@@ -1831,6 +1831,128 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			].toSorted(),
 		);
 	});
+
+	it("orders equal-timestamp import rows by sourceSequence for session resolution parity", async () => {
+		const ready = createHrParityHarness(adapter);
+		const workDate = "2025-07-28";
+		const sameInstant = "2025-07-28T09:00:00.000Z";
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-order-emp-${suffix}`,
+				idempotencyKey: `idem-order-emp-${suffix}`,
+				employeeNumber: `EO-${suffix}`,
+				legalName: `Order Worker ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-order-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const imported = await importAttendanceEvents(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-order-import-${suffix}`,
+				idempotencyKey: `idem-order-import-${suffix}`,
+				batchId: `batch-order-${suffix}`,
+				sourceKey: "parity-order",
+				events: [
+					{
+						employeeId: employee.data.id,
+						employmentId: employment.data.id,
+						eventType: "clock_out",
+						occurredAt: sameInstant,
+						sourceTimezone: "UTC",
+						localWorkDate: workDate,
+						sourceReference: `order-clock-out-${suffix}`,
+						sourceSequence: 1,
+					},
+					{
+						employeeId: employee.data.id,
+						employmentId: employment.data.id,
+						eventType: "clock_in",
+						occurredAt: sameInstant,
+						sourceTimezone: "UTC",
+						localWorkDate: workDate,
+						sourceReference: `order-clock-in-${suffix}`,
+						sourceSequence: 0,
+					},
+				],
+			},
+			ready,
+		);
+		expect(imported.ok).toBe(true);
+		if (!imported.ok) return;
+
+		const session = await resolveAttendanceSession(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-order-session-${suffix}`,
+				idempotencyKey: `idem-order-session-${suffix}`,
+				employeeId: employee.data.id,
+				localWorkDate: workDate,
+				timezone: "UTC",
+			},
+			ready,
+		);
+		expect(session.ok).toBe(true);
+		if (!session.ok) return;
+		expect(session.data.resolutionStatus).toBe("resolved");
+		expect(session.data.workedMinutes).toBe(0);
+		expect(session.data.breakMinutes).toBe(0);
+
+		const replay = await importAttendanceEvents(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-order-replay-${suffix}`,
+				idempotencyKey: `idem-order-replay-${suffix}`,
+				batchId: `batch-order-replay-${suffix}`,
+				sourceKey: "parity-order",
+				events: [
+					{
+						employeeId: employee.data.id,
+						employmentId: employment.data.id,
+						eventType: "clock_out",
+						occurredAt: sameInstant,
+						sourceTimezone: "UTC",
+						localWorkDate: workDate,
+						sourceReference: `order-clock-out-${suffix}`,
+						sourceSequence: 1,
+					},
+					{
+						employeeId: employee.data.id,
+						employmentId: employment.data.id,
+						eventType: "clock_in",
+						occurredAt: sameInstant,
+						sourceTimezone: "UTC",
+						localWorkDate: workDate,
+						sourceReference: `order-clock-in-${suffix}`,
+						sourceSequence: 0,
+					},
+				],
+			},
+			ready,
+		);
+		expect(replay.ok).toBe(true);
+		if (!replay.ok) return;
+		expect(replay.data.skipped).toHaveLength(2);
+	});
 }
 
 describe("human-resources.time.attendance.parity (memory)", () => {

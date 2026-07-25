@@ -36,4 +36,32 @@ describe("legal-minute-allocation", () => {
 			"2025-08-13",
 		);
 	});
+
+	it("allocates worked minutes across a daylight-saving spring-forward day", () => {
+		const allocated = allocateWorkedMinutesByCivilDate({
+			firstClockInAt: new Date("2025-03-09T06:30:00.000Z"),
+			finalClockOutAt: new Date("2025-03-09T10:30:00.000Z"),
+			breakIntervals: [],
+			timeZone: "America/New_York",
+		});
+
+		expect(allocated.get("2025-03-09")).toBe(240);
+		expect([...allocated.values()].reduce((sum, value) => sum + value, 0)).toBe(
+			240,
+		);
+	});
+
+	it("allocates worked minutes across a daylight-saving fall-back day", () => {
+		const allocated = allocateWorkedMinutesByCivilDate({
+			firstClockInAt: new Date("2025-11-02T05:30:00.000Z"),
+			finalClockOutAt: new Date("2025-11-02T09:30:00.000Z"),
+			breakIntervals: [],
+			timeZone: "America/New_York",
+		});
+
+		expect(allocated.get("2025-11-02")).toBe(240);
+		expect([...allocated.values()].reduce((sum, value) => sum + value, 0)).toBe(
+			240,
+		);
+	});
 });

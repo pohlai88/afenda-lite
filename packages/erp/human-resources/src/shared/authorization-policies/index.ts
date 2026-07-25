@@ -2,6 +2,7 @@ import type { HumanResourcesAuthorizationPolicy } from "../authorization-policy-
 import { compensationPolicy } from "./compensation";
 import { compliancePolicy } from "./compliance";
 import { employeeRelationsCasePolicy } from "./employee-relations";
+import { employeeProfilePolicy } from "./employee-profile";
 import { employeeSubjectPolicy } from "./employee-subject";
 import { learningPolicy } from "./learning";
 import { leavePolicy } from "./leave";
@@ -23,6 +24,7 @@ export {
 	compensationPolicy,
 	compliancePolicy,
 	employeeRelationsCasePolicy,
+	employeeProfilePolicy,
 	employeeSubjectPolicy,
 	learningPolicy,
 	leavePolicy,
@@ -41,6 +43,7 @@ export {
 
 export const HUMAN_RESOURCES_AUTHORIZATION_POLICIES = [
 	manifestOnlyPolicy,
+	employeeProfilePolicy,
 	employeeSubjectPolicy,
 	leavePolicy,
 	timePolicy,

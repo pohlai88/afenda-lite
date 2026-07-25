@@ -20,6 +20,7 @@ import type {
 	ShiftBreak,
 	TimePolicy,
 } from "../../types";
+import { sortAttendanceEventsForSession } from "./event-order";
 
 export const ATTENDANCE_SESSION_DETECTION_SOURCE =
 	"attendance_session_resolution" as const;
@@ -129,9 +130,9 @@ export function detectAttendanceExceptionsForSession(input: {
 	const scheduled = isPublishedOrChanged(scheduledAssignment)
 		? scheduledAssignment
 		: null;
-	const activeEvents = events
-		.filter((event) => event.voidedAt === null)
-		.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+	const activeEvents = sortAttendanceEventsForSession(
+		events.filter((event) => event.voidedAt === null),
+	);
 	let clockedIn = false;
 	let overlappingAttendance = false;
 	for (const event of activeEvents) {

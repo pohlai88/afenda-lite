@@ -11,6 +11,8 @@ import { fileURLToPath } from "node:url";
 
 import { neon } from "@neondatabase/serverless";
 
+import { probeMigrationDdlApplied } from "./lib/migration-ddl-probes.mjs";
+
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.join(root, "../../..");
 const drizzleDir = path.join(root, "drizzle");
@@ -46,27 +48,6 @@ function splitStatements(content) {
 		.split(/--> statement-breakpoint\n/)
 		.map((statement) => statement.trim())
 		.filter(Boolean);
-}
-
-function tableExistsProbe(sql, tableName) {
-	return sql`
-		SELECT table_name
-		FROM information_schema.tables
-		WHERE table_schema = 'public' AND table_name = ${tableName}
-	`;
-}
-
-function probeTableForMigration(tag) {
-	if (tag === "0040_hr_compensation_benefits_ddl") return "hr_benefit_enrollment";
-	if (tag === "0041_hr_learning_ddl") return "hr_learning_course";
-	if (tag === "0042_hr_learning_idempotency_columns") return "hr_learning_course";
-	if (tag === "0043_hr_leave_ddl") return "hr_leave_policy";
-	if (tag === "0044_hr_performance_ddl") return "hr_performance_cycle";
-	if (tag === "0045_hr_talent_ddl") return "hr_competency";
-	if (tag === "0046_hr_workforce_planning_ddl") return "hr_headcount_plan";
-	if (tag === "0047_hr_employee_relations_ddl") return "hr_employee_case";
-	if (tag === "0048_hr_compliance_ddl") return "hr_document_requirement";
-	return null;
 }
 
 loadEnvLocal();
@@ -116,17 +97,15 @@ for (const tag of tags) {
 		continue;
 	}
 
-	const probe = probeTableForMigration(tag);
-	const probeExists =
-		probe !== null && (await tableExistsProbe(sql, probe)).length > 0;
+	const probeExists = await probeMigrationDdlApplied(sql, tag);
 
-	if (!journalOnly && !probeExists) {
+	if (!journalOnly && probeExists !== true) {
 		const statements = splitStatements(content);
 		for (const statement of statements) {
 			await sql.query(statement);
 		}
 		console.log(`apply-migrations: ${tag} applied ${statements.length} statements`);
-	} else if (probeExists) {
+	} else if (probeExists === true) {
 		console.log(`apply-migrations: ${tag} DDL present; journal only`);
 	} else {
 		console.log(`apply-migrations: ${tag} journal-only flag`);

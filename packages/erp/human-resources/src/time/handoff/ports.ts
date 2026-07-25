@@ -13,6 +13,10 @@ import type { AttendanceEventType } from "../../types";
 /**
  * Approved leave fact consumed by Time (timesheet generation / absence).
  * Leave owns approval and balances; Time never mutates them.
+ *
+ * `workDate` is the leave segment civil date. `timezone` is the IANA display timezone from the
+ * resolved employment work calendar for that segment date (fail-closed when calendar lookup is
+ * wired). Payroll handoff minute totals omit timezone — consumers read entry `timezone`.
  */
 export type ApprovedLeaveFact = {
 	requestId: HumanResourcesLeaveRequestId;

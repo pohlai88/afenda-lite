@@ -53,6 +53,18 @@ export const listEmployeesInputSchema = humanResourcesMutationContextSchema
 
 export type ListEmployeesInput = z.infer<typeof listEmployeesInputSchema>;
 
+export const getEmployeeProfileInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		employeeId: humanResourcesEmployeeIdSchema,
+		asOf: isoDateSchema,
+		actorEmployeeId: humanResourcesEmployeeIdSchema.optional(),
+	})
+	.strict();
+
+export type GetEmployeeProfileInput = z.infer<
+	typeof getEmployeeProfileInputSchema
+>;
+
 // Employment schemas
 export const createEmploymentInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -183,7 +195,7 @@ export type GetEmploymentContractInput = z.infer<
 	typeof getEmploymentContractInputSchema
 >;
 
-export const getEmploymentContractAsOfInputSchema =
+const employmentContractAsOfLookupInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			employmentId: humanResourcesEmploymentIdSchema,
@@ -191,6 +203,42 @@ export const getEmploymentContractAsOfInputSchema =
 		})
 		.strict();
 
+export const getEmploymentContractAsOfInputSchema =
+	employmentContractAsOfLookupInputSchema;
+
 export type GetEmploymentContractAsOfInput = z.infer<
 	typeof getEmploymentContractAsOfInputSchema
+>;
+
+export const endEmploymentContractInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employmentContractId: humanResourcesEmploymentContractIdSchema,
+			endsOn: isoDateSchema,
+			reasonCode: z.string().trim().min(1).max(64),
+			sourceReference: z.string().trim().min(1).max(200),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type EndEmploymentContractInput = z.infer<
+	typeof endEmploymentContractInputSchema
+>;
+
+export const getCurrentEmploymentContractInputSchema =
+	employmentContractAsOfLookupInputSchema;
+
+export type GetCurrentEmploymentContractInput = z.infer<
+	typeof getCurrentEmploymentContractInputSchema
+>;
+
+export const listEmploymentContractsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employmentId: humanResourcesEmploymentIdSchema,
+		})
+		.strict();
+
+export type ListEmploymentContractsInput = z.infer<
+	typeof listEmploymentContractsInputSchema
 >;

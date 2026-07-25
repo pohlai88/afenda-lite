@@ -47,7 +47,7 @@ These are not bugs — they are fork points where repository evidence does not p
 
 | Aspect | Detail |
 |---|---|
-| **Conflict** | `OrganizationDimensionDirectoryPort` typed in HR; `@afenda/master-data` may not expose all dimension kinds |
+| **Conflict** | `OrganizationDimensionDirectoryPort` typed in HR; `@afenda/master-data` owns governed dimension kinds |
 | **Options** | A) Extend master-data B) HR-owned dimension snapshot tables only C) Hybrid |
 | **Canonical recommendation** | C — governed keys in master-data, snapshots on assignments (already partially on disk) |
 | **Blocking** | HR-ENT-04 |
@@ -131,7 +131,7 @@ flowchart TD
 | Effective truth breadth | OPEN-DECISION-01 | Matrix validator works for scoped set |
 | Authorization model | OPEN-DECISION-02 | ER case-access not integrated with contextual facade |
 | Privacy execution | OPEN-DECISION-03 | Port exists but unwired |
-| Org dimensions | OPEN-DECISION-04 | Port wired in apps/web; master-data completeness TBD |
+| Org dimensions | OPEN-DECISION-04 | Port wired in apps/web; master-data create + resolve + getEffective for all kinds (Slice 5.7) |
 | Payroll money | OPEN-DECISION-05 | HR decimal schema consistent internally |
 | Event emission | — | Registry incomplete (P0-003) |
 | Doc authority | — | HR-00 superseded; enterprise count drift |

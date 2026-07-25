@@ -176,7 +176,7 @@ const FOUNDATION_EVIDENCE = {
 } satisfies EffectiveTruthEvidence;
 const FOUNDATION_HISTORY_EVIDENCE = {
 	unit: "human-resources.foundation.history.test.ts",
-	parity: "human-resources.foundation.parity.test.ts",
+	parity: "human-resources.foundation.history.test.ts",
 } satisfies EffectiveTruthEvidence;
 const LEARNING_EVIDENCE = {
 	unit: "human-resources.learning.test.ts",

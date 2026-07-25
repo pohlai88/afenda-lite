@@ -194,7 +194,7 @@ export function isBasicFullDayAbsence(
 }
 
 export function isActiveEmploymentOnDate(
-	employment: Employment | null,
+	employment: Pick<Employment, "status" | "startsOn" | "endsOn"> | null,
 	workDate: string,
 ): boolean {
 	if (employment === null) return false;

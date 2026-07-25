@@ -20,6 +20,7 @@ import {
 } from "./hr-parity-harness";
 import { createNeonOrgTracker } from "./neon-cleanup";
 import { humanResourcesCodeFromResult } from "./result-details";
+import { seedEmploymentWorkCalendar } from "./seed-employment-work-calendar";
 import { uniqueSuffix } from "./time-parity-shared";
 
 const OVERTIME_AS_OF = "2025-08-11";
@@ -69,6 +70,14 @@ export function defineOvertimeApprovalAuthoritySuite(
 		);
 		expect(employment.ok).toBe(true);
 		if (!employment.ok) throw new Error("employment seed failed");
+		await seedEmploymentWorkCalendar(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			employeeId: employee.data.id,
+			employmentId: employment.data.id,
+			suffix: `${suffix}-${seedKey}`,
+			timezone: "UTC",
+		});
 		const requested = await createOvertimeRequest(
 			{
 				organizationId: ORG,
@@ -489,5 +498,170 @@ export function defineOvertimeApprovalAuthoritySuite(
 		expect(retry.data.version).toBe(first.data.version + 1);
 		expect(ready.ports.audit.calls.length).toBeGreaterThan(auditAfterFirst);
 		expect(ready.ports.outbox.calls.length).toBeGreaterThan(outboxAfterFirst);
+	});
+
+	it("resolves overtime authority asOf on org-local civil date when local date differs from UTC", async () => {
+		const ready = createHrParityHarness(adapter);
+		const seedKey = `local-date-${Date.now()}`;
+		const managerId = `user-ot-la-mgr-${seedKey.slice(-10)}`;
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-la-emp-${suffix}-${seedKey}`,
+				idempotencyKey: `idem-ot-auth-la-emp-${suffix}-${seedKey}`,
+				employeeNumber: `OTLA-${suffix}-${seedKey}`,
+				legalName: `Overtime LA ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-la-employ-${suffix}-${seedKey}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+		await seedEmploymentWorkCalendar(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			employeeId: employee.data.id,
+			employmentId: employment.data.id,
+			suffix: `${suffix}-${seedKey}`,
+			timezone: "America/Los_Angeles",
+			codePrefix: "LA",
+		});
+
+		const requested = await createOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-la-req-${suffix}-${seedKey}`,
+				idempotencyKey: `idem-ot-auth-la-req-${suffix}-${seedKey}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				overtimeType: "weekday_overtime",
+				requestedStartsAt: "2025-08-11T06:00:00.000Z",
+				requestedEndsAt: "2025-08-11T08:00:00.000Z",
+				requestedMinutes: 120,
+				reason: "Late evening shift",
+			},
+			ready,
+		);
+		expect(requested.ok).toBe(true);
+		if (!requested.ok) return;
+
+		await grantAuthority(ready, {
+			targetActorUserId: managerId,
+			effectiveFrom: "2025-08-10",
+			effectiveTo: "2025-08-10",
+			seedKey,
+		});
+
+		const approved = await approveOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-la-approve-${suffix}-${seedKey}`,
+				requestedAuthority: "line_manager",
+				requestId: requested.data.id,
+				approvedMaximumMinutes: 90,
+				expectedVersion: requested.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+	});
+
+	it("rejects overtime approval when authority matches UTC but not org-local civil date", async () => {
+		const ready = createHrParityHarness(adapter);
+		const seedKey = `utc-window-${Date.now()}`;
+		const managerId = `user-ot-utc-mgr-${seedKey.slice(-10)}`;
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-utc-emp-${suffix}-${seedKey}`,
+				idempotencyKey: `idem-ot-auth-utc-emp-${suffix}-${seedKey}`,
+				employeeNumber: `OTUTC-${suffix}-${seedKey}`,
+				legalName: `Overtime UTC window ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-utc-employ-${suffix}-${seedKey}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+		await seedEmploymentWorkCalendar(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			employeeId: employee.data.id,
+			employmentId: employment.data.id,
+			suffix: `${suffix}-${seedKey}`,
+			timezone: "America/Los_Angeles",
+			codePrefix: "UTC",
+		});
+
+		const requested = await createOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-utc-req-${suffix}-${seedKey}`,
+				idempotencyKey: `idem-ot-auth-utc-req-${suffix}-${seedKey}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				overtimeType: "weekday_overtime",
+				requestedStartsAt: "2025-08-11T06:00:00.000Z",
+				requestedEndsAt: "2025-08-11T08:00:00.000Z",
+				requestedMinutes: 120,
+				reason: "UTC-window authority probe",
+			},
+			ready,
+		);
+		expect(requested.ok).toBe(true);
+		if (!requested.ok) return;
+
+		await grantAuthority(ready, {
+			targetActorUserId: managerId,
+			effectiveFrom: "2025-08-11",
+			effectiveTo: "2025-08-11",
+			seedKey,
+		});
+
+		const denied = await approveOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-utc-deny-${suffix}-${seedKey}`,
+				requestedAuthority: "line_manager",
+				requestId: requested.data.id,
+				approvedMaximumMinutes: 60,
+				expectedVersion: requested.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			expect(humanResourcesCodeFromResult(denied)).toBe(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			);
+		}
 	});
 }

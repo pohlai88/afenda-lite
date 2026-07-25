@@ -2,13 +2,29 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 
-import { CA_ERROR_CODE_CONFLICT, caErrorDetails } from "./error-codes";
+import {
+	CA_ERROR_CODE_CONFLICT,
+	CA_ERROR_IDEMPOTENCY_CONFLICT,
+	CA_ERROR_SHARE_CERTIFICATE_CONFLICT,
+	CA_ERROR_SHARE_CLASS_CLOSED,
+	CA_ERROR_SHARE_INSUFFICIENT_HOLDING,
+	CA_ERROR_SHARE_TRANSACTION_UNBALANCED,
+	CA_ERROR_VERSION_CONFLICT,
+	caErrorDetails,
+} from "./error-codes";
 import { MemoryGovernanceStore } from "./governance-memory-store";
-import type { SlicesStore } from "./ports";
+import type {
+	Ca4MutationContext,
+	ShareCapitalMutationContext,
+	SlicesStore,
+} from "./ports";
+import { recordShareCapitalMutation } from "./share-capital-audit";
 import {
 	addDecimal,
+	compareDecimal,
 	isNegativeDecimal,
 	isZeroDecimal,
+	negateDecimal,
 	sumDecimals,
 } from "./shared/decimal";
 import type {
@@ -17,6 +33,7 @@ import type {
 	CaBankMandate,
 	CaBeneficialOwnerDisclosure,
 	CaCharge,
+	CaChargeVariation,
 	CaCorporateAsset,
 	CaCorporateDocument,
 	CaCorporateRecordSearchHit,
@@ -24,9 +41,12 @@ import type {
 	CaFilingSubmission,
 	CaGroupControlRelationship,
 	CaInsurancePolicy,
+	CaInsurancePolicyRenewal,
+	CaIntellectualPropertyRenewal,
 	CaIntellectualPropertyRight,
 	CaLicencePermit,
 	CaMaterialAgreement,
+	CaPropertyAssetMutationReceipt,
 	CaPropertyHolding,
 	CaShareCertificate,
 	CaShareClass,
@@ -94,6 +114,19 @@ export class MemorySlicesStore
 	>();
 	protected readonly insurancePolicies = new Map<string, CaInsurancePolicy>();
 	protected readonly charges = new Map<string, CaCharge>();
+	protected readonly intellectualPropertyRenewals = new Map<
+		string,
+		CaIntellectualPropertyRenewal
+	>();
+	protected readonly insurancePolicyRenewals = new Map<
+		string,
+		CaInsurancePolicyRenewal
+	>();
+	protected readonly chargeVariations = new Map<string, CaChargeVariation>();
+	protected readonly propertyAssetMutationReceipts = new Map<
+		string,
+		CaPropertyAssetMutationReceipt
+	>();
 	protected readonly licencePermits = new Map<string, CaLicencePermit>();
 	protected readonly bankAccountRegistrations = new Map<
 		string,
@@ -114,6 +147,29 @@ export class MemorySlicesStore
 	>();
 	protected readonly filingObligations = new Map<string, CaFilingObligation>();
 	protected readonly filingSubmissions = new Map<string, CaFilingSubmission>();
+	private readonly ca4LockTails = new Map<string, Promise<void>>();
+
+	private async withCa4Lock<T>(
+		key: string,
+		task: () => Promise<Result<T>>,
+	): Promise<Result<T>> {
+		const previous = this.ca4LockTails.get(key) ?? Promise.resolve();
+		let release: () => void = () => void 0;
+		const current = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const tail = previous.then(() => current);
+		this.ca4LockTails.set(key, tail);
+		await previous;
+		try {
+			return await task();
+		} finally {
+			release();
+			if (this.ca4LockTails.get(key) === tail) {
+				this.ca4LockTails.delete(key);
+			}
+		}
+	}
 
 	async getShareClassByIdempotencyKey(
 		organizationId: string,
@@ -129,6 +185,7 @@ export class MemorySlicesStore
 
 	async createShareClass(
 		record: Omit<CaShareClass, "id" | "version" | "createdAt" | "updatedAt">,
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaShareClass>> {
 		const existing = findByIdempotency(
 			this.shareClasses.values(),
@@ -157,6 +214,22 @@ export class MemorySlicesStore
 			createdAt: now,
 			updatedAt: now,
 		};
+		const facts = await recordShareCapitalMutation(
+			mutation,
+			{
+				organizationId: row.organizationId,
+				actorUserId: row.createdBy,
+				legalCompanyId: row.legalCompanyId,
+				entityType: "share_class",
+				entityId: row.id,
+				action: "CREATE",
+				version: row.version,
+				status: row.status,
+				newValue: row as unknown as Record<string, unknown>,
+			},
+			{ emitOutbox: false },
+		);
+		if (!facts.ok) return facts;
 		this.shareClasses.set(row.id, row);
 		return ok(clone(row));
 	}
@@ -183,6 +256,56 @@ export class MemorySlicesStore
 		);
 	}
 
+	async updateShareClass(
+		record: CaShareClass,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaShareClass>> {
+		const existing = this.shareClasses.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Share class not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Share class version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated: CaShareClass = {
+			...record,
+			version: existing.version + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await recordShareCapitalMutation(
+			mutation,
+			{
+				organizationId: updated.organizationId,
+				actorUserId: updated.updatedBy,
+				legalCompanyId: updated.legalCompanyId,
+				entityType: "share_class",
+				entityId: updated.id,
+				action: "UPDATE",
+				version: updated.version,
+				status: updated.status,
+				oldValue: existing as unknown as Record<string, unknown>,
+				newValue: updated as unknown as Record<string, unknown>,
+			},
+			{ emitOutbox: false },
+		);
+		if (!facts.ok) return facts;
+		this.shareClasses.set(updated.id, updated);
+		return ok(clone(updated));
+	}
+
+	async closeShareClass(
+		record: CaShareClass,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaShareClass>> {
+		return this.updateShareClass(record, expectedVersion, mutation);
+	}
+
 	async getShareTransactionByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -197,7 +320,11 @@ export class MemorySlicesStore
 
 	async createShareTransaction(
 		record: Omit<CaShareTransaction, "id" | "createdAt">,
-		legs: Omit<CaShareTransactionLeg, "id" | "createdAt">[],
+		legs: Omit<
+			CaShareTransactionLeg,
+			"id" | "createdAt" | "shareTransactionId" | "legSequence"
+		>[],
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaShareTransactionDetail>> {
 		const existing = findByIdempotency(
 			this.shareTransactions.values(),
@@ -219,12 +346,20 @@ export class MemorySlicesStore
 			return fail("NOT_FOUND", "Share class not found");
 		}
 		if (shareClass.status === "closed") {
-			return fail("CONFLICT", "Share class is closed");
+			return fail(
+				"CONFLICT",
+				"Share class is closed",
+				caErrorDetails(CA_ERROR_SHARE_CLASS_CLOSED),
+			);
 		}
 		const legDeltas = legs.map((leg) => leg.quantityDelta);
 		const totalDelta = sumDecimals(legDeltas);
 		if (record.transactionType === "transfer" && !isZeroDecimal(totalDelta)) {
-			return fail("CONFLICT", "Transfer transaction legs must sum to zero");
+			return fail(
+				"CONFLICT",
+				"Transfer transaction legs must sum to zero",
+				caErrorDetails(CA_ERROR_SHARE_TRANSACTION_UNBALANCED),
+			);
 		}
 		if (record.transactionType === "issuance") {
 			for (const delta of legDeltas) {
@@ -232,6 +367,29 @@ export class MemorySlicesStore
 					return fail("CONFLICT", "Issuance legs must be positive");
 				}
 			}
+			if (!isZeroDecimal(shareClass.authorizedQuantity)) {
+				const holdings = await this.listShareHoldingsAsOf(
+					record.organizationId,
+					record.legalCompanyId,
+					record.transactionDate,
+					record.shareClassId,
+				);
+				if (!holdings.ok) return holdings;
+				const issued = sumDecimals(holdings.data.map((row) => row.quantity));
+				const afterIssuance = addDecimal(issued, totalDelta);
+				if (compareDecimal(afterIssuance, shareClass.authorizedQuantity) > 0) {
+					return fail(
+						"CONFLICT",
+						"Issuance exceeds authorized share class quantity",
+					);
+				}
+			}
+		}
+		if (
+			record.transactionType === "cancellation" &&
+			!isNegativeDecimal(totalDelta)
+		) {
+			return fail("CONFLICT", "Cancellation transaction must reduce shares");
 		}
 		for (const leg of legs) {
 			if (isZeroDecimal(leg.quantityDelta)) {
@@ -252,6 +410,7 @@ export class MemorySlicesStore
 				return fail(
 					"CONFLICT",
 					"Insufficient share holding for transaction leg",
+					caErrorDetails(CA_ERROR_SHARE_INSUFFICIENT_HOLDING),
 				);
 			}
 		}
@@ -267,11 +426,132 @@ export class MemorySlicesStore
 			legSequence: index + 1,
 			createdAt: new Date(),
 		}));
+		const facts = await recordShareCapitalMutation(mutation, {
+			organizationId: transaction.organizationId,
+			actorUserId: transaction.createdBy,
+			legalCompanyId: transaction.legalCompanyId,
+			entityType: "share_transaction",
+			entityId: transaction.id,
+			action: "CREATE",
+			status: transaction.status,
+			reversalOfId: transaction.reversalOfId,
+			newValue: transaction as unknown as Record<string, unknown>,
+		});
+		if (!facts.ok) return facts;
 		this.shareTransactions.set(transaction.id, transaction);
 		for (const leg of savedLegs) {
 			this.shareTransactionLegs.set(leg.id, leg);
 		}
 		return ok({ ...clone(transaction), legs: savedLegs.map(clone) });
+	}
+
+	async reverseShareTransaction(input: {
+		organizationId: string;
+		legalCompanyId: string;
+		originalTransactionId: string;
+		reversalReference: string;
+		reversalDate: string;
+		createIdempotencyKey: string;
+		createdBy: string;
+		correlationId: string;
+		mutation?: ShareCapitalMutationContext;
+	}): Promise<Result<CaShareTransactionDetail>> {
+		const existing = findByIdempotency(
+			this.shareTransactions.values(),
+			input.organizationId,
+			input.createIdempotencyKey,
+		);
+		if (existing) {
+			const existingLegs = [...this.shareTransactionLegs.values()].filter(
+				(leg) => leg.shareTransactionId === existing.id,
+			);
+			return ok({ ...clone(existing), legs: existingLegs.map(clone) });
+		}
+		const original = this.shareTransactions.get(input.originalTransactionId);
+		if (
+			!original ||
+			original.organizationId !== input.organizationId ||
+			original.legalCompanyId !== input.legalCompanyId
+		) {
+			return fail("NOT_FOUND", "Share transaction not found");
+		}
+		if (original.status !== "posted" || original.reversalOfId) {
+			return fail("CONFLICT", "Share transaction cannot be reversed");
+		}
+		const originalLegs = [...this.shareTransactionLegs.values()]
+			.filter((leg) => leg.shareTransactionId === original.id)
+			.sort((a, b) => a.legSequence - b.legSequence);
+		const reversalLegs = originalLegs.map((leg) => ({
+			organizationId: leg.organizationId,
+			legalCompanyId: leg.legalCompanyId,
+			shareClassId: leg.shareClassId,
+			holderPartyId: leg.holderPartyId,
+			holderPartyCodeSnapshot: leg.holderPartyCodeSnapshot,
+			holderPartyNameSnapshot: leg.holderPartyNameSnapshot,
+			quantityDelta: negateDecimal(leg.quantityDelta),
+		}));
+		for (const leg of reversalLegs) {
+			const current = await this.computeHoldingQuantity(
+				input.organizationId,
+				input.legalCompanyId,
+				leg.shareClassId,
+				leg.holderPartyId,
+				input.reversalDate,
+			);
+			const next = addDecimal(current, leg.quantityDelta);
+			if (isNegativeDecimal(next)) {
+				return fail(
+					"CONFLICT",
+					"Insufficient share holding for reversal leg",
+					caErrorDetails(CA_ERROR_SHARE_INSUFFICIENT_HOLDING),
+				);
+			}
+		}
+		const reversal: CaShareTransaction = {
+			id: randomUUID(),
+			organizationId: input.organizationId,
+			legalCompanyId: input.legalCompanyId,
+			shareClassId: original.shareClassId,
+			transactionReference: input.reversalReference,
+			transactionType: "correction",
+			transactionDate: input.reversalDate,
+			status: "posted",
+			reversalOfId: original.id,
+			createIdempotencyKey: input.createIdempotencyKey,
+			createdBy: input.createdBy,
+			createdAt: new Date(),
+		};
+		const savedLegs: CaShareTransactionLeg[] = reversalLegs.map(
+			(leg, index) => ({
+				id: randomUUID(),
+				...leg,
+				shareTransactionId: reversal.id,
+				legSequence: index + 1,
+				createdAt: new Date(),
+			}),
+		);
+		const reversedOriginal: CaShareTransaction = {
+			...original,
+			status: "reversed",
+		};
+		const facts = await recordShareCapitalMutation(input.mutation, {
+			organizationId: reversal.organizationId,
+			actorUserId: reversal.createdBy,
+			legalCompanyId: reversal.legalCompanyId,
+			entityType: "share_transaction",
+			entityId: reversal.id,
+			action: "CREATE",
+			status: reversal.status,
+			reversalOfId: reversal.reversalOfId,
+			newValue: reversal as unknown as Record<string, unknown>,
+		});
+		if (!facts.ok) return facts;
+		this.shareTransactions.set(reversal.id, reversal);
+		for (const leg of savedLegs) {
+			this.shareTransactionLegs.set(leg.id, leg);
+		}
+		this.shareTransactions.set(original.id, reversedOriginal);
+		return ok({ ...clone(reversal), legs: savedLegs.map(clone) });
 	}
 
 	async getShareTransactionById(
@@ -311,6 +591,7 @@ export class MemorySlicesStore
 				transaction.organizationId !== organizationId ||
 				transaction.legalCompanyId !== legalCompanyId ||
 				transaction.status !== "posted" ||
+				transaction.reversalOfId ||
 				transaction.transactionDate > asOf
 			) {
 				continue;
@@ -378,6 +659,7 @@ export class MemorySlicesStore
 			CaShareCertificate,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaShareCertificate>> {
 		const existing = findByIdempotency(
 			this.shareCertificates.values(),
@@ -385,6 +667,21 @@ export class MemorySlicesStore
 			record.createIdempotencyKey,
 		);
 		if (existing) return ok(clone(existing));
+		for (const row of this.shareCertificates.values()) {
+			if (
+				row.organizationId === record.organizationId &&
+				row.legalCompanyId === record.legalCompanyId &&
+				row.normalizedCertificateNumber ===
+					record.normalizedCertificateNumber &&
+				row.status === "active"
+			) {
+				return fail(
+					"CONFLICT",
+					"Active share certificate number already exists",
+					caErrorDetails(CA_ERROR_SHARE_CERTIFICATE_CONFLICT),
+				);
+			}
+		}
 		const now = new Date();
 		const row: CaShareCertificate = {
 			id: randomUUID(),
@@ -393,8 +690,131 @@ export class MemorySlicesStore
 			createdAt: now,
 			updatedAt: now,
 		};
+		const facts = await recordShareCapitalMutation(
+			mutation,
+			{
+				organizationId: row.organizationId,
+				actorUserId: row.createdBy,
+				legalCompanyId: row.legalCompanyId,
+				entityType: "share_certificate",
+				entityId: row.id,
+				action: "CREATE",
+				version: row.version,
+				status: row.status,
+				newValue: row as unknown as Record<string, unknown>,
+			},
+			{ emitOutbox: false },
+		);
+		if (!facts.ok) return facts;
 		this.shareCertificates.set(row.id, row);
 		return ok(clone(row));
+	}
+
+	async replaceShareCertificate(input: {
+		prior: CaShareCertificate;
+		replacement: Omit<
+			CaShareCertificate,
+			"id" | "version" | "createdAt" | "updatedAt"
+		>;
+		mutation?: ShareCapitalMutationContext;
+	}): Promise<Result<CaShareCertificate>> {
+		const existing = findByIdempotency(
+			this.shareCertificates.values(),
+			input.replacement.organizationId,
+			input.replacement.createIdempotencyKey,
+		);
+		if (existing) return ok(clone(existing));
+		for (const row of this.shareCertificates.values()) {
+			if (
+				row.organizationId === input.replacement.organizationId &&
+				row.legalCompanyId === input.replacement.legalCompanyId &&
+				row.normalizedCertificateNumber ===
+					input.replacement.normalizedCertificateNumber &&
+				row.status === "active"
+			) {
+				return fail(
+					"CONFLICT",
+					"Active share certificate number already exists",
+					caErrorDetails(CA_ERROR_SHARE_CERTIFICATE_CONFLICT),
+				);
+			}
+		}
+		const replacedPrior: CaShareCertificate = {
+			...input.prior,
+			status: "replaced",
+			version: input.prior.version + 1,
+			updatedBy: input.replacement.updatedBy,
+			updatedAt: new Date(),
+		};
+		const now = new Date();
+		const row: CaShareCertificate = {
+			id: randomUUID(),
+			...input.replacement,
+			version: 1,
+			createdAt: now,
+			updatedAt: now,
+		};
+		const facts = await recordShareCapitalMutation(
+			input.mutation,
+			{
+				organizationId: row.organizationId,
+				actorUserId: row.createdBy,
+				legalCompanyId: row.legalCompanyId,
+				entityType: "share_certificate",
+				entityId: row.id,
+				action: "CREATE",
+				version: row.version,
+				status: row.status,
+				newValue: row as unknown as Record<string, unknown>,
+			},
+			{ emitOutbox: false },
+		);
+		if (!facts.ok) return facts;
+		this.shareCertificates.set(replacedPrior.id, replacedPrior);
+		this.shareCertificates.set(row.id, row);
+		return ok(clone(row));
+	}
+
+	async cancelShareCertificate(
+		record: CaShareCertificate,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaShareCertificate>> {
+		const existing = this.shareCertificates.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Share certificate not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Share certificate version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated: CaShareCertificate = {
+			...record,
+			version: existing.version + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await recordShareCapitalMutation(
+			mutation,
+			{
+				organizationId: updated.organizationId,
+				actorUserId: updated.updatedBy,
+				legalCompanyId: updated.legalCompanyId,
+				entityType: "share_certificate",
+				entityId: updated.id,
+				action: "UPDATE",
+				version: updated.version,
+				status: updated.status,
+				oldValue: existing as unknown as Record<string, unknown>,
+				newValue: updated as unknown as Record<string, unknown>,
+			},
+			{ emitOutbox: false },
+		);
+		if (!facts.ok) return facts;
+		this.shareCertificates.set(updated.id, updated);
+		return ok(clone(updated));
 	}
 
 	async getShareCertificateById(
@@ -436,6 +856,7 @@ export class MemorySlicesStore
 			CaBeneficialOwnerDisclosure,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: ShareCapitalMutationContext,
 	): Promise<Result<CaBeneficialOwnerDisclosure>> {
 		const existing = findByIdempotency(
 			this.beneficialOwnerDisclosures.values(),
@@ -451,8 +872,70 @@ export class MemorySlicesStore
 			createdAt: now,
 			updatedAt: now,
 		};
+		const facts = await recordShareCapitalMutation(mutation, {
+			organizationId: row.organizationId,
+			actorUserId: row.createdBy,
+			legalCompanyId: row.legalCompanyId,
+			entityType: "beneficial_owner_disclosure",
+			entityId: row.id,
+			action: "CREATE",
+			version: row.version,
+			status: row.verificationStatus,
+			newValue: row as unknown as Record<string, unknown>,
+		});
+		if (!facts.ok) return facts;
 		this.beneficialOwnerDisclosures.set(row.id, row);
 		return ok(clone(row));
+	}
+
+	async updateBeneficialOwnerDisclosure(
+		record: CaBeneficialOwnerDisclosure,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaBeneficialOwnerDisclosure>> {
+		const existing = this.beneficialOwnerDisclosures.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Beneficial owner disclosure not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Beneficial owner disclosure version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated: CaBeneficialOwnerDisclosure = {
+			...record,
+			version: existing.version + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await recordShareCapitalMutation(mutation, {
+			organizationId: updated.organizationId,
+			actorUserId: updated.updatedBy,
+			legalCompanyId: updated.legalCompanyId,
+			entityType: "beneficial_owner_disclosure",
+			entityId: updated.id,
+			action: "UPDATE",
+			version: updated.version,
+			status: updated.verificationStatus,
+			oldValue: existing as unknown as Record<string, unknown>,
+			newValue: updated as unknown as Record<string, unknown>,
+		});
+		if (!facts.ok) return facts;
+		this.beneficialOwnerDisclosures.set(updated.id, updated);
+		return ok(clone(updated));
+	}
+
+	async endBeneficialOwnerDisclosure(
+		record: CaBeneficialOwnerDisclosure,
+		expectedVersion: number,
+		mutation?: ShareCapitalMutationContext,
+	): Promise<Result<CaBeneficialOwnerDisclosure>> {
+		return this.updateBeneficialOwnerDisclosure(
+			record,
+			expectedVersion,
+			mutation,
+		);
 	}
 
 	async getBeneficialOwnerDisclosureById(
@@ -477,6 +960,23 @@ export class MemorySlicesStore
 				legalCompanyId,
 			).map(clone),
 		);
+	}
+
+	async listBeneficialOwnerDisclosuresAsOf(
+		organizationId: string,
+		legalCompanyId: string,
+		asOf: string,
+	): Promise<Result<CaBeneficialOwnerDisclosure[]>> {
+		const rows = filterByCompany(
+			this.beneficialOwnerDisclosures.values(),
+			organizationId,
+			legalCompanyId,
+		).filter(
+			(row) =>
+				row.effectiveFrom <= asOf &&
+				(row.effectiveTo === null || row.effectiveTo >= asOf),
+		);
+		return ok(rows.map(clone));
 	}
 
 	private createCodedEntity<
@@ -527,6 +1027,88 @@ export class MemorySlicesStore
 		return ok(clone(row));
 	}
 
+	private async recordCa4Mutation(
+		entity: {
+			id: string;
+			organizationId: string;
+			legalCompanyId: string;
+			version: number;
+			updatedBy: string;
+		},
+		entityType: CaPropertyAssetMutationReceipt["entityType"],
+		action: "CREATE" | "UPDATE",
+		mutation?: Ca4MutationContext,
+	): Promise<Result<void>> {
+		if (!mutation) return ok(undefined);
+		const receipt = [...this.propertyAssetMutationReceipts.values()].find(
+			(row) =>
+				row.organizationId === entity.organizationId &&
+				row.idempotencyKey === mutation.meta.idempotencyKey,
+		);
+		if (receipt) {
+			if (receipt.requestFingerprint !== mutation.meta.requestFingerprint) {
+				return fail(
+					"CONFLICT",
+					"Idempotency key was already used for a different request",
+					caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+				);
+			}
+			return ok(undefined);
+		}
+		const recorded = await mutation.ports.record({
+			audit: {
+				organizationId: entity.organizationId,
+				actorUserId: entity.updatedBy,
+				correlationId: mutation.meta.correlationId,
+				entity: entityType,
+				entityId: entity.id,
+				action,
+				changes: [],
+			},
+			outbox: {
+				organizationId: entity.organizationId,
+				actorUserId: entity.updatedBy,
+				correlationId: mutation.meta.correlationId,
+				type: mutation.meta.eventType,
+				payload: {
+					organizationId: entity.organizationId,
+					legalCompanyId: entity.legalCompanyId,
+					entityType,
+					entityId: entity.id,
+					version: entity.version,
+					actorId: entity.updatedBy,
+					correlationId: mutation.meta.correlationId,
+				},
+			},
+		});
+		if (!recorded.ok) return recorded;
+		const row: CaPropertyAssetMutationReceipt = {
+			id: randomUUID(),
+			organizationId: entity.organizationId,
+			commandId: mutation.meta.commandId,
+			entityType,
+			entityId: entity.id,
+			resultVersion: entity.version,
+			idempotencyKey: mutation.meta.idempotencyKey,
+			requestFingerprint: mutation.meta.requestFingerprint,
+			createdAt: new Date(),
+		};
+		this.propertyAssetMutationReceipts.set(row.id, row);
+		return ok(undefined);
+	}
+
+	async getPropertyAssetMutationReceipt(
+		organizationId: string,
+		idempotencyKey: string,
+	): Promise<Result<CaPropertyAssetMutationReceipt | null>> {
+		const row = [...this.propertyAssetMutationReceipts.values()].find(
+			(receipt) =>
+				receipt.organizationId === organizationId &&
+				receipt.idempotencyKey === idempotencyKey,
+		);
+		return ok(row ? clone(row) : null);
+	}
+
 	async getPropertyHoldingByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,
@@ -544,13 +1126,94 @@ export class MemorySlicesStore
 			CaPropertyHolding,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaPropertyHolding>> {
-		return this.createCodedEntity(
-			this.propertyHoldings,
-			this.propertyHoldings.values(),
-			record,
-			"Property holding code",
+		const lockKey = `${record.organizationId}:${record.legalCompanyId}:property:${record.normalizedTitleReference}`;
+		return this.withCa4Lock(lockKey, async () => {
+			const replay = await this.getPropertyAssetMutationReceipt(
+				record.organizationId,
+				record.createIdempotencyKey,
+			);
+			if (!replay.ok) return replay;
+			if (replay.data) {
+				if (
+					replay.data.requestFingerprint !== record.createRequestFingerprint
+				) {
+					return fail(
+						"CONFLICT",
+						"Idempotency key was already used for a different request",
+						caErrorDetails(CA_ERROR_IDEMPOTENCY_CONFLICT),
+					);
+				}
+				const existing = this.propertyHoldings.get(replay.data.entityId);
+				return existing
+					? ok(clone(existing))
+					: fail("NOT_FOUND", "Property not found");
+			}
+			for (const existing of this.propertyHoldings.values()) {
+				if (
+					existing.organizationId === record.organizationId &&
+					existing.legalCompanyId === record.legalCompanyId &&
+					existing.normalizedTitleReference ===
+						record.normalizedTitleReference &&
+					existing.status === "active"
+				) {
+					return fail(
+						"CONFLICT",
+						"Property title already has an active holding",
+					);
+				}
+			}
+			const now = new Date();
+			const row: CaPropertyHolding = {
+				id: randomUUID(),
+				...record,
+				version: 1,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const facts = await this.recordCa4Mutation(
+				row,
+				"property",
+				"CREATE",
+				mutation,
+			);
+			if (!facts.ok) return facts;
+			this.propertyHoldings.set(row.id, row);
+			return ok(clone(row));
+		});
+	}
+
+	async updatePropertyHolding(
+		record: CaPropertyHolding,
+		expectedVersion: number,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaPropertyHolding>> {
+		const existing = this.propertyHoldings.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Property not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Property version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated = {
+			...record,
+			version: expectedVersion + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await this.recordCa4Mutation(
+			updated,
+			"property",
+			"UPDATE",
+			mutation,
 		);
+		if (!facts.ok) return facts;
+		this.propertyHoldings.set(updated.id, updated);
+		return ok(clone(updated));
 	}
 
 	async getPropertyHoldingById(
@@ -571,7 +1234,11 @@ export class MemorySlicesStore
 				this.propertyHoldings.values(),
 				organizationId,
 				legalCompanyId,
-			).map(clone),
+			)
+				.sort((a, b) =>
+					a.normalizedTitleReference.localeCompare(b.normalizedTitleReference),
+				)
+				.map(clone),
 		);
 	}
 
@@ -592,13 +1259,73 @@ export class MemorySlicesStore
 			CaCorporateAsset,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaCorporateAsset>> {
-		return this.createCodedEntity(
+		const replay = findByIdempotency(
+			this.corporateAssets.values(),
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		if (replay) {
+			const facts = await this.recordCa4Mutation(
+				replay,
+				"asset",
+				"CREATE",
+				mutation,
+			);
+			if (!facts.ok) return facts;
+			return ok(clone(replay));
+		}
+		const created = await this.createCodedEntity(
 			this.corporateAssets,
 			this.corporateAssets.values(),
 			record,
 			"Corporate asset code",
 		);
+		if (!created.ok) return created;
+		const facts = await this.recordCa4Mutation(
+			created.data,
+			"asset",
+			"CREATE",
+			mutation,
+		);
+		if (!facts.ok) {
+			this.corporateAssets.delete(created.data.id);
+			return facts;
+		}
+		return created;
+	}
+
+	async updateCorporateAsset(
+		record: CaCorporateAsset,
+		expectedVersion: number,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaCorporateAsset>> {
+		const existing = this.corporateAssets.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Corporate asset not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Corporate asset version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated = {
+			...record,
+			version: expectedVersion + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await this.recordCa4Mutation(
+			updated,
+			"asset",
+			"UPDATE",
+			mutation,
+		);
+		if (!facts.ok) return facts;
+		this.corporateAssets.set(updated.id, updated);
+		return ok(clone(updated));
 	}
 
 	async getCorporateAssetById(
@@ -619,7 +1346,9 @@ export class MemorySlicesStore
 				this.corporateAssets.values(),
 				organizationId,
 				legalCompanyId,
-			).map(clone),
+			)
+				.sort((a, b) => a.normalizedCode.localeCompare(b.normalizedCode))
+				.map(clone),
 		);
 	}
 
@@ -640,12 +1369,97 @@ export class MemorySlicesStore
 			CaIntellectualPropertyRight,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaIntellectualPropertyRight>> {
-		return this.createCodedEntity(
+		const replay = findByIdempotency(
+			this.intellectualPropertyRights.values(),
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		if (replay) {
+			const facts = await this.recordCa4Mutation(
+				replay,
+				"intellectual-property",
+				"CREATE",
+				mutation,
+			);
+			if (!facts.ok) return facts;
+			return ok(clone(replay));
+		}
+		const created = await this.createCodedEntity(
 			this.intellectualPropertyRights,
 			this.intellectualPropertyRights.values(),
 			record,
 			"Intellectual property code",
+		);
+		if (!created.ok) return created;
+		const facts = await this.recordCa4Mutation(
+			created.data,
+			"intellectual-property",
+			"CREATE",
+			mutation,
+		);
+		if (!facts.ok) {
+			this.intellectualPropertyRights.delete(created.data.id);
+			return facts;
+		}
+		return created;
+	}
+
+	async updateIntellectualPropertyRight(
+		record: CaIntellectualPropertyRight,
+		expectedVersion: number,
+		renewal: Omit<CaIntellectualPropertyRenewal, "id" | "createdAt"> | null,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaIntellectualPropertyRight>> {
+		const existing = this.intellectualPropertyRights.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Intellectual property right not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Intellectual property version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated = {
+			...record,
+			version: expectedVersion + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await this.recordCa4Mutation(
+			updated,
+			"intellectual-property",
+			"UPDATE",
+			mutation,
+		);
+		if (!facts.ok) return facts;
+		this.intellectualPropertyRights.set(updated.id, updated);
+		if (renewal) {
+			const fact: CaIntellectualPropertyRenewal = {
+				id: randomUUID(),
+				...renewal,
+				createdAt: new Date(),
+			};
+			this.intellectualPropertyRenewals.set(fact.id, fact);
+		}
+		return ok(clone(updated));
+	}
+
+	async listIntellectualPropertyRenewals(
+		organizationId: string,
+		intellectualPropertyRightId: string,
+	): Promise<Result<CaIntellectualPropertyRenewal[]>> {
+		return ok(
+			[...this.intellectualPropertyRenewals.values()]
+				.filter(
+					(row) =>
+						row.organizationId === organizationId &&
+						row.intellectualPropertyRightId === intellectualPropertyRightId,
+				)
+				.sort((a, b) => a.renewalDate.localeCompare(b.renewalDate))
+				.map(clone),
 		);
 	}
 
@@ -669,7 +1483,11 @@ export class MemorySlicesStore
 				this.intellectualPropertyRights.values(),
 				organizationId,
 				legalCompanyId,
-			).map(clone),
+			)
+				.sort((a, b) =>
+					a.normalizedRightNumber.localeCompare(b.normalizedRightNumber),
+				)
+				.map(clone),
 		);
 	}
 
@@ -690,13 +1508,23 @@ export class MemorySlicesStore
 			CaInsurancePolicy,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaInsurancePolicy>> {
 		const existing = findByIdempotency(
 			this.insurancePolicies.values(),
 			record.organizationId,
 			record.createIdempotencyKey,
 		);
-		if (existing) return ok(clone(existing));
+		if (existing) {
+			const facts = await this.recordCa4Mutation(
+				existing,
+				"insurance-policy",
+				"CREATE",
+				mutation,
+			);
+			if (!facts.ok) return facts;
+			return ok(clone(existing));
+		}
 		const now = new Date();
 		const row: CaInsurancePolicy = {
 			id: randomUUID(),
@@ -705,8 +1533,72 @@ export class MemorySlicesStore
 			createdAt: now,
 			updatedAt: now,
 		};
+		const facts = await this.recordCa4Mutation(
+			row,
+			"insurance-policy",
+			"CREATE",
+			mutation,
+		);
+		if (!facts.ok) return facts;
 		this.insurancePolicies.set(row.id, row);
 		return ok(clone(row));
+	}
+
+	async updateInsurancePolicy(
+		record: CaInsurancePolicy,
+		expectedVersion: number,
+		renewal: Omit<CaInsurancePolicyRenewal, "id" | "createdAt"> | null,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaInsurancePolicy>> {
+		const existing = this.insurancePolicies.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Insurance policy not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Insurance policy version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated = {
+			...record,
+			version: expectedVersion + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await this.recordCa4Mutation(
+			updated,
+			"insurance-policy",
+			"UPDATE",
+			mutation,
+		);
+		if (!facts.ok) return facts;
+		this.insurancePolicies.set(updated.id, updated);
+		if (renewal) {
+			const fact: CaInsurancePolicyRenewal = {
+				id: randomUUID(),
+				...renewal,
+				createdAt: new Date(),
+			};
+			this.insurancePolicyRenewals.set(fact.id, fact);
+		}
+		return ok(clone(updated));
+	}
+
+	async listInsurancePolicyRenewals(
+		organizationId: string,
+		insurancePolicyId: string,
+	): Promise<Result<CaInsurancePolicyRenewal[]>> {
+		return ok(
+			[...this.insurancePolicyRenewals.values()]
+				.filter(
+					(row) =>
+						row.organizationId === organizationId &&
+						row.insurancePolicyId === insurancePolicyId,
+				)
+				.sort((a, b) => a.renewalDate.localeCompare(b.renewalDate))
+				.map(clone),
+		);
 	}
 
 	async getInsurancePolicyById(
@@ -727,7 +1619,11 @@ export class MemorySlicesStore
 				this.insurancePolicies.values(),
 				organizationId,
 				legalCompanyId,
-			).map(clone),
+			)
+				.sort((a, b) =>
+					a.normalizedPolicyNumber.localeCompare(b.normalizedPolicyNumber),
+				)
+				.map(clone),
 		);
 	}
 
@@ -745,12 +1641,96 @@ export class MemorySlicesStore
 
 	async createCharge(
 		record: Omit<CaCharge, "id" | "version" | "createdAt" | "updatedAt">,
+		mutation?: Ca4MutationContext,
 	): Promise<Result<CaCharge>> {
-		return this.createCodedEntity(
+		const replay = findByIdempotency(
+			this.charges.values(),
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		if (replay) {
+			const facts = await this.recordCa4Mutation(
+				replay,
+				"charge",
+				"CREATE",
+				mutation,
+			);
+			if (!facts.ok) return facts;
+			return ok(clone(replay));
+		}
+		const created = await this.createCodedEntity(
 			this.charges,
 			this.charges.values(),
 			record,
 			"Charge code",
+		);
+		if (!created.ok) return created;
+		const facts = await this.recordCa4Mutation(
+			created.data,
+			"charge",
+			"CREATE",
+			mutation,
+		);
+		if (!facts.ok) {
+			this.charges.delete(created.data.id);
+			return facts;
+		}
+		return created;
+	}
+
+	async updateCharge(
+		record: CaCharge,
+		expectedVersion: number,
+		variation: Omit<CaChargeVariation, "id" | "createdAt"> | null,
+		mutation?: Ca4MutationContext,
+	): Promise<Result<CaCharge>> {
+		const existing = this.charges.get(record.id);
+		if (!existing || existing.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Charge not found");
+		}
+		if (existing.version !== expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Charge version conflict",
+				caErrorDetails(CA_ERROR_VERSION_CONFLICT),
+			);
+		}
+		const updated = {
+			...record,
+			version: expectedVersion + 1,
+			updatedAt: new Date(),
+		};
+		const facts = await this.recordCa4Mutation(
+			updated,
+			"charge",
+			"UPDATE",
+			mutation,
+		);
+		if (!facts.ok) return facts;
+		this.charges.set(updated.id, updated);
+		if (variation) {
+			const fact: CaChargeVariation = {
+				id: randomUUID(),
+				...variation,
+				createdAt: new Date(),
+			};
+			this.chargeVariations.set(fact.id, fact);
+		}
+		return ok(clone(updated));
+	}
+
+	async listChargeVariations(
+		organizationId: string,
+		chargeId: string,
+	): Promise<Result<CaChargeVariation[]>> {
+		return ok(
+			[...this.chargeVariations.values()]
+				.filter(
+					(row) =>
+						row.organizationId === organizationId && row.chargeId === chargeId,
+				)
+				.sort((a, b) => a.variationDate.localeCompare(b.variationDate))
+				.map(clone),
 		);
 	}
 
@@ -768,11 +1748,9 @@ export class MemorySlicesStore
 		legalCompanyId: string,
 	): Promise<Result<CaCharge[]>> {
 		return ok(
-			filterByCompany(
-				this.charges.values(),
-				organizationId,
-				legalCompanyId,
-			).map(clone),
+			filterByCompany(this.charges.values(), organizationId, legalCompanyId)
+				.sort((a, b) => a.normalizedCode.localeCompare(b.normalizedCode))
+				.map(clone),
 		);
 	}
 

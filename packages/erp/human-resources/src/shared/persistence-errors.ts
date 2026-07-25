@@ -130,6 +130,20 @@ export function mapPersistenceFailure(
 	if (isEmployeeNumberUniqueViolation(error)) {
 		return mapEmployeeNumberDuplicate();
 	}
+	if (uniqueConstraintMatch(error, /hr_worker_org_person_uidx/i)) {
+		return fail(
+			"CONFLICT",
+			"Person is already linked to a worker",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
+	if (uniqueConstraintMatch(error, /hr_worker_org_employee_uidx/i)) {
+		return fail(
+			"CONFLICT",
+			"Employee is already linked to a worker",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+		);
+	}
 	if (
 		uniqueConstraintMatch(
 			error,

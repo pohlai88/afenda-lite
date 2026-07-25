@@ -20,6 +20,7 @@ import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
 	type HumanResourcesDepartmentId,
+	type HumanResourcesEmployeeId,
 	type HumanResourcesInterviewId,
 	type HumanResourcesJobId,
 	type HumanResourcesOfferId,
@@ -28,6 +29,7 @@ import {
 	parseHumanResourcesApplicationId,
 	parseHumanResourcesCandidateId,
 	parseHumanResourcesDepartmentId,
+	parseHumanResourcesEmployeeId,
 	parseHumanResourcesInterviewEvaluationId,
 	parseHumanResourcesInterviewId,
 	parseHumanResourcesJobId,
@@ -69,6 +71,7 @@ import {
 	assertOfferAmendable,
 	assertOfferStatusTransition,
 	assertRequisitionAmendable,
+	assertRequisitionHiringManagerAssignable,
 	assertRequisitionOpenForApplication,
 	assertRequisitionStatusTransition,
 } from "../../shared/recruitment-guards";
@@ -140,6 +143,15 @@ function mapNullablePositionId(
 	return parseHumanResourcesPositionId(value);
 }
 
+function mapNullableEmployeeId(
+	value: string | null,
+): Result<HumanResourcesEmployeeId | null> {
+	if (value === null) {
+		return ok(null);
+	}
+	return parseHumanResourcesEmployeeId(value);
+}
+
 type RequisitionSqlRow = {
 	id: string;
 	organization_id: string;
@@ -149,6 +161,7 @@ type RequisitionSqlRow = {
 	job_id: string | null;
 	position_id: string | null;
 	department_id: string | null;
+	hiring_manager_employee_id: string | null;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -165,6 +178,7 @@ function mapRequisitionFields(input: {
 	jobId: string | null;
 	positionId: string | null;
 	departmentId: string | null;
+	hiringManagerEmployeeId: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -179,6 +193,10 @@ function mapRequisitionFields(input: {
 	if (!positionId.ok) return positionId;
 	const departmentId = mapNullableDepartmentId(input.departmentId);
 	if (!departmentId.ok) return departmentId;
+	const hiringManagerEmployeeId = mapNullableEmployeeId(
+		input.hiringManagerEmployeeId,
+	);
+	if (!hiringManagerEmployeeId.ok) return hiringManagerEmployeeId;
 	const status = requisitionStatusSchema.safeParse(input.status);
 	if (!status.success) {
 		return fail(
@@ -196,6 +214,7 @@ function mapRequisitionFields(input: {
 		jobId: jobId.data,
 		positionId: positionId.data,
 		departmentId: departmentId.data,
+		hiringManagerEmployeeId: hiringManagerEmployeeId.data,
 		version: input.version,
 		createdBy: input.createdBy,
 		updatedBy: input.updatedBy,
@@ -214,6 +233,7 @@ function mapRequisitionSqlRow(row: RequisitionSqlRow): Result<JobRequisition> {
 		jobId: row.job_id,
 		positionId: row.position_id,
 		departmentId: row.department_id,
+		hiringManagerEmployeeId: row.hiring_manager_employee_id,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -234,6 +254,7 @@ function mapRequisition(
 		jobId: row.jobId,
 		positionId: row.positionId,
 		departmentId: row.departmentId,
+		hiringManagerEmployeeId: row.hiringManagerEmployeeId,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -820,6 +841,7 @@ export type DrizzleRecruitmentMethods = Pick<
 	| "findRequisitionByCode"
 	| "createDraftRequisition"
 	| "amendRequisition"
+	| "assignHiringManager"
 	| "transitionRequisitionStatus"
 	| "listRequisitions"
 	| "findCandidateByIdempotencyKey"
@@ -1033,12 +1055,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 							WITH mutated AS (
 								INSERT INTO hr_job_requisition (
 									id, organization_id, code, title, status,
-									job_id, position_id, department_id,
+									job_id, position_id, department_id, hiring_manager_employee_id,
 									create_idempotency_key, create_request_fingerprint,
 									version, created_by, updated_by
 								) VALUES (
 									${brandedId.data}, ${record.organizationId}, ${record.code}, ${record.title},
 									'draft', ${record.jobId}, ${record.positionId}, ${record.departmentId},
+									${record.hiringManagerEmployeeId},
 									${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 									1, ${record.createdBy}, ${record.createdBy}
 								)
@@ -1097,6 +1120,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			jobId?: HumanResourcesJobId | null;
 			positionId?: HumanResourcesPositionId | null;
 			departmentId?: HumanResourcesDepartmentId | null;
+			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -1134,6 +1158,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			input.departmentId !== undefined
 				? input.departmentId
 				: requisition.departmentId;
+		const nextHiringManagerEmployeeId =
+			input.hiringManagerEmployeeId !== undefined
+				? input.hiringManagerEmployeeId
+				: requisition.hiringManagerEmployeeId;
 
 		const refs = await validateRequisitionReferences(this, {
 			organizationId: input.organizationId,
@@ -1155,6 +1183,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									job_id = ${nextJobId},
 									position_id = ${nextPositionId},
 									department_id = ${nextDepartmentId},
+									hiring_manager_employee_id = ${nextHiringManagerEmployeeId},
 									version = ${nextVersion},
 									updated_by = ${input.actorUserId},
 									updated_at = now()
@@ -1194,6 +1223,92 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return mapRequisitionSqlRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to amend requisition");
+		}
+	},
+
+	async assignHiringManager(
+		input: {
+			organizationId: string;
+			requisitionId: HumanResourcesRequisitionId;
+			hiringManagerEmployeeId: HumanResourcesEmployeeId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<JobRequisition>> {
+		const existing = await this.getRequisitionById({
+			organizationId: input.organizationId,
+			requisitionId: input.requisitionId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Requisition not found");
+		}
+		const requisition = existing.data;
+
+		const versionCheck = assertExpectedVersion(
+			requisition.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const assignable = assertRequisitionHiringManagerAssignable(
+			requisition.status,
+		);
+		if (!assignable.ok) return assignable;
+
+		const auditId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		try {
+			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
+				(sql) => [
+					sql`
+							WITH mutated AS (
+								UPDATE hr_job_requisition
+								SET hiring_manager_employee_id = ${input.hiringManagerEmployeeId},
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.requisitionId}
+									AND organization_id = ${input.organizationId}
+									AND version = ${input.expectedVersion}
+									AND status NOT IN ('closed', 'cancelled')
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_job_requisition', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited
+						`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				const again = await this.getRequisitionById({
+					organizationId: input.organizationId,
+					requisitionId: input.requisitionId,
+				});
+				if (!again.ok) return again;
+				return missAfterOptimisticUpdate({
+					found: again.data !== null,
+					entityLabel: "Requisition",
+				});
+			}
+			return mapRequisitionSqlRow(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to assign requisition hiring manager",
+			);
 		}
 	},
 

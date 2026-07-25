@@ -20,6 +20,7 @@ export {
 	HARD_TENANT_ROOT_TABLES,
 } from "./hard-tenant-roots";
 export { runNeonHttpTransaction } from "./http-transaction";
+export type { NeonHttpSql } from "./http-transaction";
 export type {
 	PlatformPermissionCodeV1,
 	PlatformRoleTemplateV1,

@@ -173,13 +173,19 @@ export type CaPropertyHolding = {
 	normalizedCode: string;
 	propertyType: string;
 	titleReference: string;
+	normalizedTitleReference: string;
+	propertyDescription: string;
 	ownershipPercentage: string;
-	acquiredDate: string | null;
-	disposedDate: string | null;
+	acquisitionDate: string;
+	disposalDate: string | null;
 	tenureType: string | null;
+	valuationReference: string | null;
+	disposalReason: string | null;
+	disposalEvidenceReference: string | null;
 	status: "active" | "disposed";
 	version: number;
 	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -194,12 +200,20 @@ export type CaCorporateAsset = {
 	normalizedCode: string;
 	assetCategory: string;
 	identifier: string | null;
+	normalizedIdentifier: string | null;
 	description: string;
-	acquiredDate: string | null;
-	disposedDate: string | null;
+	custodianPartyId: string | null;
+	custodianPartyCodeSnapshot: string | null;
+	custodianPartyNameSnapshot: string | null;
+	acquisitionDate: string;
+	disposalDate: string | null;
+	writeOffDate: string | null;
+	terminalReason: string | null;
+	terminalEvidenceReference: string | null;
 	status: "active" | "disposed" | "written_off";
 	version: number;
 	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -214,19 +228,38 @@ export type CaIntellectualPropertyRight = {
 	normalizedCode: string;
 	rightType: string;
 	jurisdictionCode: string | null;
+	applicationNumber: string | null;
 	registrationNumber: string | null;
-	ownerPartyId: string | null;
+	normalizedRightNumber: string;
+	ownerPartyId: string;
+	ownerPartyCodeSnapshot: string | null;
+	ownerPartyNameSnapshot: string | null;
 	filingDate: string | null;
 	grantDate: string | null;
 	expiryDate: string | null;
-	status: "pending" | "active" | "expired" | "lapsed";
+	lastRenewalDate: string | null;
+	disposalDate: string | null;
+	terminalReason: string | null;
+	terminalEvidenceReference: string | null;
+	status: "pending" | "active" | "expired" | "disposed";
 	version: number;
 	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
 };
+
+export type Ca4Subject =
+	| { kind: "company" }
+	| { kind: "property"; propertyHoldingId: string }
+	| { kind: "corporate-asset"; corporateAssetId: string }
+	| {
+			kind: "intellectual-property";
+			intellectualPropertyRightId: string;
+	  }
+	| { kind: "other"; description: string };
 
 export type CaInsurancePolicy = {
 	id: string;
@@ -234,16 +267,22 @@ export type CaInsurancePolicy = {
 	legalCompanyId: string;
 	policyNumber: string;
 	normalizedPolicyNumber: string;
-	insurerPartyId: string | null;
+	insurerPartyId: string;
+	insurerPartyCodeSnapshot: string | null;
 	insurerPartyNameSnapshot: string | null;
-	coveredSubject: string;
+	coveredSubject: Ca4Subject;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	limitAmount: string | null;
 	currencyCode: string | null;
-	status: "active" | "expired" | "cancelled";
+	documentReference: string;
+	cancellationDate: string | null;
+	cancellationReason: string | null;
+	cancellationEvidenceReference: string | null;
+	status: "active" | "cancelled";
 	version: number;
 	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -257,20 +296,95 @@ export type CaCharge = {
 	code: string;
 	normalizedCode: string;
 	chargeType: string;
-	securedPartyId: string | null;
+	securedPartyId: string;
+	securedPartyCodeSnapshot: string | null;
 	securedPartyNameSnapshot: string | null;
-	affectedSubjectReference: string;
+	affectedSubject: Ca4Subject;
 	amount: string | null;
 	currencyCode: string | null;
+	priorityRank: number;
 	createdDate: string;
 	releasedDate: string | null;
+	creationEvidenceReference: string;
+	releaseReason: string | null;
+	releaseEvidenceReference: string | null;
 	status: "active" | "released";
 	version: number;
 	createIdempotencyKey: string;
+	createRequestFingerprint: string;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type CaIntellectualPropertyRenewal = {
+	id: string;
+	organizationId: string;
+	legalCompanyId: string;
+	intellectualPropertyRightId: string;
+	renewalDate: string;
+	previousExpiryDate: string | null;
+	newExpiryDate: string;
+	evidenceReference: string;
+	idempotencyKey: string;
+	requestFingerprint: string;
+	actorUserId: string;
+	correlationId: string;
+	createdAt: Date;
+};
+
+export type CaInsurancePolicyRenewal = {
+	id: string;
+	organizationId: string;
+	legalCompanyId: string;
+	insurancePolicyId: string;
+	renewalDate: string;
+	previousEffectiveTo: string | null;
+	newEffectiveTo: string;
+	limitAmount: string | null;
+	currencyCode: string | null;
+	documentReference: string;
+	evidenceReference: string;
+	idempotencyKey: string;
+	requestFingerprint: string;
+	actorUserId: string;
+	correlationId: string;
+	createdAt: Date;
+};
+
+export type CaChargeVariation = {
+	id: string;
+	organizationId: string;
+	legalCompanyId: string;
+	chargeId: string;
+	variationDate: string;
+	amount: string | null;
+	currencyCode: string | null;
+	priorityRank: number;
+	evidenceReference: string;
+	idempotencyKey: string;
+	requestFingerprint: string;
+	actorUserId: string;
+	correlationId: string;
+	createdAt: Date;
+};
+
+export type CaPropertyAssetMutationReceipt = {
+	id: string;
+	organizationId: string;
+	commandId: string;
+	entityType:
+		| "property"
+		| "asset"
+		| "intellectual-property"
+		| "insurance-policy"
+		| "charge";
+	entityId: string;
+	resultVersion: number;
+	idempotencyKey: string;
+	requestFingerprint: string;
+	createdAt: Date;
 };
 
 export type CaLicencePermit = {
@@ -537,80 +651,73 @@ export const listShareHoldingsAsOfInputSchema = companyQueryContext
 	})
 	.strict();
 
-export const createPropertyHoldingInputSchema = companyCommandContext
+export const getShareHoldingAsOfInputSchema = companyQueryContext
 	.extend({
-		code: z.string().trim().min(1).max(64),
-		propertyType: z.string().trim().min(1).max(64),
-		titleReference: z.string().trim().min(1).max(200),
-		ownershipPercentage: decimalString,
-		acquiredDate: z.iso.date().optional(),
-		tenureType: z.string().trim().min(1).max(64).optional(),
+		asOf: z.iso.date(),
+		shareClassId: z.uuid(),
+		holderPartyId: z.uuid(),
 	})
 	.strict();
 
-export const getPropertyHoldingInputSchema = entityGetContext.strict();
-export const listPropertyHoldingsInputSchema = companyQueryContext.strict();
+const existingShareRecordSchema = companyCommandContext.extend({
+	id: z.uuid(),
+	expectedVersion: z.number().int().positive(),
+	reason: z.string().trim().min(1).max(1000),
+});
 
-export const createCorporateAssetInputSchema = companyCommandContext
+export const updateShareClassInputSchema = existingShareRecordSchema
 	.extend({
-		code: z.string().trim().min(1).max(64),
-		assetCategory: z.string().trim().min(1).max(64),
-		description: z.string().trim().min(1).max(500),
-		identifier: z.string().trim().min(1).max(200).optional(),
-		acquiredDate: z.iso.date().optional(),
+		classType: z.string().trim().min(1).max(64).optional(),
+		parValue: decimalString.optional(),
+		authorizedQuantity: decimalString.optional(),
 	})
 	.strict();
 
-export const getCorporateAssetInputSchema = entityGetContext.strict();
-export const listCorporateAssetsInputSchema = companyQueryContext.strict();
+export const closeShareClassInputSchema = existingShareRecordSchema.strict();
 
-export const createIntellectualPropertyRightInputSchema = companyCommandContext
+export const reverseShareTransactionInputSchema = companyCommandContext
 	.extend({
-		code: z.string().trim().min(1).max(64),
-		rightType: z.string().trim().min(1).max(64),
-		jurisdictionCode: z.string().trim().min(2).max(3).optional(),
-		registrationNumber: z.string().trim().min(1).max(200).optional(),
-		ownerPartyId: z.uuid().optional(),
-		filingDate: z.iso.date().optional(),
-		grantDate: z.iso.date().optional(),
-		expiryDate: z.iso.date().optional(),
+		shareTransactionId: z.uuid(),
+		reversalReference: z.string().trim().min(1).max(64),
+		reversalDate: z.iso.date(),
 	})
 	.strict();
 
-export const getIntellectualPropertyRightInputSchema =
-	entityGetContext.strict();
-export const listIntellectualPropertyRightsInputSchema =
-	companyQueryContext.strict();
-
-export const createInsurancePolicyInputSchema = companyCommandContext
+export const replaceShareCertificateInputSchema = companyCommandContext
 	.extend({
-		policyNumber: z.string().trim().min(1).max(64),
-		insurerPartyId: z.uuid().optional(),
-		coveredSubject: z.string().trim().min(1).max(300),
-		effectiveFrom: z.iso.date(),
-		effectiveTo: z.iso.date().optional(),
-		limitAmount: decimalString.optional(),
-		currencyCode: z.string().trim().length(3).optional(),
+		priorCertificateId: z.uuid(),
+		certificateNumber: z.string().trim().min(1).max(64),
+		issuedDate: z.iso.date(),
+		evidenceReference: z.string().trim().min(1).max(500).optional(),
 	})
 	.strict();
 
-export const getInsurancePolicyInputSchema = entityGetContext.strict();
-export const listInsurancePoliciesInputSchema = companyQueryContext.strict();
-
-export const createChargeInputSchema = companyCommandContext
+export const cancelShareCertificateInputSchema = existingShareRecordSchema
 	.extend({
-		code: z.string().trim().min(1).max(64),
-		chargeType: z.string().trim().min(1).max(64),
-		affectedSubjectReference: z.string().trim().min(1).max(300),
-		securedPartyId: z.uuid().optional(),
-		amount: decimalString.optional(),
-		currencyCode: z.string().trim().length(3).optional(),
-		createdDate: z.iso.date(),
+		evidenceReference: z.string().trim().min(1).max(500).optional(),
 	})
 	.strict();
 
-export const getChargeInputSchema = entityGetContext.strict();
-export const listChargesInputSchema = companyQueryContext.strict();
+export const updateBeneficialOwnerDisclosureInputSchema =
+	existingShareRecordSchema
+		.extend({
+			natureOfControlCodes: z.string().trim().min(1).max(500).optional(),
+			evidenceReference: z.string().trim().min(1).max(500).optional(),
+			verificationStatus: z
+				.enum(CA_BENEFICIAL_OWNER_VERIFICATION_STATUSES)
+				.optional(),
+		})
+		.strict();
+
+export const endBeneficialOwnerDisclosureInputSchema =
+	existingShareRecordSchema.extend({
+		effectiveTo: z.iso.date(),
+	});
+
+export const listBeneficialOwnerDisclosuresAsOfInputSchema =
+	companyQueryContext.extend({
+		asOf: z.iso.date(),
+	});
 
 export const createLicencePermitInputSchema = companyCommandContext
 	.extend({

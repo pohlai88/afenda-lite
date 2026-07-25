@@ -21,7 +21,7 @@ Findings: [`01-domain-findings.md`](01-domain-findings.md) · Conflicts: [`03-cl
 | 6 | **HR-COREORG-HIRE-ORCHESTRATION** | P1-005 | HR-ENT-12 | Product hire from offer accept |
 | 7 | **HR-ENT-03-EFFECTIVE-TRUTH** (cluster A tranche) | P1-003 | HR-ENT-05 | `hr_person` + lifecycle table adoption rows |
 | 8 | **HR-COREORG-STRUCTURE-ALIGN** | P2-001 | HR-ENT-15 | Developer navigation (doc-only acceptable) |
-| 9 | **HR-COREORG-DB-INVARIANTS** | conflicts table | HR-ENT-03 | **CLOSED** — `0018_hr_coreorg_db_invariants.sql` |
+| 9 | **HR-COREORG-DB-INVARIANTS** | conflicts table | HR-ENT-03 | **CLOSED** — `0018_hr_coreorg_db_invariants.sql` · `0035_hr_coreorg_db_invariants_completion.sql` |
 | 10 | **HR-ENT-07-PRODUCT-OPS** (cluster A Actions) | scope note | HR-ENT-12 | Server Actions for core/lifecycle/recruitment mutations |
 
 ---

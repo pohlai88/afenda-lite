@@ -1,13 +1,13 @@
 import type { CorporateAdministrationAuthorizationPort } from "./authorization";
+import { createGenericGovernancePolicy } from "./governance-policy";
 import type {
-	CorporateAdministrationMasterLookupPort,
 	CorporateAdministrationGovernancePolicyPort,
+	CorporateAdministrationMasterLookupPort,
 	CorporateAdministrationStore,
 	MutationPorts,
 } from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveCorporateAdministrationStore } from "./resolve-store";
-import { createGenericGovernancePolicy } from "./governance-policy";
 
 export type CorporateAdministrationCommandOptions = {
 	store?: CorporateAdministrationStore;

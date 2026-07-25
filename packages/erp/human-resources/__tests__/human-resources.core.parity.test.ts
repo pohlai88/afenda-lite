@@ -14,6 +14,7 @@ import {
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
 import { createAssignment, endAssignment, getAssignmentAsOf } from "../src/core/assignment";
+import { resolvePrimaryAssignmentAsOf } from "../src/core/assignment-management";
 import { createEmployee, updateEmployee } from "../src/core/employee";
 import {
 	amendEmployment,
@@ -24,22 +25,43 @@ import {
 	listEmploymentStatusHistory,
 } from "../src/core/employment";
 import {
+	reactivateEmployment,
+	rehireEmployment,
+	suspendEmployment,
+	terminateEmployment,
+} from "../src/core/employment-management";
+import {
 	correctEmploymentContract,
 	createEmploymentContract,
+	endEmploymentContract,
+	getCurrentEmploymentContract,
 	getEmploymentContractAsOf,
+	listEmploymentContracts,
 	supersedeEmploymentContract,
 } from "../src/core/employment-contract";
 import {
+	amendEmploymentContract,
+	renewEmploymentContract,
+} from "../src/core/employment-contract-management";
+import {
+	HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
+import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
 import { createPosition } from "../src/organization/position";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { transferAssignment } from "../src/lifecycle/transfer";
+import {
+	assignEmploymentCalendar,
+	createWorkCalendar,
+} from "../src/time/calendar";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
@@ -333,7 +355,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(second.ok).toBe(false);
 		if (!second.ok) {
 			expect(humanResourcesCodeFromResult(second)).toBe(
-				HUMAN_RESOURCES_ERROR_CONFLICT,
+				HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 			);
 		}
 	});
@@ -715,7 +737,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(overlapCreate.ok).toBe(false);
 		if (!overlapCreate.ok) {
 			expect(humanResourcesCodeFromResult(overlapCreate)).toBe(
-				HUMAN_RESOURCES_ERROR_CONFLICT,
+				HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 			);
 		}
 
@@ -796,13 +818,12 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			);
 		}
 
-		const notice = await amendEmployment(
+		const notice = await suspendEmployment(
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-notice-${suffix}`,
 				employmentId: rehire.data.id,
-				status: "notice",
 				effectiveOn: "2026-08-01",
 				expectedVersion: 2,
 			},
@@ -810,6 +831,21 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(notice.ok).toBe(true);
 		if (!notice.ok) return;
+
+		const reactivated = await reactivateEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s54-reactivate-${suffix}`,
+				employmentId: rehire.data.id,
+				effectiveOn: "2026-09-01",
+				expectedVersion: 3,
+			},
+			ready,
+		);
+		expect(reactivated.ok).toBe(true);
+		if (!reactivated.ok) return;
+		expect(reactivated.data.status).toBe("active");
 
 		const history = await listEmploymentStatusHistory(
 			{
@@ -976,6 +1012,138 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(atEnd.ok).toBe(true);
 		if (atEnd.ok) {
 			expect(atEnd.data?.id).toBe(corrected.data.id);
+		}
+	});
+
+	it("employment contract management parity: amend, renew, end, current, list", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-emp-${suffix}`,
+				idempotencyKey: `idem-s55-emp-${suffix}`,
+				employeeNumber: `E-S55-${suffix}`,
+				legalName: "Slice 5.5",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const created = await createEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-create-${suffix}`,
+				employmentId: employment.data.id,
+				referenceCode: `CONTRACT-S55-${suffix}`,
+				startsOn: "2026-01-01",
+				endsOn: null,
+				reasonCode: "initial",
+			},
+			ready,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const amended = await amendEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-amend-${suffix}`,
+				employmentContractId: created.data.id,
+				referenceCode: `CONTRACT-S55-AMEND-${suffix}`,
+				reasonCode: "terms.amendment",
+				sourceReference: "HR-AMEND-S55",
+				expectedVersion: 1,
+			},
+			ready,
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+		expect(amended.data.referenceCode).toBe(`CONTRACT-S55-AMEND-${suffix}`);
+
+		const renewed = await renewEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-renew-${suffix}`,
+				employmentContractId: amended.data.id,
+				startsOn: "2027-01-01",
+				endsOn: "2027-12-31",
+				reasonCode: "renewal",
+				sourceReference: "CONTRACT-2027-S55",
+				expectedVersion: 2,
+			},
+			ready,
+		);
+		expect(renewed.ok).toBe(true);
+		if (!renewed.ok) return;
+		expect(renewed.data.superseded.lineageStatus).toBe("superseded");
+		expect(renewed.data.successor.lineageStatus).toBe("active");
+
+		const ended = await endEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-end-${suffix}`,
+				employmentContractId: renewed.data.successor.id,
+				endsOn: "2027-06-30",
+				reasonCode: "contract.end",
+				sourceReference: "HR-END-S55",
+				expectedVersion: 1,
+			},
+			ready,
+		);
+		expect(ended.ok).toBe(true);
+		if (!ended.ok) return;
+		expect(ended.data.endsOn).toBe("2027-06-30");
+		expect(ended.data.lineageStatus).toBe("active");
+
+		const current = await getCurrentEmploymentContract(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-current-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2027-03-01",
+			},
+			ready,
+		);
+		expect(current.ok).toBe(true);
+		if (current.ok) {
+			expect(current.data?.id).toBe(renewed.data.successor.id);
+		}
+
+		const listed = await listEmploymentContracts(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s55-list-${suffix}`,
+				employmentId: employment.data.id,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (listed.ok) {
+			expect(listed.data).toHaveLength(2);
+			expect(listed.data[0]?.lineageStatus).toBe("superseded");
+			expect(listed.data[1]?.id).toBe(renewed.data.successor.id);
 		}
 	});
 
@@ -1161,6 +1329,253 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(onTransferDay.ok).toBe(true);
 		if (onTransferDay.ok) {
 			expect(onTransferDay.data?.id).toBe(successor.data.id);
+		}
+	});
+
+	it("Slice 5.6 parity: primary assignment, containment, snapshot freeze", async () => {
+		const ready = createHrParityHarness(adapter);
+		const STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+			dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+			isWorkingDay: dayOfWeek >= 1 && dayOfWeek <= 5,
+			standardStartTime: dayOfWeek >= 1 && dayOfWeek <= 5 ? "09:00" : null,
+			standardEndTime: dayOfWeek >= 1 && dayOfWeek <= 5 ? "17:00" : null,
+			standardMinutes: dayOfWeek >= 1 && dayOfWeek <= 5 ? 480 : null,
+		}));
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-emp-${suffix}`,
+				idempotencyKey: `idem-s56-emp-${suffix}`,
+				employeeNumber: `E-S56-${suffix}`,
+				legalName: "Slice 5.6 Parity",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const manager = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-mgr-${suffix}`,
+				idempotencyKey: `idem-s56-mgr-${suffix}`,
+				employeeNumber: `M-S56-${suffix}`,
+				legalName: "Slice 5.6 Manager",
+			},
+			ready,
+		);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const seeded = await seedDepartmentAndJob(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+		});
+		expect(seeded).not.toBeNull();
+		if (!seeded) return;
+
+		const position = await createPosition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-pos-${suffix}`,
+				code: `POS-S56-${suffix}`,
+				title: "Slice 5.6 Role",
+				status: "active",
+				...seeded,
+			},
+			ready,
+		);
+		expect(position.ok).toBe(true);
+		if (!position.ok) return;
+
+		const outside = await createAssignment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-outside-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				startsOn: "2025-12-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(outside.ok).toBe(false);
+		if (!outside.ok) {
+			expect(humanResourcesCodeFromResult(outside)).toBe(
+				HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
+			);
+		}
+
+		await assignPrimaryReportingLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-reporting-${suffix}`,
+				employeeId: employee.data.id,
+				managerEmployeeId: manager.data.id,
+				startsOn: "2026-01-01",
+			},
+			ready,
+		);
+
+		const calendar = await createWorkCalendar(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-cal-${suffix}`,
+				idempotencyKey: `idem-s56-cal-${suffix}`,
+				code: `CAL-S56-${suffix}`,
+				name: "Slice 5.6 Calendar",
+				timezone: "UTC",
+				calendarVersion: "v1",
+				workWeek: STANDARD_WEEK,
+				standardHoursPerDay: "8.00",
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(calendar.ok).toBe(true);
+		if (!calendar.ok) return;
+
+		await assignEmploymentCalendar(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-cal-assign-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				calendarId: calendar.data.id,
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+
+		const assignment = await createAssignment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-create-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				startsOn: "2026-01-01",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+		expect(assignment.data.managerEmployeeIdSnapshot).toBe(manager.data.id);
+		expect(assignment.data.workCalendarIdSnapshot).toBe(calendar.data.id);
+
+		const primary = await resolvePrimaryAssignmentAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-primary-${suffix}`,
+				employmentId: employment.data.id,
+				asOf: "2026-03-15",
+			},
+			ready,
+		);
+		expect(primary.ok).toBe(true);
+		if (primary.ok) {
+			expect(primary.data?.id).toBe(assignment.data.id);
+		}
+
+		const managerTwo = await createEmployee(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-mgr2-${suffix}`,
+				idempotencyKey: `idem-s56-mgr2-${suffix}`,
+				employeeNumber: `M-S56-2-${suffix}`,
+				legalName: "Slice 5.6 Manager Two",
+			},
+			ready,
+		);
+		expect(managerTwo.ok).toBe(true);
+		if (!managerTwo.ok) return;
+
+		await assignPrimaryReportingLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-reporting-2-${suffix}`,
+				employeeId: employee.data.id,
+				managerEmployeeId: managerTwo.data.id,
+				startsOn: "2026-07-01",
+			},
+			ready,
+		);
+
+		const calendarTwo = await createWorkCalendar(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-cal-2-${suffix}`,
+				idempotencyKey: `idem-s56-cal-2-${suffix}`,
+				code: `CAL-S56-2-${suffix}`,
+				name: "Slice 5.6 Calendar 2",
+				timezone: "UTC",
+				calendarVersion: "v1",
+				workWeek: STANDARD_WEEK,
+				standardHoursPerDay: "8.00",
+				effectiveFrom: "2026-07-01",
+			},
+			ready,
+		);
+		expect(calendarTwo.ok).toBe(true);
+		if (!calendarTwo.ok) return;
+
+		await assignEmploymentCalendar(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-cal-assign-2-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				calendarId: calendarTwo.data.id,
+				effectiveFrom: "2026-07-01",
+			},
+			ready,
+		);
+
+		const orgContext = await resolveEmployeeOrgContextAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: `corr-s56-org-freeze-${suffix}`,
+				employeeId: employee.data.id,
+				asOf: "2026-03-15",
+			},
+			ready,
+		);
+		expect(orgContext.ok).toBe(true);
+		if (orgContext.ok) {
+			expect(orgContext.data.managerEmployeeId).toBe(manager.data.id);
+			expect(orgContext.data.workCalendarId).toBe(calendar.data.id);
+			expect(orgContext.data.legalEntityKey).toBe("LE-TEST");
 		}
 	});
 }

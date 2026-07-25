@@ -39,12 +39,14 @@ import {
 	negateLeaveQuantity,
 } from "../../shared/leave-balance";
 import {
+	ACTIVE_LEAVE_OVERLAP_STATUSES,
 	assertLeaveEntitlementActive,
 	assertLeaveEntitlementStatusTransition,
 	assertLeavePolicyEditable,
 	assertLeavePolicyStatusTransition,
 	assertLeaveRequestAmendable,
 	assertLeaveRequestStatusTransition,
+	assertNoLeaveOverlap,
 } from "../../shared/leave-guards";
 import type {
 	LeavePolicyStatus,
@@ -119,8 +121,91 @@ export function resetLeaveMemoryState(state: LeaveMemoryState): void {
 	state.leaveApprovalDecisions.clear();
 }
 
-function activeOverlapStatuses(): LeaveRequestStatus[] {
-	return ["draft", "submitted", "returned", "approved"];
+const leaveEmployeeBookingLocks = new Map<string, Promise<unknown>>();
+
+function leaveEmployeeBookingLockKey(
+	organizationId: string,
+	employeeId: HumanResourcesEmployeeId,
+): string {
+	return `${organizationId}:${employeeId}`;
+}
+
+async function withLeaveEmployeeBookingLock<T>(
+	key: string,
+	fn: () => Promise<Result<T>>,
+): Promise<Result<T>> {
+	const previous = leaveEmployeeBookingLocks.get(key) ?? Promise.resolve();
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const current = previous.then(() => gate);
+	leaveEmployeeBookingLocks.set(key, current);
+	try {
+		await previous;
+		return await fn();
+	} finally {
+		release();
+		if (leaveEmployeeBookingLocks.get(key) === current) {
+			leaveEmployeeBookingLocks.delete(key);
+		}
+	}
+}
+
+function activeLeaveOverlapRequestIds(
+	state: LeaveMemoryState,
+	input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		excludeRequestId?: HumanResourcesLeaveRequestId;
+	},
+): Set<HumanResourcesLeaveRequestId> {
+	const activeRequests = Array.from(state.leaveRequests.values()).filter(
+		(request) =>
+			request.organizationId === input.organizationId &&
+			request.employeeId === input.employeeId &&
+			(ACTIVE_LEAVE_OVERLAP_STATUSES as readonly LeaveRequestStatus[]).includes(
+				request.status,
+			) &&
+			request.id !== input.excludeRequestId,
+	);
+	return new Set(activeRequests.map((request) => request.id));
+}
+
+function assertNoLeaveOverlapForRequest(
+	state: LeaveMemoryState,
+	input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+		employeeId: HumanResourcesEmployeeId;
+	},
+): Result<void> {
+	const candidateSegments = Array.from(state.leaveRequestSegments.values())
+		.filter(
+			(segment) =>
+				segment.organizationId === input.organizationId &&
+				segment.requestId === input.requestId,
+		)
+		.map((segment) => ({
+			segmentDate: segment.segmentDate,
+			dayPortion: segment.dayPortion,
+		}));
+	const requestIds = activeLeaveOverlapRequestIds(state, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		excludeRequestId: input.requestId,
+	});
+	const existingSegments = Array.from(state.leaveRequestSegments.values())
+		.filter(
+			(segment) =>
+				segment.organizationId === input.organizationId &&
+				requestIds.has(segment.requestId),
+		)
+		.map((segment) => ({
+			segmentDate: segment.segmentDate,
+			dayPortion: segment.dayPortion,
+		}));
+	return assertNoLeaveOverlap(candidateSegments, existingSegments);
 }
 
 function postedAdjustmentsForEntitlement(
@@ -1388,14 +1473,7 @@ export function createMemoryLeaveMethods(
 			employeeId: HumanResourcesEmployeeId;
 			excludeRequestId?: HumanResourcesLeaveRequestId;
 		}): Promise<Result<LeaveRequestSegment[]>> {
-			const activeRequests = Array.from(state.leaveRequests.values()).filter(
-				(request) =>
-					request.organizationId === input.organizationId &&
-					request.employeeId === input.employeeId &&
-					activeOverlapStatuses().includes(request.status) &&
-					request.id !== input.excludeRequestId,
-			);
-			const requestIds = new Set(activeRequests.map((request) => request.id));
+			const requestIds = activeLeaveOverlapRequestIds(state, input);
 			const segments = Array.from(state.leaveRequestSegments.values()).filter(
 				(segment) =>
 					segment.organizationId === input.organizationId &&
@@ -1593,18 +1671,41 @@ export function createMemoryLeaveMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<LeaveRequest>> {
-			const transitioned = await transitionLeaveRequestStatus(
-				state,
-				this as LeaveMemoryHost & MemoryLeaveMethods,
-				{
-					...input,
-					nextStatus: "submitted",
-					ports,
-					meta,
-					emitEvent: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+			const request = state.leaveRequests.get(input.requestId);
+			if (!request) return notFound("Leave request not found");
+			if (request.organizationId !== input.organizationId) {
+				return notFound(
+					"Leave request not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			return withLeaveEmployeeBookingLock(
+				leaveEmployeeBookingLockKey(
+					input.organizationId,
+					request.employeeId,
+				),
+				async () => {
+					const overlap = assertNoLeaveOverlapForRequest(state, {
+						organizationId: input.organizationId,
+						requestId: input.requestId,
+						employeeId: request.employeeId,
+					});
+					if (!overlap.ok) return overlap;
+
+					return transitionLeaveRequestStatus(
+						state,
+						this as LeaveMemoryHost & MemoryLeaveMethods,
+						{
+							...input,
+							nextStatus: "submitted",
+							ports,
+							meta,
+							emitEvent: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+						},
+					);
 				},
 			);
-			return transitioned;
 		},
 
 		async approveLeaveRequest(
@@ -1627,47 +1728,62 @@ export function createMemoryLeaveMethods(
 				);
 			}
 
-			const consumption = await this.adjustLeaveEntitlement(
-				{
-					organizationId: input.organizationId,
-					entitlementId: request.entitlementId,
-					sourceRequestId: request.id,
-					kind: "consumption",
-					delta: negateLeaveQuantity(request.requestedQuantity),
-					reason: `Approved leave request ${request.id}`,
-					source: "approval",
-					createIdempotencyKey: `${request.id}:consumption`,
-					createRequestFingerprint: request.fingerprint,
-					createdBy: input.actorUserId,
-				},
-				ports,
-				meta,
-			);
-			if (!consumption.ok) return consumption;
+			return withLeaveEmployeeBookingLock(
+				leaveEmployeeBookingLockKey(
+					input.organizationId,
+					request.employeeId,
+				),
+				async () => {
+					const overlap = assertNoLeaveOverlapForRequest(state, {
+						organizationId: input.organizationId,
+						requestId: input.requestId,
+						employeeId: request.employeeId,
+					});
+					if (!overlap.ok) return overlap;
 
-			const approved = await transitionLeaveRequestStatus(
-				state,
-				this as LeaveMemoryHost & MemoryLeaveMethods,
-				{
-					organizationId: input.organizationId,
-					requestId: input.requestId,
-					expectedVersion: input.expectedVersion,
-					actorUserId: input.actorUserId,
-					nextStatus: "approved",
-					note: input.note,
-					decision: "approved",
-					ports,
-					meta,
-					emitEvent: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
-					approvedAt: new Date(),
+					const consumption = await this.adjustLeaveEntitlement(
+						{
+							organizationId: input.organizationId,
+							entitlementId: request.entitlementId,
+							sourceRequestId: request.id,
+							kind: "consumption",
+							delta: negateLeaveQuantity(request.requestedQuantity),
+							reason: `Approved leave request ${request.id}`,
+							source: "approval",
+							createIdempotencyKey: `${request.id}:consumption`,
+							createRequestFingerprint: request.fingerprint,
+							createdBy: input.actorUserId,
+						},
+						ports,
+						meta,
+					);
+					if (!consumption.ok) return consumption;
+
+					const approved = await transitionLeaveRequestStatus(
+						state,
+						this as LeaveMemoryHost & MemoryLeaveMethods,
+						{
+							organizationId: input.organizationId,
+							requestId: input.requestId,
+							expectedVersion: input.expectedVersion,
+							actorUserId: input.actorUserId,
+							nextStatus: "approved",
+							note: input.note,
+							decision: "approved",
+							ports,
+							meta,
+							emitEvent: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+							approvedAt: new Date(),
+						},
+					);
+					if (!approved.ok) {
+						state.leaveAdjustments.delete(consumption.data.id);
+						return approved;
+					}
+
+					return approved;
 				},
 			);
-			if (!approved.ok) {
-				state.leaveAdjustments.delete(consumption.data.id);
-				return approved;
-			}
-
-			return approved;
 		},
 
 		async rejectLeaveRequest(

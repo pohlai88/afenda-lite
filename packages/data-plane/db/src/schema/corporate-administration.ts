@@ -803,16 +803,22 @@ export const caPropertyHolding = pgTable(
 		normalizedCode: text("normalized_code").notNull(),
 		propertyType: text("property_type").notNull(),
 		titleReference: text("title_reference").notNull(),
+		normalizedTitleReference: text("normalized_title_reference").notNull(),
+		propertyDescription: text("property_description").notNull(),
 		ownershipPercentage: numeric("ownership_percentage", {
 			precision: 24,
 			scale: 12,
 		}).notNull(),
-		acquiredDate: date("acquired_date"),
-		disposedDate: date("disposed_date"),
+		acquisitionDate: date("acquisition_date").notNull(),
+		disposalDate: date("disposal_date"),
 		tenureType: text("tenure_type"),
+		valuationReference: text("valuation_reference"),
+		disposalReason: text("disposal_reason"),
+		disposalEvidenceReference: text("disposal_evidence_reference"),
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -832,6 +838,11 @@ export const caPropertyHolding = pgTable(
 			t.legalCompanyId,
 			t.normalizedCode,
 		),
+		index("ca_property_holding_org_company_title_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
+			t.normalizedTitleReference,
+		),
 		uniqueIndex("ca_property_holding_org_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -849,14 +860,22 @@ export const caCorporateAsset = pgTable(
 			.references(() => caLegalCompany.id),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		assetCategory: text("asset_category").notNull(),
-		identifier: text("identifier"),
+		assetCategory: text("category").notNull(),
+		identifier: text("asset_identifier"),
+		normalizedIdentifier: text("normalized_identifier"),
 		description: text("description").notNull(),
-		acquiredDate: date("acquired_date"),
-		disposedDate: date("disposed_date"),
+		custodianPartyId: uuid("custodian_party_id"),
+		custodianPartyCodeSnapshot: text("custodian_party_code_snapshot"),
+		custodianPartyNameSnapshot: text("custodian_party_name_snapshot"),
+		acquisitionDate: date("acquisition_date").notNull(),
+		disposalDate: date("disposal_date"),
+		writeOffDate: date("write_off_date"),
+		terminalReason: text("terminal_reason"),
+		terminalEvidenceReference: text("terminal_evidence_reference"),
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -880,6 +899,11 @@ export const caCorporateAsset = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
+		index("ca_corporate_asset_org_company_identifier_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
+			t.normalizedIdentifier,
+		),
 	],
 );
 
@@ -895,14 +919,23 @@ export const caIntellectualPropertyRight = pgTable(
 		normalizedCode: text("normalized_code").notNull(),
 		rightType: text("right_type").notNull(),
 		jurisdictionCode: text("jurisdiction_code"),
+		applicationNumber: text("application_number"),
 		registrationNumber: text("registration_number"),
-		ownerPartyId: uuid("owner_party_id"),
+		normalizedRightNumber: text("normalized_right_number").notNull(),
+		ownerPartyId: uuid("owner_party_id").notNull(),
+		ownerPartyCodeSnapshot: text("owner_party_code_snapshot"),
+		ownerPartyNameSnapshot: text("owner_party_name_snapshot"),
 		filingDate: date("filing_date"),
 		grantDate: date("grant_date"),
 		expiryDate: date("expiry_date"),
+		lastRenewalDate: date("renewal_date"),
+		disposalDate: date("disposal_date"),
+		terminalReason: text("terminal_reason"),
+		terminalEvidenceReference: text("terminal_evidence_reference"),
 		status: text("status").notNull().default("pending"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -922,6 +955,13 @@ export const caIntellectualPropertyRight = pgTable(
 			t.legalCompanyId,
 			t.normalizedCode,
 		),
+		index("ca_intellectual_property_right_org_identity_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
+			t.rightType,
+			t.jurisdictionCode,
+			t.normalizedRightNumber,
+		),
 		uniqueIndex("ca_intellectual_property_right_org_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -939,16 +979,28 @@ export const caInsurancePolicy = pgTable(
 			.references(() => caLegalCompany.id),
 		policyNumber: text("policy_number").notNull(),
 		normalizedPolicyNumber: text("normalized_policy_number").notNull(),
-		insurerPartyId: uuid("insurer_party_id"),
+		insurerPartyId: uuid("insurer_party_id").notNull(),
+		insurerPartyCodeSnapshot: text("insurer_party_code_snapshot"),
 		insurerPartyNameSnapshot: text("insurer_party_name_snapshot"),
-		coveredSubject: text("covered_subject").notNull(),
+		coveredSubjectKind: text("covered_subject_kind").notNull(),
+		coveredPropertyHoldingId: uuid("covered_property_holding_id"),
+		coveredCorporateAssetId: uuid("covered_corporate_asset_id"),
+		coveredIntellectualPropertyRightId: uuid(
+			"covered_intellectual_property_right_id",
+		),
+		coveredSubjectDescription: text("covered_subject_description"),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
 		limitAmount: numeric("limit_amount", { precision: 24, scale: 12 }),
 		currencyCode: text("currency_code"),
+		documentReference: text("document_reference").notNull(),
+		cancellationDate: date("cancellation_date"),
+		cancellationReason: text("cancellation_reason"),
+		cancellationEvidenceReference: text("cancellation_evidence_reference"),
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -986,16 +1038,28 @@ export const caCharge = pgTable(
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
 		chargeType: text("charge_type").notNull(),
-		securedPartyId: uuid("secured_party_id"),
+		securedPartyId: uuid("secured_party_id").notNull(),
+		securedPartyCodeSnapshot: text("secured_party_code_snapshot"),
 		securedPartyNameSnapshot: text("secured_party_name_snapshot"),
-		affectedSubjectReference: text("affected_subject_reference").notNull(),
+		affectedSubjectKind: text("affected_subject_kind").notNull(),
+		affectedPropertyHoldingId: uuid("affected_property_holding_id"),
+		affectedCorporateAssetId: uuid("affected_corporate_asset_id"),
+		affectedIntellectualPropertyRightId: uuid(
+			"affected_intellectual_property_right_id",
+		),
+		affectedSubjectDescription: text("affected_subject_description"),
 		amount: numeric("amount", { precision: 24, scale: 12 }),
 		currencyCode: text("currency_code"),
+		priorityRank: integer("priority_rank").notNull(),
 		createdDate: date("created_date").notNull(),
 		releasedDate: date("released_date"),
+		creationEvidenceReference: text("creation_evidence_reference").notNull(),
+		releaseReason: text("release_reason"),
+		releaseEvidenceReference: text("release_evidence_reference"),
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -1015,6 +1079,137 @@ export const caCharge = pgTable(
 		uniqueIndex("ca_charge_org_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+	],
+);
+
+export const caIntellectualPropertyRenewal = pgTable(
+	"ca_intellectual_property_renewal",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalCompanyId: uuid("legal_company_id").notNull(),
+		intellectualPropertyRightId: uuid("intellectual_property_right_id")
+			.notNull()
+			.references(() => caIntellectualPropertyRight.id),
+		renewalDate: date("renewal_date").notNull(),
+		previousExpiryDate: date("previous_expiry_date"),
+		newExpiryDate: date("new_expiry_date").notNull(),
+		evidenceReference: text("evidence_reference").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("ca_ip_renewal_org_right_idx").on(
+			t.organizationId,
+			t.intellectualPropertyRightId,
+		),
+		uniqueIndex("ca_ip_renewal_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+	],
+);
+
+export const caInsurancePolicyRenewal = pgTable(
+	"ca_insurance_policy_renewal",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalCompanyId: uuid("legal_company_id").notNull(),
+		insurancePolicyId: uuid("insurance_policy_id")
+			.notNull()
+			.references(() => caInsurancePolicy.id),
+		renewalDate: date("renewal_date").notNull(),
+		previousEffectiveTo: date("previous_effective_to"),
+		newEffectiveTo: date("new_effective_to").notNull(),
+		limitAmount: numeric("limit_amount", { precision: 24, scale: 12 }),
+		currencyCode: text("currency_code"),
+		documentReference: text("document_reference").notNull(),
+		evidenceReference: text("evidence_reference").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("ca_insurance_renewal_org_policy_idx").on(
+			t.organizationId,
+			t.insurancePolicyId,
+		),
+		uniqueIndex("ca_insurance_renewal_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+	],
+);
+
+export const caChargeVariation = pgTable(
+	"ca_charge_variation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalCompanyId: uuid("legal_company_id").notNull(),
+		chargeId: uuid("charge_id")
+			.notNull()
+			.references(() => caCharge.id),
+		variationDate: date("variation_date").notNull(),
+		amount: numeric("amount", { precision: 24, scale: 12 }),
+		currencyCode: text("currency_code"),
+		priorityRank: integer("priority_rank").notNull(),
+		evidenceReference: text("evidence_reference").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("ca_charge_variation_org_charge_idx").on(
+			t.organizationId,
+			t.chargeId,
+		),
+		uniqueIndex("ca_charge_variation_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+	],
+);
+
+export const caPropertyAssetMutationReceipt = pgTable(
+	"ca_property_asset_mutation_receipt",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		commandId: text("command_id").notNull(),
+		entityType: text("entity_type").notNull(),
+		entityId: uuid("entity_id").notNull(),
+		resultVersion: integer("result_version").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("ca_property_asset_receipt_org_key_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+		index("ca_property_asset_receipt_org_entity_idx").on(
+			t.organizationId,
+			t.entityType,
+			t.entityId,
 		),
 	],
 );

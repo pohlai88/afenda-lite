@@ -11,21 +11,18 @@ import {
 	or,
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	humanResourcesErrorDetails,
-} from "../../error-codes";
+import { HUMAN_RESOURCES_ERROR_NOT_FOUND, humanResourcesErrorDetails } from "../../error-codes";
 import type {
 	AssignmentContextQueryPort,
 	EmployeeAssignmentContext,
 } from "../../time/handoff/ports";
+import { multiplePrimaryAssignmentsAtAsOf } from "../../shared/assignment-guards";
 
 /**
  * Drizzle-backed assignment context for calendar / time resolution.
  * Missing work assignments resolve to null dimension keys so organization-
  * and employee-scoped calendars remain selectable. Multiple effective work
- * assignments fail with CONFLICT (parity with Memory
+ * assignments fail with multiple_primary_assignments (parity with Memory
  * {@link createStoreAssignmentContextQuery} / findAssignmentByEmploymentAsOf).
  */
 export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPort {
@@ -79,11 +76,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 				});
 			}
 			if (workAssignmentRows.length !== 1) {
-				return fail(
-					"CONFLICT",
-					"Multiple assignments are effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return multiplePrimaryAssignmentsAtAsOf();
 			}
 			const assignment = workAssignmentRows[0];
 			if (assignment === undefined) {

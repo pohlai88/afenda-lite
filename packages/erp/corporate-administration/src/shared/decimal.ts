@@ -97,3 +97,8 @@ export function addDecimal(a: string, b: string): string {
 export function sumDecimals(values: string[]): string {
 	return values.reduce((total, value) => addDecimal(total, value), "0");
 }
+
+export function negateDecimal(value: string): string {
+	if (isZeroDecimal(value)) return "0";
+	return value.startsWith("-") ? value.slice(1) : `-${value}`;
+}
