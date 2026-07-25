@@ -1,0 +1,69 @@
+{
+	"mission": "HR-COREORG-DB-INVARIANTS",
+	"closedOn": "2026-07-25",
+	"migration": "0018_hr_coreorg_db_invariants.sql",
+	"databaseChecks": [
+		{
+			"table": "hr_work_assignment",
+			"constraint": "hr_work_assignment_effective_range_ck",
+			"rule": "starts_on <= ends_on when ends_on is set"
+		},
+		{
+			"table": "hr_employment_contract",
+			"constraint": "hr_employment_contract_effective_range_ck",
+			"rule": "starts_on <= ends_on when ends_on is set"
+		},
+		{
+			"table": "hr_reporting_line",
+			"constraint": "hr_reporting_line_effective_range_ck",
+			"rule": "starts_on <= ends_on when ends_on is set"
+		}
+	],
+	"partialUniqueIndexes": [
+		{
+			"table": "hr_work_assignment",
+			"index": "hr_work_assignment_org_employment_open_uidx",
+			"rule": "at most one open assignment (ends_on IS NULL) per organization_id + employment_id"
+		},
+		{
+			"table": "hr_reporting_line",
+			"index": "hr_reporting_line_org_employee_open_primary_uidx",
+			"rule": "at most one open primary reporting line per organization_id + employee_id"
+		}
+	],
+	"overlapPolicies": [
+		{
+			"table": "hr_work_assignment",
+			"policy": "prevent_overlapping_active_assignments_per_employment",
+			"enforcement": "command_enforced_and_partial_index",
+			"databaseOverlapExclusion": false,
+			"enforcementSurface": [
+				"hr_work_assignment_org_employment_open_uidx",
+				"@afenda/human-resources adapters: findOpenAssignmentByEmployment before createAssignment"
+			],
+			"notes": "Dated-range overlap for closed assignments is not excluded at PostgreSQL; adapters must close prior rows before creating overlapping dated ranges."
+		},
+		{
+			"table": "hr_employment_contract",
+			"policy": "prevent_overlapping_governing_contract_terms_per_employment",
+			"enforcement": "command_only",
+			"databaseOverlapExclusion": false,
+			"enforcementSurface": [
+				"@afenda/human-resources: assertValidDateRange on createEmploymentContract"
+			],
+			"notes": "Overlap of successive governing contracts is command-enforced only; no btree_gist exclusion constraint in this migration."
+		},
+		{
+			"table": "hr_reporting_line",
+			"policy": "prevent_overlapping_primary_lines_per_employee",
+			"enforcement": "command_enforced_and_partial_index",
+			"databaseOverlapExclusion": false,
+			"enforcementSurface": [
+				"hr_reporting_line_org_employee_open_primary_uidx",
+				"@afenda/human-resources: assertNoPrimaryReportingOverlap in organization adapters"
+			],
+			"notes": "Secondary and dotted-line relationship_kind values may overlap by design; only primary lines are overlap-guarded."
+		}
+	],
+	"rollback": "ALTER TABLE hr_work_assignment DROP CONSTRAINT IF EXISTS hr_work_assignment_effective_range_ck; ALTER TABLE hr_employment_contract DROP CONSTRAINT IF EXISTS hr_employment_contract_effective_range_ck; ALTER TABLE hr_reporting_line DROP CONSTRAINT IF EXISTS hr_reporting_line_effective_range_ck;"
+}

@@ -21,8 +21,15 @@ import {
 	parseHumanResourcesLeaveRequestId,
 	parseHumanResourcesLeaveRequestSegmentId,
 } from "../../brands";
+import {
+	aggregateTypeToEntity,
+	emitHumanResourcesMutationOutcome,
+} from "../../emissions/mutation-outcome";
+import { getHumanResourcesMutationEmission } from "../../emissions/resolve-emission";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../../leave/leave-policy-lineage";
+import type { HumanResourcesCommandId } from "../../module-ids";
+import { HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST } from "../../module-ids";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
@@ -43,7 +50,10 @@ import type {
 	LeavePolicyStatus,
 	LeaveRequestStatus,
 } from "../../shared/leave-status";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import {
+	attachMutationExecutionContext,
+	type HumanResourcesMutationMeta,
+} from "../../shared/mutation-meta";
 import type {
 	HumanResourcesStore,
 	IdempotentLeaveAdjustmentRecord,
@@ -140,52 +150,68 @@ function resolveBalance(
 	};
 }
 
-async function recordAudit(
+async function emitLeaveSideEffects(
 	ports: MutationPorts,
 	input: {
+		commandId: HumanResourcesCommandId;
+		meta: HumanResourcesMutationMeta;
 		organizationId: string;
 		actorUserId: string;
-		correlationId: string;
-		entity: string;
-		entityId: string;
-		action: "CREATE" | "UPDATE" | "DELETE";
+		aggregateId: string;
+		audit: {
+			entity: string;
+			entityId?: string;
+			action: "CREATE" | "UPDATE" | "DELETE";
+		};
+		eventType?: HumanResourcesEventType;
+		eventEntityId?: string;
+		eventEntityType?: string;
+		conditionalEventSuppressed?: boolean;
 	},
-): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
+): Promise<Result<void>> {
+	const definition = getHumanResourcesMutationEmission(input.commandId);
+	const executionMeta = attachMutationExecutionContext(input.meta, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
-		correlationId: input.correlationId,
-		entity: input.entity,
-		entityId: input.entityId,
-		action: input.action,
-		changes: [],
 	});
-}
 
-async function emitOutbox(
-	ports: MutationPorts,
-	input: {
-		organizationId: string;
-		eventType: HumanResourcesEventType;
-		entityType: string;
-		entityId: string;
-		actorId: string;
-		correlationId: string;
-	},
-): Promise<Result<{ id: string }>> {
-	return ports.outbox.append({
-		organizationId: input.organizationId,
-		actorUserId: input.actorId,
-		correlationId: input.correlationId,
-		type: input.eventType,
-		payload: {
-			organizationId: input.organizationId,
-			entityType: input.entityType,
-			entityId: input.entityId,
-			actorId: input.actorId,
-			correlationId: input.correlationId,
+	const eventEntityType =
+		input.eventEntityType ??
+		(input.eventType
+			? aggregateTypeToEntity(definition.aggregateType)
+			: undefined);
+	const eventEntityId = input.eventEntityId ?? input.aggregateId;
+
+	return emitHumanResourcesMutationOutcome(
+		{
+			commandId: input.commandId,
+			meta: executionMeta,
+			aggregateType: definition.aggregateType,
+			aggregateId: input.aggregateId,
+			conditionalEventSuppressed: input.conditionalEventSuppressed,
+			audit: {
+				entity: input.audit.entity,
+				entityId: input.audit.entityId,
+				action: input.audit.action,
+				changes: [],
+			},
+			event: input.eventType
+				? {
+						type: input.eventType,
+						entityId: eventEntityId,
+						entityType: eventEntityType,
+						payload: {
+							organizationId: input.organizationId,
+							entityType: eventEntityType ?? input.audit.entity,
+							entityId: eventEntityId,
+							actorId: input.actorUserId,
+							correlationId: input.meta.correlationId,
+						},
+					}
+				: undefined,
 		},
-	});
+		ports,
+	);
 }
 
 function tenureDaysOn(startsOn: string, asOfDate: string): number {
@@ -324,17 +350,20 @@ async function transitionLeavePolicyStatus(
 	};
 	state.leavePolicies.set(updated.id, updated);
 
-	const audit = await recordAudit(input.ports, {
+	const emission = await emitLeaveSideEffects(input.ports, {
+		commandId: input.meta.operationId,
+		meta: input.meta,
 		organizationId: updated.organizationId,
 		actorUserId: input.actorUserId,
-		correlationId: input.meta.correlationId,
-		entity: "hr_leave_policy",
-		entityId: updated.id,
-		action: "UPDATE",
+		aggregateId: updated.id,
+		audit: {
+			entity: "hr_leave_policy",
+			action: "UPDATE",
+		},
 	});
-	if (!audit.ok) {
+	if (!emission.ok) {
 		state.leavePolicies.set(updated.id, previous);
-		return audit;
+		return emission;
 	}
 
 	return ok({ ...updated });
@@ -383,17 +412,20 @@ async function transitionLeaveEntitlementStatus(
 	};
 	state.leaveEntitlements.set(updated.id, updated);
 
-	const audit = await recordAudit(input.ports, {
+	const emission = await emitLeaveSideEffects(input.ports, {
+		commandId: input.meta.operationId,
+		meta: input.meta,
 		organizationId: updated.organizationId,
 		actorUserId: input.actorUserId,
-		correlationId: input.meta.correlationId,
-		entity: "hr_leave_entitlement",
-		entityId: updated.id,
-		action: "UPDATE",
+		aggregateId: updated.id,
+		audit: {
+			entity: "hr_leave_entitlement",
+			action: "UPDATE",
+		},
 	});
-	if (!audit.ok) {
+	if (!emission.ok) {
 		state.leaveEntitlements.set(updated.id, previous);
-		return audit;
+		return emission;
 	}
 
 	if (input.nextStatus === "expired") {
@@ -485,32 +517,23 @@ async function transitionLeaveRequestStatus(
 		});
 	}
 
-	const audit = await recordAudit(input.ports, {
+	const emission = await emitLeaveSideEffects(input.ports, {
+		commandId: input.meta.operationId,
+		meta: input.meta,
 		organizationId: updated.organizationId,
 		actorUserId: input.actorUserId,
-		correlationId: input.meta.correlationId,
-		entity: "hr_leave_request",
-		entityId: updated.id,
-		action: "UPDATE",
+		aggregateId: updated.id,
+		audit: {
+			entity: "hr_leave_request",
+			action: "UPDATE",
+		},
+		eventType: input.emitEvent,
+		eventEntityId: updated.id,
+		eventEntityType: "hr_leave_request",
 	});
-	if (!audit.ok) {
+	if (!emission.ok) {
 		state.leaveRequests.set(updated.id, previous);
-		return audit;
-	}
-
-	if (input.emitEvent !== undefined) {
-		const event = await emitOutbox(input.ports, {
-			organizationId: updated.organizationId,
-			eventType: input.emitEvent,
-			entityType: "hr_leave_request",
-			entityId: updated.id,
-			actorId: input.actorUserId,
-			correlationId: input.meta.correlationId,
-		});
-		if (!event.ok) {
-			state.leaveRequests.set(updated.id, previous);
-			return event;
-		}
+		return emission;
 	}
 
 	return ok({ ...updated });
@@ -683,18 +706,21 @@ export function createMemoryLeaveMethods(
 			state.leavePolicies.set(policy.id, policy);
 			state.leavePolicyEligibility.set(eligibility.id, eligibility);
 
-			const audit = await recordAudit(ports, {
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
 				organizationId: policy.organizationId,
 				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_leave_policy",
-				entityId: policy.id,
-				action: "CREATE",
+				aggregateId: policy.id,
+				audit: {
+					entity: "hr_leave_policy",
+					action: "CREATE",
+				},
 			});
-			if (!audit.ok) {
+			if (!emission.ok) {
 				state.leavePolicies.delete(policy.id);
 				state.leavePolicyEligibility.delete(eligibility.id);
-				return audit;
+				return emission;
 			}
 
 			return ok({ ...policy });
@@ -779,17 +805,20 @@ export function createMemoryLeaveMethods(
 				}
 			}
 
-			const audit = await recordAudit(ports, {
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
 				organizationId: updated.organizationId,
 				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_leave_policy",
-				entityId: updated.id,
-				action: "UPDATE",
+				aggregateId: updated.id,
+				audit: {
+					entity: "hr_leave_policy",
+					action: "UPDATE",
+				},
 			});
-			if (!audit.ok) {
+			if (!emission.ok) {
 				state.leavePolicies.set(updated.id, previous);
-				return audit;
+				return emission;
 			}
 
 			return ok({ ...updated });
@@ -1014,20 +1043,23 @@ export function createMemoryLeaveMethods(
 				},
 			);
 
-			const audit = await recordAudit(ports, {
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
 				organizationId: entitlement.organizationId,
 				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_leave_entitlement",
-				entityId: entitlement.id,
-				action: "CREATE",
+				aggregateId: entitlement.id,
+				audit: {
+					entity: "hr_leave_entitlement",
+					action: "CREATE",
+				},
 			});
-			if (!audit.ok) {
+			if (!emission.ok) {
 				state.leaveEntitlements.delete(entitlement.id);
 				state.leaveEntitlementIdempotency.delete(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
-				return audit;
+				return emission;
 			}
 
 			return ok({ ...entitlement });
@@ -1223,37 +1255,33 @@ export function createMemoryLeaveMethods(
 
 			state.leaveAdjustments.set(adjustment.id, adjustment);
 
-			const audit = await recordAudit(ports, {
-				organizationId: adjustment.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_leave_adjustment",
-				entityId: adjustment.id,
-				action: "CREATE",
-			});
-			if (!audit.ok) {
-				state.leaveAdjustments.delete(adjustment.id);
-				return audit;
-			}
-
-			if (
+			const shouldEmitAdjustedEvent =
 				record.kind === "manual" ||
 				record.kind === "accrual" ||
 				record.kind === "carry_forward" ||
-				record.kind === "expiry"
-			) {
-				const event = await emitOutbox(ports, {
-					organizationId: record.organizationId,
-					eventType: HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
-					entityType: "hr_leave_entitlement",
-					entityId: record.entitlementId,
-					actorId: record.createdBy,
-					correlationId: meta.correlationId,
-				});
-				if (!event.ok) {
-					state.leaveAdjustments.delete(adjustment.id);
-					return event;
-				}
+				record.kind === "expiry";
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+				meta,
+				organizationId: adjustment.organizationId,
+				actorUserId: record.createdBy,
+				aggregateId: record.entitlementId,
+				audit: {
+					entity: "hr_leave_adjustment",
+					entityId: adjustment.id,
+					action: "CREATE",
+				},
+				eventType: shouldEmitAdjustedEvent
+					? HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT
+					: undefined,
+				eventEntityId: record.entitlementId,
+				eventEntityType: "hr_leave_entitlement",
+				conditionalEventSuppressed: !shouldEmitAdjustedEvent,
+			});
+			if (!emission.ok) {
+				state.leaveAdjustments.delete(adjustment.id);
+				return emission;
 			}
 
 			return ok({ ...adjustment });
@@ -1438,15 +1466,18 @@ export function createMemoryLeaveMethods(
 				},
 			);
 
-			const audit = await recordAudit(ports, {
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
 				organizationId: request.organizationId,
 				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_leave_request",
-				entityId: request.id,
-				action: "CREATE",
+				aggregateId: request.id,
+				audit: {
+					entity: "hr_leave_request",
+					action: "CREATE",
+				},
 			});
-			if (!audit.ok) {
+			if (!emission.ok) {
 				state.leaveRequests.delete(request.id);
 				for (const segment of segments) {
 					state.leaveRequestSegments.delete(segment.id);
@@ -1454,7 +1485,7 @@ export function createMemoryLeaveMethods(
 				state.leaveRequestIdempotency.delete(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
-				return audit;
+				return emission;
 			}
 
 			return ok({ ...request });
@@ -1525,15 +1556,18 @@ export function createMemoryLeaveMethods(
 				});
 			}
 
-			const audit = await recordAudit(ports, {
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
 				organizationId: updated.organizationId,
 				actorUserId: record.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_leave_request",
-				entityId: updated.id,
-				action: "UPDATE",
+				aggregateId: updated.id,
+				audit: {
+					entity: "hr_leave_request",
+					action: "UPDATE",
+				},
 			});
-			if (!audit.ok) {
+			if (!emission.ok) {
 				state.leaveRequests.set(updated.id, previous);
 				for (const segment of Array.from(
 					state.leaveRequestSegments.values(),
@@ -1543,7 +1577,7 @@ export function createMemoryLeaveMethods(
 				for (const oldSegment of previousSegments) {
 					state.leaveRequestSegments.set(oldSegment.id, oldSegment);
 				}
-				return audit;
+				return emission;
 			}
 
 			return ok({ ...updated });

@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
+	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 	HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 	HumanResourcesEventSchemas,
+	humanResourcesEffectiveDatedEntityPayloadSchema,
 	humanResourcesEntityPayloadSchema,
 } from "../src/schemas/human-resources.events";
 
@@ -26,6 +34,41 @@ describe("@afenda/events human-resources schema compatibility", () => {
 		expect(parsed.success).toBe(true);
 	});
 
+	it("requires effectiveOn on effective-dated entity payloads", () => {
+		const withEffectiveOn = {
+			...goldenPayload,
+			effectiveOn: "2026-01-15",
+		};
+		expect(
+			humanResourcesEffectiveDatedEntityPayloadSchema.safeParse(withEffectiveOn)
+				.success,
+		).toBe(true);
+		expect(
+			humanResourcesEffectiveDatedEntityPayloadSchema.safeParse(goldenPayload)
+				.success,
+		).toBe(false);
+	});
+
+	it("requires effectiveOn on effective-dated HR event schemas", () => {
+		const withEffectiveOn = {
+			...goldenPayload,
+			effectiveOn: "2026-01-15",
+		};
+		for (const type of [
+			HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+			HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
+			HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+			HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+		] as const) {
+			expect(HumanResourcesEventSchemas[type].safeParse(withEffectiveOn).success).toBe(
+				true,
+			);
+			expect(HumanResourcesEventSchemas[type].safeParse(goldenPayload).success).toBe(
+				false,
+			);
+		}
+	});
+
 	it("accepts legacy payloads without operation/idempotencyKey", () => {
 		const parsed = humanResourcesEntityPayloadSchema.safeParse({
 			organizationId: "org-1",
@@ -43,6 +86,9 @@ describe("@afenda/events human-resources schema compatibility", () => {
 			HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
 			HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 			HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
+			HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+			HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
+			HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
 		] as const;
 
 		for (const type of samples) {

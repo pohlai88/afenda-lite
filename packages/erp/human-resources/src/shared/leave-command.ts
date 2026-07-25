@@ -1,27 +1,15 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
-
-import {
-	type HumanResourcesAuthorizationPort,
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
 import {
 	type HumanResourcesCommandOptions,
 	requireWorkCalendar,
 	resolveCommandDeps,
 } from "../command-options";
-import {
-	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
-	humanResourcesErrorDetails,
-} from "../error-codes";
 import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
 import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
@@ -31,11 +19,18 @@ import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
 import type { WorkCalendarPort } from "../time/work-calendar";
 import type { LeavePolicy, LeaveRequest } from "../types";
+import type { HumanResourcesAuthorizationPort } from "./authorization-types";
+import {
+	assertHumanResourcesSupplementalAuthorization,
+	requireHumanResourcesManifestPermission,
+} from "./contextual-authorization";
+import {
+	runParsedAuthorizedCommand,
+	runParsedAuthorizedQuery,
+} from "./domain-runner";
+import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
 
-type ActorScoped = {
-	organizationId: string;
-	actorUserId: string;
-};
+type ActorScoped = HumanResourcesAuthorizedActorInput;
 
 type CommandDeps = {
 	store: HumanResourcesStore;
@@ -52,6 +47,13 @@ type QueryDeps = {
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
+/** Authorization port that grants after a custom leave authorize proof succeeded. */
+const CUSTOM_AUTHORIZE_PROVEN: HumanResourcesAuthorizationPort = {
+	async can() {
+		return true;
+	},
+};
+
 export async function runLeaveCommand<
 	TSchema extends z.ZodType<ActorScoped>,
 	TOut,
@@ -63,7 +65,7 @@ export async function runLeaveCommand<
 		invalidMessage: string;
 		command: HumanResourcesCommandId;
 		authorize?: (
-			authorization: HumanResourcesAuthorizationPort | undefined,
+			options: HumanResourcesCommandOptions,
 			data: z.infer<TSchema>,
 		) => Promise<Result<void>>;
 		execute: (
@@ -72,46 +74,40 @@ export async function runLeaveCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization, identityResolver } =
-		resolveCommandDeps(options);
-	const workCalendar = requireWorkCalendar(options);
-	if (!workCalendar.ok) {
-		return workCalendar;
-	}
-	if (config.authorize !== undefined) {
-		const authorized = await config.authorize(authorization, parsed.data);
-		if (!authorized.ok) {
-			return authorized;
-		}
-	} else {
-		const authorized = await requireHumanResourcesCommandPermission(
-			authorization,
-			{
-				organizationId: parsed.data.organizationId,
-				actorUserId: parsed.data.actorUserId,
-				command: config.command,
-			},
-		);
-		if (!authorized.ok) {
-			return authorized;
-		}
-	}
-
-	return config.execute(parsed.data, {
-		store,
-		ports,
-		workCalendar: workCalendar.data,
-		authorization,
-		identityResolver,
+	return runParsedAuthorizedCommand(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
+		command: config.command,
+		parityResourceKind: "leave_request",
+		resolveOptions: async (opts, data) => {
+			if (config.authorize === undefined) {
+				return ok(opts);
+			}
+			const authorized = await config.authorize(opts, data);
+			if (!authorized.ok) {
+				return authorized;
+			}
+			return ok({
+				...opts,
+				authorization: CUSTOM_AUTHORIZE_PROVEN,
+			});
+		},
+		resolveDeps: () => {
+			const { store, ports, authorization, identityResolver } =
+				resolveCommandDeps(options);
+			const workCalendar = requireWorkCalendar(options);
+			if (!workCalendar.ok) {
+				return workCalendar;
+			}
+			return ok({
+				store,
+				ports,
+				workCalendar: workCalendar.data,
+				authorization,
+				identityResolver,
+			});
+		},
+		execute: config.execute,
 	});
 }
 
@@ -128,96 +124,107 @@ export async function runLeaveQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization, identityResolver } =
-		resolveCommandDeps(options);
-	const workCalendar = requireWorkCalendar(options);
-	if (!workCalendar.ok) {
-		return workCalendar;
-	}
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runParsedAuthorizedQuery(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
 		query: config.query,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, {
-		store,
-		workCalendar: workCalendar.data,
-		authorization,
-		identityResolver,
+		parityResourceKind: "leave_request",
+		resolveDeps: (opts) => {
+			const { store, authorization, identityResolver } =
+				resolveCommandDeps(opts);
+			const workCalendar = requireWorkCalendar(opts);
+			if (!workCalendar.ok) {
+				return workCalendar;
+			}
+			return ok({
+				store,
+				workCalendar: workCalendar.data,
+				authorization,
+				identityResolver,
+			});
+		},
+		execute: config.execute,
 	});
 }
 
 export async function requireLeaveRequestBackdatePermission(
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: HumanResourcesCommandOptions,
 	input: {
 		organizationId: string;
 		actorUserId: string;
+		correlationId?: string;
+		operationId: HumanResourcesCommandId;
 	},
 ): Promise<Result<void>> {
-	return requireHumanResourcesPermission(authorization, {
-		...input,
-		permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
-	});
+	return assertHumanResourcesSupplementalAuthorization(
+		{
+			operationId: input.operationId,
+			operationKind: "command",
+			requiredPermission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
+			actor: {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId ?? "",
+			},
+		},
+		options,
+	);
 }
 
 export async function requireLeaveCancelApprovedPermission(
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: HumanResourcesCommandOptions,
 	input: {
 		organizationId: string;
 		actorUserId: string;
+		correlationId?: string;
+		operationId: HumanResourcesCommandId;
 	},
 ): Promise<Result<void>> {
-	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
-	}
-	const canApproveTeam = await authorization.can({
-		...input,
+	const approveTeam = await requireHumanResourcesManifestPermission(options, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
 		permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
 	});
-	if (canApproveTeam) {
+	if (approveTeam.ok) {
 		return ok(undefined);
 	}
-	return requireHumanResourcesPermission(authorization, {
-		...input,
-		permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
-	});
+	return requireLeaveRequestBackdatePermission(options, input);
 }
 
 export async function requireLeaveRequestSensitiveRead(
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: HumanResourcesCommandOptions,
 	input: {
 		organizationId: string;
 		actorUserId: string;
+		correlationId?: string;
+		operationId: HumanResourcesQueryId | HumanResourcesCommandId;
+		operationKind: "command" | "query";
 	},
 ): Promise<Result<void>> {
-	return requireHumanResourcesPermission(authorization, {
-		...input,
-		permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
-	});
+	return assertHumanResourcesSupplementalAuthorization(
+		{
+			operationId: input.operationId,
+			operationKind: input.operationKind,
+			requiredPermission:
+				HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+			actor: {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId ?? "",
+			},
+		},
+		options,
+	);
 }
 
 export async function assertLeaveRequestSensitiveReadAllowed(
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: HumanResourcesCommandOptions,
 	input: {
 		organizationId: string;
 		actorUserId: string;
+		correlationId?: string;
+		operationId: HumanResourcesQueryId | HumanResourcesCommandId;
+		operationKind: "command" | "query";
 		request: LeaveRequest;
 		policy: LeavePolicy;
 	},
@@ -228,8 +235,11 @@ export async function assertLeaveRequestSensitiveReadAllowed(
 	if (input.request.createdBy === input.actorUserId) {
 		return ok(undefined);
 	}
-	return requireLeaveRequestSensitiveRead(authorization, {
+	return requireLeaveRequestSensitiveRead(options, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		operationId: input.operationId,
+		operationKind: input.operationKind,
 	});
 }

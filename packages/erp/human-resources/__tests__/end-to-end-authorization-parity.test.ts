@@ -4,7 +4,10 @@ import type { createDrizzleHumanResourcesStore } from "../src/adapters/drizzle/s
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import type { HumanResourcesEmployeeId } from "../src/brands";
+import { createEmployee } from "../src/core/employee";
+import { createEmployment } from "../src/core/employment";
 import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
 	getPerformanceGoalById,
 	listEmployeeGoals,
@@ -13,8 +16,18 @@ import {
 	getPerformanceReviewById,
 	listEmployeePerformanceReviews,
 } from "../src/performance/review";
+import { HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ } from "../src/permissions";
 import { requireComplianceEmployeeReadScope } from "../src/shared/compliance-command";
+import {
+	createCareerPlan,
+	listEmployeeCareerPlans,
+} from "../src/talent/career-plan";
+import { getEmployeeCompetencyProfile } from "../src/talent/competency";
+import { listSuccessionPlans } from "../src/talent/succession-plan";
+import { getTalentProfileByEmployee } from "../src/talent/talent-profile";
 import type { PerformanceGoal, PerformanceReviewDetail } from "../src/types";
+import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 describe("End-to-End Authorization Parity Tests", () => {
 	const organizationId = "org-123";
@@ -291,7 +304,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					correlationId,
@@ -715,7 +728,6 @@ describe("End-to-End Authorization Parity Tests", () => {
 			// temporal validation would happen in the business logic layer
 			expect(result.message).toContain("Invalid leave request approve input");
 		});
-
 	});
 
 	describe("IDOR Prevention Comprehensive", () => {
@@ -845,6 +857,270 @@ describe("End-to-End Authorization Parity Tests", () => {
 			expect(result.message).toContain(
 				"Missing required human resources permission",
 			);
+		});
+	});
+
+	describe("Talent Authorization Parity", () => {
+		it("should not leak talent profile data across organizations", async () => {
+			const authPort = createAuthPort({
+				[`${actorUserId1}:${HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ}`]: true,
+			});
+			const identityResolver = createIdentityResolver({
+				[actorUserId1]: employeeId1,
+			});
+
+			const result = await getTalentProfileByEmployee(
+				{
+					organizationId: "different-org",
+					correlationId,
+					actorUserId: actorUserId1,
+					employeeId: employeeId1,
+					includeSensitive: false,
+				},
+				{
+					store: memoryStore,
+					authorization: authPort,
+					identityResolver,
+				},
+			);
+
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.data).toBeNull();
+			}
+		});
+
+		it("should deny succession list without executive read permission", async () => {
+			const authPort = createAuthPort({
+				[`${actorUserId1}:human-resources.career-plan.own.read`]: true,
+			});
+			const identityResolver = createIdentityResolver({
+				[actorUserId1]: employeeId1,
+			});
+
+			const result = await listSuccessionPlans(
+				{
+					organizationId,
+					correlationId,
+					actorUserId: actorUserId1,
+					page: 1,
+					pageSize: 20,
+				},
+				{
+					store: memoryStore,
+					authorization: authPort,
+					identityResolver,
+				},
+			);
+
+			expect(result.ok).toBe(false);
+		});
+
+		it("should allow manager to list direct report career plans", async () => {
+			const ports = createMemoryMutationPorts();
+			const seedAuth = createGrantingHumanResourcesAuthorization([
+				"human-resources.employee.create",
+				"human-resources.employment.manage",
+				"human-resources.organization.manage",
+				"human-resources.career-plan.manage",
+				"human-resources.career-plan.own.read",
+			]);
+			const seedOptions = {
+				store: memoryStore,
+				ports,
+				authorization: seedAuth,
+				identityResolver: createIdentityResolver({}),
+			};
+
+			const manager = await createEmployee(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-mgr`,
+					idempotencyKey: "idem-talent-mgr",
+					employeeNumber: "MGR-TALENT-1",
+					legalName: "Talent Manager",
+				},
+				seedOptions,
+			);
+			expect(manager.ok).toBe(true);
+			if (!manager.ok) return;
+
+			const report = await createEmployee(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-rep`,
+					idempotencyKey: "idem-talent-rep",
+					employeeNumber: "REP-TALENT-1",
+					legalName: "Talent Report",
+				},
+				seedOptions,
+			);
+			expect(report.ok).toBe(true);
+			if (!report.ok) return;
+
+			for (const employee of [manager.data, report.data]) {
+				const employment = await createEmployment(
+					{
+						organizationId,
+						actorUserId: actorUserId1,
+						correlationId: `${correlationId}-employ-${employee.id}`,
+						employeeId: employee.id,
+						startsOn: "2024-01-01",
+					},
+					seedOptions,
+				);
+				expect(employment.ok).toBe(true);
+			}
+
+			const line = await assignPrimaryReportingLine(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-line`,
+					employeeId: report.data.id,
+					managerEmployeeId: manager.data.id,
+					startsOn: "2024-01-01",
+				},
+				seedOptions,
+			);
+			expect(line.ok).toBe(true);
+
+			const plan = await createCareerPlan(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-plan`,
+					idempotencyKey: "idem-talent-plan",
+					employeeId: report.data.id,
+					ownerUserId: actorUserId1,
+					code: "CP-TALENT-E2E",
+					title: "Report development plan",
+				},
+				{
+					...seedOptions,
+					authorization: createGrantingHumanResourcesAuthorization([
+						"human-resources.career-plan.manage",
+						"human-resources.talent.admin",
+					]),
+				},
+			);
+			expect(plan.ok).toBe(true);
+
+			const managerAuth = createAuthPort({
+				[`${actorUserId1}:human-resources.career-plan.own.read`]: true,
+			});
+			const managerIdentity = createIdentityResolver({
+				[actorUserId1]: manager.data.id,
+			});
+
+			const result = await listEmployeeCareerPlans(
+				{
+					organizationId,
+					correlationId,
+					actorUserId: actorUserId1,
+					employeeId: report.data.id,
+				},
+				{
+					store: memoryStore,
+					authorization: managerAuth,
+					identityResolver: managerIdentity,
+				},
+			);
+
+			expect(result.ok).toBe(true);
+		});
+
+		it("should allow manager to read direct report competency profile", async () => {
+			const ports = createMemoryMutationPorts();
+			const seedAuth = createGrantingHumanResourcesAuthorization([
+				"human-resources.employee.create",
+				"human-resources.employment.manage",
+				"human-resources.organization.manage",
+			]);
+			const seedOptions = {
+				store: memoryStore,
+				ports,
+				authorization: seedAuth,
+				identityResolver: createIdentityResolver({}),
+			};
+
+			const manager = await createEmployee(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-comp-mgr`,
+					idempotencyKey: "idem-comp-mgr",
+					employeeNumber: "MGR-COMP-1",
+					legalName: "Comp Manager",
+				},
+				seedOptions,
+			);
+			expect(manager.ok).toBe(true);
+			if (!manager.ok) return;
+
+			const report = await createEmployee(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-comp-rep`,
+					idempotencyKey: "idem-comp-rep",
+					employeeNumber: "REP-COMP-1",
+					legalName: "Comp Report",
+				},
+				seedOptions,
+			);
+			expect(report.ok).toBe(true);
+			if (!report.ok) return;
+
+			for (const employee of [manager.data, report.data]) {
+				await createEmployment(
+					{
+						organizationId,
+						actorUserId: actorUserId1,
+						correlationId: `${correlationId}-comp-employ-${employee.id}`,
+						employeeId: employee.id,
+						startsOn: "2024-01-01",
+					},
+					seedOptions,
+				);
+			}
+
+			await assignPrimaryReportingLine(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-comp-line`,
+					employeeId: report.data.id,
+					managerEmployeeId: manager.data.id,
+					startsOn: "2024-01-01",
+				},
+				seedOptions,
+			);
+
+			const managerAuth = createAuthPort({
+				[`${actorUserId1}:human-resources.competency.read`]: true,
+			});
+			const managerIdentity = createIdentityResolver({
+				[actorUserId1]: manager.data.id,
+			});
+
+			const result = await getEmployeeCompetencyProfile(
+				{
+					organizationId,
+					correlationId,
+					actorUserId: actorUserId1,
+					employeeId: report.data.id,
+				},
+				{
+					store: memoryStore,
+					authorization: managerAuth,
+					identityResolver: managerIdentity,
+				},
+			);
+
+			expect(result.ok).toBe(true);
 		});
 	});
 });

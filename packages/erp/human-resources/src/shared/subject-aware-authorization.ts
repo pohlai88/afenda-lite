@@ -1,9 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type {
-	HumanResourcesAuthorizationPort,
-	HumanResourcesPermission,
-} from "../authorization";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -14,7 +9,10 @@ import type {
 	HumanResourcesEmployeeIdentity,
 	HumanResourcesIdentityResolverPort,
 } from "../identity-resolver";
+import type { HumanResourcesPermission } from "../permissions";
 import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesAuthorizationPort } from "./authorization-types";
+import { requireHumanResourcesManifestPermission } from "./contextual-authorization";
 
 /** Resolve actor → employee server-side. Never trust a client-supplied employee id alone. */
 export async function resolveActorEmployeeIdentity(
@@ -46,7 +44,9 @@ export async function resolveActorEmployeeIdentity(
 
 export async function requireOwnResourceAccess(
 	identityResolver: HumanResourcesIdentityResolverPort,
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: {
+		authorization?: HumanResourcesAuthorizationPort;
+	},
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -55,24 +55,16 @@ export async function requireOwnResourceAccess(
 		asOf?: string;
 	},
 ): Promise<Result<void>> {
-	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-		);
-	}
-
-	// Check if actor has the permission
-	const hasPermission = await authorization.can({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		permission: input.permission,
-	});
-	if (!hasPermission) {
-		return fail("FORBIDDEN", "Missing required human resources permission", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+	const permissionCheck = await requireHumanResourcesManifestPermission(
+		options,
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
 			permission: input.permission,
-		});
+		},
+	);
+	if (!permissionCheck.ok) {
+		return permissionCheck;
 	}
 
 	// Resolve actor's employee identity
@@ -105,7 +97,9 @@ export async function requireOwnResourceAccess(
 export async function requireManagerResourceAccess(
 	identityResolver: HumanResourcesIdentityResolverPort,
 	store: HumanResourcesStore,
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: {
+		authorization?: HumanResourcesAuthorizationPort;
+	},
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -114,24 +108,16 @@ export async function requireManagerResourceAccess(
 		asOf?: string;
 	},
 ): Promise<Result<void>> {
-	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-		);
-	}
-
-	// Check if actor has the permission
-	const hasPermission = await authorization.can({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		permission: input.permission,
-	});
-	if (!hasPermission) {
-		return fail("FORBIDDEN", "Missing required human resources permission", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+	const permissionCheck = await requireHumanResourcesManifestPermission(
+		options,
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
 			permission: input.permission,
-		});
+		},
+	);
+	if (!permissionCheck.ok) {
+		return permissionCheck;
 	}
 
 	// Resolve actor's employee identity
@@ -173,27 +159,14 @@ export async function requireManagerResourceAccess(
 }
 
 export async function requireAdminResourceAccess(
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: {
+		authorization?: HumanResourcesAuthorizationPort;
+	},
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: HumanResourcesPermission;
 	},
 ): Promise<Result<void>> {
-	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-		);
-	}
-
-	const hasPermission = await authorization.can(input);
-	if (!hasPermission) {
-		return fail("FORBIDDEN", "Missing required human resources permission", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-			permission: input.permission,
-		});
-	}
-
-	return ok(undefined);
+	return requireHumanResourcesManifestPermission(options, input);
 }

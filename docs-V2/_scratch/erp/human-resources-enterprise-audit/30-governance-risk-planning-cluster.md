@@ -26,13 +26,13 @@
 
 **Boundary note:** HR-AUD-00 Cluster C also listed `compensation-benefits`, `performance`, and `learning`. This mission follows **Prompt 2C** and excludes those domains except where cross-cut ports apply. Compensation/performance/learning depth belongs to HR-AUD-02.
 
-**Cross-cut consumption (do not re-litigate):** Reuse open baseline IDs — `HR-XCUT-P0-001`, `HR-XCUT-P0-003`, `HR-XCUT-P0-004`, `OPEN-DECISION-02`, `OPEN-DECISION-03`, `OPEN-DECISION-01`.
+**Cross-cut consumption (do not re-litigate):** `HR-XCUT-P0-001` / `HR-XCUT-P0-004` / OPEN-DECISION-02/03 → **CLOSED** Slice 2.10 (see `01` / `41`). Still open for this cluster: `HR-XCUT-P0-003`, `OPEN-DECISION-01`, talent/WFP sensitive-policy residuals (`HR-GOV-P1-003`, `HR-GOV-P2-005`).
 
 ---
 
 ## Executive verdict
 
-The governance/risk/planning cluster has **strong package-layer contracts** (Zod schemas, store slices, Memory/Drizzle adapters, state-machine guards, vault reference validation, headcount reservation DB uniqueness). Enterprise blockers concentrate on **authorization inconsistency** (case list vs get), **missing product composition** (no Server Actions), **privacy port unwiring** (baseline P0-004), **incomplete mutation emission registry** for cluster commands, and **workforce variance semantics** that do not compare to actual employment facts.
+The governance/risk/planning cluster has **strong package-layer contracts** (Zod schemas, store slices, Memory/Drizzle adapters, state-machine guards, vault reference validation, headcount reservation DB uniqueness). Cross-cut auth facade + privacy composition are **CLOSED** (Slice 2.10 / HR-XCUT-P0-001/004). Remaining enterprise blockers concentrate on **missing product composition** (no Server Actions), **incomplete mutation emission registry** for cluster commands, **talent/WFP sensitive-policy depth**, and **workforce variance semantics** that do not compare to actual employment facts.
 
 Package domain depth exceeds product surface depth for every capability in this cluster.
 
@@ -48,7 +48,7 @@ Axes scored **Pass** / **Partial** / **Fail** with one-line evidence.
 | **Employee relations** | **Pass** — full case/action/appeal/event stack + 4 DB tables | **Pass** — status guards + appeal/action machines tested | **Fail** — `getEmployeeCaseById` uses `requireCaseAccess` + projection; **list queries do not** | **Pass** — unit + parity; Memory/Drizzle share `hasCaseAccess` helper | **Partial** — no product Actions; identity resolver required on get |
 | **Talent** | **Pass** — `src/talent/*` orchestration + `src/schemas/talent/*` Zod-only split is intentional | **Pass** — succession readiness staleness enforced in adapters (`assertReadinessNotStale`) | **Partial** — sensitive prefixes for profile/pool/career/succession; **competency.* not in policy register** | **Pass** — compile-time store coverage; parity suite only | **Fail** — no dedicated unit tests; no apps/web Actions |
 | **Workforce planning** | **Pass** — plan/line/reservation/availability chain complete | **Partial** — reservation math + DB unique active-per-requisition; **variance ≠ actual headcount** | **Partial** — manifest permission only; headcount ops absent from sensitive policy register | **Pass** — unit + parity structure; one unit test failing | **Partial** — no apps/web Actions |
-| **Integration / governance** | **Pass** — identity resolver port + platform-facts projection + sensitive policy table | **Partial** — platform-facts maps compliance notification templates; event constants partially outside `@afenda/events` registry | **Fail** — privacy port defined but unwired ([`HR-XCUT-P0-004`](01-cross-cutting-baseline.md)); auth layering open ([`OPEN-DECISION-02`](03-cross-cutting-conflicts.md)) | **N/A** — no dedicated integration store | **Partial** — `human-resources-command-options.ts` wires identity + vault; **omits privacy**; ops retry only in web |
+| **Integration / governance** | **Pass** — identity resolver port + platform-facts projection + sensitive policy table | **Partial** — platform-facts maps compliance notification templates; event constants partially outside `@afenda/events` registry | **Pass** — privacy port composed (HR-XCUT-P0-004 **CLOSED**); auth facade + policy registry (OPEN-DECISION-02 / HR-XCUT-P0-001 **CLOSED**) | **N/A** — no dedicated integration store | **Partial** — `human-resources-command-options.ts` wires identity + vault + privacy; DSAR depth / product Actions residual |
 
 ---
 
@@ -57,7 +57,7 @@ Axes scored **Pass** / **Partial** / **Fail** with one-line evidence.
 | ID | Requirement | Cluster evidence | Status |
 |---|---|---|---|
 | HR-ENT-06 | Contextual and field authorization | Case get uses ACL + projection; list bypasses; talent/competency/headcount use manifest guards; sensitive prefix gaps | **Partial** |
-| HR-ENT-07 | Privacy, retention, legal hold | Retention taxonomy in `privacy.ts`; compliance identifier fingerprinting; **no DSAR port consumer** (HR-XCUT-P0-004) | **Partial** |
+| HR-ENT-07 | Privacy, retention, legal hold | Retention taxonomy + port composed at apps/web (HR-XCUT-P0-004 **CLOSED**); export/anonymize-eval consumers exist; full DSAR collector residual | **Partial** |
 | HR-ENT-09 | Document capability | Vault reference adapter validates URI shape/kinds; rejects `data:`; HR does not own storage | **Partial** (reference-only, as designed) |
 | HR-ENT-10 | Integration and bulk data | `platform-facts.ts` projects workflow/notification facts; no bulk import/export | **Fail** (out of cluster scope to implement; observed absent) |
 | HR-ENT-11 | Reporting/read projections | Compliance summary + WFP variance queries exist; variance not employment-backed | **Partial** |
@@ -110,11 +110,11 @@ Axes scored **Pass** / **Partial** / **Fail** with one-line evidence.
 
 | ID | Title | Cluster impact |
 |---|---|---|
-| HR-XCUT-P0-001 | Parallel authorization entry points | Case ACL vs contextual policies vs manifest guards |
+| HR-XCUT-P0-001 | **CLOSED** Slice 2.10 — unified facade | ER ACL is facade policy plugin |
 | HR-XCUT-P0-003 | Mutation emission registry incomplete | Cluster ER/talent/WFP commands largely unregistered |
-| HR-XCUT-P0-004 | Privacy port unwired | No DSAR/export in compliance/ER lifecycle |
-| OPEN-DECISION-02 | Authorization layering model | Blocks HR-ENT-06 closure |
-| OPEN-DECISION-03 | Privacy / DSAR execution owner | Blocks HR-ENT-07 closure |
+| HR-XCUT-P0-004 | **CLOSED** Slice 2.10 — privacy composed | DSAR collector depth residual under HR-ENT-07 |
+| OPEN-DECISION-02 | **RATIFIED** + implemented | Facade closed; talent/WFP policy depth residual |
+| OPEN-DECISION-03 | **RATIFIED** + composition implemented | Platform privacy via HR port at apps/web |
 
 ---
 

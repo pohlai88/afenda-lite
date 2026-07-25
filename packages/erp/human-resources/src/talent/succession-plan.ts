@@ -30,6 +30,7 @@ import {
 	successionPlanStatusTransitionInputSchema,
 	updateSuccessionPlanInputSchema,
 } from "../schemas/talent";
+import { TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES } from "../shared/field-projection";
 import {
 	fingerprintSuccessionCandidateCreate,
 	fingerprintSuccessionPlanCreate,
@@ -43,6 +44,11 @@ import type {
 	SuccessionPlan,
 	SuccessionPlanListPage,
 } from "../types";
+import {
+	projectSuccessionCandidateListFromDecision,
+	SUCCESSION_CANDIDATE_SENSITIVE_FIELD_NAMES,
+	talentSensitiveQueryRequestedFields,
+} from "./talent-field-projection";
 
 export const HUMAN_RESOURCES_AGGREGATE_SUCCESSION_PLAN =
 	"succession-plan" as const;
@@ -350,6 +356,13 @@ export async function listSuccessionCandidates(
 		schema: listSuccessionCandidatesInputSchema,
 		invalidMessage: "Invalid succession candidate list input",
 		query: HUMAN_RESOURCES_QUERY_SUCCESSION_CANDIDATE_LIST,
+		resolveRequestedFields: () =>
+			talentSensitiveQueryRequestedFields([
+				...SUCCESSION_CANDIDATE_SENSITIVE_FIELD_NAMES,
+				...TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
+			]),
+		project: (value: SuccessionCandidateListPage, projection) =>
+			projectSuccessionCandidateListFromDecision(value, projection),
 		execute: async (data, { store }) => {
 			return await store.listSuccessionCandidates({
 				organizationId: data.organizationId,

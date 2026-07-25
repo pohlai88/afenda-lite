@@ -1,0 +1,297 @@
+import {
+	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
+	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
+	HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT,
+	HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT,
+	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
+	HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT,
+	HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
+} from "@afenda/events/schemas";
+
+import {
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
+	HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
+	HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
+	HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
+	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+	type HumanResourcesTalentCommandId,
+} from "../../module-ids";
+
+import {
+	defineAuditOnlyEmission,
+	defineDomainEventEmission,
+} from "../define-emission";
+import type { HumanResourcesMutationEmissionDefinition } from "../types";
+
+export const HUMAN_RESOURCES_TALENT_EMISSIONS = {
+	[HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
+		{
+			domain: "talent",
+			aggregateType: "competency",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
+		{
+			domain: "talent",
+			aggregateType: "competency",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
+		{
+			domain: "talent",
+			aggregateType: "competency",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
+		{
+			domain: "talent",
+			aggregateType: "job_competency",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
+		{
+			domain: "talent",
+			aggregateType: "job_competency",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
+			{
+				domain: "talent",
+				aggregateType: "competency_assessment",
+				eventTypes: [HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
+			{
+				domain: "talent",
+				aggregateType: "competency_assessment",
+				eventTypes: [HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
+		{
+			domain: "talent",
+			aggregateType: "talent_profile",
+			eventTypes: [HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+		{
+			domain: "talent",
+			aggregateType: "talent_profile",
+			eventTypes: [HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
+			{
+				domain: "talent",
+				aggregateType: "talent_profile_assessment",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
+			{
+				domain: "talent",
+				aggregateType: "talent_profile_assessment",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
+		{
+			domain: "talent",
+			aggregateType: "talent_profile",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
+		{
+			domain: "talent",
+			aggregateType: "talent_pool",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
+		{
+			domain: "talent",
+			aggregateType: "talent_pool",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
+		{
+			domain: "talent",
+			aggregateType: "talent_pool",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
+			{
+				domain: "talent",
+				aggregateType: "talent_pool_member",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
+			{
+				domain: "talent",
+				aggregateType: "talent_pool_member",
+				eventTypes: [
+					HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT,
+				] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
+			{
+				domain: "talent",
+				aggregateType: "talent_pool_member",
+				eventTypes: [HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
+		{
+			domain: "talent",
+			aggregateType: "career_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
+		{
+			domain: "talent",
+			aggregateType: "career_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
+		{
+			domain: "talent",
+			aggregateType: "career_plan",
+			eventTypes: [HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
+		{
+			domain: "talent",
+			aggregateType: "career_plan_action",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
+			{
+				domain: "talent",
+				aggregateType: "career_plan_action",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
+		{
+			domain: "talent",
+			aggregateType: "career_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
+		{
+			domain: "talent",
+			aggregateType: "succession_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
+		{
+			domain: "talent",
+			aggregateType: "succession_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
+			{
+				domain: "talent",
+				aggregateType: "succession_candidate",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
+			{
+				domain: "talent",
+				aggregateType: "succession_candidate",
+				eventTypes: [HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
+			{
+				domain: "talent",
+				aggregateType: "succession_candidate",
+				eventTypes: [HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
+			{
+				domain: "talent",
+				aggregateType: "succession_candidate",
+				eventTypes: [HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
+		{
+			domain: "talent",
+			aggregateType: "succession_plan",
+		},
+	),
+} satisfies Record<
+	HumanResourcesTalentCommandId,
+	HumanResourcesMutationEmissionDefinition
+>;

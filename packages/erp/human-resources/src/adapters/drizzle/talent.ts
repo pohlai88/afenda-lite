@@ -25,7 +25,9 @@ import {
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT,
+	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT,
+	HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
 } from "@afenda/events/schemas";
 
 import {
@@ -2065,6 +2067,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 		const brandedId = parseHumanResourcesTalentProfileId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_talent_profile",
+			entityId: brandedId.data,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[TalentProfileSqlRow[]]>(
@@ -2098,8 +2108,21 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 								'human-resources', 'hr_talent_profile', id, 'CREATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT},
+								'human-resources', ${meta.correlationId}, created_by,
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -2153,6 +2176,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			input.summary !== undefined ? input.summary : existing.data.summary;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_talent_profile",
+			entityId: input.talentProfileId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[TalentProfileSqlRow[]]>(
@@ -2180,8 +2211,21 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 								'human-resources', 'hr_talent_profile', id, 'UPDATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -3060,6 +3104,14 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const payloadJson = eventPayloadJson({
+				organizationId: input.organizationId,
+				entityType: "hr_talent_pool_member",
+				entityId: input.memberId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			});
 
 			const [rows] = await runNeonHttpTransaction<[TalentPoolMemberSqlRow[]]>(
 				(sqlTag) => [
@@ -3087,8 +3139,21 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 								'human-resources', 'hr_talent_pool_member', id, 'UPDATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);

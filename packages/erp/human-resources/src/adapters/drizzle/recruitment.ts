@@ -17,10 +17,6 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
-	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
-	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
-} from "@afenda/events/schemas";
-import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
 	type HumanResourcesDepartmentId,
@@ -45,10 +41,16 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
+import { planRecruitmentMutationOutboxEventType } from "../../emissions/sql-side-effects";
+import {
+	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
+	type HumanResourcesCommandId,
+} from "../../module-ids";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
+	invalidState,
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
@@ -758,6 +760,54 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
+function planRecruitmentDrizzleOutbox(input: {
+	commandId: HumanResourcesCommandId;
+	meta: HumanResourcesMutationMeta;
+	organizationId: string;
+	actorUserId: string;
+	aggregateId: string;
+	entityType: string;
+	auditAction: "CREATE" | "UPDATE";
+	conditionalEventSuppressed?: boolean;
+}):
+	| {
+			eventType: NonNullable<
+				ReturnType<typeof planRecruitmentMutationOutboxEventType>
+			>;
+			payloadJson: string;
+	  }
+	| undefined {
+	const eventType = planRecruitmentMutationOutboxEventType({
+		commandId: input.commandId,
+		meta: input.meta,
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		aggregateId: input.aggregateId,
+		audit: {
+			entity: input.entityType,
+			action: input.auditAction,
+			changes: [],
+		},
+		eventEntityId: input.aggregateId,
+		eventEntityType: input.entityType,
+		conditionalEventSuppressed: input.conditionalEventSuppressed,
+	});
+	if (eventType === undefined) {
+		return undefined;
+	}
+	return {
+		eventType,
+		payloadJson: eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: input.entityType,
+			entityId: input.aggregateId,
+			actorId: input.actorUserId,
+			correlationId: input.meta.correlationId,
+			operation: input.meta.operationId,
+		}),
+	};
+}
+
 type DrizzleRecruitmentHost = Pick<
 	HumanResourcesStore,
 	"getDepartmentById" | "getJobById" | "getPositionById"
@@ -777,6 +827,8 @@ export type DrizzleRecruitmentMethods = Pick<
 	| "findCandidateByNormalizedEmail"
 	| "createCandidate"
 	| "updateCandidateProfile"
+	| "withdrawCandidateConsent"
+	| "changeCandidateRetention"
 	| "listCandidates"
 	| "getApplicationById"
 	| "findActiveApplicationByCandidateRequisition"
@@ -1181,22 +1233,25 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
-		const shouldEmitApproved =
-			input.status === "approved" && input.emitApprovedEvent === true;
-		const eventId = randomUUID();
-		const payloadJson = eventPayloadJson({
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
 			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.requisitionId,
 			entityType: "hr_job_requisition",
-			entityId: input.requisitionId,
-			actorId: input.actorUserId,
-			correlationId: meta.correlationId,
+			auditAction: "UPDATE",
+			conditionalEventSuppressed:
+				meta.operationId === HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE &&
+				!(input.status === "approved" && input.emitApprovedEvent === true),
 		});
+		const eventId = randomUUID();
 		const releaseReservationsAuditId = randomUUID();
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[RequisitionSqlRow[]]>(
 				(sql) => [
-					shouldEmitApproved
+					plannedOutbox
 						? sql`
 								WITH mutated AS (
 									UPDATE hr_job_requisition
@@ -1226,9 +1281,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 										payload, status, attempts
 									)
 									SELECT
-										${eventId}, organization_id, ${HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT},
+										${eventId}, organization_id, ${plannedOutbox.eventType},
 										'human-resources', ${meta.correlationId}, ${input.actorUserId},
-										${payloadJson}::jsonb, 'pending', 0
+										${plannedOutbox.payloadJson}::jsonb, 'pending', 0
 									FROM mutated
 									RETURNING id
 								),
@@ -1496,6 +1551,19 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const brandedId = parseHumanResourcesCandidateId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			aggregateId: brandedId.data,
+			entityType: "hr_candidate",
+			auditAction: "CREATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Candidate create requires a domain event");
+		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
 				(sql) => [
@@ -1527,8 +1595,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									'human-resources', 'hr_candidate', id, 'CREATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, created_by,
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
 				],
 			);
@@ -1644,6 +1724,243 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return mapCandidateSqlRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update candidate profile");
+		}
+	},
+
+	async withdrawCandidateConsent(
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Candidate>> {
+		const existing = await this.getCandidateById({
+			organizationId: input.organizationId,
+			candidateId: input.candidateId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Candidate not found");
+		}
+		const candidate = existing.data;
+
+		const versionCheck = assertExpectedVersion(
+			candidate.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		if (candidate.consentWithdrawnAt !== null) {
+			return conflict("Candidate consent has already been withdrawn");
+		}
+
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.candidateId,
+			entityType: "hr_candidate",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Candidate consent withdrawal requires a domain event");
+		}
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
+				(sql) => [
+					sql`
+							WITH mutated AS (
+								UPDATE hr_candidate
+								SET consent_withdrawn_at = now(),
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.candidateId}
+									AND organization_id = ${input.organizationId}
+									AND version = ${input.expectedVersion}
+									AND consent_withdrawn_at IS NULL
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				const again = await this.getCandidateById({
+					organizationId: input.organizationId,
+					candidateId: input.candidateId,
+				});
+				if (!again.ok) return again;
+				if (again.data === null) {
+					return notFound("Candidate not found");
+				}
+				if (again.data.consentWithdrawnAt !== null) {
+					return conflict("Candidate consent has already been withdrawn");
+				}
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Candidate",
+				});
+			}
+			return mapCandidateSqlRow(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to withdraw candidate consent",
+			);
+		}
+	},
+
+	async changeCandidateRetention(
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			retentionUntil: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Candidate>> {
+		const existing = await this.getCandidateById({
+			organizationId: input.organizationId,
+			candidateId: input.candidateId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Candidate not found");
+		}
+		const candidate = existing.data;
+
+		const versionCheck = assertExpectedVersion(
+			candidate.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		if (candidate.consentWithdrawnAt !== null) {
+			return invalidState(
+				"Cannot change retention after candidate consent withdrawal",
+			);
+		}
+
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.candidateId,
+			entityType: "hr_candidate",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Candidate retention change requires a domain event");
+		}
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
+				(sql) => [
+					sql`
+							WITH mutated AS (
+								UPDATE hr_candidate
+								SET retention_until = ${input.retentionUntil},
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.candidateId}
+									AND organization_id = ${input.organizationId}
+									AND version = ${input.expectedVersion}
+									AND consent_withdrawn_at IS NULL
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				const again = await this.getCandidateById({
+					organizationId: input.organizationId,
+					candidateId: input.candidateId,
+				});
+				if (!again.ok) return again;
+				if (again.data === null) {
+					return notFound("Candidate not found");
+				}
+				if (again.data.consentWithdrawnAt !== null) {
+					return invalidState(
+						"Cannot change retention after candidate consent withdrawal",
+					);
+				}
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Candidate",
+				});
+			}
+			return mapCandidateSqlRow(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to change candidate retention",
+			);
 		}
 	},
 
@@ -1796,6 +2113,19 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const brandedId = parseHumanResourcesApplicationId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			aggregateId: brandedId.data,
+			entityType: "hr_candidate_application",
+			auditAction: "CREATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Application create requires a domain event");
+		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
 				(sql) => [
@@ -1836,8 +2166,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									'human-resources', 'hr_candidate_application', id, 'CREATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, created_by,
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
 				],
 			);
@@ -1921,7 +2263,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (!transition.ok) return transition;
 
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.applicationId,
+			entityType: "hr_candidate_application",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Application status transition requires a domain event");
+		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
 				(sql) => [
@@ -1947,8 +2302,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									'human-resources', 'hr_candidate_application', id, 'UPDATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
 				],
 			);
@@ -2075,7 +2442,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const brandedId = parseHumanResourcesInterviewId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		const scheduledAt = new Date(record.scheduledAt);
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			aggregateId: brandedId.data,
+			entityType: "hr_interview",
+			auditAction: "CREATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Interview schedule requires a domain event");
+		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[InterviewSqlRow[]]>(
 				(sql) => [
@@ -2109,8 +2489,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									'human-resources', 'hr_interview', id, 'CREATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, created_by,
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
 				],
 			);
@@ -2345,8 +2737,21 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		if (!brandedId.ok) return brandedId;
 		const interviewAuditId = randomUUID();
 		const evaluationAuditId = randomUUID();
+		const eventId = randomUUID();
 		const nextInterviewVersion = record.expectedVersion + 1;
 		const recordedAt = new Date();
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			aggregateId: record.interviewId,
+			entityType: "hr_interview",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Interview evaluation requires a domain event");
+		}
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[InterviewEvaluationSqlRow[]]
@@ -2398,8 +2803,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								'human-resources', 'hr_interview_evaluation', id, 'CREATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${plannedOutbox.eventType},
+								'human-resources', ${meta.correlationId}, ${record.createdBy},
+								${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+							FROM completed_interview
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, completed_interview, interview_audited, audited
+						SELECT mutated.* FROM mutated, completed_interview, interview_audited, audited, outboxed
 					`,
 			]);
 			const row = rows[0];
@@ -2766,11 +3183,24 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 
 		const auditId = randomUUID();
 		const applicationAuditId = randomUUID();
+		const eventId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
 		const setRespondedAt =
 			input.status === "declined" ||
 			input.status === "expired" ||
 			input.status === "withdrawn";
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.offerId,
+			entityType: "hr_employment_offer",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Offer status transition requires a domain event");
+		}
 
 		try {
 			if (input.status === "issued") {
@@ -2822,8 +3252,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 										'human-resources', 'hr_candidate_application', id, 'UPDATE', '[]'::jsonb
 									FROM updated_application
 									RETURNING id
+								),
+								outboxed AS (
+									INSERT INTO platform_domain_event (
+										id, organization_id, type, source_module, correlation_id, actor_user_id,
+										payload, status, attempts
+									)
+									SELECT
+										${eventId}, organization_id, ${plannedOutbox.eventType},
+										'human-resources', ${meta.correlationId}, ${input.actorUserId},
+										${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+									FROM updated_offer
+									RETURNING id
 								)
-								SELECT updated_offer.* FROM updated_offer, offer_audited, updated_application, application_audited
+								SELECT updated_offer.* FROM updated_offer, offer_audited, updated_application, application_audited, outboxed
 							`,
 				]);
 				const row = rows[0];
@@ -2868,8 +3310,20 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								'human-resources', 'hr_employment_offer', id, 'UPDATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${plannedOutbox.eventType},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
 			const row = rows[0];
@@ -2959,13 +3413,18 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		const reservationAuditId = randomUUID();
 		const nextOfferVersion = input.expectedVersion + 1;
 		const nextApplicationVersion = applicationRecord.version + 1;
-		const payloadJson = eventPayloadJson({
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
 			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.offerId,
 			entityType: "hr_employment_offer",
-			entityId: input.offerId,
-			actorId: input.actorUserId,
-			correlationId: meta.correlationId,
+			auditAction: "UPDATE",
 		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Offer accept requires a domain event");
+		}
 
 		try {
 			const [rows] = await runNeonHttpTransaction<
@@ -3035,9 +3494,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								payload, status, attempts
 							)
 							SELECT
-								${eventId}, organization_id, ${HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT},
+								${eventId}, organization_id, ${plannedOutbox.eventType},
 								'human-resources', ${meta.correlationId}, ${input.actorUserId},
-								${payloadJson}::jsonb, 'pending', 0
+								${plannedOutbox.payloadJson}::jsonb, 'pending', 0
 							FROM updated_offer
 							RETURNING id
 						),

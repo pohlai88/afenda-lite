@@ -1,12 +1,45 @@
 import { ok } from "@afenda/errors/result";
 import type { DomainEvent } from "@afenda/events";
-import type { EmployeeListPage } from "@afenda/human-resources";
+import type { Employee, EmployeeListPage } from "@afenda/human-resources";
+import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 import type { Notification } from "@afenda/notifications";
 import type { SearchDocument, SearchUpsertInput } from "@afenda/search";
 import { describe, expect, it, vi } from "vitest";
 
 import { handleHumanResourcesPlatformEvent } from "@/modules/platform/domain/human-resources-platform-events";
 import { rebuildHumanResourcesEmployeeSearch } from "@/modules/platform/domain/human-resources-search-projection";
+
+const sampleEmployeeId =
+	"00000000-0000-4000-8000-000000000001" as HumanResourcesEmployeeId;
+
+function sampleEmployee(input: {
+	organizationId: string;
+	legalName?: string;
+}): Employee {
+	return {
+		id: sampleEmployeeId,
+		organizationId: input.organizationId,
+		employeeNumber: "E-001",
+		legalName: input.legalName ?? "Ada Lovelace",
+		version: 1,
+		createdBy: "actor-1",
+		updatedBy: "actor-1",
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
+}
+
+function sampleEmployeeListPage(input: {
+	organizationId: string;
+	legalName?: string;
+}): EmployeeListPage {
+	return {
+		employees: [sampleEmployee(input)],
+		totalCount: 1,
+		page: 1,
+		pageSize: 100,
+	};
+}
 
 function hrEvent(): DomainEvent {
 	return {
@@ -210,24 +243,7 @@ describe("Human Resources platform integrations", () => {
 	});
 	it("builds permission-tagged employee search projections", async () => {
 		const list = vi.fn(async () =>
-			ok({
-				employees: [
-					{
-						id: "00000000-0000-4000-8000-000000000001",
-						organizationId: "org-1",
-						employeeNumber: "E-001",
-						legalName: "Ada Lovelace",
-						version: 1,
-						createdBy: "actor-1",
-						updatedBy: "actor-1",
-						createdAt: new Date(),
-						updatedAt: new Date(),
-					},
-				],
-				totalCount: 1,
-				page: 1,
-				pageSize: 100,
-			} satisfies EmployeeListPage),
+			ok(sampleEmployeeListPage({ organizationId: "org-1" })),
 		);
 		const upsert = vi.fn(async (rows: SearchUpsertInput[]) =>
 			ok(
@@ -270,24 +286,12 @@ describe("Human Resources platform integrations", () => {
 
 	it("fails closed when a list adapter returns another tenant", async () => {
 		const list = vi.fn(async () =>
-			ok({
-				employees: [
-					{
-						id: "00000000-0000-4000-8000-000000000001",
-						organizationId: "org-other",
-						employeeNumber: "E-001",
-						legalName: "Cross Tenant",
-						version: 1,
-						createdBy: "actor-1",
-						updatedBy: "actor-1",
-						createdAt: new Date(),
-						updatedAt: new Date(),
-					},
-				],
-				totalCount: 1,
-				page: 1,
-				pageSize: 100,
-			} satisfies EmployeeListPage),
+			ok(
+				sampleEmployeeListPage({
+					organizationId: "org-other",
+					legalName: "Cross Tenant",
+				}),
+			),
 		);
 		const upsert = vi.fn(async (_rows: SearchUpsertInput[]) =>
 			ok([] as SearchDocument[]),

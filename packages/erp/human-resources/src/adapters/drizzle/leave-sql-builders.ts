@@ -6,11 +6,6 @@
  * multiple related database changes in a single atomic transaction.
  */
 
-import {
-	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
-	HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
-	HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
-} from "@afenda/events";
 import type { OutboxFactInput } from "../../ports";
 import {
 	buildAuditCte,
@@ -101,6 +96,7 @@ export function buildApproveLeaveRequestSql(params: {
 	consumptionAdjustmentId: string;
 	decisionId: string;
 	createRequestFingerprint: string;
+	eventType: OutboxFactInput["type"];
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
 
@@ -194,7 +190,7 @@ export function buildApproveLeaveRequestSql(params: {
 		}).replace(/^[\s]*audited AS/, "audited AS")},
 		${buildOutboxCte({
 			eventId,
-			eventType: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+			eventType: params.eventType,
 			sourceModule: "human-resources",
 			correlationId: params.correlationId,
 			payload: `'${payloadJson}'`,
@@ -222,6 +218,7 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 	reversalAdjustmentId: string;
 	decisionId: string;
 	createRequestFingerprint: string;
+	eventType: OutboxFactInput["type"];
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
 
@@ -302,7 +299,7 @@ export function buildCancelApprovedLeaveRequestSql(params: {
 		}).replace(/^[\s]*audited AS/, "audited AS")},
 		${buildOutboxCte({
 			eventId,
-			eventType: HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
+			eventType: params.eventType,
 			sourceModule: "human-resources",
 			correlationId: params.correlationId,
 			payload: `'${payloadJson}'`,
@@ -727,6 +724,7 @@ export function buildCarryForwardEntitlementSql(params: {
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	carryAdjustmentId: string;
+	eventType: OutboxFactInput["type"];
 }): string {
 	const { auditId: sourceAuditId, eventId } = generateTransactionIds();
 	const { auditId: newAuditId } = generateTransactionIds();
@@ -842,7 +840,7 @@ export function buildCarryForwardEntitlementSql(params: {
 		}).replace(/^[\s]*audited AS/, "carry_audited AS")},
 		${buildOutboxCte({
 			eventId,
-			eventType: HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
+			eventType: params.eventType,
 			sourceModule: "human-resources",
 			correlationId: params.correlationId,
 			payload: `'${eventPayloadJson({

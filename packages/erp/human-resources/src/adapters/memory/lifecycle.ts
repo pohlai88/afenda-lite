@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
+	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
 } from "@afenda/events/schemas";
 import {
 	type HumanResourcesClearanceId,
@@ -811,6 +815,24 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_probation_review",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.probationReviews.set(updated.id, previous);
+				return outbox;
+			}
+
 			return ok(cloneProbationReview(updated));
 		},
 
@@ -868,6 +890,24 @@ export function createMemoryLifecycleMethods(
 			if (!audit.ok) {
 				state.probationReviews.set(updated.id, previous);
 				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_probation_review",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.probationReviews.set(updated.id, previous);
+				return outbox;
 			}
 
 			return ok(cloneProbationReview(updated));
@@ -1012,6 +1052,25 @@ export function createMemoryLifecycleMethods(
 				state.employmentConfirmations.delete(confirmation.id);
 				state.confirmationIdempotencyByKey.delete(idemKey);
 				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: confirmation.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
+				payload: {
+					organizationId: confirmation.organizationId,
+					entityType: "hr_employee",
+					entityId: confirmation.employeeId,
+					actorId: record.createdBy,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.employmentConfirmations.delete(confirmation.id);
+				state.confirmationIdempotencyByKey.delete(idemKey);
+				return outbox;
 			}
 
 			return ok(cloneEmploymentConfirmation(confirmation));
@@ -1214,6 +1273,7 @@ export function createMemoryLifecycleMethods(
 					entityId: employment.employeeId,
 					actorId: input.actorUserId,
 					correlationId: meta.correlationId,
+					effectiveOn: input.effectiveOn,
 				},
 			});
 			if (!outbox.ok) {
@@ -1372,6 +1432,7 @@ export function createMemoryLifecycleMethods(
 					entityId: employment.employeeId,
 					actorId: record.createdBy,
 					correlationId: meta.correlationId,
+					effectiveOn: record.effectiveOn,
 				},
 			});
 			if (!outbox.ok) {
@@ -1827,6 +1888,24 @@ export function createMemoryLifecycleMethods(
 			if (!audit.ok) {
 				state.clearances.set(updated.id, previous);
 				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_clearance",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.clearances.set(updated.id, previous);
+				return outbox;
 			}
 
 			return ok(cloneOffboardingCase(offboardingCase));

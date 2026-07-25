@@ -7,6 +7,10 @@ import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
+	HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ,
+	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
+} from "../src/permissions";
+import {
 	createCompetency,
 	getCompetencyById,
 	listCompetencies,
@@ -14,14 +18,25 @@ import {
 } from "../src/talent/competency";
 import { createTalentPool } from "../src/talent/talent-pool";
 import {
+	confirmTalentProfileAssessment,
 	createTalentProfile,
 	getTalentProfileByEmployee,
+	recordTalentProfileAssessment,
 } from "../src/talent/talent-profile";
+import { createMemoryHumanResourcesStore } from "../src/testing";
+import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import {
+	createMappingIdentityResolver,
+	createStoreBackedIdentityResolver,
+	mapActorToEmployee,
+} from "./helpers/identity-resolver";
+import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
@@ -230,6 +245,187 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 
 describe("@afenda/human-resources talent parity (memory)", () => {
 	defineTalentParitySuite("memory");
+});
+
+describe("@afenda/human-resources talent sensitive authorization (memory)", () => {
+	const ORG = `org-talent-auth-${Date.now()}`;
+
+	function authOptions(permissions: readonly string[]) {
+		const store = createMemoryHumanResourcesStore();
+		const ports = createMemoryMutationPorts();
+		return createTestHumanResourcesCommandOptions({
+			store,
+			ports,
+			identityResolver: createStoreBackedIdentityResolver(store),
+			authorization: createGrantingHumanResourcesAuthorization(
+				permissions as Parameters<
+					typeof createGrantingHumanResourcesAuthorization
+				>[0],
+			),
+		});
+	}
+
+	async function seedAuthEmployee(
+		ready: ReturnType<typeof authOptions>,
+		suffix: string,
+	) {
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: "user-admin",
+				correlationId: `corr-emp-${suffix}`,
+				idempotencyKey: `idem-emp-${suffix}`,
+				employeeNumber: `E-${suffix}`,
+				legalName: `Worker ${suffix}`,
+			},
+			ready,
+		);
+		if (!employee.ok) {
+			throw new Error(employee.message);
+		}
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: "user-admin",
+				correlationId: `corr-employ-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		if (!employment.ok) {
+			throw new Error(employment.message);
+		}
+		return employee.data;
+	}
+
+	it("denies talent profile read without sensitive read permission", async () => {
+		const adminReady = authOptions([
+			"human-resources.employee.create",
+			"human-resources.employment.manage",
+			"human-resources.talent.admin",
+		]);
+		const employee = await seedAuthEmployee(adminReady, "deny-read");
+		await createTalentProfile(
+			{
+				organizationId: ORG,
+				actorUserId: "user-admin",
+				correlationId: "corr-profile-deny",
+				idempotencyKey: "idem-profile-deny",
+				employeeId: employee.id,
+				summary: "Bench",
+			},
+			adminReady,
+		);
+
+		const denied = await getTalentProfileByEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: "user-outsider",
+				correlationId: "corr-deny",
+				employeeId: employee.id,
+				includeSensitive: false,
+			},
+			authOptions([HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ]),
+		);
+		expect(denied.ok).toBe(false);
+	});
+
+	it("nulls classification when includeSensitive is false", async () => {
+		const adminReady = authOptions([
+			"human-resources.employee.create",
+			"human-resources.employment.manage",
+			"human-resources.talent.admin",
+			HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
+		]);
+		const employee = await seedAuthEmployee(adminReady, "classify");
+		const profile = await createTalentProfile(
+			{
+				organizationId: ORG,
+				actorUserId: "user-admin",
+				correlationId: "corr-profile-classify",
+				idempotencyKey: "idem-profile-classify",
+				employeeId: employee.id,
+				summary: "High potential",
+			},
+			adminReady,
+		);
+		expect(profile.ok).toBe(true);
+		if (!profile.ok) return;
+
+		const assessment = await recordTalentProfileAssessment(
+			{
+				organizationId: ORG,
+				actorUserId: "user-admin",
+				correlationId: "corr-assess",
+				talentProfileId: profile.data.id,
+				methodCode: "manager_evidence_review",
+				classification: "high_potential",
+				evidenceSummary: "Strong delivery",
+				assessorUserId: "user-admin",
+			},
+			adminReady,
+		);
+		expect(assessment.ok).toBe(true);
+		if (!assessment.ok) return;
+		const confirmed = await confirmTalentProfileAssessment(
+			{
+				organizationId: ORG,
+				actorUserId: "user-admin",
+				correlationId: "corr-confirm",
+				assessmentId: assessment.data.id,
+				expectedVersion: assessment.data.version,
+			},
+			adminReady,
+		);
+		expect(confirmed.ok).toBe(true);
+
+		await mapActorToEmployee(adminReady.store, {
+			organizationId: ORG,
+			userId: "user-subject",
+			employeeId: employee.id,
+			actorUserId: "user-admin",
+		});
+
+		const subjectReady = createTestHumanResourcesCommandOptions({
+			store: adminReady.store,
+			ports: adminReady.ports,
+			identityResolver: createMappingIdentityResolver({
+				"user-subject": employee.id,
+			}),
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
+			]),
+		});
+
+		const redacted = await getTalentProfileByEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: "user-subject",
+				correlationId: "corr-redacted",
+				employeeId: employee.id,
+				includeSensitive: false,
+			},
+			subjectReady,
+		);
+		expect(redacted.ok).toBe(true);
+		if (!redacted.ok) return;
+		expect(redacted.data?.currentClassification).toBeNull();
+
+		const sensitive = await getTalentProfileByEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: "user-subject",
+				correlationId: "corr-sensitive",
+				employeeId: employee.id,
+				includeSensitive: true,
+			},
+			subjectReady,
+		);
+		expect(sensitive.ok).toBe(true);
+		if (!sensitive.ok) return;
+		expect(sensitive.data?.currentClassification).toBe("high_potential");
+	});
 });
 
 describe.skipIf(!runDrizzleParity)(

@@ -24,7 +24,7 @@ export function buildHumanResourcesEntityEventPayload(input: {
 		entityId: input.entityId,
 		actorId: input.actorUserId,
 		correlationId: input.meta.correlationId,
-		operation: input.meta.operation,
+		operation: input.meta.operationId,
 	};
 	if (input.meta.causationId !== undefined) {
 		payload.causationId = input.meta.causationId;

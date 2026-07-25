@@ -1,22 +1,23 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { HumanResourcesAuthorizationPort } from "../authorization";
-import type {
-	HumanResourcesEmployeeCaseId,
-	HumanResourcesEmployeeId,
-} from "../brands";
+import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
 import {
 	HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_EXCEPTIONAL_ADMIN,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_INVESTIGATE,
 } from "../permissions";
+import type { HumanResourcesAuthorizationPort } from "../shared/authorization-types";
 import type { HumanResourcesStore } from "../store";
+import {
+	applyCaseFieldProjection,
+	BASIC_CASE_FIELDS,
+	caseProjectionFields,
+	INVESTIGATOR_CASE_FIELDS,
+	PARTICIPANT_CASE_FIELDS,
+} from "./case-field-projection";
 import type { EmployeeCase } from "./types";
 
 export type CaseAccessType = "read" | "write" | "investigate" | "legal_hold";
@@ -28,109 +29,11 @@ export interface CaseAccessResult {
 	reason?: string;
 }
 
-const INVESTIGATOR_FIELDS = [
-	"id",
-	"caseNumber",
-	"status",
-	"priority",
-	"category",
-	"subcategory",
-	"summary",
-	"description",
-	"events",
-	"actions",
-	"evidence",
-	"witnessStatements",
-	"outcomes",
-	"employeeId",
-	"employmentId",
-	"ownerActorUserId",
-	"subjectActorUserId",
-	"participants",
-	"findingCode",
-	"outcomeCode",
-	"classificationCode",
-	"version",
-	"createdAt",
-	"updatedAt",
-];
+export { applyCaseFieldProjection };
 
-const PARTICIPANT_FIELDS = [
-	"id",
-	"caseNumber",
-	"status",
-	"priority",
-	"category",
-	"subcategory",
-	"summary",
-	"events",
-	"outcomes",
-	"employeeId",
-	"version",
-];
-
-const BASIC_FIELDS = [
-	"id",
-	"caseNumber",
-	"status",
-	"category",
-	"summary",
-	"employeeId",
-	"version",
-];
-
-export async function requireCaseAccess(
-	identityResolver: HumanResourcesIdentityResolverPort,
-	store: HumanResourcesStore,
-	authorization: HumanResourcesAuthorizationPort | undefined,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		caseId: HumanResourcesEmployeeCaseId;
-		accessType: CaseAccessType;
-	},
-): Promise<Result<CaseAccessResult>> {
-	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-		);
-	}
-
-	const caseResult = await store.findEmployeeCaseInOrganization({
-		organizationId: input.organizationId,
-		caseId: input.caseId,
-	});
-	if (!caseResult.ok) return caseResult;
-	if (!caseResult.data) {
-		return fail(
-			"NOT_FOUND",
-			"Employee case not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-
-	const identity = await identityResolver.resolveEmployeeForActor({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-	});
-	if (!identity.ok) return identity;
-	if (!identity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
-	}
-
-	return evaluateCaseReadAccess(store, authorization, {
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		actorEmployeeId: identity.data.employeeId,
-		employeeCase: caseResult.data,
-		accessType: input.accessType,
-	});
-}
+const INVESTIGATOR_FIELDS = caseProjectionFields(INVESTIGATOR_CASE_FIELDS);
+const PARTICIPANT_FIELDS = caseProjectionFields(PARTICIPANT_CASE_FIELDS);
+const BASIC_FIELDS = caseProjectionFields(BASIC_CASE_FIELDS);
 
 export async function evaluateCaseReadAccess(
 	store: HumanResourcesStore,
@@ -263,80 +166,6 @@ export async function evaluateCaseReadAccess(
 	);
 }
 
-export async function buildAuthorizedProjectedCaseListPage(
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		page: number;
-		pageSize: number;
-		candidates: EmployeeCase[];
-	},
-	deps: {
-		identityResolver: HumanResourcesIdentityResolverPort;
-		store: HumanResourcesStore;
-		authorization: HumanResourcesAuthorizationPort;
-	},
-): Promise<
-	Result<{
-		cases: Partial<EmployeeCase>[];
-		totalCount: number;
-		page: number;
-		pageSize: number;
-	}>
-> {
-	const identity = await deps.identityResolver.resolveEmployeeForActor({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-	});
-	if (!identity.ok) return identity;
-	if (!identity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
-	}
-
-	const sorted = [...input.candidates]
-		.filter(
-			(employeeCase) => employeeCase.organizationId === input.organizationId,
-		)
-		.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-	const authorizedProjected: Partial<EmployeeCase>[] = [];
-
-	for (const employeeCase of sorted) {
-		const access = await evaluateCaseReadAccess(
-			deps.store,
-			deps.authorization,
-			{
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				actorEmployeeId: identity.data.employeeId,
-				employeeCase,
-				accessType: "read",
-			},
-		);
-		if (!access.ok) {
-			continue;
-		}
-
-		const projected = await applyCaseFieldProjection(
-			access.data.employeeCase as unknown as Record<string, unknown>,
-			access.data.projectedFields,
-		);
-		authorizedProjected.push(projected as Partial<EmployeeCase>);
-	}
-
-	const offset = (input.page - 1) * input.pageSize;
-	return ok({
-		cases: authorizedProjected.slice(offset, offset + input.pageSize),
-		totalCount: authorizedProjected.length,
-		page: input.page,
-		pageSize: input.pageSize,
-	});
-}
-
 async function checkCaseInvestigatorAccess(
 	store: HumanResourcesStore,
 	input: {
@@ -464,18 +293,4 @@ async function checkManagerCaseAccess(
 	}
 
 	return ok(false);
-}
-
-export async function applyCaseFieldProjection<
-	T extends Record<string, unknown>,
->(data: T, allowedFields: string[]): Promise<Partial<T>> {
-	const result: Partial<T> = {};
-
-	for (const field of allowedFields) {
-		if (field in data) {
-			result[field as keyof T] = data[field as keyof T];
-		}
-	}
-
-	return result;
 }

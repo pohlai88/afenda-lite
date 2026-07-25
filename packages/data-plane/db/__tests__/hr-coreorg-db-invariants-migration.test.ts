@@ -1,0 +1,381 @@
+/**
+ * HR-COREORG-DB-INVARIANTS — migration 0018 effective-range checks.
+ */
+
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+
+const migrationPath = fileURLToPath(
+	new URL("../drizzle/0018_hr_coreorg_db_invariants.sql", import.meta.url),
+);
+const migrationSql = readFileSync(migrationPath, "utf8");
+
+const exclusionRegisterPath = fileURLToPath(
+	new URL(
+		"../../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/hr-coreorg-db-invariant-exclusion-register.json",
+		import.meta.url,
+	),
+);
+const exclusionRegister = JSON.parse(
+	readFileSync(exclusionRegisterPath, "utf8"),
+) as {
+	migration: string;
+	databaseChecks: Array<{ table: string; constraint: string }>;
+	overlapPolicies: Array<{
+		table: string;
+		enforcement: string;
+		databaseOverlapExclusion: boolean;
+	}>;
+	rollback: string;
+};
+
+const { hasDatabase } = resolveDatabaseUrlForTests();
+
+function requireDatabaseTests(): boolean {
+	const ci = process.env.CI;
+	const requireFlag = process.env.REQUIRE_DATABASE_TESTS;
+	return (
+		ci === "true" || ci === "1" || requireFlag === "1" || requireFlag === "true"
+	);
+}
+
+describe("HR coreorg DB invariants migration (0018)", () => {
+	it("is additive and names the effective-range constraints", () => {
+		const result = assertAdditiveMigrationSql(migrationSql);
+		expect(result.ok).toBe(true);
+		expect(migrationSql).toContain("hr_coreorg_db_invariants_preflight");
+		expect(migrationSql).toContain('"hr_work_assignment_effective_range_ck"');
+		expect(migrationSql).toContain(
+			'"hr_employment_contract_effective_range_ck"',
+		);
+		expect(migrationSql).toContain('"hr_reporting_line_effective_range_ck"');
+		expect(migrationSql).toContain(
+			"CHECK (ends_on IS NULL OR starts_on <= ends_on)",
+		);
+	});
+
+	it("documents overlap enforcement in the exclusion register", () => {
+		expect(exclusionRegister.migration).toBe(
+			"0018_hr_coreorg_db_invariants.sql",
+		);
+		expect(exclusionRegister.databaseChecks).toHaveLength(3);
+		const overlapTables = exclusionRegister.overlapPolicies.map(
+			(row) => row.table,
+		);
+		expect(overlapTables).toEqual([
+			"hr_work_assignment",
+			"hr_employment_contract",
+			"hr_reporting_line",
+		]);
+		for (const policy of exclusionRegister.overlapPolicies) {
+			expect(policy.databaseOverlapExclusion).toBe(false);
+		}
+		expect(exclusionRegister.rollback).toContain(
+			"DROP CONSTRAINT IF EXISTS hr_work_assignment_effective_range_ck",
+		);
+	});
+
+	it("records work-assignment overlap enforcement as command-only at the database layer", () => {
+		const assignmentPolicy = exclusionRegister.overlapPolicies.find(
+			(row) => row.table === "hr_work_assignment",
+		);
+		expect(assignmentPolicy).toBeDefined();
+		expect(assignmentPolicy?.databaseOverlapExclusion).toBe(false);
+		expect(assignmentPolicy?.enforcement).toMatch(/command/);
+	});
+
+	it("records employment-contract overlap enforcement as command-only", () => {
+		const contractPolicy = exclusionRegister.overlapPolicies.find(
+			(row) => row.table === "hr_employment_contract",
+		);
+		expect(contractPolicy).toBeDefined();
+		expect(contractPolicy?.enforcement).toBe("command_only");
+		expect(contractPolicy?.databaseOverlapExclusion).toBe(false);
+	});
+
+	it("records reporting-line primary overlap enforcement as command-only at the database layer", () => {
+		const reportingPolicy = exclusionRegister.overlapPolicies.find(
+			(row) => row.table === "hr_reporting_line",
+		);
+		expect(reportingPolicy).toBeDefined();
+		expect(reportingPolicy?.databaseOverlapExclusion).toBe(false);
+		expect(reportingPolicy?.enforcement).toMatch(/command/);
+	});
+});
+
+describe.skipIf(!hasDatabase)(
+	"HR coreorg DB invariants migration (0018 live)",
+	() => {
+		const runId = `${Date.now()}`;
+		const orgId = `org-coreorg-inv-${runId}`;
+		const otherOrgId = `org-coreorg-inv-other-${runId}`;
+		const actor = `actor-coreorg-inv-${runId}`;
+
+		const employeeId = crypto.randomUUID();
+		const otherEmployeeId = crypto.randomUUID();
+		const employmentId = crypto.randomUUID();
+		const otherEmploymentId = crypto.randomUUID();
+		const positionId = crypto.randomUUID();
+		const departmentId = crypto.randomUUID();
+		const jobId = crypto.randomUUID();
+		const managerEmployeeId = crypto.randomUUID();
+
+		let migrationReady = false;
+
+		beforeAll(async () => {
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			const rows = await sql`
+				SELECT 1 AS ok
+				FROM pg_constraint
+				WHERE conname = 'hr_work_assignment_effective_range_ck'
+				LIMIT 1
+			`;
+			migrationReady = rows.length > 0;
+			if (requireDatabaseTests() && !migrationReady) {
+				throw new Error(
+					"HR-COREORG-DB-INVARIANTS live tests require migration 0018_hr_coreorg_db_invariants.sql applied",
+				);
+			}
+		});
+
+		afterAll(async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await sql`
+				DELETE FROM hr_work_assignment
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_employment_contract
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_reporting_line
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_employment
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_position
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_department
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_job
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+			await sql`
+				DELETE FROM hr_employee
+				WHERE organization_id IN (${orgId}, ${otherOrgId})
+			`;
+		});
+
+		async function seedFoundation(): Promise<void> {
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await sql`
+				INSERT INTO hr_employee (
+					id, organization_id, employee_number, normalized_employee_number,
+					legal_name, create_idempotency_key, create_request_fingerprint,
+					version, created_by, updated_by
+				)
+				VALUES
+					(
+						${employeeId}, ${orgId}, 'E-001', 'e-001', 'Invariant Employee',
+						${`idem-emp-${runId}`}, ${`fp-emp-${runId}`}, 1, ${actor}, ${actor}
+					),
+					(
+						${managerEmployeeId}, ${orgId}, 'E-MGR', 'e-mgr', 'Invariant Manager',
+						${`idem-mgr-${runId}`}, ${`fp-mgr-${runId}`}, 1, ${actor}, ${actor}
+					),
+					(
+						${otherEmployeeId}, ${otherOrgId}, 'E-002', 'e-002', 'Other Org Employee',
+						${`idem-other-${runId}`}, ${`fp-other-${runId}`}, 1, ${actor}, ${actor}
+					)
+			`;
+			await sql`
+				INSERT INTO hr_employment (
+					id, organization_id, employee_id, status, starts_on, ends_on,
+					version, created_by, updated_by
+				)
+				VALUES
+					(
+						${employmentId}, ${orgId}, ${employeeId}, 'active', '2020-01-01', NULL,
+						1, ${actor}, ${actor}
+					),
+					(
+						${otherEmploymentId}, ${otherOrgId}, ${otherEmployeeId}, 'active', '2020-01-01', NULL,
+						1, ${actor}, ${actor}
+					)
+			`;
+			await sql`
+				INSERT INTO hr_department (
+					id, organization_id, code, name, status, version, created_by, updated_by
+				)
+				VALUES (
+					${departmentId}, ${orgId}, 'DEPT-INV', 'Invariant Dept', 'active', 1, ${actor}, ${actor}
+				)
+			`;
+			await sql`
+				INSERT INTO hr_job (
+					id, organization_id, code, title, status, version, created_by, updated_by
+				)
+				VALUES (
+					${jobId}, ${orgId}, 'JOB-INV', 'Invariant Job', 'active', 1, ${actor}, ${actor}
+				)
+			`;
+			await sql`
+				INSERT INTO hr_position (
+					id, organization_id, code, title, department_id, job_id, status,
+					version, created_by, updated_by
+				)
+				VALUES (
+					${positionId}, ${orgId}, 'POS-INV', 'Invariant Position', ${departmentId},
+					${jobId}, 'active', 1, ${actor}, ${actor}
+				)
+			`;
+		}
+
+		it("rejects an assignment whose end precedes its start", async () => {
+			if (!migrationReady) return;
+			await seedFoundation();
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_work_assignment (
+						id, organization_id, employment_id, employee_id, position_id,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${employmentId}, ${employeeId}, ${positionId},
+						'2020-06-01', '2020-01-01', 1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("accepts an open-ended assignment", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			const assignmentId = crypto.randomUUID();
+			await expect(
+				sql`
+					INSERT INTO hr_work_assignment (
+						id, organization_id, employment_id, employee_id, position_id,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${assignmentId}, ${orgId}, ${employmentId}, ${employeeId}, ${positionId},
+						'2020-01-01', NULL, 1, ${actor}, ${actor}
+					)
+				`,
+			).resolves.toBeDefined();
+		});
+
+		it("rejects a contract whose end precedes its start", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_employment_contract (
+						id, organization_id, employment_id, employee_id, reference_code,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${employmentId}, ${employeeId}, 'CTR-BAD',
+						'2021-06-01', '2021-01-01', 1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("accepts an open-ended contract", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			const contractId = crypto.randomUUID();
+			await expect(
+				sql`
+					INSERT INTO hr_employment_contract (
+						id, organization_id, employment_id, employee_id, reference_code,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${contractId}, ${orgId}, ${employmentId}, ${employeeId}, 'CTR-OPEN',
+						'2020-01-01', NULL, 1, ${actor}, ${actor}
+					)
+				`,
+			).resolves.toBeDefined();
+		});
+
+		it("rejects a reporting line whose end precedes its start", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_reporting_line (
+						id, organization_id, employee_id, manager_employee_id, relationship_kind,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${employeeId}, ${managerEmployeeId}, 'primary',
+						'2022-06-01', '2022-01-01', 1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+
+		it("preserves valid existing assignment inserts", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			const closedAssignmentId = crypto.randomUUID();
+			await expect(
+				sql`
+					INSERT INTO hr_work_assignment (
+						id, organization_id, employment_id, employee_id, position_id,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${closedAssignmentId}, ${orgId}, ${employmentId}, ${employeeId}, ${positionId},
+						'2019-01-01', '2019-12-31', 1, ${actor}, ${actor}
+					)
+				`,
+			).resolves.toBeDefined();
+		});
+
+		it("preserves tenant-scoped foreign-key behavior", async () => {
+			if (!migrationReady) return;
+			const { getNeonSql } = await import("../src/http-transaction");
+			const sql = getNeonSql();
+			await expect(
+				sql`
+					INSERT INTO hr_work_assignment (
+						id, organization_id, employment_id, employee_id, position_id,
+						starts_on, ends_on, version, created_by, updated_by
+					)
+					VALUES (
+						${crypto.randomUUID()}, ${orgId}, ${otherEmploymentId}, ${employeeId}, ${positionId},
+						'2020-01-01', NULL, 1, ${actor}, ${actor}
+					)
+				`,
+			).rejects.toThrow();
+		});
+	},
+);

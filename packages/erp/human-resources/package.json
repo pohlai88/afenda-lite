@@ -43,6 +43,10 @@
 		"./module-manifest": {
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"
+		},
+		"./privacy/subject-data-collector": {
+			"types": "./src/privacy/subject-data-collector.ts",
+			"default": "./src/privacy/subject-data-collector.ts"
 		}
 	},
 	"scripts": {

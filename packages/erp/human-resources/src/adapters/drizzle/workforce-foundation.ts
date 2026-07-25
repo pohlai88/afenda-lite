@@ -10,7 +10,9 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
 	HUMAN_RESOURCES_PERSON_CREATED_EVENT,
+	HUMAN_RESOURCES_WORKER_CHANGED_EVENT,
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 } from "@afenda/events/schemas";
 import {
@@ -289,7 +291,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async updatePersonName(input, _ports, _meta): Promise<Result<Person>> {
+		async updatePersonName(input, _ports, meta): Promise<Result<Person>> {
 			try {
 				const existing = await this.getPersonById({
 					organizationId: input.organizationId,
@@ -313,27 +315,65 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return versionCheck;
 				}
 
-				const rows = await db
-					.update(hrPerson)
-					.set({
-						legalName: input.legalName,
-						version: existing.data.version + 1,
-						updatedBy: input.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(hrPerson.organizationId, input.organizationId),
-							eq(hrPerson.id, input.personId),
-							eq(hrPerson.version, input.expectedVersion),
+				const auditId = randomUUID();
+				const eventId = randomUUID();
+				const nextVersion = input.expectedVersion + 1;
+				const changesJson = fieldChangeJson(
+					"legalName",
+					existing.data.legalName,
+					input.legalName,
+				);
+				const payloadJson = eventPayloadJson({
+					organizationId: input.organizationId,
+					entityType: "hr_person",
+					entityId: input.personId,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				});
+
+				const [rows] = await runNeonHttpTransaction<[PersonSqlRow[]]>((sql) => [
+					sql`
+						WITH mutated AS (
+							UPDATE hr_person
+							SET legal_name = ${input.legalName},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.personId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
 						),
-					)
-					.returning();
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_person', id, 'UPDATE', ${changesJson}::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_PERSON_CHANGED_EVENT}, 'human-resources',
+								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+				]);
 				const row = rows[0];
 				if (row === undefined) {
 					return fail("CONFLICT", "Person update conflict");
 				}
-				return mapPersonRow(row as unknown as PersonSqlRow);
+				return mapPersonRow(row);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -583,7 +623,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 		async changeWorkerType(
 			input,
 			_ports,
-			_meta,
+			meta,
 		): Promise<Result<EmployeeWorker | NonEmployeeWorker>> {
 			const existing = await this.getWorkerById({
 				organizationId: input.organizationId,
@@ -609,30 +649,62 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 
 			const employeeId =
 				input.workerType === "employee" ? input.employeeId : null;
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const nextVersion = input.expectedVersion + 1;
+			const payloadJson = eventPayloadJson({
+				organizationId: input.organizationId,
+				entityType: "hr_worker",
+				entityId: input.workerId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			});
 			try {
-				const rows = await db
-					.update(hrWorker)
-					.set({
-						workerType: input.workerType,
-						employeeId,
-						effectiveFrom: input.effectiveOn,
-						version: existing.data.version + 1,
-						updatedBy: input.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(hrWorker.organizationId, input.organizationId),
-							eq(hrWorker.id, input.workerId),
-							eq(hrWorker.version, input.expectedVersion),
+				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>((sql) => [
+					sql`
+						WITH mutated AS (
+							UPDATE hr_worker
+							SET worker_type = ${input.workerType},
+								employee_id = ${employeeId},
+								effective_from = ${input.effectiveOn},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.workerId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
 						),
-					)
-					.returning();
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_worker', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_WORKER_CHANGED_EVENT}, 'human-resources',
+								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+				]);
 				const row = rows[0];
 				if (row === undefined) {
 					return fail("CONFLICT", "Worker type change conflict");
 				}
-				const mapped = mapWorkerRow(row as unknown as WorkerSqlRow);
+				const mapped = mapWorkerRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -647,7 +719,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async changeWorkerStatus(input, _ports, _meta): Promise<Result<Worker>> {
+		async changeWorkerStatus(input, _ports, meta): Promise<Result<Worker>> {
 			const existing = await this.getWorkerById({
 				organizationId: input.organizationId,
 				workerId: input.workerId,
@@ -670,29 +742,62 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				return versionCheck;
 			}
 
+			const auditId = randomUUID();
+			const eventId = randomUUID();
+			const nextVersion = input.expectedVersion + 1;
+			const payloadJson = eventPayloadJson({
+				organizationId: input.organizationId,
+				entityType: "hr_worker",
+				entityId: input.workerId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			});
+
 			try {
-				const rows = await db
-					.update(hrWorker)
-					.set({
-						status: input.status,
-						effectiveFrom: input.effectiveOn,
-						version: existing.data.version + 1,
-						updatedBy: input.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(hrWorker.organizationId, input.organizationId),
-							eq(hrWorker.id, input.workerId),
-							eq(hrWorker.version, input.expectedVersion),
+				const [rows] = await runNeonHttpTransaction<[WorkerSqlRow[]]>((sql) => [
+					sql`
+						WITH mutated AS (
+							UPDATE hr_worker
+							SET status = ${input.status},
+								effective_from = ${input.effectiveOn},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.workerId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
 						),
-					)
-					.returning();
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_worker', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_WORKER_CHANGED_EVENT}, 'human-resources',
+								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+				]);
 				const row = rows[0];
 				if (row === undefined) {
 					return fail("CONFLICT", "Worker status change conflict");
 				}
-				return mapWorkerRow(row as unknown as WorkerSqlRow);
+				return mapWorkerRow(row);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,

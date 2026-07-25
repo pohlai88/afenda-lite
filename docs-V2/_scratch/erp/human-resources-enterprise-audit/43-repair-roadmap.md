@@ -103,21 +103,19 @@ flowchart TD
 
 ## Tier 3 — Database and migration truth
 
-### HR-COREORG-DB-INVARIANTS
+### HR-COREORG-DB-INVARIANTS — **CLOSED** (2026-07-25)
 
 | Field | Value |
 |---|---|
+| **Status** | **CLOSED** — migration `0018_hr_coreorg_db_invariants.sql` |
 | **HR-ENT** | HR-ENT-03, HR-ENT-16 |
-| **Outcome** | DDL checks for assignment/contract date ranges and documented overlap policy where enterprise requires |
+| **Outcome** | DDL effective-range checks on `hr_work_assignment`, `hr_employment_contract`, `hr_reporting_line`; overlap policies documented in exclusion register |
 | **Allowed paths** | `@afenda/db` schema + migrations; migration tests in `packages/data-plane/db/__tests__/` |
-| **Prohibited paths** | Unrelated HR domains; product UI |
-| **Prerequisites** | HR-COREORG-CANDIDATE-CONSENT-ALIGN (**CLOSED**) |
-| **Acceptance** | Migration tests green; invalid ranges rejected at DB or documented command-only with explicit exclusion register row |
-| **Tests** | New/extended migration tests for date-range checks |
-| **Commands** | `pnpm --filter @afenda/db test -- hr-tenant-foreign-keys-migration` (pattern); targeted new test file |
-| **Migration risk** | **Medium** — check constraints may fail on dirty dev data |
-| **Rollback** | Drop constraints in down migration |
-| **Residual** | Open employment overlap remains command-enforced unless added |
+| **Artifacts** | `packages/data-plane/db/drizzle/0018_hr_coreorg_db_invariants.sql` · `packages/data-plane/db/__tests__/hr-coreorg-db-invariants-migration.test.ts` · [`hr-coreorg-db-invariant-exclusion-register.json`](hr-coreorg-db-invariant-exclusion-register.json) |
+| **Constraints** | `hr_work_assignment_effective_range_ck` · `hr_employment_contract_effective_range_ck` · `hr_reporting_line_effective_range_ck` |
+| **Acceptance** | Migration tests green; invalid ranges rejected at DB; overlap rules in exclusion register (command-enforced where no exclusion constraint) |
+| **Rollback** | `ALTER TABLE … DROP CONSTRAINT IF EXISTS hr_*_effective_range_ck` (see exclusion register) |
+| **Residual** | Dated assignment/contract overlap remains command-enforced; employment open overlap unchanged |
 
 ### HR-OPS-LEAVE-OVERLAP-GUARD
 
@@ -259,7 +257,7 @@ flowchart TD
 | **Commands** | `pnpm --filter @afenda/human-resources test -- contextual-authorization-privacy`; targeted apps/web action test if added |
 | **Migration risk** | None |
 | **Rollback** | Revert composition wiring |
-| **Residual** | HR-XCUT-P0-001, HR-XCUT-P0-004 partially closed |
+| **Residual** | HR-GOV-P1-003 · HR-GOV-P2-005 (sensitive prefix coverage) |
 
 ### HR-ENT-07-PRODUCT-LEAVE-ACTIONS
 
@@ -337,18 +335,18 @@ flowchart TD
 | 1 | HR-ENT-ER-CASE-LIST-ACL | 1 | HR-ENT-06 | HR-GOV-P0-001 | **CLOSED** (Slice 0.1) — not a blocker |
 | 2 | HR-COREORG-CANDIDATE-CONSENT-ALIGN | 2 | HR-ENT-07 | HR-COREORG-P0-001 | **CLOSED** (Slice 0.1) — not a blocker |
 | — | HR-OPS-OVERTIME-APPROVAL-AUTHORITY | 5 | HR-ENT-06 | HR-OPS-P1-001 | **CLOSED** (Slice 0.1) — not a blocker |
-| 3 | HR-COREORG-DB-INVARIANTS | 3 | HR-ENT-03 | cluster-a DDL gaps | open (roadmap) |
+| 3 | HR-COREORG-DB-INVARIANTS | 3 | HR-ENT-03 | cluster-a DDL gaps | **CLOSED** (2026-07-25) — not a blocker |
 | 4 | HR-COREORG-LIFECYCLE-SERIALIZE-PARITY | 4 | HR-ENT-18 | HR-COREORG-P2-002 | **CLOSED** (Slice 1.2) — not a blocker |
 | 5 | HR-OPS-TIME-CALENDAR-RESOLUTION-FIXTURES | 4 | HR-ENT-16 | HR-OPS-P1-005 | **CLOSED** (Slice 1.1) — not a blocker |
-| 6 | HR-OPS-LEAVE-EMISSION-REGISTRY | 5 | HR-ENT-13 | HR-OPS-P0-001 | **next vertical** (sole active queue — [`44`](44-next-repair-mission.md)) |
+| 6 | HR-OPS-LEAVE-EMISSION-REGISTRY | 5 | HR-ENT-13 | HR-OPS-P0-001 | **next vertical** (PR 3.0 registry infrastructure — [`00-phase3.md`](../../00-phase3.md)) |
 | 7 | HR-OPS-LEAVE-HANDOFF-PERMISSION | 5 | HR-ENT-12 | HR-OPS-P1-002 | open (roadmap) |
-| 8 | HR-ENT-04-AUTH-PRIVACY | 6 | HR-ENT-06/07 | HR-XCUT-P0-001/004 | open (post-queue) |
+| 8 | HR-ENT-04-AUTH-PRIVACY | 6 | HR-ENT-06/07 | HR-XCUT-P0-001/004 | **CLOSED** Slice 2.10 |
 | 9 | HR-ENT-07-PRODUCT-LEAVE-ACTIONS | 6 | HR-ENT-12 | HR-OPS-P1-003 | open (roadmap) |
 | 10 | HR-XCUT-EMISSION-REGISTRY | 7 | HR-ENT-13 | HR-XCUT-P0-003 | open (roadmap) |
 | 11 | HR-ENT-03-EFFECTIVE-TRUTH | 7 | HR-ENT-05 | HR-XCUT-P0-002 | open (roadmap) |
 | 12 | HR-XCUT-HYGIENE + enterprise.md count refresh | 8 | HR-ENT-19 | HR-XCUT-P1-003 residual | open (hygiene; pack aligned Slice 0.3) |
 
-**Do not** schedule package-wide cleanup (emission registry full sweep, hygiene-only) as the **first** vertical mission per selection rule. Closed Slice 0.1 / Slice 1.1 / Slice 1.2 missions must not reappear as open/next blockers. Phase 0 exit MET · Slice 1.1 calendar **CLOSED** — execute leave emission registry next.
+**Do not** schedule package-wide cleanup (emission registry full sweep, hygiene-only) as the **first** vertical mission per selection rule. Closed Slice 0.1 / Slice 1.1 / Slice 1.2 / HR-COREORG-DB-INVARIANTS missions must not reappear as open/next blockers. Phase 0 exit MET · HR-COREORG-DB-INVARIANTS **CLOSED** — execute PR 3.0 registry infrastructure next.
 
 ---
 

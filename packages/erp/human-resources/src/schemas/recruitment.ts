@@ -123,6 +123,31 @@ export type UpdateCandidateProfileInput = z.infer<
 	typeof updateCandidateProfileInputSchema
 >;
 
+export const withdrawCandidateConsentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			candidateId: humanResourcesCandidateIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type WithdrawCandidateConsentInput = z.infer<
+	typeof withdrawCandidateConsentInputSchema
+>;
+
+export const changeCandidateRetentionInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			candidateId: humanResourcesCandidateIdSchema,
+			retentionUntil: z.string().date(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ChangeCandidateRetentionInput = z.infer<
+	typeof changeCandidateRetentionInputSchema
+>;
+
 export const getCandidateInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		candidateId: humanResourcesCandidateIdSchema,

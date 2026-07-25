@@ -2,12 +2,18 @@ import { randomUUID } from "node:crypto";
 
 import { ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT,
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT,
+	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
 
 import {
@@ -232,13 +238,7 @@ async function appendComplianceOutbox(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		type:
-			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT
-			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT
-			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT
-			| typeof HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT
-			| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT
-			| typeof HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT;
+		type: HumanResourcesEventType;
 		entityType: string;
 		entityId: string;
 	},
@@ -346,11 +346,7 @@ async function transitionEmployeeDocumentStatus(
 				| "metadata"
 			>
 		>;
-		events?: Array<
-			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT
-			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT
-			| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT
-		>;
+		events?: HumanResourcesEventType[];
 		ports: MutationPorts;
 		meta: HumanResourcesMutationMeta;
 	},
@@ -462,7 +458,7 @@ async function transitionWorkEligibilityStatus(
 				"issuedOn" | "expiresOn" | "documentRef" | "verifiedBy" | "verifiedAt"
 			>
 		>;
-		events?: Array<typeof HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT>;
+		events?: HumanResourcesEventType[];
 		ports: MutationPorts;
 		meta: HumanResourcesMutationMeta;
 	},
@@ -1237,6 +1233,7 @@ export function createMemoryComplianceMethods(
 					verifiedBy: null,
 					verifiedAt: null,
 				},
+				events: [HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT],
 				ports,
 				meta,
 			});
@@ -1279,6 +1276,7 @@ export function createMemoryComplianceMethods(
 				expectedVersion: input.expectedVersion,
 				actorUserId: input.actorUserId,
 				nextStatus: "expired",
+				events: [HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT],
 				ports,
 				meta,
 			});
@@ -1604,6 +1602,7 @@ export function createMemoryComplianceMethods(
 					verifiedBy: input.actorUserId,
 					verifiedAt: new Date(`${input.evidenceDate}T00:00:00.000Z`),
 				},
+				events: [HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT],
 				ports,
 				meta,
 			});
@@ -1678,6 +1677,7 @@ export function createMemoryComplianceMethods(
 						expiresOn: input.expiresOn,
 						documentRef: input.documentRef ?? eligibility.documentRef,
 					},
+					events: [HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT],
 					ports,
 					meta,
 				});
@@ -1720,6 +1720,18 @@ export function createMemoryComplianceMethods(
 				return audit;
 			}
 
+			const outbox = await appendComplianceOutbox(state, ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT,
+				entityType: "hr_work_eligibility",
+				entityId: updated.id,
+			});
+			if (!outbox.ok) {
+				state.workEligibilities.set(updated.id, previous);
+				return outbox;
+			}
+
 			return ok({ ...updated });
 		},
 
@@ -1739,6 +1751,7 @@ export function createMemoryComplianceMethods(
 				expectedVersion: input.expectedVersion,
 				actorUserId: input.actorUserId,
 				nextStatus: "closed",
+				events: [HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT],
 				ports,
 				meta,
 			});

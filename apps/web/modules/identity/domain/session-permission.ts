@@ -346,6 +346,16 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to administer succession plans.",
 	"human-resources.succession.executive.read":
 		"You do not have permission to read succession coverage.",
+	"human-resources.privacy.export":
+		"You do not have permission to export human-resources subject data.",
+	"human-resources.privacy.anonymize.evaluate":
+		"You do not have permission to evaluate human-resources anonymization.",
+	"human-resources.privacy.retention.evaluate":
+		"You do not have permission to evaluate human-resources retention.",
+	"human-resources.privacy.legal-hold.manage":
+		"You do not have permission to manage human-resources legal holds.",
+	"human-resources.privacy.anonymize.execute":
+		"You do not have permission to anonymize human-resources subject data.",
 	"payroll.setup.manage":
 		"You do not have permission to manage payroll setup.",
 	"payroll.input.manage":

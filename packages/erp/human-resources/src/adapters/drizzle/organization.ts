@@ -18,6 +18,18 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_JOB_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_JOB_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_POSITION_CLOSED_EVENT,
+	HUMAN_RESOURCES_POSITION_FROZEN_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT,
+} from "@afenda/events/schemas";
+import {
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesJobId,
@@ -37,6 +49,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
+import { humanResourcesEntityEventPayloadJson } from "../../shared/audit-facts";
 import {
 	conflict,
 	missAfterOptimisticUpdate,
@@ -831,10 +844,63 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const domainEventType =
+			input.status === "active"
+				? HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT
+				: input.status === "archived"
+					? HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT
+					: null;
+		const eventId = domainEventType ? randomUUID() : null;
+		const payloadJson = domainEventType
+			? humanResourcesEntityEventPayloadJson({
+					organizationId: input.organizationId,
+					entityType: "hr_department",
+					entityId: input.departmentId,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				})
+			: null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[DepartmentSqlRow[]]>(
 				(sql) => [
-					sql`
+					domainEventType
+						? sql`
+							WITH mutated AS (
+								UPDATE hr_department
+								SET status = ${input.status},
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.departmentId}
+									AND organization_id = ${input.organizationId}
+									AND version = ${input.expectedVersion}
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_department', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${domainEventType}, 'human-resources',
+									${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`
+						: sql`
 							WITH mutated AS (
 								UPDATE hr_department
 								SET status = ${input.status},
@@ -1163,9 +1229,62 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const domainEventType =
+			input.status === "active"
+				? HUMAN_RESOURCES_JOB_ACTIVATED_EVENT
+				: input.status === "archived"
+					? HUMAN_RESOURCES_JOB_ARCHIVED_EVENT
+					: null;
+		const eventId = domainEventType ? randomUUID() : null;
+		const payloadJson = domainEventType
+			? humanResourcesEntityEventPayloadJson({
+					organizationId: input.organizationId,
+					entityType: "hr_job",
+					entityId: input.jobId,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				})
+			: null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[JobSqlRow[]]>((sql) => [
-				sql`
+				domainEventType
+					? sql`
+						WITH mutated AS (
+							UPDATE hr_job
+							SET status = ${input.status},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.jobId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_job', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${domainEventType}, 'human-resources',
+								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`
+					: sql`
 						WITH mutated AS (
 							UPDATE hr_job
 							SET status = ${input.status},
@@ -1539,9 +1658,64 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const domainEventType =
+			input.status === "active"
+				? HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT
+				: input.status === "frozen"
+					? HUMAN_RESOURCES_POSITION_FROZEN_EVENT
+					: input.status === "closed"
+						? HUMAN_RESOURCES_POSITION_CLOSED_EVENT
+						: null;
+		const eventId = domainEventType ? randomUUID() : null;
+		const payloadJson = domainEventType
+			? humanResourcesEntityEventPayloadJson({
+					organizationId: input.organizationId,
+					entityType: "hr_position",
+					entityId: input.positionId,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				})
+			: null;
 		try {
 			const [rows] = await runNeonHttpTransaction<[PositionSqlRow[]]>((sql) => [
-				sql`
+				domainEventType
+					? sql`
+						WITH mutated AS (
+							UPDATE hr_position
+							SET status = ${input.status},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.positionId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_position', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${domainEventType}, 'human-resources',
+								${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`
+					: sql`
 						WITH mutated AS (
 							UPDATE hr_position
 							SET status = ${input.status},
@@ -1899,6 +2073,14 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		const brandedId = parseHumanResourcesReportingLineId(entityId);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = humanResourcesEntityEventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_reporting_line",
+			entityId: brandedId.data,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ReportingLineSqlRow[]]>(
 				(sql) => [
@@ -1945,8 +2127,19 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									'human-resources', 'hr_reporting_line', id, 'CREATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT}, 'human-resources',
+									${meta.correlationId}, created_by, ${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
 				],
 			);
@@ -1992,7 +2185,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		if (!dateCheck.ok) return dateCheck;
 
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
+		const payloadJson = humanResourcesEntityEventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_reporting_line",
+			entityId: input.reportingLineId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ReportingLineSqlRow[]]>(
 				(sql) => [
@@ -2018,8 +2219,19 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									'human-resources', 'hr_reporting_line', id, 'UPDATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT}, 'human-resources',
+									${meta.correlationId}, ${input.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, audited
+							SELECT mutated.* FROM mutated, audited, outboxed
 						`,
 				],
 			);
@@ -2091,7 +2303,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		if (!brandedId.ok) return brandedId;
 		const closeAuditId = randomUUID();
 		const createAuditId = randomUUID();
+		const replaceEventId = randomUUID();
 		const nextPriorVersion = priorLine.version + 1;
+		const replacePayloadJson = humanResourcesEntityEventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_reporting_line",
+			entityId: brandedId.data,
+			actorId: input.createdBy,
+			correlationId: meta.correlationId,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[ReportingLineSqlRow[]]>(
 				(sql) => [
@@ -2153,8 +2373,19 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									'human-resources', 'hr_reporting_line', id, 'CREATE', '[]'::jsonb
 								FROM mutated
 								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${replaceEventId}, organization_id, ${HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT}, 'human-resources',
+									${meta.correlationId}, created_by, ${replacePayloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
 							)
-							SELECT mutated.* FROM mutated, closed_audit, created_audit
+							SELECT mutated.* FROM mutated, closed_audit, created_audit, outboxed
 						`,
 				],
 			);

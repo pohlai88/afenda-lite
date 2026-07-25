@@ -373,6 +373,21 @@ permissions:
   - code: human-resources.succession.executive.read
     moduleId: human-resources
     namespace: human-resources
+  - code: human-resources.privacy.export
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.privacy.anonymize.evaluate
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.privacy.retention.evaluate
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.privacy.legal-hold.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.privacy.anonymize.execute
+    moduleId: human-resources
+    namespace: human-resources
   - code: inventory.movement.create
     moduleId: inventory
     namespace: inventory

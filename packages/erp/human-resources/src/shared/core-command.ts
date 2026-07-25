@@ -1,10 +1,6 @@
-import type { Result } from "@afenda/errors/result";
+import { ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 
-import {
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
 import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
@@ -13,14 +9,15 @@ import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import {
+	runParsedAuthorizedCommand,
+	runParsedAuthorizedQuery,
+} from "./domain-runner";
+import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
 
-type ActorScoped = {
-	organizationId: string;
-	actorUserId: string;
-};
+type ActorScoped = HumanResourcesAuthorizedActorInput;
 
 type CommandDeps = {
 	store: HumanResourcesStore;
@@ -47,29 +44,17 @@ export async function runCoreCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: config.command,
+	return runParsedAuthorizedCommand(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
+		command: config.command,
+		parityResourceKind: "employee",
+		resolveDeps: (opts) => {
+			const { store, ports } = resolveCommandDeps(opts);
+			return ok({ store, ports });
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, { store, ports });
+		execute: config.execute,
+	});
 }
 
 export async function runCoreQuery<
@@ -85,24 +70,15 @@ export async function runCoreQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runParsedAuthorizedQuery(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
 		query: config.query,
+		parityResourceKind: "employee",
+		resolveDeps: (opts) => {
+			const { store } = resolveCommandDeps(opts);
+			return ok({ store });
+		},
+		execute: config.execute,
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, { store });
 }

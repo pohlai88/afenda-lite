@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
+	HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import {
@@ -446,6 +450,13 @@ export function createMemoryCoreMethods(
 				);
 			}
 
+			const isRehire = [...state.employments.values()].some(
+				(employment) =>
+					employment.organizationId === record.organizationId &&
+					employment.employeeId === record.employeeId &&
+					employment.endsOn !== null,
+			);
+
 			const idResult = parseHumanResourcesEmploymentId(randomUUID());
 			if (!idResult.ok) {
 				return idResult;
@@ -486,13 +497,16 @@ export function createMemoryCoreMethods(
 				organizationId: employment.organizationId,
 				actorUserId: employment.createdBy,
 				correlationId: meta.correlationId,
-				type: HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+				type: isRehire
+					? HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT
+					: HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 				payload: {
 					organizationId: employment.organizationId,
 					entityType: "hr_employment",
 					entityId: employment.id,
 					actorId: employment.createdBy,
 					correlationId: meta.correlationId,
+					effectiveOn: record.startsOn,
 				},
 			});
 			if (!outbox.ok) {
@@ -737,7 +751,7 @@ export function createMemoryCoreMethods(
 				organizationId: contract.organizationId,
 				actorUserId: contract.createdBy,
 				correlationId: meta.correlationId,
-				type: HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+				type: HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 				payload: {
 					organizationId: contract.organizationId,
 					entityType: "hr_employment_contract",
@@ -959,6 +973,24 @@ export function createMemoryCoreMethods(
 				return audit;
 			}
 
+			const outbox = await ports.outbox.append({
+				organizationId: assignment.organizationId,
+				actorUserId: assignment.createdBy,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
+				payload: {
+					organizationId: assignment.organizationId,
+					entityType: "hr_work_assignment",
+					entityId: assignment.id,
+					actorId: assignment.createdBy,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.assignments.delete(assignment.id);
+				return outbox;
+			}
+
 			return ok({ ...assignment });
 		},
 
@@ -1018,6 +1050,24 @@ export function createMemoryCoreMethods(
 			if (!audit.ok) {
 				state.assignments.set(input.assignmentId, assignment);
 				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_work_assignment",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.assignments.set(input.assignmentId, assignment);
+				return outbox;
 			}
 
 			return ok({ ...updated });

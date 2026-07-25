@@ -171,7 +171,7 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 
 **Permission naming:** `human-resources.*` — matches manifest authorization maps.
 
-**Authorization entry points:** **Not standardized** — four parallel systems (see HR-XCUT-P0-001).
+**Authorization entry points:** **Standardized** — contextual facade + policy registry; ER ACL is a policy plugin only (HR-XCUT-P0-001 **CLOSED** Slice 2.10).
 
 **Store conventions:** Domain store file per folder; methods named `create*` / `find*` / `list*`.
 
@@ -181,7 +181,7 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 
 ### Findings — Standardize
 
-#### HR-XCUT-P0-001
+#### HR-XCUT-P0-001 — **CLOSED** (Slice 2.10 · 2026-07-25)
 
 | Field | Value |
 |---|---|
@@ -193,7 +193,7 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 | **Recommendation** | Standardize on `authorizeHumanResourcesSensitiveResource` + manifest permission; ER case access as specialized policy module |
 | **Decision** | **OPEN-DECISION** — unify vs document layered model |
 | **Repair mission** | HR-ENT-04-AUTH-PRIVACY |
-| **Verification** | Coverage test proves every sensitive command/query hits unified entry |
+| **Verification** | `authorization-policy-registry` · `contextual-authorization-privacy` · `authorization-facade-boundary` · `employee-relations-case-list-acl` · full `@afenda/human-resources` test — exit 0 |
 
 #### HR-XCUT-P2-005
 
@@ -267,11 +267,11 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 
 **Platform-fact contracts:** `integrations/platform-facts.ts` maps events → workflow/notification/identity/search.
 
-**HR-ENT alignment:** HR-ENT-05 pass is **scoped**; HR-ENT-07 blocked on privacy wiring.
+**HR-ENT alignment:** HR-ENT-05 pass is **scoped**; HR-ENT-07 privacy port wired (HR-XCUT-P0-004 **CLOSED** Slice 2.10).
 
 ### Findings — Enrich
 
-#### HR-XCUT-P0-004
+#### HR-XCUT-P0-004 — **CLOSED** (Slice 2.10 · 2026-07-25)
 
 | Field | Value |
 |---|---|
@@ -283,7 +283,7 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 | **Recommendation** | Platform-owned adapter in apps/web; HR commands call port for export/anonymize/hold |
 | **Decision** | **OPEN-DECISION** — platform package owner for DSAR execution |
 | **Repair mission** | HR-ENT-04-AUTH-PRIVACY / HR-ENT-05-PLATFORM privacy slice |
-| **Verification** | Integration test: exportSubject invoked with tenant isolation |
+| **Verification** | `pnpm --filter @afenda/web test -- human-resources-privacy-port`; `REQUIRE_DATABASE_TESTS=1 pnpm --filter @afenda/human-resources test -- human-resources.privacy.parity` — exit 0 |
 
 #### HR-XCUT-P1-010
 
@@ -315,7 +315,7 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 
 **Domain-cluster boundaries:** Locked in [`04-domain-cluster-audit-contract.md`](04-domain-cluster-audit-contract.md).
 
-**Likely first P0/P1 repair (name only, do not implement here):** `HR-ENT-04-AUTH-PRIVACY` (privacy port + authorization unification) — highest cross-cut leverage for HR-ENT-06/07.
+**HR-ENT-04-AUTH-PRIVACY:** **CLOSED** Slice 2.10 (facade + privacy composition). Residual sensitive-domain policy depth → `HR-ENT-TALENT-SENSITIVE-POLICY` / `HR-ENT-WFP-SENSITIVE-POLICY`; DSAR export depth → HR-ENT-07 follow-on.
 
 ---
 
@@ -325,8 +325,8 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 |---|---|
 | `effective-truth-adoption.ts` authoritative? | **Authoritative for 33-table scope**; not full mutation inventory |
 | `mutation-emission-registry` ↔ `mutation-tables` | Tables aligned; registry maps **commands** not tables — 88/286 coverage gap |
-| Authorization duplication | **Yes** — four mechanisms (HR-XCUT-P0-001) |
-| Privacy/sensitive policies consumed? | Sensitive policies tested; **privacy port unused** (HR-XCUT-P0-004) |
+| Authorization duplication | **Closed** — single contextual facade + policy registry; ER ACL = plugin (HR-XCUT-P0-001 **CLOSED** Slice 2.10) |
+| Privacy/sensitive policies consumed? | Sensitive policies via facade; privacy port composed at apps/web (HR-XCUT-P0-004 **CLOSED** Slice 2.10); DSAR depth residual under HR-ENT-07 |
 | production-ports / resolve-store / adapters same capability? | **Yes** at store method level (coverage guards) |
 | Root vs domain store aligned? | **Mostly** — org methods typed under core (HR-XCUT-P2-005) |
 | schemas/store/root exports stable? | **Yes** — intentional subpaths; resolve-store internal |
@@ -341,10 +341,10 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 
 | ID | Severity | Title |
 |---|---|---|
-| HR-XCUT-P0-001 | P0 | Parallel authorization entry points |
+| HR-XCUT-P0-001 | P0→**closed** | Parallel authorization entry points → unified facade (Slice 2.10) |
 | HR-XCUT-P0-002 | P0 | Effective-truth matrix scope vs HR-ENT-05 |
 | HR-XCUT-P0-003 | P0 | Mutation emission registry incomplete |
-| HR-XCUT-P0-004 | P0 | Privacy port unwired and unused |
+| HR-XCUT-P0-004 | P0→**closed** | Privacy port unwired → composed at apps/web (Slice 2.10); DSAR depth residual |
 | HR-XCUT-P1-003 | P1 | enterprise.md count drift |
 | HR-XCUT-P1-006 | P1 | Money serialization at payroll boundary |
 | HR-XCUT-P1-007 | P1 | Module-scoped store cache |

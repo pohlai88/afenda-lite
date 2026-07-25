@@ -134,6 +134,13 @@
       "when": 1784997600000,
       "tag": "0017_hr_candidate_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785001200000,
+      "tag": "0018_hr_coreorg_db_invariants",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,15 @@ export type HumanResourcesEntityPayload = z.infer<
 	typeof humanResourcesEntityPayloadSchema
 >;
 
+export const humanResourcesEffectiveDatedEntityPayloadSchema =
+	humanResourcesEntityPayloadBase.extend({
+		effectiveOn: z.string().trim().min(1),
+	});
+
+export type HumanResourcesEffectiveDatedEntityPayload = z.infer<
+	typeof humanResourcesEffectiveDatedEntityPayloadSchema
+>;
+
 export const HUMAN_RESOURCES_PERSON_CREATED_EVENT =
 	"human-resources.person.created.v1" as const;
 export const HUMAN_RESOURCES_PERSON_CHANGED_EVENT =
@@ -36,8 +45,64 @@ export const HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT =
 	"human-resources.employee.transferred.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT =
 	"human-resources.employee.terminated.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT =
+	"human-resources.employment-contract.created.v1" as const;
+export const HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT =
+	"human-resources.assignment.created.v1" as const;
+export const HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT =
+	"human-resources.assignment.ended.v1" as const;
+export const HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT =
+	"human-resources.department.activated.v1" as const;
+export const HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT =
+	"human-resources.department.archived.v1" as const;
+export const HUMAN_RESOURCES_JOB_ACTIVATED_EVENT =
+	"human-resources.job.activated.v1" as const;
+export const HUMAN_RESOURCES_JOB_ARCHIVED_EVENT =
+	"human-resources.job.archived.v1" as const;
+export const HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT =
+	"human-resources.position.activated.v1" as const;
+export const HUMAN_RESOURCES_POSITION_FROZEN_EVENT =
+	"human-resources.position.frozen.v1" as const;
+export const HUMAN_RESOURCES_POSITION_CLOSED_EVENT =
+	"human-resources.position.closed.v1" as const;
+export const HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT =
+	"human-resources.reporting-line.assigned.v1" as const;
+export const HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT =
+	"human-resources.reporting-line.closed.v1" as const;
+export const HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT =
+	"human-resources.reporting-line.replaced.v1" as const;
 export const HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT =
 	"human-resources.requisition.approved.v1" as const;
+export const HUMAN_RESOURCES_REQUISITION_OPENED_EVENT =
+	"human-resources.requisition.opened.v1" as const;
+export const HUMAN_RESOURCES_REQUISITION_CLOSED_EVENT =
+	"human-resources.requisition.closed.v1" as const;
+export const HUMAN_RESOURCES_CANDIDATE_CREATED_EVENT =
+	"human-resources.candidate.created.v1" as const;
+export const HUMAN_RESOURCES_CANDIDATE_CONSENT_WITHDRAWN_EVENT =
+	"human-resources.candidate.consent-withdrawn.v1" as const;
+export const HUMAN_RESOURCES_CANDIDATE_RETENTION_CHANGED_EVENT =
+	"human-resources.candidate.retention-changed.v1" as const;
+export const HUMAN_RESOURCES_APPLICATION_SUBMITTED_EVENT =
+	"human-resources.application.submitted.v1" as const;
+export const HUMAN_RESOURCES_APPLICATION_STAGE_CHANGED_EVENT =
+	"human-resources.application.stage-changed.v1" as const;
+export const HUMAN_RESOURCES_APPLICATION_REJECTED_EVENT =
+	"human-resources.application.rejected.v1" as const;
+export const HUMAN_RESOURCES_APPLICATION_WITHDRAWN_EVENT =
+	"human-resources.application.withdrawn.v1" as const;
+export const HUMAN_RESOURCES_INTERVIEW_SCHEDULED_EVENT =
+	"human-resources.interview.scheduled.v1" as const;
+export const HUMAN_RESOURCES_INTERVIEW_COMPLETED_EVENT =
+	"human-resources.interview.completed.v1" as const;
+export const HUMAN_RESOURCES_OFFER_ISSUED_EVENT =
+	"human-resources.offer.issued.v1" as const;
+export const HUMAN_RESOURCES_OFFER_REJECTED_EVENT =
+	"human-resources.offer.rejected.v1" as const;
+export const HUMAN_RESOURCES_OFFER_WITHDRAWN_EVENT =
+	"human-resources.offer.withdrawn.v1" as const;
+export const HUMAN_RESOURCES_OFFER_EXPIRED_EVENT =
+	"human-resources.offer.expired.v1" as const;
 export const HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT =
 	"human-resources.offer.accepted.v1" as const;
 export const HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT =
@@ -48,6 +113,16 @@ export const HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT =
 	"human-resources.offboarding.started.v1" as const;
 export const HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT =
 	"human-resources.offboarding.completed.v1" as const;
+export const HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT =
+	"human-resources.probation.extended.v1" as const;
+export const HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT =
+	"human-resources.probation.reviewed.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT =
+	"human-resources.employee.confirmed.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT =
+	"human-resources.employee.rehired.v1" as const;
+export const HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT =
+	"human-resources.clearance.completed.v1" as const;
 export const HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT =
 	"human-resources.compensation.changed.v1" as const;
 export const HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT =
@@ -106,36 +181,64 @@ export const HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT =
 	"human-resources.employee-document.registered.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT =
 	"human-resources.employee-document.verified.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT =
+	"human-resources.employee-document.rejected.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT =
+	"human-resources.employee-document.expired.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT =
 	"human-resources.employee-document.nearing-expiry.v1" as const;
+export const HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT =
+	"human-resources.work-eligibility.verified.v1" as const;
 export const HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT =
 	"human-resources.work-eligibility.suspended.v1" as const;
+export const HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT =
+	"human-resources.work-eligibility.renewed.v1" as const;
+export const HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT =
+	"human-resources.work-eligibility.expired.v1" as const;
 export const HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT =
 	"human-resources.policy-acknowledgement.outstanding.v1" as const;
 export const HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT =
 	"human-resources.policy-acknowledgement.acknowledged.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT =
 	"human-resources.employee-case.opened.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT =
+	"human-resources.employee-case.assigned.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT =
 	"human-resources.employee-case.interim-measure-issued.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT =
 	"human-resources.employee-case.finding-recorded.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT =
 	"human-resources.employee-case.action-approved.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT =
+	"human-resources.employee-case.appealed.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT =
 	"human-resources.employee-case.appeal-resolved.v1" as const;
 export const HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT =
 	"human-resources.employee-case.closed.v1" as const;
+export const HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT =
+	"human-resources.employee-case.reopened.v1" as const;
 export const HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT =
 	"human-resources.competency.assessed.v1" as const;
+export const HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT =
+	"human-resources.talent-profile.updated.v1" as const;
 export const HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT =
 	"human-resources.talent-pool.membership-approved.v1" as const;
+export const HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT =
+	"human-resources.talent-pool.member-removed.v1" as const;
 export const HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT =
 	"human-resources.career-plan.acknowledged.v1" as const;
 export const HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT =
 	"human-resources.succession-candidate.approved.v1" as const;
 export const HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT =
 	"human-resources.succession.readiness-changed.v1" as const;
+export const HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT =
+	"human-resources.headcount-plan.approved.v1" as const;
+export const HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT =
+	"human-resources.headcount.reserved.v1" as const;
+export const HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT =
+	"human-resources.headcount.reservation-released.v1" as const;
+export const HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT =
+	"human-resources.headcount.reservation-consumed.v1" as const;
 
 export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_PERSON_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
@@ -143,14 +246,62 @@ export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_WORKER_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_WORKER_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
-	[HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT]:
+		humanResourcesEffectiveDatedEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT]:
-		humanResourcesEntityPayloadSchema,
+		humanResourcesEffectiveDatedEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT]:
+		humanResourcesEffectiveDatedEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT]:
+		humanResourcesEffectiveDatedEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_JOB_ACTIVATED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_JOB_ARCHIVED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_POSITION_FROZEN_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_POSITION_CLOSED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REQUISITION_OPENED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_REQUISITION_CLOSED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_CANDIDATE_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_CANDIDATE_CONSENT_WITHDRAWN_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_CANDIDATE_RETENTION_CHANGED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_APPLICATION_SUBMITTED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_APPLICATION_STAGE_CHANGED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_APPLICATION_REJECTED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_APPLICATION_WITHDRAWN_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_INTERVIEW_SCHEDULED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_INTERVIEW_COMPLETED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_OFFER_ISSUED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_OFFER_REJECTED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_OFFER_WITHDRAWN_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_OFFER_EXPIRED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT]:
@@ -158,6 +309,11 @@ export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT]:
 		humanResourcesEntityPayloadSchema,
@@ -212,9 +368,19 @@ export const HumanResourcesEventSchemas = {
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT]:
 		humanResourcesEntityPayloadSchema,
@@ -222,25 +388,43 @@ export const HumanResourcesEventSchemas = {
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 } as const;
 
@@ -256,12 +440,45 @@ export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
+	HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_JOB_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_JOB_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_POSITION_FROZEN_EVENT,
+	HUMAN_RESOURCES_POSITION_CLOSED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
+	HUMAN_RESOURCES_REQUISITION_OPENED_EVENT,
+	HUMAN_RESOURCES_REQUISITION_CLOSED_EVENT,
+	HUMAN_RESOURCES_CANDIDATE_CREATED_EVENT,
+	HUMAN_RESOURCES_CANDIDATE_CONSENT_WITHDRAWN_EVENT,
+	HUMAN_RESOURCES_CANDIDATE_RETENTION_CHANGED_EVENT,
+	HUMAN_RESOURCES_APPLICATION_SUBMITTED_EVENT,
+	HUMAN_RESOURCES_APPLICATION_STAGE_CHANGED_EVENT,
+	HUMAN_RESOURCES_APPLICATION_REJECTED_EVENT,
+	HUMAN_RESOURCES_APPLICATION_WITHDRAWN_EVENT,
+	HUMAN_RESOURCES_INTERVIEW_SCHEDULED_EVENT,
+	HUMAN_RESOURCES_INTERVIEW_COMPLETED_EVENT,
+	HUMAN_RESOURCES_OFFER_ISSUED_EVENT,
+	HUMAN_RESOURCES_OFFER_REJECTED_EVENT,
+	HUMAN_RESOURCES_OFFER_WITHDRAWN_EVENT,
+	HUMAN_RESOURCES_OFFER_EXPIRED_EVENT,
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
+	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
+	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
 	HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
@@ -291,19 +508,33 @@ export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT,
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
+	HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT,
+	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
 	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
 ] as const satisfies readonly HumanResourcesEventType[];

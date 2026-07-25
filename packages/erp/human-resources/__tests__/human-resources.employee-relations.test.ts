@@ -36,6 +36,7 @@ import {
 	reopenEmployeeCase,
 } from "../src/employee-relations/employee-case";
 import {
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -345,7 +346,7 @@ describe("Employee relations case lifecycle", () => {
 		);
 		expect(outsiderRead.ok).toBe(false);
 		expect(humanResourcesCodeFromResult(outsiderRead)).toBe(
-			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 		);
 
 		const ownerRead = await getEmployeeCaseById(

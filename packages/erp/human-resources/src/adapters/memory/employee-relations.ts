@@ -7,11 +7,14 @@ import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT,
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
 
@@ -656,6 +659,19 @@ export function createMemoryEmployeeRelationsMethods(
 				state.cases.set(loaded.data.id, loaded.data);
 				state.events.delete(event.data.id);
 				return audit;
+			}
+
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT,
+				entityType: "hr_employee_case",
+				entityId: input.caseId,
+			});
+			if (!outbox.ok) {
+				state.cases.set(loaded.data.id, loaded.data);
+				state.events.delete(event.data.id);
+				return outbox;
 			}
 
 			return ok(cloneCase(updated));
@@ -1432,6 +1448,21 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				type: HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
+				entityType: "hr_employee_case",
+				entityId: record.caseId,
+			});
+			if (!outbox.ok) {
+				state.appeals.delete(appeal.id);
+				state.cases.set(loaded.data.id, loaded.data);
+				state.appealIdempotency.delete(idempotencyKey);
+				state.events.delete(event.data.id);
+				return outbox;
+			}
+
 			return ok(cloneAppeal(appeal));
 		},
 
@@ -1666,6 +1697,19 @@ export function createMemoryEmployeeRelationsMethods(
 				state.cases.set(loaded.data.id, loaded.data);
 				state.events.delete(event.data.id);
 				return audit;
+			}
+
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT,
+				entityType: "hr_employee_case",
+				entityId: input.caseId,
+			});
+			if (!outbox.ok) {
+				state.cases.set(loaded.data.id, loaded.data);
+				state.events.delete(event.data.id);
+				return outbox;
 			}
 
 			return ok(cloneCase(updated));

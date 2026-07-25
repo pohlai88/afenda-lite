@@ -1,0 +1,114 @@
+import {
+	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
+	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
+} from "@afenda/events/schemas";
+import { describe, expect, it } from "vitest";
+
+import { HUMAN_RESOURCES_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/lifecycle";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import {
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+	HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+} from "../src/module-ids";
+
+const EXPECTED_MATRIX: Record<
+	string,
+	{ emission: "audit_only" | "domain_event"; eventTypes?: readonly string[] }
+> = {
+	[HUMAN_RESOURCES_COMMAND_ONBOARDING_START]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK]: { emission: "audit_only" },
+	[HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_PROBATION_OPEN]: { emission: "audit_only" },
+	[HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_START]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK]: { emission: "audit_only" },
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW]: {
+		emission: "audit_only",
+	},
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT],
+	},
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE]: {
+		emission: "domain_event",
+		eventTypes: [HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT],
+	},
+};
+
+describe("lifecycle emission registry", () => {
+	it("registers every lifecycle command exactly once in domain file", () => {
+		expect(Object.keys(HUMAN_RESOURCES_LIFECYCLE_EMISSIONS)).toEqual([
+			...HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+		]);
+	});
+
+	it("matches the locked 14-row mode/eventType matrix", () => {
+		for (const commandId of HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS) {
+			const expected = EXPECTED_MATRIX[commandId];
+			expect(expected).toBeDefined();
+
+			const definition =
+				HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD[commandId];
+			expect(definition).toBeDefined();
+			expect(definition?.emissionMode).toBe(expected.emission);
+			expect(definition?.auditRequired).toBe(true);
+			expect(definition?.correlationRequired).toBe(true);
+
+			if (expected.emission === "audit_only") {
+				expect(definition?.eventTypes).toEqual([]);
+				continue;
+			}
+
+			expect(definition?.eventTypes).toEqual(expected.eventTypes);
+		}
+	});
+});

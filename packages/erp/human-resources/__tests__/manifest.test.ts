@@ -161,7 +161,7 @@ describe("humanResourcesModuleManifest", () => {
 	});
 
 	it("keeps the kernel error catalog complete", () => {
-		expect(HUMAN_RESOURCES_ERROR_CODE_LIST).toHaveLength(29);
+		expect(HUMAN_RESOURCES_ERROR_CODE_LIST).toHaveLength(30);
 		expect(HUMAN_RESOURCES_ERROR_CODES.INVALID_INPUT).toBe(
 			"human_resources.invalid_input",
 		);

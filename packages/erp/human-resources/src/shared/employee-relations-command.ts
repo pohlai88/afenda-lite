@@ -1,11 +1,5 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
-
-import {
-	type HumanResourcesAuthorizationPort,
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
 import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
@@ -19,14 +13,20 @@ import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import type {
+	HumanResourcesAuthorizationPort,
+	HumanResourcesFieldProjection,
+	HumanResourcesResourceContext,
+} from "./authorization-types";
+import {
+	runParsedAuthorizedCommand,
+	runParsedAuthorizedQuery,
+} from "./domain-runner";
+import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
 
-type ActorScoped = {
-	organizationId: string;
-	actorUserId: string;
-};
+type ActorScoped = HumanResourcesAuthorizedActorInput;
 
 type CommandDeps = {
 	store: HumanResourcesStore;
@@ -57,34 +57,17 @@ export async function runEmployeeRelationsCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization, identityResolver } =
-		resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: config.command,
+	return runParsedAuthorizedCommand(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
+		command: config.command,
+		parityResourceKind: "employee_case",
+		resolveDeps: (opts) => {
+			const { store, ports, authorization, identityResolver } =
+				resolveCommandDeps(opts);
+			return ok({ store, ports, authorization, identityResolver });
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, {
-		store,
-		ports,
-		authorization,
-		identityResolver,
+		execute: config.execute,
 	});
 }
 
@@ -98,33 +81,30 @@ export async function runEmployeeRelationsQuery<
 		schema: TSchema;
 		invalidMessage: string;
 		query: HumanResourcesQueryId;
+		resolveResource?: (
+			data: z.infer<TSchema>,
+			options: HumanResourcesCommandOptions,
+		) => Promise<HumanResourcesResourceContext | undefined>;
+		project?: (
+			value: TOut,
+			projection: HumanResourcesFieldProjection | undefined,
+		) => TOut;
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization, identityResolver } =
-		resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runParsedAuthorizedQuery(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
 		query: config.query,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, {
-		store,
-		authorization,
-		identityResolver,
+		parityResourceKind: "employee_case",
+		resolveResource: config.resolveResource,
+		project: config.project,
+		resolveDeps: (opts) => {
+			const { store, authorization, identityResolver } =
+				resolveCommandDeps(opts);
+			return ok({ store, authorization, identityResolver });
+		},
+		execute: config.execute,
 	});
 }
 
@@ -138,5 +118,5 @@ export async function requireEmployeeRelationsIdentityResolver(
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 		);
 	}
-	return { ok: true, data: identityResolver };
+	return ok(identityResolver);
 }

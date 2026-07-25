@@ -1,0 +1,152 @@
+import {
+	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
+	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
+} from "@afenda/events/schemas";
+
+import {
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+	HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+	type HumanResourcesLifecycleCommandId,
+} from "../../module-ids";
+
+import {
+	defineAuditOnlyEmission,
+	defineDomainEventEmission,
+} from "../define-emission";
+import type { HumanResourcesMutationEmissionDefinition } from "../types";
+
+export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
+	[HUMAN_RESOURCES_COMMAND_ONBOARDING_START]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
+		{
+			domain: "lifecycle",
+			aggregateType: "onboarding_case",
+			eventTypes: [HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+		{
+			domain: "lifecycle",
+			aggregateType: "onboarding_task",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+		{
+			domain: "lifecycle",
+			aggregateType: "onboarding_case",
+			eventTypes: [HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_PROBATION_OPEN]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+		{
+			domain: "lifecycle",
+			aggregateType: "probation_review",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+		{
+			domain: "lifecycle",
+			aggregateType: "probation_review",
+			eventTypes: [HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+		{
+			domain: "lifecycle",
+			aggregateType: "probation_review",
+			eventTypes: [HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+		{
+			domain: "lifecycle",
+			aggregateType: "employment_confirmation",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+		{
+			domain: "lifecycle",
+			aggregateType: "employment_movement",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+		{
+			domain: "lifecycle",
+			aggregateType: "termination",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_START]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+		{
+			domain: "lifecycle",
+			aggregateType: "offboarding_case",
+			eventTypes: [HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+		{
+			domain: "lifecycle",
+			aggregateType: "offboarding_task",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+			{
+				domain: "lifecycle",
+				aggregateType: "exit_interview",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+			{
+				domain: "lifecycle",
+				aggregateType: "clearance",
+				eventTypes: [HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
+		{
+			domain: "lifecycle",
+			aggregateType: "offboarding_case",
+			eventTypes: [HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT] as const,
+		},
+	),
+} satisfies Record<
+	HumanResourcesLifecycleCommandId,
+	HumanResourcesMutationEmissionDefinition
+>;

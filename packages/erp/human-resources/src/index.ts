@@ -1,7 +1,6 @@
 // Main exports for @afenda/human-resources package
 import "server-only";
 
-export * from "./authorization";
 export * from "./brands";
 export * from "./command-options";
 export * from "./compensation-benefits/benefit-enrollment";
@@ -58,6 +57,7 @@ export * from "./permissions";
 // Ports and options
 export type * from "./ports";
 export * from "./privacy";
+export * from "./privacy/operations";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
 export { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 export { createProductionAttendanceSource } from "./production-attendance-source";
@@ -69,8 +69,15 @@ export * from "./recruitment/offer";
 export * from "./recruitment/requisition";
 export * from "./schemas";
 export * from "./sensitive-operation-policies";
+export * from "./shared/authorization-policy-registry";
+export * from "./shared/authorization-policy-types";
+export * from "./shared/authorization-types";
 export * from "./shared/contextual-authorization";
+export * from "./shared/domain-runner";
 export * from "./shared/field-projection";
+export * from "./shared/manifest-permission";
+export * from "./shared/run-authorized-operation";
+export * from "./shared/sensitive-field-types";
 export type * from "./store";
 // Store resolver removed - internal only
 export * from "./talent/career-plan";

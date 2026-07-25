@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT,
+	type HumanResourcesEventType,
+} from "@afenda/events/schemas";
+import {
 	type HumanResourcesHeadcountPlanId,
 	type HumanResourcesHeadcountPlanLineId,
 	type HumanResourcesHeadcountReservationId,
@@ -93,6 +100,32 @@ async function recordAudit(
 		entityId: input.entityId,
 		action: input.action,
 		changes: [],
+	});
+}
+
+async function recordOutbox(
+	ports: MutationPorts,
+	meta: HumanResourcesMutationMeta,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		type: HumanResourcesEventType;
+		entityType: string;
+		entityId: string;
+	},
+): Promise<Result<{ id: string }>> {
+	return ports.outbox.append({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		type: input.type,
+		payload: {
+			organizationId: input.organizationId,
+			entityType: input.entityType,
+			entityId: input.entityId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		},
 	});
 }
 
@@ -209,6 +242,22 @@ async function transitionHeadcountReservationStatus(
 	if (!audit.ok) {
 		state.headcountReservations.set(updated.id, previous);
 		return audit;
+	}
+
+	const outboxType =
+		input.nextStatus === "released"
+			? HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT
+			: HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT;
+	const outbox = await recordOutbox(input.ports, input.meta, {
+		organizationId: updated.organizationId,
+		actorUserId: input.actorUserId,
+		type: outboxType,
+		entityType: "hr_headcount_reservation",
+		entityId: updated.id,
+	});
+	if (!outbox.ok) {
+		state.headcountReservations.set(updated.id, previous);
+		return outbox;
 	}
 
 	return ok({ ...updated });
@@ -497,6 +546,23 @@ export function createMemoryWorkforcePlanningMethods(
 					state.headcountPlans.set(supersededPrevious.id, supersededPrevious);
 				}
 				return audit;
+			}
+
+			if (input.status === "approved") {
+				const outbox = await recordOutbox(ports, meta, {
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					type: HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
+					entityType: "hr_headcount_plan",
+					entityId: updated.id,
+				});
+				if (!outbox.ok) {
+					state.headcountPlans.set(updated.id, previous);
+					if (supersededPrevious) {
+						state.headcountPlans.set(supersededPrevious.id, supersededPrevious);
+					}
+					return outbox;
+				}
 			}
 
 			return ok({ ...updated });
@@ -973,6 +1039,21 @@ export function createMemoryWorkforcePlanningMethods(
 					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
 				);
 				return audit;
+			}
+
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: reservation.organizationId,
+				actorUserId: reservation.createdBy,
+				type: HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
+				entityType: "hr_headcount_reservation",
+				entityId: reservation.id,
+			});
+			if (!outbox.ok) {
+				state.headcountReservations.delete(reservation.id);
+				state.headcountReservationIdempotency.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return outbox;
 			}
 
 			return ok({ ...reservation });

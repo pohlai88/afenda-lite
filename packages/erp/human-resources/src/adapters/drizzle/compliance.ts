@@ -16,12 +16,17 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT,
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT,
 } from "@afenda/events/schemas";
 
 import {
@@ -1347,6 +1352,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			"rejected",
 		);
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = complianceEntityPayload({
+			organizationId: input.organizationId,
+			entityType: "hr_employee_document",
+			entityId: input.documentId,
+			actorId: input.actorUserId,
+			meta,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[EmployeeDocumentSqlRow[]]>(
@@ -1377,8 +1390,21 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REJECTED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -1497,6 +1523,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			"expired",
 		);
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = complianceEntityPayload({
+			organizationId: input.organizationId,
+			entityType: "hr_employee_document",
+			entityId: input.documentId,
+			actorId: input.actorUserId,
+			meta,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[EmployeeDocumentSqlRow[]]>(
@@ -1526,8 +1560,21 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								'human-resources', 'hr_employee_document', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -1905,6 +1952,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			"active",
 		);
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = complianceEntityPayload({
+			organizationId: input.organizationId,
+			entityType: "hr_work_eligibility",
+			entityId: input.eligibilityId,
+			actorId: input.actorUserId,
+			meta,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[WorkEligibilitySqlRow[]]>(
@@ -1934,8 +1989,21 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -2081,6 +2149,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			input.expiresOn,
 		);
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = complianceEntityPayload({
+			organizationId: input.organizationId,
+			entityType: "hr_work_eligibility",
+			entityId: input.eligibilityId,
+			actorId: input.actorUserId,
+			meta,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[WorkEligibilitySqlRow[]]>(
@@ -2110,8 +2186,21 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_WORK_ELIGIBILITY_RENEWED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -2155,6 +2244,14 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			"closed",
 		);
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = complianceEntityPayload({
+			organizationId: input.organizationId,
+			entityType: "hr_work_eligibility",
+			entityId: input.eligibilityId,
+			actorId: input.actorUserId,
+			meta,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[WorkEligibilitySqlRow[]]>(
@@ -2182,8 +2279,21 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								'human-resources', 'hr_work_eligibility', id, 'UPDATE', ${changesJson}::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_WORK_ELIGIBILITY_EXPIRED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);

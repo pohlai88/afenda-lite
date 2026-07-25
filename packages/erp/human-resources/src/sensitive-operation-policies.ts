@@ -1,11 +1,13 @@
-import type {
-	HumanResourcesCommandId,
-	HumanResourcesQueryId,
+import {
+	HUMAN_RESOURCES_COMMAND_IDS,
+	HUMAN_RESOURCES_QUERY_IDS,
+	type HumanResourcesCommandId,
+	type HumanResourcesQueryId,
 } from "./module-ids";
 import type {
 	HumanResourcesSensitiveFieldClass,
 	HumanResourcesSensitiveResourceType,
-} from "./shared/contextual-authorization";
+} from "./shared/sensitive-field-types";
 
 export type HumanResourcesSensitiveOperationId =
 	| HumanResourcesCommandId
@@ -14,6 +16,7 @@ export type HumanResourcesSensitiveOperationId =
 export type HumanResourcesSubjectPolicy =
 	| "subject_or_privileged"
 	| "manager_or_privileged"
+	| "subject_manager_or_privileged"
 	| "assigned_or_privileged"
 	| "privileged_only";
 
@@ -107,11 +110,28 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 	},
 	{
 		operationPrefixes: [
+			"human-resources.competency-assessment.",
+			"human-resources.employee-competency-profile.",
+		],
+		resourceType: "succession",
+		subjectPolicy: "subject_manager_or_privileged",
+		fieldClasses: ["succession"],
+	},
+	{
+		operationPrefixes: [
 			"human-resources.talent-profile.",
 			"human-resources.talent-profile-assessment.",
+			"human-resources.talent-pool.",
 			"human-resources.talent-pool-member.",
 			"human-resources.career-plan.",
 			"human-resources.career-plan-action.",
+		],
+		resourceType: "succession",
+		subjectPolicy: "subject_manager_or_privileged",
+		fieldClasses: ["succession"],
+	},
+	{
+		operationPrefixes: [
 			"human-resources.succession-plan.",
 			"human-resources.succession-candidate.",
 			"human-resources.position-succession-coverage.",
@@ -134,3 +154,11 @@ export function humanResourcesSensitiveOperationPolicy(
 	}
 	return null;
 }
+
+export const HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS = [
+	...HUMAN_RESOURCES_COMMAND_IDS,
+	...HUMAN_RESOURCES_QUERY_IDS,
+].filter(
+	(operationId): operationId is HumanResourcesSensitiveOperationId =>
+		humanResourcesSensitiveOperationPolicy(operationId) !== null,
+);

@@ -1,0 +1,169 @@
+import {
+	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT,
+} from "@afenda/events/schemas";
+
+import {
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+	type HumanResourcesEmployeeRelationsCommandId,
+} from "../../module-ids";
+
+import {
+	defineAuditOnlyEmission,
+	defineDomainEventEmission,
+} from "../define-emission";
+import type { HumanResourcesMutationEmissionDefinition } from "../types";
+
+export const HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS = {
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+		{
+			domain: "employee-relations",
+			aggregateType: "employee_case",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+				eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
+		{
+			domain: "employee-relations",
+			aggregateType: "employee_case",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+				eventTypes: [
+					HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT,
+				] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+				eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+				eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+				eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
+			{
+				domain: "employee-relations",
+				aggregateType: "employee_case",
+				eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+		{
+			domain: "employee-relations",
+			aggregateType: "employee_case",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+		{
+			domain: "employee-relations",
+			aggregateType: "employee_case",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT] as const,
+		},
+	),
+} satisfies Record<
+	HumanResourcesEmployeeRelationsCommandId,
+	HumanResourcesMutationEmissionDefinition
+>;

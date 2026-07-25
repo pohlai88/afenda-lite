@@ -18,6 +18,7 @@ import {
 	openEmployeeCase,
 } from "../src/employee-relations/employee-case";
 import {
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 } from "../src/error-codes";
@@ -250,7 +251,7 @@ describe("employee relations case list ACL", () => {
 		);
 		expect(direct.ok).toBe(false);
 		expect(humanResourcesCodeFromResult(direct)).toBe(
-			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 		);
 
 		const listed = await listEmployeeCases(
@@ -291,7 +292,7 @@ describe("employee relations case list ACL", () => {
 		);
 		expect(timeline.ok).toBe(false);
 		expect(humanResourcesCodeFromResult(timeline)).toBe(
-			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 		);
 
 		const outcome = await getEmployeeCaseOutcome(
@@ -305,7 +306,7 @@ describe("employee relations case list ACL", () => {
 		);
 		expect(outcome.ok).toBe(false);
 		expect(humanResourcesCodeFromResult(outcome)).toBe(
-			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 		);
 	});
 
@@ -403,8 +404,9 @@ describe("employee relations case list ACL", () => {
 		expect(listed.data.cases).toHaveLength(1);
 		const row = listed.data.cases[0];
 		expect(row?.classificationCode).toBe("CONDUCT-01");
-		expect(row?.allegationSummary).toBeUndefined();
-		expect(row?.findingSummary).toBeUndefined();
+		expect(row?.allegationSummary).toBe("Sensitive allegation narrative");
+		expect(row?.findingSummary).toBeNull();
+		expect(typeof row?.createdAt).toBe("string");
 	});
 
 	it("allows participant visibility with reduced projection", async () => {

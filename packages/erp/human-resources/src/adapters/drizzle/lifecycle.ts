@@ -18,12 +18,16 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
+	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
 } from "@afenda/events/schemas";
 
 import {
@@ -1245,6 +1249,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
 				(sqlTag) => [
@@ -1271,8 +1276,27 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								'human-resources', 'hr_probation_review', id, 'UPDATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'hr_probation_review',
+									'entityId', id,
+									'actorId', ${input.actorUserId}::text,
+									'correlationId', ${meta.correlationId}::text
+								),
+								'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -1308,6 +1332,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[ProbationSqlRow[]]>(
 				(sqlTag) => [
@@ -1337,8 +1362,27 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								'human-resources', 'hr_probation_review', id, 'UPDATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'hr_probation_review',
+									'entityId', id,
+									'actorId', ${input.actorUserId}::text,
+									'correlationId', ${meta.correlationId}::text
+								),
+								'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -1462,6 +1506,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		const brandedId = parseHumanResourcesEmploymentConfirmationId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<[ConfirmationSqlRow[]]>(
 				(sqlTag) => [
@@ -1498,8 +1543,27 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								'[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT},
+								'human-resources', ${meta.correlationId}, created_by,
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'hr_employee',
+									'entityId', employee_id::text,
+									'actorId', created_by,
+									'correlationId', ${meta.correlationId}::text
+								),
+								'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);
@@ -1771,7 +1835,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 									'entityType', 'hr_employee',
 									'entityId', employee_id::text,
 									'actorId', ${input.actorUserId}::text,
-									'correlationId', ${meta.correlationId}::text
+									'correlationId', ${meta.correlationId}::text,
+									'effectiveOn', effective_on::text
 								),
 								'pending', 0
 							FROM mutated
@@ -1965,7 +2030,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 									'entityType', 'hr_employee',
 									'entityId', employee_id::text,
 									'actorId', ${record.createdBy}::text,
-									'correlationId', ${meta.correlationId}::text
+									'correlationId', ${meta.correlationId}::text,
+									'effectiveOn', effective_on::text
 								),
 								'pending', 0
 							FROM mutated
@@ -2390,6 +2456,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 	async recordClearance(input, _ports, meta) {
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[{ offboarding_case_id: string }[]]
@@ -2410,7 +2477,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								AND oc.id = c.offboarding_case_id
 								AND oc.organization_id = c.organization_id
 								AND oc.status = 'in_progress'
-							RETURNING c.offboarding_case_id
+							RETURNING c.id, c.organization_id, c.offboarding_case_id
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -2423,8 +2490,27 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								${input.clearanceId}, 'UPDATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'hr_clearance',
+									'entityId', id::text,
+									'actorId', ${input.actorUserId}::text,
+									'correlationId', ${meta.correlationId}::text
+								),
+								'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 			]);
 			const row = rows[0];

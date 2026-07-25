@@ -1,4 +1,3 @@
-import type { HumanResourcesPermission } from "../authorization";
 import {
 	HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
@@ -10,11 +9,13 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_SUCCESSION_EXECUTIVE_READ,
 	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
+	type HumanResourcesPermission,
 } from "../permissions";
+import type { HumanResourcesFieldProjection } from "./authorization-types";
 import type {
 	HumanResourcesSensitiveFieldClass,
 	HumanResourcesSensitiveResourceType,
-} from "./contextual-authorization";
+} from "./sensitive-field-types";
 
 export type SensitivityLevel = "standard" | "sensitive" | "highly_restricted";
 
@@ -23,19 +24,48 @@ export interface ProjectedData<T> {
 	redactedFields: string[];
 }
 
+/** Tiered compensation field classes — managers must not inherit payroll handoff. */
+export const COMPENSATION_FIELD_CLASSES = {
+	public: ["currencyCode", "payFrequency"],
+	manager: ["gradeCode", "bandCode"],
+	confidential: ["baseAmount", "allowances", "benefits", "reviewProposal"],
+	payroll: [
+		"baseAmount",
+		"currencyCode",
+		"payFrequency",
+		"effectiveFrom",
+		"effectiveTo",
+	],
+} as const;
+
+export type CompensationFieldAccessTier =
+	| "public"
+	| "manager"
+	| "confidential"
+	| "payroll";
+
+/** Employee-level actuals blocked on broad workforce-plan read permissions. */
+export const WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS = [
+	"employeeId",
+	"subjectEmployeeId",
+	"actualEmployeeIds",
+	"employeeActuals",
+	"fteByEmployee",
+	"headcountByEmployee",
+] as const;
+
 const COMPENSATION_SENSITIVE_FIELDS = [
-	"baseAmount",
+	...COMPENSATION_FIELD_CLASSES.confidential,
+	...COMPENSATION_FIELD_CLASSES.payroll,
+	...COMPENSATION_FIELD_CLASSES.manager,
 	"baseSalary",
 	"totalCompensation",
 	"salaryGrade",
 	"payBand",
 	"bonus",
 	"equity",
-	"benefits",
 	"currency",
-	"currencyCode",
 	"bands",
-	"effectiveFrom",
 ] as const;
 
 const MEDICAL_SENSITIVE_FIELDS = [
@@ -58,17 +88,22 @@ const EMPLOYEE_RELATIONS_SENSITIVE_FIELDS = [
 	"evidence",
 ] as const;
 
-const HIGHLY_RESTRICTED_FIELDS = [
+/** Identifier / PII fields masked unless identity-document sensitive read is held. */
+export const PERSONAL_IDENTIFIER_MASK_FIELDS = [
+	"identifierLast4",
+	"identifierFingerprint",
+	"documentRef",
 	"ssn",
 	"socialSecurityNumber",
 	"taxId",
+] as const;
+
+const HIGHLY_RESTRICTED_FIELDS = [
+	...PERSONAL_IDENTIFIER_MASK_FIELDS,
 	"bankAccount",
 	"emergencyContacts",
 	"personalPhoneNumber",
 	"homeAddress",
-	"identifierLast4",
-	"identifierFingerprint",
-	"documentRef",
 ] as const;
 
 const BACKGROUND_CHECK_SENSITIVE_FIELDS = [
@@ -87,7 +122,18 @@ const SUCCESSION_SENSITIVE_FIELDS = [
 	"potentialRating",
 	"successionRank",
 	"developmentGap",
+	"currentClassification",
+	"readiness",
+	"readinessEffectiveOn",
+	"evidenceSummary",
+	"level",
+	"evidenceSource",
+	"classification",
 ] as const;
+
+/** Succession / talent sensitive field inventory for projection tests and runners. */
+export const TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES =
+	SUCCESSION_SENSITIVE_FIELDS;
 
 const FIELD_CLASS_FIELDS = {
 	personal_identifiers: HIGHLY_RESTRICTED_FIELDS,
@@ -100,6 +146,107 @@ const FIELD_CLASS_FIELDS = {
 	HumanResourcesSensitiveFieldClass,
 	readonly string[]
 >;
+
+/**
+ * Partition requested field names into allowed vs denied using sensitive
+ * field-class inventories. Non-sensitive requested fields are allowed.
+ */
+export function partitionRequestedFieldsBySensitivity(input: {
+	requestedFields: readonly string[];
+	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
+	actorPermissions: ReadonlySet<HumanResourcesPermission>;
+}): HumanResourcesFieldProjection {
+	const denied = new Set<string>();
+	for (const fieldClass of input.fieldClasses) {
+		if (canReadFieldClass(fieldClass, input.actorPermissions)) continue;
+		for (const field of FIELD_CLASS_FIELDS[fieldClass]) {
+			denied.add(field);
+		}
+	}
+	return partitionAgainstDeniedSet(input.requestedFields, denied);
+}
+
+/**
+ * Partition compensation fields by access tier. Managers receive public+manager
+ * only; payroll handoff requires the payroll tier.
+ */
+export function partitionCompensationFieldsByTier(input: {
+	requestedFields: readonly string[];
+	tier: CompensationFieldAccessTier;
+}): HumanResourcesFieldProjection {
+	const allowedSet = new Set<string>(compensationFieldsForTier(input.tier));
+	const knownCompensationFields = new Set<string>([
+		...COMPENSATION_FIELD_CLASSES.public,
+		...COMPENSATION_FIELD_CLASSES.manager,
+		...COMPENSATION_FIELD_CLASSES.confidential,
+		...COMPENSATION_FIELD_CLASSES.payroll,
+	]);
+	const allowedFields: string[] = [];
+	const deniedFields: string[] = [];
+	for (const field of input.requestedFields) {
+		if (!knownCompensationFields.has(field) || allowedSet.has(field)) {
+			allowedFields.push(field);
+		} else {
+			deniedFields.push(field);
+		}
+	}
+	return { allowedFields, deniedFields };
+}
+
+export function compensationFieldsForTier(
+	tier: CompensationFieldAccessTier,
+): readonly string[] {
+	switch (tier) {
+		case "public":
+			return COMPENSATION_FIELD_CLASSES.public;
+		case "manager":
+			return [
+				...COMPENSATION_FIELD_CLASSES.public,
+				...COMPENSATION_FIELD_CLASSES.manager,
+			];
+		case "confidential":
+			return [
+				...COMPENSATION_FIELD_CLASSES.public,
+				...COMPENSATION_FIELD_CLASSES.manager,
+				...COMPENSATION_FIELD_CLASSES.confidential,
+			];
+		case "payroll":
+			return [
+				...COMPENSATION_FIELD_CLASSES.public,
+				...COMPENSATION_FIELD_CLASSES.manager,
+				...COMPENSATION_FIELD_CLASSES.confidential,
+				...COMPENSATION_FIELD_CLASSES.payroll,
+			];
+		default: {
+			const _exhaustive: never = tier;
+			return _exhaustive;
+		}
+	}
+}
+
+/** Deny employee-level actual fields on workforce-plan reads. */
+export function partitionWorkforcePlanningReadFields(input: {
+	requestedFields: readonly string[];
+}): HumanResourcesFieldProjection {
+	const denied = new Set<string>(WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS);
+	return partitionAgainstDeniedSet(input.requestedFields, denied);
+}
+
+function partitionAgainstDeniedSet(
+	requestedFields: readonly string[],
+	denied: ReadonlySet<string>,
+): HumanResourcesFieldProjection {
+	const allowedFields: string[] = [];
+	const deniedFields: string[] = [];
+	for (const field of requestedFields) {
+		if (denied.has(field)) {
+			deniedFields.push(field);
+		} else {
+			allowedFields.push(field);
+		}
+	}
+	return { allowedFields, deniedFields };
+}
 
 function canReadFieldClass(
 	fieldClass: HumanResourcesSensitiveFieldClass,

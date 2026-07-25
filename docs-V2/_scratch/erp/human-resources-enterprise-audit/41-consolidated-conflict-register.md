@@ -54,10 +54,10 @@ Canonical IDs only. **Aliases** absorbed into parent findings.
 
 | Canonical ID | Aliases (do not duplicate) | Sev | Concern bucket | HR-ENT | Owner mission |
 |---|---|---|---|---|---|
-| HR-XCUT-P0-001 | — | P0 | package contract | HR-ENT-06 | HR-ENT-04-AUTH-PRIVACY |
+| HR-XCUT-P0-001 | — | P0→**closed** | package contract | HR-ENT-06 | HR-ENT-04-AUTH-PRIVACY (**CLOSED** Slice 2.10) |
 | HR-XCUT-P0-002 | HR-OPS-P1-004; HR-COREORG-P1-003 | P0 | architecture decision | HR-ENT-05 | HR-ENT-03-EFFECTIVE-TRUTH |
-| HR-XCUT-P0-003 | HR-COREORG-P0-002; HR-OPS-P0-001; HR-GOV-P0-002 | P0 | package contract | HR-ENT-13 | HR-XCUT-EMISSION-REGISTRY |
-| HR-XCUT-P0-004 | HR-GOV-P0-003 | P0 | application composition | HR-ENT-07 | HR-ENT-04-AUTH-PRIVACY |
+| HR-XCUT-P0-003 | HR-COREORG-P0-002; HR-OPS-P0-001 (**leave tranche closed** 2026-07-25); HR-GOV-P0-002 | P0 | package contract | HR-ENT-13 | HR-XCUT-EMISSION-REGISTRY |
+| HR-XCUT-P0-004 | HR-GOV-P0-003 | P0→**closed** | application composition | HR-ENT-07 | HR-ENT-04-AUTH-PRIVACY (**CLOSED** Slice 2.10) |
 | HR-GOV-P0-001 | — | P0→**closed** | authorization (see reconciliation) | HR-ENT-06, HR-ENT-07 | HR-ENT-ER-CASE-LIST-ACL (**CLOSED**; ER DB parity = evidence residual only) |
 | HR-COREORG-P0-001 | HR-COREORG-P1-001 | P0→**closed** | database + package contract | HR-ENT-07, HR-ENT-16, HR-ENT-18 | HR-COREORG-CANDIDATE-CONSENT-ALIGN (**CLOSED**) |
 | HR-OPS-P1-001 | — | P1→**closed** | command/query | HR-ENT-06 | HR-OPS-OVERTIME-APPROVAL-AUTHORITY (**CLOSED**) |
@@ -117,6 +117,8 @@ Canonical IDs only. **Aliases** absorbed into parent findings.
 | HR-OPS-P1-005 | AUD-02 P1 | **closed** | Slice 1.1 (2026-07-24): assignment-context fixture wiring + Memory/Drizzle calendar scope/employment resolution + conflict/timezone evidence green |
 | HR-ENT-04 | enterprise.md Major | **partial** (unchanged) | Disk ahead of enterprise.md; dimension snapshot requirement remains |
 | HR-GOV-P0-001 | AUD-03 P0 | **closed** | Slice 0.1 (2026-07-24): list ACL + projection closed via `buildAuthorizedProjectedCaseListPage` / `evaluateCaseReadAccess`; unit matrix green. **Evidence residual only (not a blocker reopen):** Employee Relations Memory/Drizzle list ACL database parity coverage |
+| HR-XCUT-P0-001 | AUD-00 P0 | **closed** | Slice 2.10 (2026-07-25): domain authorization routed through `authorizeHumanResourcesOperation` / facade helpers; ER ACL plugin-only; `authorization-facade-boundary.test.ts` locks import graph; `@afenda/human-resources` barrel no longer exports low-level `require*` helpers |
+| HR-XCUT-P0-004 | AUD-00 P0 | **closed** | Slice 2.10 (2026-07-25): privacy port composed at apps/web; `human-resources-privacy-port` + `human-resources.privacy.parity` green; platform privacy service wired via command options |
 | HR-OPS-P1-001 | AUD-02 P1 | **closed** | HR-OPS-OVERTIME-APPROVAL-AUTHORITY COMPLETE; Slice 0.1 confirms not an open/next blocker |
 | HR-COREORG-P0-001 vs P1-001 | P0 + P1 | **closed** (was single P0) | Consent triple drift repaired under HR-COREORG-CANDIDATE-CONSENT-ALIGN; P1-001 remains merged alias — do not reopen as separate finding |
 | HR-COREORG-P2-002 | AUD-01 P2 | **closed** | Slice 1.2 (2026-07-24): `EmploymentMovement.createdAt`/`updatedAt` ISO datetime strings Memory + Drizzle; `human-resources.lifecycle.parity` transfer case green |
@@ -154,7 +156,7 @@ Executed during HR-AUD-04 only where audit findings conflicted.
 |---|---|---|---|---|---|---|---|
 | Effective-truth breadth | HR-XCUT-P0-002 · OPEN-DECISION-01 (**RATIFIED**) | — | — | — | — | — | — |
 | Auth layering | HR-XCUT-P0-001 · OPEN-DECISION-02 (**RATIFIED**) | — | — | — | — | — | — |
-| Privacy/DSAR owner | OPEN-DECISION-03 (**RATIFIED**) | — | HR-XCUT-P0-004 | — | apps/web omits port | — | — |
+| Privacy/DSAR owner | OPEN-DECISION-03 (**RATIFIED**) | — | HR-XCUT-P0-004 **closed** (composition) | — | apps/web wires privacy port; DSAR depth residual | — | — |
 | Org dimensions | OPEN-DECISION-04 (**RATIFIED**) | — | — | — | partial port wired | — | HR-COREORG-P1-004 |
 | Payroll money | OPEN-DECISION-05 (**RATIFIED**) | — | HR-XCUT-P1-006 | — | — | — | — |
 | Candidate consent | OPEN-DECISION-A1 (**RATIFIED**; implemented CLOSED; do not reopen) | — (HR-COREORG-P0-001 **closed**) | — | — | — | — | — |

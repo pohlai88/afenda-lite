@@ -1,10 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
-	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
-	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
-} from "@afenda/events/schemas";
-import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
 	type HumanResourcesDepartmentId,
@@ -26,9 +22,13 @@ import {
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
+import { appendRegistryGatedOutbox } from "../../emissions/sql-side-effects";
+import {
+	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
+} from "../../module-ids";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { conflict, notFound } from "../../shared/domain-guards";
+import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertApplicationEligibleForOffer,
@@ -206,6 +206,8 @@ export type MemoryRecruitmentMethods = Pick<
 	| "findCandidateByNormalizedEmail"
 	| "createCandidate"
 	| "updateCandidateProfile"
+	| "withdrawCandidateConsent"
+	| "changeCandidateRetention"
 	| "listCandidates"
 	| "getApplicationById"
 	| "findActiveApplicationByCandidateRequisition"
@@ -576,26 +578,20 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			const shouldEmitApproved =
-				input.status === "approved" && input.emitApprovedEvent === true;
-			if (shouldEmitApproved) {
-				const outbox = await ports.outbox.append({
-					organizationId: updated.organizationId,
-					actorUserId: input.actorUserId,
-					correlationId: meta.correlationId,
-					type: HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
-					payload: {
-						organizationId: updated.organizationId,
-						entityType: "hr_job_requisition",
-						entityId: updated.id,
-						actorId: input.actorUserId,
-						correlationId: meta.correlationId,
-					},
-				});
-				if (!outbox.ok) {
-					state.requisitions.set(input.requisitionId, requisition);
-					return outbox;
-				}
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_job_requisition",
+				conditionalEventSuppressed:
+					meta.operationId === HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE &&
+					!(input.status === "approved" && input.emitApprovedEvent === true),
+			});
+			if (!outbox.ok) {
+				state.requisitions.set(input.requisitionId, requisition);
+				return outbox;
 			}
 
 			if (input.status === "cancelled" || input.status === "closed") {
@@ -788,6 +784,25 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: candidate.organizationId,
+				actorUserId: candidate.createdBy,
+				aggregateId: candidate.id,
+				eventEntityType: "hr_candidate",
+			});
+			if (!outbox.ok) {
+				state.candidates.delete(candidate.id);
+				state.candidateByNormalizedEmail.delete(
+					`${record.organizationId}:${record.normalizedEmail}`,
+				);
+				state.candidateIdempotencyByKey.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return outbox;
+			}
+
 			return ok(cloneCandidate(candidate));
 		},
 
@@ -851,6 +866,161 @@ export function createMemoryRecruitmentMethods(
 			if (!audit.ok) {
 				state.candidates.set(input.candidateId, candidate);
 				return audit;
+			}
+
+			return ok(cloneCandidate(updated));
+		},
+
+		async withdrawCandidateConsent(
+			input: {
+				organizationId: string;
+				candidateId: HumanResourcesCandidateId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Candidate>> {
+			const candidate = state.candidates.get(input.candidateId);
+			if (candidate === undefined) {
+				return notFound("Candidate not found");
+			}
+			const orgCheck = assertRecruitmentOrgMatch(
+				candidate,
+				input.organizationId,
+				"Candidate",
+			);
+			if (!orgCheck.ok) {
+				return orgCheck;
+			}
+
+			const versionCheck = assertExpectedVersion(
+				candidate.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			if (candidate.consentWithdrawnAt !== null) {
+				return conflict("Candidate consent has already been withdrawn");
+			}
+
+			const now = new Date();
+			const updated: Candidate = {
+				...candidate,
+				consentWithdrawnAt: now,
+				version: candidate.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.candidates.set(input.candidateId, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_candidate",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.candidates.set(input.candidateId, candidate);
+				return audit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_candidate",
+			});
+			if (!outbox.ok) {
+				state.candidates.set(input.candidateId, candidate);
+				return outbox;
+			}
+
+			return ok(cloneCandidate(updated));
+		},
+
+		async changeCandidateRetention(
+			input: {
+				organizationId: string;
+				candidateId: HumanResourcesCandidateId;
+				retentionUntil: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Candidate>> {
+			const candidate = state.candidates.get(input.candidateId);
+			if (candidate === undefined) {
+				return notFound("Candidate not found");
+			}
+			const orgCheck = assertRecruitmentOrgMatch(
+				candidate,
+				input.organizationId,
+				"Candidate",
+			);
+			if (!orgCheck.ok) {
+				return orgCheck;
+			}
+
+			const versionCheck = assertExpectedVersion(
+				candidate.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			if (candidate.consentWithdrawnAt !== null) {
+				return invalidState(
+					"Cannot change retention after candidate consent withdrawal",
+				);
+			}
+
+			const now = new Date();
+			const updated: Candidate = {
+				...candidate,
+				retentionUntil: input.retentionUntil,
+				version: candidate.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.candidates.set(input.candidateId, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_candidate",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.candidates.set(input.candidateId, candidate);
+				return audit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_candidate",
+			});
+			if (!outbox.ok) {
+				state.candidates.set(input.candidateId, candidate);
+				return outbox;
 			}
 
 			return ok(cloneCandidate(updated));
@@ -1022,6 +1192,19 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: application.organizationId,
+				actorUserId: application.createdBy,
+				aggregateId: application.id,
+				eventEntityType: "hr_candidate_application",
+			});
+			if (!outbox.ok) {
+				state.applications.delete(application.id);
+				return outbox;
+			}
+
 			return ok(cloneApplication(application));
 		},
 
@@ -1088,6 +1271,19 @@ export function createMemoryRecruitmentMethods(
 			if (!audit.ok) {
 				state.applications.set(input.applicationId, application);
 				return audit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_candidate_application",
+			});
+			if (!outbox.ok) {
+				state.applications.set(input.applicationId, application);
+				return outbox;
 			}
 
 			return ok(cloneApplication(updated));
@@ -1206,6 +1402,19 @@ export function createMemoryRecruitmentMethods(
 			if (!audit.ok) {
 				state.interviews.delete(interview.id);
 				return audit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: interview.organizationId,
+				actorUserId: interview.createdBy,
+				aggregateId: interview.id,
+				eventEntityType: "hr_interview",
+			});
+			if (!outbox.ok) {
+				state.interviews.delete(interview.id);
+				return outbox;
 			}
 
 			return ok(cloneInterview(interview));
@@ -1445,6 +1654,21 @@ export function createMemoryRecruitmentMethods(
 				state.interviewEvaluations.delete(evaluation.id);
 				state.interviewEvaluationByInterviewId.delete(record.interviewId);
 				return evaluationAudit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: completedInterview.organizationId,
+				actorUserId: record.createdBy,
+				aggregateId: completedInterview.id,
+				eventEntityType: "hr_interview",
+			});
+			if (!outbox.ok) {
+				state.interviews.set(record.interviewId, interview);
+				state.interviewEvaluations.delete(evaluation.id);
+				state.interviewEvaluationByInterviewId.delete(record.interviewId);
+				return outbox;
 			}
 
 			return ok(cloneEvaluation(evaluation));
@@ -1775,6 +1999,22 @@ export function createMemoryRecruitmentMethods(
 				}
 			}
 
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_employment_offer",
+			});
+			if (!outbox.ok) {
+				state.offers.set(input.offerId, offer);
+				if (updatedApplication !== null) {
+					state.applications.set(application.id, application);
+				}
+				return outbox;
+			}
+
 			return ok(cloneOffer(updated));
 		},
 
@@ -1941,18 +2181,13 @@ export function createMemoryRecruitmentMethods(
 				return applicationAudit;
 			}
 
-			const outbox = await ports.outbox.append({
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
 				organizationId: updatedOffer.organizationId,
 				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				type: HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
-				payload: {
-					organizationId: updatedOffer.organizationId,
-					entityType: "hr_employment_offer",
-					entityId: updatedOffer.id,
-					actorId: input.actorUserId,
-					correlationId: meta.correlationId,
-				},
+				aggregateId: updatedOffer.id,
+				eventEntityType: "hr_employment_offer",
 			});
 			if (!outbox.ok) {
 				state.offers.set(input.offerId, offer);

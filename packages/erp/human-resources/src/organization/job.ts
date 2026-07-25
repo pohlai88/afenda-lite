@@ -1,12 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import {
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
-import {
-	type HumanResourcesCommandOptions,
-	resolveCommandDeps,
-} from "../command-options";
+import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -19,7 +12,6 @@ import {
 	HUMAN_RESOURCES_QUERY_JOB_GET,
 	HUMAN_RESOURCES_QUERY_JOB_LIST,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import {
 	createJobInputSchema,
 	getJobInputSchema,
@@ -28,6 +20,10 @@ import {
 	updateJobInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import {
+	runOrganizationCommand,
+	runOrganizationQuery,
+} from "../shared/organization-command";
 import type { Job } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_JOB = "job" as const;
@@ -37,237 +33,148 @@ export async function createJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
-	const parsed = parseHumanResourcesInput(
-		createJobInputSchema,
-		input,
-		"Invalid job create input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.createJob(
-		{
-			organizationId: parsed.data.organizationId,
-			code: parsed.data.code.trim(),
-			title: parsed.data.title.trim(),
-			status: parsed.data.status ?? "active",
-			createdBy: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: createJobInputSchema,
+		invalidMessage: "Invalid job create input",
+		command: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+		execute: async (data, { store, ports }) =>
+			store.createJob(
+				{
+					organizationId: data.organizationId,
+					code: data.code.trim(),
+					title: data.title.trim(),
+					status: data.status ?? "active",
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+				}),
+			),
+	});
 }
 
 export async function updateJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
-	const parsed = parseHumanResourcesInput(
-		updateJobInputSchema,
-		input,
-		"Invalid job update input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.updateJob(
-		{
-			organizationId: parsed.data.organizationId,
-			jobId: parsed.data.jobId,
-			title: parsed.data.title.trim(),
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: updateJobInputSchema,
+		invalidMessage: "Invalid job update input",
+		command: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+		execute: async (data, { store, ports }) =>
+			store.updateJob(
+				{
+					organizationId: data.organizationId,
+					jobId: data.jobId,
+					title: data.title.trim(),
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+				}),
+			),
+	});
 }
 
 export async function activateJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
-	const parsed = parseHumanResourcesInput(
-		jobStatusTransitionInputSchema,
-		input,
-		"Invalid job activate input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.setJobStatus(
-		{
-			organizationId: parsed.data.organizationId,
-			jobId: parsed.data.jobId,
-			status: "active",
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: jobStatusTransitionInputSchema,
+		invalidMessage: "Invalid job activate input",
+		command: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+		execute: async (data, { store, ports }) =>
+			store.setJobStatus(
+				{
+					organizationId: data.organizationId,
+					jobId: data.jobId,
+					status: "active",
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+				}),
+			),
+	});
 }
 
 export async function archiveJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
-	const parsed = parseHumanResourcesInput(
-		jobStatusTransitionInputSchema,
-		input,
-		"Invalid job archive input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.setJobStatus(
-		{
-			organizationId: parsed.data.organizationId,
-			jobId: parsed.data.jobId,
-			status: "archived",
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: jobStatusTransitionInputSchema,
+		invalidMessage: "Invalid job archive input",
+		command: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+		execute: async (data, { store, ports }) =>
+			store.setJobStatus(
+				{
+					organizationId: data.organizationId,
+					jobId: data.jobId,
+					status: "archived",
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+				}),
+			),
+	});
 }
 
 export async function getJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Job>> {
-	const parsed = parseHumanResourcesInput(
-		getJobInputSchema,
-		input,
-		"Invalid job get input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runOrganizationQuery(input, options, {
+		schema: getJobInputSchema,
+		invalidMessage: "Invalid job get input",
 		query: HUMAN_RESOURCES_QUERY_JOB_GET,
+		execute: async (data, { store }) => {
+			const job = await store.getJobById({
+				organizationId: data.organizationId,
+				jobId: data.jobId,
+			});
+			if (!job.ok) {
+				return job;
+			}
+			if (job.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Job not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(job.data);
+		},
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const job = await store.getJobById({
-		organizationId: parsed.data.organizationId,
-		jobId: parsed.data.jobId,
-	});
-	if (!job.ok) {
-		return job;
-	}
-	if (job.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Job not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-	return ok(job.data);
 }
 
 export async function listJobs(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ jobs: Job[]; totalCount: number }>> {
-	const parsed = parseHumanResourcesInput(
-		listJobsInputSchema,
-		input,
-		"Invalid job list input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runOrganizationQuery(input, options, {
+		schema: listJobsInputSchema,
+		invalidMessage: "Invalid job list input",
 		query: HUMAN_RESOURCES_QUERY_JOB_LIST,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.listJobs({
-		organizationId: parsed.data.organizationId,
-		page: parsed.data.page ?? 1,
-		pageSize: parsed.data.pageSize ?? 20,
-		status: parsed.data.status,
+		execute: async (data, { store }) =>
+			store.listJobs({
+				organizationId: data.organizationId,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 20,
+				status: data.status,
+			}),
 	});
 }

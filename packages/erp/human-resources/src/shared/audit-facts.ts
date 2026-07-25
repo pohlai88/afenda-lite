@@ -200,3 +200,29 @@ export function valueSnapshotJson(value: Record<string, unknown>): string {
 export function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
+
+export type HumanResourcesEntityEventPayloadInput = {
+	organizationId: string;
+	entityType: string;
+	entityId: string;
+	actorId: string;
+	correlationId: string;
+};
+
+export function buildHumanResourcesEntityEventPayload(
+	input: HumanResourcesEntityEventPayloadInput,
+): Record<string, unknown> {
+	return {
+		organizationId: input.organizationId,
+		entityType: input.entityType,
+		entityId: input.entityId,
+		actorId: input.actorId,
+		correlationId: input.correlationId,
+	};
+}
+
+export function humanResourcesEntityEventPayloadJson(
+	input: HumanResourcesEntityEventPayloadInput,
+): string {
+	return eventPayloadJson(buildHumanResourcesEntityEventPayload(input));
+}

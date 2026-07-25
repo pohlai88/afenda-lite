@@ -12,6 +12,12 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT,
+} from "@afenda/events/schemas";
+import {
 	type HumanResourcesHeadcountReservationId,
 	parseHumanResourcesDepartmentId,
 	parseHumanResourcesHeadcountPlanId,
@@ -426,6 +432,22 @@ export type DrizzleWorkforcePlanningMethods = Pick<
 	| "getWorkforcePlanVariance"
 >;
 
+function headcountEventPayloadJson(input: {
+	organizationId: string;
+	entityType: string;
+	entityId: string;
+	actorId: string;
+	correlationId: string;
+}): string {
+	return JSON.stringify({
+		organizationId: input.organizationId,
+		entityType: input.entityType,
+		entityId: input.entityId,
+		actorId: input.actorId,
+		correlationId: input.correlationId,
+	});
+}
+
 async function transitionHeadcountReservationStatus(
 	host: WorkforcePlanningHost & DrizzleWorkforcePlanningMethods,
 	input: {
@@ -439,6 +461,18 @@ async function transitionHeadcountReservationStatus(
 ): Promise<Result<HeadcountReservation>> {
 	const auditId = randomUUID();
 	const nextVersion = input.expectedVersion + 1;
+	const eventId = randomUUID();
+	const eventType =
+		nextStatus === "released"
+			? HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT
+			: HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT;
+	const payloadJson = headcountEventPayloadJson({
+		organizationId: input.organizationId,
+		entityType: "hr_headcount_reservation",
+		entityId: input.reservationId,
+		actorId: input.actorUserId,
+		correlationId: meta.correlationId,
+	});
 	try {
 		const [rows] = await runNeonHttpTransaction<[HeadcountReservationSqlRow[]]>(
 			(sql) => [
@@ -465,8 +499,20 @@ async function transitionHeadcountReservationStatus(
 							'human-resources', 'hr_headcount_reservation', id, 'UPDATE', '[]'::jsonb
 						FROM mutated
 						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT
+							${eventId}, organization_id, ${eventType},
+							'human-resources', ${meta.correlationId}, ${input.actorUserId},
+							${payloadJson}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
 					)
-					SELECT mutated.* FROM mutated JOIN audited ON true
+					SELECT mutated.* FROM mutated JOIN audited ON true JOIN outboxed ON true
 				`,
 			],
 		);
@@ -773,6 +819,18 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const supersedeAuditId = randomUUID();
+		const outboxId =
+			input.status === "approved" ? randomUUID() : null;
+		const outboxPayload =
+			input.status === "approved"
+				? headcountEventPayloadJson({
+						organizationId: input.organizationId,
+						entityType: "hr_headcount_plan",
+						entityId: input.planId,
+						actorId: input.actorUserId,
+						correlationId: meta.correlationId,
+					})
+				: null;
 		const rejectionReason =
 			input.status === "rejected" ? (input.rejectionReason ?? null) : null;
 
@@ -831,11 +889,26 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 								'human-resources', 'hr_headcount_plan', id, 'UPDATE', '[]'::jsonb
 							FROM superseded_prior
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${outboxId}, organization_id,
+								${HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT},
+								'human-resources', ${meta.correlationId}, ${input.actorUserId},
+								${outboxPayload}::jsonb, 'pending', 0
+							FROM mutated
+							WHERE ${input.status} = 'approved'
+							RETURNING id
 						)
 						SELECT mutated.* FROM mutated
 						JOIN audited ON true
 						LEFT JOIN superseded_prior ON true
 						LEFT JOIN superseded_audited ON true
+						LEFT JOIN outboxed ON true
 					`,
 				],
 			);
@@ -1476,6 +1549,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const brandedId = parseHumanResourcesHeadcountReservationId(randomUUID());
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = headcountEventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_headcount_reservation",
+			entityId: brandedId.data,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+		});
 
 		try {
 			const [rows] = await runNeonHttpTransaction<
@@ -1505,8 +1586,21 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 								'human-resources', 'hr_headcount_reservation', id, 'CREATE', '[]'::jsonb
 							FROM mutated
 							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT},
+								'human-resources', ${meta.correlationId}, created_by,
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
 						)
-						SELECT mutated.* FROM mutated JOIN audited ON true
+						SELECT mutated.* FROM mutated JOIN audited ON true JOIN outboxed ON true
 					`,
 			]);
 			const row = rows[0];

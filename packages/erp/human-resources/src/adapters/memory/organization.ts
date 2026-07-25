@@ -1,5 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
+import type { HumanResourcesEventType } from "@afenda/events";
+import {
+	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_JOB_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_JOB_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_POSITION_CLOSED_EVENT,
+	HUMAN_RESOURCES_POSITION_FROZEN_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT,
+} from "@afenda/events/schemas";
 import {
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
@@ -19,6 +32,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
+import { buildHumanResourcesEntityEventPayload } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidInput, notFound } from "../../shared/domain-guards";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
@@ -120,6 +134,36 @@ export function resetOrganizationMemoryState(
 	state.jobs.clear();
 	state.positions.clear();
 	state.reportingLines.clear();
+}
+
+async function appendOrganizationDomainEvent(
+	ports: MutationPorts,
+	meta: HumanResourcesMutationMeta,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		entityType: string;
+		entityId: string;
+		eventType: HumanResourcesEventType;
+	},
+): Promise<Result<void>> {
+	const outbox = await ports.outbox.append({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: meta.correlationId,
+		type: input.eventType,
+		payload: buildHumanResourcesEntityEventPayload({
+			organizationId: input.organizationId,
+			entityType: input.entityType,
+			entityId: input.entityId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		}),
+	});
+	if (!outbox.ok) {
+		return outbox;
+	}
+	return ok(undefined);
 }
 
 export function createMemoryOrganizationMethods(
@@ -402,6 +446,26 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
+			const departmentEventType =
+				input.status === "active"
+					? HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT
+					: input.status === "archived"
+						? HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT
+						: null;
+			if (departmentEventType) {
+				const outbox = await appendOrganizationDomainEvent(ports, meta, {
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					entityType: "hr_department",
+					entityId: updated.id,
+					eventType: departmentEventType,
+				});
+				if (!outbox.ok) {
+					state.departments.set(input.departmentId, department);
+					return outbox;
+				}
+			}
+
 			return ok({ ...updated });
 		},
 
@@ -648,6 +712,26 @@ export function createMemoryOrganizationMethods(
 			if (!audit.ok) {
 				state.jobs.set(input.jobId, job);
 				return audit;
+			}
+
+			const jobEventType =
+				input.status === "active"
+					? HUMAN_RESOURCES_JOB_ACTIVATED_EVENT
+					: input.status === "archived"
+						? HUMAN_RESOURCES_JOB_ARCHIVED_EVENT
+						: null;
+			if (jobEventType) {
+				const outbox = await appendOrganizationDomainEvent(ports, meta, {
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					entityType: "hr_job",
+					entityId: updated.id,
+					eventType: jobEventType,
+				});
+				if (!outbox.ok) {
+					state.jobs.set(input.jobId, job);
+					return outbox;
+				}
 			}
 
 			return ok({ ...updated });
@@ -967,6 +1051,28 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
+			const positionEventType =
+				input.status === "active"
+					? HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT
+					: input.status === "frozen"
+						? HUMAN_RESOURCES_POSITION_FROZEN_EVENT
+						: input.status === "closed"
+							? HUMAN_RESOURCES_POSITION_CLOSED_EVENT
+							: null;
+			if (positionEventType) {
+				const outbox = await appendOrganizationDomainEvent(ports, meta, {
+					organizationId: updated.organizationId,
+					actorUserId: input.actorUserId,
+					entityType: "hr_position",
+					entityId: updated.id,
+					eventType: positionEventType,
+				});
+				if (!outbox.ok) {
+					state.positions.set(input.positionId, position);
+					return outbox;
+				}
+			}
+
 			return ok({ ...updated });
 		},
 
@@ -1272,6 +1378,18 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
+			const assignOutbox = await appendOrganizationDomainEvent(ports, meta, {
+				organizationId: reportingLine.organizationId,
+				actorUserId: reportingLine.createdBy,
+				entityType: "hr_reporting_line",
+				entityId: reportingLine.id,
+				eventType: HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT,
+			});
+			if (!assignOutbox.ok) {
+				state.reportingLines.delete(reportingLine.id);
+				return assignOutbox;
+			}
+
 			return ok({ ...reportingLine });
 		},
 
@@ -1331,6 +1449,18 @@ export function createMemoryOrganizationMethods(
 			if (!audit.ok) {
 				state.reportingLines.set(input.reportingLineId, line);
 				return audit;
+			}
+
+			const closeOutbox = await appendOrganizationDomainEvent(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				entityType: "hr_reporting_line",
+				entityId: updated.id,
+				eventType: HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT,
+			});
+			if (!closeOutbox.ok) {
+				state.reportingLines.set(input.reportingLineId, line);
+				return closeOutbox;
 			}
 
 			return ok({ ...updated });
@@ -1514,6 +1644,19 @@ export function createMemoryOrganizationMethods(
 				state.reportingLines.set(prior.id, prior);
 				state.reportingLines.delete(reportingLine.id);
 				return createAudit;
+			}
+
+			const replaceOutbox = await appendOrganizationDomainEvent(ports, meta, {
+				organizationId: reportingLine.organizationId,
+				actorUserId: input.createdBy,
+				entityType: "hr_reporting_line",
+				entityId: reportingLine.id,
+				eventType: HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT,
+			});
+			if (!replaceOutbox.ok) {
+				state.reportingLines.set(prior.id, prior);
+				state.reportingLines.delete(reportingLine.id);
+				return replaceOutbox;
 			}
 
 			return ok({ ...reportingLine });

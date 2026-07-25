@@ -6,7 +6,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
-**Disk inventory (2026-07-24):** **286** commands · **141** queries · **99** permissions · **106** `hr_*` mutation / hard-tenant tables · emission registry **88** / 286 (~31%). Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 1 Slice 1.4 test-env parity **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+**Disk inventory (2026-07-25):** **290** commands · **144** queries · **99** permissions · **106** `hr_*` mutation / hard-tenant tables · emission registry **169** / 290 (~58%). Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 3 Slice 3.4 lifecycle emissions **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
 
 ## Consume
 
@@ -80,7 +80,7 @@ Person → Worker → Employee specialization
 |---------|------|
 | `@afenda/human-resources` | Domain commands, queries, brands, schemas, permissions, port types, production wiring helpers |
 | `@afenda/human-resources/adapters/drizzle` | `createDrizzleHumanResourcesStore`, per-domain Drizzle adapters, assignment-context and work-calendar lookups |
-| `@afenda/human-resources/authorization` | Authorization port types and helpers |
+| `@afenda/human-resources/authorization` | Composition-root authorization port types and low-level helpers — not a domain entry; domain code uses `authorizeHumanResourcesOperation` |
 | `@afenda/human-resources/brands` | Branded ID types for HR entities |
 | `@afenda/human-resources/identity-resolver` | Actor / subject identity resolution port |
 | `@afenda/human-resources/resolve-store` | Store resolver for composition roots |

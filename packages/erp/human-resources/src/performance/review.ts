@@ -248,15 +248,12 @@ export async function getPerformanceReviewById(
 	return runPerformanceResourceScopedQuery(input, options, {
 		schema: getPerformanceReviewByIdInputSchema,
 		invalidMessage: "Invalid performance review get input",
-		execute: async (data, { store, authorization }) => {
-			const confidential = await requirePerformanceConfidentialRead(
-				authorization,
-				{
-					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-					includeConfidential: data.includeConfidential,
-				},
-			);
+		execute: async (data, { store }) => {
+			const confidential = await requirePerformanceConfidentialRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				includeConfidential: data.includeConfidential,
+			});
 			if (!confidential.ok) {
 				return confidential;
 			}
@@ -276,15 +273,12 @@ export async function listEmployeePerformanceReviews(
 	return runPerformanceEmployeeScopedQuery(input, options, {
 		schema: listEmployeePerformanceReviewsInputSchema,
 		invalidMessage: "Invalid employee performance reviews list input",
-		execute: async (data, { store, authorization }) => {
-			const confidential = await requirePerformanceConfidentialRead(
-				authorization,
-				{
-					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-					includeConfidential: data.includeConfidential,
-				},
-			);
+		execute: async (data, { store }) => {
+			const confidential = await requirePerformanceConfidentialRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				includeConfidential: data.includeConfidential,
+			});
 			if (!confidential.ok) {
 				return confidential;
 			}
@@ -325,15 +319,12 @@ export async function getEmployeePerformanceHistory(
 		schema: getEmployeePerformanceHistoryInputSchema,
 		invalidMessage: "Invalid employee performance history get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
-		execute: async (data, { store, authorization }) => {
-			const confidential = await requirePerformanceConfidentialRead(
-				authorization,
-				{
-					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-					includeConfidential: data.includeConfidential,
-				},
-			);
+		execute: async (data, { store }) => {
+			const confidential = await requirePerformanceConfidentialRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				includeConfidential: data.includeConfidential,
+			});
 			if (!confidential.ok) {
 				return confidential;
 			}

@@ -28,6 +28,18 @@ function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function readEffectiveOn(payload: unknown): string | undefined {
+	if (typeof payload !== "object" || payload === null) {
+		return undefined;
+	}
+	if (!("effectiveOn" in payload)) {
+		return undefined;
+	}
+	return typeof payload.effectiveOn === "string"
+		? payload.effectiveOn
+		: undefined;
+}
+
 describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 	const neonOrgs = createNeonOrgTracker();
 
@@ -200,11 +212,16 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 			if (!termination.ok) return;
 
 			if (adapter === "memory") {
-				const eventTypes = ready.ports.outbox.calls.map((call) => call.type);
-				expect(eventTypes).toContain(
-					HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+				const transferEvent = ready.ports.outbox.calls.find(
+					(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 				);
-				expect(eventTypes).toContain(HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT);
+				const terminationEvent = ready.ports.outbox.calls.find(
+					(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+				);
+				expect(transferEvent).toBeDefined();
+				expect(terminationEvent).toBeDefined();
+				expect(transferEvent?.payload.effectiveOn).toBe("2025-03-01");
+				expect(terminationEvent?.payload.effectiveOn).toBe("2025-04-01");
 				return;
 			}
 
@@ -220,16 +237,16 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 						]),
 					),
 				);
-			expect(
-				events.some(
-					(row) => row.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
-				),
-			).toBe(true);
-			expect(
-				events.some(
-					(row) => row.type === HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
-				),
-			).toBe(true);
+			const transferEvent = events.find(
+				(row) => row.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+			);
+			const terminationEvent = events.find(
+				(row) => row.type === HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+			);
+			expect(transferEvent).toBeDefined();
+			expect(terminationEvent).toBeDefined();
+			expect(readEffectiveOn(transferEvent?.payload)).toBe("2025-03-01");
+			expect(readEffectiveOn(terminationEvent?.payload)).toBe("2025-04-01");
 		});
 	}
 });

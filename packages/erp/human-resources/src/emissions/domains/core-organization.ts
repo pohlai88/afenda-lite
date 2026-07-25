@@ -1,0 +1,245 @@
+import {
+	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
+	HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+	HUMAN_RESOURCES_JOB_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_JOB_ARCHIVED_EVENT,
+	HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT,
+	HUMAN_RESOURCES_POSITION_CLOSED_EVENT,
+	HUMAN_RESOURCES_POSITION_FROZEN_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT,
+	HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT,
+} from "@afenda/events/schemas";
+
+import {
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
+	HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
+	HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+	HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+	HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+	HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
+	HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
+	HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+	HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
+	HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+	HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY,
+	HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE,
+	HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
+	type HumanResourcesCoreOrganizationCommandId,
+} from "../../module-ids";
+
+import {
+	defineAuditOnlyEmission,
+	defineDomainEventEmission,
+} from "../define-emission";
+import type { HumanResourcesMutationEmissionDefinition } from "../types";
+
+export const HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS = {
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+		{
+			domain: "core",
+			aggregateType: "employee",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+		{
+			domain: "core",
+			aggregateType: "employee",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+		{
+			domain: "core",
+			aggregateType: "employment",
+			eventTypes: [
+				HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+				HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
+			] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+		{
+			domain: "core",
+			aggregateType: "employment",
+			eventTypes: [
+				HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+				HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+			] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+			{
+				domain: "core",
+				aggregateType: "employment_contract",
+				eventTypes: [HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+		{
+			domain: "core",
+			aggregateType: "assignment",
+			eventTypes: [HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
+		{
+			domain: "core",
+			aggregateType: "assignment",
+			eventTypes: [HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+		{
+			domain: "organization",
+			aggregateType: "department",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
+		{
+			domain: "organization",
+			aggregateType: "department",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
+		{
+			domain: "organization",
+			aggregateType: "department",
+			eventTypes: [HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
+		{
+			domain: "organization",
+			aggregateType: "department",
+			eventTypes: [HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_JOB_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+		{
+			domain: "organization",
+			aggregateType: "job",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_JOB_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+		{
+			domain: "organization",
+			aggregateType: "job",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+		{
+			domain: "organization",
+			aggregateType: "job",
+			eventTypes: [HUMAN_RESOURCES_JOB_ACTIVATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+		{
+			domain: "organization",
+			aggregateType: "job",
+			eventTypes: [HUMAN_RESOURCES_JOB_ARCHIVED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_POSITION_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+		{
+			domain: "organization",
+			aggregateType: "position",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_POSITION_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+		{
+			domain: "organization",
+			aggregateType: "position",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
+		{
+			domain: "organization",
+			aggregateType: "position",
+			eventTypes: [HUMAN_RESOURCES_POSITION_ACTIVATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_POSITION_FREEZE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
+		{
+			domain: "organization",
+			aggregateType: "position",
+			eventTypes: [HUMAN_RESOURCES_POSITION_FROZEN_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_POSITION_CLOSE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
+		{
+			domain: "organization",
+			aggregateType: "position",
+			eventTypes: [HUMAN_RESOURCES_POSITION_CLOSED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY,
+			{
+				domain: "organization",
+				aggregateType: "reporting_line",
+				eventTypes: [HUMAN_RESOURCES_REPORTING_LINE_ASSIGNED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE,
+		{
+			domain: "organization",
+			aggregateType: "reporting_line",
+			eventTypes: [HUMAN_RESOURCES_REPORTING_LINE_CLOSED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
+			{
+				domain: "organization",
+				aggregateType: "reporting_line",
+				eventTypes: [HUMAN_RESOURCES_REPORTING_LINE_REPLACED_EVENT] as const,
+			},
+		),
+} satisfies Record<
+	HumanResourcesCoreOrganizationCommandId,
+	HumanResourcesMutationEmissionDefinition
+>;

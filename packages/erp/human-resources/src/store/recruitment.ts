@@ -207,6 +207,29 @@ export type HumanResourcesRecruitmentStore = {
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Candidate>>;
 
+	withdrawCandidateConsent(
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Candidate>>;
+
+	changeCandidateRetention(
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			retentionUntil: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Candidate>>;
+
 	listCandidates(input: {
 		organizationId: string;
 		page: number;

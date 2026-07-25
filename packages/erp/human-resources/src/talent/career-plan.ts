@@ -1,9 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
+import { resolveCommandDeps } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -14,12 +13,8 @@ import {
 	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
 	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
 	HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET,
+	HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
 } from "../module-ids";
-import {
-	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_OWN_READ,
-	HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
-} from "../permissions";
 import {
 	acknowledgeCareerPlanInputSchema,
 	addCareerPlanActionInputSchema,
@@ -33,13 +28,9 @@ import {
 import { fingerprintCareerPlanCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
-	requireAdminResourceAccess,
-	requireOwnResourceAccess,
-} from "../shared/subject-aware-authorization";
-import {
+	resolveTalentProfileResourceForEmployee,
+	resolveTalentProfileResourceFromCareerPlan,
 	runTalentCommand,
-	runTalentEmployeeScopedQuery,
-	runTalentQuery,
 } from "../shared/talent-command";
 import type {
 	CareerPlan,
@@ -47,6 +38,15 @@ import type {
 	CareerPlanListPage,
 	CareerPlanWithActions,
 } from "../types";
+import {
+	runAuthorizedTalentLoadedReadQuery,
+	runAuthorizedTalentSubjectListQuery,
+} from "./authorized-talent-read";
+import {
+	projectCareerPlanFromDecision,
+	projectCareerPlanWithActionsFromDecision,
+	talentSensitiveQueryRequestedFields,
+} from "./talent-field-projection";
 
 export const HUMAN_RESOURCES_AGGREGATE_CAREER_PLAN = "career-plan" as const;
 export type HumanResourcesCareerPlanAggregate =
@@ -60,6 +60,14 @@ export async function createCareerPlan(
 		schema: createCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan create input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
+		resolveResource: async (data, opts) =>
+			resolveTalentProfileResourceForEmployee(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+				},
+				opts,
+			),
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintCareerPlanCreate({
 				employeeId: data.employeeId,
@@ -116,6 +124,8 @@ export async function updateCareerPlan(
 		schema: updateCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan update input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromCareerPlan(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.updateCareerPlan(
 				{
@@ -143,6 +153,8 @@ export async function acknowledgeCareerPlan(
 		schema: acknowledgeCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan acknowledge input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromCareerPlan(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.acknowledgeCareerPlan(
 				{
@@ -169,6 +181,8 @@ export async function addCareerPlanAction(
 		schema: addCareerPlanActionInputSchema,
 		invalidMessage: "Invalid career plan action add input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromCareerPlan(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.addCareerPlanAction(
 				{
@@ -197,6 +211,23 @@ export async function completeCareerPlanAction(
 		schema: completeCareerPlanActionInputSchema,
 		invalidMessage: "Invalid career plan action complete input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
+		resolveResource: async (data, opts) => {
+			const { store } = resolveCommandDeps(opts);
+			const action = await store.getCareerPlanActionById({
+				organizationId: data.organizationId,
+				actionId: data.actionId,
+			});
+			if (!action.ok || action.data === null) {
+				return undefined;
+			}
+			return resolveTalentProfileResourceFromCareerPlan(
+				{
+					organizationId: data.organizationId,
+					careerPlanId: action.data.careerPlanId,
+				},
+				opts,
+			);
+		},
 		execute: async (data, { store, ports }) => {
 			return await store.completeCareerPlanAction(
 				{
@@ -223,6 +254,8 @@ export async function closeCareerPlan(
 		schema: closeCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan close input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromCareerPlan(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.closeCareerPlan(
 				{
@@ -245,66 +278,28 @@ export async function getCareerPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanWithActions | null>> {
-	return runTalentQuery(input, options, {
+	return runAuthorizedTalentLoadedReadQuery(input, options, {
 		schema: getCareerPlanByIdInputSchema,
 		invalidMessage: "Invalid career plan get input",
 		query: HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET,
-		execute: async (data, { store, authorization, identityResolver }) => {
-			const loaded = await store.getCareerPlanById({
+		load: async ({ data, store }) =>
+			store.getCareerPlanById({
 				organizationId: data.organizationId,
 				careerPlanId: data.careerPlanId,
-			});
-			if (!loaded.ok) return loaded;
-			if (loaded.data === null) {
-				return ok(null);
-			}
-
-			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Human Resources identity resolver port is required",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-				);
-			}
-
-			const adminCheck = await requireAdminResourceAccess(authorization, {
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				permission: HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
-			});
-			if (adminCheck.ok) {
-				return ok(loaded.data);
-			}
-
-			const manageCheck = await requireAdminResourceAccess(authorization, {
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				permission: HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_MANAGE,
-			});
-			if (manageCheck.ok) {
-				return ok(loaded.data);
-			}
-
-			const ownCheck = await requireOwnResourceAccess(
-				identityResolver,
-				authorization,
+			}),
+		resolveResourceFromLoaded: async (data, careerPlan, opts) =>
+			resolveTalentProfileResourceForEmployee(
 				{
 					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-					targetEmployeeId: loaded.data.employeeId,
-					permission: HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_OWN_READ,
+					employeeId: careerPlan.employeeId,
+					resourceId: data.careerPlanId,
 				},
-			);
-			if (!ownCheck.ok) {
-				return fail(
-					"FORBIDDEN",
-					"Cannot access other employee's career plan",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
-			}
-
-			return ok(loaded.data);
-		},
+				opts,
+			),
+		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
+		project: (value: CareerPlanWithActions, projection) =>
+			projectCareerPlanWithActionsFromDecision(value, projection),
+		execute: async ({ loaded }) => ok(loaded),
 	});
 }
 
@@ -312,17 +307,27 @@ export async function listEmployeeCareerPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanListPage>> {
-	return runTalentEmployeeScopedQuery(input, options, {
+	return runAuthorizedTalentSubjectListQuery<
+		typeof listEmployeeCareerPlansInputSchema,
+		"careerPlans",
+		CareerPlan,
+		CareerPlan,
+		CareerPlanListPage
+	>(input, options, {
 		schema: listEmployeeCareerPlansInputSchema,
 		invalidMessage: "Invalid employee career plan list input",
-		execute: async (data, { store }) => {
-			return await store.listEmployeeCareerPlans({
+		query: HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
+		itemsKey: "careerPlans",
+		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
+		projectItem: (plan, projection) =>
+			projectCareerPlanFromDecision(plan, projection),
+		loadPage: async ({ data, store }) =>
+			store.listEmployeeCareerPlans({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
-			});
-		},
+			}),
 	});
 }

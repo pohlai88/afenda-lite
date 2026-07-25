@@ -106,8 +106,15 @@ export type EmployeeCaseAppeal = {
 	updatedAt: Date;
 };
 
+/** Case row after ACL field projection (dates as ISO strings). */
+export type ProjectedEmployeeCase = {
+	[K in keyof EmployeeCase]?: EmployeeCase[K] extends Date
+		? string
+		: EmployeeCase[K];
+};
+
 export type EmployeeCaseListPage = {
-	cases: Partial<EmployeeCase>[];
+	cases: ProjectedEmployeeCase[];
 	totalCount: number;
 	page: number;
 	pageSize: number;

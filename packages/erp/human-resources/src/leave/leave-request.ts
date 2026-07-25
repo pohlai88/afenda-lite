@@ -1,8 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import {
-	requireHumanResourcesPermission,
-	requireHumanResourcesResourceAwarePermission,
-} from "../authorization";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
@@ -45,11 +41,13 @@ import {
 	submitLeaveRequestInputSchema,
 	withdrawLeaveRequestInputSchema,
 } from "../schemas/leave";
+import { assertHumanResourcesSupplementalAuthorization } from "../shared/contextual-authorization";
 import { fingerprintLeaveRequestCreate } from "../shared/fingerprint";
 import {
 	assertLeaveRequestSensitiveReadAllowed,
 	requireLeaveCancelApprovedPermission,
 	requireLeaveRequestBackdatePermission,
+	requireLeaveRequestSensitiveRead,
 	runLeaveCommand,
 	runLeaveQuery,
 } from "../shared/leave-command";
@@ -123,15 +121,14 @@ export async function createDraftLeaveRequest(
 		schema: createDraftLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request create input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
-		execute: async (data, { store, ports, workCalendar, authorization }) => {
+		execute: async (data, { store, ports, workCalendar }) => {
 			if (data.isBackdated === true) {
-				const backdate = await requireLeaveRequestBackdatePermission(
-					authorization,
-					{
-						organizationId: data.organizationId,
-						actorUserId: data.actorUserId,
-					},
-				);
+				const backdate = await requireLeaveRequestBackdatePermission(options, {
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+				});
 				if (!backdate.ok) return backdate;
 			}
 
@@ -249,15 +246,14 @@ export async function amendLeaveRequest(
 		schema: amendLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request amend input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
-		execute: async (data, { store, ports, workCalendar, authorization }) => {
+		execute: async (data, { store, ports, workCalendar }) => {
 			if (data.isBackdated === true) {
-				const backdate = await requireLeaveRequestBackdatePermission(
-					authorization,
-					{
-						organizationId: data.organizationId,
-						actorUserId: data.actorUserId,
-					},
-				);
+				const backdate = await requireLeaveRequestBackdatePermission(options, {
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
+				});
 				if (!backdate.ok) return backdate;
 			}
 
@@ -674,10 +670,12 @@ export async function cancelApprovedLeaveRequest(
 		schema: cancelApprovedLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request cancel input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
-		authorize: (authorization, data) =>
-			requireLeaveCancelApprovedPermission(authorization, {
+		authorize: (opts, data) =>
+			requireLeaveCancelApprovedPermission(opts, {
 				organizationId: data.organizationId,
 				actorUserId: data.actorUserId,
+				correlationId: data.correlationId,
+				operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
 			}),
 		execute: (data, { store, ports }) =>
 			store.cancelApprovedLeaveRequest(
@@ -705,7 +703,7 @@ export async function getLeaveRequest(
 		schema: getLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
-		execute: async (data, { store, authorization, identityResolver }) => {
+		execute: async (data, { store, identityResolver }) => {
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
 				requestId: data.requestId,
@@ -727,15 +725,13 @@ export async function getLeaveRequest(
 				actorIdentity.data.employeeId === request.data.employeeId;
 
 			if (!isOwner) {
-				// Non-owners need an explicit sensitive-read administrative permission.
-				const sensitiveAdmin = await requireHumanResourcesPermission(
-					authorization,
-					{
-						organizationId: data.organizationId,
-						actorUserId: data.actorUserId,
-						permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
-					},
-				);
+				const sensitiveAdmin = await requireLeaveRequestSensitiveRead(options, {
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+					operationKind: "query",
+				});
 				if (!sensitiveAdmin.ok) {
 					return fail(
 						"FORBIDDEN",
@@ -754,32 +750,39 @@ export async function getLeaveRequest(
 				return fail("NOT_FOUND", "Leave policy not found");
 			}
 
-			const sensitive = await assertLeaveRequestSensitiveReadAllowed(
-				authorization,
-				{
-					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-					request: request.data,
-					policy: policy.data,
-				},
-			);
+			const sensitive = await assertLeaveRequestSensitiveReadAllowed(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				correlationId: data.correlationId,
+				operationId: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+				operationKind: "query",
+				request: request.data,
+				policy: policy.data,
+			});
 			if (!sensitive.ok) return sensitive;
 
 			if (policy.data.sensitive && options.resourceAwareAuthorization) {
 				const resourceAware =
-					await requireHumanResourcesResourceAwarePermission(
-						options.resourceAwareAuthorization,
+					await assertHumanResourcesSupplementalAuthorization(
 						{
-							organizationId: data.organizationId,
-							actorUserId: data.actorUserId,
-							permission: isOwner
+							operationId: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+							operationKind: "query",
+							requiredPermission: isOwner
 								? HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN
 								: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
-							resourceType: "leave",
-							resourceId: request.data.id,
-							subjectEmployeeId: request.data.employeeId,
-							sensitivity: "sensitive",
+							actor: {
+								organizationId: data.organizationId,
+								actorUserId: data.actorUserId,
+								correlationId: data.correlationId ?? "",
+							},
+							resource: {
+								organizationId: data.organizationId,
+								kind: "leave_request",
+								resourceId: request.data.id,
+								subjectEmployeeId: request.data.employeeId,
+							},
 						},
+						options,
 					);
 				if (!resourceAware.ok) return resourceAware;
 			}
@@ -797,7 +800,7 @@ export async function listLeaveRequests(
 		schema: listLeaveRequestsInputSchema,
 		invalidMessage: "Invalid leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST,
-		execute: async (data, { store, authorization, identityResolver }) => {
+		execute: async (data, { store, identityResolver }) => {
 			const actorIdentity = await resolveActorEmployeeIdentity(
 				identityResolver,
 				{
@@ -840,10 +843,13 @@ export async function listLeaveRequests(
 					return fail("NOT_FOUND", "Leave policy not found");
 				}
 				const sensitive = await assertLeaveRequestSensitiveReadAllowed(
-					authorization,
+					options,
 					{
 						organizationId: data.organizationId,
 						actorUserId: data.actorUserId,
+						correlationId: data.correlationId,
+						operationId: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST,
+						operationKind: "query",
 						request,
 						policy: policy.data,
 					},

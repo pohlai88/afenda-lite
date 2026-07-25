@@ -14,11 +14,6 @@ import {
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
-	HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
-	HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
-	HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
-} from "@afenda/events/schemas";
-import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesLeavePolicyId,
@@ -31,7 +26,20 @@ import {
 	parseHumanResourcesLeaveRequestId,
 	parseHumanResourcesLeaveRequestSegmentId,
 } from "../../brands";
+import { planLeaveMutationOutboxEventType } from "../../emissions/sql-side-effects";
 import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../../leave/leave-policy-lineage";
+import {
+	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+} from "../../module-ids";
+import {
+	emitHumanResourcesMutationOutcome,
+	getHumanResourcesMutationEmission,
+	getRegistryDomainEventType,
+} from "../../mutation-emission-registry";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
@@ -61,7 +69,10 @@ import {
 	leaveTypeSchema,
 	leaveUnitSchema,
 } from "../../shared/leave-status";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import {
+	attachMutationExecutionContext,
+	type HumanResourcesMutationMeta,
+} from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,
@@ -167,18 +178,36 @@ async function transitionLeavePolicyStatus(input: {
 			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
 		}
 
-		// Record audit
-		await input.ports.audit.record({
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: input.meta.correlationId,
-			entity: "hr_leave_policy",
-			entityId: input.policyId,
-			action: "UPDATE",
-			changes: [
-				{ field: "status", oldValue: "active", newValue: input.nextStatus },
-			],
-		});
+		// Record audit via canonical emission executor
+		const definition = getHumanResourcesMutationEmission(
+			input.meta.operationId,
+		);
+		const emission = await emitHumanResourcesMutationOutcome(
+			{
+				commandId: input.meta.operationId,
+				meta: attachMutationExecutionContext(input.meta, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+				}),
+				aggregateType: definition.aggregateType,
+				aggregateId: input.policyId,
+				audit: {
+					entity: "hr_leave_policy",
+					action: "UPDATE",
+					changes: [
+						{
+							field: "status",
+							oldValue: "active",
+							newValue: input.nextStatus,
+						},
+					],
+				},
+			},
+			input.ports,
+		);
+		if (!emission.ok) {
+			return emission;
+		}
 
 		return ok({
 			id: policy.id as HumanResourcesLeavePolicyId,
@@ -826,16 +855,25 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			return mapPersistenceFailure(error, "Failed to update leave policy");
 		}
 
-		const audit = await ports.audit.record({
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: meta.correlationId,
-			entity: "hr_leave_policy",
-			entityId: input.policyId,
-			action: "UPDATE",
-			changes: [], // Empty changes array for now
-		});
-		if (!audit.ok) return audit;
+		const definition = getHumanResourcesMutationEmission(meta.operationId);
+		const emission = await emitHumanResourcesMutationOutcome(
+			{
+				commandId: meta.operationId,
+				meta: attachMutationExecutionContext(meta, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+				}),
+				aggregateType: definition.aggregateType,
+				aggregateId: input.policyId,
+				audit: {
+					entity: "hr_leave_policy",
+					action: "UPDATE",
+					changes: [],
+				},
+			},
+			ports,
+		);
+		if (!emission.ok) return emission;
 
 		return this.getLeavePolicyById({
 			organizationId: input.organizationId,
@@ -1233,6 +1271,28 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		);
 		if (!carryAdjustmentId.ok) return carryAdjustmentId;
 
+		const carryEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: newEntitlementId.data,
+			audit: {
+				entity: "hr_leave_adjustment",
+				entityId: carryAdjustmentId.data,
+				action: "CREATE",
+				changes: [],
+			},
+			eventType: getRegistryDomainEventType(
+				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+			),
+			eventEntityId: newEntitlementId.data,
+			eventEntityType: "hr_leave_entitlement",
+		});
+		if (carryEventType === undefined) {
+			return invalidState("Carry-forward adjustment requires a domain event");
+		}
+
 		try {
 			const sql = buildCarryForwardEntitlementSql({
 				sourceEntitlementId: input.entitlementId,
@@ -1247,6 +1307,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				createIdempotencyKey: input.createIdempotencyKey,
 				createRequestFingerprint: input.createRequestFingerprint,
 				carryAdjustmentId: carryAdjustmentId.data,
+				eventType: carryEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
@@ -1437,6 +1498,28 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			record.kind === "carry_forward" ||
 			record.kind === "expiry";
 
+		const plannedEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+			meta,
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			aggregateId: record.entitlementId,
+			audit: {
+				entity: "hr_leave_adjustment",
+				entityId: adjustmentId.data,
+				action: "CREATE",
+				changes: [],
+			},
+			eventType: shouldEmitEvent
+				? getRegistryDomainEventType(
+						HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+					)
+				: undefined,
+			eventEntityId: record.entitlementId,
+			eventEntityType: "hr_leave_entitlement",
+			conditionalEventSuppressed: !shouldEmitEvent,
+		});
+
 		try {
 			const sql = buildCreateLeaveAdjustmentSql({
 				adjustmentId: adjustmentId.data,
@@ -1451,9 +1534,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				createRequestFingerprint: record.createRequestFingerprint,
 				createdBy: record.createdBy,
 				correlationId: meta.correlationId,
-				eventType: shouldEmitEvent
-					? HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT
-					: undefined,
+				eventType: plannedEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>(
@@ -1912,6 +1993,24 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 		if (!validation.ok) return validation;
 
+		const submitEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.requestId,
+			audit: {
+				entity: "hr_leave_request",
+				action: "UPDATE",
+				changes: [],
+			},
+			eventType: getRegistryDomainEventType(
+				HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+			),
+			eventEntityId: input.requestId,
+			eventEntityType: "hr_leave_request",
+		});
+
 		try {
 			const sql = buildStatusTransitionSql({
 				requestId: input.requestId,
@@ -1920,7 +2019,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				actorUserId: input.actorUserId,
 				correlationId: meta.correlationId,
 				nextStatus: "submitted",
-				eventType: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+				eventType: submitEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
@@ -1986,6 +2085,27 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
 		if (!decisionId.ok) return decisionId;
 
+		const approveEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.requestId,
+			audit: {
+				entity: "hr_leave_request",
+				action: "UPDATE",
+				changes: [],
+			},
+			eventType: getRegistryDomainEventType(
+				HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+			),
+			eventEntityId: input.requestId,
+			eventEntityType: "hr_leave_request",
+		});
+		if (approveEventType === undefined) {
+			return invalidState("Leave request approval requires a domain event");
+		}
+
 		try {
 			const sql = buildApproveLeaveRequestSql({
 				requestId: input.requestId,
@@ -1997,6 +2117,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				consumptionAdjustmentId: consumptionAdjustmentId.data,
 				decisionId: decisionId.data,
 				createRequestFingerprint: request.data.fingerprint,
+				eventType: approveEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
@@ -2052,6 +2173,24 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
 		if (!decisionId.ok) return decisionId;
 
+		const rejectEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.requestId,
+			audit: {
+				entity: "hr_leave_request",
+				action: "UPDATE",
+				changes: [],
+			},
+			eventType: getRegistryDomainEventType(
+				HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+			),
+			eventEntityId: input.requestId,
+			eventEntityType: "hr_leave_request",
+		});
+
 		try {
 			const sql = buildStatusTransitionSql({
 				requestId: input.requestId,
@@ -2063,7 +2202,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				decision: "rejected",
 				decisionId: decisionId.data,
 				note: input.note,
-				eventType: HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
+				eventType: rejectEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(
@@ -2250,6 +2389,27 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
 		if (!decisionId.ok) return decisionId;
 
+		const cancelEventType = planLeaveMutationOutboxEventType({
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.requestId,
+			audit: {
+				entity: "hr_leave_request",
+				action: "UPDATE",
+				changes: [],
+			},
+			eventType: getRegistryDomainEventType(
+				HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+			),
+			eventEntityId: input.requestId,
+			eventEntityType: "hr_leave_request",
+		});
+		if (cancelEventType === undefined) {
+			return invalidState("Leave request cancellation requires a domain event");
+		}
+
 		try {
 			const sql = buildCancelApprovedLeaveRequestSql({
 				requestId: input.requestId,
@@ -2261,6 +2421,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				reversalAdjustmentId: reversalAdjustmentId.data,
 				decisionId: decisionId.data,
 				createRequestFingerprint: request.data.fingerprint,
+				eventType: cancelEventType,
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveRequestSqlRow[]]>(

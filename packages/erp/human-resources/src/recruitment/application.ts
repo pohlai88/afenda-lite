@@ -84,7 +84,7 @@ async function transitionApplication(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
+					operation: config.command,
 				}),
 			),
 	});

@@ -76,10 +76,103 @@ export type HumanResourcesPrivacyRequestContext = {
 	legalBasis: string;
 };
 
+export type HumanResourcesPrivacySubjectRecord = {
+	recordId: string;
+	entity: string;
+	organizationId: string;
+};
+
+export type HumanResourcesPrivacyExportResult = {
+	exportReference: string;
+	recordCount: number;
+	records: readonly HumanResourcesPrivacySubjectRecord[];
+};
+
+export const HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION =
+	"human-resources.subject-export.v1" as const;
+
+export type HumanResourcesSubjectExportRecordCategory =
+	| "identity"
+	| "employment"
+	| "assignment"
+	| "recruitment"
+	| "leave"
+	| "time"
+	| "compensation"
+	| "performance"
+	| "learning"
+	| "talent"
+	| "compliance"
+	| "employee_relations";
+
+export type HumanResourcesSubjectExportRecord = {
+	category: HumanResourcesSubjectExportRecordCategory;
+	entityType: string;
+	entityId: string;
+	classification: "personal" | "sensitive" | "highly_sensitive";
+	retentionClass: string;
+	data: Readonly<Record<string, unknown>>;
+};
+
+export type HumanResourcesSubjectExportBundle = {
+	schemaVersion: typeof HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION;
+	organizationId: string;
+	generatedAt: string;
+	correlationId: string;
+	exportReference: string;
+	recordCount: number;
+	subject: {
+		personId: string;
+		employeeIds: readonly string[];
+		workerIds: readonly string[];
+	};
+	records: readonly HumanResourcesSubjectExportRecord[];
+};
+
+export type HumanResourcesPrivacyCase = {
+	organizationId: string;
+	subjectEmployeeId: HumanResourcesEmployeeId;
+	exports: readonly {
+		exportId: string;
+		exportReference: string;
+		recordCount: number;
+		createdAt: string;
+	}[];
+	activeLegalHolds: readonly {
+		legalHoldId: string;
+		holdReference: string;
+		classifications: readonly string[];
+		placedAt: string;
+	}[];
+	recentOperations: readonly {
+		operationId: string;
+		kind: string;
+		affectedCount: number;
+		createdAt: string;
+	}[];
+};
+
+export type HumanResourcesAnonymizationEvaluation = {
+	allowed: boolean;
+	reasonCode?: string;
+};
+
+export type HumanResourcesRetentionEvaluation = {
+	policies: readonly HumanResourcesRetentionPolicy[];
+};
+
 export type HumanResourcesPrivacyPort = {
 	exportSubject(
 		input: HumanResourcesPrivacyRequestContext,
-	): Promise<Result<{ exportReference: string; recordCount: number }>>;
+	): Promise<Result<HumanResourcesPrivacyExportResult>>;
+	getSubjectPrivacyCase(
+		input: HumanResourcesPrivacyRequestContext,
+	): Promise<Result<HumanResourcesPrivacyCase>>;
+	evaluateAnonymization(
+		input: HumanResourcesPrivacyRequestContext & {
+			classifications?: readonly HumanResourcesRetentionClassification[];
+		},
+	): Promise<Result<HumanResourcesAnonymizationEvaluation>>;
 	rectifySubject(
 		input: HumanResourcesPrivacyRequestContext & {
 			changes: Readonly<Record<string, unknown>>;

@@ -156,7 +156,7 @@ async function transitionRequisition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
+					operation: config.command,
 				}),
 			),
 	});

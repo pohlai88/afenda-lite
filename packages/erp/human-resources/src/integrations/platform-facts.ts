@@ -15,15 +15,14 @@ import {
 	type HumanResourcesEventType,
 	humanResourcesEntityPayloadSchema,
 } from "@afenda/events";
+import {
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
+	HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+} from "@afenda/events/schemas";
 
 const HUMAN_RESOURCES_EVENT_TYPE_SET = new Set<string>(
 	HUMAN_RESOURCES_EVENT_IDS,
 );
-
-const EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT =
-	"human-resources.employee-document.nearing-expiry.v1" as const;
-const POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT =
-	"human-resources.policy-acknowledgement.outstanding.v1" as const;
 
 const WORKFLOW_TRANSITIONS: Partial<
 	Record<
@@ -76,13 +75,13 @@ const NOTIFICATION_TEMPLATES: Partial<
 		}
 	>
 > = {
-	[EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT]: {
+	[HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT]: {
 		type: "ACTION_REQUIRED",
 		priority: "HIGH",
 		title: "Employee document nearing expiry",
 		body: "Review the expiring employee document.",
 	},
-	[POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT]: {
+	[HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT]: {
 		type: "ACTION_REQUIRED",
 		priority: "HIGH",
 		title: "Policy acknowledgement outstanding",

@@ -76,7 +76,7 @@ describe("Security Boundary Tests", () => {
 		it("should allow access to own employee documents", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: validActorUserId,
@@ -90,7 +90,7 @@ describe("Security Boundary Tests", () => {
 		it("should deny access to other employee's documents with wrong employee ID", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: validActorUserId,
@@ -107,7 +107,7 @@ describe("Security Boundary Tests", () => {
 		it("should deny access when user has no employee identity", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: invalidActorUserId,
@@ -175,7 +175,7 @@ describe("Security Boundary Tests", () => {
 		it("should prevent cross-organization access", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId: "different-org", // Different organization
 					actorUserId: validActorUserId,
@@ -218,7 +218,7 @@ describe("Security Boundary Tests", () => {
 			// Test with a valid date within the effective period
 			const validResult = await requireComplianceEmployeeReadScope(
 				temporalIdentityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: validActorUserId,
@@ -232,7 +232,7 @@ describe("Security Boundary Tests", () => {
 			// Test with a date outside the effective period
 			const invalidResult = await requireComplianceEmployeeReadScope(
 				temporalIdentityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: validActorUserId,
@@ -250,7 +250,7 @@ describe("Security Boundary Tests", () => {
 		it("should derive own employee when client omits employeeId", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: validActorUserId,
@@ -264,7 +264,7 @@ describe("Security Boundary Tests", () => {
 		it("should handle malformed employee IDs", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: validActorUserId,
@@ -282,7 +282,7 @@ describe("Security Boundary Tests", () => {
 		it("should handle malformed organization IDs", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId: "malicious-org-id",
 					actorUserId: validActorUserId,
@@ -297,7 +297,7 @@ describe("Security Boundary Tests", () => {
 		it("should handle malformed user IDs", async () => {
 			const result = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId: "'; DROP TABLE platform_user; --",
@@ -504,7 +504,7 @@ describe("Security Boundary Tests", () => {
 			const managerAccessResult = await requireManagerResourceAccess(
 				identityResolver,
 				testStore as HumanResourcesStore,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,
@@ -518,7 +518,7 @@ describe("Security Boundary Tests", () => {
 			const managerDeniedResult = await requireManagerResourceAccess(
 				identityResolver,
 				testStore as HumanResourcesStore,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,
@@ -572,7 +572,7 @@ describe("Security Boundary Tests", () => {
 			// Should allow access to legitimate employee identity
 			const legitResult = await requireOwnResourceAccess(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,
@@ -585,7 +585,7 @@ describe("Security Boundary Tests", () => {
 			// Should prevent access to spoofed employee identity
 			const spoofResult = await requireOwnResourceAccess(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,
@@ -635,7 +635,7 @@ describe("Security Boundary Tests", () => {
 			// Should work for correct organization
 			const validOrgResult = await requireOwnResourceAccess(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,
@@ -648,7 +648,7 @@ describe("Security Boundary Tests", () => {
 			// Should fail for different organization
 			const invalidOrgResult = await requireOwnResourceAccess(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId: "different-org-456",
 					actorUserId,
@@ -699,7 +699,7 @@ describe("Security Boundary Tests", () => {
 			// Should work within valid period
 			const validPeriodResult = await requireOwnResourceAccess(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,
@@ -713,7 +713,7 @@ describe("Security Boundary Tests", () => {
 			// Should fail after identity expired
 			const expiredResult = await requireOwnResourceAccess(
 				identityResolver,
-				authPort,
+				{ authorization: authPort },
 				{
 					organizationId,
 					actorUserId,

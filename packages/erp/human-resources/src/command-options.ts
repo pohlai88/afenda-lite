@@ -1,9 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type {
-	HumanResourcesAuthorizationPort,
-	HumanResourcesResourceAwareAuthorizationPort,
-} from "./authorization";
 import { createProductionCurrencyLookup } from "./compensation-benefits/currency-lookup";
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
@@ -22,6 +17,10 @@ import type { HumanResourcesPrivacyPort } from "./privacy";
 import { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveHumanResourcesStore } from "./resolve-store";
+import type {
+	HumanResourcesAuthorizationPort,
+	HumanResourcesResourceAwareAuthorizationPort,
+} from "./shared/authorization-types";
 import type { HumanResourcesStore } from "./store";
 import type { AssignmentContextQueryPort } from "./time/handoff/ports";
 import type { WorkCalendarPort } from "./time/work-calendar";
@@ -56,30 +55,36 @@ export function resolveStore(store?: HumanResourcesStore): HumanResourcesStore {
 	return resolveHumanResourcesStore(store);
 }
 
-export function requireWorkCalendar(
-	options: HumanResourcesCommandOptions,
-): Result<WorkCalendarPort> {
-	if (options.workCalendar === undefined) {
+function requireCommandOptionPort<T>(
+	value: T | undefined,
+	message: string,
+): Result<T> {
+	if (value === undefined) {
 		return fail(
 			"CONFLICT",
-			"Work calendar adapter is required for this command.",
+			message,
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
 		);
 	}
-	return ok(options.workCalendar);
+	return ok(value);
+}
+
+export function requireWorkCalendar(
+	options: HumanResourcesCommandOptions,
+): Result<WorkCalendarPort> {
+	return requireCommandOptionPort(
+		options.workCalendar,
+		"Work calendar adapter is required for this command.",
+	);
 }
 
 export function requireApprovedLeaveQuery(
 	options: HumanResourcesCommandOptions,
 ): Result<ApprovedLeaveQueryPort> {
-	if (options.approvedLeave === undefined) {
-		return fail(
-			"CONFLICT",
-			"Approved leave query adapter is required for this command.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
-	}
-	return ok(options.approvedLeave);
+	return requireCommandOptionPort(
+		options.approvedLeave,
+		"Approved leave query adapter is required for this command.",
+	);
 }
 
 export function resolveAssignmentContext(
@@ -91,53 +96,37 @@ export function resolveAssignmentContext(
 export function requireAttendanceSource(
 	options: HumanResourcesCommandOptions,
 ): Result<AttendanceSourcePort> {
-	if (options.attendanceSource === undefined) {
-		return fail(
-			"CONFLICT",
-			"Attendance source adapter is required for this command.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
-	}
-	return ok(options.attendanceSource);
+	return requireCommandOptionPort(
+		options.attendanceSource,
+		"Attendance source adapter is required for this command.",
+	);
 }
 
 export function requireDocumentReference(
 	options: HumanResourcesCommandOptions,
 ): Result<DocumentReferencePort> {
-	if (options.documentReference === undefined) {
-		return fail(
-			"CONFLICT",
-			"Document reference adapter is required for this command.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
-	}
-	return ok(options.documentReference);
+	return requireCommandOptionPort(
+		options.documentReference,
+		"Document reference adapter is required for this command.",
+	);
 }
 
 export function requirePrivacyPort(
 	options: HumanResourcesCommandOptions,
 ): Result<HumanResourcesPrivacyPort> {
-	if (options.privacy === undefined) {
-		return fail(
-			"CONFLICT",
-			"Human Resources privacy adapter is required for this operation.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
-	}
-	return ok(options.privacy);
+	return requireCommandOptionPort(
+		options.privacy,
+		"Human Resources privacy adapter is required for this operation.",
+	);
 }
 
 export function requireOrganizationDimensionDirectory(
 	options: HumanResourcesCommandOptions,
 ): Result<OrganizationDimensionDirectoryPort> {
-	if (options.organizationDimensions === undefined) {
-		return fail(
-			"CONFLICT",
-			"Organization dimension directory is required for this command.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
-	}
-	return ok(options.organizationDimensions);
+	return requireCommandOptionPort(
+		options.organizationDimensions,
+		"Organization dimension directory is required for this command.",
+	);
 }
 
 export function resolveCommandDeps(

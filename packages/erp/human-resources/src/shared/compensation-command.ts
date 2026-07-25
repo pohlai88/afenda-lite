@@ -1,12 +1,5 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
-import type { HumanResourcesPermission } from "../authorization";
-import {
-	type HumanResourcesResourceAwareAuthorizationPort,
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-	requireHumanResourcesResourceAwarePermission,
-} from "../authorization";
 import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
@@ -19,16 +12,20 @@ import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
+import type { HumanResourcesPermission } from "../permissions";
 import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../permissions";
 import type { CurrencyLookupPort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesResourceContext } from "./authorization-types";
+import { assertHumanResourcesSupplementalAuthorization } from "./contextual-authorization";
+import {
+	runParsedAuthorizedCommand,
+	runParsedAuthorizedQuery,
+} from "./domain-runner";
 import { applySensitivityProjection } from "./field-projection";
+import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
 
-type ActorScoped = {
-	organizationId: string;
-	actorUserId: string;
-};
+type ActorScoped = HumanResourcesAuthorizedActorInput;
 
 type CommandDeps = {
 	store: HumanResourcesStore;
@@ -38,9 +35,6 @@ type CommandDeps = {
 
 type QueryDeps = {
 	store: HumanResourcesStore;
-	resourceAwareAuthorization:
-		| HumanResourcesResourceAwareAuthorizationPort
-		| undefined;
 };
 
 /** Apply highly_restricted compensation projection when resource-aware port is wired. */
@@ -52,11 +46,14 @@ export async function projectCompensationRecord<
 		organizationId: string;
 		actorUserId: string;
 		resourceId?: string;
-		resourceAwareAuthorization?: HumanResourcesResourceAwareAuthorizationPort;
+		operationId: HumanResourcesCommandId | HumanResourcesQueryId;
+		operationKind: "command" | "query";
+		options: HumanResourcesCommandOptions;
 		actorPermissions: Set<HumanResourcesPermission>;
 	},
 ): Promise<Result<Partial<T>>> {
-	if (!input.resourceAwareAuthorization) {
+	const { resourceAwareAuthorization } = resolveCommandDeps(input.options);
+	if (!resourceAwareAuthorization) {
 		const projected = applySensitivityProjection(
 			record,
 			"highly_restricted",
@@ -65,22 +62,27 @@ export async function projectCompensationRecord<
 		return { ok: true, data: projected.data };
 	}
 
-	const decision = await requireHumanResourcesResourceAwarePermission(
-		input.resourceAwareAuthorization,
+	const resource: HumanResourcesResourceContext = {
+		organizationId: input.organizationId,
+		kind: "compensation",
+		...(input.resourceId === undefined ? {} : { resourceId: input.resourceId }),
+	};
+
+	const decision = await assertHumanResourcesSupplementalAuthorization(
 		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			permission: HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
-			resourceType: "compensation",
-			resourceId: input.resourceId,
-			sensitivity: "highly_restricted",
+			operationId: input.operationId,
+			operationKind: input.operationKind,
+			requiredPermission: HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+			actor: {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: "",
+			},
+			resource,
 		},
+		input.options,
 	);
 	if (!decision.ok) return decision;
-
-	if (!decision.data.projectedFields?.length) {
-		return { ok: true, data: record };
-	}
 
 	const projected = applySensitivityProjection(
 		record,
@@ -124,29 +126,17 @@ export async function runCompensationCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, currency, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: config.command,
+	return runParsedAuthorizedCommand(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
+		command: config.command,
+		parityResourceKind: "compensation",
+		resolveDeps: (opts) => {
+			const { store, ports, currency } = resolveCommandDeps(opts);
+			return ok({ store, ports, currency });
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, { store, ports, currency });
+		execute: config.execute,
+	});
 }
 
 export async function runCompensationQuery<
@@ -162,25 +152,15 @@ export async function runCompensationQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization, resourceAwareAuthorization } =
-		resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runParsedAuthorizedQuery(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
 		query: config.query,
+		parityResourceKind: "compensation",
+		resolveDeps: (opts) => {
+			const { store } = resolveCommandDeps(opts);
+			return ok({ store });
+		},
+		execute: config.execute,
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, { store, resourceAwareAuthorization });
 }

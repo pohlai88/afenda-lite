@@ -10,6 +10,7 @@ import {
 import { createHumanResourcesDocumentReferencePort } from "@/lib/erp/human-resources-document-reference-port";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
 import { createHumanResourcesOrganizationDimensionPort } from "@/lib/erp/human-resources-organization-dimension-port";
+import { createHumanResourcesPrivacyPort } from "@/lib/erp/human-resources-privacy-port";
 import { createHumanResourcesWorkCalendarPort } from "@/lib/erp/human-resources-work-calendar-port";
 
 /** Composition-root options for `@afenda/human-resources` public APIs. */
@@ -27,5 +28,6 @@ export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptio
 		}),
 		attendanceSource: createHumanResourcesAttendanceSourcePort(),
 		documentReference: createHumanResourcesDocumentReferencePort(),
+		privacy: createHumanResourcesPrivacyPort(),
 	};
 }

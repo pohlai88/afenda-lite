@@ -126,7 +126,7 @@ async function transitionOffer(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
+					operation: config.command,
 				}),
 			),
 	});

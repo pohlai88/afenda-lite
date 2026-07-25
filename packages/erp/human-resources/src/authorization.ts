@@ -1,5 +1,4 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import type { HumanResourcesEmployeeId } from "./brands";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
@@ -10,44 +9,19 @@ import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
 } from "./module-ids";
-import type { HUMAN_RESOURCES_PERMISSION_CODES } from "./permissions";
+import type { HumanResourcesPermission } from "./permissions";
+import type {
+	HumanResourcesAuthorizationDecisionInput,
+	HumanResourcesAuthorizationPort,
+	HumanResourcesResourceAwareAuthorizationPort,
+} from "./shared/authorization-types";
 
-export type HumanResourcesPermission =
-	(typeof HUMAN_RESOURCES_PERMISSION_CODES)[number];
-
-export type HumanResourcesAuthorizationPort = {
-	can(input: {
-		organizationId: string;
-		actorUserId: string;
-		permission: HumanResourcesPermission;
-	}): Promise<boolean>;
-};
-
-export type HumanResourcesAuthorizationDecisionInput = {
-	organizationId: string;
-	actorUserId: string;
-	permission: HumanResourcesPermission;
-
-	// Resource context
-	resourceType?: string;
-	resourceId?: string;
-	subjectEmployeeId?: HumanResourcesEmployeeId;
-	ownerEmployeeId?: HumanResourcesEmployeeId;
-
-	// Sensitivity and temporal context
-	sensitivity?: "standard" | "sensitive" | "highly_restricted";
-	asOf?: string;
-};
-
-export type HumanResourcesResourceAwareAuthorizationPort = {
-	canWithContext(input: HumanResourcesAuthorizationDecisionInput): Promise<
-		Result<{
-			allowed: boolean;
-			projectedFields?: string[];
-			reason?: string;
-		}>
-	>;
-};
+export type {
+	HumanResourcesAuthorizationDecisionInput,
+	HumanResourcesAuthorizationPort,
+	HumanResourcesResourceAwareAuthorizationPort,
+} from "./shared/authorization-types";
+export type { HumanResourcesPermission };
 
 export async function requireHumanResourcesCommandPermission(
 	authorization: HumanResourcesAuthorizationPort | undefined,

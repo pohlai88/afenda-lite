@@ -360,6 +360,10 @@ export const hrEmploymentContract = pgTable(
 			t.employmentId,
 			t.referenceCode,
 		),
+		check(
+			"hr_employment_contract_effective_range_ck",
+			sql`${t.endsOn} IS NULL OR ${t.startsOn} <= ${t.endsOn}`,
+		),
 	],
 );
 
@@ -478,6 +482,10 @@ export const hrWorkAssignment = pgTable(
 			],
 			name: "hr_work_assignment_org_project_dimension_fk",
 		}),
+		check(
+			"hr_work_assignment_effective_range_ck",
+			sql`${t.endsOn} IS NULL OR ${t.startsOn} <= ${t.endsOn}`,
+		),
 	],
 );
 
@@ -519,6 +527,10 @@ export const hrReportingLine = pgTable(
 		uniqueIndex("hr_reporting_line_org_employee_open_primary_uidx")
 			.on(t.organizationId, t.employeeId)
 			.where(sql`${t.endsOn} IS NULL AND ${t.relationshipKind} = 'primary'`),
+		check(
+			"hr_reporting_line_effective_range_ck",
+			sql`${t.endsOn} IS NULL OR ${t.startsOn} <= ${t.endsOn}`,
+		),
 	],
 );
 

@@ -55,17 +55,22 @@ Consumes **OPEN-DECISION-04** (org dimensions) and **OPEN-DECISION-01** (effecti
 
 ---
 
-## Missing database invariants (command-enforced only)
+## Database effective-range invariants (CLOSED — HR-COREORG-DB-INVARIANTS)
+
+| Table | DDL (2026-07-25) | Overlap policy |
+|---|---|---|
+| `hr_work_assignment` | `hr_work_assignment_effective_range_ck` | Open-assignment unique index + command guards; dated overlap command-only — [`hr-coreorg-db-invariant-exclusion-register.json`](../../hr-coreorg-db-invariant-exclusion-register.json) |
+| `hr_employment_contract` | `hr_employment_contract_effective_range_ck` | Overlap command-only (`assertValidDateRange`; no exclusion constraint) |
+| `hr_reporting_line` | `hr_reporting_line_effective_range_ck` | Primary overlap via `assertNoPrimaryReportingOverlap` + open-primary unique index |
+
+## Remaining gaps (command-enforced only)
 
 | Table | Missing DDL | Command/adapter enforcement | Risk |
 |---|---|---|---|
-| `hr_work_assignment` | No `starts_on <= ends_on` check | `assertValidDateRange` in adapters | Bad ranges if bypassing package |
-| `hr_employment_contract` | No overlap exclusion constraint | Adapter overlap checks (verify per adapter) | Historical overlap under concurrency |
-| `hr_reporting_line` | Open-primary unique only | Adapter + unique partial index | Overlap of dated ranges possible |
 | `hr_person` | No FK from employee to person | Worker FK to person only | Orphan person records acceptable by design |
-| `hr_candidate` | Consent columns absent vs type | Zod at command boundary only | Persistence cannot store consent |
+| `hr_candidate` | Consent columns absent vs type | Zod at command boundary only | Persistence cannot store consent — **superseded**: HR-COREORG-CANDIDATE-CONSENT-ALIGN **CLOSED** |
 
-Positive DDL evidence: `hr_worker_org_person_uidx`, `hr_worker_org_employee_uidx`, `hr_employment_org_employee_open_uidx`, `hr_work_assignment_org_employment_open_uidx`, `hr_candidate_application` open-application unique, offer accept idempotency unique.
+Positive DDL evidence: `hr_worker_org_person_uidx`, `hr_worker_org_employee_uidx`, `hr_employment_org_employee_open_uidx`, `hr_work_assignment_org_employment_open_uidx`, `hr_work_assignment_effective_range_ck`, `hr_employment_contract_effective_range_ck`, `hr_reporting_line_effective_range_ck`, `hr_candidate_application` open-application unique, offer accept idempotency unique.
 
 ---
 

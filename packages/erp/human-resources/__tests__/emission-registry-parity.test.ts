@@ -1,7 +1,18 @@
 import { HumanResourcesEventSchemas } from "@afenda/events";
 import { describe, expect, it } from "vitest";
 import { humanResourcesModuleManifest } from "../src/module.manifest";
-import { HUMAN_RESOURCES_TIME_COMMAND_IDS } from "../src/module-ids";
+import {
+	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
+	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
+	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
+	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
+	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
+	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
+	HUMAN_RESOURCES_TIME_COMMAND_IDS,
+	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
+	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
+} from "../src/module-ids";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
 
 describe("mutation emission registry parity", () => {
@@ -44,5 +55,147 @@ describe("mutation emission registry parity", () => {
 				),
 		);
 		expect(timeRows).toHaveLength(HUMAN_RESOURCES_TIME_COMMAND_IDS.length);
+	});
+
+	it("every leave command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_LEAVE_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const leaveRows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter(
+			(entry) =>
+				(HUMAN_RESOURCES_LEAVE_COMMAND_IDS as readonly string[]).includes(
+					entry.command,
+				),
+		);
+		expect(leaveRows).toHaveLength(HUMAN_RESOURCES_LEAVE_COMMAND_IDS.length);
+	});
+
+	it("every workforce-foundation command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(
+				HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS as readonly string[]
+			).includes(entry.command),
+		);
+		expect(rows).toHaveLength(
+			HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS.length,
+		);
+	});
+
+	it("every core-organization command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS as readonly string[]).includes(
+				entry.command,
+			),
+		);
+		expect(rows).toHaveLength(HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS.length);
+	});
+
+	it("every recruitment command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS as readonly string[]).includes(
+				entry.command,
+			),
+		);
+		expect(rows).toHaveLength(HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS.length);
+	});
+
+	it("every lifecycle command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS as readonly string[]).includes(
+				entry.command,
+			),
+		);
+		expect(rows).toHaveLength(HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS.length);
+	});
+
+	it("every employee-relations command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(
+				HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS as readonly string[]
+			).includes(entry.command),
+		);
+		expect(rows).toHaveLength(
+			HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS.length,
+		);
+	});
+
+	it("every compliance command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS as readonly string[]).includes(
+				entry.command,
+			),
+		);
+		expect(rows).toHaveLength(HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS.length);
+	});
+
+	it("every talent command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_TALENT_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(HUMAN_RESOURCES_TALENT_COMMAND_IDS as readonly string[]).includes(
+				entry.command,
+			),
+		);
+		expect(rows).toHaveLength(HUMAN_RESOURCES_TALENT_COMMAND_IDS.length);
+	});
+
+	it("every workforce-planning command appears exactly once in the emission registry", () => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(
+				HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS as readonly string[]
+			).includes(entry.command),
+		);
+		expect(rows).toHaveLength(
+			HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS.length,
+		);
 	});
 });

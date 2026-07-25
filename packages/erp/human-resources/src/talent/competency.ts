@@ -36,7 +36,12 @@ import {
 	fingerprintCompetencyCreate,
 } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
+import {
+	resolveCompetencyAssessmentResource,
+	runTalentCommand,
+	runTalentEmployeeScopedQuery,
+	runTalentQuery,
+} from "../shared/talent-command";
 import type {
 	Competency,
 	CompetencyAssessment,
@@ -45,6 +50,10 @@ import type {
 	JobCompetency,
 	JobCompetencyListPage,
 } from "../types";
+import {
+	projectEmployeeCompetencyProfileFromDecision,
+	talentSensitiveQueryRequestedFields,
+} from "./talent-field-projection";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPETENCY = "competency" as const;
 export type HumanResourcesCompetencyAggregate =
@@ -223,6 +232,11 @@ export async function assessEmployeeCompetency(
 		schema: assessEmployeeCompetencyInputSchema,
 		invalidMessage: "Invalid employee competency assessment input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
+		resolveResource: async (data) => ({
+			organizationId: data.organizationId,
+			kind: "competency_assessment",
+			subjectEmployeeId: data.employeeId,
+		}),
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintCompetencyAssessmentCreate({
 				employeeId: data.employeeId,
@@ -286,6 +300,8 @@ export async function supersedeCompetencyAssessment(
 		schema: supersedeCompetencyAssessmentInputSchema,
 		invalidMessage: "Invalid competency assessment supersede input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
+		resolveResource: (data, opts) =>
+			resolveCompetencyAssessmentResource(data, opts),
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintCompetencyAssessmentSupersede({
 				assessmentId: data.assessmentId,
@@ -376,10 +392,13 @@ export async function getEmployeeCompetencyProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompetencyProfile>> {
-	return runTalentQuery(input, options, {
+	return runTalentEmployeeScopedQuery(input, options, {
 		schema: getEmployeeCompetencyProfileInputSchema,
 		invalidMessage: "Invalid employee competency profile get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET,
+		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
+		project: (value: EmployeeCompetencyProfile, projection) =>
+			projectEmployeeCompetencyProfileFromDecision(value, projection),
 		execute: async (data, { store }) => {
 			return await store.getEmployeeCompetencyProfile({
 				organizationId: data.organizationId,

@@ -1,12 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import {
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
-import {
-	type HumanResourcesCommandOptions,
-	resolveCommandDeps,
-} from "../command-options";
+import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -21,7 +14,6 @@ import {
 	HUMAN_RESOURCES_QUERY_POSITION_LIST,
 	HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
 } from "../module-ids";
-import { parseHumanResourcesInput } from "../parse-input";
 import {
 	createPositionInputSchema,
 	getPositionInputSchema,
@@ -31,332 +23,219 @@ import {
 	updatePositionInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import {
+	runOrganizationCommand,
+	runOrganizationQuery,
+} from "../shared/organization-command";
 import type { Position, PositionOccupancyAsOf } from "../types";
 
 export async function createPosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
-	const parsed = parseHumanResourcesInput(
-		createPositionInputSchema,
-		input,
-		"Invalid position create input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.createPosition(
-		{
-			organizationId: parsed.data.organizationId,
-			code: parsed.data.code.trim(),
-			title: parsed.data.title.trim(),
-			departmentId: parsed.data.departmentId,
-			jobId: parsed.data.jobId,
-			status: parsed.data.status ?? "active",
-			createdBy: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: createPositionInputSchema,
+		invalidMessage: "Invalid position create input",
+		command: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+		execute: async (data, { store, ports }) =>
+			store.createPosition(
+				{
+					organizationId: data.organizationId,
+					code: data.code.trim(),
+					title: data.title.trim(),
+					departmentId: data.departmentId,
+					jobId: data.jobId,
+					status: data.status ?? "active",
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+				}),
+			),
+	});
 }
 
 export async function updatePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
-	const parsed = parseHumanResourcesInput(
-		updatePositionInputSchema,
-		input,
-		"Invalid position update input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.updatePosition(
-		{
-			organizationId: parsed.data.organizationId,
-			positionId: parsed.data.positionId,
-			title: parsed.data.title?.trim(),
-			departmentId: parsed.data.departmentId,
-			jobId: parsed.data.jobId,
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: updatePositionInputSchema,
+		invalidMessage: "Invalid position update input",
+		command: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+		execute: async (data, { store, ports }) =>
+			store.updatePosition(
+				{
+					organizationId: data.organizationId,
+					positionId: data.positionId,
+					title: data.title?.trim(),
+					departmentId: data.departmentId,
+					jobId: data.jobId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+				}),
+			),
+	});
 }
 
 export async function activatePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
-	const parsed = parseHumanResourcesInput(
-		positionStatusTransitionInputSchema,
-		input,
-		"Invalid position activate input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.setPositionStatus(
-		{
-			organizationId: parsed.data.organizationId,
-			positionId: parsed.data.positionId,
-			status: "active",
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: positionStatusTransitionInputSchema,
+		invalidMessage: "Invalid position activate input",
+		command: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
+		execute: async (data, { store, ports }) =>
+			store.setPositionStatus(
+				{
+					organizationId: data.organizationId,
+					positionId: data.positionId,
+					status: "active",
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
+				}),
+			),
+	});
 }
 
 export async function freezePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
-	const parsed = parseHumanResourcesInput(
-		positionStatusTransitionInputSchema,
-		input,
-		"Invalid position freeze input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.setPositionStatus(
-		{
-			organizationId: parsed.data.organizationId,
-			positionId: parsed.data.positionId,
-			status: "frozen",
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: positionStatusTransitionInputSchema,
+		invalidMessage: "Invalid position freeze input",
+		command: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
+		execute: async (data, { store, ports }) =>
+			store.setPositionStatus(
+				{
+					organizationId: data.organizationId,
+					positionId: data.positionId,
+					status: "frozen",
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
+				}),
+			),
+	});
 }
 
 export async function closePosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
-	const parsed = parseHumanResourcesInput(
-		positionStatusTransitionInputSchema,
-		input,
-		"Invalid position close input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.setPositionStatus(
-		{
-			organizationId: parsed.data.organizationId,
-			positionId: parsed.data.positionId,
-			status: "closed",
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-		},
-		ports,
-		buildMutationMeta({
-			correlationId: parsed.data.correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
-		}),
-	);
+	return runOrganizationCommand(input, options, {
+		schema: positionStatusTransitionInputSchema,
+		invalidMessage: "Invalid position close input",
+		command: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
+		execute: async (data, { store, ports }) =>
+			store.setPositionStatus(
+				{
+					organizationId: data.organizationId,
+					positionId: data.positionId,
+					status: "closed",
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
+				}),
+			),
+	});
 }
 
 export async function getPosition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Position>> {
-	const parsed = parseHumanResourcesInput(
-		getPositionInputSchema,
-		input,
-		"Invalid position get input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runOrganizationQuery(input, options, {
+		schema: getPositionInputSchema,
+		invalidMessage: "Invalid position get input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_GET,
+		execute: async (data, { store }) => {
+			const position = await store.getPositionById({
+				organizationId: data.organizationId,
+				positionId: data.positionId,
+			});
+			if (!position.ok) {
+				return position;
+			}
+			if (position.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Position not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(position.data);
+		},
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const position = await store.getPositionById({
-		organizationId: parsed.data.organizationId,
-		positionId: parsed.data.positionId,
-	});
-	if (!position.ok) {
-		return position;
-	}
-	if (position.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Position not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-	return ok(position.data);
 }
 
 export async function getPositionOccupancyAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PositionOccupancyAsOf>> {
-	const parsed = parseHumanResourcesInput(
-		getPositionOccupancyAsOfInputSchema,
-		input,
-		"Invalid position occupancy input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runOrganizationQuery(input, options, {
+		schema: getPositionOccupancyAsOfInputSchema,
+		invalidMessage: "Invalid position occupancy input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
+		execute: async (data, { store }) => {
+			const occupancy = await store.resolvePositionOccupancyAsOf({
+				organizationId: data.organizationId,
+				positionId: data.positionId,
+				asOf: data.asOf,
+			});
+			if (!occupancy.ok) {
+				return occupancy;
+			}
+			if (occupancy.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Position not found",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+			return ok(occupancy.data);
+		},
 	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const occupancy = await store.resolvePositionOccupancyAsOf({
-		organizationId: parsed.data.organizationId,
-		positionId: parsed.data.positionId,
-		asOf: parsed.data.asOf,
-	});
-	if (!occupancy.ok) {
-		return occupancy;
-	}
-	if (occupancy.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Position not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
-	}
-	return ok(occupancy.data);
 }
 
 export async function listPositions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ positions: Position[]; totalCount: number }>> {
-	const parsed = parseHumanResourcesInput(
-		listPositionsInputSchema,
-		input,
-		"Invalid position list input",
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runOrganizationQuery(input, options, {
+		schema: listPositionsInputSchema,
+		invalidMessage: "Invalid position list input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_LIST,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return store.listPositions({
-		organizationId: parsed.data.organizationId,
-		page: parsed.data.page ?? 1,
-		pageSize: parsed.data.pageSize ?? 20,
-		status: parsed.data.status,
-		departmentId: parsed.data.departmentId,
-		jobId: parsed.data.jobId,
+		execute: async (data, { store }) =>
+			store.listPositions({
+				organizationId: data.organizationId,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 20,
+				status: data.status,
+				departmentId: data.departmentId,
+				jobId: data.jobId,
+			}),
 	});
 }

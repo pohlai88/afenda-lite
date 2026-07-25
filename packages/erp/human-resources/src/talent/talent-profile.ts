@@ -12,6 +12,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
 	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
 } from "../module-ids";
+import { parseHumanResourcesInput } from "../parse-input";
 import {
 	archiveTalentProfileInputSchema,
 	confirmTalentProfileAssessmentInputSchema,
@@ -23,11 +24,17 @@ import {
 import { fingerprintTalentProfileCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
-	requireTalentProfileSensitiveRead,
+	resolveActorTalentProfileResource,
+	resolveTalentProfileResourceForEmployee,
+	resolveTalentProfileResourceFromTalentProfile,
 	runTalentCommand,
-	runTalentQuery,
+	runTalentEmployeeScopedQuery,
 } from "../shared/talent-command";
 import type { TalentProfile, TalentProfileAssessment } from "../types";
+import {
+	projectTalentProfileFromDecision,
+	TALENT_PROFILE_SENSITIVE_FIELD_NAMES,
+} from "./talent-field-projection";
 
 export const HUMAN_RESOURCES_AGGREGATE_TALENT_PROFILE =
 	"talent-profile" as const;
@@ -42,6 +49,14 @@ export async function createTalentProfile(
 		schema: createTalentProfileInputSchema,
 		invalidMessage: "Invalid talent profile create input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
+		resolveResource: async (data, opts) =>
+			resolveTalentProfileResourceForEmployee(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+				},
+				opts,
+			),
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintTalentProfileCreate({
 				employeeId: data.employeeId,
@@ -94,6 +109,8 @@ export async function updateTalentProfile(
 		schema: updateTalentProfileInputSchema,
 		invalidMessage: "Invalid talent profile update input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromTalentProfile(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.updateTalentProfile(
 				{
@@ -121,6 +138,8 @@ export async function recordTalentProfileAssessment(
 		schema: recordTalentProfileAssessmentInputSchema,
 		invalidMessage: "Invalid talent profile assessment record input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromTalentProfile(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.recordTalentProfileAssessment(
 				{
@@ -150,6 +169,8 @@ export async function confirmTalentProfileAssessment(
 		schema: confirmTalentProfileAssessmentInputSchema,
 		invalidMessage: "Invalid talent profile assessment confirm input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
+		resolveResource: (data, opts) =>
+			resolveActorTalentProfileResource(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.confirmTalentProfileAssessment(
 				{
@@ -176,6 +197,8 @@ export async function archiveTalentProfile(
 		schema: archiveTalentProfileInputSchema,
 		invalidMessage: "Invalid talent profile archive input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromTalentProfile(data, opts),
 		execute: async (data, { store, ports }) => {
 			return await store.archiveTalentProfile(
 				{
@@ -198,34 +221,30 @@ export async function getTalentProfileByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile | null>> {
-	return runTalentQuery(input, options, {
+	const parsed = parseHumanResourcesInput(
+		getTalentProfileByEmployeeInputSchema,
+		input,
+		"Invalid talent profile get by employee input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+	const includeSensitive = parsed.data.includeSensitive;
+
+	return runTalentEmployeeScopedQuery(parsed.data, options, {
 		schema: getTalentProfileByEmployeeInputSchema,
 		invalidMessage: "Invalid talent profile get by employee input",
 		query: HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
-		execute: async (data, { store, authorization }) => {
-			const sensitiveCheck = await requireTalentProfileSensitiveRead(
-				authorization,
-				{
-					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-					includeSensitive: data.includeSensitive,
-				},
-			);
-			if (!sensitiveCheck.ok) {
-				return sensitiveCheck;
-			}
-
-			const profile = await store.getTalentProfileByEmployee({
+		resolveRequestedFields: () =>
+			includeSensitive ? [...TALENT_PROFILE_SENSITIVE_FIELD_NAMES] : undefined,
+		project: (value: TalentProfile | null, projection) =>
+			projectTalentProfileFromDecision(value, projection, {
+				includeSensitive,
+			}),
+		execute: async (data, { store }) =>
+			store.getTalentProfileByEmployee({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
-			});
-			if (!profile.ok) {
-				return profile;
-			}
-			if (profile.data === null || data.includeSensitive) {
-				return profile;
-			}
-			return ok({ ...profile.data, currentClassification: null });
-		},
+			}),
 	});
 }

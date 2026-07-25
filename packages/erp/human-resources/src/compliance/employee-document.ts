@@ -312,7 +312,7 @@ export async function getEmployeeDocument(
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: getEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document get input",
-		execute: async (data, { store, authorization, identityResolver }) => {
+		execute: async (data, { store, identityResolver }) => {
 			const documentResult = await store.getEmployeeDocumentById({
 				organizationId: data.organizationId,
 				documentId: data.documentId,
@@ -332,7 +332,7 @@ export async function getEmployeeDocument(
 			}
 			const scope = await requireComplianceEmployeeReadScope(
 				identityResolver,
-				authorization,
+				options,
 				{
 					organizationId: data.organizationId,
 					actorUserId: data.actorUserId,
@@ -343,13 +343,10 @@ export async function getEmployeeDocument(
 				return scope;
 			}
 
-			const sensitive = await requireIdentityDocumentSensitiveRead(
-				authorization,
-				{
-					organizationId: data.organizationId,
-					actorUserId: data.actorUserId,
-				},
-			);
+			const sensitive = await requireIdentityDocumentSensitiveRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+			});
 			if (sensitive.ok) {
 				return ok(toEmployeeDocumentSensitiveDetail(documentResult.data));
 			}

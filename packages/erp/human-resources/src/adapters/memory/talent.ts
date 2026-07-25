@@ -11,7 +11,9 @@ import {
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT,
+	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT,
+	HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
 
@@ -1203,6 +1205,19 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: profile.organizationId,
+				actorUserId: profile.createdBy,
+				type: HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
+				entityType: "hr_talent_profile",
+				entityId: profile.id,
+			});
+			if (!outbox.ok) {
+				state.talentProfiles.delete(profile.id);
+				state.talentProfileIdempotency.delete(idempotencyKey);
+				return outbox;
+			}
+
 			return ok({ ...profile });
 		},
 
@@ -1249,6 +1264,18 @@ export function createMemoryTalentMethods(
 			if (!audit.ok) {
 				state.talentProfiles.set(loaded.data.id, loaded.data);
 				return audit;
+			}
+
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
+				entityType: "hr_talent_profile",
+				entityId: input.talentProfileId,
+			});
+			if (!outbox.ok) {
+				state.talentProfiles.set(loaded.data.id, loaded.data);
+				return outbox;
 			}
 
 			return ok({ ...updated });
@@ -1850,6 +1877,18 @@ export function createMemoryTalentMethods(
 			if (!audit.ok) {
 				state.talentPoolMembers.set(loaded.data.id, loaded.data);
 				return audit;
+			}
+
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
+				entityType: "hr_talent_pool_member",
+				entityId: input.memberId,
+			});
+			if (!outbox.ok) {
+				state.talentPoolMembers.set(loaded.data.id, loaded.data);
+				return outbox;
 			}
 
 			return ok({ ...updated });

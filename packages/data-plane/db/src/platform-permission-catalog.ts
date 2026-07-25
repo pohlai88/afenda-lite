@@ -1106,6 +1106,36 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
+		code: "human-resources.privacy.export",
+		module: "human_resources",
+		description: "Export human-resources subject data for privacy requests",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.privacy.anonymize.evaluate",
+		module: "human_resources",
+		description: "Evaluate human-resources anonymization eligibility",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.privacy.retention.evaluate",
+		module: "human_resources",
+		description: "Evaluate human-resources retention policies for a subject",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.privacy.legal-hold.manage",
+		module: "human_resources",
+		description: "Place and release human-resources legal holds",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.privacy.anonymize.execute",
+		module: "human_resources",
+		description: "Execute human-resources subject anonymization",
+		sensitive: true,
+	},
+	{
 		code: "payroll.setup.manage",
 		module: "payroll",
 		description: "Manage payroll calendars, pay groups, and rules",

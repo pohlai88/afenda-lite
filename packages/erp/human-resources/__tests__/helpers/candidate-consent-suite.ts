@@ -1,9 +1,11 @@
 import { afterAll, expect, it } from "vitest";
 
 import {
+	changeCandidateRetention,
 	createCandidate,
 	getCandidate,
 	listCandidates,
+	withdrawCandidateConsent,
 } from "../../src/recruitment/candidate";
 import { candidateConsentFixture } from "./candidate-consent-fixture";
 import {
@@ -174,5 +176,142 @@ export function runCandidateConsentSuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		expect(crossOrg.ok).toBe(false);
+	});
+
+	it("withdraws candidate consent and rejects double withdrawal", async () => {
+		const ready = createHrParityHarness(adapter);
+		const created = await createCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-withdraw-create-${suffix}`,
+				idempotencyKey: `idem-consent-withdraw-create-${suffix}`,
+				displayName: "Withdraw Candidate",
+				email: `withdraw-${suffix}@example.com`,
+				...candidateConsentFixture(),
+			},
+			ready,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const withdrawn = await withdrawCandidateConsent(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-withdraw-${suffix}`,
+				candidateId: created.data.id,
+				expectedVersion: created.data.version,
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+		expect(withdrawn.data.consentWithdrawnAt).not.toBeNull();
+
+		const again = await withdrawCandidateConsent(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-withdraw-again-${suffix}`,
+				candidateId: created.data.id,
+				expectedVersion: withdrawn.data.version,
+			},
+			ready,
+		);
+		expect(again.ok).toBe(false);
+	});
+
+	it("changes candidate retention and rejects after consent withdrawal", async () => {
+		const ready = createHrParityHarness(adapter);
+		const created = await createCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-retention-create-${suffix}`,
+				idempotencyKey: `idem-consent-retention-create-${suffix}`,
+				displayName: "Retention Candidate",
+				email: `retention-${suffix}@example.com`,
+				...candidateConsentFixture({ retentionUntil: "2028-01-15" }),
+			},
+			ready,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const changed = await changeCandidateRetention(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-retention-change-${suffix}`,
+				candidateId: created.data.id,
+				retentionUntil: "2029-06-01",
+				expectedVersion: created.data.version,
+			},
+			ready,
+		);
+		expect(changed.ok).toBe(true);
+		if (!changed.ok) return;
+		expect(changed.data.retentionUntil).toBe("2029-06-01");
+
+		const withdrawn = await withdrawCandidateConsent(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-retention-withdraw-${suffix}`,
+				candidateId: changed.data.id,
+				expectedVersion: changed.data.version,
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+
+		const blocked = await changeCandidateRetention(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-retention-blocked-${suffix}`,
+				candidateId: withdrawn.data.id,
+				retentionUntil: "2030-01-01",
+				expectedVersion: withdrawn.data.version,
+			},
+			ready,
+		);
+		expect(blocked.ok).toBe(false);
+	});
+
+	it("rejects retention change before consent capture date", async () => {
+		const ready = createHrParityHarness(adapter);
+		const created = await createCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-retention-early-create-${suffix}`,
+				idempotencyKey: `idem-consent-retention-early-create-${suffix}`,
+				displayName: "Early Retention",
+				email: `early-retention-${suffix}@example.com`,
+				...candidateConsentFixture({
+					consentCapturedAt: "2026-03-01T12:00:00+00:00",
+					retentionUntil: "2028-03-01",
+				}),
+			},
+			ready,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const blocked = await changeCandidateRetention(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-consent-retention-early-${suffix}`,
+				candidateId: created.data.id,
+				retentionUntil: "2026-02-01",
+				expectedVersion: created.data.version,
+			},
+			ready,
+		);
+		expect(blocked.ok).toBe(false);
 	});
 }

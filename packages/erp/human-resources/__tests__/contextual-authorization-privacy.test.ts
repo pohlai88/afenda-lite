@@ -7,18 +7,20 @@ import type {
 } from "../src";
 import {
 	applyResourceFieldProjection,
+	authorizeHumanResourcesOperation,
 	authorizeHumanResourcesSensitiveResource,
 	HUMAN_RESOURCES_ACTOR_SCOPES,
 	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
 	HUMAN_RESOURCES_RETENTION_POLICIES,
+	HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS,
 	HUMAN_RESOURCES_SENSITIVE_RESOURCE_POLICIES,
 	HUMAN_RESOURCES_SENSITIVE_RESOURCE_TYPES,
 	humanResourcesSensitiveOperationPolicy,
 } from "../src";
-import {
-	HUMAN_RESOURCES_COMMAND_IDS,
-	HUMAN_RESOURCES_QUERY_IDS,
-} from "../src/module-ids";
+import type { HumanResourcesAuthorizationPort } from "../src/authorization";
+import type { HumanResourcesQueryId } from "../src/module-ids";
+import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../src/permissions";
+import { COMPENSATION_FIELD_CLASSES } from "../src/shared/field-projection";
 
 const employeeId =
 	"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;
@@ -66,22 +68,19 @@ describe("HR-ENT-04 contextual authorization", () => {
 	});
 
 	it("classifies the complete sensitive command/query surface", () => {
-		const commandPolicies = HUMAN_RESOURCES_COMMAND_IDS.flatMap((operation) => {
-			const policy = humanResourcesSensitiveOperationPolicy(operation);
-			return policy ? [{ operation, policy }] : [];
-		});
-		const queryPolicies = HUMAN_RESOURCES_QUERY_IDS.flatMap((operation) => {
-			const policy = humanResourcesSensitiveOperationPolicy(operation);
-			return policy ? [{ operation, policy }] : [];
-		});
+		expect(HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS.length).toBeGreaterThan(0);
 
-		// Canonical inventory: every sensitive-prefixed command/query in the
-		// module registers must match a policy family (not a brittle snapshot).
-		expect(commandPolicies).toHaveLength(128);
-		expect(queryPolicies).toHaveLength(50);
-		for (const { policy } of [...commandPolicies, ...queryPolicies]) {
+		for (const operationId of HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS) {
+			const policy = humanResourcesSensitiveOperationPolicy(operationId);
+			expect(
+				policy,
+				`${operationId} must resolve a sensitive policy`,
+			).not.toBeNull();
+			if (policy === null) {
+				continue;
+			}
 			expect(policy.subjectPolicy).toMatch(
-				/^(subject|manager|assigned)_or_privileged$|^privileged_only$/,
+				/^(subject|manager|subject_manager|assigned)_or_privileged$|^privileged_only$/,
 			);
 			expect(policy.fieldClasses.length).toBeGreaterThan(0);
 			expect(HUMAN_RESOURCES_SENSITIVE_RESOURCE_TYPES).toContain(
@@ -232,6 +231,68 @@ describe("HR-ENT-04 contextual authorization", () => {
 });
 
 describe("HR-ENT-04 field privacy and retention", () => {
+	const EMPLOYEE_COMPENSATION_GET =
+		"human-resources.employee-compensation.get" as HumanResourcesQueryId;
+
+	function grantingAuthorization(
+		permissions: ReadonlySet<string>,
+	): HumanResourcesAuthorizationPort {
+		return {
+			async can(input) {
+				return permissions.has(input.permission);
+			},
+		};
+	}
+
+	function createCompensationReadRequest(input: {
+		actorScope: "manager" | "subject";
+	}) {
+		const actorEmployeeId =
+			input.actorScope === "manager" ? "manager-1" : "employee-2";
+		return {
+			operationId: EMPLOYEE_COMPENSATION_GET,
+			operationKind: "query" as const,
+			requiredPermission: HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+			actor: {
+				organizationId: "org-1",
+				actorUserId: "user-1",
+				actorEmployeeId,
+				correlationId: "corr-1",
+			},
+			resource: {
+				organizationId: "org-1",
+				kind: "compensation" as const,
+				subjectEmployeeId: "employee-2",
+				...(input.actorScope === "manager"
+					? { attributes: { inManagerScope: true } }
+					: {}),
+			},
+			requestedFields: [
+				...COMPENSATION_FIELD_CLASSES.public,
+				...COMPENSATION_FIELD_CLASSES.manager,
+				"baseAmount",
+			],
+		};
+	}
+
+	it("does not expose compensation amount to manager-only access", async () => {
+		const decision = await authorizeHumanResourcesOperation(
+			createCompensationReadRequest({ actorScope: "manager" }),
+			{
+				authorization: grantingAuthorization(
+					new Set([HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ]),
+				),
+			},
+		);
+
+		expect(decision.ok).toBe(true);
+		if (!decision.ok || !decision.data.allowed) {
+			throw new Error("Expected authorization success");
+		}
+
+		expect(decision.data.projection?.deniedFields).toContain("baseAmount");
+	});
+
 	it("redacts every governed field class unless its explicit permission is present", () => {
 		const source = {
 			displayName: "Person",

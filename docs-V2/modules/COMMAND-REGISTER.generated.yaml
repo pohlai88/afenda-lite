@@ -931,6 +931,15 @@ commands:
   - id: human-resources.overtime-request.verify
     moduleId: human-resources
     permission: human-resources.time.overtime.approve
+  - id: human-resources.privacy.legal-hold.place
+    moduleId: human-resources
+    permission: human-resources.privacy.legal-hold.manage
+  - id: human-resources.privacy.legal-hold.release
+    moduleId: human-resources
+    permission: human-resources.privacy.legal-hold.manage
+  - id: human-resources.privacy.subject.anonymize
+    moduleId: human-resources
+    permission: human-resources.privacy.anonymize.execute
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

@@ -3,12 +3,15 @@
  */
 
 import {
+	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
@@ -476,10 +479,25 @@ describe("human-resources lifecycle", () => {
 		const eventTypes = ready.ports.outbox.calls.map((call) => call.type);
 		expect(eventTypes).toContain(HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT);
 		expect(eventTypes).toContain(HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT);
+		expect(eventTypes).toContain(HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT);
+		expect(eventTypes).toContain(HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT);
 		expect(eventTypes).toContain(HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT);
 		expect(eventTypes).toContain(HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT);
 		expect(eventTypes).toContain(HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT);
+		expect(eventTypes).toContain(HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT);
 		expect(eventTypes).toContain(HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT);
+
+		const transferEvent = ready.ports.outbox.calls.find(
+			(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+		);
+		expect(transferEvent?.payload.effectiveOn).toBe("2025-05-01");
+		const terminationEvent = ready.ports.outbox.calls.find(
+			(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+		);
+		expect(terminationEvent?.payload.effectiveOn).toBe("2025-06-01");
+		expect(JSON.stringify(ready.ports.outbox.calls)).not.toContain(
+			"Exit interview completed",
+		);
 
 		expect(JSON.stringify(ready.ports.outbox.calls)).not.toMatch(/payroll_/i);
 		expect(JSON.stringify(ready.ports.audit.calls)).not.toMatch(/neon_auth/i);

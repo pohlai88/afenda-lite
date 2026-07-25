@@ -15,11 +15,14 @@ import {
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_INTERIM_MEASURE_ISSUED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT,
 } from "@afenda/events/schemas";
 
 import {
@@ -986,6 +989,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
 		if (!eventId.ok) return eventId;
 		const auditId = randomUUID();
+		const outboxId = randomUUID();
+		const outboxPayload = entityPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employee_case",
+			entityId: input.caseId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
 				sqlTag`
@@ -1027,8 +1038,20 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
 						FROM mutated
 						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT
+							${outboxId}, organization_id, ${HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT},
+							'human-resources', ${meta.correlationId}, ${input.actorUserId},
+							${outboxPayload}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
 					)
-					SELECT mutated.* FROM mutated, audited, inserted_event
+					SELECT mutated.* FROM mutated, audited, inserted_event, outboxed
 				`,
 			]);
 			const row = rows[0];
@@ -1964,6 +1987,14 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
 		if (!eventId.ok) return eventId;
 		const auditId = randomUUID();
+		const outboxId = randomUUID();
+		const outboxPayload = entityPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_employee_case",
+			entityId: record.caseId,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+		});
 		const nextCaseVersion = record.expectedVersion + 1;
 		try {
 			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>(
@@ -2031,8 +2062,21 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							'human-resources', 'hr_employee_case_appeal', id, 'CREATE', '[]'::jsonb
 						FROM inserted_appeal
 						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT
+							${outboxId}, case_row.organization_id,
+							${HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT},
+							'human-resources', ${meta.correlationId}, ${record.createdBy},
+							${outboxPayload}::jsonb, 'pending', 0
+						FROM case_row, case_update
+						RETURNING id
 					)
-					SELECT inserted_appeal.* FROM inserted_appeal, audited, case_update, inserted_event
+					SELECT inserted_appeal.* FROM inserted_appeal, audited, case_update, inserted_event, outboxed
 				`,
 				],
 			);
@@ -2316,7 +2360,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const eventId = parseHumanResourcesEmployeeCaseEventId(randomUUID());
 		if (!eventId.ok) return eventId;
 		const auditId = randomUUID();
-		const payloadJson = JSON.stringify({ reasonCode: input.reasonCode });
+		const outboxId = randomUUID();
+		const timelinePayloadJson = JSON.stringify({ reasonCode: input.reasonCode });
+		const outboxPayload = entityPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_employee_case",
+			entityId: input.caseId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<[CaseSqlRow[]]>((sqlTag) => [
 				sqlTag`
@@ -2348,7 +2400,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 						SELECT
 							${eventId.data}, mutated.organization_id, mutated.id,
 							'case_reopened', next_seq.seq,
-							${payloadJson}::jsonb, ${input.actorUserId}, now()
+							${timelinePayloadJson}::jsonb, ${input.actorUserId}, now()
 						FROM mutated, next_seq
 						RETURNING id
 					),
@@ -2362,8 +2414,20 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							'human-resources', 'hr_employee_case', id, 'UPDATE', '[]'::jsonb
 						FROM mutated
 						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT
+							${outboxId}, organization_id, ${HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT},
+							'human-resources', ${meta.correlationId}, ${input.actorUserId},
+							${outboxPayload}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
 					)
-					SELECT mutated.* FROM mutated, audited, inserted_event
+					SELECT mutated.* FROM mutated, audited, inserted_event, outboxed
 				`,
 			]);
 			const row = rows[0];

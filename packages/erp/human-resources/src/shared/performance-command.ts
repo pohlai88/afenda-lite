@@ -1,13 +1,6 @@
 import type { Result } from "@afenda/errors/result";
 import { fail, ok } from "@afenda/errors/result";
 import type { z } from "zod";
-
-import {
-	type HumanResourcesAuthorizationPort,
-	requireHumanResourcesCommandPermission,
-	requireHumanResourcesPermission,
-	requireHumanResourcesQueryPermission,
-} from "../authorization";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	parseHumanResourcesGoalId,
@@ -36,16 +29,20 @@ import {
 } from "../permissions";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesAuthorizationPort } from "./authorization-types";
+import { requireHumanResourcesManifestPermission } from "./contextual-authorization";
+import {
+	runParsedAuthorizedCommand,
+	runParsedAuthorizedQuery,
+} from "./domain-runner";
+import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
 import {
 	requireAdminResourceAccess,
 	requireManagerResourceAccess,
 	requireOwnResourceAccess,
 } from "./subject-aware-authorization";
 
-type ActorScoped = {
-	organizationId: string;
-	actorUserId: string;
-};
+type ActorScoped = HumanResourcesAuthorizedActorInput;
 
 type CommandDeps = {
 	store: HumanResourcesStore;
@@ -75,29 +72,17 @@ export async function runPerformanceCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, ports, authorization } = resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesCommandPermission(
-		authorization,
-		{
-			organizationId: parsed.data.organizationId,
-			actorUserId: parsed.data.actorUserId,
-			command: config.command,
+	return runParsedAuthorizedCommand(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
+		command: config.command,
+		parityResourceKind: "performance_review",
+		resolveDeps: (opts) => {
+			const { store, ports } = resolveCommandDeps(opts);
+			return ok({ store, ports });
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, { store, ports });
+		execute: config.execute,
+	});
 }
 
 export async function runPerformanceQuery<
@@ -113,30 +98,17 @@ export async function runPerformanceQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parseHumanResourcesInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
-	if (!parsed.ok) {
-		return parsed;
-	}
-
-	const { store, authorization, identityResolver } =
-		resolveCommandDeps(options);
-	const authorized = await requireHumanResourcesQueryPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
+	return runParsedAuthorizedQuery(input, options, {
+		schema: config.schema,
+		invalidMessage: config.invalidMessage,
 		query: config.query,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return config.execute(parsed.data, {
-		store,
-		authorization,
-		identityResolver,
+		parityResourceKind: "performance_review",
+		resolveDeps: (opts) => {
+			const { store, authorization, identityResolver } =
+				resolveCommandDeps(opts);
+			return ok({ store, authorization, identityResolver });
+		},
+		execute: config.execute,
 	});
 }
 
@@ -213,11 +185,14 @@ export async function requirePerformanceEmployeeReadScope(
 	}
 
 	// Check admin permission first
-	const adminCheck = await requireAdminResourceAccess(authorization, {
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
-	});
+	const adminCheck = await requireAdminResourceAccess(
+		{ authorization },
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
+		},
+	);
 	if (adminCheck.ok) {
 		return ok(undefined);
 	}
@@ -226,7 +201,7 @@ export async function requirePerformanceEmployeeReadScope(
 	if (input.employeeId !== undefined) {
 		const ownCheck = await requireOwnResourceAccess(
 			identityResolver,
-			authorization,
+			{ authorization },
 			{
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -242,7 +217,7 @@ export async function requirePerformanceEmployeeReadScope(
 		const managerCheck = await requireManagerResourceAccess(
 			identityResolver,
 			store,
-			authorization,
+			{ authorization },
 			{
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -303,11 +278,14 @@ export async function runPerformanceResourceScopedQuery<
 	}
 
 	// Check admin permission first
-	const adminCheck = await requireAdminResourceAccess(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
-	});
+	const adminCheck = await requireAdminResourceAccess(
+		{ authorization },
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
+		},
+	);
 	if (adminCheck.ok) {
 		return config.execute(parsed.data, {
 			store,
@@ -357,7 +335,7 @@ export async function runPerformanceResourceScopedQuery<
 	if (targetEmployeeId) {
 		const ownCheck = await requireOwnResourceAccess(
 			identityResolver,
-			authorization,
+			{ authorization },
 			{
 				organizationId: parsed.data.organizationId,
 				actorUserId: parsed.data.actorUserId,
@@ -379,7 +357,7 @@ export async function runPerformanceResourceScopedQuery<
 
 /** Gate confidential performance reads when includeConfidential is true. */
 export async function requirePerformanceConfidentialRead(
-	authorization: HumanResourcesAuthorizationPort | undefined,
+	options: HumanResourcesCommandOptions,
 	input: {
 		organizationId: string;
 		actorUserId: string;
@@ -389,7 +367,7 @@ export async function requirePerformanceConfidentialRead(
 	if (!input.includeConfidential) {
 		return ok(undefined);
 	}
-	return requireHumanResourcesPermission(authorization, {
+	return requireHumanResourcesManifestPermission(options, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_CONFIDENTIAL_READ,
