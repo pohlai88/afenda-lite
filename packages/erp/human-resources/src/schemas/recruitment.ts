@@ -163,6 +163,19 @@ export type ChangeCandidateRetentionInput = z.infer<
 	typeof changeCandidateRetentionInputSchema
 >;
 
+export const anonymizeCandidateInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			candidateId: humanResourcesCandidateIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+			asOf: z.string().date().optional(),
+		})
+		.strict();
+
+export type AnonymizeCandidateInput = z.infer<
+	typeof anonymizeCandidateInputSchema
+>;
+
 export const getCandidateInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		candidateId: humanResourcesCandidateIdSchema,
@@ -177,10 +190,30 @@ export const listCandidatesInputSchema = humanResourcesMutationContextSchema
 		pageSize: z.number().int().positive().max(100).optional(),
 		status: candidateStatusSchema.optional(),
 		retentionDueAsOf: z.string().date().optional(),
+		query: z.string().trim().min(1).max(200).optional(),
 	})
 	.strict();
 
 export type ListCandidatesInput = z.infer<typeof listCandidatesInputSchema>;
+
+export const detectCandidateDuplicatesInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			email: z.string().trim().email().max(320).optional(),
+			displayName: z.string().trim().min(1).max(200).optional(),
+		})
+		.strict()
+		.refine(
+			(value) =>
+				value.email !== undefined || value.displayName !== undefined,
+			{
+				message: "Provide email and/or displayName for duplicate detection",
+			},
+		);
+
+export type DetectCandidateDuplicatesInput = z.infer<
+	typeof detectCandidateDuplicatesInputSchema
+>;
 
 // Application schemas
 export const createApplicationInputSchema = humanResourcesMutationContextSchema

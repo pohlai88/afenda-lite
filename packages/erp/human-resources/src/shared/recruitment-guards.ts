@@ -136,9 +136,58 @@ export function canTransitionCandidateStatus(
 	next: CandidateStatus,
 ): boolean {
 	if (current === next) return false;
+	if (current === "anonymized") return false;
 	if (current === "active" && next === "archived") return true;
 	if (current === "archived" && next === "active") return true;
+	if (
+		(current === "active" || current === "archived") &&
+		next === "anonymized"
+	) {
+		return true;
+	}
 	return false;
+}
+
+export function assertCandidateNotAnonymized(
+	status: CandidateStatus,
+): Result<void> {
+	if (status === "anonymized") {
+		return invalidState("Candidate has been anonymized");
+	}
+	return ok(undefined);
+}
+
+export function assertCandidateAnonymizationEligible(input: {
+	status: CandidateStatus;
+	consentWithdrawnAt: Date | null;
+	retentionUntil: string | null;
+	asOf: string;
+}): Result<void> {
+	if (input.status === "anonymized") {
+		return invalidState("Candidate has already been anonymized");
+	}
+	const transition = assertCandidateStatusTransition(
+		input.status,
+		"anonymized",
+	);
+	if (!transition.ok) {
+		return transition;
+	}
+	const withdrawn = input.consentWithdrawnAt !== null;
+	const retentionDue =
+		input.retentionUntil !== null && input.retentionUntil <= input.asOf;
+	if (!withdrawn && !retentionDue) {
+		return invalidState(
+			"Candidate anonymization requires consent withdrawal or due retention",
+		);
+	}
+	return ok(undefined);
+}
+
+export const ANONYMIZED_CANDIDATE_DISPLAY_NAME = "Anonymized Candidate" as const;
+
+export function anonymizedCandidateEmail(candidateId: string): string {
+	return `anonymized+${candidateId}@invalid.local`;
 }
 
 export function assertCandidateStatusTransition(

@@ -7,16 +7,20 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
+	HUMAN_RESOURCES_QUERY_CANDIDATE_DUPLICATES_DETECT,
 	HUMAN_RESOURCES_QUERY_CANDIDATE_GET,
 	HUMAN_RESOURCES_QUERY_CANDIDATE_LIST,
 } from "../module-ids";
 import {
+	anonymizeCandidateInputSchema,
 	changeCandidateRetentionInputSchema,
 	createCandidateInputSchema,
+	detectCandidateDuplicatesInputSchema,
 	getCandidateInputSchema,
 	listCandidatesInputSchema,
 	updateCandidateProfileInputSchema,
@@ -28,8 +32,18 @@ import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
 } from "../shared/recruitment-command";
-import { normalizeCandidateEmail } from "../shared/recruitment-guards";
-import type { Candidate, CandidateListPage } from "../types";
+import {
+	assertCandidateAnonymizationEligible,
+	assertCandidateNotAnonymized,
+	normalizeCandidateEmail,
+} from "../shared/recruitment-guards";
+import type { HumanResourcesCandidateId } from "../brands";
+import type { HumanResourcesRecruitmentStore } from "../store/recruitment";
+import type {
+	Candidate,
+	CandidateDuplicateMatch,
+	CandidateListPage,
+} from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_CANDIDATE = "candidate" as const;
 export type HumanResourcesCandidateAggregate =
@@ -109,8 +123,21 @@ export async function updateCandidateProfile(
 		schema: updateCandidateProfileInputSchema,
 		invalidMessage: "Invalid candidate update-profile input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
-		execute: (data, { store, ports }) =>
-			store.updateCandidateProfile(
+		execute: async (data, { store, ports }) => {
+			const existing = await loadExistingCandidate(
+				store,
+				data.organizationId,
+				data.candidateId,
+			);
+			if (!existing.ok) {
+				return existing;
+			}
+			const notAnonymized = assertCandidateNotAnonymized(existing.data.status);
+			if (!notAnonymized.ok) {
+				return notAnonymized;
+			}
+
+			return store.updateCandidateProfile(
 				{
 					organizationId: data.organizationId,
 					candidateId: data.candidateId,
@@ -124,7 +151,8 @@ export async function updateCandidateProfile(
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
 				}),
-			),
+			);
+		},
 	});
 }
 
@@ -136,8 +164,21 @@ export async function withdrawCandidateConsent(
 		schema: withdrawCandidateConsentInputSchema,
 		invalidMessage: "Invalid candidate withdraw-consent input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
-		execute: (data, { store, ports }) =>
-			store.withdrawCandidateConsent(
+		execute: async (data, { store, ports }) => {
+			const existing = await loadExistingCandidate(
+				store,
+				data.organizationId,
+				data.candidateId,
+			);
+			if (!existing.ok) {
+				return existing;
+			}
+			const notAnonymized = assertCandidateNotAnonymized(existing.data.status);
+			if (!notAnonymized.ok) {
+				return notAnonymized;
+			}
+
+			return store.withdrawCandidateConsent(
 				{
 					organizationId: data.organizationId,
 					candidateId: data.candidateId,
@@ -149,7 +190,8 @@ export async function withdrawCandidateConsent(
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
 				}),
-			),
+			);
+		},
 	});
 }
 
@@ -162,19 +204,17 @@ export async function changeCandidateRetention(
 		invalidMessage: "Invalid candidate change-retention input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
 		execute: async (data, { store, ports }) => {
-			const existing = await store.getCandidateById({
-				organizationId: data.organizationId,
-				candidateId: data.candidateId,
-			});
+			const existing = await loadExistingCandidate(
+				store,
+				data.organizationId,
+				data.candidateId,
+			);
 			if (!existing.ok) {
 				return existing;
 			}
-			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Candidate not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+			const notAnonymized = assertCandidateNotAnonymized(existing.data.status);
+			if (!notAnonymized.ok) {
+				return notAnonymized;
 			}
 			if (
 				existing.data.consentCapturedAt !== null &&
@@ -200,6 +240,52 @@ export async function changeCandidateRetention(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
+				}),
+			);
+		},
+	});
+}
+
+export async function anonymizeCandidate(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<Candidate>> {
+	return runRecruitmentCommand(input, options, {
+		schema: anonymizeCandidateInputSchema,
+		invalidMessage: "Invalid candidate anonymize input",
+		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
+		execute: async (data, { store, ports }) => {
+			const existing = await loadExistingCandidate(
+				store,
+				data.organizationId,
+				data.candidateId,
+			);
+			if (!existing.ok) {
+				return existing;
+			}
+			const asOf = data.asOf ?? new Date().toISOString().slice(0, 10);
+			const eligible = assertCandidateAnonymizationEligible({
+				status: existing.data.status,
+				consentWithdrawnAt: existing.data.consentWithdrawnAt,
+				retentionUntil: existing.data.retentionUntil,
+				asOf,
+			});
+			if (!eligible.ok) {
+				return eligible;
+			}
+
+			return store.anonymizeCandidate(
+				{
+					organizationId: data.organizationId,
+					candidateId: data.candidateId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+					asOf,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
 				}),
 			);
 		},
@@ -249,6 +335,46 @@ export async function listCandidates(
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
 				retentionDueAsOf: data.retentionDueAsOf,
+				query: data.query,
 			}),
 	});
+}
+
+export async function detectCandidateDuplicates(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<readonly CandidateDuplicateMatch[]>> {
+	return runRecruitmentQuery(input, options, {
+		schema: detectCandidateDuplicatesInputSchema,
+		invalidMessage: "Invalid candidate duplicates detect input",
+		query: HUMAN_RESOURCES_QUERY_CANDIDATE_DUPLICATES_DETECT,
+		execute: (data, { store }) =>
+			store.detectCandidateDuplicates({
+				organizationId: data.organizationId,
+				email: data.email,
+				displayName: data.displayName,
+			}),
+	});
+}
+
+async function loadExistingCandidate(
+	store: HumanResourcesRecruitmentStore,
+	organizationId: string,
+	candidateId: HumanResourcesCandidateId,
+): Promise<Result<Candidate>> {
+	const existing = await store.getCandidateById({
+		organizationId,
+		candidateId,
+	});
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data === null) {
+		return fail(
+			"NOT_FOUND",
+			"Candidate not found",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+		);
+	}
+	return ok(existing.data);
 }

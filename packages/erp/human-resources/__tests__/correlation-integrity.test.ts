@@ -109,6 +109,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
 	HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
+	HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
@@ -348,6 +349,7 @@ import {
 	createWorker,
 } from "../src/workforce-foundation/worker";
 import {
+	anonymizeCandidate,
 	changeCandidateRetention,
 	createCandidate,
 	withdrawCandidateConsent,
@@ -786,6 +788,42 @@ describe("correlation integrity", () => {
 		assertCorrelationPropagated(ready, retentionCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
+		});
+
+		clearPorts(ready);
+		const anonCreate = await createCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-candidate-anon-create-${suffix}`,
+				idempotencyKey: `idem-candidate-anon-create-${suffix}`,
+				displayName: "Anon Corr",
+				email: `anon-corr-${suffix}@example.com`,
+				...candidateConsentFixture({ retentionUntil: "2026-03-01" }),
+			},
+			ready,
+		);
+		expect(anonCreate.ok).toBe(true);
+		if (!anonCreate.ok) return;
+
+		clearPorts(ready);
+		const anonCorr = `trace-candidate-anonymize-${suffix}`;
+		const anonymized = await anonymizeCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: anonCorr,
+				candidateId: anonCreate.data.id,
+				expectedVersion: anonCreate.data.version,
+				asOf: "2026-06-01",
+			},
+			ready,
+		);
+		expect(anonymized.ok).toBe(true);
+		if (!anonymized.ok) return;
+		assertCorrelationPropagated(ready, anonCorr, {
+			expectOutbox: true,
+			operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
 		});
 	});
 

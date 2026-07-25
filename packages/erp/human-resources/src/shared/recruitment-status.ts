@@ -11,7 +11,7 @@ export const REQUISITION_STATUSES = [
 ] as const;
 export type RequisitionStatus = (typeof REQUISITION_STATUSES)[number];
 
-export const CANDIDATE_STATUSES = ["active", "archived"] as const;
+export const CANDIDATE_STATUSES = ["active", "archived", "anonymized"] as const;
 export type CandidateStatus = (typeof CANDIDATE_STATUSES)[number];
 
 export const CANDIDATE_CONSENT_SOURCES = [

@@ -12,6 +12,7 @@ import {
 	hrInterviewEvaluation,
 	hrJobRequisition,
 	lte,
+	or,
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
@@ -62,10 +63,15 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import {
+	ANONYMIZED_CANDIDATE_DISPLAY_NAME,
+	anonymizedCandidateEmail,
 	assertApplicationEligibleForOffer,
 	assertApplicationStatusTransition,
 	assertCandidateActive,
+	assertCandidateAnonymizationEligible,
+	assertCandidateNotAnonymized,
 	assertInterviewSchedulable,
+	normalizeCandidateEmail,
 	assertInterviewStatusTransition,
 	assertOfferAcceptable,
 	assertOfferAmendable,
@@ -105,6 +111,8 @@ import type {
 	ApplicationListPage,
 	Candidate,
 	CandidateApplication,
+	CandidateDuplicateMatch,
+	CandidateDuplicateMatchReason,
 	CandidateListPage,
 	EmploymentOffer,
 	Interview,
@@ -851,7 +859,9 @@ export type DrizzleRecruitmentMethods = Pick<
 	| "updateCandidateProfile"
 	| "withdrawCandidateConsent"
 	| "changeCandidateRetention"
+	| "anonymizeCandidate"
 	| "listCandidates"
+	| "detectCandidateDuplicates"
 	| "getApplicationById"
 	| "findActiveApplicationByCandidateRequisition"
 	| "createApplication"
@@ -1785,6 +1795,11 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		);
 		if (!versionCheck.ok) return versionCheck;
 
+		const notAnonymized = assertCandidateNotAnonymized(candidate.status);
+		if (!notAnonymized.ok) {
+			return notAnonymized;
+		}
+
 		const nextDisplayName =
 			input.displayName !== undefined
 				? input.displayName
@@ -1807,6 +1822,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								WHERE id = ${input.candidateId}
 									AND organization_id = ${input.organizationId}
 									AND version = ${input.expectedVersion}
+									AND status <> 'anonymized'
 								RETURNING *
 							),
 							audited AS (
@@ -1831,6 +1847,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					candidateId: input.candidateId,
 				});
 				if (!again.ok) return again;
+				if (again.data?.status === "anonymized") {
+					return invalidState("Candidate has been anonymized");
+				}
 				return missAfterOptimisticUpdate({
 					found: again.data !== null,
 					entityLabel: "Candidate",
@@ -1868,6 +1887,11 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		);
 		if (!versionCheck.ok) return versionCheck;
 
+		const notAnonymized = assertCandidateNotAnonymized(candidate.status);
+		if (!notAnonymized.ok) {
+			return notAnonymized;
+		}
+
 		if (candidate.consentWithdrawnAt !== null) {
 			return conflict("Candidate consent has already been withdrawn");
 		}
@@ -1902,6 +1926,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									AND organization_id = ${input.organizationId}
 									AND version = ${input.expectedVersion}
 									AND consent_withdrawn_at IS NULL
+									AND status <> 'anonymized'
 								RETURNING *
 							),
 							audited AS (
@@ -1985,6 +2010,11 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		);
 		if (!versionCheck.ok) return versionCheck;
 
+		const notAnonymized = assertCandidateNotAnonymized(candidate.status);
+		if (!notAnonymized.ok) {
+			return notAnonymized;
+		}
+
 		if (candidate.consentWithdrawnAt !== null) {
 			return invalidState(
 				"Cannot change retention after candidate consent withdrawal",
@@ -2021,6 +2051,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 									AND organization_id = ${input.organizationId}
 									AND version = ${input.expectedVersion}
 									AND consent_withdrawn_at IS NULL
+									AND status <> 'anonymized'
 								RETURNING *
 							),
 							audited AS (
@@ -2079,12 +2110,139 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 		}
 	},
 
+	async anonymizeCandidate(
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			expectedVersion: number;
+			actorUserId: string;
+			asOf: string;
+		},
+		_ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Candidate>> {
+		const existing = await this.getCandidateById({
+			organizationId: input.organizationId,
+			candidateId: input.candidateId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Candidate not found");
+		}
+		const candidate = existing.data;
+
+		const versionCheck = assertExpectedVersion(
+			candidate.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const eligible = assertCandidateAnonymizationEligible({
+			status: candidate.status,
+			consentWithdrawnAt: candidate.consentWithdrawnAt,
+			retentionUntil: candidate.retentionUntil,
+			asOf: input.asOf,
+		});
+		if (!eligible.ok) {
+			return eligible;
+		}
+
+		const scrubbedEmail = anonymizedCandidateEmail(candidate.id);
+		const scrubbedNormalizedEmail = normalizeCandidateEmail(scrubbedEmail);
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const nextVersion = input.expectedVersion + 1;
+		const plannedOutbox = planRecruitmentDrizzleOutbox({
+			commandId: meta.operationId,
+			meta,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			aggregateId: input.candidateId,
+			entityType: "hr_candidate",
+			auditAction: "UPDATE",
+		});
+		if (plannedOutbox === undefined) {
+			return invalidState("Candidate anonymization requires a domain event");
+		}
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[CandidateSqlRow[]]>(
+				(txSql) => [
+					txSql`
+							WITH mutated AS (
+								UPDATE hr_candidate
+								SET display_name = ${ANONYMIZED_CANDIDATE_DISPLAY_NAME},
+									email = ${scrubbedEmail},
+									normalized_email = ${scrubbedNormalizedEmail},
+									phone = NULL,
+									status = 'anonymized',
+									version = ${nextVersion},
+									updated_by = ${input.actorUserId},
+									updated_at = now()
+								WHERE id = ${input.candidateId}
+									AND organization_id = ${input.organizationId}
+									AND version = ${input.expectedVersion}
+									AND status <> 'anonymized'
+								RETURNING *
+							),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes
+								)
+								SELECT
+									${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+									'human-resources', 'hr_candidate', id, 'UPDATE', '[]'::jsonb
+								FROM mutated
+								RETURNING id
+							),
+							outboxed AS (
+								INSERT INTO platform_domain_event (
+									id, organization_id, type, source_module, correlation_id, actor_user_id,
+									payload, status, attempts
+								)
+								SELECT
+									${eventId}, organization_id, ${plannedOutbox.eventType},
+									'human-resources', ${meta.correlationId}, ${input.actorUserId},
+									${plannedOutbox.payloadJson}::jsonb, 'pending', 0
+								FROM mutated
+								RETURNING id
+							)
+							SELECT mutated.* FROM mutated, audited, outboxed
+						`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				const again = await this.getCandidateById({
+					organizationId: input.organizationId,
+					candidateId: input.candidateId,
+				});
+				if (!again.ok) return again;
+				if (again.data === null) {
+					return notFound("Candidate not found");
+				}
+				if (again.data.status === "anonymized") {
+					return invalidState("Candidate has already been anonymized");
+				}
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Candidate",
+				});
+			}
+			return mapCandidateSqlRow(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to anonymize candidate");
+		}
+	},
+
 	async listCandidates(input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
 		status?: CandidateStatus;
 		retentionDueAsOf?: string;
+		query?: string;
 	}): Promise<Result<CandidateListPage>> {
 		try {
 			const conditions = [eq(hrCandidate.organizationId, input.organizationId)];
@@ -2095,6 +2253,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				conditions.push(sql`${hrCandidate.retentionUntil} IS NOT NULL`);
 				conditions.push(
 					lte(hrCandidate.retentionUntil, input.retentionDueAsOf),
+				);
+			}
+			if (input.query !== undefined) {
+				const needle = `%${input.query.trim()}%`;
+				conditions.push(
+					sql`(
+						${hrCandidate.displayName} ILIKE ${needle}
+						OR ${hrCandidate.email} ILIKE ${needle}
+						OR ${hrCandidate.normalizedEmail} ILIKE ${needle}
+					)`,
 				);
 			}
 			const offset = (input.page - 1) * input.pageSize;
@@ -2126,6 +2294,87 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list candidates");
+		}
+	},
+
+	async detectCandidateDuplicates(input: {
+		organizationId: string;
+		email?: string;
+		displayName?: string;
+	}): Promise<Result<readonly CandidateDuplicateMatch[]>> {
+		try {
+			const conditions = [
+				eq(hrCandidate.organizationId, input.organizationId),
+				sql`${hrCandidate.status} <> 'anonymized'`,
+			];
+			const normalizedEmail =
+				input.email !== undefined
+					? normalizeCandidateEmail(input.email)
+					: undefined;
+			const normalizedDisplayName =
+				input.displayName !== undefined
+					? input.displayName.trim().toLowerCase()
+					: undefined;
+			const emailMatch =
+				normalizedEmail !== undefined
+					? eq(hrCandidate.normalizedEmail, normalizedEmail)
+					: undefined;
+			const nameMatch =
+				normalizedDisplayName !== undefined
+					? sql`lower(trim(${hrCandidate.displayName})) = ${normalizedDisplayName}`
+					: undefined;
+			if (emailMatch !== undefined && nameMatch !== undefined) {
+				conditions.push(or(emailMatch, nameMatch)!);
+			} else if (emailMatch !== undefined) {
+				conditions.push(emailMatch);
+			} else if (nameMatch !== undefined) {
+				conditions.push(nameMatch);
+			} else {
+				return ok([]);
+			}
+
+			const rows = await db
+				.select()
+				.from(hrCandidate)
+				.where(and(...conditions))
+				.orderBy(asc(hrCandidate.displayName));
+
+			const results: CandidateDuplicateMatch[] = [];
+			for (const row of rows) {
+				const mapped = mapCandidate(row);
+				if (!mapped.ok) {
+					continue;
+				}
+				const reasons: CandidateDuplicateMatchReason[] = [];
+				if (
+					normalizedEmail !== undefined &&
+					normalizeCandidateEmail(mapped.data.email) === normalizedEmail
+				) {
+					reasons.push("email");
+				}
+				if (
+					normalizedDisplayName !== undefined &&
+					mapped.data.displayName.trim().toLowerCase() ===
+						normalizedDisplayName
+				) {
+					reasons.push("display_name");
+				}
+				if (reasons.length === 0) {
+					continue;
+				}
+				results.push({
+					candidateId: mapped.data.id,
+					matchReasons: reasons,
+					displayName: mapped.data.displayName,
+					email: mapped.data.email,
+				});
+			}
+			return ok(results);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to detect candidate duplicates",
+			);
 		}
 	},
 

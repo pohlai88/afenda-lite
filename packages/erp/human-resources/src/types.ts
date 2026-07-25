@@ -374,6 +374,15 @@ export type Candidate = {
 	updatedAt: Date;
 };
 
+export type CandidateDuplicateMatchReason = "email" | "display_name";
+
+export type CandidateDuplicateMatch = {
+	candidateId: HumanResourcesCandidateId;
+	matchReasons: readonly CandidateDuplicateMatchReason[];
+	displayName: string;
+	email: string;
+};
+
 export type CandidateApplication = {
 	id: HumanResourcesApplicationId;
 	organizationId: string;

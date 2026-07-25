@@ -79,6 +79,7 @@ describe("@afenda/events schemas", () => {
 			"human-resources.assignment.created.v1",
 			"human-resources.assignment.ended.v1",
 			"human-resources.benefit-enrollment.changed.v1",
+			"human-resources.candidate.anonymized.v1",
 			"human-resources.candidate.consent-withdrawn.v1",
 			"human-resources.candidate.created.v1",
 			"human-resources.candidate.retention-changed.v1",

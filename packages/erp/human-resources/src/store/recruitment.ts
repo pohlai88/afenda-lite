@@ -24,6 +24,7 @@ import type {
 	ApplicationListPage,
 	Candidate,
 	CandidateApplication,
+	CandidateDuplicateMatch,
 	CandidateListPage,
 	EmploymentOffer,
 	Interview,
@@ -245,13 +246,32 @@ export type HumanResourcesRecruitmentStore = {
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<Candidate>>;
 
+	anonymizeCandidate(
+		input: {
+			organizationId: string;
+			candidateId: HumanResourcesCandidateId;
+			expectedVersion: number;
+			actorUserId: string;
+			asOf: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<Candidate>>;
+
 	listCandidates(input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
 		status?: CandidateStatus;
 		retentionDueAsOf?: string;
+		query?: string;
 	}): Promise<Result<CandidateListPage>>;
+
+	detectCandidateDuplicates(input: {
+		organizationId: string;
+		email?: string;
+		displayName?: string;
+	}): Promise<Result<readonly CandidateDuplicateMatch[]>>;
 	// Application
 	getApplicationById(input: {
 		organizationId: string;

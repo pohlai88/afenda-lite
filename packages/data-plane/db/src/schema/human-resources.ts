@@ -1140,7 +1140,7 @@ export const hrCandidate = pgTable(
 		consentWithdrawnAt: timestamp("consent_withdrawn_at", {
 			withTimezone: true,
 		}),
-		/** active | archived */
+		/** active | archived | anonymized */
 		status: text("status").notNull(),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),

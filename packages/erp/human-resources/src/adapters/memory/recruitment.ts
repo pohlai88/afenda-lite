@@ -32,10 +32,15 @@ import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
+	ANONYMIZED_CANDIDATE_DISPLAY_NAME,
+	anonymizedCandidateEmail,
 	assertApplicationEligibleForOffer,
 	assertApplicationStatusTransition,
 	assertCandidateActive,
+	assertCandidateAnonymizationEligible,
+	assertCandidateNotAnonymized,
 	assertInterviewSchedulable,
+	normalizeCandidateEmail,
 	assertInterviewStatusTransition,
 	assertOfferAcceptable,
 	assertOfferAmendable,
@@ -69,6 +74,8 @@ import type {
 	ApplicationListPage,
 	Candidate,
 	CandidateApplication,
+	CandidateDuplicateMatch,
+	CandidateDuplicateMatchReason,
 	CandidateListPage,
 	EmploymentOffer,
 	Interview,
@@ -211,7 +218,9 @@ export type MemoryRecruitmentMethods = Pick<
 	| "updateCandidateProfile"
 	| "withdrawCandidateConsent"
 	| "changeCandidateRetention"
+	| "anonymizeCandidate"
 	| "listCandidates"
+	| "detectCandidateDuplicates"
 	| "getApplicationById"
 	| "findActiveApplicationByCandidateRequisition"
 	| "createApplication"
@@ -916,6 +925,11 @@ export function createMemoryRecruitmentMethods(
 				return versionCheck;
 			}
 
+			const notAnonymized = assertCandidateNotAnonymized(candidate.status);
+			if (!notAnonymized.ok) {
+				return notAnonymized;
+			}
+
 			const now = new Date();
 			const updated: Candidate = {
 				...candidate,
@@ -977,6 +991,11 @@ export function createMemoryRecruitmentMethods(
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
+			}
+
+			const notAnonymized = assertCandidateNotAnonymized(candidate.status);
+			if (!notAnonymized.ok) {
+				return notAnonymized;
 			}
 
 			if (candidate.consentWithdrawnAt !== null) {
@@ -1056,6 +1075,11 @@ export function createMemoryRecruitmentMethods(
 				return versionCheck;
 			}
 
+			const notAnonymized = assertCandidateNotAnonymized(candidate.status);
+			if (!notAnonymized.ok) {
+				return notAnonymized;
+			}
+
 			if (candidate.consentWithdrawnAt !== null) {
 				return invalidState(
 					"Cannot change retention after candidate consent withdrawal",
@@ -1103,12 +1127,123 @@ export function createMemoryRecruitmentMethods(
 			return ok(cloneCandidate(updated));
 		},
 
+		async anonymizeCandidate(
+			input: {
+				organizationId: string;
+				candidateId: HumanResourcesCandidateId;
+				expectedVersion: number;
+				actorUserId: string;
+				asOf: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<Candidate>> {
+			const candidate = state.candidates.get(input.candidateId);
+			if (candidate === undefined) {
+				return notFound("Candidate not found");
+			}
+			const orgCheck = assertRecruitmentOrgMatch(
+				candidate,
+				input.organizationId,
+				"Candidate",
+			);
+			if (!orgCheck.ok) {
+				return orgCheck;
+			}
+
+			const versionCheck = assertExpectedVersion(
+				candidate.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const eligible = assertCandidateAnonymizationEligible({
+				status: candidate.status,
+				consentWithdrawnAt: candidate.consentWithdrawnAt,
+				retentionUntil: candidate.retentionUntil,
+				asOf: input.asOf,
+			});
+			if (!eligible.ok) {
+				return eligible;
+			}
+
+			const previousNormalizedEmail = normalizeCandidateEmail(candidate.email);
+			const scrubbedEmail = anonymizedCandidateEmail(candidate.id);
+			const scrubbedNormalizedEmail = normalizeCandidateEmail(scrubbedEmail);
+			const now = new Date();
+			const updated: Candidate = {
+				...candidate,
+				displayName: ANONYMIZED_CANDIDATE_DISPLAY_NAME,
+				email: scrubbedEmail,
+				phone: null,
+				status: "anonymized",
+				version: candidate.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.candidates.set(input.candidateId, updated);
+			state.candidateByNormalizedEmail.delete(
+				`${candidate.organizationId}:${previousNormalizedEmail}`,
+			);
+			state.candidateByNormalizedEmail.set(
+				`${candidate.organizationId}:${scrubbedNormalizedEmail}`,
+				candidate.id,
+			);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_candidate",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.candidates.set(input.candidateId, candidate);
+				state.candidateByNormalizedEmail.delete(
+					`${candidate.organizationId}:${scrubbedNormalizedEmail}`,
+				);
+				state.candidateByNormalizedEmail.set(
+					`${candidate.organizationId}:${previousNormalizedEmail}`,
+					candidate.id,
+				);
+				return audit;
+			}
+
+			const outbox = await appendRegistryGatedOutbox(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				eventEntityType: "hr_candidate",
+			});
+			if (!outbox.ok) {
+				state.candidates.set(input.candidateId, candidate);
+				state.candidateByNormalizedEmail.delete(
+					`${candidate.organizationId}:${scrubbedNormalizedEmail}`,
+				);
+				state.candidateByNormalizedEmail.set(
+					`${candidate.organizationId}:${previousNormalizedEmail}`,
+					candidate.id,
+				);
+				return outbox;
+			}
+
+			return ok(cloneCandidate(updated));
+		},
+
 		async listCandidates(input: {
 			organizationId: string;
 			page: number;
 			pageSize: number;
 			status?: CandidateStatus;
 			retentionDueAsOf?: string;
+			query?: string;
 		}): Promise<Result<CandidateListPage>> {
 			let filtered = Array.from(state.candidates.values()).filter(
 				(c) => c.organizationId === input.organizationId,
@@ -1124,6 +1259,17 @@ export function createMemoryRecruitmentMethods(
 						candidate.retentionUntil <= retentionDueAsOf,
 				);
 			}
+			if (input.query !== undefined) {
+				const needle = input.query.trim().toLowerCase();
+				filtered = filtered.filter((candidate) => {
+					const normalizedEmail = normalizeCandidateEmail(candidate.email);
+					return (
+						candidate.displayName.toLowerCase().includes(needle) ||
+						candidate.email.toLowerCase().includes(needle) ||
+						normalizedEmail.includes(needle)
+					);
+				});
+			}
 			filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
 			const totalCount = filtered.length;
 			const start = (input.page - 1) * input.pageSize;
@@ -1136,6 +1282,71 @@ export function createMemoryRecruitmentMethods(
 				page: input.page,
 				pageSize: input.pageSize,
 			});
+		},
+
+		async detectCandidateDuplicates(input: {
+			organizationId: string;
+			email?: string;
+			displayName?: string;
+		}): Promise<Result<readonly CandidateDuplicateMatch[]>> {
+			const matches = new Map<
+				HumanResourcesCandidateId,
+				Set<CandidateDuplicateMatchReason>
+			>();
+			const addMatch = (
+				candidateId: HumanResourcesCandidateId,
+				reason: CandidateDuplicateMatchReason,
+			) => {
+				const existing = matches.get(candidateId) ?? new Set();
+				existing.add(reason);
+				matches.set(candidateId, existing);
+			};
+
+			const normalizedEmail =
+				input.email !== undefined
+					? normalizeCandidateEmail(input.email)
+					: undefined;
+			const normalizedDisplayName =
+				input.displayName !== undefined
+					? input.displayName.trim().toLowerCase()
+					: undefined;
+
+			for (const candidate of state.candidates.values()) {
+				if (candidate.organizationId !== input.organizationId) {
+					continue;
+				}
+				if (candidate.status === "anonymized") {
+					continue;
+				}
+				if (
+					normalizedEmail !== undefined &&
+					normalizeCandidateEmail(candidate.email) === normalizedEmail
+				) {
+					addMatch(candidate.id, "email");
+				}
+				if (
+					normalizedDisplayName !== undefined &&
+					candidate.displayName.trim().toLowerCase() === normalizedDisplayName
+				) {
+					addMatch(candidate.id, "display_name");
+				}
+			}
+
+			const results: CandidateDuplicateMatch[] = [];
+			for (const [candidateId, reasons] of matches) {
+				const candidate = state.candidates.get(candidateId);
+				if (candidate === undefined) {
+					continue;
+				}
+				results.push({
+					candidateId,
+					matchReasons: [...reasons],
+					displayName: candidate.displayName,
+					email: candidate.email,
+				});
+			}
+			results.sort((a, b) => a.displayName.localeCompare(b.displayName));
+			return ok(results);
 		},
 
 		// Application methods
