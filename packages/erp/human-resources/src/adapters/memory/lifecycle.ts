@@ -54,8 +54,7 @@ import {
 } from "../../shared/domain-guards";
 import { previousIsoDate } from "../../shared/effective-dates";
 import {
-	assertAssignmentWithinEmployment,
-	assertNoAssignmentOverlap,
+	assertTransferAssignmentRanges,
 } from "../../shared/assignment-guards";
 import { assertValidDateRange } from "../../shared/employment-status";
 import { fingerprintTransfer } from "../../shared/fingerprint";
@@ -1188,26 +1187,6 @@ export function createMemoryLifecycleMethods(
 				return dateCheck;
 			}
 
-			const withinEmployment = assertAssignmentWithinEmployment({
-				assignmentStartsOn: openAssignment.data.startsOn,
-				assignmentEndsOn: previousIsoDate(input.effectiveOn),
-				employmentStartsOn: employment.startsOn,
-				employmentEndsOn: employment.endsOn,
-			});
-			if (!withinEmployment.ok) {
-				return withinEmployment;
-			}
-
-			const successorWithinEmployment = assertAssignmentWithinEmployment({
-				assignmentStartsOn: input.effectiveOn,
-				assignmentEndsOn: null,
-				employmentStartsOn: employment.startsOn,
-				employmentEndsOn: employment.endsOn,
-			});
-			if (!successorWithinEmployment.ok) {
-				return successorWithinEmployment;
-			}
-
 			const siblings = await this.listAssignmentsByEmployment({
 				organizationId: input.organizationId,
 				employmentId: input.employmentId,
@@ -1216,23 +1195,15 @@ export function createMemoryLifecycleMethods(
 				return siblings;
 			}
 
-			const endedOverlap = assertNoAssignmentOverlap({
-				candidateAssignmentId: openAssignment.data.id,
-				candidateStartsOn: openAssignment.data.startsOn,
-				candidateEndsOn: previousIsoDate(input.effectiveOn),
-				existing: siblings.data,
+			const transferRanges = assertTransferAssignmentRanges({
+				openAssignment: openAssignment.data,
+				effectiveOn: input.effectiveOn,
+				employmentStartsOn: employment.startsOn,
+				employmentEndsOn: employment.endsOn,
+				siblings: siblings.data,
 			});
-			if (!endedOverlap.ok) {
-				return endedOverlap;
-			}
-
-			const successorOverlap = assertNoAssignmentOverlap({
-				candidateStartsOn: input.effectiveOn,
-				candidateEndsOn: null,
-				existing: siblings.data,
-			});
-			if (!successorOverlap.ok) {
-				return successorOverlap;
+			if (!transferRanges.ok) {
+				return transferRanges;
 			}
 
 			const newAssignmentIdResult = parseHumanResourcesAssignmentId(

@@ -85,6 +85,8 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				departmentId: root.data.id,
 				parentDepartmentId: child.data.id,
 				expectedVersion: 1,
+				effectiveOn: "2026-01-01",
+				reasonCode: "restructure",
 			},
 			ready,
 		);
@@ -464,6 +466,8 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				departmentId: department.data.id,
 				name: "Updated",
 				expectedVersion: 99,
+				effectiveOn: "2026-01-01",
+				reasonCode: "rename",
 			},
 			ready,
 		);

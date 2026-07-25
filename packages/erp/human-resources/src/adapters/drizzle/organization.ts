@@ -2848,6 +2848,11 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return notFound("Open primary reporting line not found");
 		}
 		const priorLine = prior.data;
+		if (input.closePriorOn < priorLine.startsOn) {
+			return invalidInput(
+				"closePriorOn must be on or after the prior reporting line start date",
+			);
+		}
 		const closeDateCheck = assertValidDateRange(
 			priorLine.startsOn,
 			input.closePriorOn,
@@ -3000,6 +3005,184 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 		const tree = buildBoundedDepartmentTree({
 			departments: departments.data,
+			rootDepartmentId: input.rootDepartmentId,
+			maxDepth: input.maxDepth,
+			maxNodes: input.maxNodes,
+		});
+		return ok(tree);
+	},
+
+	async findDepartmentAsOf(input: {
+		organizationId: string;
+		departmentId: HumanResourcesDepartmentId;
+		asOf: string;
+	}): Promise<Result<DepartmentStructureAtAsOf | null>> {
+		const department = await this.getDepartmentById({
+			organizationId: input.organizationId,
+			departmentId: input.departmentId,
+		});
+		if (!department.ok) return department;
+		if (department.data === null) return ok(null);
+
+		const versionsResult = await listDepartmentStructureVersions({
+			organizationId: input.organizationId,
+			departmentId: input.departmentId,
+		});
+		if (!versionsResult.ok) return versionsResult;
+
+		const resolved = resolveDepartmentStructureAsOf({
+			versions: versionsResult.data,
+			departmentId: input.departmentId,
+			asOf: input.asOf,
+		});
+		if (!resolved.ok) {
+			return fail(
+				"CONFLICT",
+				`Department structure is not deterministic for as-of date (${resolved.reason})`,
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+		if (resolved.record === null) return ok(null);
+
+		return ok({
+			departmentId: input.departmentId,
+			organizationId: input.organizationId,
+			name: resolved.record.name,
+			parentDepartmentId: resolved.record.parentDepartmentId,
+			asOf: input.asOf,
+			effectiveFrom: resolved.record.effectiveFrom,
+			effectiveTo: resolved.record.effectiveTo,
+			structureVersionId: resolved.record.id,
+		});
+	},
+
+	async findJobAsOf(input: {
+		organizationId: string;
+		jobId: HumanResourcesJobId;
+		asOf: string;
+	}): Promise<Result<JobDefinitionAtAsOf | null>> {
+		const job = await this.getJobById({
+			organizationId: input.organizationId,
+			jobId: input.jobId,
+		});
+		if (!job.ok) return job;
+		if (job.data === null) return ok(null);
+
+		const versionsResult = await listJobDefinitionVersions({
+			organizationId: input.organizationId,
+			jobId: input.jobId,
+		});
+		if (!versionsResult.ok) return versionsResult;
+
+		const resolved = resolveJobDefinitionAsOf({
+			versions: versionsResult.data,
+			jobId: input.jobId,
+			asOf: input.asOf,
+		});
+		if (!resolved.ok) {
+			return fail(
+				"CONFLICT",
+				`Job definition is not deterministic for as-of date (${resolved.reason})`,
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+		if (resolved.record === null) return ok(null);
+
+		return ok({
+			jobId: input.jobId,
+			organizationId: input.organizationId,
+			title: resolved.record.title,
+			asOf: input.asOf,
+			effectiveFrom: resolved.record.effectiveFrom,
+			effectiveTo: resolved.record.effectiveTo,
+			definitionVersionId: resolved.record.id,
+		});
+	},
+
+	async findPositionAsOf(input: {
+		organizationId: string;
+		positionId: HumanResourcesPositionId;
+		asOf: string;
+	}): Promise<Result<PositionDefinitionAtAsOf | null>> {
+		const position = await this.getPositionById({
+			organizationId: input.organizationId,
+			positionId: input.positionId,
+		});
+		if (!position.ok) return position;
+		if (position.data === null) return ok(null);
+
+		const versionsResult = await listPositionDefinitionVersions({
+			organizationId: input.organizationId,
+			positionId: input.positionId,
+		});
+		if (!versionsResult.ok) return versionsResult;
+
+		const resolved = resolvePositionDefinitionAsOf({
+			versions: versionsResult.data,
+			positionId: input.positionId,
+			asOf: input.asOf,
+		});
+		if (!resolved.ok) {
+			return fail(
+				"CONFLICT",
+				`Position definition is not deterministic for as-of date (${resolved.reason})`,
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+		if (resolved.record === null) return ok(null);
+
+		return ok({
+			positionId: input.positionId,
+			organizationId: input.organizationId,
+			title: resolved.record.title,
+			departmentId: resolved.record.departmentId,
+			jobId: resolved.record.jobId,
+			asOf: input.asOf,
+			effectiveFrom: resolved.record.effectiveFrom,
+			effectiveTo: resolved.record.effectiveTo,
+			definitionVersionId: resolved.record.id,
+		});
+	},
+
+	async getOrganizationTreeAsOf(input: {
+		organizationId: string;
+		asOf: string;
+		rootDepartmentId: HumanResourcesDepartmentId | null;
+		maxDepth: number;
+		maxNodes: number;
+	}): Promise<Result<OrganizationTreePage>> {
+		const departments = await this.listAllDepartments({
+			organizationId: input.organizationId,
+		});
+		if (!departments.ok) return departments;
+
+		const historicalDepartments: Department[] = [];
+		for (const department of departments.data) {
+			const asOfStructure = await this.findDepartmentAsOf({
+				organizationId: input.organizationId,
+				departmentId: department.id,
+				asOf: input.asOf,
+			});
+			if (!asOfStructure.ok) return asOfStructure;
+			if (asOfStructure.data === null) continue;
+			historicalDepartments.push({
+				...department,
+				name: asOfStructure.data.name,
+				parentDepartmentId: asOfStructure.data.parentDepartmentId,
+			});
+		}
+
+		if (input.rootDepartmentId !== null) {
+			const root = historicalDepartments.find(
+				(d) => d.id === input.rootDepartmentId,
+			);
+			if (root === undefined) {
+				return notFound("Root department not found");
+			}
+		}
+
+		const tree = buildBoundedDepartmentTree({
+			departments: historicalDepartments,
 			rootDepartmentId: input.rootDepartmentId,
 			maxDepth: input.maxDepth,
 			maxNodes: input.maxNodes,

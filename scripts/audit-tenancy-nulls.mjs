@@ -116,6 +116,7 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"ca_governance_body",
 	"ca_governance_membership",
 	"ca_authority_mandate",
+	"ca_authority_mandate_holder",
 	"ca_company_premise",
 	"ca_governance_meeting",
 	"ca_resolution",
@@ -468,6 +469,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM ca_governance_membership WHERE organization_id IS NULL`,
 	ca_authority_mandate: () =>
 		sql`SELECT count(*)::int AS null_count FROM ca_authority_mandate WHERE organization_id IS NULL`,
+	ca_authority_mandate_holder: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_authority_mandate_holder WHERE organization_id IS NULL`,
 	ca_company_premise: () =>
 		sql`SELECT count(*)::int AS null_count FROM ca_company_premise WHERE organization_id IS NULL`,
 	ca_governance_meeting: () =>

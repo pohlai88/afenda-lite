@@ -270,6 +270,11 @@ export type CaOfficerAppointment = {
 	status: CaOfficerStatus;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
+	supersedesOfficerAppointmentId: string | null;
+	amendmentReason: string | null;
+	endReason: string | null;
+	endEvidenceReference: string | null;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -298,6 +303,10 @@ export type CaGovernanceBody = {
 	status: CaGovernanceBodyStatus;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
+	retiredAt: Date | null;
+	retiredBy: string | null;
+	retirementReason: string | null;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -318,6 +327,8 @@ export type CaGovernanceMembership = {
 	effectiveTo: string | null;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
+	endReason: string | null;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -346,6 +357,7 @@ export type CaAuthorityMandate = {
 	amountLimit: string | null;
 	currencyCode: string | null;
 	signingRule: CaSigningRule;
+	minimumSignatories: number;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	grantEvidenceReference: string | null;
@@ -353,10 +365,37 @@ export type CaAuthorityMandate = {
 	status: CaMandateStatus;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
+	supersedesAuthorityMandateId: string | null;
+	amendmentReason: string | null;
+	revocationReason: string | null;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export const CA_MANDATE_HOLDER_KINDS = ["party", "officer"] as const;
+export type CaMandateHolderKind = (typeof CA_MANDATE_HOLDER_KINDS)[number];
+
+export type CaAuthorityMandateHolder = {
+	id: string;
+	organizationId: string;
+	legalCompanyId: string;
+	authorityMandateId: string;
+	holderKind: CaMandateHolderKind;
+	partyId: string | null;
+	partyCodeSnapshot: string | null;
+	partyNameSnapshot: string | null;
+	officerAppointmentId: string | null;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	createdBy: string;
+	createdAt: Date;
+};
+
+export type CaAuthorityMandateDetail = CaAuthorityMandate & {
+	holders: CaAuthorityMandateHolder[];
 };
 
 export const CA_PREMISE_TYPES = [
@@ -388,6 +427,10 @@ export type CaCompanyPremise = {
 	status: CaPremiseStatus;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
+	supersedesCompanyPremiseId: string | null;
+	amendmentReason: string | null;
+	retirementReason: string | null;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -421,6 +464,11 @@ export type CaGovernanceMeeting = {
 	minutesDocumentReference: string | null;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
+	correctsGovernanceMeetingId: string | null;
+	correctionReason: string | null;
+	closedAt: Date | null;
+	closedBy: string | null;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -446,9 +494,16 @@ export type CaResolution = {
 	description: string | null;
 	status: CaResolutionStatus;
 	approvedDate: string | null;
+	approvalEvidenceReference: string | null;
+	supersedesResolutionId: string | null;
 	supersededById: string | null;
+	supersededAt: Date | null;
+	revokedDate: string | null;
+	revocationReason: string | null;
+	revocationEvidenceReference: string | null;
 	version: number;
 	createIdempotencyKey: string;
+	requestFingerprint: string;
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -467,11 +522,47 @@ const governanceQueryContext = z.object({
 	organizationId: z.string().trim().min(1),
 	actorUserId: z.string().trim().min(1),
 	legalCompanyId: z.uuid(),
+	asOf: z.iso.date().optional(),
 });
 
 const governanceGetContext = governanceQueryContext.extend({
 	id: z.uuid(),
 });
+
+const governanceExistingCommandContext = governanceCommandContext.extend({
+	id: z.uuid(),
+	expectedVersion: z.number().int().positive(),
+	reason: z.string().trim().min(1).max(1000),
+});
+
+const membershipSubjectSchema = z.discriminatedUnion("kind", [
+	z.object({ kind: z.literal("party"), partyId: z.uuid() }).strict(),
+	z
+		.object({ kind: z.literal("officer"), officerAppointmentId: z.uuid() })
+		.strict(),
+]);
+
+const mandateHolderSchema = z.discriminatedUnion("kind", [
+	z.object({ kind: z.literal("party"), partyId: z.uuid() }).strict(),
+	z
+		.object({ kind: z.literal("officer"), officerAppointmentId: z.uuid() })
+		.strict(),
+]);
+
+const premiseAddressSourceSchema = z.discriminatedUnion("kind", [
+	z.object({ kind: z.literal("master"), partyAddressId: z.uuid() }).strict(),
+	z
+		.object({
+			kind: z.literal("manual"),
+			line1: z.string().trim().min(1).max(300),
+			line2: z.string().trim().min(1).max(300).optional(),
+			city: z.string().trim().min(1).max(120),
+			region: z.string().trim().min(1).max(120).optional(),
+			postalCode: z.string().trim().min(1).max(32).optional(),
+			countryCode: z.string().trim().length(2),
+		})
+		.strict(),
+]);
 
 export const createOfficerAppointmentInputSchema = governanceCommandContext
 	.extend({
@@ -500,8 +591,7 @@ export const listGovernanceBodiesInputSchema = governanceQueryContext.strict();
 export const createGovernanceMembershipInputSchema = governanceCommandContext
 	.extend({
 		governanceBodyId: z.uuid(),
-		memberPartyId: z.uuid().optional(),
-		officerAppointmentId: z.uuid().optional(),
+		subject: membershipSubjectSchema,
 		roleTitle: z.string().trim().min(1).max(200),
 		effectiveFrom: z.iso.date(),
 	})
@@ -518,6 +608,8 @@ export const createAuthorityMandateInputSchema = governanceCommandContext
 		amountLimit: z.string().trim().min(1).max(32).optional(),
 		currencyCode: z.string().trim().length(3).optional(),
 		signingRule: z.enum(CA_SIGNING_RULES).default("single"),
+		minimumSignatories: z.number().int().positive().default(1),
+		holders: z.array(mandateHolderSchema).min(1).max(50),
 		effectiveFrom: z.iso.date(),
 		grantEvidenceReference: z.string().trim().min(1).max(500).optional(),
 	})
@@ -529,13 +621,7 @@ export const listAuthorityMandatesInputSchema = governanceQueryContext.strict();
 export const createCompanyPremiseInputSchema = governanceCommandContext
 	.extend({
 		premiseType: z.enum(CA_PREMISE_TYPES),
-		partyAddressId: z.uuid().optional(),
-		addressLine1Snapshot: z.string().trim().min(1).max(300),
-		addressLine2Snapshot: z.string().trim().min(1).max(300).optional(),
-		citySnapshot: z.string().trim().min(1).max(120).optional(),
-		regionSnapshot: z.string().trim().min(1).max(120).optional(),
-		postalCodeSnapshot: z.string().trim().min(1).max(32).optional(),
-		countryCodeSnapshot: z.string().trim().min(2).max(3).optional(),
+		addressSource: premiseAddressSourceSchema,
 		isPrimary: z.boolean().default(false),
 		effectiveFrom: z.iso.date(),
 	})
@@ -544,31 +630,141 @@ export const createCompanyPremiseInputSchema = governanceCommandContext
 export const getCompanyPremiseInputSchema = governanceGetContext.strict();
 export const listCompanyPremisesInputSchema = governanceQueryContext.strict();
 
-export const createGovernanceMeetingInputSchema = governanceCommandContext
-	.extend({
-		governanceBodyId: z.uuid(),
-		meetingAt: z.iso.datetime(),
-		quorumResult: z.enum(CA_QUORUM_RESULTS).default("pending"),
-		status: z.enum(CA_MEETING_STATUSES).default("scheduled"),
-		minutesDocumentReference: z.string().trim().min(1).max(500).optional(),
-	})
-	.strict();
+const standardMeetingRecordSchema = governanceCommandContext.extend({
+	mode: z.literal("standard"),
+	governanceBodyId: z.uuid(),
+	meetingAt: z.iso.datetime(),
+	quorumResult: z.enum(CA_QUORUM_RESULTS).default("pending"),
+	status: z.enum(["scheduled", "held", "cancelled"]).default("scheduled"),
+	minutesDocumentReference: z.string().trim().min(1).max(500).optional(),
+});
+
+const correctionMeetingRecordSchema = governanceCommandContext.extend({
+	mode: z.literal("correction"),
+	correctsGovernanceMeetingId: z.uuid(),
+	correctionReason: z.string().trim().min(1).max(1000),
+	governanceBodyId: z.uuid(),
+	meetingAt: z.iso.datetime(),
+	quorumResult: z.enum(["met", "not_met", "waived"]),
+	minutesDocumentReference: z.string().trim().min(1).max(500),
+});
+
+export const createGovernanceMeetingInputSchema = z.discriminatedUnion("mode", [
+	standardMeetingRecordSchema.strict(),
+	correctionMeetingRecordSchema.strict(),
+]);
 
 export const getGovernanceMeetingInputSchema = governanceGetContext.strict();
 export const listGovernanceMeetingsInputSchema =
 	governanceQueryContext.strict();
 
-export const createResolutionInputSchema = governanceCommandContext
-	.extend({
-		governanceMeetingId: z.uuid().optional(),
-		resolutionNumber: z.string().trim().min(1).max(64),
-		resolutionYear: z.number().int().min(1900).max(9999),
-		title: z.string().trim().min(1).max(300),
-		description: z.string().trim().min(1).max(5000).optional(),
-		status: z.enum(CA_RESOLUTION_STATUSES).default("draft"),
-		approvedDate: z.iso.date().optional(),
-	})
-	.strict();
+const standardResolutionRecordSchema = governanceCommandContext.extend({
+	mode: z.literal("standard"),
+	governanceMeetingId: z.uuid().optional(),
+	resolutionNumber: z.string().trim().min(1).max(64),
+	resolutionYear: z.number().int().min(1900).max(9999),
+	title: z.string().trim().min(1).max(300),
+	description: z.string().trim().min(1).max(5000).optional(),
+});
+
+const supersedingResolutionRecordSchema =
+	standardResolutionRecordSchema.extend({
+		mode: z.literal("superseding"),
+		supersedesResolutionId: z.uuid(),
+	});
+
+export const createResolutionInputSchema = z.discriminatedUnion("mode", [
+	standardResolutionRecordSchema.strict(),
+	supersedingResolutionRecordSchema.strict(),
+]);
 
 export const getResolutionInputSchema = governanceGetContext.strict();
 export const listResolutionsInputSchema = governanceQueryContext.strict();
+
+export const amendOfficerInputSchema = governanceExistingCommandContext
+	.extend({
+		effectiveFrom: z.iso.date(),
+		officerRole: z.enum(CA_OFFICER_ROLES).optional(),
+		authorityLimits: z.string().trim().min(1).max(1000).nullable().optional(),
+	})
+	.strict();
+
+export const endOfficerInputSchema = governanceExistingCommandContext
+	.extend({
+		effectiveTo: z.iso.date(),
+		endKind: z.enum(["resigned", "removed"]),
+		evidenceReference: z.string().trim().min(1).max(500).optional(),
+	})
+	.strict();
+
+export const updateGovernanceBodyInputSchema = governanceExistingCommandContext
+	.extend({
+		displayName: z.string().trim().min(1).max(300).optional(),
+		bodyType: z.enum(CA_GOVERNANCE_BODY_TYPES).optional(),
+	})
+	.strict();
+
+export const retireGovernanceBodyInputSchema =
+	governanceExistingCommandContext.strict();
+
+export const endGovernanceMembershipInputSchema =
+	governanceExistingCommandContext
+		.extend({ effectiveTo: z.iso.date() })
+		.strict();
+
+export const amendAuthorityMandateInputSchema = governanceExistingCommandContext
+	.extend({
+		effectiveFrom: z.iso.date(),
+		mandateType: z.enum(CA_MANDATE_TYPES),
+		scopeDescription: z.string().trim().min(1).max(2000),
+		amountLimit: z.string().trim().min(1).max(32).optional(),
+		currencyCode: z.string().trim().length(3).optional(),
+		signingRule: z.enum(CA_SIGNING_RULES),
+		minimumSignatories: z.number().int().positive(),
+		holders: z.array(mandateHolderSchema).min(1).max(50),
+		grantEvidenceReference: z.string().trim().min(1).max(500),
+	})
+	.strict();
+
+export const revokeAuthorityMandateInputSchema =
+	governanceExistingCommandContext
+		.extend({
+			effectiveTo: z.iso.date(),
+			evidenceReference: z.string().trim().min(1).max(500),
+		})
+		.strict();
+
+export const updateCompanyPremiseInputSchema = governanceExistingCommandContext
+	.extend({
+		effectiveFrom: z.iso.date(),
+		premiseType: z.enum(CA_PREMISE_TYPES),
+		addressSource: premiseAddressSourceSchema,
+		isPrimary: z.boolean(),
+	})
+	.strict();
+
+export const retireCompanyPremiseInputSchema = governanceExistingCommandContext
+	.extend({ effectiveTo: z.iso.date() })
+	.strict();
+
+export const closeGovernanceMeetingInputSchema =
+	governanceExistingCommandContext
+		.extend({
+			quorumResult: z.enum(["met", "not_met", "waived"]),
+			minutesDocumentReference: z.string().trim().min(1).max(500),
+		})
+		.strict();
+
+export const approveResolutionInputSchema = governanceExistingCommandContext
+	.extend({
+		approvedDate: z.iso.date(),
+		evidenceReference: z.string().trim().min(1).max(500),
+	})
+	.strict();
+
+export const revokeResolutionInputSchema = governanceExistingCommandContext
+	.extend({
+		revokedDate: z.iso.date(),
+		evidenceReference: z.string().trim().min(1).max(500).optional(),
+	})
+	.strict();

@@ -23,18 +23,42 @@ export const CA_COMMAND_COMPANY_IDENTIFIER_RETIRE =
 
 export const CA_COMMAND_OFFICER_APPOINT =
 	"corporate-administration.officer.appoint" as const;
+export const CA_COMMAND_OFFICER_AMEND =
+	"corporate-administration.officer.amend" as const;
+export const CA_COMMAND_OFFICER_END =
+	"corporate-administration.officer.end" as const;
 export const CA_COMMAND_GOVERNANCE_BODY_CREATE =
 	"corporate-administration.governance-body.create" as const;
+export const CA_COMMAND_GOVERNANCE_BODY_UPDATE =
+	"corporate-administration.governance-body.update" as const;
+export const CA_COMMAND_GOVERNANCE_BODY_RETIRE =
+	"corporate-administration.governance-body.retire" as const;
 export const CA_COMMAND_GOVERNANCE_MEMBERSHIP_APPOINT =
 	"corporate-administration.governance-membership.appoint" as const;
+export const CA_COMMAND_GOVERNANCE_MEMBERSHIP_END =
+	"corporate-administration.governance-membership.end" as const;
 export const CA_COMMAND_AUTHORITY_MANDATE_GRANT =
 	"corporate-administration.authority-mandate.grant" as const;
+export const CA_COMMAND_AUTHORITY_MANDATE_AMEND =
+	"corporate-administration.authority-mandate.amend" as const;
+export const CA_COMMAND_AUTHORITY_MANDATE_REVOKE =
+	"corporate-administration.authority-mandate.revoke" as const;
 export const CA_COMMAND_PREMISE_REGISTER =
 	"corporate-administration.premise.register" as const;
+export const CA_COMMAND_PREMISE_UPDATE =
+	"corporate-administration.premise.update" as const;
+export const CA_COMMAND_PREMISE_RETIRE =
+	"corporate-administration.premise.retire" as const;
 export const CA_COMMAND_GOVERNANCE_MEETING_RECORD =
 	"corporate-administration.governance-meeting.record" as const;
+export const CA_COMMAND_GOVERNANCE_MEETING_CLOSE =
+	"corporate-administration.governance-meeting.close" as const;
 export const CA_COMMAND_RESOLUTION_RECORD =
 	"corporate-administration.resolution.record" as const;
+export const CA_COMMAND_RESOLUTION_APPROVE =
+	"corporate-administration.resolution.approve" as const;
+export const CA_COMMAND_RESOLUTION_REVOKE =
+	"corporate-administration.resolution.revoke" as const;
 
 export const CA_COMMAND_SHARE_CLASS_CREATE =
 	"corporate-administration.share-class.create" as const;
@@ -87,12 +111,24 @@ export const CA_COMMAND_IDS = [
 	CA_COMMAND_COMPANY_IDENTIFIER_UPDATE,
 	CA_COMMAND_COMPANY_IDENTIFIER_RETIRE,
 	CA_COMMAND_OFFICER_APPOINT,
+	CA_COMMAND_OFFICER_AMEND,
+	CA_COMMAND_OFFICER_END,
 	CA_COMMAND_GOVERNANCE_BODY_CREATE,
+	CA_COMMAND_GOVERNANCE_BODY_UPDATE,
+	CA_COMMAND_GOVERNANCE_BODY_RETIRE,
 	CA_COMMAND_GOVERNANCE_MEMBERSHIP_APPOINT,
+	CA_COMMAND_GOVERNANCE_MEMBERSHIP_END,
 	CA_COMMAND_AUTHORITY_MANDATE_GRANT,
+	CA_COMMAND_AUTHORITY_MANDATE_AMEND,
+	CA_COMMAND_AUTHORITY_MANDATE_REVOKE,
 	CA_COMMAND_PREMISE_REGISTER,
+	CA_COMMAND_PREMISE_UPDATE,
+	CA_COMMAND_PREMISE_RETIRE,
 	CA_COMMAND_GOVERNANCE_MEETING_RECORD,
+	CA_COMMAND_GOVERNANCE_MEETING_CLOSE,
 	CA_COMMAND_RESOLUTION_RECORD,
+	CA_COMMAND_RESOLUTION_APPROVE,
+	CA_COMMAND_RESOLUTION_REVOKE,
 	CA_COMMAND_SHARE_CLASS_CREATE,
 	CA_COMMAND_SHARE_TRANSACTION_CREATE,
 	CA_COMMAND_SHARE_CERTIFICATE_CREATE,
@@ -131,30 +167,44 @@ export const CA_QUERY_OFFICER_GET =
 	"corporate-administration.officer.get" as const;
 export const CA_QUERY_OFFICER_LIST =
 	"corporate-administration.officer.list" as const;
+export const CA_QUERY_OFFICER_GET_AS_OF =
+	"corporate-administration.officer.get-as-of" as const;
 export const CA_QUERY_GOVERNANCE_BODY_GET =
 	"corporate-administration.governance-body.get" as const;
 export const CA_QUERY_GOVERNANCE_BODY_LIST =
 	"corporate-administration.governance-body.list" as const;
+export const CA_QUERY_GOVERNANCE_BODY_GET_AS_OF =
+	"corporate-administration.governance-body.get-as-of" as const;
 export const CA_QUERY_GOVERNANCE_MEMBERSHIP_GET =
 	"corporate-administration.governance-membership.get" as const;
 export const CA_QUERY_GOVERNANCE_MEMBERSHIP_LIST =
 	"corporate-administration.governance-membership.list" as const;
+export const CA_QUERY_GOVERNANCE_MEMBERSHIP_GET_AS_OF =
+	"corporate-administration.governance-membership.get-as-of" as const;
 export const CA_QUERY_AUTHORITY_MANDATE_GET =
 	"corporate-administration.authority-mandate.get" as const;
 export const CA_QUERY_AUTHORITY_MANDATE_LIST =
 	"corporate-administration.authority-mandate.list" as const;
+export const CA_QUERY_AUTHORITY_MANDATE_GET_AS_OF =
+	"corporate-administration.authority-mandate.get-as-of" as const;
 export const CA_QUERY_PREMISE_GET =
 	"corporate-administration.premise.get" as const;
 export const CA_QUERY_PREMISE_LIST =
 	"corporate-administration.premise.list" as const;
+export const CA_QUERY_PREMISE_GET_AS_OF =
+	"corporate-administration.premise.get-as-of" as const;
 export const CA_QUERY_GOVERNANCE_MEETING_GET =
 	"corporate-administration.governance-meeting.get" as const;
 export const CA_QUERY_GOVERNANCE_MEETING_LIST =
 	"corporate-administration.governance-meeting.list" as const;
+export const CA_QUERY_GOVERNANCE_MEETING_GET_AS_OF =
+	"corporate-administration.governance-meeting.get-as-of" as const;
 export const CA_QUERY_RESOLUTION_GET =
 	"corporate-administration.resolution.get" as const;
 export const CA_QUERY_RESOLUTION_LIST =
 	"corporate-administration.resolution.list" as const;
+export const CA_QUERY_RESOLUTION_GET_AS_OF =
+	"corporate-administration.resolution.get-as-of" as const;
 
 export const CA_QUERY_SHARE_CLASS_GET =
 	"corporate-administration.share-class.get" as const;
@@ -246,18 +296,25 @@ export const CA_QUERY_IDS = [
 	CA_QUERY_COMPANY_STATUS_LIST,
 	CA_QUERY_OFFICER_GET,
 	CA_QUERY_OFFICER_LIST,
+	CA_QUERY_OFFICER_GET_AS_OF,
 	CA_QUERY_GOVERNANCE_BODY_GET,
 	CA_QUERY_GOVERNANCE_BODY_LIST,
+	CA_QUERY_GOVERNANCE_BODY_GET_AS_OF,
 	CA_QUERY_GOVERNANCE_MEMBERSHIP_GET,
 	CA_QUERY_GOVERNANCE_MEMBERSHIP_LIST,
+	CA_QUERY_GOVERNANCE_MEMBERSHIP_GET_AS_OF,
 	CA_QUERY_AUTHORITY_MANDATE_GET,
 	CA_QUERY_AUTHORITY_MANDATE_LIST,
+	CA_QUERY_AUTHORITY_MANDATE_GET_AS_OF,
 	CA_QUERY_PREMISE_GET,
 	CA_QUERY_PREMISE_LIST,
+	CA_QUERY_PREMISE_GET_AS_OF,
 	CA_QUERY_GOVERNANCE_MEETING_GET,
 	CA_QUERY_GOVERNANCE_MEETING_LIST,
+	CA_QUERY_GOVERNANCE_MEETING_GET_AS_OF,
 	CA_QUERY_RESOLUTION_GET,
 	CA_QUERY_RESOLUTION_LIST,
+	CA_QUERY_RESOLUTION_GET_AS_OF,
 	CA_QUERY_SHARE_CLASS_GET,
 	CA_QUERY_SHARE_CLASS_LIST,
 	CA_QUERY_SHARE_TRANSACTION_GET,

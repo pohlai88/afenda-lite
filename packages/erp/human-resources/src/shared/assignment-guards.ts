@@ -5,6 +5,7 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import { previousIsoDate } from "./effective-dates";
 import { datesOverlap } from "./organization-guards";
 
 export function assertNoAssignmentOverlap(input: {
@@ -69,4 +70,55 @@ export function assertAssignmentWithinEmployment(input: {
 		}
 	}
 	return ok(undefined);
+}
+
+export function assertTransferAssignmentRanges(input: {
+	openAssignment: { id: string; startsOn: string };
+	effectiveOn: string;
+	employmentStartsOn: string;
+	employmentEndsOn: string | null;
+	siblings: readonly {
+		id: string;
+		startsOn: string;
+		endsOn: string | null;
+	}[];
+}): Result<void> {
+	const endedOn = previousIsoDate(input.effectiveOn);
+
+	const withinEmployment = assertAssignmentWithinEmployment({
+		assignmentStartsOn: input.openAssignment.startsOn,
+		assignmentEndsOn: endedOn,
+		employmentStartsOn: input.employmentStartsOn,
+		employmentEndsOn: input.employmentEndsOn,
+	});
+	if (!withinEmployment.ok) {
+		return withinEmployment;
+	}
+
+	const successorWithinEmployment = assertAssignmentWithinEmployment({
+		assignmentStartsOn: input.effectiveOn,
+		assignmentEndsOn: null,
+		employmentStartsOn: input.employmentStartsOn,
+		employmentEndsOn: input.employmentEndsOn,
+	});
+	if (!successorWithinEmployment.ok) {
+		return successorWithinEmployment;
+	}
+
+	const endedOverlap = assertNoAssignmentOverlap({
+		candidateAssignmentId: input.openAssignment.id,
+		candidateStartsOn: input.openAssignment.startsOn,
+		candidateEndsOn: endedOn,
+		existing: input.siblings,
+	});
+	if (!endedOverlap.ok) {
+		return endedOverlap;
+	}
+
+	return assertNoAssignmentOverlap({
+		candidateAssignmentId: input.openAssignment.id,
+		candidateStartsOn: input.effectiveOn,
+		candidateEndsOn: null,
+		existing: input.siblings,
+	});
 }

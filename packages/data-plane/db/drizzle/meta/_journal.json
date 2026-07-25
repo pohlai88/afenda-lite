@@ -239,6 +239,13 @@
       "when": 1785051600000,
       "tag": "0032_hr_organization_structure_lineage",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1785055200000,
+      "tag": "0033_ca_governance_premises_hardening",
+      "breakpoints": true
     }
   ]
 }

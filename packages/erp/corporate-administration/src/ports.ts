@@ -4,10 +4,15 @@ import type { CorporateAdministrationEventType } from "@afenda/events/schemas";
 import type {
 	OrganizationDimensionReference,
 	Party,
+	PartyAddress,
+	RefCountry,
+	RefCurrency,
 } from "@afenda/master-data";
 
 import type {
 	CaAuthorityMandate,
+	CaAuthorityMandateDetail,
+	CaAuthorityMandateHolder,
 	CaCompanyIdentifier,
 	CaCompanyName,
 	CaCompanyPremise,
@@ -94,6 +99,34 @@ export type CorporateAdministrationMasterLookupPort = {
 		actorUserId: string;
 		partyId: string;
 	}): Promise<Result<Party | null>>;
+	getPartyAddressById(input: {
+		organizationId: string;
+		actorUserId: string;
+		partyId: string;
+		partyAddressId: string;
+	}): Promise<Result<PartyAddress | null>>;
+	getCountryByCode(input: {
+		organizationId: string;
+		actorUserId: string;
+		code: string;
+	}): Promise<Result<RefCountry | null>>;
+	getCurrencyByCode(input: {
+		organizationId: string;
+		actorUserId: string;
+		code: string;
+	}): Promise<Result<RefCurrency | null>>;
+};
+
+export type CorporateAdministrationGovernancePolicyPort = {
+	validateOfficerAppointment(input: {
+		organizationId: string;
+		legalCompanyId: string;
+		partyId: string;
+		officerRole: CaOfficerAppointment["officerRole"];
+		effectiveFrom: string;
+		effectiveTo: string | null;
+		existingAppointments: readonly CaOfficerAppointment[];
+	}): Promise<Result<void>>;
 };
 
 export type LegalCompanyCreateRecord = Omit<
@@ -176,15 +209,21 @@ export type GovernanceStore = {
 			CaAuthorityMandate,
 			"id" | "version" | "createdAt" | "updatedAt"
 		>,
-	): Promise<Result<CaAuthorityMandate>>;
+		holders: ReadonlyArray<
+			Omit<
+				CaAuthorityMandateHolder,
+				"id" | "authorityMandateId" | "createdAt"
+			>
+		>,
+	): Promise<Result<CaAuthorityMandateDetail>>;
 	getAuthorityMandateById(
 		organizationId: string,
 		authorityMandateId: string,
-	): Promise<Result<CaAuthorityMandate | null>>;
+	): Promise<Result<CaAuthorityMandateDetail | null>>;
 	listAuthorityMandates(
 		organizationId: string,
 		legalCompanyId: string,
-	): Promise<Result<CaAuthorityMandate[]>>;
+	): Promise<Result<CaAuthorityMandateDetail[]>>;
 	getCompanyPremiseByIdempotencyKey(
 		organizationId: string,
 		idempotencyKey: string,

@@ -140,6 +140,9 @@ tables:
   - table: ca_authority_mandate
     writeOwner: "@afenda/corporate-administration"
     kind: erp
+  - table: ca_authority_mandate_holder
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
   - table: ca_company_premise
     writeOwner: "@afenda/corporate-administration"
     kind: erp

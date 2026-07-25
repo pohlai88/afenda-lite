@@ -179,17 +179,28 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				organizationId,
 				assignmentId: transfer.data.fromAssignmentId,
 			});
-			expect(previousAssignment.ok).toBe(true);
-			if (previousAssignment.ok && previousAssignment.data) {
-				expect(previousAssignment.data.endsOn).toBe("2025-02-28");
-			}
 			const successorAssignment = await ready.store.getAssignmentById({
 				organizationId,
 				assignmentId: transfer.data.toAssignmentId,
 			});
+			expect(previousAssignment.ok).toBe(true);
 			expect(successorAssignment.ok).toBe(true);
-			if (successorAssignment.ok && successorAssignment.data) {
+			if (
+				previousAssignment.ok &&
+				successorAssignment.ok &&
+				previousAssignment.data &&
+				successorAssignment.data
+			) {
+				expect(previousAssignment.data.endsOn).toBe("2025-02-28");
+				expect(previousAssignment.data.successorAssignmentId).toBe(
+					successorAssignment.data.id,
+				);
+				expect(previousAssignment.data.transferMovementId).toBe(transfer.data.id);
 				expect(successorAssignment.data.startsOn).toBe("2025-03-01");
+				expect(successorAssignment.data.predecessorAssignmentId).toBe(
+					previousAssignment.data.id,
+				);
+				expect(successorAssignment.data.transferMovementId).toBe(transfer.data.id);
 				expect(
 					successorAssignment.data.organizationDimensions?.legal_entity.key,
 				).toBe(TEST_ORGANIZATION_DIMENSION_KEYS.legalEntityKey);

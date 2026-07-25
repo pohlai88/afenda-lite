@@ -2090,6 +2090,143 @@ describe("@afenda/human-resources core operations", () => {
 			}
 		});
 
+		it("honors inclusive assignment as-of boundaries", async () => {
+			const ready = harness();
+			const seeded = await seedAssignmentEmployment(ready);
+			if (!seeded) return;
+
+			const bounded = await createAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-boundary",
+					employmentId: seeded.employment.id,
+					positionId: seeded.position.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
+					startsOn: "2026-01-01",
+					endsOn: "2026-06-30",
+				},
+				ready,
+			);
+			expect(bounded.ok).toBe(true);
+			if (!bounded.ok) return;
+
+			const atStart = await getAssignmentAsOf(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-boundary-start",
+					employmentId: seeded.employment.id,
+					asOf: "2026-01-01",
+				},
+				ready,
+			);
+			expect(atStart.ok).toBe(true);
+			if (atStart.ok) {
+				expect(atStart.data?.id).toBe(bounded.data.id);
+			}
+
+			const atEnd = await getAssignmentAsOf(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-boundary-end",
+					employmentId: seeded.employment.id,
+					asOf: "2026-06-30",
+				},
+				ready,
+			);
+			expect(atEnd.ok).toBe(true);
+			if (atEnd.ok) {
+				expect(atEnd.data?.id).toBe(bounded.data.id);
+			}
+
+			const afterEnd = await getAssignmentAsOf(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-boundary-after",
+					employmentId: seeded.employment.id,
+					asOf: "2026-07-01",
+				},
+				ready,
+			);
+			expect(afterEnd.ok).toBe(true);
+			if (afterEnd.ok) {
+				expect(afterEnd.data).toBeNull();
+			}
+		});
+
+		it("returns NOT_FOUND for org context during assignment gap", async () => {
+			const ready = harness();
+			const seeded = await seedAssignmentEmployment(ready);
+			if (!seeded) return;
+
+			const first = await createAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-gap-first",
+					employmentId: seeded.employment.id,
+					positionId: seeded.position.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
+					startsOn: "2026-01-01",
+					endsOn: "2026-05-31",
+				},
+				ready,
+			);
+			expect(first.ok).toBe(true);
+			if (!first.ok) return;
+
+			const second = await createAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-gap-second",
+					employmentId: seeded.employment.id,
+					positionId: seeded.position.id,
+					...TEST_ORGANIZATION_DIMENSION_KEYS,
+					startsOn: "2026-07-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(second.ok).toBe(true);
+			if (!second.ok) return;
+
+			const gapAssignment = await getAssignmentAsOf(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-gap-asof",
+					employmentId: seeded.employment.id,
+					asOf: "2026-06-15",
+				},
+				ready,
+			);
+			expect(gapAssignment.ok).toBe(true);
+			if (gapAssignment.ok) {
+				expect(gapAssignment.data).toBeNull();
+			}
+
+			const gapOrgContext = await resolveEmployeeOrgContextAsOf(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-s45-gap-org",
+					employeeId: seeded.employee.id,
+					asOf: "2026-06-15",
+				},
+				ready,
+			);
+			expect(gapOrgContext.ok).toBe(false);
+			if (!gapOrgContext.ok) {
+				expect(humanResourcesCodeFromResult(gapOrgContext)).toBe(
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				);
+			}
+		});
+
 		it("wires transfer lineage on predecessor and successor rows", async () => {
 			const ready = harness();
 			const seeded = await seedAssignmentEmployment(ready);

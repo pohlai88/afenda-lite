@@ -126,11 +126,15 @@ export type MemoryCoreMethods = Pick<
 	| "getAssignmentById"
 	| "findOpenAssignmentByEmployment"
 	| "findAssignmentByEmploymentAsOf"
+	| "listAssignmentsByEmployment"
 	| "createAssignment"
 	| "endAssignment"
 >;
 
-export type CoreMemoryHost = Pick<HumanResourcesStore, "getPositionById">;
+export type CoreMemoryHost = Pick<
+	HumanResourcesStore,
+	"getPositionById" | "listAssignmentsByEmployment"
+>;
 
 export function createCoreMemoryState(): CoreMemoryState {
 	return {

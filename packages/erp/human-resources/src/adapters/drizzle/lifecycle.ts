@@ -48,8 +48,7 @@ import {
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import {
-	assertAssignmentWithinEmployment,
-	assertNoAssignmentOverlap,
+	assertTransferAssignmentRanges,
 } from "../../shared/assignment-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
@@ -1696,42 +1695,20 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			);
 		}
 
-		const withinEmployment = assertAssignmentWithinEmployment({
-			assignmentStartsOn: openAssignment.data.startsOn,
-			assignmentEndsOn: previousIsoDate(input.effectiveOn),
-			employmentStartsOn: employment.data.startsOn,
-			employmentEndsOn: employment.data.endsOn,
-		});
-		if (!withinEmployment.ok) return withinEmployment;
-
-		const successorWithinEmployment = assertAssignmentWithinEmployment({
-			assignmentStartsOn: input.effectiveOn,
-			assignmentEndsOn: null,
-			employmentStartsOn: employment.data.startsOn,
-			employmentEndsOn: employment.data.endsOn,
-		});
-		if (!successorWithinEmployment.ok) return successorWithinEmployment;
-
 		const siblings = await this.listAssignmentsByEmployment({
 			organizationId: input.organizationId,
 			employmentId: input.employmentId,
 		});
 		if (!siblings.ok) return siblings;
 
-		const endedOverlap = assertNoAssignmentOverlap({
-			candidateAssignmentId: openAssignment.data.id,
-			candidateStartsOn: openAssignment.data.startsOn,
-			candidateEndsOn: previousIsoDate(input.effectiveOn),
-			existing: siblings.data,
+		const transferRanges = assertTransferAssignmentRanges({
+			openAssignment: openAssignment.data,
+			effectiveOn: input.effectiveOn,
+			employmentStartsOn: employment.data.startsOn,
+			employmentEndsOn: employment.data.endsOn,
+			siblings: siblings.data,
 		});
-		if (!endedOverlap.ok) return endedOverlap;
-
-		const successorOverlap = assertNoAssignmentOverlap({
-			candidateStartsOn: input.effectiveOn,
-			candidateEndsOn: null,
-			existing: siblings.data,
-		});
-		if (!successorOverlap.ok) return successorOverlap;
+		if (!transferRanges.ok) return transferRanges;
 
 		const currentAssignment = openAssignment.data;
 		const newAssignmentId = randomUUID();

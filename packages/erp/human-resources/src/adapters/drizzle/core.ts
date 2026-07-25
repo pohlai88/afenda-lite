@@ -90,6 +90,7 @@ import type {
 	Employment,
 	EmploymentContract,
 	EmploymentStatusHistory,
+	Position,
 	PositionOccupancyAsOf,
 	WorkAssignment,
 } from "../../types";
@@ -2312,39 +2313,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					{
-						id: string;
-						organization_id: string;
-						employment_id: string;
-						employee_id: string;
-						position_id: string;
-						legal_entity_dimension_id: string | null;
-						legal_entity_key_snapshot: string | null;
-						legal_entity_name_snapshot: string | null;
-						business_unit_dimension_id: string | null;
-						business_unit_key_snapshot: string | null;
-						business_unit_name_snapshot: string | null;
-						location_dimension_id: string | null;
-						location_key_snapshot: string | null;
-						location_name_snapshot: string | null;
-						cost_centre_dimension_id: string | null;
-						cost_centre_key_snapshot: string | null;
-						cost_centre_name_snapshot: string | null;
-						project_dimension_id: string | null;
-						project_key_snapshot: string | null;
-						project_name_snapshot: string | null;
-						starts_on: string;
-						ends_on: string | null;
-						version: number;
-						created_by: string;
-						updated_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}[],
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction<[AssignmentSqlRow[]]>(
+				(sql) => [
 				sql`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
@@ -2557,39 +2527,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[
-					{
-						id: string;
-						organization_id: string;
-						employment_id: string;
-						employee_id: string;
-						position_id: string;
-						legal_entity_dimension_id: string | null;
-						legal_entity_key_snapshot: string | null;
-						legal_entity_name_snapshot: string | null;
-						business_unit_dimension_id: string | null;
-						business_unit_key_snapshot: string | null;
-						business_unit_name_snapshot: string | null;
-						location_dimension_id: string | null;
-						location_key_snapshot: string | null;
-						location_name_snapshot: string | null;
-						cost_centre_dimension_id: string | null;
-						cost_centre_key_snapshot: string | null;
-						cost_centre_name_snapshot: string | null;
-						project_dimension_id: string | null;
-						project_key_snapshot: string | null;
-						project_name_snapshot: string | null;
-						starts_on: string;
-						ends_on: string | null;
-						version: number;
-						created_by: string;
-						updated_by: string;
-						created_at: Date;
-						updated_at: Date;
-					}[],
-				]
-			>((sql) => [
+			const [rows] = await runNeonHttpTransaction<[AssignmentSqlRow[]]>(
+				(sql) => [
 				sql`
 						WITH mutated AS (
 							UPDATE hr_work_assignment

@@ -296,6 +296,7 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"ca_governance_body",
 	"ca_governance_membership",
 	"ca_authority_mandate",
+	"ca_authority_mandate_holder",
 	"ca_company_premise",
 	"ca_governance_meeting",
 	"ca_resolution",

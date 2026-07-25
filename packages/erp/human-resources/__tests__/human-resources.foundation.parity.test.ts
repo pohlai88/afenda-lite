@@ -8,7 +8,7 @@ import { createAssignment, endAssignment } from "../src/core/assignment";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
-import { createPosition } from "../src/organization/position";
+import { createPosition, updatePosition } from "../src/organization/position";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
@@ -75,7 +75,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-foundation-employ-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2025-01-01",
+				startsOn: "2026-07-25",
 			},
 			ready,
 		);
@@ -94,7 +94,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				calendarVersion: "v1",
 				workWeek: STANDARD_WEEK,
 				standardHoursPerDay: "8.00",
-				effectiveFrom: "2025-01-01",
+				effectiveFrom: "2026-07-25",
 			},
 			ready,
 		);
@@ -109,7 +109,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				employeeId: employee.data.id,
 				employmentId: employment.data.id,
 				calendarId: calendar.data.id,
-				effectiveFrom: "2025-01-01",
+				effectiveFrom: "2026-07-25",
 			},
 			ready,
 		);
@@ -163,7 +163,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				positionId: positionA.data.id,
 				...TEST_ORGANIZATION_DIMENSION_KEYS,
-				startsOn: "2025-01-01",
+				startsOn: "2026-07-25",
 				endsOn: null,
 			},
 			ready,
@@ -177,7 +177,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-end-a-${suffix}`,
 				assignmentId: firstAssignment.data.id,
-				endsOn: "2025-06-30",
+				endsOn: "2026-07-31",
 				expectedVersion: firstAssignment.data.version,
 			},
 			ready,
@@ -196,7 +196,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				locationKey: "LOC-TEST-V2",
 				costCentreKey: "CC-TEST-V2",
 				projectKey: "PRJ-TEST-V2",
-				startsOn: "2025-07-01",
+				startsOn: "2026-08-01",
 				endsOn: null,
 			},
 			ready,
@@ -210,7 +210,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-org-before-${suffix}`,
 				employeeId: employee.data.id,
-				asOf: "2025-03-15",
+				asOf: "2026-07-26",
 			},
 			ready,
 		);
@@ -231,7 +231,7 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-org-after-${suffix}`,
 				employeeId: employee.data.id,
-				asOf: "2025-08-01",
+				asOf: "2026-08-15",
 			},
 			ready,
 		);
@@ -244,6 +244,130 @@ function defineFoundationParitySuite(adapter: WorkforceStoreAdapter): void {
 			expect(afterTransfer.data.locationKey).toBe("LOC-TEST-V2");
 			expect(afterTransfer.data.costCentreKey).toBe("CC-TEST-V2");
 			expect(afterTransfer.data.projectKey).toBe("PRJ-TEST-V2");
+		}
+	});
+
+	it("resolves historical department from position definition lineage at asOf", async () => {
+		const ready = createHrParityHarness(adapter);
+		const seeded = await seedDepartmentAndJob(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+		});
+		expect(seeded).not.toBeNull();
+		if (seeded === null) return;
+
+		const deptB = await seedDepartmentAndJob(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-dept-move-${suffix}`,
+		});
+		expect(deptB).not.toBeNull();
+		if (deptB === null) return;
+
+		const position = await createPosition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pos-move-${suffix}`,
+				departmentId: seeded.departmentId,
+				jobId: seeded.jobId,
+				code: `POS-MOVE-${suffix}`,
+				title: "Mobile Role",
+				status: "active",
+			},
+			ready,
+		);
+		expect(position.ok).toBe(true);
+		if (!position.ok) return;
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-move-emp-${suffix}`,
+				idempotencyKey: `idem-move-emp-${suffix}`,
+				employeeNumber: `EM-${suffix}`,
+				legalName: "Position Move Worker",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-move-employ-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-07-25",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const assignment = await createAssignment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-move-assign-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: position.data.id,
+				...TEST_ORGANIZATION_DIMENSION_KEYS,
+				startsOn: "2026-07-25",
+				endsOn: null,
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const moved = await updatePosition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pos-dept-move-${suffix}`,
+				positionId: position.data.id,
+				departmentId: deptB.departmentId,
+				expectedVersion: 1,
+				effectiveOn: "2026-08-01",
+				reasonCode: "restructure",
+			},
+			ready,
+		);
+		expect(moved.ok).toBe(true);
+
+		const beforeMove = await resolveEmployeeOrgContextAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-org-pos-before-${suffix}`,
+				employeeId: employee.data.id,
+				asOf: "2026-07-26",
+			},
+			ready,
+		);
+		expect(beforeMove.ok).toBe(true);
+		if (beforeMove.ok) {
+			expect(beforeMove.data.positionId).toBe(position.data.id);
+			expect(beforeMove.data.departmentId).toBe(seeded.departmentId);
+		}
+
+		const afterMove = await resolveEmployeeOrgContextAsOf(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-org-pos-after-${suffix}`,
+				employeeId: employee.data.id,
+				asOf: "2026-08-15",
+			},
+			ready,
+		);
+		expect(afterMove.ok).toBe(true);
+		if (afterMove.ok) {
+			expect(afterMove.data.positionId).toBe(position.data.id);
+			expect(afterMove.data.departmentId).toBe(deptB.departmentId);
 		}
 	});
 }

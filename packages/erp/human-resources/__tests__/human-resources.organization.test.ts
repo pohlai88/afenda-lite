@@ -13,14 +13,18 @@ import {
 	activateDepartment,
 	archiveDepartment,
 	createDepartment,
+	getDepartmentAsOf,
 	getOrganizationTree,
+	getOrganizationTreeAsOf,
 	updateDepartment,
 } from "../src/organization/department";
-import { archiveJob } from "../src/organization/job";
+import { archiveJob, createJob, getJobAsOf, updateJob } from "../src/organization/job";
 import {
 	closePosition,
 	createPosition,
 	freezePosition,
+	getPositionAsOf,
+	updatePosition,
 } from "../src/organization/position";
 import {
 	assignPrimaryReportingLine,
@@ -131,6 +135,8 @@ describe("@afenda/human-resources organization structure", () => {
 				departmentId: root.data.id,
 				parentDepartmentId: child.data.id,
 				expectedVersion: 1,
+				effectiveOn: "2026-01-01",
+				reasonCode: "restructure",
 			},
 			ready,
 		);
@@ -504,6 +510,8 @@ describe("@afenda/human-resources organization structure", () => {
 				departmentId: department.data.id,
 				name: "Updated",
 				expectedVersion: 99,
+				effectiveOn: "2026-01-01",
+				reasonCode: "rename",
 			},
 			ready,
 		);
@@ -763,6 +771,301 @@ describe("@afenda/human-resources organization structure", () => {
 		expect(activated.ok).toBe(true);
 		if (activated.ok) {
 			expect(activated.data.status).toBe("active");
+		}
+	});
+});
+
+describe("@afenda/human-resources organization historical truth", () => {
+	it("preserves department structure lineage and resolves as-of after rename", async () => {
+		const ready = harness();
+		const department = await createDepartment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-dept",
+				code: "LINEAGE",
+				name: "Original Name",
+			},
+			ready,
+		);
+		expect(department.ok).toBe(true);
+		if (!department.ok) return;
+
+		const updated = await updateDepartment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-dept-update",
+				departmentId: department.data.id,
+				name: "Renamed Department",
+				expectedVersion: 1,
+				effectiveOn: "2026-08-01",
+				reasonCode: "rename",
+			},
+			ready,
+		);
+		expect(updated.ok).toBe(true);
+
+		const beforeRename = await getDepartmentAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-dept-before",
+				departmentId: department.data.id,
+				asOf: "2026-07-25",
+			},
+			ready,
+		);
+		expect(beforeRename.ok).toBe(true);
+		if (beforeRename.ok) {
+			expect(beforeRename.data.name).toBe("Original Name");
+		}
+
+		const afterRename = await getDepartmentAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-dept-after",
+				departmentId: department.data.id,
+				asOf: "2026-08-15",
+			},
+			ready,
+		);
+		expect(afterRename.ok).toBe(true);
+		if (afterRename.ok) {
+			expect(afterRename.data.name).toBe("Renamed Department");
+		}
+	});
+
+	it("preserves job and position definition lineage with as-of queries", async () => {
+		const ready = harness();
+		const seeded = await seedDepartmentAndJob(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+		});
+		expect(seeded).not.toBeNull();
+		if (seeded === null) return;
+
+		const jobUpdated = await updateJob(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-job",
+				jobId: seeded.jobId,
+				title: "Senior Engineer",
+				expectedVersion: 1,
+				effectiveOn: "2026-09-01",
+				reasonCode: "grade_change",
+			},
+			ready,
+		);
+		expect(jobUpdated.ok).toBe(true);
+
+		const jobBefore = await getJobAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-job-before",
+				jobId: seeded.jobId,
+				asOf: "2026-08-15",
+			},
+			ready,
+		);
+		expect(jobBefore.ok).toBe(true);
+		if (jobBefore.ok) {
+			expect(jobBefore.data.title).not.toBe("Senior Engineer");
+		}
+
+		const position = await createPosition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-pos",
+				code: "LINEAGE-POS",
+				title: "Engineer I",
+				departmentId: seeded.departmentId,
+				jobId: seeded.jobId,
+			},
+			ready,
+		);
+		expect(position.ok).toBe(true);
+		if (!position.ok) return;
+
+		const positionUpdated = await updatePosition(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-pos-update",
+				positionId: position.data.id,
+				title: "Engineer II",
+				expectedVersion: 1,
+				effectiveOn: "2026-10-01",
+				reasonCode: "regrade",
+			},
+			ready,
+		);
+		expect(positionUpdated.ok).toBe(true);
+
+		const positionBefore = await getPositionAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-lineage-pos-before",
+				positionId: position.data.id,
+				asOf: "2026-09-15",
+			},
+			ready,
+		);
+		expect(positionBefore.ok).toBe(true);
+		if (positionBefore.ok) {
+			expect(positionBefore.data.title).toBe("Engineer I");
+		}
+	});
+
+	it("projects organization tree as-of after department reparent", async () => {
+		const ready = harness();
+		const root = await createDepartment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-tree-root",
+				code: "ROOT",
+				name: "Root",
+			},
+			ready,
+		);
+		expect(root.ok).toBe(true);
+		if (!root.ok) return;
+
+		const child = await createDepartment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-tree-child",
+				code: "CHILD2",
+				name: "Child",
+				parentDepartmentId: root.data.id,
+			},
+			ready,
+		);
+		expect(child.ok).toBe(true);
+		if (!child.ok) return;
+
+		const beforeTree = await getOrganizationTreeAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-tree-before",
+				asOf: "2026-07-25",
+				rootDepartmentId: root.data.id,
+			},
+			ready,
+		);
+		expect(beforeTree.ok).toBe(true);
+		if (beforeTree.ok) {
+			expect(beforeTree.data.nodes.some((node) => node.id === child.data.id)).toBe(
+				true,
+			);
+		}
+
+		const reparented = await updateDepartment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-tree-reparent",
+				departmentId: child.data.id,
+				parentDepartmentId: null,
+				expectedVersion: 1,
+				effectiveOn: "2026-08-01",
+				reasonCode: "restructure",
+			},
+			ready,
+		);
+		expect(reparented.ok).toBe(true);
+
+		const afterTree = await getOrganizationTreeAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-tree-after",
+				asOf: "2026-08-15",
+				rootDepartmentId: root.data.id,
+			},
+			ready,
+		);
+		expect(afterTree.ok).toBe(true);
+		if (afterTree.ok) {
+			expect(
+				afterTree.data.nodes.some((node) => node.id === child.data.id),
+			).toBe(false);
+		}
+	});
+
+	it("links reporting-line predecessor and successor on primary replace", async () => {
+		const ready = harness();
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG_A,
+			employeeNumber: "RL-1",
+			legalName: "Reportee",
+		});
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const managerA = await seedEmployee(ready, {
+			organizationId: ORG_A,
+			employeeNumber: "RL-M1",
+			legalName: "Manager A",
+		});
+		expect(managerA.ok).toBe(true);
+		if (!managerA.ok) return;
+
+		const managerB = await seedEmployee(ready, {
+			organizationId: ORG_A,
+			employeeNumber: "RL-M2",
+			legalName: "Manager B",
+		});
+		expect(managerB.ok).toBe(true);
+		if (!managerB.ok) return;
+
+		const assigned = await assignPrimaryReportingLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-rl-assign",
+				employeeId: employee.data.id,
+				managerEmployeeId: managerA.data.id,
+				startsOn: "2026-01-01",
+			},
+			ready,
+		);
+		expect(assigned.ok).toBe(true);
+		if (!assigned.ok) return;
+
+		const replaced = await replacePrimaryReportingLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-rl-replace",
+				employeeId: employee.data.id,
+				managerEmployeeId: managerB.data.id,
+				startsOn: "2026-03-01",
+				closePriorOn: "2026-02-28",
+			},
+			ready,
+		);
+		expect(replaced.ok).toBe(true);
+		if (!replaced.ok) return;
+
+		expect(replaced.data.supersedesReportingLineId).toBe(assigned.data.id);
+
+		const prior = await ready.store.getReportingLineById({
+			organizationId: ORG_A,
+			reportingLineId: assigned.data.id,
+		});
+		expect(prior.ok).toBe(true);
+		if (prior.ok && prior.data !== null) {
+			expect(prior.data.supersededByReportingLineId).toBe(replaced.data.id);
+			expect(prior.data.endsOn).toBe("2026-02-28");
 		}
 	});
 });

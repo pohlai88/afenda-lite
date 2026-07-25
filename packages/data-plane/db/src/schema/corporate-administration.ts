@@ -218,6 +218,13 @@ export const caOfficerAppointment = pgTable(
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		supersedesOfficerAppointmentId: uuid(
+			"supersedes_officer_appointment_id",
+		),
+		amendmentReason: text("amendment_reason"),
+		endReason: text("end_reason"),
+		endEvidenceReference: text("end_evidence_reference"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -255,6 +262,10 @@ export const caGovernanceBody = pgTable(
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		retiredAt: timestamp("retired_at", { withTimezone: true }),
+		retiredBy: text("retired_by"),
+		retirementReason: text("retirement_reason"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -303,6 +314,8 @@ export const caGovernanceMembership = pgTable(
 		effectiveTo: date("effective_to"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		endReason: text("end_reason"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -342,6 +355,7 @@ export const caAuthorityMandate = pgTable(
 		amountLimit: numeric("amount_limit"),
 		currencyCode: text("currency_code"),
 		signingRule: text("signing_rule").notNull().default("single"),
+		minimumSignatories: integer("minimum_signatories").notNull().default(1),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
 		grantEvidenceReference: text("grant_evidence_reference"),
@@ -349,6 +363,10 @@ export const caAuthorityMandate = pgTable(
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		supersedesAuthorityMandateId: uuid("supersedes_authority_mandate_id"),
+		amendmentReason: text("amendment_reason"),
+		revocationReason: text("revocation_reason"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -366,6 +384,44 @@ export const caAuthorityMandate = pgTable(
 		uniqueIndex("ca_authority_mandate_org_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
+		),
+	],
+);
+
+/** party | officer */
+export const caAuthorityMandateHolder = pgTable(
+	"ca_authority_mandate_holder",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalCompanyId: uuid("legal_company_id")
+			.notNull()
+			.references(() => caLegalCompany.id),
+		authorityMandateId: uuid("authority_mandate_id")
+			.notNull()
+			.references(() => caAuthorityMandate.id),
+		holderKind: text("holder_kind").notNull(),
+		partyId: uuid("party_id"),
+		partyCodeSnapshot: text("party_code_snapshot"),
+		partyNameSnapshot: text("party_name_snapshot"),
+		officerAppointmentId: uuid("officer_appointment_id").references(
+			() => caOfficerAppointment.id,
+		),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("ca_authority_mandate_holder_org_mandate_idx").on(
+			t.organizationId,
+			t.authorityMandateId,
+		),
+		index("ca_authority_mandate_holder_org_company_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
 		),
 	],
 );
@@ -393,6 +449,10 @@ export const caCompanyPremise = pgTable(
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		supersedesCompanyPremiseId: uuid("supersedes_company_premise_id"),
+		amendmentReason: text("amendment_reason"),
+		retirementReason: text("retirement_reason"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -431,6 +491,11 @@ export const caGovernanceMeeting = pgTable(
 		minutesDocumentReference: text("minutes_document_reference"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		correctsGovernanceMeetingId: uuid("corrects_governance_meeting_id"),
+		correctionReason: text("correction_reason"),
+		closedAt: timestamp("closed_at", { withTimezone: true }),
+		closedBy: text("closed_by"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -473,9 +538,16 @@ export const caResolution = pgTable(
 		description: text("description"),
 		status: text("status").notNull().default("draft"),
 		approvedDate: date("approved_date"),
+		approvalEvidenceReference: text("approval_evidence_reference"),
+		supersedesResolutionId: uuid("supersedes_resolution_id"),
 		supersededById: uuid("superseded_by_id"),
+		supersededAt: timestamp("superseded_at", { withTimezone: true }),
+		revokedDate: date("revoked_date"),
+		revocationReason: text("revocation_reason"),
+		revocationEvidenceReference: text("revocation_evidence_reference"),
 		version: integer("version").notNull().default(1),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
