@@ -59,8 +59,10 @@ import {
 	openImprovementPlan,
 } from "../src/performance/improvement-plan";
 import {
+	addCycleParticipant,
 	openPerformanceCycle,
 } from "../src/performance/performance-cycle";
+import { publishPerformanceCycleReady } from "./helpers/performance-cycle-harness";
 import {
 	acknowledgePerformanceReview,
 	finalizePerformanceReview,
@@ -5682,13 +5684,36 @@ describe("correlation integrity", () => {
 		});
 		clearPorts(ready);
 		const openCycleCorr = "trace-perf-cycle-open";
+		const published = await publishPerformanceCycleReady(worker.perfReady, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationIdPrefix: openCycleCorr,
+			cycle: draftCycle,
+		});
+		expect(published.ok).toBe(true);
+		if (!published.ok) return;
+
+		const cycleParticipant = await addCycleParticipant(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `${openCycleCorr}-participant`,
+				cycleId: published.data.id,
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+			},
+			worker.perfReady,
+		);
+		expect(cycleParticipant.ok).toBe(true);
+		if (!cycleParticipant.ok) return;
+
 		const openedCycle = await openPerformanceCycle(
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: openCycleCorr,
-				cycleId: draftCycle.id,
-				expectedVersion: draftCycle.version,
+				cycleId: published.data.id,
+				expectedVersion: published.data.version,
 			},
 			worker.perfReady,
 		);

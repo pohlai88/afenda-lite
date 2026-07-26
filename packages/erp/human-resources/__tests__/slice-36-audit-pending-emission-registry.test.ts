@@ -17,13 +17,13 @@ import {
 const SLICE_36_CLASSIFIED_PACKS = [
 	{
 		label: "compensation-benefits",
-		expectedCount: 21,
+		expectedCount: 36,
 		commandIds: HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 		emissions: HUMAN_RESOURCES_COMPENSATION_EMISSIONS,
 	},
 	{
 		label: "performance",
-		expectedCount: 30,
+		expectedCount: 32,
 		commandIds: HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 		emissions: HUMAN_RESOURCES_PERFORMANCE_EMISSIONS,
 	},

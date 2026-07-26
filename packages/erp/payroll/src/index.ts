@@ -19,6 +19,15 @@ export {
 	payrollErrorDetails,
 } from "./error-codes";
 export {
+	parseApprovedPayrollHandoff,
+	parseApprovedPayrollHandoffInput,
+	toPayrollRoundingPolicy,
+	type ApprovedPayrollHandoffParsed,
+	type ApprovedPayrollHandoffParsedComponent,
+	type ParsedApprovedPayrollHandoffInput,
+	type ParsedPayrollHandoffComponent,
+} from "./inputs/parse-approved-payroll-handoff";
+export {
 	createPayrollVariableInput,
 	getPayrollVariableInput,
 } from "./inputs/variable-input";
@@ -40,6 +49,7 @@ export type {
 	MutationPorts,
 	OutboxPort,
 	PayrollEmployeeQueryPort,
+	PayrollHrHandoffInputPort,
 	PayrollRunCalculatorPort,
 	PayrollRunCalculatorResult,
 } from "./ports";

@@ -5,6 +5,8 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ACTIVATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ALIGN,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE,
@@ -15,9 +17,12 @@ import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
 } from "../module-ids";
 import {
+	alignPerformanceGoalInputSchema,
+	closePerformanceGoalInputSchema,
 	createPerformanceGoalInputSchema,
 	getPerformanceGoalByIdInputSchema,
 	listEmployeeGoalsInputSchema,
+	listGoalProgressInputSchema,
 	performanceGoalStatusTransitionInputSchema,
 	recordGoalProgressInputSchema,
 	updatePerformanceGoalInputSchema,
@@ -25,6 +30,9 @@ import {
 import { fingerprintPerformanceGoalCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
+	requirePerformanceGoalByIdOwnScope,
+	requirePerformanceGoalManagerScope,
+	requirePerformanceGoalOwnScope,
 	runPerformanceCommand,
 	runPerformanceEmployeeScopedQuery,
 	runPerformanceResourceScopedQuery,
@@ -33,6 +41,7 @@ import type {
 	PerformanceGoal,
 	PerformanceGoalListPage,
 	PerformanceGoalProgress,
+	PerformanceGoalProgressListPage,
 } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_GOAL = "goal" as const;
@@ -46,11 +55,26 @@ export async function createPerformanceGoal(
 		schema: createPerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal create input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE,
+		authorize: async (opts, data, deps) => {
+			if (data.goalKind === "manager") {
+				return requirePerformanceGoalManagerScope(opts, deps, {
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					targetEmployeeId: data.employeeId,
+				});
+			}
+			return requirePerformanceGoalOwnScope(opts, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				targetEmployeeId: data.employeeId,
+			});
+		},
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintPerformanceGoalCreate({
 				cycleId: data.cycleId,
 				employeeId: data.employeeId,
 				employmentId: data.employmentId,
+				goalKind: data.goalKind,
 				title: data.title,
 				periodStart: data.periodStart,
 				periodEnd: data.periodEnd,
@@ -82,6 +106,7 @@ export async function createPerformanceGoal(
 					cycleId: data.cycleId,
 					employeeId: data.employeeId,
 					employmentId: data.employmentId,
+					goalKind: data.goalKind,
 					title: data.title,
 					description: data.description ?? null,
 					weight:
@@ -91,6 +116,7 @@ export async function createPerformanceGoal(
 					periodStart: data.periodStart,
 					periodEnd: data.periodEnd,
 					exceptionOutsideCycle: data.exceptionOutsideCycle ?? false,
+					alignedToGoalId: data.alignedToGoalId ?? null,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -113,6 +139,12 @@ export async function updatePerformanceGoal(
 		schema: updatePerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal update input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
+		authorize: async (opts, data, deps) =>
+			requirePerformanceGoalByIdOwnScope(opts, deps, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				goalId: data.goalId,
+			}),
 		execute: (data, { store, ports }) =>
 			store.updatePerformanceGoal(
 				{
@@ -148,6 +180,12 @@ export async function submitPerformanceGoal(
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal submit input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT,
+		authorize: async (opts, data, deps) =>
+			requirePerformanceGoalByIdOwnScope(opts, deps, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				goalId: data.goalId,
+			}),
 		execute: (data, { store, ports }) =>
 			store.submitPerformanceGoal(
 				{
@@ -223,6 +261,12 @@ export async function recordGoalProgress(
 		schema: recordGoalProgressInputSchema,
 		invalidMessage: "Invalid goal progress record input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS,
+		authorize: async (opts, data, deps) =>
+			requirePerformanceGoalByIdOwnScope(opts, deps, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				goalId: data.goalId,
+			}),
 		execute: (data, { store, ports }) =>
 			store.recordGoalProgress(
 				{
@@ -233,6 +277,7 @@ export async function recordGoalProgress(
 						data.progressValue !== undefined && data.progressValue !== null
 							? String(data.progressValue)
 							: null,
+					evidenceReference: data.evidenceReference ?? null,
 					actorUserId: data.actorUserId,
 				},
 				ports,
@@ -244,12 +289,63 @@ export async function recordGoalProgress(
 	});
 }
 
-export async function closePerformanceGoal(
+export async function activatePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
 	return runPerformanceCommand(input, options, {
 		schema: performanceGoalStatusTransitionInputSchema,
+		invalidMessage: "Invalid performance goal activate input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ACTIVATE,
+		execute: (data, { store, ports }) =>
+			store.activatePerformanceGoal(
+				{
+					organizationId: data.organizationId,
+					goalId: data.goalId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ACTIVATE,
+				}),
+			),
+	});
+}
+
+export async function alignPerformanceGoal(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceGoal>> {
+	return runPerformanceCommand(input, options, {
+		schema: alignPerformanceGoalInputSchema,
+		invalidMessage: "Invalid performance goal align input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ALIGN,
+		execute: (data, { store, ports }) =>
+			store.alignPerformanceGoal(
+				{
+					organizationId: data.organizationId,
+					goalId: data.goalId,
+					alignedToGoalId: data.alignedToGoalId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ALIGN,
+				}),
+			),
+	});
+}
+
+export async function closePerformanceGoal(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceGoal>> {
+	return runPerformanceCommand(input, options, {
+		schema: closePerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal close input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE,
 		execute: (data, { store, ports }) =>
@@ -258,6 +354,9 @@ export async function closePerformanceGoal(
 					organizationId: data.organizationId,
 					goalId: data.goalId,
 					expectedVersion: data.expectedVersion,
+					completionNote: data.completionNote ?? null,
+					completionEvidenceReference:
+						data.completionEvidenceReference ?? null,
 					actorUserId: data.actorUserId,
 				},
 				ports,
@@ -277,6 +376,28 @@ export async function cancelPerformanceGoal(
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal cancel input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL,
+		authorize: async (opts, data, deps) => {
+			const goalResult = await deps.store.getPerformanceGoalById({
+				organizationId: data.organizationId,
+				goalId: data.goalId,
+			});
+			if (!goalResult.ok) return goalResult;
+			if (goalResult.data === null) {
+				return fail("NOT_FOUND", "Performance goal not found");
+			}
+			if (goalResult.data.goalKind === "manager") {
+				return requirePerformanceGoalManagerScope(opts, deps, {
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					targetEmployeeId: goalResult.data.employeeId,
+				});
+			}
+			return requirePerformanceGoalOwnScope(opts, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				targetEmployeeId: goalResult.data.employeeId,
+			});
+		},
 		execute: (data, { store, ports }) =>
 			store.cancelPerformanceGoal(
 				{
@@ -323,6 +444,23 @@ export async function listEmployeeGoals(
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
 				status: data.status,
+			}),
+	});
+}
+
+export async function listGoalProgress(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceGoalProgressListPage>> {
+	return runPerformanceResourceScopedQuery(input, options, {
+		schema: listGoalProgressInputSchema,
+		invalidMessage: "Invalid goal progress list input",
+		execute: (data, { store }) =>
+			store.listGoalProgress({
+				organizationId: data.organizationId,
+				goalId: data.goalId,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 20,
 			}),
 	});
 }

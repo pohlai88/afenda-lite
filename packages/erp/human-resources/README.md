@@ -124,6 +124,10 @@ pnpm governance:packages
 | HR domain commands, validation, business rules, and events for `hr_*` tables | Database schema host (`@afenda/db` — `writeOwner` in SCHEMA-OWNERSHIP-MANIFEST) |
 | Store adapters (`adapters/drizzle`, `adapters/memory`) | Payroll calculation (`@afenda/payroll`) |
 | Zod input/output contracts under `src/schemas/` | UI (`@afenda/ui-system` in `apps/web` only) |
+| **Compensation agreement** — `hr_employee_compensation`, `hr_allowance_entitlement`, `hr_bonus_eligibility`, benefit enrollment **contribution terms** on `hr_benefit_enrollment` | Pay-period calculated earnings/deductions/net; `payroll_*`, `journal*`, `payment*` writes |
+| Gross-to-net, statutory pay math, payslip generation | — |
+
+**Allowance/deduction four-way ownership (Slice 8.6):** HR entitlement/agreement → payroll calculation → accounting posting → payments disbursement. SSOT: [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
 
 **Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/master-data`, `@afenda/audit`.
 

@@ -1,0 +1,25 @@
+Corporate Administration Greenfield Source Manifest
+
+dbaeb5a07ddd0e1ee37b8abb7646868f618622026316959c8f730503ce539a44    283716  Corporate-Admin-Greenfield.txt
+dbaeb5a07ddd0e1ee37b8abb7646868f618622026316959c8f730503ce539a44    283716  Corporate-Admin.txt
+0dc6a03c9ecced8bafb98b69cf09e8d9b37a118967c0793387fdfdadcb1b43d3       698  README.md
+dac8f3be2949b17992288faf99e739bffacb3e9cfd8c86595e4edaa28212ea26     18942  docs-V2/_scratch/erp/corporate-administration-greenfield/00-CORPORATE-ADMINISTRATION-AUTHORITY.md
+9285fc6c22b966b2c328481339c76d1a3a7a273acc8cb42f4a47cc2a85522e92     20710  docs-V2/_scratch/erp/corporate-administration-greenfield/01-DOMAIN-MODEL-AND-DATA-AUTHORITY.md
+a1ec4a377041ff8961b74c7dcb3c450b00781c6e5fc2362fc04a68f95e5af99d     17239  docs-V2/_scratch/erp/corporate-administration-greenfield/02-PACKAGE-ARCHITECTURE-AND-CONTRACTS.md
+bdfe2cd2ef6e186d722e4167c9d89ec2d672f084bbc21adc71145b0889f1eeef      8096  docs-V2/_scratch/erp/corporate-administration-greenfield/03-ROADMAP-INDEX.md
+c7486ad5ef60ea274f7cb8c62f09481493fef1d89b6e4edb2a0cfc95e1d75266     10975  docs-V2/_scratch/erp/corporate-administration-greenfield/90-VERIFICATION-ACCEPTANCE-AND-HANDOFF.md
+dbaeb5a07ddd0e1ee37b8abb7646868f618622026316959c8f730503ce539a44    283716  docs-V2/_scratch/erp/corporate-administration-greenfield/CORPORATE-ADMINISTRATION-ALL-IN-ONE.md
+ca1b53b4e27a5ae4fc7d2d4b7d1d72c71a51b3ad5b60f949c3d056535b0e300d      1991  docs-V2/_scratch/erp/corporate-administration-greenfield/README.md
+98fa7d51a156994899346570136501a1908e66b0b76c42e14d5ef57e0514ab47      7626  docs-V2/_scratch/erp/corporate-administration-greenfield/ROADMAP-TRACKER.tsv
+44b100f92b40f85579cfa9fb32c93ffd358fdfb869a4b9035c1bfa35c753352f     13912  docs-V2/_scratch/erp/corporate-administration-greenfield/ROADMAP.yaml
+44502f670568b40ec4acda105369d97aefd3696f2530422ca20a93b71399c138       972  docs-V2/_scratch/erp/corporate-administration-greenfield/SOURCE-PLACEMENT.md
+6a61469d1a027a8fff98ab894ccbb43ffd2ebb1f5d23ff600fcbd204cdc3536e     16727  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-0-ARCHITECTURE-AND-FOUNDATION.md
+9bfb3ed843cf2d32b39eb60b985f0d9008fb6bc340c2edb36b3e5576a5c53903     21393  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-1-LEGAL-COMPANY-AND-ESTABLISHMENTS.md
+92eea3e3253a2cea5d3a78b188063ee4d926d7195d031cae6e4121136f2eef54     21033  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-2-GOVERNANCE-AND-STATUTORY-OFFICES.md
+bc621a6b9114e861dba4354494a46a76467641dad52c0cb00fa943013a155742     16487  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-3-AUTHORITY-APPROVALS-AND-SEAL.md
+8eb00cc49de04270142e4f2eb3406a4958968283e342aa48f84368ca9a96d476     25494  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-4-CAPITAL-OWNERSHIP-AND-BENEFICIAL-CONTROL.md
+dfea60844ca7ac28430b29d34ddfbc92e4faf8bd0b239e6042fe3ffc423a9bf5     24961  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-5-ASSETS-LICENCES-INSURANCE-CHARGES-AND-BANKING.md
+de412990ea93c732c8d1257eed42a5c7ad13320b82b9959a1804365e62dae41d     21542  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-6-GROUP-AGREEMENTS-AND-CORPORATE-ACTIONS.md
+e342fbbc53ba34e41e92d6311275f98e586f4525fdd20862b38909b106752b51     25270  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-7-DOCUMENTS-REGISTERS-COMPLIANCE-AND-FILINGS.md
+692388903d17344074dc6ab0d2f0d9ec863f8dad851c3ded3c717ff0338b2e96     23948  docs-V2/_scratch/erp/corporate-administration-greenfield/phases/PHASE-8-OPERATIONS-AND-ENTERPRISE-ACTIVATION.md
+8ee259b5266b9656ecdfb5294ed93e27e614969ce54243993651637ad9962d06      5918  packages/erp/corporate-administration/README.md

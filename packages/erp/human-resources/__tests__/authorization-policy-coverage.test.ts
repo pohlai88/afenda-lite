@@ -16,6 +16,25 @@ describe("authorization policy coverage", () => {
 		...HUMAN_RESOURCES_QUERY_IDS,
 	];
 
+	it("resolves slice 8.2 compensation grade and progression operations", () => {
+		const operations = [
+			"human-resources.compensation-grade.get",
+			"human-resources.compensation-grade.list",
+			"human-resources.salary-band.get",
+			"human-resources.salary-band.list-by-grade",
+			"human-resources.salary-band.find-as-of",
+			"human-resources.compensation-grade-progression-rule.create",
+			"human-resources.compensation-grade-progression-rule.archive",
+			"human-resources.compensation-grade-progression-rule.get",
+			"human-resources.compensation-grade-progression-rule.list-from-grade",
+			"human-resources.compensation-grade-progression-targets.list",
+		] as const;
+		for (const operationId of operations) {
+			const policy = resolveHumanResourcesAuthorizationPolicy(operationId);
+			expect(policy.id).toBe("hr.compensation");
+		}
+	});
+
 	it("resolves every command and query to exactly one policy", () => {
 		const operationCount = allOperations.length;
 		expect(operationCount).toBeGreaterThan(0);

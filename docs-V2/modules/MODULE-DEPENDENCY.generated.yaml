@@ -16,14 +16,6 @@ modules:
       - moduleId: payments
         style: events
     required: []
-  - id: corporate-administration
-    optionalIntegratesWith:
-      - moduleId: accounting
-        style: events
-      - moduleId: human-resources
-        style: events
-    required:
-      - master-data
   - id: fulfillment
     optionalIntegratesWith:
       - moduleId: sales

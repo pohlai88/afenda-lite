@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { approvedPayrollHandoffSchema } from "./hr-payroll-handoff";
+
 const humanResourcesEntityPayloadBase = z.object({
 	organizationId: z.string().trim().min(1),
 	entityType: z.string().trim().min(1),
@@ -445,7 +447,7 @@ export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT]:
-		humanResourcesEntityPayloadSchema,
+		approvedPayrollHandoffSchema,
 	[HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT]:

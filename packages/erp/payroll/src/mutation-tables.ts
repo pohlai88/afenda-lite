@@ -1,4 +1,19 @@
-/** Payroll sole-mutator tables — aligned with SCHEMA-OWNERSHIP-MANIFEST. */
+/** Payroll sole-mutator tables — aligned with SCHEMA-OWNERSHIP-MANIFEST.
+ *
+ * PAYROLL_MUTATION_TABLES = tables Payroll may insert/update/delete.
+ * Allowance and deduction *calculation* live here (earning/deduction rules,
+ * recurring lines, result lines, statutory results, runs, payslips).
+ *
+ * PAYROLL_AGGREGATES includes payment_instruction and accounting_posting as
+ * logical event-saga markers only — not mutation tables. Posting ownership is
+ * @afenda/accounting (journal*); disbursement ownership is @afenda/payments
+ * (payment*). Finalization emits payroll.posting-requested.v1 and
+ * payroll.payment-requested.v1 as requests, not peer-table writes.
+ *
+ * HR agreement tables (hr_allowance_entitlement, hr_employee_compensation, …):
+ * @afenda/human-resources only.
+ * Authority: docs-V2/_scratch/erp/allowance-deduction-ownership.md
+ */
 export const PAYROLL_MUTATION_TABLES = [
 	"payroll_calendar",
 	"payroll_pay_group",

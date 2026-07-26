@@ -6,6 +6,7 @@
 import {
 	FORBIDDEN_SETTING_KEYS,
 	NODE_WRAPPER_LSP_BIN,
+	PRETTIER_DISABLE_LANGUAGES,
 	REQUIRED_SCALAR_SETTINGS,
 	WATCHER_EXCLUDE_PATTERNS,
 } from "../../scripts/lib/editor-posture.mjs";
@@ -107,6 +108,21 @@ function findDrift(text) {
 			reasons.push(
 				`[${lang}].editor.defaultFormatter must be "biomejs.biome" (found "${match[1]}")`,
 			);
+		}
+	}
+
+	if (!/"editor\.defaultFormatter"\s*:\s*"biomejs\.biome"/.test(text)) {
+		reasons.push('editor.defaultFormatter must be "biomejs.biome"');
+	}
+
+	if (!/"prettier\.disableLanguages"\s*:/.test(text)) {
+		reasons.push("prettier.disableLanguages is required");
+	} else {
+		for (const lang of PRETTIER_DISABLE_LANGUAGES) {
+			if (!text.includes(`"${lang}"`)) {
+				reasons.push(`prettier.disableLanguages must include "${lang}"`);
+				break;
+			}
 		}
 	}
 

@@ -25,6 +25,7 @@ import {
 } from "../src/learning/certification";
 import { listCompletions, recordCompletion } from "../src/learning/completion";
 import {
+	activateCourse,
 	archiveCourse,
 	createCourse,
 	listCourses,
@@ -112,7 +113,7 @@ async function seedCourse(
 }
 
 describe("Course lifecycle", () => {
-	it("creates course → updates title → archives", async () => {
+	it("creates course → updates title → archives → reactivates", async () => {
 		const ready = harness();
 
 		const created = await createCourse(
@@ -164,6 +165,20 @@ describe("Course lifecycle", () => {
 		expect(archived.ok).toBe(true);
 		if (!archived.ok) return;
 		expect(archived.data.status).toBe("archived");
+
+		const reactivated = await activateCourse(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-course-act",
+				courseId: archived.data.id,
+				expectedVersion: archived.data.version,
+			},
+			ready,
+		);
+		expect(reactivated.ok).toBe(true);
+		if (!reactivated.ok) return;
+		expect(reactivated.data.status).toBe("active");
 	});
 
 	it("rejects assignment to archived course", async () => {
@@ -204,6 +219,30 @@ describe("Course lifecycle", () => {
 		expect(assignment.ok).toBe(false);
 		if (assignment.ok) return;
 		expect(humanResourcesCodeFromResult(assignment)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		);
+	});
+
+	it("rejects activate when course is already active", async () => {
+		const ready = harness();
+		const course = await seedCourse(ready, {
+			organizationId: ORG_A,
+			code: "ALREADY-ACTIVE",
+		});
+
+		const result = await activateCourse(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-act-dup",
+				courseId: course.id,
+				expectedVersion: course.version,
+			},
+			ready,
+		);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(humanResourcesCodeFromResult(result)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 		);
 	});

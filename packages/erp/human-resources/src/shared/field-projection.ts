@@ -25,6 +25,69 @@ export interface ProjectedData<T> {
 	redactedFields: string[];
 }
 
+import {
+	PERFORMANCE_ASSESSMENT_CONFIDENTIAL_FIELDS,
+	PERFORMANCE_REVIEW_CONFIDENTIAL_FIELDS,
+	PERFORMANCE_REVIEW_PUBLIC_FIELDS,
+} from "../performance/performance-field-projection";
+
+/** Tiered performance field classes — own vs manager vs confidential HR reads. */
+export const PERFORMANCE_FIELD_CLASSES = {
+	public: [...PERFORMANCE_REVIEW_PUBLIC_FIELDS],
+	own: ["acknowledgementNote"],
+	manager: ["rating", "commentsSensitive"],
+	confidential: [
+		...PERFORMANCE_REVIEW_CONFIDENTIAL_FIELDS,
+		...PERFORMANCE_ASSESSMENT_CONFIDENTIAL_FIELDS,
+	],
+} as const;
+
+export type PerformanceFieldAccessTier =
+	| "public"
+	| "own"
+	| "manager"
+	| "confidential";
+
+export function partitionPerformanceFieldsByTier(input: {
+	tier: PerformanceFieldAccessTier;
+	requestedFields?: readonly string[];
+}): string[] {
+	const allowed = performanceFieldsForTier(input.tier);
+	if (!input.requestedFields) {
+		return [...allowed];
+	}
+	return input.requestedFields.filter((field) => allowed.includes(field));
+}
+
+function performanceFieldsForTier(tier: PerformanceFieldAccessTier): string[] {
+	switch (tier) {
+		case "public":
+			return [...PERFORMANCE_FIELD_CLASSES.public];
+		case "own":
+			return [
+				...PERFORMANCE_FIELD_CLASSES.public,
+				...PERFORMANCE_FIELD_CLASSES.own,
+			];
+		case "manager":
+			return [
+				...PERFORMANCE_FIELD_CLASSES.public,
+				...PERFORMANCE_FIELD_CLASSES.own,
+				...PERFORMANCE_FIELD_CLASSES.manager,
+			];
+		case "confidential":
+			return [
+				...PERFORMANCE_FIELD_CLASSES.public,
+				...PERFORMANCE_FIELD_CLASSES.own,
+				...PERFORMANCE_FIELD_CLASSES.manager,
+				...PERFORMANCE_FIELD_CLASSES.confidential,
+			];
+		default: {
+			const exhaustive: never = tier;
+			return exhaustive;
+		}
+	}
+}
+
 /** Tiered compensation field classes — managers must not inherit payroll handoff. */
 export const COMPENSATION_FIELD_CLASSES = {
 	public: ["currencyCode", "payFrequency"],
@@ -39,6 +102,8 @@ export const COMPENSATION_FIELD_CLASSES = {
 		"confidentialNote",
 		"proposedGradeId",
 		"proposedSalaryBandId",
+		"gradeId",
+		"salaryBandId",
 	],
 	payroll: [
 		"baseAmount",
@@ -426,7 +491,10 @@ export function redactedFieldsForResource(
 	sensitivity: "sensitive" | "highly_restricted",
 ): string[] {
 	if (resourceType === "performance") {
-		return ["commentsSensitive", "rating", "overallRating"];
+		return [
+			...PERFORMANCE_FIELD_CLASSES.manager,
+			...PERFORMANCE_FIELD_CLASSES.confidential,
+		];
 	}
 	if (resourceType === "leave") {
 		return ["note", "rejectionNote", "medicalDetails"];

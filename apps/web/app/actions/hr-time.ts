@@ -10,6 +10,7 @@ import {
 	type AttendanceSession,
 	activateTimePolicy,
 	approveAttendanceBreakWaiver,
+	approveOvertimeRequest,
 	approveTimesheet,
 	archiveWorkCalendar,
 	assignShift,
@@ -23,18 +24,26 @@ import {
 	createWorkCalendar,
 	dryRunAttendanceImport,
 	endTimeApprovalAuthorityAssignment,
+	excuseAttendanceException,
 	generateTimesheetEntries,
+	getOvertimeRequest,
 	getApprovedTimeHandoff,
 	importAttendanceEvents,
+	listOvertimeRequests,
+	listPendingOvertimeApprovals,
 	lockTimesheet,
 	type OvertimeRequest,
 	publishShiftAssignment,
+	recordOvertimeActual,
 	recordBreakEnd,
 	recordBreakStart,
 	recordClockIn,
 	recordClockOut,
+	rejectOvertimeRequest,
+	rejectAttendanceException,
 	rejectTimesheet,
 	reopenTimesheet,
+	reviewAttendanceException,
 	resolveAttendanceException,
 	resolveAttendanceSession,
 	returnTimesheet,
@@ -51,6 +60,7 @@ import {
 	type Timesheet,
 	type TimesheetEntry,
 	updateWorkCalendar,
+	verifyOvertimeRequest,
 	voidAttendanceEvent,
 	type WorkCalendar,
 } from "@afenda/human-resources";
@@ -1089,6 +1099,115 @@ export async function approveAttendanceBreakWaiverAction(input: {
 	});
 }
 
+export async function reviewAttendanceExceptionAction(input: {
+	correlationId?: string;
+	exceptionId: string;
+	expectedVersion: number;
+}): Promise<ActionResult<{ exception: AttendanceException }>> {
+	return runOperatorPermissionAction({
+		path: "reviewAttendanceExceptionAction",
+		permission: "human-resources.time.exception.resolve",
+		safeMessage: "Could not review attendance exception.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					exceptionId: z.string().uuid(),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid exception review.",
+					parsed.details,
+				);
+			}
+			const result = await reviewAttendanceException(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { exception: mapped.data } };
+		},
+	});
+}
+
+export async function excuseAttendanceExceptionAction(input: {
+	correlationId?: string;
+	exceptionId: string;
+	resolution: string;
+	expectedVersion: number;
+}): Promise<ActionResult<{ exception: AttendanceException }>> {
+	return runOperatorPermissionAction({
+		path: "excuseAttendanceExceptionAction",
+		permission: "human-resources.time.exception.resolve",
+		safeMessage: "Could not excuse attendance exception.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					exceptionId: z.string().uuid(),
+					resolution: z.string().trim().min(1).max(1000),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid exception excuse.",
+					parsed.details,
+				);
+			}
+			const result = await excuseAttendanceException(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { exception: mapped.data } };
+		},
+	});
+}
+
+export async function rejectAttendanceExceptionAction(input: {
+	correlationId?: string;
+	exceptionId: string;
+	resolution: string;
+	expectedVersion: number;
+}): Promise<ActionResult<{ exception: AttendanceException }>> {
+	return runOperatorPermissionAction({
+		path: "rejectAttendanceExceptionAction",
+		permission: "human-resources.time.exception.resolve",
+		safeMessage: "Could not reject attendance exception.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					exceptionId: z.string().uuid(),
+					resolution: z.string().trim().min(1).max(1000),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid exception rejection.",
+					parsed.details,
+				);
+			}
+			const result = await rejectAttendanceException(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { exception: mapped.data } };
+		},
+	});
+}
+
 export async function resolveAttendanceExceptionAction(input: {
 	correlationId?: string;
 	exceptionId: string;
@@ -1344,6 +1463,286 @@ export async function createOvertimeRequestAction(input: {
 			const mapped = mapPackageResult(result);
 			if (!mapped.ok) return mapped;
 			return { ok: true, data: { request: mapped.data } };
+		},
+	});
+}
+
+export async function approveOvertimeRequestAction(input: {
+	correlationId?: string;
+	requestId: string;
+	requestedAuthority: "line_manager" | "department" | "hr" | "payroll";
+	approvedMaximumMinutes: number;
+	comment?: string | null;
+	expectedVersion: number;
+}): Promise<ActionResult<{ request: OvertimeRequest }>> {
+	return runOperatorPermissionAction({
+		path: "approveOvertimeRequestAction",
+		permission: "human-resources.time.overtime.approve",
+		safeMessage: "Could not approve overtime request.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					requestId: z.string().uuid(),
+					requestedAuthority: timeApprovalAuthoritySchema,
+					approvedMaximumMinutes: z.number().int().positive().max(1440),
+					comment: z.string().trim().max(1000).nullable().optional(),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid overtime approval.",
+					parsed.details,
+				);
+			}
+			const result = await approveOvertimeRequest(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { request: mapped.data } };
+		},
+	});
+}
+
+export async function rejectOvertimeRequestAction(input: {
+	correlationId?: string;
+	requestId: string;
+	comment: string;
+	expectedVersion: number;
+}): Promise<ActionResult<{ request: OvertimeRequest }>> {
+	return runOperatorPermissionAction({
+		path: "rejectOvertimeRequestAction",
+		permission: "human-resources.time.overtime.approve",
+		safeMessage: "Could not reject overtime request.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					requestId: z.string().uuid(),
+					comment: z.string().trim().min(1).max(1000),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid overtime rejection.",
+					parsed.details,
+				);
+			}
+			const result = await rejectOvertimeRequest(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { request: mapped.data } };
+		},
+	});
+}
+
+export async function recordOvertimeActualAction(input: {
+	correlationId?: string;
+	requestId: string;
+	actualMinutes: number;
+	expectedVersion: number;
+}): Promise<ActionResult<{ request: OvertimeRequest }>> {
+	return runOperatorPermissionAction({
+		path: "recordOvertimeActualAction",
+		permission: "human-resources.time.attendance.correct",
+		safeMessage: "Could not record overtime actual.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					requestId: z.string().uuid(),
+					actualMinutes: z.number().int().positive().max(1440),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter valid overtime actual minutes.",
+					parsed.details,
+				);
+			}
+			const result = await recordOvertimeActual(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { request: mapped.data } };
+		},
+	});
+}
+
+export async function verifyOvertimeRequestAction(input: {
+	correlationId?: string;
+	requestId: string;
+	payrollApprovedMinutes: number;
+	expectedVersion: number;
+}): Promise<ActionResult<{ request: OvertimeRequest }>> {
+	return runOperatorPermissionAction({
+		path: "verifyOvertimeRequestAction",
+		permission: "human-resources.time.overtime.approve",
+		safeMessage: "Could not verify overtime for payroll handoff.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					requestId: z.string().uuid(),
+					payrollApprovedMinutes: z.number().int().positive().max(1440),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter valid overtime payroll verification.",
+					parsed.details,
+				);
+			}
+			const result = await verifyOvertimeRequest(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { request: mapped.data } };
+		},
+	});
+}
+
+export async function getOvertimeRequestAction(input: {
+	correlationId?: string;
+	requestId: string;
+}): Promise<ActionResult<{ request: OvertimeRequest | null }>> {
+	return runOperatorPermissionAction({
+		path: "getOvertimeRequestAction",
+		permission: "human-resources.time.overtime.read",
+		safeMessage: "Could not get overtime request.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					requestId: z.string().uuid(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid overtime request id.",
+					parsed.details,
+				);
+			}
+			const result = await getOvertimeRequest(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { request: mapped.data } };
+		},
+	});
+}
+
+export async function listOvertimeRequestsAction(input?: {
+	correlationId?: string;
+	employeeId?: string;
+	status?:
+		| "requested"
+		| "approved"
+		| "rejected"
+		| "worked"
+		| "verified"
+		| "cancelled";
+	page?: number;
+	pageSize?: number;
+}): Promise<ActionResult<{ requests: OvertimeRequest[] }>> {
+	return runOperatorPermissionAction({
+		path: "listOvertimeRequestsAction",
+		permission: "human-resources.time.overtime.read",
+		safeMessage: "Could not list overtime requests.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema
+					.extend({
+						employeeId: z.string().uuid().optional(),
+						status: z
+							.enum([
+								"requested",
+								"approved",
+								"rejected",
+								"worked",
+								"verified",
+								"cancelled",
+							])
+							.optional(),
+						page: z.number().int().positive().optional(),
+						pageSize: z.number().int().positive().max(100).optional(),
+					})
+					.optional(),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter valid overtime list filters.",
+					parsed.details,
+				);
+			}
+			const result = await listOvertimeRequests(
+				withSessionContext(session, correlationId, parsed.data ?? {}),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { requests: mapped.data } };
+		},
+	});
+}
+
+export async function listPendingOvertimeApprovalsAction(input?: {
+	correlationId?: string;
+	employeeId?: string;
+	page?: number;
+	pageSize?: number;
+}): Promise<ActionResult<{ requests: OvertimeRequest[] }>> {
+	return runOperatorPermissionAction({
+		path: "listPendingOvertimeApprovalsAction",
+		permission: "human-resources.time.overtime.approve",
+		safeMessage: "Could not list pending overtime approvals.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema
+					.extend({
+						employeeId: z.string().uuid().optional(),
+						page: z.number().int().positive().optional(),
+						pageSize: z.number().int().positive().max(100).optional(),
+					})
+					.optional(),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter valid pending overtime filters.",
+					parsed.details,
+				);
+			}
+			const result = await listPendingOvertimeApprovals(
+				withSessionContext(session, correlationId, parsed.data ?? {}),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { requests: mapped.data } };
 		},
 	});
 }

@@ -23,6 +23,7 @@ import type {
 import { parseHumanResourcesInput } from "../parse-input";
 import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_CONFIDENTIAL_READ,
+	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
@@ -47,12 +48,20 @@ type ActorScoped = HumanResourcesAuthorizedActorInput;
 type CommandDeps = {
 	store: HumanResourcesStore;
 	ports: MutationPorts;
+	authorization: HumanResourcesAuthorizationPort | undefined;
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
 };
 
 type QueryDeps = {
 	store: HumanResourcesStore;
 	authorization: HumanResourcesAuthorizationPort | undefined;
 	identityResolver: HumanResourcesIdentityResolverPort | undefined;
+};
+
+const CUSTOM_AUTHORIZE_PROVEN: HumanResourcesAuthorizationPort = {
+	async can() {
+		return true;
+	},
 };
 
 /** Shared authorize → parse → execute path for performance mutations. */
@@ -66,6 +75,11 @@ export async function runPerformanceCommand<
 		schema: TSchema;
 		invalidMessage: string;
 		command: HumanResourcesCommandId;
+		authorize?: (
+			options: HumanResourcesCommandOptions,
+			data: z.infer<TSchema>,
+			deps: CommandDeps,
+		) => Promise<Result<void>>;
 		execute: (
 			data: z.infer<TSchema>,
 			deps: CommandDeps,
@@ -77,11 +91,149 @@ export async function runPerformanceCommand<
 		invalidMessage: config.invalidMessage,
 		command: config.command,
 		parityResourceKind: "performance_review",
-		resolveDeps: (opts) => {
-			const { store, ports } = resolveCommandDeps(opts);
-			return ok({ store, ports });
+		resolveOptions: async (opts, data) => {
+			if (config.authorize === undefined) {
+				return ok(opts);
+			}
+			const { store, ports, authorization, identityResolver } =
+				resolveCommandDeps(opts);
+			const authorized = await config.authorize(opts, data, {
+				store,
+				ports,
+				authorization,
+				identityResolver,
+			});
+			if (!authorized.ok) {
+				return authorized;
+			}
+			return ok({
+				...opts,
+				authorization: CUSTOM_AUTHORIZE_PROVEN,
+			});
 		},
-		execute: config.execute,
+		resolveDeps: (opts) => {
+			const { store, ports, authorization, identityResolver } =
+				resolveCommandDeps(opts);
+			return ok({ store, ports, authorization, identityResolver });
+		},
+		execute: (data, deps) => config.execute(data, deps),
+	});
+}
+
+export async function requirePerformanceGoalOwnScope(
+	options: HumanResourcesCommandOptions,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		targetEmployeeId: HumanResourcesEmployeeId;
+	},
+): Promise<Result<void>> {
+	const { authorization, identityResolver } = resolveCommandDeps(options);
+	if (!identityResolver) {
+		return fail(
+			"UNAUTHORIZED",
+			"Human Resources identity resolver port is required",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+		);
+	}
+
+	const adminCheck = await requireAdminResourceAccess(
+		{ authorization },
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
+		},
+	);
+	if (adminCheck.ok) {
+		return ok(undefined);
+	}
+
+	return requireOwnResourceAccess(identityResolver, { authorization }, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		targetEmployeeId: input.targetEmployeeId,
+		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
+	});
+}
+
+export async function requirePerformanceGoalManagerScope(
+	options: HumanResourcesCommandOptions,
+	deps: { store: HumanResourcesStore },
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		targetEmployeeId: HumanResourcesEmployeeId;
+	},
+): Promise<Result<void>> {
+	const { authorization, identityResolver } = resolveCommandDeps(options);
+	if (!identityResolver) {
+		return fail(
+			"UNAUTHORIZED",
+			"Human Resources identity resolver port is required",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
+		);
+	}
+
+	const adminCheck = await requireAdminResourceAccess(
+		{ authorization },
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
+		},
+	);
+	if (adminCheck.ok) {
+		return ok(undefined);
+	}
+
+	return requireManagerResourceAccess(
+		identityResolver,
+		deps.store,
+		{ authorization },
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			targetEmployeeId: input.targetEmployeeId,
+			permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
+		},
+	);
+}
+
+export async function requirePerformanceGoalByIdOwnScope(
+	options: HumanResourcesCommandOptions,
+	deps: { store: HumanResourcesStore },
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		goalId: string;
+	},
+): Promise<Result<void>> {
+	const goalId = parseHumanResourcesGoalId(input.goalId);
+	if (!goalId.ok) {
+		return goalId;
+	}
+	const goal = await deps.store.getPerformanceGoalById({
+		organizationId: input.organizationId,
+		goalId: goalId.data,
+	});
+	if (!goal.ok) {
+		return goal;
+	}
+	if (goal.data === null) {
+		return fail("NOT_FOUND", "Performance goal not found");
+	}
+	if (goal.data.goalKind === "manager") {
+		return requirePerformanceGoalManagerScope(options, deps, {
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			targetEmployeeId: goal.data.employeeId,
+		});
+	}
+	return requirePerformanceGoalOwnScope(options, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		targetEmployeeId: goal.data.employeeId,
 	});
 }
 

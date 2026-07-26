@@ -7,17 +7,22 @@ import {
 import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesBenefitEnrollmentId,
+	type HumanResourcesBenefitEnrollmentDependentId,
 	type HumanResourcesBenefitPlanId,
 	type HumanResourcesCompensationGradeId,
+	type HumanResourcesCompensationGradeProgressionRuleId,
 	type HumanResourcesCompensationProposalId,
+	type HumanResourcesCompensationReviewCycleId,
 	type HumanResourcesCompensationReviewId,
 	type HumanResourcesEmployeeCompensationId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesSalaryBandId,
 	parseHumanResourcesBenefitEnrollmentId,
+	parseHumanResourcesBenefitEnrollmentDependentId,
 	parseHumanResourcesBenefitPlanId,
 	parseHumanResourcesCompensationGradeId,
+	parseHumanResourcesCompensationGradeProgressionRuleId,
 	parseHumanResourcesCompensationProposalId,
 	parseHumanResourcesCompensationReviewId,
 	parseHumanResourcesEmployeeCompensationId,
@@ -37,29 +42,48 @@ import {
 	assertCompensationProposalAmendable,
 	assertCompensationProposalStatusTransition,
 } from "../../shared/compensation-proposal-guards";
+import { assertReviewCycleOpenForMutation } from "../../shared/compensation-review-guards";
+import { buildCreateAuditFact } from "../../shared/audit-facts";
+import { compensationReviewAuditSnapshot } from "../../shared/compensation-review-audit";
 import {
 	isBenefitEnrollmentActive,
+	isBenefitEnrollmentOpen,
+	isBenefitPlanActive,
 	isCompensationGradeActive,
+	isCompensationGradeProgressionRuleActive,
 	isCompensationReviewFinalized,
 	isEmployeeCompensationActive,
 	isSalaryBandActive,
 } from "../../shared/compensation-status";
+import {
+	assertBenefitContributionFacts,
+	assertEffectiveRange,
+	isEmployeeEligibleForBenefitPlan,
+	tenureDaysOn,
+} from "../../shared/benefit-guards";
+import { conflict, invalidInput, invalidState, notFound } from "../../shared/domain-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { conflict, invalidState, notFound } from "../../shared/domain-guards";
+import { previousIsoDate } from "../../shared/effective-dates";
 import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type { HumanResourcesStore } from "../../store";
+import type { IdempotentCompensationReviewCycleRecord } from "../../store/compensation";
 import type {
 	ApprovedCompensationHandoff,
 	BenefitEnrollment,
+	BenefitEnrollmentDependent,
 	BenefitEnrollmentListPage,
 	BenefitPlan,
+	BenefitPlanEligibility,
 	BenefitPlanListPage,
 	CompensationGrade,
 	CompensationGradeListPage,
+	CompensationGradeProgressionRule,
+	CompensationGradeProgressionRuleListPage,
 	CompensationProposal,
 	CompensationProposalListPage,
 	CompensationReview,
+	CompensationReviewCycle,
 	CompensationReviewListPage,
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
@@ -67,12 +91,41 @@ import type {
 	SalaryBandListPage,
 } from "../../types";
 import type { CoreMemoryState } from "./core";
+import {
+	createMemoryCompensationReviewCycleMethods,
+	createMemoryReviewLifecycleDeps,
+	memoryApplyReviewCompensationLink,
+	memoryFinalizeCompensationReview,
+	memoryRecordCompensationRecommendation,
+} from "./compensation-review-cycle";
 import type { RecruitmentMemoryState } from "./recruitment";
+import {
+	memoryActivateEmployeeCompensation,
+	memoryAmendEmployeeCompensation,
+	memoryApproveEmployeeCompensation,
+	memoryCorrectEmployeeCompensation,
+	memoryCreateEmployeeCompensation,
+	memoryEndEmployeeCompensation,
+	memoryFindEmployeeCompensationByEmploymentAsOf,
+	memoryNewEmployeeCompensationFromReview,
+	memoryScheduleEmployeeCompensationChange,
+} from "./employee-compensation-lifecycle";
 import { idempotencyMapKey } from "./shared";
+
+function benefitEligibilityMapKey(
+	organizationId: string,
+	planId: HumanResourcesBenefitPlanId,
+): string {
+	return `${organizationId}:${planId}`;
+}
 
 export type CompensationBenefitsMemoryState = {
 	compensationGrades: Map<HumanResourcesCompensationGradeId, CompensationGrade>;
 	salaryBands: Map<HumanResourcesSalaryBandId, SalaryBand>;
+	compensationGradeProgressionRules: Map<
+		HumanResourcesCompensationGradeProgressionRuleId,
+		CompensationGradeProgressionRule
+	>;
 	employeeCompensations: Map<
 		HumanResourcesEmployeeCompensationId,
 		EmployeeCompensation
@@ -82,13 +135,23 @@ export type CompensationBenefitsMemoryState = {
 		HumanResourcesCompensationReviewId,
 		CompensationReview
 	>;
+	compensationReviewCycles: Map<
+		HumanResourcesCompensationReviewCycleId,
+		CompensationReviewCycle
+	>;
+	cycleIdempotencyByKey: Map<string, IdempotentCompensationReviewCycleRecord>;
 	compensationProposals: Map<
 		HumanResourcesCompensationProposalId,
 		CompensationProposal
 	>;
 	reviewIdempotencyByKey: Map<string, CompensationReview>;
 	benefitPlans: Map<HumanResourcesBenefitPlanId, BenefitPlan>;
+	benefitEligibility: Map<string, BenefitPlanEligibility>;
 	benefitEnrollments: Map<HumanResourcesBenefitEnrollmentId, BenefitEnrollment>;
+	benefitEnrollmentDependents: Map<
+		HumanResourcesBenefitEnrollmentDependentId,
+		BenefitEnrollmentDependent
+	>;
 	enrollmentIdempotencyByKey: Map<string, BenefitEnrollment>;
 };
 
@@ -105,13 +168,32 @@ export type MemoryCompensationBenefitsMethods = Pick<
 	| "supersedeSalaryBand"
 	| "archiveSalaryBand"
 	| "listSalaryBandsByGrade"
+	| "findSalaryBandByGradeAndCurrencyAsOf"
+	| "getCompensationGradeProgressionRule"
+	| "createCompensationGradeProgressionRule"
+	| "archiveCompensationGradeProgressionRule"
+	| "listCompensationGradeProgressionRulesFromGrade"
+	| "listEligibleProgressionTargets"
 	| "getEmployeeCompensation"
 	| "findEmployeeCompensationByIdempotencyKey"
 	| "createEmployeeCompensation"
+	| "amendEmployeeCompensation"
+	| "approveEmployeeCompensation"
+	| "scheduleEmployeeCompensationChange"
+	| "activateEmployeeCompensation"
+	| "correctEmployeeCompensation"
 	| "endEmployeeCompensation"
 	| "listEmployeeCompensationsByEmployee"
 	| "findActiveEmployeeCompensationByEmployment"
 	| "findEmployeeCompensationByEmploymentAsOf"
+	| "getCompensationReviewCycle"
+	| "findCompensationReviewCycleByIdempotencyKey"
+	| "createCompensationReviewCycle"
+	| "openCompensationReviewCycle"
+	| "closeCompensationReviewCycle"
+	| "cancelCompensationReviewCycle"
+	| "listCompensationReviewCycles"
+	| "listCompensationReviewsByCycle"
 	| "getCompensationReview"
 	| "findCompensationReviewByIdempotencyKey"
 	| "createCompensationReviewDraft"
@@ -130,12 +212,19 @@ export type MemoryCompensationBenefitsMethods = Pick<
 	| "updateBenefitPlan"
 	| "archiveBenefitPlan"
 	| "listBenefitPlans"
+	| "getBenefitPlanEligibility"
+	| "setBenefitPlanEligibility"
 	| "getBenefitEnrollment"
 	| "findBenefitEnrollmentByIdempotencyKey"
 	| "enrolBenefit"
 	| "endBenefitEnrollment"
 	| "cancelBenefitEnrollment"
 	| "listBenefitEnrollmentsByEmployee"
+	| "waiveBenefit"
+	| "getBenefitEnrollmentDependent"
+	| "listBenefitEnrollmentDependentsByEnrollment"
+	| "addBenefitEnrollmentDependent"
+	| "endBenefitEnrollmentDependent"
 	| "getApprovedCompensationHandoff"
 >;
 
@@ -143,13 +232,18 @@ export function createCompensationBenefitsMemoryState(): CompensationBenefitsMem
 	return {
 		compensationGrades: new Map(),
 		salaryBands: new Map(),
+		compensationGradeProgressionRules: new Map(),
 		employeeCompensations: new Map(),
 		compensationIdempotencyByKey: new Map(),
 		compensationReviews: new Map(),
+		compensationReviewCycles: new Map(),
+		cycleIdempotencyByKey: new Map(),
 		compensationProposals: new Map(),
 		reviewIdempotencyByKey: new Map(),
 		benefitPlans: new Map(),
+		benefitEligibility: new Map(),
 		benefitEnrollments: new Map(),
+		benefitEnrollmentDependents: new Map(),
 		enrollmentIdempotencyByKey: new Map(),
 	};
 }
@@ -162,10 +256,14 @@ export function resetCompensationBenefitsMemoryState(
 	state.employeeCompensations.clear();
 	state.compensationIdempotencyByKey.clear();
 	state.compensationReviews.clear();
+	state.compensationReviewCycles.clear();
+	state.cycleIdempotencyByKey.clear();
 	state.compensationProposals.clear();
 	state.reviewIdempotencyByKey.clear();
 	state.benefitPlans.clear();
+	state.benefitEligibility.clear();
 	state.benefitEnrollments.clear();
+	state.benefitEnrollmentDependents.clear();
 	state.enrollmentIdempotencyByKey.clear();
 }
 
@@ -175,7 +273,11 @@ export function createMemoryCompensationBenefitsMethods(
 	recruitment: RecruitmentMemoryState,
 ): MemoryCompensationBenefitsMethods &
 	ThisType<MemoryCompensationBenefitsMethods> {
+	const reviewCycleMethods = createMemoryCompensationReviewCycleMethods(state);
+	const reviewLifecycleDeps = createMemoryReviewLifecycleDeps(state);
+
 	return {
+		...reviewCycleMethods,
 		async getCompensationGrade(input: {
 			organizationId: string;
 			gradeId: HumanResourcesCompensationGradeId;
@@ -447,6 +549,7 @@ export function createMemoryCompensationBenefitsMethods(
 				(band) =>
 					band.organizationId === record.organizationId &&
 					band.gradeId === record.gradeId &&
+					band.currencyCode === record.currencyCode &&
 					(band.status === "active" || band.status === "superseded") &&
 					rangesOverlap(
 						band.effectiveFrom,
@@ -456,7 +559,9 @@ export function createMemoryCompensationBenefitsMethods(
 					),
 			);
 			if (overlapping) {
-				return conflict("Overlapping salary band exists for this grade");
+				return conflict(
+					"Overlapping salary band exists for this grade and currency",
+				);
 			}
 
 			const idResult = parseHumanResourcesSalaryBandId(randomUUID());
@@ -474,6 +579,7 @@ export function createMemoryCompensationBenefitsMethods(
 				maxAmount: record.maxAmount,
 				effectiveFrom: record.effectiveFrom,
 				effectiveTo: record.effectiveTo,
+				supersedesSalaryBandId: null,
 				status: "active",
 				version: 1,
 				createdBy: record.createdBy,
@@ -510,11 +616,12 @@ export function createMemoryCompensationBenefitsMethods(
 				maxAmount: string;
 				effectiveFrom: string;
 				effectiveTo: string | null;
+				supersededSalaryBandId?: HumanResourcesSalaryBandId;
 				actorUserId: string;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
-		): Promise<Result<SalaryBand>> {
+		): Promise<Result<{ superseded: SalaryBand; successor: SalaryBand }>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
 				return notFound(
@@ -532,18 +639,91 @@ export function createMemoryCompensationBenefitsMethods(
 				return moneyCheck;
 			}
 
-			const overlappingBands = Array.from(state.salaryBands.values()).filter(
+			let predecessor: SalaryBand | undefined;
+			if (input.supersededSalaryBandId) {
+				const band = state.salaryBands.get(input.supersededSalaryBandId);
+				if (!band || band.organizationId !== input.organizationId) {
+					return notFound(
+						"Salary band not found",
+						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+					);
+				}
+				predecessor = band;
+			} else {
+				const activeBands = Array.from(state.salaryBands.values()).filter(
+					(band) =>
+						band.organizationId === input.organizationId &&
+						band.gradeId === input.gradeId &&
+						band.currencyCode === input.currencyCode &&
+						isSalaryBandActive(band.status),
+				);
+				if (activeBands.length === 0) {
+					return notFound("No active salary band to supersede");
+				}
+				if (activeBands.length > 1) {
+					return conflict("Ambiguous active salary band for grade and currency");
+				}
+				predecessor = activeBands[0];
+			}
+
+			if (!predecessor || !isSalaryBandActive(predecessor.status)) {
+				return invalidState("Only active salary bands can be superseded");
+			}
+			if (
+				predecessor.gradeId !== input.gradeId ||
+				predecessor.currencyCode !== input.currencyCode
+			) {
+				return invalidInput(
+					"Predecessor salary band grade or currency does not match input",
+				);
+			}
+			if (input.effectiveFrom <= predecessor.effectiveFrom) {
+				return invalidInput(
+					"Successor effectiveFrom must be after predecessor effectiveFrom",
+				);
+			}
+
+			const predecessorEffectiveTo = previousIsoDate(input.effectiveFrom);
+			const closedPredecessor: SalaryBand = {
+				...predecessor,
+				effectiveTo: predecessorEffectiveTo,
+				status: "superseded",
+			};
+
+			const others = Array.from(state.salaryBands.values()).filter(
 				(band) =>
 					band.organizationId === input.organizationId &&
 					band.gradeId === input.gradeId &&
+					band.currencyCode === input.currencyCode &&
 					(band.status === "active" || band.status === "superseded") &&
+					band.id !== predecessor.id,
+			);
+			for (const other of others) {
+				if (
 					rangesOverlap(
-						band.effectiveFrom,
-						band.effectiveTo,
+						other.effectiveFrom,
+						other.effectiveTo,
 						input.effectiveFrom,
 						input.effectiveTo,
-					),
-			);
+					)
+				) {
+					return conflict(
+						"Overlapping salary band exists for this grade and currency",
+					);
+				}
+			}
+			if (
+				rangesOverlap(
+					closedPredecessor.effectiveFrom,
+					closedPredecessor.effectiveTo,
+					input.effectiveFrom,
+					input.effectiveTo,
+				)
+			) {
+				return conflict(
+					"Overlapping salary band exists for this grade and currency",
+				);
+			}
 
 			const idResult = parseHumanResourcesSalaryBandId(randomUUID());
 			if (!idResult.ok) return idResult;
@@ -560,6 +740,7 @@ export function createMemoryCompensationBenefitsMethods(
 				maxAmount: input.maxAmount,
 				effectiveFrom: input.effectiveFrom,
 				effectiveTo: input.effectiveTo,
+				supersedesSalaryBandId: predecessor.id,
 				status: "active",
 				version: 1,
 				createdBy: input.actorUserId,
@@ -567,22 +748,24 @@ export function createMemoryCompensationBenefitsMethods(
 				createdAt: now,
 				updatedAt: now,
 			};
+
+			const previousPredecessor = { ...predecessor };
+			const supersededBand: SalaryBand = {
+				...predecessor,
+				effectiveTo: predecessorEffectiveTo,
+				status: "superseded",
+				version: predecessor.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.salaryBands.set(supersededBand.id, supersededBand);
 			state.salaryBands.set(id, newBand);
 
-			const rollback: Array<() => void> = [() => state.salaryBands.delete(id)];
-
-			for (const old of overlappingBands) {
-				const prev = { ...old };
-				const superseded: SalaryBand = {
-					...old,
-					status: "superseded",
-					version: old.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: now,
-				};
-				state.salaryBands.set(old.id, superseded);
-				rollback.push(() => state.salaryBands.set(old.id, prev));
-			}
+			const rollback: Array<() => void> = [
+				() => state.salaryBands.delete(id),
+				() => state.salaryBands.set(predecessor.id, previousPredecessor),
+			];
 
 			const auditNew = await ports.audit.record({
 				organizationId: newBand.organizationId,
@@ -598,23 +781,21 @@ export function createMemoryCompensationBenefitsMethods(
 				return auditNew;
 			}
 
-			for (const old of overlappingBands) {
-				const auditSupersede = await ports.audit.record({
-					organizationId: old.organizationId,
-					actorUserId: input.actorUserId,
-					correlationId: meta.correlationId,
-					entity: "hr_salary_band",
-					entityId: old.id,
-					action: "UPDATE",
-					changes: [],
-				});
-				if (!auditSupersede.ok) {
-					for (const undo of rollback) undo();
-					return auditSupersede;
-				}
+			const auditSupersede = await ports.audit.record({
+				organizationId: supersededBand.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_salary_band",
+				entityId: supersededBand.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!auditSupersede.ok) {
+				for (const undo of rollback) undo();
+				return auditSupersede;
 			}
 
-			return ok({ ...newBand });
+			return ok({ superseded: { ...supersededBand }, successor: { ...newBand } });
 		},
 
 		async archiveSalaryBand(
@@ -705,6 +886,234 @@ export function createMemoryCompensationBenefitsMethods(
 			});
 		},
 
+		async findSalaryBandByGradeAndCurrencyAsOf(input: {
+			organizationId: string;
+			gradeId: HumanResourcesCompensationGradeId;
+			currencyCode: string;
+			asOf: string;
+		}): Promise<Result<SalaryBand | null>> {
+			const records = Array.from(state.salaryBands.values()).filter(
+				(band) =>
+					band.organizationId === input.organizationId &&
+					band.gradeId === input.gradeId &&
+					band.currencyCode === input.currencyCode &&
+					(band.status === "active" || band.status === "superseded"),
+			);
+			const selected = selectUniqueEffectiveRangeRecord({
+				records,
+				asOf: input.asOf,
+			});
+			return ok(selected === null ? null : { ...selected });
+		},
+
+		async getCompensationGradeProgressionRule(input: {
+			organizationId: string;
+			progressionRuleId: HumanResourcesCompensationGradeProgressionRuleId;
+		}): Promise<Result<CompensationGradeProgressionRule | null>> {
+			const rule = state.compensationGradeProgressionRules.get(
+				input.progressionRuleId,
+			);
+			if (!rule || rule.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+			return ok({ ...rule });
+		},
+
+		async createCompensationGradeProgressionRule(
+			record: {
+				organizationId: string;
+				fromGradeId: HumanResourcesCompensationGradeId;
+				toGradeId: HumanResourcesCompensationGradeId;
+				effectiveFrom: string;
+				effectiveTo: string | null;
+				minMonthsInGrade: number | null;
+				createdBy: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<CompensationGradeProgressionRule>> {
+			if (record.fromGradeId === record.toGradeId) {
+				return invalidInput("fromGradeId and toGradeId must differ");
+			}
+
+			const fromGrade = state.compensationGrades.get(record.fromGradeId);
+			if (!fromGrade || fromGrade.organizationId !== record.organizationId) {
+				return notFound("From compensation grade not found");
+			}
+			const toGrade = state.compensationGrades.get(record.toGradeId);
+			if (!toGrade || toGrade.organizationId !== record.organizationId) {
+				return notFound("To compensation grade not found");
+			}
+			if (
+				!isCompensationGradeActive(fromGrade.status) ||
+				!isCompensationGradeActive(toGrade.status)
+			) {
+				return invalidState("Grades must be active");
+			}
+
+			const overlapping = Array.from(
+				state.compensationGradeProgressionRules.values(),
+			).some(
+				(rule) =>
+					rule.organizationId === record.organizationId &&
+					rule.fromGradeId === record.fromGradeId &&
+					rule.toGradeId === record.toGradeId &&
+					isCompensationGradeProgressionRuleActive(rule.status) &&
+					rangesOverlap(
+						rule.effectiveFrom,
+						rule.effectiveTo,
+						record.effectiveFrom,
+						record.effectiveTo,
+					),
+			);
+			if (overlapping) {
+				return conflict(
+					"Overlapping progression rule exists for this grade transition",
+				);
+			}
+
+			const idResult = parseHumanResourcesCompensationGradeProgressionRuleId(
+				randomUUID(),
+			);
+			if (!idResult.ok) return idResult;
+
+			const now = new Date();
+			const rule: CompensationGradeProgressionRule = {
+				id: idResult.data,
+				organizationId: record.organizationId,
+				fromGradeId: record.fromGradeId,
+				toGradeId: record.toGradeId,
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: record.effectiveTo,
+				minMonthsInGrade: record.minMonthsInGrade,
+				status: "active",
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.compensationGradeProgressionRules.set(rule.id, rule);
+
+			const audit = await ports.audit.record({
+				organizationId: rule.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: meta.correlationId,
+				entity: "hr_compensation_grade_progression_rule",
+				entityId: rule.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.compensationGradeProgressionRules.delete(rule.id);
+				return audit;
+			}
+
+			return ok({ ...rule });
+		},
+
+		async archiveCompensationGradeProgressionRule(
+			input: {
+				organizationId: string;
+				progressionRuleId: HumanResourcesCompensationGradeProgressionRuleId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<CompensationGradeProgressionRule>> {
+			const rule = state.compensationGradeProgressionRules.get(
+				input.progressionRuleId,
+			);
+			if (!rule || rule.organizationId !== input.organizationId) {
+				return notFound("Progression rule not found");
+			}
+			const versionCheck = assertExpectedVersion(
+				rule.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) return versionCheck;
+
+			const now = new Date();
+			const previous = { ...rule };
+			const updated: CompensationGradeProgressionRule = {
+				...rule,
+				status: "archived",
+				version: rule.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.compensationGradeProgressionRules.set(updated.id, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_compensation_grade_progression_rule",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.compensationGradeProgressionRules.set(updated.id, previous);
+				return audit;
+			}
+
+			return ok({ ...updated });
+		},
+
+		async listCompensationGradeProgressionRulesFromGrade(input: {
+			organizationId: string;
+			fromGradeId: HumanResourcesCompensationGradeId;
+			page: number;
+			pageSize: number;
+			asOf?: string;
+		}): Promise<Result<CompensationGradeProgressionRuleListPage>> {
+			let rules = Array.from(
+				state.compensationGradeProgressionRules.values(),
+			).filter(
+				(rule) =>
+					rule.organizationId === input.organizationId &&
+					rule.fromGradeId === input.fromGradeId &&
+					isCompensationGradeProgressionRuleActive(rule.status),
+			);
+			if (input.asOf) {
+				rules = rules.filter((rule) => {
+					const selected = selectUniqueEffectiveRangeRecord({
+						records: [rule],
+						asOf: input.asOf as string,
+					});
+					return selected !== null;
+				});
+			}
+			rules.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+			const totalCount = rules.length;
+			const offset = (input.page - 1) * input.pageSize;
+			const paginated = rules.slice(offset, offset + input.pageSize);
+			return ok({
+				rules: paginated.map((rule) => ({ ...rule })),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async listEligibleProgressionTargets(input: {
+			organizationId: string;
+			fromGradeId: HumanResourcesCompensationGradeId;
+			asOf: string;
+		}): Promise<Result<CompensationGradeProgressionRule[]>> {
+			const listed = await this.listCompensationGradeProgressionRulesFromGrade({
+				organizationId: input.organizationId,
+				fromGradeId: input.fromGradeId,
+				page: 1,
+				pageSize: 10_000,
+				asOf: input.asOf,
+			});
+			if (!listed.ok) return listed;
+			return ok(listed.data.rules);
+		},
+
 		// Employee Compensation
 		async getEmployeeCompensation(input: {
 			organizationId: string;
@@ -726,202 +1135,50 @@ export function createMemoryCompensationBenefitsMethods(
 			return ok(comp === undefined ? null : { ...comp });
 		},
 
-		async createEmployeeCompensation(
-			record: {
-				organizationId: string;
-				employeeId: HumanResourcesEmployeeId;
-				employmentId: HumanResourcesEmploymentId;
-				gradeId: HumanResourcesCompensationGradeId | null;
-				salaryBandId: HumanResourcesSalaryBandId | null;
-				baseAmount: string;
-				currencyCode: string;
-				effectiveFrom: string;
-				reason: string;
-				sourceReviewId: HumanResourcesCompensationReviewId | null;
-				createIdempotencyKey: string;
-				createRequestFingerprint: string;
-				createdBy: string;
-			},
-			ports: MutationPorts,
-			meta: HumanResourcesMutationMeta,
-		): Promise<Result<EmployeeCompensation>> {
-			const idempKey = idempotencyMapKey(
-				record.organizationId,
-				record.createIdempotencyKey,
+		async createEmployeeCompensation(record, ports, meta) {
+			return memoryCreateEmployeeCompensation(
+				state,
+				core,
+				record,
+				ports,
+				meta,
 			);
-			const existing = state.compensationIdempotencyByKey.get(idempKey);
-			if (existing) {
-				return ok({ ...existing });
-			}
-
-			const employment = core.employments.get(record.employmentId);
-			if (!employment || employment.organizationId !== record.organizationId) {
-				return notFound(
-					"Employment not found or cross-org reference",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
-			}
-
-			const active = Array.from(state.employeeCompensations.values()).find(
-				(c) =>
-					c.organizationId === record.organizationId &&
-					c.employmentId === record.employmentId &&
-					isEmployeeCompensationActive(c.status),
-			);
-			if (active) {
-				return conflict(
-					"An active compensation agreement already exists for this employment",
-				);
-			}
-
-			const idResult = parseHumanResourcesEmployeeCompensationId(randomUUID());
-			if (!idResult.ok) return idResult;
-			const id = idResult.data;
-
-			const now = new Date();
-			const compensation: EmployeeCompensation = {
-				id,
-				organizationId: record.organizationId,
-				employeeId: record.employeeId,
-				employmentId: record.employmentId,
-				gradeId: record.gradeId,
-				salaryBandId: record.salaryBandId,
-				baseAmount: record.baseAmount,
-				currencyCode: record.currencyCode,
-				effectiveFrom: record.effectiveFrom,
-				effectiveTo: null,
-				reason: record.reason,
-				status: "active",
-				sourceReviewId: record.sourceReviewId,
-				createIdempotencyKey: record.createIdempotencyKey,
-				fingerprint: record.createRequestFingerprint,
-				version: 1,
-				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
-				createdAt: now,
-				updatedAt: now,
-			};
-			state.employeeCompensations.set(id, compensation);
-			state.compensationIdempotencyByKey.set(idempKey, compensation);
-
-			const rollback: Array<() => void> = [
-				() => state.employeeCompensations.delete(id),
-				() => state.compensationIdempotencyByKey.delete(idempKey),
-			];
-
-			const audit = await ports.audit.record({
-				organizationId: compensation.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_employee_compensation",
-				entityId: compensation.id,
-				action: "CREATE",
-				changes: [],
-			});
-			if (!audit.ok) {
-				for (const undo of rollback) undo();
-				return audit;
-			}
-
-			const outbox = await ports.outbox.append({
-				organizationId: compensation.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				type: HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
-				payload: {
-					organizationId: compensation.organizationId,
-					entityType: "hr_employee_compensation",
-					entityId: compensation.id,
-					actorId: record.createdBy,
-					correlationId: meta.correlationId,
-				},
-			});
-			if (!outbox.ok) {
-				for (const undo of rollback) undo();
-				return outbox;
-			}
-
-			return ok({ ...compensation });
 		},
 
-		async endEmployeeCompensation(
-			input: {
-				organizationId: string;
-				compensationId: HumanResourcesEmployeeCompensationId;
-				endsOn: string;
-				expectedVersion: number;
-				actorUserId: string;
-			},
-			ports: MutationPorts,
-			meta: HumanResourcesMutationMeta,
-		): Promise<Result<EmployeeCompensation>> {
-			const comp = state.employeeCompensations.get(input.compensationId);
-			if (!comp || comp.organizationId !== input.organizationId) {
-				return notFound(
-					"Employee compensation not found",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
-			}
-			const versionCheck = assertExpectedVersion(
-				comp.version,
-				input.expectedVersion,
+		async amendEmployeeCompensation(input, ports, meta) {
+			return memoryAmendEmployeeCompensation(state, input, ports, meta);
+		},
+
+		async approveEmployeeCompensation(input, ports, meta) {
+			return memoryApproveEmployeeCompensation(state, input, ports, meta);
+		},
+
+		async scheduleEmployeeCompensationChange(input, ports, meta) {
+			return memoryScheduleEmployeeCompensationChange(
+				state,
+				core,
+				input,
+				ports,
+				meta,
 			);
-			if (!versionCheck.ok) {
-				return versionCheck;
-			}
-			if (!isEmployeeCompensationActive(comp.status)) {
-				return invalidState("Compensation is not active");
-			}
+		},
 
-			const now = new Date();
-			const previous = { ...comp };
-			const updated: EmployeeCompensation = {
-				...comp,
-				status: "ended",
-				effectiveTo: input.endsOn,
-				version: comp.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: now,
-			};
-			state.employeeCompensations.set(updated.id, updated);
+		async activateEmployeeCompensation(input, ports, meta) {
+			return memoryActivateEmployeeCompensation(state, input, ports, meta);
+		},
 
-			const rollback: Array<() => void> = [
-				() => state.employeeCompensations.set(updated.id, previous),
-			];
+		async correctEmployeeCompensation(input, ports, meta) {
+			return memoryCorrectEmployeeCompensation(
+				state,
+				core,
+				input,
+				ports,
+				meta,
+			);
+		},
 
-			const audit = await ports.audit.record({
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_employee_compensation",
-				entityId: updated.id,
-				action: "UPDATE",
-				changes: [],
-			});
-			if (!audit.ok) {
-				for (const undo of rollback) undo();
-				return audit;
-			}
-
-			const outbox = await ports.outbox.append({
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				type: HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
-				payload: {
-					organizationId: updated.organizationId,
-					entityType: "hr_employee_compensation",
-					entityId: updated.id,
-					actorId: input.actorUserId,
-					correlationId: meta.correlationId,
-				},
-			});
-			if (!outbox.ok) {
-				for (const undo of rollback) undo();
-				return outbox;
-			}
-
-			return ok({ ...updated });
+		async endEmployeeCompensation(input, ports, meta) {
+			return memoryEndEmployeeCompensation(state, input, ports, meta);
 		},
 
 		async listEmployeeCompensationsByEmployee(input: {
@@ -965,21 +1222,11 @@ export function createMemoryCompensationBenefitsMethods(
 			return ok(comp === null ? null : { ...comp });
 		},
 
-		async findEmployeeCompensationByEmploymentAsOf(input: {
-			organizationId: string;
-			employmentId: HumanResourcesEmploymentId;
-			asOf: string;
-		}): Promise<Result<EmployeeCompensation | null>> {
-			const records = Array.from(state.employeeCompensations.values()).filter(
-				(compensation) =>
-					compensation.organizationId === input.organizationId &&
-					compensation.employmentId === input.employmentId &&
-					isEmployeeCompensationActive(compensation.status),
+		async findEmployeeCompensationByEmploymentAsOf(input) {
+			const selected = memoryFindEmployeeCompensationByEmploymentAsOf(
+				state,
+				input,
 			);
-			const selected = selectUniqueEffectiveRangeRecord({
-				records,
-				asOf: input.asOf,
-			});
 			return ok(selected === null ? null : { ...selected });
 		},
 
@@ -1008,6 +1255,7 @@ export function createMemoryCompensationBenefitsMethods(
 		async createCompensationReviewDraft(
 			record: {
 				organizationId: string;
+				cycleId: HumanResourcesCompensationReviewCycleId;
 				employeeId: HumanResourcesEmployeeId;
 				employmentId: HumanResourcesEmploymentId;
 				createIdempotencyKey: string;
@@ -1045,6 +1293,18 @@ export function createMemoryCompensationBenefitsMethods(
 				);
 			}
 
+			const cycle = state.compensationReviewCycles.get(record.cycleId);
+			if (!cycle || cycle.organizationId !== record.organizationId) {
+				return notFound(
+					"Compensation review cycle not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const openCycle = assertReviewCycleOpenForMutation(cycle.status);
+			if (!openCycle.ok) {
+				return openCycle;
+			}
+
 			const idResult = parseHumanResourcesCompensationReviewId(randomUUID());
 			if (!idResult.ok) return idResult;
 			const id = idResult.data;
@@ -1053,6 +1313,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const review: CompensationReview = {
 				id,
 				organizationId: record.organizationId,
+				cycleId: record.cycleId,
 				employeeId: record.employeeId,
 				employmentId: record.employmentId,
 				status: "draft",
@@ -1075,15 +1336,18 @@ export function createMemoryCompensationBenefitsMethods(
 			state.compensationReviews.set(id, review);
 			state.reviewIdempotencyByKey.set(key, review);
 
-			const audit = await ports.audit.record({
-				organizationId: review.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: meta.correlationId,
-				entity: "hr_compensation_review",
-				entityId: review.id,
-				action: "CREATE",
-				changes: [],
-			});
+			const audit = await ports.audit.record(
+				buildCreateAuditFact({
+					context: {
+						organizationId: review.organizationId,
+						actorUserId: record.createdBy,
+						entity: "hr_compensation_review",
+						entityId: review.id,
+						meta,
+					},
+					newValue: compensationReviewAuditSnapshot(review),
+				}),
+			);
 			if (!audit.ok) {
 				state.compensationReviews.delete(id);
 				state.reviewIdempotencyByKey.delete(key);
@@ -1093,160 +1357,24 @@ export function createMemoryCompensationBenefitsMethods(
 			return ok({ ...review });
 		},
 
-		async recordCompensationRecommendation(
-			input: {
-				organizationId: string;
-				reviewId: HumanResourcesCompensationReviewId;
-				proposedBaseAmount: string;
-				proposedCurrencyCode: string;
-				proposedGradeId: HumanResourcesCompensationGradeId | null;
-				proposedSalaryBandId: HumanResourcesSalaryBandId | null;
-				effectiveFrom: string;
-				recommendationNote: string | null;
-				actorUserId: string;
-				expectedVersion: number;
-			},
-			ports: MutationPorts,
-			meta: HumanResourcesMutationMeta,
-		): Promise<Result<CompensationReview>> {
-			const review = state.compensationReviews.get(input.reviewId);
-			if (!review) {
-				return notFound(
-					"Compensation review not found",
-					HUMAN_RESOURCES_ERROR_NOT_FOUND,
-				);
-			}
-			if (review.organizationId !== input.organizationId) {
-				return notFound(
-					"Compensation review not found",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
-			}
-			const versionCheck = assertExpectedVersion(
-				review.version,
-				input.expectedVersion,
+		async recordCompensationRecommendation(input, ports, meta) {
+			return memoryRecordCompensationRecommendation(
+				state,
+				reviewLifecycleDeps,
+				input,
+				ports,
+				meta,
 			);
-			if (!versionCheck.ok) {
-				return versionCheck;
-			}
-			const isCompensationReviewDraft = (status: string) => status === "draft";
-			if (!isCompensationReviewDraft(review.status)) {
-				return invalidState("Compensation review is not in draft status");
-			}
-
-			const now = new Date();
-			const previous = { ...review };
-			const updated: CompensationReview = {
-				...review,
-				proposedBaseAmount: input.proposedBaseAmount,
-				proposedCurrencyCode: input.proposedCurrencyCode,
-				proposedGradeId: input.proposedGradeId,
-				proposedSalaryBandId: input.proposedSalaryBandId,
-				effectiveFrom: input.effectiveFrom,
-				recommendationNote: input.recommendationNote,
-				version: review.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: now,
-			};
-			state.compensationReviews.set(updated.id, updated);
-			const key = `${updated.organizationId}:${updated.createIdempotencyKey}`;
-			state.reviewIdempotencyByKey.set(key, updated);
-
-			const rollback: Array<() => void> = [
-				() => {
-					state.compensationReviews.set(updated.id, previous);
-					state.reviewIdempotencyByKey.set(key, previous);
-				},
-			];
-
-			const audit = await ports.audit.record({
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_compensation_review",
-				entityId: updated.id,
-				action: "UPDATE",
-				changes: [],
-			});
-			if (!audit.ok) {
-				for (const undo of rollback) undo();
-				return audit;
-			}
-
-			return ok({ ...updated });
 		},
 
-		async finalizeCompensationReview(
-			input: {
-				organizationId: string;
-				reviewId: HumanResourcesCompensationReviewId;
-				actorUserId: string;
-				expectedVersion: number;
-			},
-			ports: MutationPorts,
-			meta: HumanResourcesMutationMeta,
-		): Promise<Result<CompensationReview>> {
-			const review = state.compensationReviews.get(input.reviewId);
-			if (!review) {
-				return notFound(
-					"Compensation review not found",
-					HUMAN_RESOURCES_ERROR_NOT_FOUND,
-				);
-			}
-			if (review.organizationId !== input.organizationId) {
-				return notFound(
-					"Compensation review not found",
-					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-				);
-			}
-			const versionCheck = assertExpectedVersion(
-				review.version,
-				input.expectedVersion,
+		async finalizeCompensationReview(input, ports, meta) {
+			return memoryFinalizeCompensationReview(
+				state,
+				reviewLifecycleDeps,
+				input,
+				ports,
+				meta,
 			);
-			if (!versionCheck.ok) {
-				return versionCheck;
-			}
-			const isCompensationReviewDraft = (status: string) => status === "draft";
-			if (!isCompensationReviewDraft(review.status)) {
-				return invalidState("Compensation review is not in draft status");
-			}
-
-			const now = new Date();
-			const previous = { ...review };
-			const updated: CompensationReview = {
-				...review,
-				status: "finalized",
-				finalizedAt: now,
-				version: review.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: now,
-			};
-			state.compensationReviews.set(updated.id, updated);
-			const key = `${updated.organizationId}:${updated.createIdempotencyKey}`;
-			state.reviewIdempotencyByKey.set(key, updated);
-
-			const rollback: Array<() => void> = [
-				() => {
-					state.compensationReviews.set(updated.id, previous);
-					state.reviewIdempotencyByKey.set(key, previous);
-				},
-			];
-
-			const audit = await ports.audit.record({
-				organizationId: updated.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: meta.correlationId,
-				entity: "hr_compensation_review",
-				entityId: updated.id,
-				action: "UPDATE",
-				changes: [],
-			});
-			if (!audit.ok) {
-				for (const undo of rollback) undo();
-				return audit;
-			}
-
-			return ok({ ...updated });
 		},
 
 		async applyApprovedCompensationResult(
@@ -1356,9 +1484,7 @@ export function createMemoryCompensationBenefitsMethods(
 			if (!idResult.ok) return idResult;
 			const id = idResult.data;
 
-			const now = new Date();
-			const newComp: EmployeeCompensation = {
-				id,
+			const newComp = memoryNewEmployeeCompensationFromReview({
 				organizationId: input.organizationId,
 				employeeId: review.employeeId,
 				employmentId: review.employmentId,
@@ -1367,18 +1493,13 @@ export function createMemoryCompensationBenefitsMethods(
 				baseAmount: review.proposedBaseAmount,
 				currencyCode: review.proposedCurrencyCode,
 				effectiveFrom: review.effectiveFrom,
-				effectiveTo: null,
 				reason: input.reason,
 				sourceReviewId: input.reviewId,
-				status: "active",
 				createIdempotencyKey: input.createIdempotencyKey,
 				fingerprint: `${review.effectiveFrom}:${review.proposedBaseAmount}:${review.proposedCurrencyCode}`,
-				version: 1,
-				createdBy: input.actorUserId,
-				updatedBy: input.actorUserId,
-				createdAt: now,
-				updatedAt: now,
-			};
+				actorUserId: input.actorUserId,
+			});
+			newComp.id = id;
 			state.employeeCompensations.set(id, newComp);
 			const key = `${newComp.organizationId}:${newComp.createIdempotencyKey}`;
 			state.compensationIdempotencyByKey.set(key, newComp);
@@ -1417,6 +1538,17 @@ export function createMemoryCompensationBenefitsMethods(
 			if (!outbox.ok) {
 				for (const undo of rollback) undo();
 				return outbox;
+			}
+
+			const linked = memoryApplyReviewCompensationLink(
+				state,
+				input.reviewId,
+				id,
+				input.actorUserId,
+			);
+			if (!linked.ok) {
+				for (const undo of rollback) undo();
+				return linked;
 			}
 
 			return ok({ ...newComp });
@@ -1911,6 +2043,18 @@ export function createMemoryCompensationBenefitsMethods(
 				return versionCheck;
 			}
 
+			const openEnrollment = Array.from(state.benefitEnrollments.values()).find(
+				(enrollment) =>
+					enrollment.organizationId === input.organizationId &&
+					enrollment.planId === input.planId &&
+					isBenefitEnrollmentOpen(enrollment.status),
+			);
+			if (openEnrollment) {
+				return conflict(
+					"Benefit plan cannot be archived while open enrollments exist",
+				);
+			}
+
 			const now = new Date();
 			const previous = { ...plan };
 			const updated: BenefitPlan = {
@@ -1963,6 +2107,79 @@ export function createMemoryCompensationBenefitsMethods(
 			});
 		},
 
+		async getBenefitPlanEligibility(input: {
+			organizationId: string;
+			planId: HumanResourcesBenefitPlanId;
+		}): Promise<Result<BenefitPlanEligibility | null>> {
+			const eligibility =
+				state.benefitEligibility.get(
+					benefitEligibilityMapKey(input.organizationId, input.planId),
+				) ?? null;
+			return ok(eligibility === null ? null : { ...eligibility });
+		},
+
+		async setBenefitPlanEligibility(
+			input: {
+				organizationId: string;
+				planId: HumanResourcesBenefitPlanId;
+				minTenureDays: number | null;
+				allowedEmploymentStatuses: BenefitPlanEligibility["allowedEmploymentStatuses"];
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<BenefitPlanEligibility>> {
+			const plan = state.benefitPlans.get(input.planId);
+			if (!plan || plan.organizationId !== input.organizationId) {
+				return notFound(
+					"Benefit plan not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const key = benefitEligibilityMapKey(input.organizationId, input.planId);
+			const existing = state.benefitEligibility.get(key);
+			const now = new Date();
+			const eligibility: BenefitPlanEligibility = {
+				id: existing?.id ?? randomUUID(),
+				organizationId: input.organizationId,
+				planId: input.planId,
+				minTenureDays: input.minTenureDays,
+				allowedEmploymentStatuses: input.allowedEmploymentStatuses,
+				createdBy: existing?.createdBy ?? input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: existing?.createdAt ?? now,
+				updatedAt: now,
+			};
+			state.benefitEligibility.set(key, eligibility);
+
+			const rollback: Array<() => void> = [
+				() => {
+					if (existing) {
+						state.benefitEligibility.set(key, existing);
+					} else {
+						state.benefitEligibility.delete(key);
+					}
+				},
+			];
+
+			const audit = await ports.audit.record({
+				organizationId: eligibility.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_benefit_eligibility",
+				entityId: eligibility.id,
+				action: existing ? "UPDATE" : "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...eligibility });
+		},
+
 		// --- Benefit Enrollment ---
 
 		async getBenefitEnrollment(input: {
@@ -1993,6 +2210,11 @@ export function createMemoryCompensationBenefitsMethods(
 				employmentId: HumanResourcesEmploymentId;
 				planId: HumanResourcesBenefitPlanId;
 				effectiveFrom: string;
+				effectiveTo: string | null;
+				employeeContributionAmount: string | null;
+				employerContributionAmount: string | null;
+				contributionCurrencyCode: string | null;
+				contributionFrequency: BenefitEnrollment["contributionFrequency"];
 				createIdempotencyKey: string;
 				createRequestFingerprint: string;
 				createdBy: string;
@@ -2012,6 +2234,20 @@ export function createMemoryCompensationBenefitsMethods(
 				return conflict("Idempotency key already used with different data");
 			}
 
+			const rangeCheck = assertEffectiveRange({
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: record.effectiveTo,
+			});
+			if (!rangeCheck.ok) return rangeCheck;
+
+			const contributionCheck = assertBenefitContributionFacts({
+				employeeContributionAmount: record.employeeContributionAmount,
+				employerContributionAmount: record.employerContributionAmount,
+				contributionCurrencyCode: record.contributionCurrencyCode,
+				contributionFrequency: record.contributionFrequency,
+			});
+			if (!contributionCheck.ok) return contributionCheck;
+
 			const employee = core.employees.get(record.employeeId);
 			if (!employee || employee.organizationId !== record.organizationId) {
 				return notFound(
@@ -2027,6 +2263,9 @@ export function createMemoryCompensationBenefitsMethods(
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
 			}
+			if (employment.employeeId !== record.employeeId) {
+				return invalidInput("Employee does not match employment assignment");
+			}
 
 			const plan = state.benefitPlans.get(record.planId);
 			if (!plan || plan.organizationId !== record.organizationId) {
@@ -2035,19 +2274,35 @@ export function createMemoryCompensationBenefitsMethods(
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
 			}
+			if (!isBenefitPlanActive(plan.status)) {
+				return invalidState("Benefit plan is not active");
+			}
 
-			const activeEnrollment = Array.from(
-				state.benefitEnrollments.values(),
-			).find(
+			const eligibility =
+				state.benefitEligibility.get(
+					benefitEligibilityMapKey(record.organizationId, record.planId),
+				) ?? null;
+			if (eligibility !== null) {
+				const eligible = isEmployeeEligibleForBenefitPlan({
+					eligibility,
+					employmentStatus: employment.status,
+					tenureDays: tenureDaysOn(employment.startsOn, record.effectiveFrom),
+				});
+				if (!eligible) {
+					return invalidState("Employee is not eligible for this benefit plan");
+				}
+			}
+
+			const openEnrollment = Array.from(state.benefitEnrollments.values()).find(
 				(e) =>
 					e.organizationId === record.organizationId &&
 					e.employeeId === record.employeeId &&
 					e.planId === record.planId &&
-					isBenefitEnrollmentActive(e.status),
+					isBenefitEnrollmentOpen(e.status),
 			);
-			if (activeEnrollment) {
+			if (openEnrollment) {
 				return conflict(
-					"Employee already has an active enrollment for this plan",
+					"Employee already has an open enrollment for this plan",
 				);
 			}
 
@@ -2062,8 +2317,13 @@ export function createMemoryCompensationBenefitsMethods(
 				employmentId: record.employmentId,
 				planId: record.planId,
 				effectiveFrom: record.effectiveFrom,
-				effectiveTo: null,
+				effectiveTo: record.effectiveTo,
 				status: "active",
+				employeeContributionAmount: record.employeeContributionAmount,
+				employerContributionAmount: record.employerContributionAmount,
+				contributionCurrencyCode: record.contributionCurrencyCode,
+				contributionFrequency: record.contributionFrequency,
+				waiverReason: null,
 				createIdempotencyKey: record.createIdempotencyKey,
 				fingerprint: record.createRequestFingerprint,
 				version: 1,
@@ -2117,6 +2377,102 @@ export function createMemoryCompensationBenefitsMethods(
 			return ok({ ...enrollment });
 		},
 
+		async waiveBenefit(
+			input: {
+				organizationId: string;
+				enrollmentId: HumanResourcesBenefitEnrollmentId;
+				waiverReason: string;
+				effectiveTo: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<BenefitEnrollment>> {
+			const enrollment = state.benefitEnrollments.get(input.enrollmentId);
+			if (!enrollment) {
+				return notFound("Benefit enrollment not found");
+			}
+			if (enrollment.organizationId !== input.organizationId) {
+				return notFound(
+					"Benefit enrollment not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				enrollment.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (!isBenefitEnrollmentActive(enrollment.status)) {
+				return invalidState("Only active benefit enrollments can be waived");
+			}
+
+			const rangeCheck = assertEffectiveRange({
+				effectiveFrom: enrollment.effectiveFrom,
+				effectiveTo: input.effectiveTo,
+			});
+			if (!rangeCheck.ok) return rangeCheck;
+
+			const now = new Date();
+			const previous = { ...enrollment };
+			const updated: BenefitEnrollment = {
+				...enrollment,
+				status: "waived",
+				waiverReason: input.waiverReason,
+				effectiveTo: input.effectiveTo,
+				version: enrollment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.benefitEnrollments.set(updated.id, updated);
+			const key = `${updated.organizationId}:${updated.createIdempotencyKey}`;
+			state.enrollmentIdempotencyByKey.set(key, updated);
+
+			const rollback: Array<() => void> = [
+				() => {
+					state.benefitEnrollments.set(updated.id, previous);
+					state.enrollmentIdempotencyByKey.set(key, previous);
+				},
+			];
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_benefit_enrollment",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
+				payload: {
+					organizationId: updated.organizationId,
+					entityType: "hr_benefit_enrollment",
+					entityId: updated.id,
+					actorId: input.actorUserId,
+					correlationId: meta.correlationId,
+				},
+			});
+			if (!outbox.ok) {
+				for (const undo of rollback) undo();
+				return outbox;
+			}
+
+			return ok({ ...updated });
+		},
+
 		async endBenefitEnrollment(
 			input: {
 				organizationId: string;
@@ -2148,6 +2504,12 @@ export function createMemoryCompensationBenefitsMethods(
 			if (!isBenefitEnrollmentActive(enrollment.status)) {
 				return invalidState("Benefit enrollment is not active");
 			}
+
+			const rangeCheck = assertEffectiveRange({
+				effectiveFrom: enrollment.effectiveFrom,
+				effectiveTo: input.endsOn,
+			});
+			if (!rangeCheck.ok) return rangeCheck;
 
 			const now = new Date();
 			const previous = { ...enrollment };
@@ -2314,6 +2676,175 @@ export function createMemoryCompensationBenefitsMethods(
 				page: input.page,
 				pageSize: input.pageSize,
 			});
+		},
+
+		async getBenefitEnrollmentDependent(input: {
+			organizationId: string;
+			dependentId: HumanResourcesBenefitEnrollmentDependentId;
+		}): Promise<Result<BenefitEnrollmentDependent | null>> {
+			const dependent = state.benefitEnrollmentDependents.get(input.dependentId);
+			if (!dependent || dependent.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+			return ok({ ...dependent });
+		},
+
+		async listBenefitEnrollmentDependentsByEnrollment(input: {
+			organizationId: string;
+			enrollmentId: HumanResourcesBenefitEnrollmentId;
+		}): Promise<Result<BenefitEnrollmentDependent[]>> {
+			const dependents = Array.from(
+				state.benefitEnrollmentDependents.values(),
+			).filter(
+				(dependent) =>
+					dependent.organizationId === input.organizationId &&
+					dependent.enrollmentId === input.enrollmentId,
+			);
+			dependents.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+			return ok(dependents.map((dependent) => ({ ...dependent })));
+		},
+
+		async addBenefitEnrollmentDependent(
+			input: {
+				organizationId: string;
+				enrollmentId: HumanResourcesBenefitEnrollmentId;
+				dependentName: string;
+				relationship: BenefitEnrollmentDependent["relationship"];
+				effectiveFrom: string;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<BenefitEnrollmentDependent>> {
+			const enrollment = state.benefitEnrollments.get(input.enrollmentId);
+			if (!enrollment || enrollment.organizationId !== input.organizationId) {
+				return notFound(
+					"Benefit enrollment not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			if (!isBenefitEnrollmentActive(enrollment.status)) {
+				return invalidState(
+					"Dependents can only be added to active benefit enrollments",
+				);
+			}
+
+			const rangeCheck = assertEffectiveRange({
+				effectiveFrom: input.effectiveFrom,
+				effectiveTo: enrollment.effectiveTo,
+			});
+			if (!rangeCheck.ok) return rangeCheck;
+			if (input.effectiveFrom < enrollment.effectiveFrom) {
+				return invalidInput(
+					"Dependent effective date must be on or after enrollment effective date",
+				);
+			}
+
+			const idResult = parseHumanResourcesBenefitEnrollmentDependentId(
+				randomUUID(),
+			);
+			if (!idResult.ok) return idResult;
+			const now = new Date();
+			const dependent: BenefitEnrollmentDependent = {
+				id: idResult.data,
+				organizationId: input.organizationId,
+				enrollmentId: input.enrollmentId,
+				dependentName: input.dependentName,
+				relationship: input.relationship,
+				effectiveFrom: input.effectiveFrom,
+				effectiveTo: null,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.benefitEnrollmentDependents.set(dependent.id, dependent);
+
+			const rollback: Array<() => void> = [
+				() => state.benefitEnrollmentDependents.delete(dependent.id),
+			];
+
+			const audit = await ports.audit.record({
+				organizationId: dependent.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_benefit_enrollment_dependent",
+				entityId: dependent.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...dependent });
+		},
+
+		async endBenefitEnrollmentDependent(
+			input: {
+				organizationId: string;
+				dependentId: HumanResourcesBenefitEnrollmentDependentId;
+				endsOn: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<BenefitEnrollmentDependent>> {
+			const dependent = state.benefitEnrollmentDependents.get(input.dependentId);
+			if (!dependent || dependent.organizationId !== input.organizationId) {
+				return notFound(
+					"Benefit enrollment dependent not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				dependent.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) return versionCheck;
+			if (dependent.effectiveTo !== null) {
+				return invalidState("Benefit enrollment dependent is already ended");
+			}
+
+			const rangeCheck = assertEffectiveRange({
+				effectiveFrom: dependent.effectiveFrom,
+				effectiveTo: input.endsOn,
+			});
+			if (!rangeCheck.ok) return rangeCheck;
+
+			const now = new Date();
+			const previous = { ...dependent };
+			const updated: BenefitEnrollmentDependent = {
+				...dependent,
+				effectiveTo: input.endsOn,
+				version: dependent.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.benefitEnrollmentDependents.set(updated.id, updated);
+
+			const rollback: Array<() => void> = [
+				() => state.benefitEnrollmentDependents.set(updated.id, previous),
+			];
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_benefit_enrollment_dependent",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...updated });
 		},
 
 		// --- Handoff ---

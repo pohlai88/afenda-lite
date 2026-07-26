@@ -56,11 +56,64 @@ export type AttendanceSourceEvent = {
 	deviceMetadata?: Record<string, unknown> | null;
 	payloadChecksum?: string | null;
 	notes?: string | null;
+	sourceSequence?: number;
+};
+
+export type AttendanceSourceRejectedRow = {
+	rowIndex: number;
+	sourceReference: string;
+	errorCode:
+		| "DUPLICATE_SOURCE_REFERENCE"
+		| "INVALID_TIMEZONE"
+		| "INVALID_EVENT_ROW";
+	errorMessage: string;
 };
 
 export type AttendanceSourceBatch = {
 	events: readonly AttendanceSourceEvent[];
 	nextCursor?: string;
+	rejectedRows?: readonly AttendanceSourceRejectedRow[];
+};
+
+export type AttendanceSourcePreviewRow =
+	| {
+			status: "accepted";
+			rowIndex: number;
+			sourceReference: string;
+	  }
+	| {
+			status: "rejected";
+			rowIndex: number;
+			sourceReference: string;
+			errorCode: AttendanceSourceRejectedRow["errorCode"];
+			errorMessage: string;
+	  };
+
+export type AttendanceSourcePreviewResult = {
+	mode: "preview";
+	organizationId: string;
+	reconciliationKey: string;
+	rows: readonly AttendanceSourcePreviewRow[];
+	totals: {
+		accepted: number;
+		rejected: number;
+	};
+	nextCursor?: string;
+};
+
+/**
+ * Thin pull transport wired at composition root. HR does not implement device drivers.
+ */
+export type AttendanceConnectorPullPort = {
+	pull(input: {
+		organizationId: string;
+		cursor?: string;
+	}): Promise<
+		Result<{
+			events: readonly AttendanceSourceEvent[];
+			nextCursor?: string;
+		}>
+	>;
 };
 
 /**
@@ -72,6 +125,10 @@ export type AttendanceSourcePort = {
 		organizationId: string;
 		cursor?: string;
 	}): Promise<Result<AttendanceSourceBatch>>;
+	previewEvents(input: {
+		organizationId: string;
+		cursor?: string;
+	}): Promise<Result<AttendanceSourcePreviewResult>>;
 };
 
 export type EmployeeAssignmentContext = {

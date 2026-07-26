@@ -13,8 +13,7 @@ export type ShellNavModuleId =
 	| "payables"
 	| "payments"
 	| "accounting"
-	| "human-resources"
-	| "corporate-administration";
+	| "human-resources";
 
 export type ShellNavKind = "module";
 
@@ -127,14 +126,6 @@ export const OPERATOR_SHELL_NAV: readonly ShellNavItem[] = [
 		],
 	},
 	{
-		id: "corporate-administration",
-		label: "Corporate administration",
-		href: "/admin/corporate-administration",
-		moduleId: "corporate-administration",
-		kind: "module",
-		permissionCodes: ["corporate-administration.company.read"],
-	},
-	{
 		id: "accounting",
 		label: "Accounting",
 		href: "/admin/accounting",
@@ -232,14 +223,6 @@ export const CLIENT_SHELL_NAV: readonly ShellNavItem[] = [
 			"human-resources.leave-request.approve-team",
 			"human-resources.time.attendance.self.record",
 		],
-	},
-	{
-		id: "corporate-administration",
-		label: "Corporate administration",
-		href: "/client/corporate-administration",
-		moduleId: "corporate-administration",
-		kind: "module",
-		permissionCodes: ["corporate-administration.company.read"],
 	},
 	{
 		id: "accounting",

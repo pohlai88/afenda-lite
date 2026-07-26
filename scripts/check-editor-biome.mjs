@@ -13,6 +13,7 @@ import {
 	BIOME_LSP_BIN_PLATFORM_MAP,
 	FORBIDDEN_SETTING_KEYS,
 	NODE_WRAPPER_LSP_BIN,
+	PRETTIER_DISABLE_LANGUAGES,
 	REQUIRED_SCALAR_SETTINGS,
 	REQUIRED_TS_WATCH_OPTIONS,
 	TAILWIND_FILES_EXCLUDE,
@@ -201,6 +202,17 @@ function checkFormatters(settings) {
 	) {
 		errors.push("[markdown] must not use biomejs.biome — Biome force-ignores md");
 	}
+
+	const prettierDisabled = settings["prettier.disableLanguages"];
+	if (!Array.isArray(prettierDisabled)) {
+		errors.push("prettier.disableLanguages must be set");
+	} else if (!deepEqual(prettierDisabled, PRETTIER_DISABLE_LANGUAGES)) {
+		errors.push("prettier.disableLanguages must match editor posture SSOT");
+	}
+
+	if (settings["editor.defaultFormatter"] !== "biomejs.biome") {
+		errors.push('editor.defaultFormatter must be "biomejs.biome"');
+	}
 }
 
 /**
@@ -234,7 +246,7 @@ function checkCliFormatsTs() {
 		"erp",
 		"human-resources",
 		"src",
-		"schemas.ts",
+		"module-ids.ts",
 	);
 	if (!existsSync(sample)) {
 		return;

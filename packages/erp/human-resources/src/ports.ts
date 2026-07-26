@@ -123,8 +123,11 @@ export type OrganizationDimensionDirectoryPort = {
 export type {
 	ApprovedLeaveFact,
 	ApprovedLeaveQueryPort,
+	AttendanceConnectorPullPort,
 	AttendanceSourceBatch,
 	AttendanceSourceEvent,
 	AttendanceSourcePort,
+	AttendanceSourcePreviewResult,
+	AttendanceSourceRejectedRow,
 } from "./time/handoff/ports";
 export type { WorkCalendarPort } from "./time/work-calendar";

@@ -30,6 +30,7 @@ import {
 	listTimesheetEntries,
 	lockTimesheet,
 	removeTimesheetEntry,
+	rejectTimesheet,
 	reopenTimesheet,
 	returnTimesheet,
 	submitTimesheet,
@@ -654,6 +655,188 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			...handoff.data,
 			timesheetVersion: locked.data.version,
 		});
+	});
+
+	it("submit → reject → reopen → resubmit → approve parity", async () => {
+		const ready = createHrParityHarness(adapter);
+		const rejectManager = `user-hr-time-reject-manager-${suffix}`;
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-emp-${suffix}`,
+				idempotencyKey: `idem-p07-ts-reject-emp-${suffix}`,
+				employeeNumber: `EP07TSR-${suffix}`,
+				legalName: `Timesheet Reject Parity ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-employ-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const timesheet = await createTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-create-${suffix}`,
+				idempotencyKey: `idem-p07-ts-reject-create-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				periodStart: "2025-08-04",
+				periodEnd: "2025-08-04",
+			},
+			ready,
+		);
+		expect(timesheet.ok).toBe(true);
+		if (!timesheet.ok) return;
+
+		const entry = await addTimesheetEntry(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-entry-${suffix}`,
+				timesheetId: timesheet.data.id,
+				employeeId: employee.data.id,
+				workDate: "2025-08-04",
+				timezone: "Asia/Singapore",
+				sourceType: "manual",
+				timeType: "regular",
+				recordedMinutes: 480,
+				approvedMinutes: 480,
+			},
+			ready,
+		);
+		expect(entry.ok).toBe(true);
+		if (!entry.ok) return;
+
+		const draft = await getTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-get-${suffix}`,
+				timesheetId: timesheet.data.id,
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok || draft.data === null) return;
+
+		const submitted = await submitTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-submit-${suffix}`,
+				timesheetId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+		expect(submitted.data.status).toBe("submitted");
+
+		const rejected = await rejectTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: rejectManager,
+				correlationId: `corr-p07-ts-reject-${suffix}`,
+				timesheetId: submitted.data.id,
+				rejectionReason: "Missing break evidence",
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(rejected.ok).toBe(true);
+		if (!rejected.ok) return;
+		expect(rejected.data.status).toBe("rejected");
+		expect(rejected.data.rejectionReason).toBe("Missing break evidence");
+
+		const rejectedHandoff = await getApprovedTimeHandoff(
+			{
+				organizationId: ORG,
+				actorUserId: rejectManager,
+				correlationId: `corr-p07-ts-reject-handoff-${suffix}`,
+				timesheetId: rejected.data.id,
+			},
+			ready,
+		);
+		expect(rejectedHandoff.ok).toBe(true);
+		if (!rejectedHandoff.ok) return;
+		expect(rejectedHandoff.data).toBeNull();
+
+		const reopened = await reopenTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: rejectManager,
+				correlationId: `corr-p07-ts-reject-reopen-${suffix}`,
+				timesheetId: rejected.data.id,
+				expectedVersion: rejected.data.version,
+			},
+			ready,
+		);
+		expect(reopened.ok).toBe(true);
+		if (!reopened.ok) return;
+		expect(reopened.data.status).toBe("draft");
+		expect(reopened.data.rejectionReason).toBeNull();
+		expect(reopened.data.approverNotes).toBeNull();
+		expect(reopened.data.completedApprovalSteps).toBe(0);
+
+		const resubmitted = await submitTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-resubmit-${suffix}`,
+				timesheetId: reopened.data.id,
+				expectedVersion: reopened.data.version,
+			},
+			ready,
+		);
+		expect(resubmitted.ok).toBe(true);
+		if (!resubmitted.ok) return;
+		expect(resubmitted.data.status).toBe("submitted");
+
+		const authority = await assignTimeApprovalAuthority(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-p07-ts-reject-authority-${suffix}`,
+				targetActorUserId: rejectManager,
+				authority: "line_manager",
+				effectiveFrom: "2020-01-01",
+			},
+			ready,
+		);
+		expect(authority.ok).toBe(true);
+		if (!authority.ok) return;
+
+		const approved = await approveTimesheet(
+			{
+				organizationId: ORG,
+				actorUserId: rejectManager,
+				correlationId: `corr-p07-ts-reject-approve-${suffix}`,
+				authority: "line_manager",
+				timesheetId: resubmitted.data.id,
+				expectedVersion: resubmitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+		expect(approved.data.status).toBe("approved");
 	});
 
 	it("supersedes an approved timesheet into a distinct correction draft without mutating original facts", async () => {

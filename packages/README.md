@@ -8,8 +8,8 @@ For engineers extending Platform or Surfaces; each package README is the consume
 
 **Catalog version:** `packages-catalog/2026-07-25`
 **Layout state:** Phase 1–3 complete; one-level category nesting active (`packages/<category>/<name>`).  
-**ERP promotion state:** Phase 4 complete; Corporate Administration CA-0 approved and scaffolded.
-**Current roadmap:** Corporate Administration is approved for incremental CA slices ([MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml)).
+**ERP promotion state:** Phase 4 complete; corporate-administration removed 2026-07-26 pending greenfield rebuild.
+**Current roadmap:** See [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) (no open module promotions).
 **Production evidence:** Catalog status is valid only for the repository commit whose package-governance gate passes. See [docs-V2/monorepo](../docs-V2/monorepo/README.md) § Phase status.  
 **Last disk verification:** `pnpm governance:packages` OK · `2026-07-25` (re-run and stamp commit SHA after merge).
 
@@ -114,7 +114,6 @@ Memory adapters for rate-limit and cache are test and local-development only unl
 | [`@afenda/accounting`](./erp/accounting/README.md) | Node | Active | Journal / journal line / ledger posting / accounting period / CoA / posting profile sole mutator (ARCH-006) |
 | [`@afenda/human-resources`](./erp/human-resources/README.md) | Node | Scaffolded | Workforce relationship sole mutator (`hr_*`) |
 | [`@afenda/payroll`](./erp/payroll/README.md) | Node | Scaffolded | Payroll calculation sole mutator (`payroll_*`) |
-| [`@afenda/corporate-administration`](./erp/corporate-administration/README.md) | Node | Scaffolded | Corporate Administration and Statutory Registers sole mutator (`ca_*`) |
 
 Peer R1-F packages do not import each other by default. ERP peer collaboration occurs only through:
 

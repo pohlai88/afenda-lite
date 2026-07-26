@@ -45,6 +45,7 @@ import {
 	assertCompletionRecordable,
 	assertCourseActive,
 	assertCourseCanArchive,
+	assertCourseStatusTransition,
 	assertNoDuplicateCompletion,
 	assertSessionSchedulable,
 	assertSessionStatusTransition,
@@ -726,9 +727,11 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		if (existing.data.status === "archived") {
-			return invalidState("Cannot activate archived course");
-		}
+		const transition = assertCourseStatusTransition(
+			existing.data.status,
+			"active",
+		);
+		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -745,7 +748,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 							WHERE id = ${input.courseId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status != 'archived'
+								AND status = 'archived'
 							RETURNING *
 						),
 						audited AS (

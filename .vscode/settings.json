@@ -17,7 +17,16 @@
 		"source.fixAll.biome": "explicit",
 		"source.organizeImports.biome": "explicit"
 	},
-	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.defaultFormatter": "biomejs.biome",
+	"prettier.disableLanguages": [
+		"javascript",
+		"javascriptreact",
+		"typescript",
+		"typescriptreact",
+		"json",
+		"jsonc",
+		"css"
+	],
 	"[javascript]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},

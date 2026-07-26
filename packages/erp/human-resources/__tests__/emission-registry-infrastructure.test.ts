@@ -56,7 +56,7 @@ describe("emission registry infrastructure", () => {
 		expect(catalogIssues).toEqual([]);
 	});
 
-	it("preserves 310 / 63 / 18 / 12 / 27 / 32 / 1 / 14 / 15 / 19 / 31 / 13 / 21 / 30 / 11 / 3 classification counts", () => {
+	it("preserves 335 / 63 / 18 / 12 / 27 / 32 / 1 / 22 / 15 / 19 / 31 / 13 / 36 / 32 / 11 / 3 classification counts", () => {
 		expect(
 			Object.keys(HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS),
 		).toHaveLength(63);
@@ -71,7 +71,7 @@ describe("emission registry infrastructure", () => {
 		expect(Object.keys(HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS)).toHaveLength(
 			1,
 		);
-		expect(Object.keys(HUMAN_RESOURCES_LIFECYCLE_EMISSIONS)).toHaveLength(14);
+		expect(Object.keys(HUMAN_RESOURCES_LIFECYCLE_EMISSIONS)).toHaveLength(22);
 		expect(
 			Object.keys(HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS),
 		).toHaveLength(15);
@@ -80,13 +80,13 @@ describe("emission registry infrastructure", () => {
 		expect(
 			Object.keys(HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS),
 		).toHaveLength(13);
-		expect(Object.keys(HUMAN_RESOURCES_COMPENSATION_EMISSIONS)).toHaveLength(21);
-		expect(Object.keys(HUMAN_RESOURCES_PERFORMANCE_EMISSIONS)).toHaveLength(30);
+		expect(Object.keys(HUMAN_RESOURCES_COMPENSATION_EMISSIONS)).toHaveLength(36);
+		expect(Object.keys(HUMAN_RESOURCES_PERFORMANCE_EMISSIONS)).toHaveLength(32);
 		expect(Object.keys(HUMAN_RESOURCES_LEARNING_EMISSIONS)).toHaveLength(11);
 		expect(Object.keys(HUMAN_RESOURCES_PRIVACY_EMISSIONS)).toHaveLength(3);
 		expect(
 			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		).toHaveLength(310);
+		).toHaveLength(335);
 	});
 
 	it("keeps leave commands out of legacy classifications", () => {
@@ -189,7 +189,7 @@ describe("emission registry infrastructure", () => {
 		expect(mutationInventoryFixture.totalCommandIds).toBe(
 			HUMAN_RESOURCES_COMMAND_IDS.length,
 		);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(310);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(335);
 		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
 		expect(mutationInventoryFixture.unclassified).toEqual([]);
 	});

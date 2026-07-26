@@ -2410,6 +2410,9 @@ export const hrSalaryBand = pgTable(
 		currencyCode: text("currency_code").notNull(),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
+		supersedesSalaryBandId: uuid("supersedes_salary_band_id").references(
+			(): AnyPgColumn => hrSalaryBand.id,
+		),
 		/** active | superseded | archived */
 		status: text("status").notNull(),
 		version: integer("version").notNull().default(1),
@@ -2426,9 +2429,59 @@ export const hrSalaryBand = pgTable(
 		index("hr_salary_band_org_id_idx").on(t.organizationId, t.id),
 		index("hr_salary_band_org_grade_idx").on(t.organizationId, t.gradeId),
 		index("hr_salary_band_org_status_idx").on(t.organizationId, t.status),
+		index("hr_salary_band_org_supersedes_idx").on(
+			t.organizationId,
+			t.supersedesSalaryBandId,
+		),
 		check(
 			"hr_salary_band_effective_range_ck",
 			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
+	],
+);
+
+export const hrCompensationGradeProgressionRule = pgTable(
+	"hr_compensation_grade_progression_rule",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		fromGradeId: uuid("from_grade_id")
+			.notNull()
+			.references(() => hrCompensationGrade.id),
+		toGradeId: uuid("to_grade_id")
+			.notNull()
+			.references(() => hrCompensationGrade.id),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		minMonthsInGrade: integer("min_months_in_grade"),
+		/** active | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_compensation_grade_progression_rule_org_from_idx").on(
+			t.organizationId,
+			t.fromGradeId,
+		),
+		index("hr_compensation_grade_progression_rule_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		check(
+			"hr_compensation_grade_progression_rule_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
+		check(
+			"hr_compensation_grade_progression_rule_from_to_ck",
+			sql`${t.fromGradeId} <> ${t.toGradeId}`,
 		),
 	],
 );
@@ -2448,10 +2501,15 @@ export const hrEmployeeCompensation = pgTable(
 		salaryBandId: uuid("salary_band_id").references(() => hrSalaryBand.id),
 		baseAmount: text("base_amount").notNull(),
 		currencyCode: text("currency_code").notNull(),
+		payFrequency: text("pay_frequency").notNull(),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
 		reason: text("reason").notNull(),
-		/** active | ended */
+		confidentialNote: text("confidential_note"),
+		supersedesCompensationId: uuid("supersedes_compensation_id"),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		approvedBy: text("approved_by"),
+		/** draft | scheduled | active | ended | superseded */
 		status: text("status").notNull(),
 		sourceReviewId: uuid("source_review_id"),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
@@ -2479,6 +2537,12 @@ export const hrEmployeeCompensation = pgTable(
 		uniqueIndex("hr_employee_compensation_org_employment_active_uidx")
 			.on(t.organizationId, t.employmentId)
 			.where(sql`${t.status} = 'active'`),
+		uniqueIndex("hr_employee_compensation_org_employment_scheduled_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'scheduled'`),
+		uniqueIndex("hr_employee_compensation_org_employment_draft_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'draft'`),
 		uniqueIndex("hr_employee_compensation_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -2524,8 +2588,36 @@ export const hrBenefitPlan = pgTable(
 	],
 );
 
-export const hrBenefitEligibility = createErpScaffoldTable(
+export const hrBenefitEligibility = pgTable(
 	"hr_benefit_eligibility",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => hrBenefitPlan.id),
+		minTenureDays: integer("min_tenure_days"),
+		allowedEmploymentStatuses: text("allowed_employment_statuses").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_benefit_eligibility_org_id_idx").on(t.organizationId, t.id),
+		index("hr_benefit_eligibility_org_plan_idx").on(
+			t.organizationId,
+			t.planId,
+		),
+		uniqueIndex("hr_benefit_eligibility_org_plan_uidx").on(
+			t.organizationId,
+			t.planId,
+		),
+	],
 );
 
 export const hrBenefitEnrollment = pgTable(
@@ -2544,8 +2636,13 @@ export const hrBenefitEnrollment = pgTable(
 			.references(() => hrBenefitPlan.id),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
-		/** active | ended | cancelled */
+		/** active | ended | cancelled | waived */
 		status: text("status").notNull(),
+		employeeContributionAmount: text("employee_contribution_amount"),
+		employerContributionAmount: text("employer_contribution_amount"),
+		contributionCurrencyCode: text("contribution_currency_code"),
+		contributionFrequency: text("contribution_frequency"),
+		waiverReason: text("waiver_reason"),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		version: integer("version").notNull().default(1),
@@ -2565,9 +2662,9 @@ export const hrBenefitEnrollment = pgTable(
 			t.employeeId,
 		),
 		index("hr_benefit_enrollment_org_plan_idx").on(t.organizationId, t.planId),
-		uniqueIndex("hr_benefit_enrollment_org_employee_plan_active_uidx")
+		uniqueIndex("hr_benefit_enrollment_org_employee_plan_open_uidx")
 			.on(t.organizationId, t.employeeId, t.planId)
-			.where(sql`${t.status} = 'active'`),
+			.where(sql`${t.status} IN ('active', 'waived')`),
 		uniqueIndex("hr_benefit_enrollment_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -2579,8 +2676,92 @@ export const hrBenefitEnrollment = pgTable(
 	],
 );
 
-export const hrCompensationReviewCycle = createErpScaffoldTable(
+export const hrBenefitEnrollmentDependent = pgTable(
+	"hr_benefit_enrollment_dependent",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		enrollmentId: uuid("enrollment_id")
+			.notNull()
+			.references(() => hrBenefitEnrollment.id),
+		dependentName: text("dependent_name").notNull(),
+		/** spouse | child | other */
+		relationship: text("relationship").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_benefit_enrollment_dependent_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_benefit_enrollment_dependent_org_enrollment_idx").on(
+			t.organizationId,
+			t.enrollmentId,
+		),
+		check(
+			"hr_benefit_enrollment_dependent_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
+	],
+);
+
+export const hrCompensationReviewCycle = pgTable(
 	"hr_compensation_review_cycle",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		status: text("status").notNull(),
+		budgetTotalAmount: text("budget_total_amount").notNull(),
+		budgetCurrencyCode: text("budget_currency_code").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_compensation_review_cycle_org_id_idx").on(t.organizationId, t.id),
+		index("hr_compensation_review_cycle_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		uniqueIndex("hr_compensation_review_cycle_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		uniqueIndex("hr_compensation_review_cycle_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check(
+			"hr_compensation_review_cycle_status_check",
+			sql`${t.status} IN ('draft', 'open', 'closed', 'cancelled')`,
+		),
+		check(
+			"hr_compensation_review_cycle_period_range_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+	],
 );
 
 export const hrCompensationReview = pgTable(
@@ -2588,6 +2769,9 @@ export const hrCompensationReview = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
+		cycleId: uuid("cycle_id")
+			.notNull()
+			.references(() => hrCompensationReviewCycle.id),
 		employeeId: uuid("employee_id")
 			.notNull()
 			.references(() => hrEmployee.id),
@@ -3040,7 +3224,7 @@ export const hrPerformanceCycle = pgTable(
 		),
 		check(
 			"hr_performance_cycle_status_check",
-			sql`${t.status} IN ('draft', 'open', 'closed', 'cancelled')`,
+			sql`${t.status} IN ('draft', 'published', 'open', 'closed', 'cancelled')`,
 		),
 		check(
 			"hr_performance_cycle_weighting_model_check",
@@ -3099,6 +3283,82 @@ export const hrPerformanceCycleParticipant = pgTable(
 	],
 );
 
+export const hrPerformanceCycleReviewPeriod = pgTable(
+	"hr_performance_cycle_review_period",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		cycleId: uuid("cycle_id")
+			.notNull()
+			.references(() => hrPerformanceCycle.id),
+		kind: text("kind").notNull(),
+		periodStart: date("period_start").notNull(),
+		periodEnd: date("period_end").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_cycle_review_period_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_performance_cycle_review_period_org_cycle_idx").on(
+			t.organizationId,
+			t.cycleId,
+		),
+		uniqueIndex("hr_performance_cycle_review_period_org_cycle_kind_uidx").on(
+			t.organizationId,
+			t.cycleId,
+			t.kind,
+		),
+		check(
+			"hr_performance_cycle_review_period_kind_check",
+			sql`${t.kind} IN ('goal_setting', 'self_review', 'manager_review', 'calibration')`,
+		),
+		check(
+			"hr_performance_cycle_review_period_range_check",
+			sql`${t.periodEnd} >= ${t.periodStart}`,
+		),
+	],
+);
+
+export const hrPerformanceCycleEligibility = pgTable(
+	"hr_performance_cycle_eligibility",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		cycleId: uuid("cycle_id")
+			.notNull()
+			.references(() => hrPerformanceCycle.id),
+		minTenureDays: integer("min_tenure_days"),
+		allowedEmploymentStatuses: text("allowed_employment_statuses").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_performance_cycle_eligibility_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("hr_performance_cycle_eligibility_org_cycle_uidx").on(
+			t.organizationId,
+			t.cycleId,
+		),
+	],
+);
+
 export const hrPerformanceGoal = pgTable(
 	"hr_performance_goal",
 	{
@@ -3121,6 +3381,12 @@ export const hrPerformanceGoal = pgTable(
 		exceptionOutsideCycle: boolean("exception_outside_cycle")
 			.notNull()
 			.default(false),
+		goalKind: text("goal_kind").notNull().default("employee"),
+		alignedToGoalId: uuid("aligned_to_goal_id").references(
+			(): AnyPgColumn => hrPerformanceGoal.id,
+		),
+		completionNote: text("completion_note"),
+		completionEvidenceReference: text("completion_evidence_reference"),
 		status: text("status").notNull(),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
@@ -3141,6 +3407,10 @@ export const hrPerformanceGoal = pgTable(
 			t.organizationId,
 			t.employeeId,
 		),
+		index("hr_performance_goal_org_aligned_idx").on(
+			t.organizationId,
+			t.alignedToGoalId,
+		),
 		uniqueIndex("hr_performance_goal_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -3148,6 +3418,10 @@ export const hrPerformanceGoal = pgTable(
 		check(
 			"hr_performance_goal_status_check",
 			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'active', 'closed', 'cancelled')`,
+		),
+		check(
+			"hr_performance_goal_goal_kind_check",
+			sql`${t.goalKind} IN ('employee', 'manager')`,
 		),
 		check(
 			"hr_performance_goal_period_range_check",
@@ -3167,6 +3441,7 @@ export const hrPerformanceGoalProgress = pgTable(
 		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
 		progressNote: text("progress_note").notNull(),
 		progressValue: text("progress_value"),
+		evidenceReference: text("evidence_reference"),
 		recordedBy: text("recorded_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -3200,6 +3475,7 @@ export const hrPerformanceReview = pgTable(
 			.references(() => hrEmployment.id),
 		overallRating: text("overall_rating"),
 		acknowledgementNote: text("acknowledgement_note"),
+		calibrationNote: text("calibration_note"),
 		status: text("status").notNull(),
 		finalizeIdempotencyKey: text("finalize_idempotency_key"),
 		version: integer("version").notNull().default(1),
@@ -3243,6 +3519,7 @@ export const hrPerformanceReviewParticipant = pgTable(
 		role: text("role").notNull(),
 		employeeId: uuid("employee_id").references(() => hrEmployee.id),
 		userId: text("user_id"),
+		sequenceNumber: integer("sequence_number").notNull().default(0),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -3277,6 +3554,9 @@ export const hrPerformanceAssessment = pgTable(
 		reviewId: uuid("review_id")
 			.notNull()
 			.references(() => hrPerformanceReview.id),
+		participantId: uuid("participant_id")
+			.notNull()
+			.references(() => hrPerformanceReviewParticipant.id),
 		kind: text("kind").notNull(),
 		rating: text("rating"),
 		commentsSensitive: text("comments_sensitive"),
@@ -3297,14 +3577,14 @@ export const hrPerformanceAssessment = pgTable(
 			t.organizationId,
 			t.reviewId,
 		),
-		uniqueIndex("hr_performance_assessment_org_review_kind_uidx").on(
+		uniqueIndex("hr_performance_assessment_org_review_participant_uidx").on(
 			t.organizationId,
 			t.reviewId,
-			t.kind,
+			t.participantId,
 		),
 		check(
 			"hr_performance_assessment_kind_check",
-			sql`${t.kind} IN ('self', 'manager')`,
+			sql`${t.kind} IN ('self', 'manager', 'delegated')`,
 		),
 	],
 );

@@ -49,210 +49,6 @@ commands:
   - id: accounting.exception.resolve
     moduleId: accounting
     permission: accounting.exception.manage
-  - id: corporate-administration.company.create
-    moduleId: corporate-administration
-    permission: corporate-administration.company.create
-  - id: corporate-administration.company.update
-    moduleId: corporate-administration
-    permission: corporate-administration.company.update
-  - id: corporate-administration.company.activate
-    moduleId: corporate-administration
-    permission: corporate-administration.company.activate
-  - id: corporate-administration.company.suspend
-    moduleId: corporate-administration
-    permission: corporate-administration.company.suspend
-  - id: corporate-administration.company.dissolve
-    moduleId: corporate-administration
-    permission: corporate-administration.company.dissolve
-  - id: corporate-administration.company.archive
-    moduleId: corporate-administration
-    permission: corporate-administration.company.archive
-  - id: corporate-administration.company-name.add
-    moduleId: corporate-administration
-    permission: corporate-administration.company-name.manage
-  - id: corporate-administration.company-name.end
-    moduleId: corporate-administration
-    permission: corporate-administration.company-name.manage
-  - id: corporate-administration.company-identifier.add
-    moduleId: corporate-administration
-    permission: corporate-administration.company-identifier.manage
-  - id: corporate-administration.company-identifier.update
-    moduleId: corporate-administration
-    permission: corporate-administration.company-identifier.manage
-  - id: corporate-administration.company-identifier.retire
-    moduleId: corporate-administration
-    permission: corporate-administration.company-identifier.manage
-  - id: corporate-administration.officer.appoint
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.officer.amend
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.officer.end
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-body.create
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-body.update
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-body.retire
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-membership.appoint
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-membership.end
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.authority-mandate.grant
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.authority-mandate.amend
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.authority-mandate.revoke
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.premise.register
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.premise.update
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.premise.retire
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-meeting.record
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.governance-meeting.close
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.resolution.record
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.resolution.approve
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.resolution.revoke
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.manage
-  - id: corporate-administration.share-class.create
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-class.update
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-class.close
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-transaction.create
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-transaction.reverse
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-certificate.create
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-certificate.replace
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.share-certificate.cancel
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.beneficial-owner-disclosure.create
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.beneficial-owner-disclosure.update
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.beneficial-owner-disclosure.end
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.manage
-  - id: corporate-administration.property.register
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.property.update
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.property.dispose
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.asset.register
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.asset.update
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.asset.dispose
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.asset.write-off
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.intellectual-property.register
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.intellectual-property.update
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.intellectual-property.renew
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.intellectual-property.expire
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.intellectual-property.dispose
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.insurance-policy.register
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.insurance-policy.update
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.insurance-policy.renew
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.insurance-policy.cancel
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.charge.register
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.charge.amend
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.charge.release
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.manage
-  - id: corporate-administration.licence-permit.create
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.manage
-  - id: corporate-administration.bank-account-registration.create
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.manage
-  - id: corporate-administration.bank-mandate.create
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.manage
-  - id: corporate-administration.group-control-relationship.create
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.manage
-  - id: corporate-administration.material-agreement.create
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.manage
-  - id: corporate-administration.corporate-document.create
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.manage
-  - id: corporate-administration.filing-obligation.create
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.manage
-  - id: corporate-administration.filing-submission.create
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.manage
   - id: fulfillment.delivery.create
     moduleId: fulfillment
     permission: fulfillment.delivery.create
@@ -505,6 +301,15 @@ commands:
   - id: human-resources.onboarding.complete
     moduleId: human-resources
     permission: human-resources.onboarding.manage
+  - id: human-resources.onboarding.record-orientation
+    moduleId: human-resources
+    permission: human-resources.onboarding.manage
+  - id: human-resources.onboarding.record-equipment-handoff
+    moduleId: human-resources
+    permission: human-resources.onboarding.manage
+  - id: human-resources.onboarding.record-access-handoff
+    moduleId: human-resources
+    permission: human-resources.onboarding.manage
   - id: human-resources.probation.open
     moduleId: human-resources
     permission: human-resources.employment.manage
@@ -514,10 +319,19 @@ commands:
   - id: human-resources.probation.record-outcome
     moduleId: human-resources
     permission: human-resources.employment.manage
+  - id: human-resources.probation.record-assessment
+    moduleId: human-resources
+    permission: human-resources.employment.manage
   - id: human-resources.employment.confirm
     moduleId: human-resources
     permission: human-resources.employment.manage
   - id: human-resources.assignment.transfer
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.termination.propose
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.termination.approve
     moduleId: human-resources
     permission: human-resources.employment.manage
   - id: human-resources.termination.finalize
@@ -533,6 +347,12 @@ commands:
     moduleId: human-resources
     permission: human-resources.offboarding.manage
   - id: human-resources.offboarding.record-clearance
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
+  - id: human-resources.offboarding.record-access-revocation
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
+  - id: human-resources.offboarding.record-payroll-handoff
     moduleId: human-resources
     permission: human-resources.offboarding.manage
   - id: human-resources.offboarding.complete
@@ -601,7 +421,28 @@ commands:
   - id: human-resources.salary-band.archive
     moduleId: human-resources
     permission: human-resources.compensation.manage
+  - id: human-resources.compensation-grade-progression-rule.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-grade-progression-rule.archive
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
   - id: human-resources.employee-compensation.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.amend
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.approve
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.schedule
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.activate
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.correct
     moduleId: human-resources
     permission: human-resources.compensation.manage
   - id: human-resources.employee-compensation.end
@@ -617,6 +458,18 @@ commands:
     moduleId: human-resources
     permission: human-resources.compensation.manage
   - id: human-resources.compensation-review.apply-approved-result
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review-cycle.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review-cycle.open
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review-cycle.close
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-review-cycle.cancel
     moduleId: human-resources
     permission: human-resources.compensation.manage
   - id: human-resources.compensation-proposal.create
@@ -644,6 +497,18 @@ commands:
     moduleId: human-resources
     permission: human-resources.benefits.manage
   - id: human-resources.benefit-enrollment.cancel
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-plan.eligibility.set
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.waive
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment-dependent.add
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment-dependent.end
     moduleId: human-resources
     permission: human-resources.benefits.manage
   - id: human-resources.employee-case.open

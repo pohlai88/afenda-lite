@@ -43,6 +43,32 @@ export function formatScaledToDecimal(scaled: bigint): string {
 	return negative ? `-${unsigned}` : unsigned;
 }
 
+/** Format scaled money with a fixed handoff decimal scale (0–4), preserving trailing zeros. */
+export function formatScaledToHandoffAmount(
+	scaled: bigint,
+	decimalScale: number,
+): string {
+	if (decimalScale < 0 || decimalScale > PAYROLL_MONEY_SCALE) {
+		throw new RangeError(
+			`Handoff decimal scale must be between 0 and ${PAYROLL_MONEY_SCALE}`,
+		);
+	}
+
+	const canonical = formatScaledToDecimal(scaled);
+	if (decimalScale === 0) {
+		return canonical.split(".")[0] ?? canonical;
+	}
+
+	const negative = canonical.startsWith("-");
+	const unsigned = negative ? canonical.slice(1) : canonical;
+	const [integerPart = "0", fractionalPart = ""] = unsigned.split(".");
+	const paddedFraction = fractionalPart
+		.padEnd(decimalScale, "0")
+		.slice(0, decimalScale);
+	const formatted = `${integerPart}.${paddedFraction}`;
+	return negative ? `-${formatted}` : formatted;
+}
+
 export function addScaled(left: bigint, right: bigint): bigint {
 	return left + right;
 }

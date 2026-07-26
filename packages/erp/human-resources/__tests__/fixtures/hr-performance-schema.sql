@@ -71,6 +71,10 @@ CREATE TABLE "hr_performance_goal" (
 	"period_start" date NOT NULL,
 	"period_end" date NOT NULL,
 	"exception_outside_cycle" boolean DEFAULT false NOT NULL,
+	"goal_kind" text DEFAULT 'employee' NOT NULL,
+	"aligned_to_goal_id" uuid,
+	"completion_note" text,
+	"completion_evidence_reference" text,
 	"status" text NOT NULL,
 	"create_idempotency_key" text NOT NULL,
 	"create_request_fingerprint" text NOT NULL,
@@ -87,6 +91,8 @@ CREATE INDEX "hr_performance_goal_org_cycle_idx" ON "hr_performance_goal" USING 
 --> statement-breakpoint
 CREATE INDEX "hr_performance_goal_org_employee_idx" ON "hr_performance_goal" USING btree ("organization_id","employee_id");
 --> statement-breakpoint
+CREATE INDEX "hr_performance_goal_org_aligned_idx" ON "hr_performance_goal" USING btree ("organization_id","aligned_to_goal_id");
+--> statement-breakpoint
 CREATE UNIQUE INDEX "hr_performance_goal_org_create_idempotency_uidx" ON "hr_performance_goal" USING btree ("organization_id","create_idempotency_key");
 --> statement-breakpoint
 ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_cycle_id_hr_performance_cycle_id_fk" FOREIGN KEY ("cycle_id") REFERENCES "public"."hr_performance_cycle"("id") ON DELETE no action ON UPDATE no action;
@@ -95,7 +101,11 @@ ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_employee_i
 --> statement-breakpoint
 ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_employment_id_hr_employment_id_fk" FOREIGN KEY ("employment_id") REFERENCES "public"."hr_employment"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
+ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_aligned_to_goal_id_hr_performance_goal_id_fk" FOREIGN KEY ("aligned_to_goal_id") REFERENCES "public"."hr_performance_goal"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
 ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_status_check" CHECK ("status" IN ('draft', 'submitted', 'approved', 'rejected', 'active', 'closed', 'cancelled'));
+--> statement-breakpoint
+ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_goal_kind_check" CHECK ("goal_kind" IN ('employee', 'manager'));
 --> statement-breakpoint
 ALTER TABLE "hr_performance_goal" ADD CONSTRAINT "hr_performance_goal_period_range_check" CHECK ("period_end" >= "period_start");
 --> statement-breakpoint
@@ -106,6 +116,7 @@ CREATE TABLE "hr_performance_goal_progress" (
 	"recorded_at" timestamp with time zone NOT NULL,
 	"progress_note" text NOT NULL,
 	"progress_value" text,
+	"evidence_reference" text,
 	"recorded_by" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -125,6 +136,7 @@ CREATE TABLE "hr_performance_review" (
 	"employment_id" uuid NOT NULL,
 	"overall_rating" text,
 	"acknowledgement_note" text,
+	"calibration_note" text,
 	"status" text NOT NULL,
 	"finalize_idempotency_key" text,
 	"version" integer DEFAULT 1 NOT NULL,
@@ -157,6 +169,7 @@ CREATE TABLE "hr_performance_review_participant" (
 	"role" text NOT NULL,
 	"employee_id" uuid,
 	"user_id" text,
+	"sequence_number" integer DEFAULT 0 NOT NULL,
 	"version" integer DEFAULT 1 NOT NULL,
 	"created_by" text NOT NULL,
 	"updated_by" text NOT NULL,
@@ -178,6 +191,7 @@ CREATE TABLE "hr_performance_assessment" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" text NOT NULL,
 	"review_id" uuid NOT NULL,
+	"participant_id" uuid NOT NULL,
 	"kind" text NOT NULL,
 	"rating" text,
 	"comments_sensitive" text,
@@ -193,11 +207,13 @@ CREATE INDEX "hr_performance_assessment_org_id_idx" ON "hr_performance_assessmen
 --> statement-breakpoint
 CREATE INDEX "hr_performance_assessment_org_review_idx" ON "hr_performance_assessment" USING btree ("organization_id","review_id");
 --> statement-breakpoint
-CREATE UNIQUE INDEX "hr_performance_assessment_org_review_kind_uidx" ON "hr_performance_assessment" USING btree ("organization_id","review_id","kind");
+CREATE UNIQUE INDEX "hr_performance_assessment_org_review_participant_uidx" ON "hr_performance_assessment" USING btree ("organization_id","review_id","participant_id");
 --> statement-breakpoint
 ALTER TABLE "hr_performance_assessment" ADD CONSTRAINT "hr_performance_assessment_review_id_hr_performance_review_id_fk" FOREIGN KEY ("review_id") REFERENCES "public"."hr_performance_review"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
-ALTER TABLE "hr_performance_assessment" ADD CONSTRAINT "hr_performance_assessment_kind_check" CHECK ("kind" IN ('self', 'manager'));
+ALTER TABLE "hr_performance_assessment" ADD CONSTRAINT "hr_performance_assessment_participant_id_hr_performance_review_participant_id_fk" FOREIGN KEY ("participant_id") REFERENCES "public"."hr_performance_review_participant"("id") ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+ALTER TABLE "hr_performance_assessment" ADD CONSTRAINT "hr_performance_assessment_kind_check" CHECK ("kind" IN ('self', 'manager', 'delegated'));
 --> statement-breakpoint
 CREATE TABLE "hr_performance_improvement_plan" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

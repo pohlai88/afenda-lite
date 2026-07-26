@@ -120,6 +120,17 @@ export const BIOME_FORMATTER_LANGUAGES = [
 	"css",
 ];
 
+/** Prettier must not claim product languages — Biome owns format + lint. */
+export const PRETTIER_DISABLE_LANGUAGES = [
+	"javascript",
+	"javascriptreact",
+	"typescript",
+	"typescriptreact",
+	"json",
+	"jsonc",
+	"css",
+];
+
 /** Keys that must not appear in settings.json. */
 export const FORBIDDEN_SETTING_KEYS = ["biome.lspBin", "biome.requireConfigFile"];
 

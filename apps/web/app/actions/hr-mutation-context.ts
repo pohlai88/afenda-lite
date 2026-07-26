@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { parseSchema } from "@/modules/platform/schemas/common";
+
 export const hrMutationContextSchema = z.object({
 	correlationId: z.string().trim().min(1).max(128).optional(),
 });
@@ -66,4 +68,26 @@ export function withHrSessionContext<T extends Record<string, unknown>>(
 		correlationId: data.correlationId ?? correlationId,
 		...data,
 	};
+}
+
+/** Action boundary input — server-stamped fields omitted; correlationId optional. */
+export type HrActionInput<T extends z.ZodTypeAny> = Omit<
+	z.input<T>,
+	"organizationId" | "actorUserId" | "correlationId"
+> & { correlationId?: string };
+
+/**
+ * Validate package schemas with superRefine after session stamp.
+ * `hrActionSchema` on refined schemas only surfaces correlationId at the boundary.
+ */
+export function parseHrStampedPackageInput<T extends z.ZodTypeAny>(
+	session: { orgId: string; userId: string },
+	correlationId: string,
+	packageSchema: T,
+	input: HrActionInput<T>,
+) {
+	return parseSchema(
+		packageSchema,
+		withHrSessionContext(session, correlationId, input),
+	);
 }

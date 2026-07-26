@@ -484,6 +484,8 @@ July net pay = calculated amount
 
 HR must not calculate gross-to-net payroll. Payroll must not silently change employment compensation agreements.
 
+**Slice 8.6 four-way ownership (accounting + payments):** HR entitlement/agreement → payroll calculation → accounting posting → payments disbursement. Full matrix, path tables, homonyms, and anti-patterns: [`allowance-deduction-ownership.md`](./allowance-deduction-ownership.md).
+
 ---
 
 # 4.1 Leave administration (HR-LEAVE-01)
@@ -759,6 +761,8 @@ Accounting creates and posts journal
 Payroll must not insert journals directly.
 
 This follows your established event, port and app-saga integration rules for peer ERP packages.
+
+**Allowance/deduction four-way matrix:** [`allowance-deduction-ownership.md`](./allowance-deduction-ownership.md) (Slice 8.6 SSOT).
 
 ---
 

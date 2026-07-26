@@ -529,7 +529,7 @@ export type CaCompanyStatusHistoryRow =
 export type NewCaCompanyStatusHistoryRow =
 	typeof caCompanyStatusHistory.$inferInsert;
 
-/** CA-2 — governance and premises */
+/** CA-2 ÔÇö governance and premises */
 
 /** director | secretary | auditor | other */
 export const caOfficerAppointment = pgTable(
@@ -907,7 +907,7 @@ export const caResolution = pgTable(
 	],
 );
 
-/** CA-3 — share capital */
+/** CA-3 ÔÇö share capital */
 
 export const caShareClass = pgTable(
 	"ca_share_class",
@@ -1121,7 +1121,7 @@ export const caBeneficialOwnerDisclosure = pgTable(
 	],
 );
 
-/** CA-4 — property and assets */
+/** CA-4 ÔÇö property and assets */
 
 export const caPropertyHolding = pgTable(
 	"ca_property_holding",
@@ -1546,7 +1546,7 @@ export const caPropertyAssetMutationReceipt = pgTable(
 	],
 );
 
-/** CA-5 — licences and banking */
+/** CA-5 ÔÇö licences and banking */
 
 export const caLicencePermit = pgTable(
 	"ca_licence_permit",
@@ -1766,7 +1766,7 @@ export const caMaterialAgreement = pgTable(
 	],
 );
 
-/** CA-6 — documents and filings */
+/** CA-6 ÔÇö documents and filings */
 
 export const caCorporateDocument = pgTable(
 	"ca_corporate_document",

@@ -17,6 +17,7 @@ import {
 	HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import {
@@ -40,6 +41,7 @@ import {
 	createDraftLeaveRequest,
 	getApprovedLeaveHandoff,
 	getLeaveRequest,
+	rejectLeaveRequest,
 	returnLeaveRequest,
 	submitLeaveRequest,
 	withdrawLeaveRequest,
@@ -52,6 +54,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_ADJUST,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_READ,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_HANDOFF_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
@@ -82,6 +85,7 @@ const LEAVE_REQUEST_WORKFLOW_PERMISSIONS = [
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_HANDOFF_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
@@ -281,6 +285,179 @@ async function seedManagerWithReportingLine(
 	if (!assigned.ok) return assigned;
 
 	return manager;
+}
+
+async function seedLeaveRequestWorkflowFixture(
+	ready: ReturnType<typeof harness>,
+	options?: {
+		allowSelfApproval?: boolean;
+		withManagerLine?: boolean;
+		openingQuantity?: string;
+	},
+) {
+	const seeded = await seedEmployeeEmployment(ready);
+	if (!seeded.ok) return seeded;
+
+	if (options?.withManagerLine !== false) {
+		const manager = await seedManagerWithReportingLine(
+			ready,
+			seeded.employee.id,
+			{
+				correlationId: "corr-s73-mgr",
+				idempotencyKey: "idem-s73-mgr",
+				employeeNumber: "E-MGR-S73",
+			},
+		);
+		if (!manager.ok) return manager;
+	}
+
+	const policyReady = {
+		...ready,
+		authorization: createGrantingHumanResourcesAuthorization([
+			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
+		]),
+	};
+	const created = await createLeavePolicy(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: "corr-s73-policy",
+			code: `S73-${Date.now()}`,
+			name: "Slice 7.3 Policy",
+			leaveType: "annual",
+			unit: "days",
+			paid: true,
+			allowSelfApproval: options?.allowSelfApproval ?? false,
+			effectiveFrom: "2025-01-01",
+			allowedEmploymentStatuses: ["active"],
+		},
+		policyReady,
+	);
+	if (!created.ok) return created;
+
+	const published = await publishLeavePolicy(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: "corr-s73-policy-pub",
+			policyId: created.data.id,
+			expectedVersion: created.data.version,
+		},
+		policyReady,
+	);
+	if (!published.ok) return published;
+
+	const granted = await grantLeaveEntitlement(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: "corr-s73-ent",
+			employeeId: seeded.employee.id,
+			employmentId: seeded.employment.id,
+			policyId: published.data.id,
+			periodStart: "2025-01-01",
+			periodEnd: "2025-12-31",
+			openingQuantity: options?.openingQuantity ?? "10",
+			idempotencyKey: `idem-s73-ent-${Date.now()}`,
+		},
+		ready,
+	);
+	if (!granted.ok) return granted;
+
+	return {
+		ok: true as const,
+		ready,
+		seeded,
+		policy: published.data,
+		entitlement: granted.data,
+	};
+}
+
+async function seedApprovedLeaveHandoffFixture(
+	ready: ReturnType<typeof harness>,
+	key: string,
+) {
+	const seeded = await seedEmployeeEmployment(ready);
+	if (!seeded.ok) return seeded;
+
+	const manager = await seedManagerWithReportingLine(
+		ready,
+		seeded.employee.id,
+		{
+			correlationId: `corr-mgr-${key}`,
+			idempotencyKey: `idem-mgr-${key}`,
+			employeeNumber: `E-MGR-${key}`,
+		},
+	);
+	if (!manager.ok) return manager;
+
+	const policy = await seedPublishedPolicy(ready);
+	if (!policy.ok) return policy;
+
+	const granted = await grantLeaveEntitlement(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-ent-${key}`,
+			employeeId: seeded.employee.id,
+			employmentId: seeded.employment.id,
+			policyId: policy.data.id,
+			periodStart: "2025-01-01",
+			periodEnd: "2025-12-31",
+			openingQuantity: "10",
+			idempotencyKey: `idem-ent-${key}`,
+		},
+		ready,
+	);
+	if (!granted.ok) return granted;
+
+	const draft = await createDraftLeaveRequest(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-draft-${key}`,
+			employeeId: seeded.employee.id,
+			entitlementId: granted.data.id,
+			startDate: "2025-11-03",
+			endDate: "2025-11-05",
+			requestedQuantity: "3",
+			idempotencyKey: `idem-req-${key}`,
+		},
+		ready,
+	);
+	if (!draft.ok) return draft;
+
+	const submitted = await submitLeaveRequest(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-submit-${key}`,
+			requestId: draft.data.id,
+			expectedVersion: draft.data.version,
+		},
+		ready,
+	);
+	if (!submitted.ok) return submitted;
+
+	const approved = await approveLeaveRequest(
+		{
+			organizationId: ORG,
+			actorUserId: MANAGER,
+			correlationId: `corr-approve-${key}`,
+			requestId: submitted.data.id,
+			expectedVersion: submitted.data.version,
+		},
+		ready,
+	);
+	if (!approved.ok) return approved;
+
+	return {
+		ok: true as const,
+		seeded,
+		policy: policy.data,
+		approved: approved.data,
+	};
 }
 
 describe("Leave policy lifecycle", () => {
@@ -1392,6 +1569,451 @@ describe("Leave request workflow", () => {
 	});
 });
 
+describe("Slice 7.3 leave request workflow", () => {
+	it("submit transitions draft to submitted", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-submit-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2025-11-03",
+				endDate: "2025-11-05",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-submit",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+		expect(draft.data.status).toBe("draft");
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+		expect(submitted.data.status).toBe("submitted");
+	});
+
+	it("amends draft request and re-expands segments", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-amend-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2025-11-10",
+				endDate: "2025-11-12",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-amend-draft",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const amended = await amendLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-amend-draft-run",
+				requestId: draft.data.id,
+				startDate: "2025-11-17",
+				endDate: "2025-11-18",
+				requestedQuantity: "2",
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+		expect(amended.data.status).toBe("draft");
+		expect(amended.data.startDate).toBe("2025-11-17");
+		expect(amended.data.requestedQuantity).toBe("2");
+	});
+
+	it("denies amend when request is submitted", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-amend-deny-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2025-11-24",
+				endDate: "2025-11-26",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-amend-deny",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-amend-deny-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const denied = await amendLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-amend-deny",
+				requestId: submitted.data.id,
+				startDate: "2025-12-01",
+				endDate: "2025-12-02",
+				requestedQuantity: "2",
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(denied)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		);
+	});
+
+	it("rejects submitted request via primary manager", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-reject-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2025-12-08",
+				endDate: "2025-12-10",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-reject",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-reject-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const rejected = await rejectLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-s73-reject",
+				requestId: submitted.data.id,
+				note: "Not approved",
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(rejected.ok).toBe(true);
+		if (!rejected.ok) return;
+		expect(rejected.data.status).toBe("rejected");
+	});
+
+	it("denies reject from non-primary manager", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const otherManager = await seedManagerEmployee(ready, {
+			correlationId: "corr-s73-other-mgr",
+			idempotencyKey: "idem-s73-other-mgr",
+			employeeNumber: "E-MGR-OTHER",
+		});
+		expect(otherManager.ok).toBe(true);
+		if (!otherManager.ok) return;
+
+		const otherMapped = await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: OTHER,
+			employeeId: otherManager.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+		expect(otherMapped.ok).toBe(true);
+		if (!otherMapped.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-reject-mgr-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2025-12-15",
+				endDate: "2025-12-17",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-reject-mgr",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-reject-mgr-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const denied = await rejectLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: OTHER,
+				correlationId: "corr-s73-reject-mgr-deny",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(denied)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+	});
+
+	it("allows self-approval when policy permits and actor is the request employee", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready, {
+			allowSelfApproval: true,
+			withManagerLine: false,
+		});
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-self-allow-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2026-01-05",
+				endDate: "2026-01-07",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-self-allow",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-self-allow-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-self-allow-approve",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+		expect(approved.data.status).toBe("approved");
+	});
+
+	it("requires backdate permission for backdated amend", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedLeaveRequestWorkflowFixture(ready);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-backdate-amend-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2026-01-12",
+				endDate: "2026-01-14",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-backdate-amend",
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const denied = await amendLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-backdate-amend-deny",
+				requestId: draft.data.id,
+				startDate: "2025-04-01",
+				endDate: "2025-04-02",
+				requestedQuantity: "2",
+				isBackdated: true,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(denied.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(denied)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+	});
+
+	it("allows cancel-approved via backdate-only permission", async () => {
+		const backdateOnlyReady = {
+			...harness([
+				...LEAVE_REQUEST_WORKFLOW_PERMISSIONS,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
+			]),
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_GRANT,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_ENTITLEMENT_READ,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
+				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+				HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+			]),
+		};
+		const fixture = await seedLeaveRequestWorkflowFixture(backdateOnlyReady);
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-cancel-backdate-draft",
+				employeeId: fixture.seeded.employee.id,
+				entitlementId: fixture.entitlement.id,
+				startDate: "2026-01-19",
+				endDate: "2026-01-21",
+				requestedQuantity: "3",
+				idempotencyKey: "idem-s73-cancel-backdate",
+			},
+			backdateOnlyReady,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-cancel-backdate-submit",
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			backdateOnlyReady,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const approveReady = {
+			...backdateOnlyReady,
+			authorization: createGrantingHumanResourcesAuthorization([
+				...LEAVE_REQUEST_WORKFLOW_PERMISSIONS,
+				HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
+			]),
+		};
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: "corr-s73-cancel-backdate-approve",
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			approveReady,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const cancelled = await cancelApprovedLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-s73-cancel-backdate",
+				requestId: approved.data.id,
+				expectedVersion: approved.data.version,
+			},
+			backdateOnlyReady,
+		);
+		expect(cancelled.ok).toBe(true);
+		if (!cancelled.ok) return;
+		expect(cancelled.data.status).toBe("cancelled");
+	});
+});
+
 describe("Leave plan matrix (HR-LEAVE-01)", () => {
 	it("resolves applicable published policy for employee", async () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
@@ -1660,95 +2282,65 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		expect(approved.data.status).toBe("approved");
 	});
 
-	it("returns approved leave handoff with plan shape", async () => {
+	it("requires leave.handoff.read (not leave-request.approve-team) for approved handoff query", async () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
-		const seeded = await seedEmployeeEmployment(ready);
-		expect(seeded.ok).toBe(true);
-		if (!seeded.ok) return;
+		const fixture = await seedApprovedLeaveHandoffFixture(ready, "handoff-perm");
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
 
-		const manager = await seedManagerWithReportingLine(
-			ready,
-			seeded.employee.id,
-			{
-				correlationId: "corr-mgr-handoff",
-				idempotencyKey: "idem-mgr-handoff",
-				employeeNumber: "E-MGR-HANDOFF",
-			},
-		);
-		expect(manager.ok).toBe(true);
-		if (!manager.ok) return;
-
-		const policy = await seedPublishedPolicy(ready);
-		expect(policy.ok).toBe(true);
-		if (!policy.ok) return;
-
-		const granted = await grantLeaveEntitlement(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: "corr-ent-handoff",
-				employeeId: seeded.employee.id,
-				employmentId: seeded.employment.id,
-				policyId: policy.data.id,
-				periodStart: "2025-01-01",
-				periodEnd: "2025-12-31",
-				openingQuantity: "10",
-				idempotencyKey: "idem-ent-handoff",
-			},
-			ready,
-		);
-		expect(granted.ok).toBe(true);
-		if (!granted.ok) return;
-
-		const draft = await createDraftLeaveRequest(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: "corr-handoff-draft",
-				employeeId: seeded.employee.id,
-				entitlementId: granted.data.id,
-				startDate: "2025-11-03",
-				endDate: "2025-11-05",
-				requestedQuantity: "3",
-				idempotencyKey: "idem-handoff-req",
-			},
-			ready,
-		);
-		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
-
-		const submitted = await submitLeaveRequest(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: "corr-handoff-submit",
-				requestId: draft.data.id,
-				expectedVersion: draft.data.version,
-			},
-			ready,
-		);
-		expect(submitted.ok).toBe(true);
-		if (!submitted.ok) return;
-
-		const approved = await approveLeaveRequest(
+		const approveTeamOnlyReady = {
+			...ready,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
+			]),
+		};
+		const denied = await getApprovedLeaveHandoff(
 			{
 				organizationId: ORG,
 				actorUserId: MANAGER,
-				correlationId: "corr-handoff-approve",
-				requestId: submitted.data.id,
-				expectedVersion: submitted.data.version,
+				correlationId: "corr-handoff-perm-deny",
+				requestId: fixture.approved.id,
 			},
-			ready,
+			approveTeamOnlyReady,
 		);
-		expect(approved.ok).toBe(true);
-		if (!approved.ok) return;
+		expect(denied.ok).toBe(false);
+		if (denied.ok) return;
+		expect(humanResourcesCodeFromResult(denied)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+
+		const handoffReadOnlyReady = {
+			...ready,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_LEAVE_HANDOFF_READ,
+			]),
+		};
+		const allowed = await getApprovedLeaveHandoff(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-handoff-perm-allow",
+				requestId: fixture.approved.id,
+			},
+			handoffReadOnlyReady,
+		);
+		expect(allowed.ok).toBe(true);
+		if (!allowed.ok) return;
+		expect(allowed.data).not.toBeNull();
+	});
+
+	it("returns approved leave handoff with plan shape", async () => {
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
+		const fixture = await seedApprovedLeaveHandoffFixture(ready, "handoff-shape");
+		expect(fixture.ok).toBe(true);
+		if (!fixture.ok) return;
 
 		const handoff = await getApprovedLeaveHandoff(
 			{
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: "corr-handoff-get",
-				requestId: approved.data.id,
+				requestId: fixture.approved.id,
 			},
 			ready,
 		);
@@ -1756,8 +2348,8 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 		if (!handoff.ok) return;
 		expect(handoff.data).not.toBeNull();
 		if (!handoff.data) return;
-		expect(handoff.data.employmentId).toBe(seeded.employment.id);
-		expect(handoff.data.policyVersion).toBe(policy.data.version);
+		expect(handoff.data.employmentId).toBe(fixture.seeded.employment.id);
+		expect(handoff.data.policyVersion).toBe(fixture.policy.version);
 		expect(handoff.data.paid).toBe(true);
 		expect(handoff.data.correlationId).toBe("corr-handoff-get");
 		expect(handoff.data.segments.length).toBeGreaterThan(0);

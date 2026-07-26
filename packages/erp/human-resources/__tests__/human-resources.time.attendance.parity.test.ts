@@ -13,6 +13,7 @@ import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
@@ -21,12 +22,14 @@ import {
 	listAttendanceBreakWaiverDecisions,
 } from "../src/time/attendance/break-waivers";
 import {
+	getAttendanceEvent,
 	listAttendanceEvents,
 	recordBreakEnd,
 	recordBreakStart,
 	recordClockIn,
 	recordClockOut,
 	recordManualAttendance,
+	voidAttendanceEvent,
 } from "../src/time/attendance/events";
 import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
@@ -1952,6 +1955,121 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(replay.ok).toBe(true);
 		if (!replay.ok) return;
 		expect(replay.data.skipped).toHaveLength(2);
+	});
+
+	it("voids attendance events with void provenance parity", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-void-employee-${suffix}`,
+				idempotencyKey: `idem-void-employee-${suffix}`,
+				employeeNumber: `VOID-${suffix}`,
+				legalName: `Void Parity Worker ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-void-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const clockIn = await recordClockIn(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-void-clock-in-${suffix}`,
+				idempotencyKey: `idem-void-clock-in-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				occurredAt: "2025-08-10T01:00:00.000Z",
+				sourceTimezone: "UTC",
+				localWorkDate: "2025-08-10",
+			},
+			ready,
+		);
+		expect(clockIn.ok).toBe(true);
+		if (!clockIn.ok) return;
+		expect(clockIn.data.voidedAt).toBeNull();
+
+		const voided = await voidAttendanceEvent(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-void-event-${suffix}`,
+				eventId: clockIn.data.id,
+				voidReason: "duplicate punch",
+				expectedVersion: clockIn.data.version,
+			},
+			ready,
+		);
+		expect(voided.ok).toBe(true);
+		if (!voided.ok) return;
+		expect(voided.data).toMatchObject({
+			id: clockIn.data.id,
+			voidReason: "duplicate punch",
+			version: clockIn.data.version + 1,
+		});
+		expect(voided.data.voidedAt).not.toBeNull();
+
+		const fetched = await getAttendanceEvent(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-void-get-${suffix}`,
+				eventId: clockIn.data.id,
+			},
+			ready,
+		);
+		expect(fetched.ok).toBe(true);
+		if (!fetched.ok || fetched.data === null) return;
+		expect(fetched.data.voidedAt).not.toBeNull();
+		expect(fetched.data.voidReason).toBe("duplicate punch");
+
+		const duplicateVoid = await voidAttendanceEvent(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-void-duplicate-${suffix}`,
+				eventId: clockIn.data.id,
+				voidReason: "duplicate punch again",
+				expectedVersion: voided.data.version,
+			},
+			ready,
+		);
+		expect(duplicateVoid.ok).toBe(false);
+		if (!duplicateVoid.ok) {
+			expect(humanResourcesCodeFromResult(duplicateVoid)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		}
+
+		const listed = await listAttendanceEvents(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-void-list-${suffix}`,
+				employeeId: employee.data.id,
+				fromDate: "2025-08-10",
+				toDate: "2025-08-10",
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data).toHaveLength(1);
+		expect(listed.data[0]?.voidedAt).not.toBeNull();
 	});
 }
 

@@ -90,15 +90,19 @@ Inputs: [`10-workforce-foundation-cluster.md`](10-workforce-foundation-cluster.m
 
 ---
 
-## Unaudited domains (scope orphan)
+## Cluster C subset — compensation, performance, learning (HR-AUD-06 domain-depth)
+
+Audit date: **2026-07-26** · Evidence: [`35-compensation-performance-learning-cluster.md`](35-compensation-performance-learning-cluster.md) · [`cluster-c/`](cluster-c/)
 
 | Domain | Contract | Correctness | Authz/Privacy | Parity | Evidence | Overall |
 |---|---|---|---|---|---|---|
-| compensation-benefits | Unaudited | Unaudited | Unaudited | Unaudited | Unaudited | **Unaudited** |
-| performance | Unaudited | Unaudited | Unaudited | Unaudited | Unaudited | **Unaudited** |
-| learning | Unaudited | Unaudited | Unaudited | Unaudited | Unaudited | **Unaudited** |
+| compensation-benefits | Pass | Pass | Partial | Partial† | Pass | **Partial** |
+| performance | Pass | Pass | Partial | Partial† | Pass | **Partial** |
+| learning | Pass | Pass | Pass | Partial† | Pass | **Partial** |
 
-Authority: AUD-00 Cluster C listed these domains; AUD-02 Prompt 2B and AUD-03 Prompt 2C excluded each other — no dedicated pack.
+† **Parity Partial:** memory parity green (2026-07-26 verify); Drizzle parity **14 skipped** without `DATABASE_URL` — not Fail.
+
+Authority: AUD-00 Cluster C listed these domains; **HR-AUD-06 domain-depth (Slice 8.1)** closes the unaudited-depth gap. Emission classification remains [`HR-AUD-06-COMPENSATION-PERFORMANCE-LEARNING.md`](HR-AUD-06-COMPENSATION-PERFORMANCE-LEARNING.md) (Phase 3; not rewritten).
 
 ---
 
@@ -124,7 +128,8 @@ Authority: AUD-00 Cluster C listed these domains; AUD-02 Prompt 2B and AUD-03 Pr
 |---|---|---|
 | A | Strong person/worker/org kernel; recruitment consent **closed** (Slice 0.1) | Remaining Gap axes: hire orchestration / product composition — not consent drift |
 | B | Strongest domain depth; overtime authority **closed**; calendar resolution **Pass** (Slice 1.1); time emission **Pass** | Leave emission Fail |
-| C | Strong contracts; ER list ACL **closed**; thin product | Privacy Fail; talent evidence Fail; ER DB parity = evidence residual only |
+| C (gov) | Strong contracts; ER list ACL **closed**; thin product | Privacy Fail; talent evidence Fail; ER DB parity = evidence residual only |
+| C (comp/perf/learn) | Strong package depth; product Actions + tests green (repair 2026-07-26) | Drizzle parity skipped (HR-CPL-P1-003); payroll handoff money open |
 | Cross-cut | Mature kernel; incomplete consumption | Emission registry Fail; privacy Fail; authz facade Fail |
 
 **Consolidated module posture:** domain logic substantially exceeds product surface; Phase 0 exit MET (Slice 0.1–0.3); Slice 1.1 calendar **CLOSED**; next vertical = `HR-OPS-LEAVE-EMISSION-REGISTRY`; remaining package/product gaps still block enterprise-ready claims.
@@ -144,4 +149,5 @@ Authority: AUD-00 Cluster C listed these domains; AUD-02 Prompt 2B and AUD-03 Pr
 | emission registry | HR-XCUT-P0-003 |
 | package typecheck | — (HR-COREORG-P0-001 **closed**); remaining CI gaps tracked under HR-ENT-18 open findings |
 | product surfaces | HR-OPS-P1-003, HR-GOV-P1-004 |
+| compensation / performance / learning depth | HR-CPL-P1-003, HR-XCUT-P1-006, HR-CPL-P2-002 |
 | effective truth scope | HR-XCUT-P0-002 |

@@ -28,15 +28,25 @@ const hrTimeMocks = vi.hoisted(() => ({
 	createWorkCalendar: vi.fn(),
 	createTimePolicy: vi.fn(),
 	endTimeApprovalAuthorityAssignment: vi.fn(),
+	excuseAttendanceException: vi.fn(),
 	publishShiftAssignment: vi.fn(),
+	rejectAttendanceException: vi.fn(),
 	reopenTimesheet: vi.fn(),
 	returnTimesheet: vi.fn(),
 	resolveAttendanceSession: vi.fn(),
 	resolveAttendanceException: vi.fn(),
+	reviewAttendanceException: vi.fn(),
 	generateTimesheetEntries: vi.fn(),
 	importAttendanceEvents: vi.fn(),
 	lockTimesheet: vi.fn(),
 	createOvertimeRequest: vi.fn(),
+	approveOvertimeRequest: vi.fn(),
+	rejectOvertimeRequest: vi.fn(),
+	recordOvertimeActual: vi.fn(),
+	verifyOvertimeRequest: vi.fn(),
+	getOvertimeRequest: vi.fn(),
+	listOvertimeRequests: vi.fn(),
+	listPendingOvertimeApprovals: vi.fn(),
 	createShift: vi.fn(),
 	supersedeShift: vi.fn(),
 	supersedeTimePolicy: vi.fn(),
@@ -69,11 +79,21 @@ vi.mock("@afenda/human-resources", async (importOriginal) => {
 		createTimePolicy: hrTimeMocks.createTimePolicy,
 		endTimeApprovalAuthorityAssignment:
 			hrTimeMocks.endTimeApprovalAuthorityAssignment,
+		excuseAttendanceException: hrTimeMocks.excuseAttendanceException,
 		publishShiftAssignment: hrTimeMocks.publishShiftAssignment,
+		rejectAttendanceException: hrTimeMocks.rejectAttendanceException,
 		resolveAttendanceException: hrTimeMocks.resolveAttendanceException,
+		reviewAttendanceException: hrTimeMocks.reviewAttendanceException,
 		importAttendanceEvents: hrTimeMocks.importAttendanceEvents,
 		generateTimesheetEntries: hrTimeMocks.generateTimesheetEntries,
 		createOvertimeRequest: hrTimeMocks.createOvertimeRequest,
+		approveOvertimeRequest: hrTimeMocks.approveOvertimeRequest,
+		rejectOvertimeRequest: hrTimeMocks.rejectOvertimeRequest,
+		recordOvertimeActual: hrTimeMocks.recordOvertimeActual,
+		verifyOvertimeRequest: hrTimeMocks.verifyOvertimeRequest,
+		getOvertimeRequest: hrTimeMocks.getOvertimeRequest,
+		listOvertimeRequests: hrTimeMocks.listOvertimeRequests,
+		listPendingOvertimeApprovals: hrTimeMocks.listPendingOvertimeApprovals,
 		createShift: hrTimeMocks.createShift,
 		supersedeShift: hrTimeMocks.supersedeShift,
 		supersedeTimePolicy: hrTimeMocks.supersedeTimePolicy,
@@ -100,20 +120,30 @@ import {
 	activateTimePolicyAction,
 	approveAttendanceBreakWaiverAction,
 	approveTimesheetAction,
+	approveOvertimeRequestAction,
 	assignTimeApprovalAuthorityAction,
 	assignTimePolicyAction,
 	createOvertimeRequestAction,
+	getOvertimeRequestAction,
 	createTimePolicyAction,
 	createWorkCalendarAction,
 	endTimeApprovalAuthorityAssignmentAction,
+	excuseAttendanceExceptionAction,
 	generateTimesheetEntriesAction,
 	importAttendanceEventsAction,
+	listOvertimeRequestsAction,
+	listPendingOvertimeApprovalsAction,
 	publishShiftAssignmentAction,
+	recordOvertimeActualAction,
+	rejectOvertimeRequestAction,
+	rejectAttendanceExceptionAction,
 	resolveAttendanceExceptionAction,
+	reviewAttendanceExceptionAction,
 	supersedeShiftAction,
 	supersedeTimePolicyAction,
 	supersedeWorkCalendarAction,
 	validateAttendanceImportAction,
+	verifyOvertimeRequestAction,
 } from "../app/actions/hr-time";
 
 const sampleWorkWeek = [
@@ -719,6 +749,62 @@ describe("hr-time Server Actions", () => {
 		);
 	});
 
+	it("gates reviewAttendanceExceptionAction on human-resources.time.exception.resolve", async () => {
+		hrTimeMocks.reviewAttendanceException.mockResolvedValue({
+			ok: true,
+			data: { id: "44444444-4444-4444-8444-444444444444", version: 2 },
+		});
+
+		const result = await reviewAttendanceExceptionAction({
+			exceptionId: "44444444-4444-4444-8444-444444444444",
+			expectedVersion: 1,
+		});
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.exception.resolve",
+		);
+	});
+
+	it("gates excuseAttendanceExceptionAction on human-resources.time.exception.resolve", async () => {
+		hrTimeMocks.excuseAttendanceException.mockResolvedValue({
+			ok: true,
+			data: { id: "44444444-4444-4444-8444-444444444444", version: 2 },
+		});
+
+		const result = await excuseAttendanceExceptionAction({
+			exceptionId: "44444444-4444-4444-8444-444444444444",
+			resolution: "Traffic delay",
+			expectedVersion: 1,
+		});
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.exception.resolve",
+		);
+	});
+
+	it("gates rejectAttendanceExceptionAction on human-resources.time.exception.resolve", async () => {
+		hrTimeMocks.rejectAttendanceException.mockResolvedValue({
+			ok: true,
+			data: { id: "44444444-4444-4444-8444-444444444444", version: 2 },
+		});
+
+		const result = await rejectAttendanceExceptionAction({
+			exceptionId: "44444444-4444-4444-8444-444444444444",
+			resolution: "Unapproved leave",
+			expectedVersion: 1,
+		});
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.exception.resolve",
+		);
+	});
+
 	it("gates generateTimesheetEntriesAction on human-resources.time.timesheet.self.edit", async () => {
 		hrTimeMocks.generateTimesheetEntries.mockResolvedValue({
 			ok: true,
@@ -760,6 +846,95 @@ describe("hr-time Server Actions", () => {
 		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
 			operatorSession,
 			"human-resources.time.overtime.request",
+		);
+	});
+
+	it("gates approveOvertimeRequestAction on human-resources.time.overtime.approve", async () => {
+		hrTimeMocks.approveOvertimeRequest.mockResolvedValue({
+			ok: true,
+			data: { id: "66666666-6666-4666-8666-666666666666", version: 2 },
+		});
+
+		const result = await approveOvertimeRequestAction({
+			requestId: "66666666-6666-4666-8666-666666666666",
+			requestedAuthority: "line_manager",
+			approvedMaximumMinutes: 90,
+			expectedVersion: 1,
+		});
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.overtime.approve",
+		);
+	});
+
+	it("gates rejectOvertimeRequestAction on human-resources.time.overtime.approve", async () => {
+		hrTimeMocks.rejectOvertimeRequest.mockResolvedValue({
+			ok: true,
+			data: { id: "66666666-6666-4666-8666-666666666666", status: "rejected" },
+		});
+
+		const result = await rejectOvertimeRequestAction({
+			requestId: "66666666-6666-4666-8666-666666666666",
+			comment: "Not justified",
+			expectedVersion: 1,
+		});
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.overtime.approve",
+		);
+	});
+
+	it("gates verifyOvertimeRequestAction on human-resources.time.overtime.approve", async () => {
+		hrTimeMocks.verifyOvertimeRequest.mockResolvedValue({
+			ok: true,
+			data: {
+				id: "66666666-6666-4666-8666-666666666666",
+				payrollApprovedMinutes: 60,
+				status: "verified",
+			},
+		});
+
+		const result = await verifyOvertimeRequestAction({
+			requestId: "66666666-6666-4666-8666-666666666666",
+			payrollApprovedMinutes: 60,
+			expectedVersion: 3,
+		});
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.overtime.approve",
+		);
+	});
+
+	it("gates listOvertimeRequestsAction on human-resources.time.overtime.read", async () => {
+		hrTimeMocks.listOvertimeRequests.mockResolvedValue({ ok: true, data: [] });
+
+		const result = await listOvertimeRequestsAction({ status: "requested" });
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.overtime.read",
+		);
+	});
+
+	it("gates listPendingOvertimeApprovalsAction on human-resources.time.overtime.approve", async () => {
+		hrTimeMocks.listPendingOvertimeApprovals.mockResolvedValue({
+			ok: true,
+			data: [],
+		});
+
+		const result = await listPendingOvertimeApprovalsAction();
+
+		expect(result.ok).toBe(true);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.overtime.approve",
 		);
 	});
 

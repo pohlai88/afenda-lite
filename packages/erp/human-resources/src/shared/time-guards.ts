@@ -36,7 +36,7 @@ const TIMESHEET_STATUS: Record<TimesheetStatus, readonly TimesheetStatus[]> = {
 	submitted: ["returned", "approved", "rejected"],
 	returned: ["submitted", "draft"],
 	approved: ["locked", "superseded"],
-	rejected: ["superseded"],
+	rejected: ["superseded", "draft"],
 	locked: [],
 	superseded: [],
 };
@@ -92,6 +92,19 @@ export function assertAssignmentStatusTransition(
 	next: ShiftAssignmentPublicationStatus,
 ): Result<void> {
 	return assertTransition(current, next, ASSIGNMENT_STATUS, "shift assignment");
+}
+
+/** Clears review snapshot fields when a timesheet reopens to draft for resubmission. */
+export function timesheetReopenSnapshot(): {
+	rejectionReason: null;
+	approverNotes: null;
+	completedApprovalSteps: 0;
+} {
+	return {
+		rejectionReason: null,
+		approverNotes: null,
+		completedApprovalSteps: 0,
+	};
 }
 
 export function assertTimesheetStatusTransition(

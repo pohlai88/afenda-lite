@@ -9,8 +9,10 @@ import {
 	hrBenefitEnrollment,
 	hrBenefitPlan,
 	hrCompensationGrade,
+	hrCompensationGradeProgressionRule,
 	hrCompensationProposal,
 	hrCompensationReview,
+	hrCompensationReviewCycle,
 	hrEmployeeCompensation,
 	hrEmployment,
 	hrSalaryBand,
@@ -30,7 +32,9 @@ import {
 	parseHumanResourcesBenefitEnrollmentId,
 	parseHumanResourcesBenefitPlanId,
 	parseHumanResourcesCompensationGradeId,
+	parseHumanResourcesCompensationGradeProgressionRuleId,
 	parseHumanResourcesCompensationProposalId,
+	parseHumanResourcesCompensationReviewCycleId,
 	parseHumanResourcesCompensationReviewId,
 	parseHumanResourcesEmployeeCompensationId,
 	parseHumanResourcesEmployeeId,
@@ -40,38 +44,55 @@ import {
 import { planCommandMutationOutboxEventType } from "../../emissions/sql-side-effects";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { HumanResourcesCommandId } from "../../module-ids";
-import { compareMoneyOrder } from "../../shared/compensation-money";
+import {
+	assertBenefitContributionFacts,
+	assertEffectiveRange,
+} from "../../shared/benefit-guards";
+import { compareMoneyOrder, rangesOverlap } from "../../shared/compensation-money";
 import {
 	assertCompensationProposalAmendable,
 	assertCompensationProposalStatusTransition,
 } from "../../shared/compensation-proposal-guards";
+import { assertCompensationReviewBudgetForMutation } from "../../shared/compensation-review-budget-loader";
+import {
+	assertCanFinalizeCompensationReview,
+	assertCanRecordCompensationRecommendation,
+	assertReviewCycleOpenForMutation,
+} from "../../shared/compensation-review-guards";
 import {
 	benefitEnrollmentStatusSchema,
 	benefitPlanStatusSchema,
-	type CompensationReviewStatus,
 	compensationGradeStatusSchema,
+	compensationGradeProgressionRuleStatusSchema,
 	compensationProposalStatusSchema,
 	compensationReviewStatusSchema,
 	employeeCompensationStatusSchema,
 	isCompensationGradeActive,
+	isCompensationGradeProgressionRuleActive,
 	isCompensationReviewFinalized,
 	isEmployeeCompensationActive,
+	isBenefitEnrollmentActive,
+	isBenefitEnrollmentOpen,
+	isBenefitPlanActive,
+	isSalaryBandActive,
+	payFrequencySchema,
 	salaryBandStatusSchema,
 } from "../../shared/compensation-status";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
 
-// Helper: check if a review is in draft status
-function isCompensationReviewDraft(status: CompensationReviewStatus): boolean {
-	return status === "draft";
-}
-
 import {
 	conflict,
+	invalidInput,
 	invalidState,
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import { previousIsoDate } from "../../shared/effective-dates";
+import {
+	isEmployeeCompensationAsOfEligible,
+	isEmployeeCompensationCancellable,
+} from "../../shared/employee-compensation-lifecycle";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
@@ -84,11 +105,84 @@ import type {
 	BenefitEnrollment,
 	BenefitPlan,
 	CompensationGrade,
+	CompensationGradeProgressionRule,
 	CompensationProposal,
 	CompensationReview,
 	EmployeeCompensation,
 	SalaryBand,
 } from "../../types";
+import {
+	assertDrizzleBenefitEnrollmentPreconditions,
+	drizzleAddBenefitEnrollmentDependent,
+	drizzleEndBenefitEnrollmentDependent,
+	drizzleGetBenefitEnrollmentDependent,
+	drizzleGetBenefitPlanEligibility,
+	drizzleListBenefitEnrollmentDependentsByEnrollment,
+	drizzleSetBenefitPlanEligibility,
+	drizzleWaiveBenefit,
+	mapBenefitEnrollmentFromDbRow,
+	mapBenefitEnrollmentSql,
+	type BenefitEnrollmentSqlRow,
+} from "./benefit-methods-drizzle";
+import {
+	drizzleAmendEmployeeCompensation,
+	drizzleActivateEmployeeCompensation,
+	drizzleApproveEmployeeCompensation,
+	drizzleCorrectEmployeeCompensation,
+	drizzleScheduleEmployeeCompensationChange,
+} from "./employee-compensation-lifecycle-drizzle";
+import { drizzleCompensationReviewCycleMethods } from "./compensation-review-cycle-drizzle";
+
+type ReviewBudgetHost = Pick<
+	HumanResourcesStore,
+	"findActiveEmployeeCompensationByEmployment"
+>;
+
+async function assertDrizzleReviewCycleOpen(
+	organizationId: string,
+	cycleId: CompensationReview["cycleId"],
+): Promise<Result<true>> {
+	const cycle = await drizzleCompensationReviewCycleMethods.getCompensationReviewCycle(
+		{ organizationId, cycleId },
+	);
+	if (!cycle.ok) return cycle;
+	if (cycle.data === null) {
+		return notFound("Compensation review cycle not found");
+	}
+	const open = assertReviewCycleOpenForMutation(cycle.data.status);
+	if (!open.ok) return open;
+	return ok(true);
+}
+
+async function assertDrizzleReviewBudget(
+	host: ReviewBudgetHost,
+	organizationId: string,
+	review: CompensationReview,
+): Promise<Result<true>> {
+	return assertCompensationReviewBudgetForMutation(
+		{
+			getCycle: () =>
+				drizzleCompensationReviewCycleMethods.getCompensationReviewCycle({
+					organizationId,
+					cycleId: review.cycleId,
+				}),
+			listCycleReviews: () =>
+				drizzleCompensationReviewCycleMethods.listCompensationReviewsByCycle({
+					organizationId,
+					cycleId: review.cycleId,
+				}),
+			getActiveBaseAmount: async (employmentId) => {
+				const active = await host.findActiveEmployeeCompensationByEmployment({
+					organizationId,
+					employmentId,
+				});
+				if (!active.ok) return active;
+				return ok(active.data?.baseAmount ?? null);
+			},
+		},
+		review,
+	);
+}
 
 function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
@@ -159,13 +253,32 @@ export type DrizzleCompensationBenefitsMethods = Pick<
 	| "supersedeSalaryBand"
 	| "archiveSalaryBand"
 	| "listSalaryBandsByGrade"
+	| "findSalaryBandByGradeAndCurrencyAsOf"
+	| "getCompensationGradeProgressionRule"
+	| "createCompensationGradeProgressionRule"
+	| "archiveCompensationGradeProgressionRule"
+	| "listCompensationGradeProgressionRulesFromGrade"
+	| "listEligibleProgressionTargets"
 	| "getEmployeeCompensation"
 	| "findEmployeeCompensationByIdempotencyKey"
 	| "createEmployeeCompensation"
+	| "amendEmployeeCompensation"
+	| "approveEmployeeCompensation"
+	| "scheduleEmployeeCompensationChange"
+	| "activateEmployeeCompensation"
+	| "correctEmployeeCompensation"
 	| "endEmployeeCompensation"
 	| "listEmployeeCompensationsByEmployee"
 	| "findActiveEmployeeCompensationByEmployment"
 	| "findEmployeeCompensationByEmploymentAsOf"
+	| "getCompensationReviewCycle"
+	| "findCompensationReviewCycleByIdempotencyKey"
+	| "createCompensationReviewCycle"
+	| "openCompensationReviewCycle"
+	| "closeCompensationReviewCycle"
+	| "cancelCompensationReviewCycle"
+	| "listCompensationReviewCycles"
+	| "listCompensationReviewsByCycle"
 	| "getCompensationReview"
 	| "findCompensationReviewByIdempotencyKey"
 	| "createCompensationReviewDraft"
@@ -184,12 +297,19 @@ export type DrizzleCompensationBenefitsMethods = Pick<
 	| "updateBenefitPlan"
 	| "archiveBenefitPlan"
 	| "listBenefitPlans"
+	| "getBenefitPlanEligibility"
+	| "setBenefitPlanEligibility"
 	| "getBenefitEnrollment"
 	| "findBenefitEnrollmentByIdempotencyKey"
 	| "enrolBenefit"
+	| "waiveBenefit"
 	| "endBenefitEnrollment"
 	| "cancelBenefitEnrollment"
 	| "listBenefitEnrollmentsByEmployee"
+	| "getBenefitEnrollmentDependent"
+	| "listBenefitEnrollmentDependentsByEnrollment"
+	| "addBenefitEnrollmentDependent"
+	| "endBenefitEnrollmentDependent"
 	| "getApprovedCompensationHandoff"
 >;
 
@@ -216,6 +336,7 @@ type SalaryBandSqlRow = {
 	maximum_amount: string;
 	effective_from: string;
 	effective_to: string | null;
+	supersedes_salary_band_id: string | null;
 	status: string;
 	version: number;
 	created_by: string;
@@ -224,7 +345,23 @@ type SalaryBandSqlRow = {
 	updated_at: Date;
 };
 
-type EmployeeCompensationSqlRow = {
+type CompensationGradeProgressionRuleSqlRow = {
+	id: string;
+	organization_id: string;
+	from_grade_id: string;
+	to_grade_id: string;
+	effective_from: string;
+	effective_to: string | null;
+	min_months_in_grade: number | null;
+	status: string;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+export type EmployeeCompensationSqlRow = {
 	id: string;
 	organization_id: string;
 	employee_id: string;
@@ -233,9 +370,14 @@ type EmployeeCompensationSqlRow = {
 	salary_band_id: string | null;
 	base_amount: string;
 	currency_code: string;
+	pay_frequency: string;
 	effective_from: string;
 	effective_to: string | null;
 	reason: string;
+	confidential_note: string | null;
+	supersedes_compensation_id: string | null;
+	approved_at: Date | null;
+	approved_by: string | null;
 	status: string;
 	source_review_id: string | null;
 	create_idempotency_key: string;
@@ -250,6 +392,7 @@ type EmployeeCompensationSqlRow = {
 type CompensationReviewSqlRow = {
 	id: string;
 	organization_id: string;
+	cycle_id: string;
 	employee_id: string;
 	employment_id: string;
 	status: string;
@@ -301,24 +444,6 @@ type BenefitPlanSqlRow = {
 	updated_at: Date;
 };
 
-type BenefitEnrollmentSqlRow = {
-	id: string;
-	organization_id: string;
-	employee_id: string;
-	employment_id: string;
-	plan_id: string;
-	effective_from: string;
-	effective_to: string | null;
-	status: string;
-	create_idempotency_key: string;
-	create_request_fingerprint: string;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
-
 function mapCompensationGrade(
 	row: typeof hrCompensationGrade.$inferSelect,
 ): Result<CompensationGrade> {
@@ -353,6 +478,12 @@ function mapSalaryBand(
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid salary band status");
 	}
+	let supersedesSalaryBandId = null as SalaryBand["supersedesSalaryBandId"];
+	if (row.supersedesSalaryBandId !== null && row.supersedesSalaryBandId !== undefined) {
+		const parsed = parseHumanResourcesSalaryBandId(row.supersedesSalaryBandId);
+		if (!parsed.ok) return parsed;
+		supersedesSalaryBandId = parsed.data;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -363,6 +494,7 @@ function mapSalaryBand(
 		maxAmount: row.maximumAmount,
 		effectiveFrom: row.effectiveFrom,
 		effectiveTo: row.effectiveTo,
+		supersedesSalaryBandId,
 		status: status.data,
 		version: row.version,
 		createdBy: row.createdBy,
@@ -399,6 +531,19 @@ function mapEmployeeCompensation(
 		if (!parsed.ok) return parsed;
 		sourceReviewId = parsed.data;
 	}
+	let supersedesCompensationId =
+		null as EmployeeCompensation["supersedesCompensationId"];
+	if (row.supersedesCompensationId !== null) {
+		const parsed = parseHumanResourcesEmployeeCompensationId(
+			row.supersedesCompensationId,
+		);
+		if (!parsed.ok) return parsed;
+		supersedesCompensationId = parsed.data;
+	}
+	const payFrequency = payFrequencySchema.safeParse(row.payFrequency);
+	if (!payFrequency.success) {
+		return fail("INTERNAL_ERROR", "Invalid employee compensation pay frequency");
+	}
 	const status = employeeCompensationStatusSchema.safeParse(row.status);
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid employee compensation status");
@@ -412,10 +557,15 @@ function mapEmployeeCompensation(
 		salaryBandId,
 		baseAmount: row.baseAmount,
 		currencyCode: row.currencyCode,
+		payFrequency: payFrequency.data,
 		effectiveFrom: row.effectiveFrom,
 		effectiveTo: row.effectiveTo,
 		reason: row.reason,
 		status: status.data,
+		confidentialNote: row.confidentialNote,
+		supersedesCompensationId,
+		approvedAt: row.approvedAt,
+		approvedBy: row.approvedBy,
 		sourceReviewId,
 		createIdempotencyKey: row.createIdempotencyKey,
 		fingerprint: row.createRequestFingerprint,
@@ -427,7 +577,7 @@ function mapEmployeeCompensation(
 	});
 }
 
-function mapCompensationReview(
+export function mapCompensationReviewFromDbRow(
 	row: typeof hrCompensationReview.$inferSelect,
 ): Result<CompensationReview> {
 	const id = parseHumanResourcesCompensationReviewId(row.id);
@@ -436,6 +586,8 @@ function mapCompensationReview(
 	if (!employeeId.ok) return employeeId;
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
 	if (!employmentId.ok) return employmentId;
+	const cycleId = parseHumanResourcesCompensationReviewCycleId(row.cycleId);
+	if (!cycleId.ok) return cycleId;
 	let proposedGradeId = null as CompensationReview["proposedGradeId"];
 	if (row.proposedGradeId !== null) {
 		const parsed = parseHumanResourcesCompensationGradeId(row.proposedGradeId);
@@ -464,6 +616,7 @@ function mapCompensationReview(
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
+		cycleId: cycleId.data,
 		employeeId: employeeId.data,
 		employmentId: employmentId.data,
 		status: status.data,
@@ -509,40 +662,6 @@ function mapBenefitPlan(
 	});
 }
 
-function mapBenefitEnrollment(
-	row: typeof hrBenefitEnrollment.$inferSelect,
-): Result<BenefitEnrollment> {
-	const id = parseHumanResourcesBenefitEnrollmentId(row.id);
-	if (!id.ok) return id;
-	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
-	if (!employeeId.ok) return employeeId;
-	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
-	if (!employmentId.ok) return employmentId;
-	const planId = parseHumanResourcesBenefitPlanId(row.planId);
-	if (!planId.ok) return planId;
-	const status = benefitEnrollmentStatusSchema.safeParse(row.status);
-	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid benefit enrollment status");
-	}
-	return ok({
-		id: id.data,
-		organizationId: row.organizationId,
-		employeeId: employeeId.data,
-		employmentId: employmentId.data,
-		planId: planId.data,
-		effectiveFrom: row.effectiveFrom,
-		effectiveTo: row.effectiveTo,
-		status: status.data,
-		createIdempotencyKey: row.createIdempotencyKey,
-		fingerprint: row.createRequestFingerprint,
-		version: row.version,
-		createdBy: row.createdBy,
-		updatedBy: row.updatedBy,
-		createdAt: row.createdAt,
-		updatedAt: row.updatedAt,
-	});
-}
-
 function mapCompensationGradeSql(
 	row: CompensationGradeSqlRow,
 ): Result<CompensationGrade> {
@@ -571,6 +690,7 @@ function mapSalaryBandSql(row: SalaryBandSqlRow): Result<SalaryBand> {
 		maximumAmount: row.maximum_amount,
 		effectiveFrom: row.effective_from,
 		effectiveTo: row.effective_to,
+		supersedesSalaryBandId: row.supersedes_salary_band_id,
 		status: row.status,
 		version: row.version,
 		createdBy: row.created_by,
@@ -580,7 +700,59 @@ function mapSalaryBandSql(row: SalaryBandSqlRow): Result<SalaryBand> {
 	});
 }
 
-function mapEmployeeCompensationSql(
+function mapCompensationGradeProgressionRule(
+	row: typeof hrCompensationGradeProgressionRule.$inferSelect,
+): Result<CompensationGradeProgressionRule> {
+	const id = parseHumanResourcesCompensationGradeProgressionRuleId(row.id);
+	if (!id.ok) return id;
+	const fromGradeId = parseHumanResourcesCompensationGradeId(row.fromGradeId);
+	if (!fromGradeId.ok) return fromGradeId;
+	const toGradeId = parseHumanResourcesCompensationGradeId(row.toGradeId);
+	if (!toGradeId.ok) return toGradeId;
+	const status = compensationGradeProgressionRuleStatusSchema.safeParse(
+		row.status,
+	);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid progression rule status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		fromGradeId: fromGradeId.data,
+		toGradeId: toGradeId.data,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		minMonthsInGrade: row.minMonthsInGrade,
+		status: status.data,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapCompensationGradeProgressionRuleSql(
+	row: CompensationGradeProgressionRuleSqlRow,
+): Result<CompensationGradeProgressionRule> {
+	return mapCompensationGradeProgressionRule({
+		id: row.id,
+		organizationId: row.organization_id,
+		fromGradeId: row.from_grade_id,
+		toGradeId: row.to_grade_id,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		minMonthsInGrade: row.min_months_in_grade,
+		status: row.status,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+export function mapEmployeeCompensationSql(
 	row: EmployeeCompensationSqlRow,
 ): Result<EmployeeCompensation> {
 	return mapEmployeeCompensation({
@@ -592,9 +764,14 @@ function mapEmployeeCompensationSql(
 		salaryBandId: row.salary_band_id,
 		baseAmount: row.base_amount,
 		currencyCode: row.currency_code,
+		payFrequency: row.pay_frequency,
 		effectiveFrom: row.effective_from,
 		effectiveTo: row.effective_to,
 		reason: row.reason,
+		confidentialNote: row.confidential_note,
+		supersedesCompensationId: row.supersedes_compensation_id,
+		approvedAt: row.approved_at,
+		approvedBy: row.approved_by,
 		status: row.status,
 		sourceReviewId: row.source_review_id,
 		createIdempotencyKey: row.create_idempotency_key,
@@ -673,9 +850,10 @@ function mapCompensationProposalSql(
 function mapCompensationReviewSql(
 	row: CompensationReviewSqlRow,
 ): Result<CompensationReview> {
-	return mapCompensationReview({
+	return mapCompensationReviewFromDbRow({
 		id: row.id,
 		organizationId: row.organization_id,
+		cycleId: row.cycle_id,
 		employeeId: row.employee_id,
 		employmentId: row.employment_id,
 		status: row.status,
@@ -713,30 +891,9 @@ function mapBenefitPlanSql(row: BenefitPlanSqlRow): Result<BenefitPlan> {
 	});
 }
 
-function mapBenefitEnrollmentSql(
-	row: BenefitEnrollmentSqlRow,
-): Result<BenefitEnrollment> {
-	return mapBenefitEnrollment({
-		id: row.id,
-		organizationId: row.organization_id,
-		employeeId: row.employee_id,
-		employmentId: row.employment_id,
-		planId: row.plan_id,
-		effectiveFrom: row.effective_from,
-		effectiveTo: row.effective_to,
-		status: row.status,
-		createIdempotencyKey: row.create_idempotency_key,
-		createRequestFingerprint: row.create_request_fingerprint,
-		version: row.version,
-		createdBy: row.created_by,
-		updatedBy: row.updated_by,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
-	});
-}
-
 export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMethods &
 	ThisType<CompensationBenefitsHost & DrizzleCompensationBenefitsMethods> = {
+	...drizzleCompensationReviewCycleMethods,
 	async getCompensationGrade(input) {
 		try {
 			const rows = await db
@@ -1085,6 +1242,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							FROM hr_salary_band
 							WHERE organization_id = ${record.organizationId}
 								AND grade_id = ${record.gradeId}
+								AND currency_code = ${record.currencyCode}
 								AND status IN ('active', 'superseded')
 								AND (
 									(${record.effectiveFrom}::date <= COALESCE(effective_to::date, '9999-12-31'::date))
@@ -1096,14 +1254,14 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							INSERT INTO hr_salary_band (
 								id, organization_id, grade_id, currency_code,
 								minimum_amount, midpoint_amount, maximum_amount,
-								effective_from, effective_to, status, version,
+								effective_from, effective_to, supersedes_salary_band_id, status, version,
 								created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, ${record.organizationId}, ${record.gradeId},
 								${record.currencyCode}, ${record.minAmount}, ${record.midAmount},
 								${record.maxAmount}, ${record.effectiveFrom}, ${record.effectiveTo},
-								'active', 1, ${record.createdBy}, ${record.createdBy}
+								NULL, 'active', 1, ${record.createdBy}, ${record.createdBy}
 							WHERE NOT EXISTS (SELECT 1 FROM overlapping)
 							RETURNING *
 						),
@@ -1124,7 +1282,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			);
 			const row = rows[0];
 			if (!row) {
-				return conflict("Overlapping salary band exists for this grade");
+				return conflict(
+					"Overlapping salary band exists for this grade and currency",
+				);
 			}
 			return mapSalaryBandSql(row);
 		} catch (error) {
@@ -1153,73 +1313,146 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		);
 		if (!moneyCheck.ok) return moneyCheck;
 
+		let predecessor: SalaryBand | null = null;
+		if (input.supersededSalaryBandId) {
+			const band = await this.getSalaryBand({
+				organizationId: input.organizationId,
+				salaryBandId: input.supersededSalaryBandId,
+			});
+			if (!band.ok) return band;
+			if (band.data === null) {
+				return notFound(
+					"Salary band not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			predecessor = band.data;
+		} else {
+			try {
+				const rows = await db
+					.select()
+					.from(hrSalaryBand)
+					.where(
+						and(
+							eq(hrSalaryBand.organizationId, input.organizationId),
+							eq(hrSalaryBand.gradeId, input.gradeId),
+							eq(hrSalaryBand.currencyCode, input.currencyCode),
+							eq(hrSalaryBand.status, "active"),
+						),
+					);
+				if (rows.length === 0) {
+					return notFound("No active salary band to supersede");
+				}
+				if (rows.length > 1) {
+					return conflict("Ambiguous active salary band for grade and currency");
+				}
+				const activeRow = rows[0];
+				if (!activeRow) {
+					return notFound("No active salary band to supersede");
+				}
+				const mapped = mapSalaryBand(activeRow);
+				if (!mapped.ok) return mapped;
+				predecessor = mapped.data;
+			} catch (error) {
+				return mapPersistenceFailure(error, "Failed to resolve salary band");
+			}
+		}
+
+		if (!predecessor || !isSalaryBandActive(predecessor.status)) {
+			return invalidState("Only active salary bands can be superseded");
+		}
+		if (
+			predecessor.gradeId !== input.gradeId ||
+			predecessor.currencyCode !== input.currencyCode
+		) {
+			return invalidInput(
+				"Predecessor salary band grade or currency does not match input",
+			);
+		}
+		if (input.effectiveFrom <= predecessor.effectiveFrom) {
+			return invalidInput(
+				"Successor effectiveFrom must be after predecessor effectiveFrom",
+			);
+		}
+
+		const predecessorEffectiveTo = previousIsoDate(input.effectiveFrom);
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesSalaryBandId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
+		const nextPredecessorVersion = predecessor.version + 1;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[SalaryBandSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
-						WITH overlapping_ids AS (
-							SELECT id, version
-							FROM hr_salary_band
-							WHERE organization_id = ${input.organizationId}
-								AND grade_id = ${input.gradeId}
-								AND status IN ('active', 'superseded')
-								AND (
-									(${input.effectiveFrom}::date <= COALESCE(effective_to::date, '9999-12-31'::date))
-									AND (effective_from::date <= COALESCE(${input.effectiveTo}::date, '9999-12-31'::date))
-								)
-							FOR UPDATE
-						),
-						superseded_bands AS (
-							UPDATE hr_salary_band
-							SET status = 'superseded',
-								version = version + 1,
-								updated_by = ${input.actorUserId},
-								updated_at = now()
-							FROM overlapping_ids
-							WHERE hr_salary_band.id = overlapping_ids.id
-								AND hr_salary_band.version = overlapping_ids.version
-							RETURNING hr_salary_band.id
-						),
-						mutated AS (
-							INSERT INTO hr_salary_band (
-								id, organization_id, grade_id, currency_code,
-								minimum_amount, midpoint_amount, maximum_amount,
-								effective_from, effective_to, status, version,
-								created_by, updated_by
-							)
-							VALUES (
-								${brandedId.data}, ${input.organizationId}, ${input.gradeId},
-								${input.currencyCode}, ${input.minAmount}, ${input.midAmount},
-								${input.maxAmount}, ${input.effectiveFrom}, ${input.effectiveTo},
-								'active', 1, ${input.actorUserId}, ${input.actorUserId}
-							)
-							RETURNING *
-						),
-						audited AS (
-							INSERT INTO platform_audit_log (
-								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
-							)
-							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_salary_band', id, 'CREATE', '[]'::jsonb
-							FROM mutated
-							RETURNING id
+			const [rows] = await runNeonHttpTransaction<
+				[
+					Array<
+						SalaryBandSqlRow & {
+							row_kind: "superseded" | "successor";
+						}
+					>,
+				]
+			>((sqlTag) => [
+				sqlTag`
+					WITH superseded AS (
+						UPDATE hr_salary_band
+						SET status = 'superseded',
+							effective_to = ${predecessorEffectiveTo},
+							version = ${nextPredecessorVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${predecessor.id}
+							AND status = 'active'
+							AND version = ${predecessor.version}
+						RETURNING *, 'superseded'::text AS row_kind
+					),
+					successor AS (
+						INSERT INTO hr_salary_band (
+							id, organization_id, grade_id, currency_code,
+							minimum_amount, midpoint_amount, maximum_amount,
+							effective_from, effective_to, supersedes_salary_band_id, status, version,
+							created_by, updated_by
 						)
-						SELECT mutated.* FROM mutated, audited
-					`,
-				],
-			);
-			const row = rows[0];
-			if (!row) {
+						SELECT
+							${brandedId.data}, ${input.organizationId}, ${input.gradeId},
+							${input.currencyCode}, ${input.minAmount}, ${input.midAmount},
+							${input.maxAmount}, ${input.effectiveFrom}, ${input.effectiveTo},
+							${predecessor.id}, 'active', 1, ${input.actorUserId}, ${input.actorUserId}
+						WHERE EXISTS (SELECT 1 FROM superseded)
+						RETURNING *, 'successor'::text AS row_kind
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_salary_band', id, 'CREATE', '[]'::jsonb
+						FROM successor
+						RETURNING id
+					)
+					SELECT * FROM superseded
+					UNION ALL
+					SELECT * FROM successor
+				`,
+			]);
+
+			const supersededSql = rows.find((row) => row.row_kind === "superseded");
+			const successorSql = rows.find((row) => row.row_kind === "successor");
+			if (supersededSql === undefined || successorSql === undefined) {
 				return conflict("Unable to supersede salary band");
 			}
-			return mapSalaryBandSql(row);
+
+			const superseded = mapSalaryBandSql(supersededSql);
+			if (!superseded.ok) return superseded;
+			const successor = mapSalaryBandSql(successorSql);
+			if (!successor.ok) return successor;
+
+			return ok({
+				superseded: superseded.data,
+				successor: successor.data,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to supersede salary band");
 		}
@@ -1329,6 +1562,273 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	async findSalaryBandByGradeAndCurrencyAsOf(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrSalaryBand)
+				.where(
+					and(
+						eq(hrSalaryBand.organizationId, input.organizationId),
+						eq(hrSalaryBand.gradeId, input.gradeId),
+						eq(hrSalaryBand.currencyCode, input.currencyCode),
+						or(
+							eq(hrSalaryBand.status, "active"),
+							eq(hrSalaryBand.status, "superseded"),
+						),
+					),
+				);
+			const records: SalaryBand[] = [];
+			for (const row of rows) {
+				const mapped = mapSalaryBand(row);
+				if (!mapped.ok) return mapped;
+				records.push(mapped.data);
+			}
+			const selected = selectUniqueEffectiveRangeRecord({
+				records,
+				asOf: input.asOf,
+			});
+			return ok(selected);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to resolve salary band as of");
+		}
+	},
+
+	async getCompensationGradeProgressionRule(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrCompensationGradeProgressionRule)
+				.where(
+					and(
+						eq(
+							hrCompensationGradeProgressionRule.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrCompensationGradeProgressionRule.id,
+							input.progressionRuleId,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			return mapCompensationGradeProgressionRule(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to load progression rule");
+		}
+	},
+
+	async createCompensationGradeProgressionRule(record, _ports, meta) {
+		if (record.fromGradeId === record.toGradeId) {
+			return invalidInput("fromGradeId and toGradeId must differ");
+		}
+
+		const fromGrade = await this.getCompensationGrade({
+			organizationId: record.organizationId,
+			gradeId: record.fromGradeId,
+		});
+		if (!fromGrade.ok) return fromGrade;
+		if (fromGrade.data === null) {
+			return notFound("From compensation grade not found");
+		}
+		const toGrade = await this.getCompensationGrade({
+			organizationId: record.organizationId,
+			gradeId: record.toGradeId,
+		});
+		if (!toGrade.ok) return toGrade;
+		if (toGrade.data === null) {
+			return notFound("To compensation grade not found");
+		}
+		if (
+			!isCompensationGradeActive(fromGrade.data.status) ||
+			!isCompensationGradeActive(toGrade.data.status)
+		) {
+			return invalidState("Grades must be active");
+		}
+
+		const id = randomUUID();
+		const brandedId = parseHumanResourcesCompensationGradeProgressionRuleId(id);
+		if (!brandedId.ok) return brandedId;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[CompensationGradeProgressionRuleSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+					WITH overlapping AS (
+						SELECT 1 AS exists
+						FROM hr_compensation_grade_progression_rule
+						WHERE organization_id = ${record.organizationId}
+							AND from_grade_id = ${record.fromGradeId}
+							AND to_grade_id = ${record.toGradeId}
+							AND status = 'active'
+							AND (
+								(${record.effectiveFrom}::date <= COALESCE(effective_to::date, '9999-12-31'::date))
+								AND (effective_from::date <= COALESCE(${record.effectiveTo}::date, '9999-12-31'::date))
+							)
+						LIMIT 1
+					),
+					mutated AS (
+						INSERT INTO hr_compensation_grade_progression_rule (
+							id, organization_id, from_grade_id, to_grade_id,
+							effective_from, effective_to, min_months_in_grade,
+							status, version, created_by, updated_by
+						)
+						SELECT
+							${brandedId.data}, ${record.organizationId}, ${record.fromGradeId},
+							${record.toGradeId}, ${record.effectiveFrom}, ${record.effectiveTo},
+							${record.minMonthsInGrade}, 'active', 1, ${record.createdBy}, ${record.createdBy}
+						WHERE NOT EXISTS (SELECT 1 FROM overlapping)
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, created_by, ${meta.correlationId},
+							'human-resources', 'hr_compensation_grade_progression_rule', id, 'CREATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return conflict(
+					"Overlapping progression rule exists for this grade transition",
+				);
+			}
+			return mapCompensationGradeProgressionRuleSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to create progression rule");
+		}
+	},
+
+	async archiveCompensationGradeProgressionRule(input, _ports, meta) {
+		const existing = await this.getCompensationGradeProgressionRule({
+			organizationId: input.organizationId,
+			progressionRuleId: input.progressionRuleId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Progression rule not found");
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[CompensationGradeProgressionRuleSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_compensation_grade_progression_rule
+						SET status = 'archived',
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.progressionRuleId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_compensation_grade_progression_rule', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Progression rule",
+				});
+			}
+			return mapCompensationGradeProgressionRuleSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to archive progression rule");
+		}
+	},
+
+	async listCompensationGradeProgressionRulesFromGrade(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrCompensationGradeProgressionRule)
+				.where(
+					and(
+						eq(
+							hrCompensationGradeProgressionRule.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrCompensationGradeProgressionRule.fromGradeId,
+							input.fromGradeId,
+						),
+						eq(hrCompensationGradeProgressionRule.status, "active"),
+					),
+				)
+				.orderBy(desc(hrCompensationGradeProgressionRule.effectiveFrom));
+			const rules: CompensationGradeProgressionRule[] = [];
+			for (const row of rows) {
+				const mapped = mapCompensationGradeProgressionRule(row);
+				if (!mapped.ok) return mapped;
+				if (input.asOf) {
+					const selected = selectUniqueEffectiveRangeRecord({
+						records: [mapped.data],
+						asOf: input.asOf,
+					});
+					if (selected === null) continue;
+				}
+				rules.push(mapped.data);
+			}
+			const totalCount = rules.length;
+			const offset = (input.page - 1) * input.pageSize;
+			const paginated = rules.slice(offset, offset + input.pageSize);
+			return ok({
+				rules: paginated,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to list progression rules");
+		}
+	},
+
+	async listEligibleProgressionTargets(input) {
+		const listed = await this.listCompensationGradeProgressionRulesFromGrade({
+			organizationId: input.organizationId,
+			fromGradeId: input.fromGradeId,
+			page: 1,
+			pageSize: 10_000,
+			asOf: input.asOf,
+		});
+		if (!listed.ok) return listed;
+		return ok(listed.data.rules);
+	},
+
 	async getEmployeeCompensation(input) {
 		try {
 			const rows = await db
@@ -1398,6 +1898,15 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			});
 		}
+		if (employment.data.employeeId !== record.employeeId) {
+			return fail(
+				"NOT_FOUND",
+				"Employee does not match employment assignment scope",
+				{
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
+			);
+		}
 
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeCompensationId(id);
@@ -1423,31 +1932,34 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							WHERE id = ${record.employmentId}
 								AND organization_id = ${record.organizationId}
 						),
-						active_check AS (
+						draft_check AS (
 							SELECT 1 AS exists
 							FROM hr_employee_compensation
 							WHERE organization_id = ${record.organizationId}
 								AND employment_id = ${record.employmentId}
-								AND status = 'active'
+								AND status = 'draft'
 							LIMIT 1
 						),
 						mutated AS (
 							INSERT INTO hr_employee_compensation (
 								id, organization_id, employee_id, employment_id, grade_id,
-								salary_band_id, base_amount, currency_code, effective_from,
-								effective_to, reason, status, source_review_id,
+								salary_band_id, base_amount, currency_code, pay_frequency,
+								effective_from, effective_to, reason, confidential_note,
+								supersedes_compensation_id, status, source_review_id,
 								create_idempotency_key, create_request_fingerprint, version,
 								created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, employment.organization_id, employment.employee_id,
 								employment.id, ${record.gradeId}, ${record.salaryBandId},
-								${record.baseAmount}, ${record.currencyCode}, ${record.effectiveFrom},
-								NULL, ${record.reason}, 'active', ${record.sourceReviewId},
+								${record.baseAmount}, ${record.currencyCode}, ${record.payFrequency},
+								${record.effectiveFrom}, ${record.effectiveTo}, ${record.reason},
+								${record.confidentialNote}, ${record.supersedesCompensationId},
+								'draft', ${record.sourceReviewId},
 								${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 								1, ${record.createdBy}, ${record.createdBy}
 							FROM employment
-							WHERE NOT EXISTS (SELECT 1 FROM active_check)
+							WHERE NOT EXISTS (SELECT 1 FROM draft_check)
 							RETURNING *
 						),
 						audited AS (
@@ -1479,7 +1991,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const row = rows[0];
 			if (!row) {
 				return conflict(
-					"An active compensation agreement already exists for this employment",
+					"An open draft compensation agreement already exists for this employment",
 				);
 			}
 			return mapEmployeeCompensationSql(row);
@@ -1501,6 +2013,26 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	async amendEmployeeCompensation(input, ports, meta) {
+		return drizzleAmendEmployeeCompensation(this, input, ports, meta);
+	},
+
+	async approveEmployeeCompensation(input, ports, meta) {
+		return drizzleApproveEmployeeCompensation(this, input, ports, meta);
+	},
+
+	async scheduleEmployeeCompensationChange(input, ports, meta) {
+		return drizzleScheduleEmployeeCompensationChange(this, input, ports, meta);
+	},
+
+	async activateEmployeeCompensation(input, ports, meta) {
+		return drizzleActivateEmployeeCompensation(this, input, ports, meta);
+	},
+
+	async correctEmployeeCompensation(input, ports, meta) {
+		return drizzleCorrectEmployeeCompensation(this, input, ports, meta);
+	},
+
 	async endEmployeeCompensation(input, _ports, meta) {
 		const existing = await this.getEmployeeCompensation({
 			organizationId: input.organizationId,
@@ -1515,8 +2047,8 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		if (!isEmployeeCompensationActive(existing.data.status)) {
-			return invalidState("Compensation is not active");
+		if (!isEmployeeCompensationCancellable(existing.data.status)) {
+			return invalidState("Compensation cannot be ended in its current status");
 		}
 
 		const nextVersion = input.expectedVersion + 1;
@@ -1545,7 +2077,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							WHERE id = ${input.compensationId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = 'active'
+								AND status IN ('draft', 'scheduled', 'active')
 							RETURNING *
 						),
 						audited AS (
@@ -1658,18 +2190,15 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					and(
 						eq(hrEmployeeCompensation.organizationId, input.organizationId),
 						eq(hrEmployeeCompensation.employmentId, input.employmentId),
-						eq(hrEmployeeCompensation.status, "active"),
-						lte(hrEmployeeCompensation.effectiveFrom, input.asOf),
-						or(
-							isNull(hrEmployeeCompensation.effectiveTo),
-							gte(hrEmployeeCompensation.effectiveTo, input.asOf),
-						),
 					),
 				);
 			const records: EmployeeCompensation[] = [];
 			for (const row of rows) {
 				const mapped = mapEmployeeCompensation(row);
 				if (!mapped.ok) return mapped;
+				if (!isEmployeeCompensationAsOfEligible(mapped.data.status)) {
+					continue;
+				}
 				records.push(mapped.data);
 			}
 			const selected = selectUniqueEffectiveRangeRecord({
@@ -1699,7 +2228,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
-			return mapCompensationReview(row);
+			return mapCompensationReviewFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load compensation review");
 		}
@@ -1719,7 +2248,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
-			return mapCompensationReview(row);
+			return mapCompensationReviewFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1763,6 +2292,12 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			});
 		}
 
+		const cycleOpen = await assertDrizzleReviewCycleOpen(
+			record.organizationId,
+			record.cycleId,
+		);
+		if (!cycleOpen.ok) return cycleOpen;
+
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCompensationReviewId(id);
 		if (!brandedId.ok) return brandedId;
@@ -1774,17 +2309,18 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_compensation_review (
-								id, organization_id, employee_id, employment_id, status,
+								id, organization_id, cycle_id, employee_id, employment_id, status,
 								proposed_base_amount, proposed_currency_code, proposed_grade_id,
 								proposed_salary_band_id, recommendation_note, effective_from,
 								finalized_at, applied_compensation_id, create_idempotency_key,
 								create_request_fingerprint, version, created_by, updated_by
 							)
 							VALUES (
-								${brandedId.data}, ${record.organizationId}, ${record.employeeId},
-								${record.employmentId}, 'draft', NULL, NULL, NULL, NULL, NULL, NULL,
-								NULL, NULL, ${record.createIdempotencyKey}, ${record.createRequestFingerprint},
-								1, ${record.createdBy}, ${record.createdBy}
+								${brandedId.data}, ${record.organizationId}, ${record.cycleId},
+								${record.employeeId}, ${record.employmentId}, 'draft', NULL, NULL, NULL,
+								NULL, NULL, NULL, NULL, NULL, ${record.createIdempotencyKey},
+								${record.createRequestFingerprint}, 1, ${record.createdBy},
+								${record.createdBy}
 							)
 							RETURNING *
 						),
@@ -1843,9 +2379,34 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		if (!isCompensationReviewDraft(existing.data.status)) {
-			return invalidState("Compensation review is not in draft status");
-		}
+
+		const statusGuard = assertCanRecordCompensationRecommendation(
+			existing.data.status,
+		);
+		if (!statusGuard.ok) return statusGuard;
+
+		const cycleOpen = await assertDrizzleReviewCycleOpen(
+			input.organizationId,
+			existing.data.cycleId,
+		);
+		if (!cycleOpen.ok) return cycleOpen;
+
+		const updatedPreview: CompensationReview = {
+			...existing.data,
+			proposedBaseAmount: input.proposedBaseAmount,
+			proposedCurrencyCode: input.proposedCurrencyCode,
+			proposedGradeId: input.proposedGradeId,
+			proposedSalaryBandId: input.proposedSalaryBandId,
+			effectiveFrom: input.effectiveFrom,
+			recommendationNote: input.recommendationNote,
+			status: "recorded",
+		};
+		const budgetCheck = await assertDrizzleReviewBudget(
+			this,
+			input.organizationId,
+			updatedPreview,
+		);
+		if (!budgetCheck.ok) return budgetCheck;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1862,13 +2423,14 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 								proposed_salary_band_id = ${input.proposedSalaryBandId},
 								effective_from = ${input.effectiveFrom},
 								recommendation_note = ${input.recommendationNote},
+								status = 'recorded',
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							WHERE id = ${input.reviewId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = 'draft'
+								AND status IN ('draft', 'recorded')
 							RETURNING *
 						),
 						audited AS (
@@ -1916,9 +2478,22 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		if (!isCompensationReviewDraft(existing.data.status)) {
-			return invalidState("Compensation review is not in draft status");
-		}
+
+		const finalizeGuard = assertCanFinalizeCompensationReview(existing.data);
+		if (!finalizeGuard.ok) return finalizeGuard;
+
+		const cycleOpen = await assertDrizzleReviewCycleOpen(
+			input.organizationId,
+			existing.data.cycleId,
+		);
+		if (!cycleOpen.ok) return cycleOpen;
+
+		const budgetCheck = await assertDrizzleReviewBudget(
+			this,
+			input.organizationId,
+			existing.data,
+		);
+		if (!budgetCheck.ok) return budgetCheck;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1937,7 +2512,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							WHERE id = ${input.reviewId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = 'draft'
+								AND status = 'recorded'
 							RETURNING *
 						),
 						audited AS (
@@ -2118,8 +2693,20 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 								${payloadNewJson}::jsonb, 'pending', 0
 							FROM mutated
 							RETURNING id
+						),
+						review_linked AS (
+							UPDATE hr_compensation_review r
+							SET applied_compensation_id = m.id,
+								version = r.version + 1,
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							FROM mutated m
+							WHERE r.id = ${input.reviewId}
+								AND r.organization_id = ${input.organizationId}
+								AND r.status = 'finalized'
+							RETURNING r.id
 						)
-						SELECT mutated.* FROM mutated, audit_new, outbox_new
+						SELECT mutated.* FROM mutated, audit_new, outbox_new, review_linked
 					`,
 			]);
 			const row = rows[0];
@@ -2162,7 +2749,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.orderBy(desc(hrCompensationReview.createdAt));
 			const reviews: CompensationReview[] = [];
 			for (const row of allRows) {
-				const mapped = mapCompensationReview(row);
+				const mapped = mapCompensationReviewFromDbRow(row);
 				if (!mapped.ok) return mapped;
 				reviews.push(mapped.data);
 			}
@@ -2687,6 +3274,30 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		);
 		if (!versionCheck.ok) return versionCheck;
 
+		try {
+			const openRows = await db
+				.select({ id: hrBenefitEnrollment.id, status: hrBenefitEnrollment.status })
+				.from(hrBenefitEnrollment)
+				.where(
+					and(
+						eq(hrBenefitEnrollment.organizationId, input.organizationId),
+						eq(hrBenefitEnrollment.planId, input.planId),
+					),
+				)
+				.limit(1);
+			const openEnrollment = openRows.find((row) => {
+				const parsed = benefitEnrollmentStatusSchema.safeParse(row.status);
+				return parsed.success && isBenefitEnrollmentOpen(parsed.data);
+			});
+			if (openEnrollment) {
+				return conflict(
+					"Benefit plan cannot be archived while open enrollments exist",
+				);
+			}
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to check benefit enrollments");
+		}
+
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 
@@ -2760,6 +3371,14 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	async getBenefitPlanEligibility(input) {
+		return drizzleGetBenefitPlanEligibility(input);
+	},
+
+	async setBenefitPlanEligibility(input, ports, meta) {
+		return drizzleSetBenefitPlanEligibility(this, input, ports, meta);
+	},
+
 	async getBenefitEnrollment(input) {
 		try {
 			const rows = await db
@@ -2774,7 +3393,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
-			return mapBenefitEnrollment(row);
+			return mapBenefitEnrollmentFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load benefit enrollment");
 		}
@@ -2794,7 +3413,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
-			return mapBenefitEnrollment(row);
+			return mapBenefitEnrollmentFromDbRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2816,6 +3435,27 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return conflict("Idempotency key already used with different data");
 		}
 
+		const contributionCheck = assertBenefitContributionFacts({
+			employeeContributionAmount: record.employeeContributionAmount,
+			employerContributionAmount: record.employerContributionAmount,
+			contributionCurrencyCode: record.contributionCurrencyCode,
+			contributionFrequency: record.contributionFrequency,
+		});
+		if (!contributionCheck.ok) return contributionCheck;
+
+		const preconditions = await assertDrizzleBenefitEnrollmentPreconditions(
+			this,
+			{
+				organizationId: record.organizationId,
+				employeeId: record.employeeId,
+				employmentId: record.employmentId,
+				planId: record.planId,
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: record.effectiveTo,
+			},
+		);
+		if (!preconditions.ok) return preconditions;
+
 		const employee = await this.getEmployeeById({
 			organizationId: record.organizationId,
 			employeeId: record.employeeId,
@@ -2825,19 +3465,6 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
 				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			});
-		}
-
-		const plan = await this.getBenefitPlan({
-			organizationId: record.organizationId,
-			planId: record.planId,
-		});
-		if (!plan.ok) return plan;
-		if (plan.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Benefit plan not found or cross-org reference",
-				{ code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE },
-			);
 		}
 
 		const id = randomUUID();
@@ -2852,32 +3479,37 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			actorId: record.createdBy,
 			correlationId: meta.correlationId,
 		});
+		const contributionFrequency = record.contributionFrequency ?? null;
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[BenefitEnrollmentSqlRow[]]>(
 				(sqlTag) => [
 					sqlTag`
-						WITH active_check AS (
+						WITH open_check AS (
 							SELECT 1 AS exists
 							FROM hr_benefit_enrollment
 							WHERE organization_id = ${record.organizationId}
 								AND employee_id = ${record.employeeId}
 								AND plan_id = ${record.planId}
-								AND status = 'active'
+								AND status IN ('active', 'waived')
 							LIMIT 1
 						),
 						mutated AS (
 							INSERT INTO hr_benefit_enrollment (
 								id, organization_id, employee_id, employment_id, plan_id, effective_from,
-								effective_to, status, create_idempotency_key,
+								effective_to, status, employee_contribution_amount,
+								employer_contribution_amount, contribution_currency_code,
+								contribution_frequency, waiver_reason, create_idempotency_key,
 								create_request_fingerprint, version, created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, ${record.organizationId}, ${record.employeeId},
-								${record.employmentId}, ${record.planId}, ${record.effectiveFrom}, NULL,
-								'active', ${record.createIdempotencyKey}, ${record.createRequestFingerprint},
-								1, ${record.createdBy}, ${record.createdBy}
-							WHERE NOT EXISTS (SELECT 1 FROM active_check)
+								${record.employmentId}, ${record.planId}, ${record.effectiveFrom},
+								${record.effectiveTo}, 'active', ${record.employeeContributionAmount},
+								${record.employerContributionAmount}, ${record.contributionCurrencyCode},
+								${contributionFrequency}, NULL, ${record.createIdempotencyKey},
+								${record.createRequestFingerprint}, 1, ${record.createdBy}, ${record.createdBy}
+							WHERE NOT EXISTS (SELECT 1 FROM open_check)
 							RETURNING *
 						),
 						audited AS (
@@ -2910,7 +3542,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const row = rows[0];
 			if (!row) {
 				return conflict(
-					"Employee already has an active enrollment for this plan",
+					"Employee already has an open enrollment for this plan",
 				);
 			}
 			return mapBenefitEnrollmentSql(row);
@@ -2932,6 +3564,26 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 	},
 
+	async waiveBenefit(input, ports, meta) {
+		return drizzleWaiveBenefit(this, input, ports, meta);
+	},
+
+	async getBenefitEnrollmentDependent(input) {
+		return drizzleGetBenefitEnrollmentDependent(input);
+	},
+
+	async listBenefitEnrollmentDependentsByEnrollment(input) {
+		return drizzleListBenefitEnrollmentDependentsByEnrollment(input);
+	},
+
+	async addBenefitEnrollmentDependent(input, ports, meta) {
+		return drizzleAddBenefitEnrollmentDependent(this, input, ports, meta);
+	},
+
+	async endBenefitEnrollmentDependent(input, ports, meta) {
+		return drizzleEndBenefitEnrollmentDependent(input, ports, meta);
+	},
+
 	async endBenefitEnrollment(input, _ports, meta) {
 		const existing = await this.getBenefitEnrollment({
 			organizationId: input.organizationId,
@@ -2946,9 +3598,14 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		if (existing.data.status !== "active") {
+		if (!isBenefitEnrollmentActive(existing.data.status)) {
 			return invalidState("Benefit enrollment is not active");
 		}
+		const rangeCheck = assertEffectiveRange({
+			effectiveFrom: existing.data.effectiveFrom,
+			effectiveTo: input.endsOn,
+		});
+		if (!rangeCheck.ok) return rangeCheck;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -3032,7 +3689,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		if (existing.data.status !== "active") {
+		if (!isBenefitEnrollmentActive(existing.data.status)) {
 			return invalidState("Benefit enrollment is not active");
 		}
 
@@ -3120,7 +3777,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.orderBy(desc(hrBenefitEnrollment.effectiveFrom));
 			const enrollments: BenefitEnrollment[] = [];
 			for (const row of allRows) {
-				const mapped = mapBenefitEnrollment(row);
+				const mapped = mapBenefitEnrollmentFromDbRow(row);
 				if (!mapped.ok) return mapped;
 				enrollments.push(mapped.data);
 			}
@@ -3196,7 +3853,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				);
 			const activeBenefitEnrollments: BenefitEnrollment[] = [];
 			for (const row of enrollmentRows) {
-				const mapped = mapBenefitEnrollment(row);
+				const mapped = mapBenefitEnrollmentFromDbRow(row);
 				if (!mapped.ok) return mapped;
 				activeBenefitEnrollments.push(mapped.data);
 			}

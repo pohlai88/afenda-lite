@@ -434,37 +434,6 @@ edges:
     reason: "FK + snapshots; masters via public API only"
     effectiveDate: "2026-07-21"
 
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/db"
-    status: approved
-    authority: ARCH-006
-    reason: "ca_* schema access"
-    effectiveDate: "2026-07-25"
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/errors"
-    status: approved
-    authority: ARCH-006
-    reason: "Corporate Administration error codes"
-    effectiveDate: "2026-07-25"
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/audit"
-    status: approved
-    authority: ARCH-006
-    reason: "Corporate Administration mutation audit"
-    effectiveDate: "2026-07-25"
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/events"
-    status: approved
-    authority: ARCH-006
-    reason: "Corporate Administration outbox events"
-    effectiveDate: "2026-07-25"
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/master-data"
-    status: approved
-    authority: ARCH-006
-    reason: "Legal entity dimension and party lookups via public API only"
-    effectiveDate: "2026-07-25"
-
   - from: "@afenda/payroll"
     to: "@afenda/db"
     status: approved

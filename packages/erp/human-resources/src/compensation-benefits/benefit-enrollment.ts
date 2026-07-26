@@ -4,6 +4,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
 	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
 	HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET,
 } from "../module-ids";
 import {
@@ -11,12 +12,13 @@ import {
 	endBenefitEnrollmentInputSchema,
 	enrolBenefitInputSchema,
 	getApprovedCompensationHandoffInputSchema,
+	waiveBenefitInputSchema,
 } from "../schemas/compensation";
 import {
 	runCompensationCommand,
 	runCompensationQuery,
 } from "../shared/compensation-command";
-import { fingerprintBenefitEnrollment } from "../shared/fingerprint";
+import { fingerprintBenefitEnrollment, fingerprintBenefitWaiver } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ApprovedCompensationHandoff, BenefitEnrollment } from "../types";
 
@@ -39,6 +41,11 @@ export async function enrolBenefit(
 				employmentId: data.employmentId,
 				planId: data.planId,
 				effectiveFrom: data.effectiveFrom,
+				effectiveTo: data.effectiveTo ?? null,
+				employeeContributionAmount: data.employeeContributionAmount ?? null,
+				employerContributionAmount: data.employerContributionAmount ?? null,
+				contributionCurrencyCode: data.contributionCurrencyCode ?? null,
+				contributionFrequency: data.contributionFrequency ?? null,
 			});
 			return store.enrolBenefit(
 				{
@@ -47,6 +54,11 @@ export async function enrolBenefit(
 					employmentId: data.employmentId,
 					planId: data.planId,
 					effectiveFrom: data.effectiveFrom,
+					effectiveTo: data.effectiveTo ?? null,
+					employeeContributionAmount: data.employeeContributionAmount ?? null,
+					employerContributionAmount: data.employerContributionAmount ?? null,
+					contributionCurrencyCode: data.contributionCurrencyCode ?? null,
+					contributionFrequency: data.contributionFrequency ?? null,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: fingerprint,
 					createdBy: data.actorUserId,
@@ -107,6 +119,33 @@ export async function cancelBenefitEnrollment(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+				}),
+			),
+	});
+}
+
+export async function waiveBenefit(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<BenefitEnrollment>> {
+	return runCompensationCommand(input, options, {
+		schema: waiveBenefitInputSchema,
+		invalidMessage: "Invalid benefit waiver input",
+		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
+		execute: (data, { store, ports }) =>
+			store.waiveBenefit(
+				{
+					organizationId: data.organizationId,
+					enrollmentId: data.enrollmentId,
+					waiverReason: data.waiverReason,
+					effectiveTo: data.effectiveTo ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
 				}),
 			),
 	});

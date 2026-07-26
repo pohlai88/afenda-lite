@@ -8,10 +8,10 @@ import {
 	submitPerformanceGoal,
 } from "../../src/performance/goal";
 import {
-	addCycleParticipant,
 	createPerformanceCycle,
-	openPerformanceCycle,
+	listCycleParticipants,
 } from "../../src/performance/performance-cycle";
+import { publishAndOpenPerformanceCycle } from "./performance-cycle-harness";
 import {
 	startPerformanceReview,
 	submitManagerAssessment,
@@ -23,6 +23,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_IMPROVEMENT_PLAN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_REVIEW_REOPEN,
 } from "../../src/permissions";
@@ -133,38 +134,40 @@ export async function seedOpenPerformanceCycleWithParticipant(input: {
 	suffix: string;
 }) {
 	const draft = await seedDraftPerformanceCycle(input);
-	const opened = await openPerformanceCycle(
-		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: `corr-perf-open-seed-${input.suffix}`,
-			cycleId: draft.id,
-			expectedVersion: draft.version,
+	const opened = await publishAndOpenPerformanceCycle(input.perfReady, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationIdPrefix: `corr-perf-open-seed-${input.suffix}`,
+		cycle: draft,
+		participant: {
+			employeeId: input.worker.employeeId,
+			employmentId: input.worker.employmentId,
 		},
-		input.perfReady,
-	);
+	});
 	expect(opened.ok).toBe(true);
 	if (!opened.ok) {
 		throw opened.error;
 	}
 
-	const participant = await addCycleParticipant(
+	const participants = await listCycleParticipants(
 		{
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
-			correlationId: `corr-perf-part-${input.suffix}`,
+			correlationId: `corr-perf-part-list-${input.suffix}`,
 			cycleId: opened.data.id,
-			employeeId: input.worker.employeeId,
-			employmentId: input.worker.employmentId,
 		},
 		input.perfReady,
 	);
-	expect(participant.ok).toBe(true);
-	if (!participant.ok) {
-		throw participant.error;
+	expect(participants.ok).toBe(true);
+	if (!participants.ok) {
+		throw participants.error;
+	}
+	const participant = participants.data[0];
+	if (!participant) {
+		throw new Error("Expected cycle participant after open");
 	}
 
-	return { cycle: opened.data, participant: participant.data };
+	return { cycle: opened.data, participant };
 }
 
 export async function seedSubmittedPerformanceGoal(input: {
@@ -185,6 +188,7 @@ export async function seedSubmittedPerformanceGoal(input: {
 			cycleId: input.cycleId,
 			employeeId: input.employeeId,
 			employmentId: input.employmentId,
+			goalKind: "employee",
 			title: "Correlation goal",
 			weight: "100",
 			periodStart: "2025-01-01",

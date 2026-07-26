@@ -282,6 +282,14 @@ export type HumanResourcesSalaryBandId = z.infer<
 	typeof humanResourcesSalaryBandIdSchema
 >;
 
+export const humanResourcesCompensationGradeProgressionRuleIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCompensationGradeProgressionRuleId">();
+export type HumanResourcesCompensationGradeProgressionRuleId = z.infer<
+	typeof humanResourcesCompensationGradeProgressionRuleIdSchema
+>;
+
 export const humanResourcesEmployeeCompensationIdSchema = z
 	.string()
 	.uuid()
@@ -306,6 +314,14 @@ export type HumanResourcesCompensationReviewId = z.infer<
 	typeof humanResourcesCompensationReviewIdSchema
 >;
 
+export const humanResourcesCompensationReviewCycleIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCompensationReviewCycleId">();
+export type HumanResourcesCompensationReviewCycleId = z.infer<
+	typeof humanResourcesCompensationReviewCycleIdSchema
+>;
+
 export const humanResourcesBenefitPlanIdSchema = z
 	.string()
 	.uuid()
@@ -320,6 +336,14 @@ export const humanResourcesBenefitEnrollmentIdSchema = z
 	.brand<"HumanResourcesBenefitEnrollmentId">();
 export type HumanResourcesBenefitEnrollmentId = z.infer<
 	typeof humanResourcesBenefitEnrollmentIdSchema
+>;
+
+export const humanResourcesBenefitEnrollmentDependentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesBenefitEnrollmentDependentId">();
+export type HumanResourcesBenefitEnrollmentDependentId = z.infer<
+	typeof humanResourcesBenefitEnrollmentDependentIdSchema
 >;
 
 export const humanResourcesCourseIdSchema = z
@@ -1052,6 +1076,21 @@ export function parseHumanResourcesSalaryBandId(
 	return ok(parsed.data);
 }
 
+export function parseHumanResourcesCompensationGradeProgressionRuleId(
+	id: string,
+): Result<HumanResourcesCompensationGradeProgressionRuleId> {
+	const parsed =
+		humanResourcesCompensationGradeProgressionRuleIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid compensation grade progression rule identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
 export function parseHumanResourcesEmployeeCompensationId(
 	id: string,
 ): Result<HumanResourcesEmployeeCompensationId> {
@@ -1094,6 +1133,20 @@ export function parseHumanResourcesCompensationReviewId(
 	return ok(parsed.data);
 }
 
+export function parseHumanResourcesCompensationReviewCycleId(
+	id: string,
+): Result<HumanResourcesCompensationReviewCycleId> {
+	const parsed = humanResourcesCompensationReviewCycleIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid compensation review cycle identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
 export function parseHumanResourcesBenefitPlanId(
 	id: string,
 ): Result<HumanResourcesBenefitPlanId> {
@@ -1116,6 +1169,20 @@ export function parseHumanResourcesBenefitEnrollmentId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid benefit enrollment identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesBenefitEnrollmentDependentId(
+	id: string,
+): Result<HumanResourcesBenefitEnrollmentDependentId> {
+	const parsed = humanResourcesBenefitEnrollmentDependentIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid benefit enrollment dependent identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

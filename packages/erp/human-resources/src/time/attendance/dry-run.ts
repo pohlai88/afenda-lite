@@ -3,8 +3,11 @@ import { createHash } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import { importAttendanceEventsInputSchema } from "../../schemas/time";
-import { isValidIanaTimeZone } from "../iana-timezone";
 import { namespacedImportSourceReference } from "./import-keys";
+import {
+	ATTENDANCE_IMPORT_ROW_BASIC_MESSAGES,
+	assessAttendanceImportRowBasics,
+} from "./import-row-validation";
 
 export type AttendanceImportDryRunRow =
 	| {
@@ -51,39 +54,38 @@ export function dryRunAttendanceImport(
 
 	const seenReferences = new Set<string>();
 	const rows: AttendanceImportDryRunRow[] = [];
+	let accepted = 0;
+	let rejected = 0;
+
 	for (const [rowIndex, row] of parsed.data.events.entries()) {
 		const sourceReference = namespacedImportSourceReference(
 			parsed.data.sourceKey,
 			row.sourceReference,
 		);
-		if (seenReferences.has(sourceReference)) {
+		const basicIssue = assessAttendanceImportRowBasics({
+			seenReferences,
+			sourceReference,
+			sourceTimezone: row.sourceTimezone,
+		});
+		if (basicIssue !== null) {
 			rows.push({
 				status: "rejected",
 				rowIndex,
 				sourceReference,
-				errorCode: "DUPLICATE_SOURCE_REFERENCE",
-				errorMessage: "Source reference is duplicated in this batch",
+				errorCode: basicIssue,
+				errorMessage: ATTENDANCE_IMPORT_ROW_BASIC_MESSAGES[basicIssue],
 			});
+			rejected += 1;
 			continue;
 		}
 		seenReferences.add(sourceReference);
-
-		if (!isValidIanaTimeZone(row.sourceTimezone)) {
-			rows.push({
-				status: "rejected",
-				rowIndex,
-				sourceReference,
-				errorCode: "INVALID_TIMEZONE",
-				errorMessage: "Source timezone is not a valid IANA timezone",
-			});
-			continue;
-		}
 
 		rows.push({
 			status: "accepted",
 			rowIndex,
 			sourceReference,
 		});
+		accepted += 1;
 	}
 
 	const reconciliationKey = createHash("sha256")
@@ -110,9 +112,6 @@ export function dryRunAttendanceImport(
 		sourceKey: parsed.data.sourceKey,
 		reconciliationKey,
 		rows,
-		totals: {
-			accepted: rows.filter((row) => row.status === "accepted").length,
-			rejected: rows.filter((row) => row.status === "rejected").length,
-		},
+		totals: { accepted, rejected },
 	});
 }

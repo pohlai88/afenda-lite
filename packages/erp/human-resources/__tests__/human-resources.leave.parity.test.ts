@@ -22,9 +22,14 @@ import {
 } from "../src/leave/leave-policy";
 import {
 	approveLeaveRequest,
+	amendLeaveRequest,
+	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
 	getApprovedLeaveHandoff,
+	rejectLeaveRequest,
+	returnLeaveRequest,
 	submitLeaveRequest,
+	withdrawLeaveRequest,
 } from "../src/leave/leave-request";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
@@ -885,6 +890,472 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (!reconciliation.ok) return;
 		expect(reconciliation.data?.balance).toBe("0");
 		expect(reconciliation.data?.adjustments.at(-1)?.kind).toBe("expiry");
+	}, 120_000);
+
+	it("return, amend, resubmit, reject workflow parity", async () => {
+		const ready = createHrParityHarness(adapter);
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-emp-s73-${suffix}`,
+				idempotencyKey: `idem-emp-s73-${suffix}`,
+				employeeNumber: `E-S73-${suffix}`,
+				legalName: `Worker S73 ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const actorMapped = await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: ACTOR,
+			employeeId: employee.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+		expect(actorMapped.ok).toBe(true);
+		if (!actorMapped.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employ-s73-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const policy = await createLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-s73-${suffix}`,
+				code: `S73-${suffix}`,
+				name: "Slice 7.3 Parity Policy",
+				leaveType: "annual",
+				unit: "days",
+				paid: true,
+				allowSelfApproval: false,
+				effectiveFrom: "2025-01-01",
+				allowedEmploymentStatuses: ["active"],
+			},
+			ready,
+		);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const published = await publishLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pub-s73-${suffix}`,
+				policyId: policy.data.id,
+				expectedVersion: policy.data.version,
+			},
+			ready,
+		);
+		expect(published.ok).toBe(true);
+		if (!published.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ent-s73-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				policyId: published.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: `idem-ent-s73-${suffix}`,
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const manager = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-mgr-s73-${suffix}`,
+				idempotencyKey: `idem-mgr-s73-${suffix}`,
+				employeeNumber: `M-S73-${suffix}`,
+				legalName: `Manager S73 ${suffix}`,
+			},
+			ready,
+		);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		const managerMapped = await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: MANAGER,
+			employeeId: manager.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+		expect(managerMapped.ok).toBe(true);
+		if (!managerMapped.ok) return;
+
+		const reportingLine = await assignPrimaryReportingLine(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-line-s73-${suffix}`,
+				employeeId: employee.data.id,
+				managerEmployeeId: manager.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(reportingLine.ok).toBe(true);
+		if (!reportingLine.ok) return;
+
+		const draft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-draft-s73-${suffix}`,
+				employeeId: employee.data.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-08-04",
+				endDate: "2025-08-06",
+				requestedQuantity: "3",
+				idempotencyKey: `idem-req-s73-${suffix}`,
+			},
+			ready,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const submitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-submit-s73-${suffix}`,
+				requestId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			ready,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) return;
+
+		const returned = await returnLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-return-s73-${suffix}`,
+				requestId: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			ready,
+		);
+		expect(returned.ok).toBe(true);
+		if (!returned.ok) return;
+		expect(returned.data.status).toBe("returned");
+
+		const amended = await amendLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-amend-s73-${suffix}`,
+				requestId: returned.data.id,
+				startDate: "2025-08-11",
+				endDate: "2025-08-12",
+				requestedQuantity: "2",
+				expectedVersion: returned.data.version,
+			},
+			ready,
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+
+		const resubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-resubmit-s73-${suffix}`,
+				requestId: amended.data.id,
+				expectedVersion: amended.data.version,
+			},
+			ready,
+		);
+		expect(resubmitted.ok).toBe(true);
+		if (!resubmitted.ok) return;
+
+		const rejected = await rejectLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-reject-s73-${suffix}`,
+				requestId: resubmitted.data.id,
+				expectedVersion: resubmitted.data.version,
+			},
+			ready,
+		);
+		expect(rejected.ok).toBe(true);
+		if (!rejected.ok) return;
+		expect(rejected.data.status).toBe("rejected");
+	}, 120_000);
+
+	it("withdraw and cancel-approved balance parity", async () => {
+		const ready = createHrParityHarness(adapter);
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-emp-cancel-s73-${suffix}`,
+				idempotencyKey: `idem-emp-cancel-s73-${suffix}`,
+				employeeNumber: `E-CANCEL-${suffix}`,
+				legalName: `Worker Cancel ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: ACTOR,
+			employeeId: employee.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-employ-cancel-s73-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const policy = await createLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-policy-cancel-s73-${suffix}`,
+				code: `CANCEL-${suffix}`,
+				name: "Cancel Parity Policy",
+				leaveType: "annual",
+				unit: "days",
+				paid: true,
+				allowSelfApproval: false,
+				effectiveFrom: "2025-01-01",
+				allowedEmploymentStatuses: ["active"],
+			},
+			ready,
+		);
+		expect(policy.ok).toBe(true);
+		if (!policy.ok) return;
+
+		const published = await publishLeavePolicy(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pub-cancel-s73-${suffix}`,
+				policyId: policy.data.id,
+				expectedVersion: policy.data.version,
+			},
+			ready,
+		);
+		expect(published.ok).toBe(true);
+		if (!published.ok) return;
+
+		const granted = await grantLeaveEntitlement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ent-cancel-s73-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				policyId: published.data.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				openingQuantity: "10",
+				idempotencyKey: `idem-ent-cancel-s73-${suffix}`,
+			},
+			ready,
+		);
+		expect(granted.ok).toBe(true);
+		if (!granted.ok) return;
+
+		const withdrawDraft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-withdraw-draft-s73-${suffix}`,
+				employeeId: employee.data.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-09-01",
+				endDate: "2025-09-03",
+				requestedQuantity: "3",
+				idempotencyKey: `idem-withdraw-s73-${suffix}`,
+			},
+			ready,
+		);
+		expect(withdrawDraft.ok).toBe(true);
+		if (!withdrawDraft.ok) return;
+
+		const withdrawSubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-withdraw-submit-s73-${suffix}`,
+				requestId: withdrawDraft.data.id,
+				expectedVersion: withdrawDraft.data.version,
+			},
+			ready,
+		);
+		expect(withdrawSubmitted.ok).toBe(true);
+		if (!withdrawSubmitted.ok) return;
+
+		const withdrawn = await withdrawLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-withdraw-s73-${suffix}`,
+				requestId: withdrawSubmitted.data.id,
+				expectedVersion: withdrawSubmitted.data.version,
+			},
+			ready,
+		);
+		expect(withdrawn.ok).toBe(true);
+		if (!withdrawn.ok) return;
+		expect(withdrawn.data.status).toBe("withdrawn");
+
+		const manager = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-mgr-cancel-s73-${suffix}`,
+				idempotencyKey: `idem-mgr-cancel-s73-${suffix}`,
+				employeeNumber: `M-CANCEL-${suffix}`,
+				legalName: `Manager Cancel ${suffix}`,
+			},
+			ready,
+		);
+		expect(manager.ok).toBe(true);
+		if (!manager.ok) return;
+
+		await mapActorToEmployee(ready.store, {
+			organizationId: ORG,
+			userId: MANAGER,
+			employeeId: manager.data.id,
+			actorUserId: ACTOR,
+			effectiveFrom: "2025-01-01",
+		});
+
+		await assignPrimaryReportingLine(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-line-cancel-s73-${suffix}`,
+				employeeId: employee.data.id,
+				managerEmployeeId: manager.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+
+		const cancelDraft = await createDraftLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cancel-draft-s73-${suffix}`,
+				employeeId: employee.data.id,
+				entitlementId: granted.data.id,
+				startDate: "2025-10-06",
+				endDate: "2025-10-08",
+				requestedQuantity: "3",
+				idempotencyKey: `idem-cancel-s73-${suffix}`,
+			},
+			ready,
+		);
+		expect(cancelDraft.ok).toBe(true);
+		if (!cancelDraft.ok) return;
+
+		const cancelSubmitted = await submitLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cancel-submit-s73-${suffix}`,
+				requestId: cancelDraft.data.id,
+				expectedVersion: cancelDraft.data.version,
+			},
+			ready,
+		);
+		expect(cancelSubmitted.ok).toBe(true);
+		if (!cancelSubmitted.ok) return;
+
+		const approved = await approveLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-cancel-approve-s73-${suffix}`,
+				requestId: cancelSubmitted.data.id,
+				expectedVersion: cancelSubmitted.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const balanceAfterApprove = await getLeaveBalance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-balance-approve-s73-${suffix}`,
+				entitlementId: granted.data.id,
+			},
+			ready,
+		);
+		expect(balanceAfterApprove.ok).toBe(true);
+		if (!balanceAfterApprove.ok) return;
+		expect(balanceAfterApprove.data?.balance).toBe("7");
+
+		const cancelled = await cancelApprovedLeaveRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cancel-s73-${suffix}`,
+				requestId: approved.data.id,
+				expectedVersion: approved.data.version,
+			},
+			ready,
+		);
+		expect(cancelled.ok).toBe(true);
+		if (!cancelled.ok) return;
+		expect(cancelled.data.status).toBe("cancelled");
+
+		const balanceAfterCancel = await getLeaveBalance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-balance-cancel-s73-${suffix}`,
+				entitlementId: granted.data.id,
+			},
+			ready,
+		);
+		expect(balanceAfterCancel.ok).toBe(true);
+		if (!balanceAfterCancel.ok) return;
+		expect(balanceAfterCancel.data?.balance).toBe("10");
 	}, 120_000);
 }
 

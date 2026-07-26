@@ -98,7 +98,7 @@ pnpm --filter @afenda/human-resources test -- human-resources.leave correlation-
 | HR-GOV-P0-001 | **CLOSED** | Same ER DB parity evidence residual only |
 | HR-COREORG-CANDIDATE-CONSENT-ALIGN | **CLOSED** | Hire orchestration remains separate (HR-COREORG-HIRE-ORCHESTRATION) |
 | HR-COREORG-P0-001 | **CLOSED** | Alias HR-COREORG-P1-001 stays merged — do not reopen |
-| HR-OPS-OVERTIME-APPROVAL-AUTHORITY | **CLOSED** | Related open items (e.g. HR-OPS-P1-006) stay separate |
+| HR-OPS-OVERTIME-APPROVAL-AUTHORITY | **CLOSED** | HR-OPS-P1-006 **CLOSED** 2026-07-26 |
 | HR-OPS-P1-001 | **CLOSED** | — |
 
 Do **not** select any of the above as the next vertical repair.

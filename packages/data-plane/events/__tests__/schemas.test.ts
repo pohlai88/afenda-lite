@@ -14,56 +14,6 @@ describe("@afenda/events schemas", () => {
 			"accounting.journal.posted.v1",
 			"accounting.journal.reversed.v1",
 			"accounting.period.closed.v1",
-			"corporate-administration.asset.disposed.v1",
-			"corporate-administration.asset.registered.v1",
-			"corporate-administration.asset.updated.v1",
-			"corporate-administration.asset.written-off.v1",
-			"corporate-administration.authority-mandate.amended.v1",
-			"corporate-administration.authority-mandate.granted.v1",
-			"corporate-administration.authority-mandate.revoked.v1",
-			"corporate-administration.beneficial-owner.changed.v1",
-			"corporate-administration.charge.amended.v1",
-			"corporate-administration.charge.registered.v1",
-			"corporate-administration.charge.released.v1",
-			"corporate-administration.company.activated.v1",
-			"corporate-administration.company.archived.v1",
-			"corporate-administration.company.created.v1",
-			"corporate-administration.company.dissolved.v1",
-			"corporate-administration.company.status-changed.v1",
-			"corporate-administration.company.suspended.v1",
-			"corporate-administration.company.updated.v1",
-			"corporate-administration.governance-body.created.v1",
-			"corporate-administration.governance-body.retired.v1",
-			"corporate-administration.governance-body.updated.v1",
-			"corporate-administration.governance-membership.appointed.v1",
-			"corporate-administration.governance-membership.ended.v1",
-			"corporate-administration.insurance-policy.cancelled.v1",
-			"corporate-administration.insurance-policy.registered.v1",
-			"corporate-administration.insurance-policy.renewed.v1",
-			"corporate-administration.insurance-policy.updated.v1",
-			"corporate-administration.intellectual-property.disposed.v1",
-			"corporate-administration.intellectual-property.expired.v1",
-			"corporate-administration.intellectual-property.registered.v1",
-			"corporate-administration.intellectual-property.renewed.v1",
-			"corporate-administration.intellectual-property.updated.v1",
-			"corporate-administration.meeting.closed.v1",
-			"corporate-administration.meeting.corrected.v1",
-			"corporate-administration.meeting.recorded.v1",
-			"corporate-administration.officer.amended.v1",
-			"corporate-administration.officer.appointed.v1",
-			"corporate-administration.officer.ended.v1",
-			"corporate-administration.premise.registered.v1",
-			"corporate-administration.premise.retired.v1",
-			"corporate-administration.premise.updated.v1",
-			"corporate-administration.property.disposed.v1",
-			"corporate-administration.property.registered.v1",
-			"corporate-administration.property.updated.v1",
-			"corporate-administration.resolution.approved.v1",
-			"corporate-administration.resolution.recorded.v1",
-			"corporate-administration.resolution.revoked.v1",
-			"corporate-administration.resolution.superseded.v1",
-			"corporate-administration.share-transaction.posted.v1",
-			"corporate-administration.share-transaction.reversed.v1",
 			"fulfillment.delivery.cancelled.v1",
 			"fulfillment.delivery.closed.v1",
 			"fulfillment.delivery.completed.v1",
@@ -349,29 +299,6 @@ describe("@afenda/events schemas", () => {
 
 	it("registers payroll as an event source module", () => {
 		expect(EVENT_SOURCE_MODULES).toContain("payroll");
-	});
-
-	it("accepts corporate administration events from the production publisher", () => {
-		const parsed = publishEventCommandSchema.safeParse({
-			type: "corporate-administration.company.created.v1",
-			sourceModule: "corporate-administration",
-			organizationId: "org-1",
-			actorUserId: "user-1",
-			correlationId: "corr-1",
-			payload: {
-				organizationId: "org-1",
-				entityType: "legal_company",
-				entityId: "10000000-0000-4000-8000-000000000001",
-				code: "ACME",
-				version: 1,
-				actorId: "user-1",
-				correlationId: "corr-1",
-				status: "draft",
-			},
-		});
-
-		expect(EVENT_SOURCE_MODULES).toContain("corporate-administration");
-		expect(parsed.success).toBe(true);
 	});
 
 	it("accepts a valid publish command", () => {

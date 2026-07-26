@@ -104,17 +104,6 @@ export default defineConfig({
 			},
 			{
 				...nodeProject(
-					"corporate-administration",
-					path.join(repoRoot, "packages/erp/corporate-administration"),
-				),
-				resolve: {
-					alias: {
-						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
-					},
-				},
-			},
-			{
-				...nodeProject(
 					"purchasing",
 					path.join(repoRoot, "packages/erp/purchasing"),
 				),

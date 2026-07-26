@@ -18,6 +18,7 @@ SSOT: [`scripts/lib/editor-posture.mjs`](../../scripts/lib/editor-posture.mjs) Â
 | `biome.configurationPath` | `"./biome.jsonc"` |
 | `biome.lsp.watcher.kind` | `"none"` |
 | Product JS/TS/JSON/CSS | `"editor.defaultFormatter": "biomejs.biome"` |
+| Prettier carve-out | `prettier.disableLanguages` for JS/TS/JSON/CSS; Prettier for md/mdx only |
 | Markdown/MDX | Prettier only |
 
 Requires [`.npmrc`](../../.npmrc) `public-hoist-pattern[]=@biomejs/cli-*` + `pnpm install`.

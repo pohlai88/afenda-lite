@@ -310,6 +310,30 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		rationale: "Cluster A lifecycle workflow — onboarding task completion",
 	}),
 	row({
+		table: "hr_onboarding_orientation",
+		category: "transactional-state-machine",
+		domain: "lifecycle",
+		cluster: "A",
+		rationale:
+			"Cluster A lifecycle workflow — onboarding orientation scheduling and completion",
+	}),
+	row({
+		table: "hr_onboarding_equipment_handoff",
+		category: "transactional-state-machine",
+		domain: "lifecycle",
+		cluster: "A",
+		rationale:
+			"Cluster A lifecycle workflow — equipment provisioning handoff state",
+	}),
+	row({
+		table: "hr_onboarding_access_handoff",
+		category: "transactional-state-machine",
+		domain: "lifecycle",
+		cluster: "A",
+		rationale:
+			"Cluster A lifecycle workflow — system access provisioning handoff state",
+	}),
+	row({
 		table: "hr_probation_review",
 		category: "transactional-state-machine",
 		domain: "lifecycle",
@@ -364,6 +388,22 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		domain: "lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — clearance checklist state",
+	}),
+	row({
+		table: "hr_offboarding_access_revocation",
+		category: "transactional-state-machine",
+		domain: "lifecycle",
+		cluster: "A",
+		rationale:
+			"Cluster A lifecycle workflow — access revocation checklist state",
+	}),
+	row({
+		table: "hr_offboarding_payroll_handoff",
+		category: "transactional-state-machine",
+		domain: "lifecycle",
+		cluster: "A",
+		rationale:
+			"Cluster A lifecycle workflow — payroll finalization handoff state",
 	}),
 	row({
 		table: "hr_learning_course",
@@ -446,6 +486,14 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 			"Phase 3 adoption effective-range — salary band effective window",
 	}),
 	row({
+		table: "hr_compensation_grade_progression_rule",
+		category: "effective-definition",
+		domain: "compensation",
+		cluster: "C",
+		rationale:
+			"Phase 3 adoption effective-range — grade progression rule definition",
+	}),
+	row({
 		table: "hr_employee_compensation",
 		category: "effective-definition",
 		domain: "compensation",
@@ -487,6 +535,13 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		domain: "compensation",
 		cluster: "C",
 		rationale: "Phase 3 adoption effective-range — enrollment effective window",
+	}),
+	row({
+		table: "hr_benefit_enrollment_dependent",
+		category: "effective-definition",
+		domain: "compensation",
+		cluster: "C",
+		rationale: "Cluster C compensation — dependent coverage effective window",
 	}),
 	row({
 		table: "hr_compensation_review_cycle",
@@ -573,6 +628,20 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		domain: "performance",
 		cluster: "C",
 		rationale: "Cluster C performance — cycle participation effective range",
+	}),
+	row({
+		table: "hr_performance_cycle_review_period",
+		category: "versioned-current-fact",
+		domain: "performance",
+		cluster: "C",
+		rationale: "Cluster C performance — cycle review period schedule",
+	}),
+	row({
+		table: "hr_performance_cycle_eligibility",
+		category: "versioned-current-fact",
+		domain: "performance",
+		cluster: "C",
+		rationale: "Cluster C performance — cycle eligible population criteria",
 	}),
 	row({
 		table: "hr_performance_goal",

@@ -3,6 +3,7 @@ import type { Result } from "@afenda/errors/result";
 import type { PayrollEventType } from "@afenda/events";
 
 import type { PayrollPayGroupId, PayrollPeriodId, PayrollRunId } from "./brands";
+import type { ApprovedPayrollHandoffParsed } from "./inputs/parse-approved-payroll-handoff";
 import type { PayrollExceptionSeverity, PayrollRunType } from "./types";
 
 export type PayrollRunCalculatorException = {
@@ -58,6 +59,18 @@ export type PayrollEmployeeQueryPort = {
 			amount: string;
 		}>;
 	} | null>;
+};
+
+export type PayrollHrHandoffInputPort = {
+	getApprovedPayrollHandoff(input: {
+		organizationId: string;
+		employeeId: string;
+		effectiveDate: string;
+		periodStart?: string;
+		periodEnd?: string;
+		timesheetId?: string;
+		leaveRequestIds?: readonly string[];
+	}): Promise<Result<ApprovedPayrollHandoffParsed | null>>;
 };
 
 export type AuditFactInput = {

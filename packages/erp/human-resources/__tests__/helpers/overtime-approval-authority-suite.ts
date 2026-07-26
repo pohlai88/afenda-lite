@@ -3,6 +3,7 @@ import { afterAll, expect, it } from "vitest";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
@@ -12,6 +13,8 @@ import {
 	createOvertimeRequest,
 	getOvertimeRequest,
 	recordOvertimeActual,
+	rejectOvertimeRequest,
+	verifyOvertimeRequest,
 } from "../../src/time/overtime";
 import { assignTimeApprovalAuthority } from "../../src/time/policy";
 import {
@@ -458,7 +461,45 @@ export function defineOvertimeApprovalAuthoritySuite(
 		expect(second.ok).toBe(false);
 	});
 
-	it("documents approved-to-approved retry as a repeat mutation (HR-OPS-P1-006)", async () => {
+	it("rejects an overtime request from requested state", async () => {
+		const ready = createHrParityHarness(adapter);
+		const { request, managerId, seedKey } = await seedOvertimeRequest(ready);
+		await grantAuthority(ready, { targetActorUserId: managerId, seedKey });
+		const auditBefore = ready.ports.audit.calls.length;
+		const outboxBefore = ready.ports.outbox.calls.length;
+
+		const rejected = await rejectOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-reject-${suffix}`,
+				requestId: request.id,
+				comment: "Insufficient business justification",
+				expectedVersion: request.version,
+			},
+			ready,
+		);
+		expect(rejected.ok).toBe(true);
+		if (!rejected.ok) return;
+		expect(rejected.data.status).toBe("rejected");
+		expect(ready.ports.audit.calls.length).toBeGreaterThan(auditBefore);
+		expect(ready.ports.outbox.calls.length).toBe(outboxBefore);
+
+		const unchanged = await getOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-read-after-reject-${suffix}`,
+				requestId: request.id,
+			},
+			ready,
+		);
+		expect(unchanged.ok).toBe(true);
+		if (!unchanged.ok) return;
+		expect(unchanged.data?.status).toBe("rejected");
+	});
+
+	it("returns true no-op on repeat approve with identical approved maximum minutes", async () => {
 		const ready = createHrParityHarness(adapter);
 		const { request, managerId, seedKey } = await seedOvertimeRequest(ready);
 		await grantAuthority(ready, { targetActorUserId: managerId, seedKey });
@@ -487,17 +528,138 @@ export function defineOvertimeApprovalAuthoritySuite(
 				correlationId: `corr-ot-auth-reapprove-second-${suffix}`,
 				requestedAuthority: "line_manager",
 				requestId: first.data.id,
-				approvedMaximumMinutes: 60,
+				approvedMaximumMinutes: 90,
 				expectedVersion: first.data.version,
 			},
 			ready,
 		);
 		expect(retry.ok).toBe(true);
 		if (!retry.ok) return;
-		expect(retry.data.approvedMaximumMinutes).toBe(60);
-		expect(retry.data.version).toBe(first.data.version + 1);
-		expect(ready.ports.audit.calls.length).toBeGreaterThan(auditAfterFirst);
-		expect(ready.ports.outbox.calls.length).toBeGreaterThan(outboxAfterFirst);
+		expect(retry.data.approvedMaximumMinutes).toBe(90);
+		expect(retry.data.version).toBe(first.data.version);
+		expect(ready.ports.audit.calls.length).toBe(auditAfterFirst);
+		expect(ready.ports.outbox.calls.length).toBe(outboxAfterFirst);
+	});
+
+	it("rejects repeat approve with different approved maximum minutes", async () => {
+		const ready = createHrParityHarness(adapter);
+		const { request, managerId, seedKey } = await seedOvertimeRequest(ready);
+		await grantAuthority(ready, { targetActorUserId: managerId, seedKey });
+
+		const first = await approveOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-reapprove-diff-first-${suffix}`,
+				requestedAuthority: "line_manager",
+				requestId: request.id,
+				approvedMaximumMinutes: 90,
+				expectedVersion: request.version,
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+		const auditAfterFirst = ready.ports.audit.calls.length;
+		const outboxAfterFirst = ready.ports.outbox.calls.length;
+
+		const retry = await approveOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-reapprove-diff-second-${suffix}`,
+				requestedAuthority: "line_manager",
+				requestId: first.data.id,
+				approvedMaximumMinutes: 60,
+				expectedVersion: first.data.version,
+			},
+			ready,
+		);
+		expect(retry.ok).toBe(false);
+		if (retry.ok) return;
+		expect(humanResourcesCodeFromResult(retry)).toBe(
+			HUMAN_RESOURCES_ERROR_CONFLICT,
+		);
+		expect(ready.ports.audit.calls.length).toBe(auditAfterFirst);
+		expect(ready.ports.outbox.calls.length).toBe(outboxAfterFirst);
+
+		const unchanged = await getOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-read-after-reapprove-deny-${suffix}`,
+				requestId: first.data.id,
+			},
+			ready,
+		);
+		expect(unchanged.ok).toBe(true);
+		if (!unchanged.ok) return;
+		expect(unchanged.data?.approvedMaximumMinutes).toBe(90);
+		expect(unchanged.data?.version).toBe(first.data.version);
+	});
+
+	it("hands off verified overtime minutes to payroll through verify", async () => {
+		const ready = createHrParityHarness(adapter);
+		const { request, managerId, seedKey } = await seedOvertimeRequest(ready);
+		await grantAuthority(ready, { targetActorUserId: managerId, seedKey });
+
+		const approved = await approveOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-payroll-approve-${suffix}`,
+				requestedAuthority: "line_manager",
+				requestId: request.id,
+				approvedMaximumMinutes: 90,
+				expectedVersion: request.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const worked = await recordOvertimeActual(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-ot-auth-payroll-actual-${suffix}`,
+				requestId: approved.data.id,
+				actualMinutes: 75,
+				expectedVersion: approved.data.version,
+			},
+			ready,
+		);
+		expect(worked.ok).toBe(true);
+		if (!worked.ok) return;
+
+		const verified = await verifyOvertimeRequest(
+			{
+				organizationId: ORG,
+				actorUserId: managerId,
+				correlationId: `corr-ot-auth-payroll-verify-${suffix}`,
+				requestId: worked.data.id,
+				payrollApprovedMinutes: 60,
+				expectedVersion: worked.data.version,
+			},
+			ready,
+		);
+		expect(verified.ok).toBe(true);
+		if (!verified.ok) return;
+		expect(verified.data).toMatchObject({
+			requestedMinutes: 120,
+			approvedMaximumMinutes: 90,
+			actualMinutes: 75,
+			payrollApprovedMinutes: 60,
+			status: "verified",
+		});
+		expect(
+			new Set([
+				verified.data.requestedMinutes,
+				verified.data.approvedMaximumMinutes,
+				verified.data.actualMinutes,
+				verified.data.payrollApprovedMinutes,
+			]).size,
+		).toBe(4);
 	});
 
 	it("resolves overtime authority asOf on org-local civil date when local date differs from UTC", async () => {

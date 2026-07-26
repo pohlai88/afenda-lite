@@ -21,6 +21,7 @@ import {
 	type HumanResourcesPerformanceCycleId,
 	type HumanResourcesPerformanceCycleParticipantId,
 	type HumanResourcesReviewId,
+	type HumanResourcesReviewParticipantId,
 	humanResourcesAssessmentIdSchema,
 	humanResourcesGoalProgressIdSchema,
 	humanResourcesImprovementCheckpointIdSchema,
@@ -46,23 +47,44 @@ import {
 	notFound,
 } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import { tenureDaysOn } from "../../shared/benefit-guards";
+import {
+	assertEmploymentEligibleForPerformanceCycle,
+	isEmploymentEligibleForPerformanceCycle,
+} from "../../shared/performance-cycle-eligibility";
 import {
 	assertCheckpointOutcomeTransition,
+	assertCyclePublishReady,
 	assertCycleStatusTransition,
+	assertGoalAlignment,
 	assertGoalDatesWithinCycle,
 	assertGoalEditable,
 	assertGoalStatusTransition,
+	assertGoalWeightForModel,
 	assertGoalWeightsSumTo100,
 	assertImprovementPlanStatusTransition,
+	assertAllDelegatedAssessmentsSubmitted,
+	assertPriorDelegatedAssessmentsSubmitted,
 	assertReviewNotFinalized,
+	assertReviewPeriodsNonOverlapping,
+	assertReviewPeriodsWithinCycle,
 	assertReviewStatusTransition,
 	assertValidCyclePeriod,
+	nextDelegatedSequenceNumber,
 } from "../../shared/performance-guards";
-import { validateRatingInScale } from "../../shared/performance-rating";
 import {
+	assertRatingScaleUniqueCodes,
+	validateRatingInScale,
+	type PerformanceRatingScale,
+} from "../../shared/performance-rating";
+import {
+	isPerformanceCycleConfigurable,
 	isPerformanceCycleOpen,
+	isPerformanceCycleParticipantEnrollable,
 	isPerformanceGoalProgressable,
 	isPerformanceReviewFinalized,
+	type PerformanceCycleReviewPeriodKind,
+	type PerformanceWeightingModel,
 } from "../../shared/performance-status";
 import type {
 	HumanResourcesStore,
@@ -77,8 +99,10 @@ import type {
 	EmployeePerformanceHistory,
 	PerformanceAssessment,
 	PerformanceCycle,
+	PerformanceCycleEligibility,
 	PerformanceCycleListPage,
 	PerformanceCycleParticipant,
+	PerformanceCycleReviewPeriod,
 	PerformanceGoal,
 	PerformanceGoalListPage,
 	PerformanceGoalProgress,
@@ -90,7 +114,11 @@ import type {
 	PerformanceReviewListPage,
 	PerformanceReviewParticipant,
 } from "../../types";
-import { projectPerformanceReviewDetail } from "../../types";
+import {
+	PERFORMANCE_REVIEW_MANAGER_SEQUENCE,
+	PERFORMANCE_REVIEW_SELF_SEQUENCE,
+} from "../../types";
+import { projectPerformanceReviewDetailForReader } from "../../performance/performance-field-projection";
 
 export type PerformanceMemoryState = {
 	cycles: Map<HumanResourcesPerformanceCycleId, PerformanceCycle>;
@@ -99,6 +127,8 @@ export type PerformanceMemoryState = {
 		HumanResourcesPerformanceCycleParticipantId,
 		PerformanceCycleParticipant
 	>;
+	cycleReviewPeriods: Map<string, PerformanceCycleReviewPeriod[]>;
+	cycleEligibility: Map<string, PerformanceCycleEligibility>;
 	goals: Map<HumanResourcesGoalId, PerformanceGoal>;
 	goalIdempotency: Map<string, IdempotentPerformanceGoalRecord>;
 	goalProgress: Map<string, PerformanceGoalProgress>;
@@ -116,7 +146,10 @@ export type PerformanceMemoryState = {
 
 export type MemoryPerformanceHost = Pick<
 	HumanResourcesStore,
-	"getEmployeeById" | "getEmploymentById"
+	| "getEmployeeById"
+	| "getEmploymentById"
+	| "listEmployees"
+	| "listEmploymentsByEmployee"
 >;
 
 export type PerformanceMemoryMethods = Pick<
@@ -125,9 +158,15 @@ export type PerformanceMemoryMethods = Pick<
 	| "findPerformanceCycleByIdempotencyKey"
 	| "createPerformanceCycle"
 	| "updatePerformanceCycle"
+	| "publishPerformanceCycle"
 	| "openPerformanceCycle"
 	| "closePerformanceCycle"
 	| "cancelPerformanceCycle"
+	| "setPerformanceCycleReviewPeriods"
+	| "listPerformanceCycleReviewPeriods"
+	| "setPerformanceCycleEligibility"
+	| "getPerformanceCycleEligibility"
+	| "enrollEligibleCycleParticipants"
 	| "addCycleParticipant"
 	| "removeCycleParticipant"
 	| "listPerformanceCycles"
@@ -140,12 +179,18 @@ export type PerformanceMemoryMethods = Pick<
 	| "approvePerformanceGoal"
 	| "rejectPerformanceGoal"
 	| "recordGoalProgress"
+	| "activatePerformanceGoal"
+	| "alignPerformanceGoal"
 	| "closePerformanceGoal"
 	| "cancelPerformanceGoal"
 	| "listEmployeeGoals"
+	| "listGoalProgress"
 	| "startPerformanceReview"
 	| "submitSelfAssessment"
 	| "submitManagerAssessment"
+	| "addDelegatedReviewer"
+	| "submitDelegatedAssessment"
+	| "calibratePerformanceReview"
 	| "returnPerformanceReviewForCorrection"
 	| "acknowledgePerformanceReview"
 	| "finalizePerformanceReview"
@@ -174,6 +219,8 @@ export function createPerformanceMemoryState(): PerformanceMemoryState {
 		cycles: new Map(),
 		cycleIdempotency: new Map(),
 		cycleParticipants: new Map(),
+		cycleReviewPeriods: new Map(),
+		cycleEligibility: new Map(),
 		goals: new Map(),
 		goalIdempotency: new Map(),
 		goalProgress: new Map(),
@@ -193,6 +240,8 @@ export function resetPerformanceMemoryState(
 	state.cycles.clear();
 	state.cycleIdempotency.clear();
 	state.cycleParticipants.clear();
+	state.cycleReviewPeriods.clear();
+	state.cycleEligibility.clear();
 	state.goals.clear();
 	state.goalIdempotency.clear();
 	state.goalProgress.clear();
@@ -207,6 +256,34 @@ export function resetPerformanceMemoryState(
 
 function idemKey(organizationId: string, idempotencyKey: string): string {
 	return `${organizationId}:${idempotencyKey}`;
+}
+
+function cycleChildKey(
+	organizationId: string,
+	cycleId: HumanResourcesPerformanceCycleId,
+): string {
+	return `${organizationId}:${cycleId}`;
+}
+
+function reviewPeriodsForCycle(
+	state: PerformanceMemoryState,
+	organizationId: string,
+	cycleId: HumanResourcesPerformanceCycleId,
+): PerformanceCycleReviewPeriod[] {
+	return [
+		...(state.cycleReviewPeriods.get(cycleChildKey(organizationId, cycleId)) ??
+			[]),
+	];
+}
+
+function eligibilityForCycle(
+	state: PerformanceMemoryState,
+	organizationId: string,
+	cycleId: HumanResourcesPerformanceCycleId,
+): PerformanceCycleEligibility | null {
+	return (
+		state.cycleEligibility.get(cycleChildKey(organizationId, cycleId)) ?? null
+	);
 }
 
 function cloneCycle(cycle: PerformanceCycle): PerformanceCycle {
@@ -420,6 +497,8 @@ function redactReviewList(
 	return reviews.map((review) => ({
 		...review,
 		overallRating: null,
+		acknowledgementNote: null,
+		calibrationNote: null,
 	}));
 }
 
@@ -542,6 +621,8 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				name?: string;
 				periodStart?: string;
 				periodEnd?: string;
+				ratingScale?: PerformanceRatingScale;
+				weightingModel?: PerformanceWeightingModel;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -553,7 +634,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return current;
 			}
 			const cycle = current.data;
-			if (cycle.status !== "draft") {
+			if (!isPerformanceCycleConfigurable(cycle.status)) {
 				return invalidState("Performance cycle can only be edited while draft");
 			}
 			const versionCheck = assertExpectedVersion(
@@ -571,6 +652,15 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return periodCheck;
 			}
 
+			let ratingScale = cycle.ratingScale;
+			if (input.ratingScale !== undefined) {
+				const scaleCheck = assertRatingScaleUniqueCodes(input.ratingScale);
+				if (!scaleCheck.ok) {
+					return scaleCheck;
+				}
+				ratingScale = scaleCheck.data;
+			}
+
 			const previous = cloneCycle(cycle);
 			const now = new Date();
 			const updated = cloneCycle({
@@ -578,6 +668,78 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				name: input.name ?? cycle.name,
 				periodStart,
 				periodEnd,
+				ratingScale,
+				weightingModel: input.weightingModel ?? cycle.weightingModel,
+				version: cycle.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			});
+			state.cycles.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_cycle",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.cycles.set(previous.id, previous);
+				return audit;
+			}
+
+			return ok(cloneCycle(updated));
+		},
+
+		async publishPerformanceCycle(
+			input: {
+				organizationId: string;
+				cycleId: HumanResourcesPerformanceCycleId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceCycle>> {
+			const current = getCycle(state, input.organizationId, input.cycleId);
+			if (!current.ok) {
+				return current;
+			}
+			const cycle = current.data;
+			const versionCheck = assertExpectedVersion(
+				cycle.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertCycleStatusTransition(cycle.status, "published");
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const publishReady = assertCyclePublishReady({
+				ratingScale: cycle.ratingScale,
+				eligibility: eligibilityForCycle(
+					state,
+					input.organizationId,
+					input.cycleId,
+				),
+				reviewPeriods: reviewPeriodsForCycle(
+					state,
+					input.organizationId,
+					input.cycleId,
+				),
+			});
+			if (!publishReady.ok) {
+				return publishReady;
+			}
+
+			const previous = cloneCycle(cycle);
+			const now = new Date();
+			const updated = cloneCycle({
+				...cycle,
+				status: "published",
 				version: cycle.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -624,6 +786,17 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			const transition = assertCycleStatusTransition(cycle.status, "open");
 			if (!transition.ok) {
 				return transition;
+			}
+
+			const activeParticipants = participantsForCycle(
+				state,
+				input.organizationId,
+				input.cycleId,
+			).filter((participant) => participant.status === "active");
+			if (activeParticipants.length === 0) {
+				return invalidState(
+					"Performance cycle must have at least one active participant before open",
+				);
 			}
 
 			const previous = cloneCycle(cycle);
@@ -773,6 +946,347 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			return ok(cloneCycle(updated));
 		},
 
+		async setPerformanceCycleReviewPeriods(
+			input: {
+				organizationId: string;
+				cycleId: HumanResourcesPerformanceCycleId;
+				periods: Array<{
+					kind: PerformanceCycleReviewPeriodKind;
+					periodStart: string;
+					periodEnd: string;
+				}>;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceCycleReviewPeriod[]>> {
+			const current = getCycle(state, input.organizationId, input.cycleId);
+			if (!current.ok) {
+				return current;
+			}
+			const cycle = current.data;
+			if (!isPerformanceCycleConfigurable(cycle.status)) {
+				return invalidState(
+					"Review periods can only be configured while cycle is draft",
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				cycle.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const withinCycle = assertReviewPeriodsWithinCycle({
+				cyclePeriodStart: cycle.periodStart,
+				cyclePeriodEnd: cycle.periodEnd,
+				periods: input.periods,
+			});
+			if (!withinCycle.ok) {
+				return withinCycle;
+			}
+
+			const kinds = new Set(input.periods.map((period) => period.kind));
+			if (kinds.size !== input.periods.length) {
+				return invalidInput("Each review period kind may only be configured once");
+			}
+
+			const now = new Date();
+			const key = cycleChildKey(input.organizationId, input.cycleId);
+			const previousPeriods = reviewPeriodsForCycle(
+				state,
+				input.organizationId,
+				input.cycleId,
+			);
+			const previousCycle = cloneCycle(cycle);
+			const nextPeriods: PerformanceCycleReviewPeriod[] = input.periods.map(
+				(period) => ({
+					id: randomUUID(),
+					organizationId: input.organizationId,
+					cycleId: input.cycleId,
+					kind: period.kind,
+					periodStart: period.periodStart,
+					periodEnd: period.periodEnd,
+					createdBy: input.actorUserId,
+					updatedBy: input.actorUserId,
+					createdAt: now,
+					updatedAt: now,
+				}),
+			);
+			const overlapCheck = assertReviewPeriodsNonOverlapping(nextPeriods);
+			if (!overlapCheck.ok) {
+				return overlapCheck;
+			}
+
+			const updatedCycle = cloneCycle({
+				...cycle,
+				version: cycle.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			});
+			state.cycleReviewPeriods.set(key, nextPeriods);
+			state.cycles.set(updatedCycle.id, updatedCycle);
+
+			const rollback: Array<() => void> = [
+				() => state.cycleReviewPeriods.set(key, previousPeriods),
+				() => state.cycles.set(previousCycle.id, previousCycle),
+			];
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updatedCycle.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_cycle_review_period",
+				entityId: input.cycleId,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok(nextPeriods.map((period) => ({ ...period })));
+		},
+
+		async listPerformanceCycleReviewPeriods(input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+		}): Promise<Result<PerformanceCycleReviewPeriod[]>> {
+			const cycle = getCycle(state, input.organizationId, input.cycleId);
+			if (!cycle.ok) {
+				return cycle;
+			}
+			return ok(
+				reviewPeriodsForCycle(
+					state,
+					input.organizationId,
+					input.cycleId,
+				).map((period) => ({ ...period })),
+			);
+		},
+
+		async setPerformanceCycleEligibility(
+			input: {
+				organizationId: string;
+				cycleId: HumanResourcesPerformanceCycleId;
+				minTenureDays: number | null;
+				allowedEmploymentStatuses: PerformanceCycleEligibility["allowedEmploymentStatuses"];
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceCycleEligibility>> {
+			const current = getCycle(state, input.organizationId, input.cycleId);
+			if (!current.ok) {
+				return current;
+			}
+			const cycle = current.data;
+			if (!isPerformanceCycleConfigurable(cycle.status)) {
+				return invalidState(
+					"Eligibility can only be configured while cycle is draft",
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				cycle.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const key = cycleChildKey(input.organizationId, input.cycleId);
+			const existing = eligibilityForCycle(
+				state,
+				input.organizationId,
+				input.cycleId,
+			);
+			const now = new Date();
+			const eligibility: PerformanceCycleEligibility = {
+				id: existing?.id ?? randomUUID(),
+				organizationId: input.organizationId,
+				cycleId: input.cycleId,
+				minTenureDays: input.minTenureDays,
+				allowedEmploymentStatuses: [...input.allowedEmploymentStatuses],
+				createdBy: existing?.createdBy ?? input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: existing?.createdAt ?? now,
+				updatedAt: now,
+			};
+			const previousCycle = cloneCycle(cycle);
+			const updatedCycle = cloneCycle({
+				...cycle,
+				version: cycle.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			});
+			state.cycleEligibility.set(key, eligibility);
+			state.cycles.set(updatedCycle.id, updatedCycle);
+
+			const rollback: Array<() => void> = [
+				() => {
+					if (existing) {
+						state.cycleEligibility.set(key, existing);
+					} else {
+						state.cycleEligibility.delete(key);
+					}
+				},
+				() => state.cycles.set(previousCycle.id, previousCycle),
+			];
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: eligibility.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_cycle_eligibility",
+				entityId: eligibility.id,
+				action: existing ? "UPDATE" : "CREATE",
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...eligibility });
+		},
+
+		async getPerformanceCycleEligibility(input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+		}): Promise<Result<PerformanceCycleEligibility | null>> {
+			const cycle = getCycle(state, input.organizationId, input.cycleId);
+			if (!cycle.ok) {
+				return cycle;
+			}
+			const eligibility = eligibilityForCycle(
+				state,
+				input.organizationId,
+				input.cycleId,
+			);
+			return ok(eligibility === null ? null : { ...eligibility });
+		},
+
+		async enrollEligibleCycleParticipants(
+			input: {
+				organizationId: string;
+				cycleId: HumanResourcesPerformanceCycleId;
+				asOfDate: string;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceCycleParticipant[]>> {
+			const cycleResult = getCycle(state, input.organizationId, input.cycleId);
+			if (!cycleResult.ok) {
+				return cycleResult;
+			}
+			const cycle = cycleResult.data;
+			if (!isPerformanceCycleParticipantEnrollable(cycle.status)) {
+				return invalidState(
+					"Eligible participants can only be enrolled while cycle is published or open",
+				);
+			}
+
+			const eligibility = eligibilityForCycle(
+				state,
+				input.organizationId,
+				input.cycleId,
+			);
+			if (eligibility === null) {
+				return invalidState(
+					"Performance cycle eligibility must be configured before enrollment",
+				);
+			}
+
+			const host = this as unknown as MemoryPerformanceHost &
+				PerformanceMemoryMethods;
+			const enrolled: PerformanceCycleParticipant[] = [];
+			let page = 1;
+			const pageSize = 100;
+
+			while (true) {
+				const employees = await host.listEmployees({
+					organizationId: input.organizationId,
+					page,
+					pageSize,
+				});
+				if (!employees.ok) {
+					return employees;
+				}
+				if (employees.data.employees.length === 0) {
+					break;
+				}
+
+				for (const employee of employees.data.employees) {
+					const employments = await host.listEmploymentsByEmployee({
+						organizationId: input.organizationId,
+						employeeId: employee.id,
+					});
+					if (!employments.ok) {
+						return employments;
+					}
+
+					for (const employmentRef of employments.data) {
+						const employment = await host.getEmploymentById({
+							organizationId: input.organizationId,
+							employmentId: employmentRef.id,
+						});
+						if (!employment.ok) {
+							return employment;
+						}
+						if (employment.data === null) {
+							continue;
+						}
+						if (
+							!isEmploymentEligibleForPerformanceCycle({
+								eligibility,
+								employmentStatus: employment.data.status,
+								tenureDays: tenureDaysOn(
+									employment.data.startsOn,
+									input.asOfDate,
+								),
+							})
+						) {
+							continue;
+						}
+
+						const added = await host.addCycleParticipant(
+							{
+								organizationId: input.organizationId,
+								cycleId: input.cycleId,
+								employeeId: employee.id,
+								employmentId: employmentRef.id,
+								actorUserId: input.actorUserId,
+							},
+							ports,
+							meta,
+						);
+						if (!added.ok) {
+							if (
+								added.code === "CONFLICT" &&
+								added.message ===
+									"Participant is already active in this cycle"
+							) {
+								continue;
+							}
+							return added;
+						}
+						enrolled.push(added.data);
+					}
+				}
+
+				if (
+					page * pageSize >= employees.data.totalCount ||
+					employees.data.employees.length < pageSize
+				) {
+					break;
+				}
+				page += 1;
+			}
+
+			return ok(enrolled);
+		},
+
 		async addCycleParticipant(
 			input: {
 				organizationId: string;
@@ -788,18 +1302,51 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			if (!cycleResult.ok) {
 				return cycleResult;
 			}
-			if (!isPerformanceCycleOpen(cycleResult.data.status)) {
-				return invalidState("Participants can only be added to open cycles");
+			if (!isPerformanceCycleParticipantEnrollable(cycleResult.data.status)) {
+				return invalidState(
+					"Participants can only be added while cycle is published or open",
+				);
 			}
 
+			const host = this as unknown as MemoryPerformanceHost;
 			const refs = await assertEmployeeEmployment(
-				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
+				host,
 				input.organizationId,
 				input.employeeId,
 				input.employmentId,
 			);
 			if (!refs.ok) {
 				return refs;
+			}
+
+			const eligibility = eligibilityForCycle(
+				state,
+				input.organizationId,
+				input.cycleId,
+			);
+			if (eligibility !== null) {
+				const employment = await host.getEmploymentById({
+					organizationId: input.organizationId,
+					employmentId: input.employmentId,
+				});
+				if (!employment.ok) {
+					return employment;
+				}
+				if (employment.data === null) {
+					return notFound(
+						"Employment not found",
+						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+					);
+				}
+				const eligibilityCheck = assertEmploymentEligibleForPerformanceCycle({
+					eligibility,
+					employmentStatus: employment.data.status,
+					employmentStartsOn: employment.data.startsOn,
+					asOfDate: cycleResult.data.periodStart,
+				});
+				if (!eligibilityCheck.ok) {
+					return eligibilityCheck;
+				}
 			}
 
 			const existing = Array.from(state.cycleParticipants.values()).find(
@@ -1066,6 +1613,8 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			}
 
 			const now = new Date();
+			const initialStatus =
+				record.goalKind === "manager" ? "approved" : "draft";
 			const goal: PerformanceGoal = {
 				id: idResult.data,
 				organizationId: record.organizationId,
@@ -1078,13 +1627,51 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				periodStart: record.periodStart,
 				periodEnd: record.periodEnd,
 				exceptionOutsideCycle: record.exceptionOutsideCycle,
-				status: "draft",
+				goalKind: record.goalKind,
+				alignedToGoalId: record.alignedToGoalId,
+				completionNote: null,
+				completionEvidenceReference: null,
+				status: initialStatus,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
 				createdAt: now,
 				updatedAt: now,
 			};
+
+			if (record.alignedToGoalId !== null) {
+				const parent = getGoal(
+					state,
+					record.organizationId,
+					record.alignedToGoalId,
+				);
+				const alignment = assertGoalAlignment({
+					goalId: goal.id,
+					alignedToGoalId: record.alignedToGoalId,
+					parentGoal:
+						parent.ok && parent.data
+							? {
+									id: parent.data.id,
+									cycleId: parent.data.cycleId,
+									goalKind: parent.data.goalKind,
+									alignedToGoalId: parent.data.alignedToGoalId,
+								}
+							: null,
+					goalCycleId: goal.cycleId,
+					resolveParent: (parentId) => {
+						const resolved = getGoal(state, record.organizationId, parentId as HumanResourcesGoalId);
+						if (!resolved.ok) return null;
+						return {
+							id: resolved.data.id,
+							alignedToGoalId: resolved.data.alignedToGoalId,
+						};
+					},
+				});
+				if (!alignment.ok) {
+					return alignment;
+				}
+			}
+
 			state.goals.set(goal.id, goal);
 			state.goalIdempotency.set(key, {
 				goal: { ...goal },
@@ -1127,7 +1714,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return current;
 			}
 			const goal = current.data;
-			const editable = assertGoalEditable(goal.status);
+			const editable = assertGoalEditable(goal.status, goal.goalKind);
 			if (!editable.ok) {
 				return editable;
 			}
@@ -1199,6 +1786,25 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceGoal>> {
+			const current = getGoal(state, input.organizationId, input.goalId);
+			if (!current.ok) {
+				return current;
+			}
+			const goal = current.data;
+			if (goal.goalKind === "manager") {
+				return invalidState("Manager-assigned goals cannot be submitted");
+			}
+			const cycleResult = getCycle(state, goal.organizationId, goal.cycleId);
+			if (!cycleResult.ok) {
+				return cycleResult;
+			}
+			const weightCheck = assertGoalWeightForModel({
+				weight: goal.weight,
+				weightingModel: cycleResult.data.weightingModel,
+			});
+			if (!weightCheck.ok) {
+				return weightCheck;
+			}
 			return transitionGoalStatus(
 				state,
 				ports,
@@ -1338,6 +1944,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				goalId: HumanResourcesGoalId;
 				progressNote: string;
 				progressValue: string | null;
+				evidenceReference: string | null;
 				actorUserId: string;
 			},
 			ports: MutationPorts,
@@ -1365,6 +1972,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				recordedAt: now,
 				progressNote: input.progressNote,
 				progressValue: input.progressValue,
+				evidenceReference: input.evidenceReference,
 				recordedBy: input.actorUserId,
 				createdAt: now,
 				updatedAt: now,
@@ -1386,7 +1994,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			return ok({ ...progress });
 		},
 
-		async closePerformanceGoal(
+		async activatePerformanceGoal(
 			input: {
 				organizationId: string;
 				goalId: HumanResourcesGoalId;
@@ -1401,9 +2009,153 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				ports,
 				meta,
 				input,
-				"closed",
+				"active",
 				assertGoalStatusTransition,
 			);
+		},
+
+		async alignPerformanceGoal(
+			input: {
+				organizationId: string;
+				goalId: HumanResourcesGoalId;
+				alignedToGoalId: HumanResourcesGoalId | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceGoal>> {
+			const current = getGoal(state, input.organizationId, input.goalId);
+			if (!current.ok) {
+				return current;
+			}
+			const goal = current.data;
+			const versionCheck = assertExpectedVersion(
+				goal.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const parent =
+				input.alignedToGoalId === null
+					? ok(null)
+					: getGoal(state, input.organizationId, input.alignedToGoalId);
+			if (!parent.ok) {
+				return parent;
+			}
+			const alignment = assertGoalAlignment({
+				goalId: goal.id,
+				alignedToGoalId: input.alignedToGoalId,
+				parentGoal:
+					parent.data === null
+						? null
+						: {
+								id: parent.data.id,
+								cycleId: parent.data.cycleId,
+								goalKind: parent.data.goalKind,
+								alignedToGoalId: parent.data.alignedToGoalId,
+							},
+				goalCycleId: goal.cycleId,
+				resolveParent: (parentId) => {
+					const resolved = getGoal(
+						state,
+						input.organizationId,
+						parentId as HumanResourcesGoalId,
+					);
+					if (!resolved.ok) return null;
+					return {
+						id: resolved.data.id,
+						alignedToGoalId: resolved.data.alignedToGoalId,
+					};
+				},
+			});
+			if (!alignment.ok) {
+				return alignment;
+			}
+
+			const previous = { ...goal };
+			const now = new Date();
+			const updated: PerformanceGoal = {
+				...goal,
+				alignedToGoalId: input.alignedToGoalId,
+				version: goal.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.goals.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_goal",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.goals.set(previous.id, previous);
+				return audit;
+			}
+
+			return ok({ ...updated });
+		},
+
+		async closePerformanceGoal(
+			input: {
+				organizationId: string;
+				goalId: HumanResourcesGoalId;
+				expectedVersion: number;
+				completionNote: string | null;
+				completionEvidenceReference: string | null;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceGoal>> {
+			const current = getGoal(state, input.organizationId, input.goalId);
+			if (!current.ok) {
+				return current;
+			}
+			const goal = current.data;
+			const versionCheck = assertExpectedVersion(
+				goal.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertGoalStatusTransition(goal.status, "closed");
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const previous = { ...goal };
+			const now = new Date();
+			const updated: PerformanceGoal = {
+				...goal,
+				status: "closed",
+				completionNote: input.completionNote,
+				completionEvidenceReference: input.completionEvidenceReference,
+				version: goal.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.goals.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_goal",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.goals.set(previous.id, previous);
+				return audit;
+			}
+
+			return ok({ ...updated });
 		},
 
 		async cancelPerformanceGoal(
@@ -1424,6 +2176,31 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				"cancelled",
 				assertGoalStatusTransition,
 			);
+		},
+
+		async listGoalProgress(input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			page: number;
+			pageSize: number;
+		}): Promise<Result<import("../../types").PerformanceGoalProgressListPage>> {
+			let filtered = Array.from(state.goalProgress.values()).filter(
+				(entry) =>
+					entry.organizationId === input.organizationId &&
+					entry.goalId === input.goalId,
+			);
+			filtered.sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime());
+			const totalCount = filtered.length;
+			const start = (input.page - 1) * input.pageSize;
+			const progress = filtered
+				.slice(start, start + input.pageSize)
+				.map((entry) => ({ ...entry }));
+			return ok({
+				progress,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
 		},
 
 		async listEmployeeGoals(input: {
@@ -1527,6 +2304,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				employmentId: input.employmentId,
 				overallRating: null,
 				acknowledgementNote: null,
+				calibrationNote: null,
 				status: "draft",
 				version: 1,
 				createdBy: input.actorUserId,
@@ -1565,6 +2343,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				role: "self",
 				employeeId: input.employeeId,
 				userId: null,
+				sequenceNumber: PERFORMANCE_REVIEW_SELF_SEQUENCE,
 				version: 1,
 				createdBy: input.actorUserId,
 				updatedBy: input.actorUserId,
@@ -1578,6 +2357,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				role: "manager",
 				employeeId: input.managerEmployeeId,
 				userId: null,
+				sequenceNumber: PERFORMANCE_REVIEW_MANAGER_SEQUENCE,
 				version: 1,
 				createdBy: input.actorUserId,
 				updatedBy: input.actorUserId,
@@ -1591,6 +2371,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				id: selfAssessmentId.data,
 				organizationId: input.organizationId,
 				reviewId: review.id,
+				participantId: selfParticipant.id,
 				kind: "self",
 				rating: null,
 				commentsSensitive: null,
@@ -1605,6 +2386,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				id: managerAssessmentId.data,
 				organizationId: input.organizationId,
 				reviewId: review.id,
+				participantId: managerParticipant.id,
 				kind: "manager",
 				rating: null,
 				commentsSensitive: null,
@@ -1701,6 +2483,315 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				"manager",
 				"manager_submitted",
 			);
+		},
+
+		async addDelegatedReviewer(
+			input: {
+				organizationId: string;
+				reviewId: HumanResourcesReviewId;
+				delegatedEmployeeId: HumanResourcesEmployeeId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceReview>> {
+			const current = getReview(state, input.organizationId, input.reviewId);
+			if (!current.ok) {
+				return current;
+			}
+			const review = current.data;
+			const immutable = assertReviewNotFinalized(review.status);
+			if (!immutable.ok) {
+				return immutable;
+			}
+			const versionCheck = assertExpectedVersion(
+				review.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (input.delegatedEmployeeId === review.employeeId) {
+				return invalidInput("Delegated reviewer cannot be the review employee");
+			}
+
+			const participants = participantsForReview(state, review.id);
+			if (
+				participants.some(
+					(participant) => participant.employeeId === input.delegatedEmployeeId,
+				)
+			) {
+				return conflict("Employee is already a review participant");
+			}
+
+			const participantId = newBrandId(humanResourcesReviewParticipantIdSchema);
+			const assessmentId = newBrandId(humanResourcesAssessmentIdSchema);
+			if (!participantId.ok || !assessmentId.ok) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Could not create delegated reviewer",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+				);
+			}
+
+			const now = new Date();
+			const sequenceNumber = nextDelegatedSequenceNumber(participants);
+			const participant: PerformanceReviewParticipant = {
+				id: participantId.data,
+				organizationId: input.organizationId,
+				reviewId: review.id,
+				role: "delegated",
+				employeeId: input.delegatedEmployeeId,
+				userId: null,
+				sequenceNumber,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const assessment: PerformanceAssessment = {
+				id: assessmentId.data,
+				organizationId: input.organizationId,
+				reviewId: review.id,
+				participantId: participant.id,
+				kind: "delegated",
+				rating: null,
+				commentsSensitive: null,
+				submittedAt: null,
+				version: 1,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const updatedReview: PerformanceReview = {
+				...review,
+				version: review.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			const previousReview = { ...review };
+			state.reviewParticipants.set(participant.id, participant);
+			state.assessments.set(assessment.id, assessment);
+			state.reviews.set(updatedReview.id, updatedReview);
+
+			const rollback: Array<() => void> = [
+				() => state.reviews.set(previousReview.id, previousReview),
+				() => state.reviewParticipants.delete(participant.id),
+				() => state.assessments.delete(assessment.id),
+			];
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updatedReview.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_review",
+				entityId: updatedReview.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...updatedReview });
+		},
+
+		async submitDelegatedAssessment(
+			input: {
+				organizationId: string;
+				reviewId: HumanResourcesReviewId;
+				participantId: HumanResourcesReviewParticipantId;
+				rating: string;
+				commentsSensitive: string | null;
+				delegatedEmployeeId: HumanResourcesEmployeeId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceReview>> {
+			const reviewResult = getReview(
+				state,
+				input.organizationId,
+				input.reviewId,
+			);
+			if (!reviewResult.ok) {
+				return reviewResult;
+			}
+			const review = reviewResult.data;
+			const immutable = assertReviewNotFinalized(review.status);
+			if (!immutable.ok) {
+				return immutable;
+			}
+			const versionCheck = assertExpectedVersion(
+				review.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const participants = participantsForReview(state, review.id);
+			const assessments = assessmentsForReview(state, review.id);
+			const participant = participants.find(
+				(item) => item.id === input.participantId,
+			);
+			if (!participant || participant.role !== "delegated") {
+				return invalidInput("Participant is not a delegated reviewer");
+			}
+			if (participant.employeeId !== input.delegatedEmployeeId) {
+				return invalidInput("Actor is not the assigned delegated participant");
+			}
+
+			const priorCheck = assertPriorDelegatedAssessmentsSubmitted({
+				participants,
+				assessments,
+				targetParticipantId: participant.id,
+			});
+			if (!priorCheck.ok) {
+				return priorCheck;
+			}
+
+			const assessment = assessments.find(
+				(item) => item.participantId === participant.id,
+			);
+			if (!assessment) {
+				return invalidState("Missing delegated assessment");
+			}
+			if (assessment.submittedAt) {
+				return invalidState("Delegated assessment is already submitted");
+			}
+
+			const cycleResult = getCycle(state, review.organizationId, review.cycleId);
+			if (!cycleResult.ok) {
+				return cycleResult;
+			}
+			const ratingCheck = validateRatingInScale(
+				input.rating,
+				cycleResult.data.ratingScale,
+			);
+			if (!ratingCheck.ok) {
+				return ratingCheck;
+			}
+
+			const previousReview = { ...review };
+			const previousAssessment = { ...assessment };
+			const now = new Date();
+			const updatedAssessment: PerformanceAssessment = {
+				...assessment,
+				rating: input.rating,
+				commentsSensitive: input.commentsSensitive,
+				submittedAt: now,
+				version: assessment.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			const updatedReview: PerformanceReview = {
+				...review,
+				version: review.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.assessments.set(updatedAssessment.id, updatedAssessment);
+			state.reviews.set(updatedReview.id, updatedReview);
+
+			const rollback: Array<() => void> = [
+				() => state.reviews.set(previousReview.id, previousReview),
+				() => state.assessments.set(previousAssessment.id, previousAssessment),
+			];
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updatedReview.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_review",
+				entityId: updatedReview.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				for (const undo of rollback) undo();
+				return audit;
+			}
+
+			return ok({ ...updatedReview });
+		},
+
+		async calibratePerformanceReview(
+			input: {
+				organizationId: string;
+				reviewId: HumanResourcesReviewId;
+				overallRating: string;
+				calibrationNote: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<PerformanceReview>> {
+			const current = getReview(state, input.organizationId, input.reviewId);
+			if (!current.ok) {
+				return current;
+			}
+			const review = current.data;
+			const immutable = assertReviewNotFinalized(review.status);
+			if (!immutable.ok) {
+				return immutable;
+			}
+			if (
+				review.status !== "manager_submitted" &&
+				review.status !== "acknowledged"
+			) {
+				return invalidState(
+					"Calibration is only allowed after manager submission or acknowledgement",
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				review.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const cycleResult = getCycle(state, review.organizationId, review.cycleId);
+			if (!cycleResult.ok) {
+				return cycleResult;
+			}
+			const ratingCheck = validateRatingInScale(
+				input.overallRating,
+				cycleResult.data.ratingScale,
+			);
+			if (!ratingCheck.ok) {
+				return ratingCheck;
+			}
+
+			const previous = { ...review };
+			const now = new Date();
+			const updated: PerformanceReview = {
+				...review,
+				overallRating: input.overallRating,
+				calibrationNote: input.calibrationNote,
+				version: review.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.reviews.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_review",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.reviews.set(previous.id, previous);
+				return audit;
+			}
+
+			return ok({ ...updated });
 		},
 
 		async returnPerformanceReviewForCorrection(
@@ -1840,7 +2931,25 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return ratingCheck;
 			}
 
+			if (
+				review.overallRating !== null &&
+				review.overallRating !== input.overallRating
+			) {
+				return invalidInput(
+					"Finalize overall rating must match calibrated rating",
+				);
+			}
+
+			const reviewParticipants = participantsForReview(state, review.id);
 			const reviewAssessments = assessmentsForReview(state, review.id);
+			const delegatedCheck = assertAllDelegatedAssessmentsSubmitted({
+				participants: reviewParticipants,
+				assessments: reviewAssessments,
+			});
+			if (!delegatedCheck.ok) {
+				return delegatedCheck;
+			}
+
 			const selfAssessment = reviewAssessments.find(
 				(assessment) => assessment.kind === "self",
 			);
@@ -1988,7 +3097,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			if (!review || review.organizationId !== input.organizationId) {
 				return ok(null);
 			}
-			const detail = projectPerformanceReviewDetail(
+			const detail = projectPerformanceReviewDetailForReader(
 				{
 					review,
 					participants: participantsForReview(state, review.id),
@@ -2570,7 +3679,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
 			const entries = reviews.map((review) => {
-				const detail = projectPerformanceReviewDetail(
+				const detail = projectPerformanceReviewDetailForReader(
 					{
 						review,
 						participants: participantsForReview(state, review.id),
@@ -2848,7 +3957,9 @@ async function submitAssessment(
 	}
 
 	const participant = participantsForReview(state, review.id).find(
-		(item) => item.role === kind && item.employeeId === input.actorEmployeeId,
+		(item) =>
+			item.id === assessment.participantId &&
+			item.employeeId === input.actorEmployeeId,
 	);
 	if (!participant) {
 		return invalidInput(`Actor is not the assigned ${kind} participant`);

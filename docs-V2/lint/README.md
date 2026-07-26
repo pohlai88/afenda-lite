@@ -62,7 +62,7 @@ SSOT: [`scripts/lib/editor-posture.mjs`](../../scripts/lib/editor-posture.mjs) Â
 | Area | Required posture |
 |------|------------------|
 | Biome LSP | Native `@biomejs/cli-*` platform map; `biome.lsp.watcher.kind: none`; `.npmrc` hoist + `pnpm install` |
-| Formatters | `biomejs.biome` for JS/TS/JSON/CSS; Prettier for md/mdx only |
+| Formatters | `biomejs.biome` for JS/TS/JSON/CSS; `prettier.disableLanguages` blocks Prettier on product langs; Prettier for md/mdx only |
 | tsserver | `disableAutomaticTypeAcquisition: true`; capped memory; `watchOptions.excludeDirectories` incl. `docs-V2` |
 | Explorer | `excludeGitIgnore: false`; `files.watcherExclude` SSOT (incl. `docs-V2/**` watcher-only) |
 | Tailwind ext | `experimental.configFile` â†’ `apps/web/postcss.config.mjs`; scoped `files.exclude` |

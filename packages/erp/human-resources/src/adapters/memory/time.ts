@@ -71,6 +71,7 @@ import {
 	assertOvertimeStatusTransition,
 	assertShiftStatusTransition,
 	assertTimesheetStatusTransition,
+	timesheetReopenSnapshot,
 } from "../../shared/time-guards";
 import type { HumanResourcesStore } from "../../store";
 import type {
@@ -3867,7 +3868,13 @@ export function createMemoryTimeMethods(
 			});
 		},
 		async reopenTimesheet(input, ports) {
-			return transitionTimesheet(state, ports, input, "draft");
+			return transitionTimesheet(
+				state,
+				ports,
+				input,
+				"draft",
+				timesheetReopenSnapshot(),
+			);
 		},
 		async lockTimesheet(input, ports) {
 			return transitionTimesheet(state, ports, input, "locked", {
@@ -4193,6 +4200,14 @@ export function createMemoryTimeMethods(
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) return versionCheck;
+			if (request.status === "approved") {
+				if (request.approvedMaximumMinutes === input.approvedMaximumMinutes) {
+					return ok({ ...request });
+				}
+				return conflict(
+					"Overtime request is already approved with different approved maximum minutes",
+				);
+			}
 			const transition = assertOvertimeStatusTransition(
 				request.status,
 				"approved",

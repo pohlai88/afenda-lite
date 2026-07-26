@@ -62,6 +62,7 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 			"human-resources.salary-band.",
 			"human-resources.employee-compensation.",
 			"human-resources.compensation-review.",
+			"human-resources.compensation-proposal.",
 			"human-resources.approved-compensation-handoff.",
 		],
 		resourceType: "compensation",
@@ -72,6 +73,7 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 		operationPrefixes: [
 			"human-resources.benefit-plan.",
 			"human-resources.benefit-enrollment.",
+			"human-resources.benefit-enrollment-dependent.",
 		],
 		resourceType: "benefits",
 		subjectPolicy: "subject_or_privileged",
@@ -107,6 +109,18 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 		resourceType: "performance",
 		subjectPolicy: "manager_or_privileged",
 		fieldClasses: ["employee_relations_evidence"],
+	},
+	{
+		operationPrefixes: [
+			"human-resources.course.",
+			"human-resources.session.",
+			"human-resources.learning-assignment.",
+			"human-resources.completion.",
+			"human-resources.certification.",
+		],
+		resourceType: "personal_identifiers",
+		subjectPolicy: "subject_or_privileged",
+		fieldClasses: ["personal_identifiers"],
 	},
 	{
 		operationPrefixes: [

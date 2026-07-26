@@ -18,30 +18,6 @@ modules:
     packageName: "@afenda/accounting"
   - activationMode: organization_toggle
     aggregates:
-      - legal_company
-      - officer_appointment
-      - governance_body
-      - governance_membership
-      - authority_mandate
-      - company_premise
-      - governance_meeting
-      - resolution
-      - share_class
-      - share_transaction
-      - share_certificate
-      - beneficial_owner_disclosure
-      - property_holding
-      - licence_permit
-      - bank_account_registration
-      - corporate_document
-      - filing_obligation
-    band: R1-F
-    category: erp
-    id: corporate-administration
-    lifecycle: scaffolded
-    packageName: "@afenda/corporate-administration"
-  - activationMode: organization_toggle
-    aggregates:
       - delivery
     band: R1-F
     category: supply-chain
@@ -100,6 +76,7 @@ modules:
       - compensation_grade
       - salary_band
       - employee_compensation
+      - allowance_entitlement
       - benefit_plan
       - benefit_enrollment
       - compensation_review

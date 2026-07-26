@@ -2,10 +2,13 @@ import type { Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
@@ -13,6 +16,8 @@ import {
 } from "../module-ids";
 import {
 	acknowledgePerformanceReviewInputSchema,
+	addDelegatedReviewerInputSchema,
+	calibratePerformanceReviewInputSchema,
 	finalizePerformanceReviewInputSchema,
 	getEmployeePerformanceHistoryInputSchema,
 	getPerformanceReviewByIdInputSchema,
@@ -21,6 +26,7 @@ import {
 	performanceReviewStatusTransitionInputSchema,
 	reopenPerformanceReviewInputSchema,
 	startPerformanceReviewInputSchema,
+	submitDelegatedAssessmentInputSchema,
 	submitManagerAssessmentInputSchema,
 	submitSelfAssessmentInputSchema,
 } from "../schemas/performance";
@@ -124,7 +130,92 @@ export async function submitManagerAssessment(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation:
-						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
+				}),
+			),
+	});
+}
+
+export async function addDelegatedReviewer(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCommand(input, options, {
+		schema: addDelegatedReviewerInputSchema,
+		invalidMessage: "Invalid delegated reviewer input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
+		execute: (data, { store, ports }) =>
+			store.addDelegatedReviewer(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					delegatedEmployeeId: data.delegatedEmployeeId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
+				}),
+			),
+	});
+}
+
+export async function submitDelegatedAssessment(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCommand(input, options, {
+		schema: submitDelegatedAssessmentInputSchema,
+		invalidMessage: "Invalid delegated assessment submit input",
+		command:
+			HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
+		execute: (data, { store, ports }) =>
+			store.submitDelegatedAssessment(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					participantId: data.participantId,
+					rating: data.rating,
+					commentsSensitive: data.commentsSensitive ?? null,
+					delegatedEmployeeId: data.delegatedEmployeeId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
+				}),
+			),
+	});
+}
+
+export async function calibratePerformanceReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCommand(input, options, {
+		schema: calibratePerformanceReviewInputSchema,
+		invalidMessage: "Invalid performance review calibration input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
+		execute: (data, { store, ports }) =>
+			store.calibratePerformanceReview(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					overallRating: data.overallRating,
+					calibrationNote: data.calibrationNote ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
 				}),
 			),
 	});

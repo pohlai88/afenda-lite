@@ -7,6 +7,7 @@ import {
 	finalizeCompensationReview,
 	recordCompensationRecommendation,
 } from "../../src/compensation-benefits/compensation-review";
+import { seedOpenCompensationReviewCycle } from "./compensation-review-cycle-seed";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
@@ -100,12 +101,20 @@ export async function seedFinalizedCompensationReview(input: {
 	employmentId: string;
 	suffix: string;
 }) {
+	const cycle = await seedOpenCompensationReviewCycle({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		ready: input.seedReady,
+		suffix: input.suffix,
+	});
+
 	const draft = await createCompensationReviewDraft(
 		{
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
 			correlationId: `corr-comp-review-draft-${input.suffix}`,
 			idempotencyKey: `idem-comp-review-${input.suffix}`,
+			cycleId: cycle.id,
 			employeeId: input.employeeId,
 			employmentId: input.employmentId,
 		},

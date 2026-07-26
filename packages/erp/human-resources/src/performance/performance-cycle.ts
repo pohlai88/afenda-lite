@@ -9,21 +9,32 @@ import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CLOSE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ENROLL_ELIGIBLE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_PUBLISH,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_REMOVE_PARTICIPANT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_ELIGIBILITY,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_REVIEW_PERIODS,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
 	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET_ELIGIBILITY,
 	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST,
 	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_PARTICIPANTS,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_REVIEW_PERIODS,
 } from "../module-ids";
 import {
 	addCycleParticipantInputSchema,
 	createPerformanceCycleInputSchema,
+	enrollEligibleCycleParticipantsInputSchema,
 	getPerformanceCycleByIdInputSchema,
+	getPerformanceCycleEligibilityInputSchema,
 	listCycleParticipantsInputSchema,
+	listPerformanceCycleReviewPeriodsInputSchema,
 	listPerformanceCyclesInputSchema,
 	performanceCycleStatusTransitionInputSchema,
 	removeCycleParticipantInputSchema,
+	setPerformanceCycleEligibilityInputSchema,
+	setPerformanceCycleReviewPeriodsInputSchema,
 	updatePerformanceCycleInputSchema,
 } from "../schemas/performance";
 import { fingerprintPerformanceCycleCreate } from "../shared/fingerprint";
@@ -32,10 +43,13 @@ import {
 	runPerformanceCommand,
 	runPerformanceQuery,
 } from "../shared/performance-command";
+import { assertRatingScaleUniqueCodes } from "../shared/performance-rating";
 import type {
 	PerformanceCycle,
+	PerformanceCycleEligibility,
 	PerformanceCycleListPage,
 	PerformanceCycleParticipant,
+	PerformanceCycleReviewPeriod,
 } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_PERFORMANCE_CYCLE =
@@ -52,6 +66,11 @@ export async function createPerformanceCycle(
 		invalidMessage: "Invalid performance cycle create input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE,
 		execute: async (data, { store, ports }) => {
+			const scaleCheck = assertRatingScaleUniqueCodes(data.ratingScale);
+			if (!scaleCheck.ok) {
+				return scaleCheck;
+			}
+
 			const requestFingerprint = fingerprintPerformanceCycleCreate({
 				code: data.code,
 				name: data.name,
@@ -87,7 +106,7 @@ export async function createPerformanceCycle(
 					name: data.name,
 					periodStart: data.periodStart,
 					periodEnd: data.periodEnd,
-					ratingScale: data.ratingScale,
+					ratingScale: scaleCheck.data,
 					weightingModel: data.weightingModel,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
@@ -111,14 +130,22 @@ export async function updatePerformanceCycle(
 		schema: updatePerformanceCycleInputSchema,
 		invalidMessage: "Invalid performance cycle update input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
-		execute: (data, { store, ports }) =>
-			store.updatePerformanceCycle(
+		execute: async (data, { store, ports }) => {
+			if (data.ratingScale !== undefined) {
+				const scaleCheck = assertRatingScaleUniqueCodes(data.ratingScale);
+				if (!scaleCheck.ok) {
+					return scaleCheck;
+				}
+			}
+			return store.updatePerformanceCycle(
 				{
 					organizationId: data.organizationId,
 					cycleId: data.cycleId,
 					name: data.name,
 					periodStart: data.periodStart,
 					periodEnd: data.periodEnd,
+					ratingScale: data.ratingScale,
+					weightingModel: data.weightingModel,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -126,6 +153,32 @@ export async function updatePerformanceCycle(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
+				}),
+			);
+		},
+	});
+}
+
+export async function publishPerformanceCycle(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceCycle>> {
+	return runPerformanceCommand(input, options, {
+		schema: performanceCycleStatusTransitionInputSchema,
+		invalidMessage: "Invalid performance cycle publish input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_PUBLISH,
+		execute: (data, { store, ports }) =>
+			store.publishPerformanceCycle(
+				{
+					organizationId: data.organizationId,
+					cycleId: data.cycleId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_PUBLISH,
 				}),
 			),
 	});
@@ -201,6 +254,118 @@ export async function cancelPerformanceCycle(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL,
+				}),
+			),
+	});
+}
+
+export async function setPerformanceCycleReviewPeriods(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceCycleReviewPeriod[]>> {
+	return runPerformanceCommand(input, options, {
+		schema: setPerformanceCycleReviewPeriodsInputSchema,
+		invalidMessage: "Invalid performance cycle review periods input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_REVIEW_PERIODS,
+		execute: (data, { store, ports }) =>
+			store.setPerformanceCycleReviewPeriods(
+				{
+					organizationId: data.organizationId,
+					cycleId: data.cycleId,
+					periods: data.periods,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_REVIEW_PERIODS,
+				}),
+			),
+	});
+}
+
+export async function listPerformanceCycleReviewPeriods(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceCycleReviewPeriod[]>> {
+	return runPerformanceQuery(input, options, {
+		schema: listPerformanceCycleReviewPeriodsInputSchema,
+		invalidMessage: "Invalid performance cycle review periods list input",
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_REVIEW_PERIODS,
+		execute: (data, { store }) =>
+			store.listPerformanceCycleReviewPeriods({
+				organizationId: data.organizationId,
+				cycleId: data.cycleId,
+			}),
+	});
+}
+
+export async function setPerformanceCycleEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceCycleEligibility>> {
+	return runPerformanceCommand(input, options, {
+		schema: setPerformanceCycleEligibilityInputSchema,
+		invalidMessage: "Invalid performance cycle eligibility input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_ELIGIBILITY,
+		execute: (data, { store, ports }) =>
+			store.setPerformanceCycleEligibility(
+				{
+					organizationId: data.organizationId,
+					cycleId: data.cycleId,
+					minTenureDays: data.minTenureDays,
+					allowedEmploymentStatuses: data.allowedEmploymentStatuses,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_ELIGIBILITY,
+				}),
+			),
+	});
+}
+
+export async function getPerformanceCycleEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceCycleEligibility | null>> {
+	return runPerformanceQuery(input, options, {
+		schema: getPerformanceCycleEligibilityInputSchema,
+		invalidMessage: "Invalid performance cycle eligibility get input",
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET_ELIGIBILITY,
+		execute: (data, { store }) =>
+			store.getPerformanceCycleEligibility({
+				organizationId: data.organizationId,
+				cycleId: data.cycleId,
+			}),
+	});
+}
+
+export async function enrollEligibleCycleParticipants(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceCycleParticipant[]>> {
+	return runPerformanceCommand(input, options, {
+		schema: enrollEligibleCycleParticipantsInputSchema,
+		invalidMessage: "Invalid performance cycle enrollment input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ENROLL_ELIGIBLE,
+		execute: (data, { store, ports }) =>
+			store.enrollEligibleCycleParticipants(
+				{
+					organizationId: data.organizationId,
+					cycleId: data.cycleId,
+					asOfDate:
+						data.asOfDate ?? new Date().toISOString().slice(0, 10),
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ENROLL_ELIGIBLE,
 				}),
 			),
 	});

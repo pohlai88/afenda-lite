@@ -8,6 +8,7 @@ import type {
 	HumanResourcesAttendanceExceptionId,
 	HumanResourcesAttendanceSessionId,
 	HumanResourcesBenefitEnrollmentId,
+	HumanResourcesBenefitEnrollmentDependentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
 	HumanResourcesCareerPlanActionId,
@@ -15,8 +16,10 @@ import type {
 	HumanResourcesCertificationId,
 	HumanResourcesClearanceId,
 	HumanResourcesCompensationGradeId,
+	HumanResourcesCompensationGradeProgressionRuleId,
 	HumanResourcesCompensationProposalId,
 	HumanResourcesCompensationReviewId,
+	HumanResourcesCompensationReviewCycleId,
 	HumanResourcesCompetencyAssessmentId,
 	HumanResourcesCompetencyId,
 	HumanResourcesCompletionId,
@@ -97,12 +100,16 @@ import type {
 } from "./brands";
 import type { HumanResourcesOrganizationDimensions } from "./ports";
 import type {
+	BenefitDependentRelationship,
 	BenefitEnrollmentStatus,
 	BenefitPlanStatus,
+	CompensationGradeProgressionRuleStatus,
 	CompensationGradeStatus,
 	CompensationProposalStatus,
+	CompensationReviewCycleStatus,
 	CompensationReviewStatus,
 	EmployeeCompensationStatus,
+	PayFrequency,
 	SalaryBandStatus,
 } from "./shared/compensation-status";
 import type {
@@ -158,7 +165,9 @@ import type {
 	PerformanceAssessmentKind,
 	PerformanceCheckpointOutcome,
 	PerformanceCycleParticipantStatus,
+	PerformanceCycleReviewPeriodKind,
 	PerformanceCycleStatus,
+	PerformanceGoalKind,
 	PerformanceGoalStatus,
 	PerformanceImprovementPlanStatus,
 	PerformanceReviewStatus,
@@ -809,7 +818,24 @@ export type SalaryBand = {
 	maxAmount: string;
 	effectiveFrom: string;
 	effectiveTo: string | null;
+	supersedesSalaryBandId: HumanResourcesSalaryBandId | null;
 	status: SalaryBandStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompensationGradeProgressionRule = {
+	id: HumanResourcesCompensationGradeProgressionRuleId;
+	organizationId: string;
+	fromGradeId: HumanResourcesCompensationGradeId;
+	toGradeId: HumanResourcesCompensationGradeId;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	minMonthsInGrade: number | null;
+	status: CompensationGradeProgressionRuleStatus;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -826,10 +852,15 @@ export type EmployeeCompensation = {
 	salaryBandId: HumanResourcesSalaryBandId | null;
 	baseAmount: string;
 	currencyCode: string;
+	payFrequency: PayFrequency;
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	reason: string;
 	status: EmployeeCompensationStatus;
+	confidentialNote: string | null;
+	supersedesCompensationId: HumanResourcesEmployeeCompensationId | null;
+	approvedAt: Date | null;
+	approvedBy: string | null;
 	sourceReviewId: HumanResourcesCompensationReviewId | null;
 	createIdempotencyKey: string;
 	fingerprint: string;
@@ -867,6 +898,7 @@ export type CompensationProposalListPage = {
 export type CompensationReview = {
 	id: HumanResourcesCompensationReviewId;
 	organizationId: string;
+	cycleId: HumanResourcesCompensationReviewCycleId;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;
 	status: CompensationReviewStatus;
@@ -887,6 +919,30 @@ export type CompensationReview = {
 	updatedAt: Date;
 };
 
+export type CompensationReviewCycle = {
+	id: HumanResourcesCompensationReviewCycleId;
+	organizationId: string;
+	code: string;
+	name: string;
+	periodStart: string;
+	periodEnd: string;
+	status: CompensationReviewCycleStatus;
+	budgetTotalAmount: string;
+	budgetCurrencyCode: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompensationReviewCycleListPage = {
+	cycles: CompensationReviewCycle[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
 export type BenefitPlan = {
 	id: HumanResourcesBenefitPlanId;
 	organizationId: string;
@@ -895,6 +951,18 @@ export type BenefitPlan = {
 	eligibilityNote: string | null;
 	status: BenefitPlanStatus;
 	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type BenefitPlanEligibility = {
+	id: string;
+	organizationId: string;
+	planId: HumanResourcesBenefitPlanId;
+	minTenureDays: number | null;
+	allowedEmploymentStatuses: EmploymentStatus[];
 	createdBy: string;
 	updatedBy: string;
 	createdAt: Date;
@@ -910,8 +978,28 @@ export type BenefitEnrollment = {
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	status: BenefitEnrollmentStatus;
+	employeeContributionAmount: string | null;
+	employerContributionAmount: string | null;
+	contributionCurrencyCode: string | null;
+	contributionFrequency: PayFrequency | null;
+	waiverReason: string | null;
 	createIdempotencyKey: string;
 	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type BenefitEnrollmentDependent = {
+	id: HumanResourcesBenefitEnrollmentDependentId;
+	organizationId: string;
+	enrollmentId: HumanResourcesBenefitEnrollmentId;
+	dependentName: string;
+	relationship: BenefitDependentRelationship;
+	effectiveFrom: string;
+	effectiveTo: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -928,6 +1016,13 @@ export type CompensationGradeListPage = {
 
 export type SalaryBandListPage = {
 	bands: SalaryBand[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type CompensationGradeProgressionRuleListPage = {
+	rules: CompensationGradeProgressionRule[];
 	totalCount: number;
 	page: number;
 	pageSize: number;
@@ -1313,6 +1408,31 @@ export type PerformanceCycle = {
 	updatedAt: Date;
 };
 
+export type PerformanceCycleReviewPeriod = {
+	id: string;
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	kind: PerformanceCycleReviewPeriodKind;
+	periodStart: string;
+	periodEnd: string;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type PerformanceCycleEligibility = {
+	id: string;
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+	minTenureDays: number | null;
+	allowedEmploymentStatuses: EmploymentStatus[];
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type PerformanceCycleParticipant = {
 	id: HumanResourcesPerformanceCycleParticipantId;
 	organizationId: string;
@@ -1339,6 +1459,10 @@ export type PerformanceGoal = {
 	periodStart: string;
 	periodEnd: string;
 	exceptionOutsideCycle: boolean;
+	goalKind: PerformanceGoalKind;
+	alignedToGoalId: HumanResourcesGoalId | null;
+	completionNote: string | null;
+	completionEvidenceReference: string | null;
 	status: PerformanceGoalStatus;
 	version: number;
 	createdBy: string;
@@ -1354,10 +1478,14 @@ export type PerformanceGoalProgress = {
 	recordedAt: Date;
 	progressNote: string;
 	progressValue: string | null;
+	evidenceReference: string | null;
 	recordedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
 };
+
+export const PERFORMANCE_REVIEW_SELF_SEQUENCE = 0 as const;
+export const PERFORMANCE_REVIEW_MANAGER_SEQUENCE = 1000 as const;
 
 export type PerformanceReview = {
 	id: HumanResourcesReviewId;
@@ -1367,6 +1495,7 @@ export type PerformanceReview = {
 	employmentId: HumanResourcesEmploymentId;
 	overallRating: string | null;
 	acknowledgementNote: string | null;
+	calibrationNote: string | null;
 	status: PerformanceReviewStatus;
 	version: number;
 	createdBy: string;
@@ -1382,6 +1511,7 @@ export type PerformanceReviewParticipant = {
 	role: "self" | "manager" | "delegated";
 	employeeId: HumanResourcesEmployeeId | null;
 	userId: string | null;
+	sequenceNumber: number;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -1393,6 +1523,7 @@ export type PerformanceAssessment = {
 	id: HumanResourcesAssessmentId;
 	organizationId: string;
 	reviewId: HumanResourcesReviewId;
+	participantId: HumanResourcesReviewParticipantId;
 	kind: PerformanceAssessmentKind;
 	rating: string | null;
 	commentsSensitive: string | null;
@@ -1459,6 +1590,13 @@ export type PerformanceGoalListPage = {
 	pageSize: number;
 };
 
+export type PerformanceGoalProgressListPage = {
+	progress: PerformanceGoalProgress[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
 export type PerformanceReviewListPage = {
 	reviews: PerformanceReview[];
 	totalCount: number;
@@ -1475,6 +1613,7 @@ export type PerformanceImprovementPlanListPage = {
 
 export type PerformanceAssessmentProjection = {
 	id: HumanResourcesAssessmentId;
+	participantId: HumanResourcesReviewParticipantId;
 	kind: PerformanceAssessmentKind;
 	rating: string | null;
 	commentsSensitive: string | null;
@@ -1505,21 +1644,12 @@ export function projectPerformanceAssessment(
 	assessment: PerformanceAssessment,
 	includeConfidential: boolean,
 ): PerformanceAssessmentProjection {
-	if (includeConfidential) {
-		return {
-			id: assessment.id,
-			kind: assessment.kind,
-			rating: assessment.rating,
-			commentsSensitive: assessment.commentsSensitive,
-			submittedAt: assessment.submittedAt,
-			version: assessment.version,
-		};
-	}
 	return {
 		id: assessment.id,
+		participantId: assessment.participantId,
 		kind: assessment.kind,
-		rating: null,
-		commentsSensitive: null,
+		rating: includeConfidential ? assessment.rating : null,
+		commentsSensitive: includeConfidential ? assessment.commentsSensitive : null,
 		submittedAt: assessment.submittedAt,
 		version: assessment.version,
 	};
@@ -1539,6 +1669,7 @@ export function projectPerformanceReviewDetail(
 			: {
 					...input.review,
 					overallRating: null,
+					calibrationNote: null,
 					acknowledgementNote: input.review.acknowledgementNote,
 				},
 		participants: input.participants,
@@ -2698,7 +2829,11 @@ export type ApprovedTimeHandoff = {
 	periodStart: string;
 	periodEnd: string;
 	regularMinutes: number;
-	overtime: readonly { type: OvertimeType; minutes: number }[];
+	overtime: readonly {
+		type: OvertimeType;
+		minutes: number;
+		payrollApprovedMinutes?: number | null;
+	}[];
 	publicHolidayMinutes: number;
 	restDayMinutes: number;
 	nightMinutes: number;

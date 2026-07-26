@@ -41,6 +41,7 @@ import {
 	assertCompletionRecordable,
 	assertCourseActive,
 	assertCourseCanArchive,
+	assertCourseStatusTransition,
 	assertNoDuplicateCompletion,
 	assertSessionNotTerminal,
 	assertSessionSchedulable,
@@ -361,8 +362,9 @@ export function createMemoryLearningMethods(
 				return versionCheck;
 			}
 
-			if (course.status === "active") {
-				return conflict("Course is already active");
+			const transition = assertCourseStatusTransition(course.status, "active");
+			if (!transition.ok) {
+				return transition;
 			}
 
 			const now = new Date();

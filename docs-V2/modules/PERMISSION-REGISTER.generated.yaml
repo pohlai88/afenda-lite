@@ -52,69 +52,6 @@ permissions:
   - code: accounting.exception.manage
     moduleId: accounting
     namespace: accounting
-  - code: corporate-administration.company.create
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.update
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.activate
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.suspend
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.dissolve
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.archive
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company.list
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company-name.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.company-identifier.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.governance.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.governance.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.share-capital.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.share-capital.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.property-assets.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.property-assets.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.licences-banking.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.licences-banking.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.documents-filings.manage
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.documents-filings.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
-  - code: corporate-administration.compliance.read
-    moduleId: corporate-administration
-    namespace: corporate-administration
   - code: fulfillment.delivery.read
     moduleId: fulfillment
     namespace: fulfillment
@@ -245,6 +182,9 @@ permissions:
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.leave-request.sensitive-read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave.handoff.read
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.attendance.manage

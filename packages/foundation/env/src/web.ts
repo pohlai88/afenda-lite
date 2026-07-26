@@ -75,6 +75,9 @@ export const env = createEnv({
 		/** AI Gateway model id (`provider/model`). */
 		AI_THE_MACHINE_MODEL: z.string().min(1).optional(),
 
+		/** Optional HTTP attendance connector base URL for HR Time import pulls. */
+		HR_ATTENDANCE_CONNECTOR_BASE_URL: z.url().optional(),
+
 		PLAYGROUND_ENABLED: boolString
 			.optional()
 			.default(false)
@@ -139,6 +142,9 @@ export const env = createEnv({
 
 		AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
 		AI_THE_MACHINE_MODEL: process.env.AI_THE_MACHINE_MODEL,
+
+		HR_ATTENDANCE_CONNECTOR_BASE_URL:
+			process.env.HR_ATTENDANCE_CONNECTOR_BASE_URL,
 
 		PLAYGROUND_ENABLED: process.env.PLAYGROUND_ENABLED,
 		PLAYGROUND_SURVEY_ID: process.env.PLAYGROUND_SURVEY_ID,

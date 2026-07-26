@@ -6,9 +6,11 @@ import {
 	eq,
 	hrPerformanceAssessment,
 	hrPerformanceCycle,
+	hrPerformanceCycleEligibility,
 	hrPerformanceCycleParticipant,
+	hrPerformanceCycleReviewPeriod,
 	hrPerformanceGoal,
-	type hrPerformanceGoalProgress,
+	hrPerformanceGoalProgress,
 	hrPerformanceImprovementCheckpoint,
 	hrPerformanceImprovementPlan,
 	hrPerformanceReview,
@@ -31,6 +33,7 @@ import {
 	type HumanResourcesImprovementPlanId,
 	type HumanResourcesPerformanceCycleId,
 	type HumanResourcesReviewId,
+	type HumanResourcesReviewParticipantId,
 	humanResourcesAssessmentIdSchema,
 	humanResourcesGoalProgressIdSchema,
 	humanResourcesImprovementCheckpointIdSchema,
@@ -55,6 +58,11 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import { assertExpectedVersion } from "../../shared/concurrency";
+import { tenureDaysOn } from "../../shared/benefit-guards";
+import {
+	assertEmploymentEligibleForPerformanceCycle,
+	isEmploymentEligibleForPerformanceCycle,
+} from "../../shared/performance-cycle-eligibility";
 import {
 	conflict,
 	invalidInput,
@@ -65,28 +73,43 @@ import {
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	assertCheckpointOutcomeTransition,
+	assertCyclePublishReady,
 	assertCycleStatusTransition,
+	assertGoalAlignment,
 	assertGoalDatesWithinCycle,
 	assertGoalEditable,
 	assertGoalStatusTransition,
+	assertGoalWeightForModel,
 	assertGoalWeightsSumTo100,
 	assertImprovementPlanStatusTransition,
+	assertAllDelegatedAssessmentsSubmitted,
+	assertPriorDelegatedAssessmentsSubmitted,
 	assertReviewNotFinalized,
+	assertReviewPeriodsNonOverlapping,
+	assertReviewPeriodsWithinCycle,
 	assertReviewStatusTransition,
 	assertValidCyclePeriod,
+	nextDelegatedSequenceNumber,
 } from "../../shared/performance-guards";
 import {
+	assertRatingScaleUniqueCodes,
 	parseRatingScale,
 	validateRatingInScale,
+	type PerformanceRatingScale,
 } from "../../shared/performance-rating";
+import { employmentStatusSchema } from "../../shared/employment-status";
 import {
+	isPerformanceCycleConfigurable,
 	isPerformanceCycleOpen,
+	isPerformanceCycleParticipantEnrollable,
 	isPerformanceGoalProgressable,
 	isPerformanceReviewFinalized,
 	performanceAssessmentKindSchema,
 	performanceCheckpointOutcomeSchema,
 	performanceCycleParticipantStatusSchema,
+	performanceCycleReviewPeriodKindSchema,
 	performanceCycleStatusSchema,
+	performanceGoalKindSchema,
 	performanceGoalStatusSchema,
 	performanceImprovementPlanStatusSchema,
 	performanceReviewStatusSchema,
@@ -101,19 +124,28 @@ import type { HumanResourcesStore } from "../../store";
 import type {
 	PerformanceAssessment,
 	PerformanceCycle,
+	PerformanceCycleEligibility,
 	PerformanceCycleParticipant,
+	PerformanceCycleReviewPeriod,
 	PerformanceGoal,
 	PerformanceGoalProgress,
+	PerformanceGoalProgressListPage,
 	PerformanceImprovementCheckpoint,
 	PerformanceImprovementPlan,
 	PerformanceReview,
 	PerformanceReviewParticipant,
 } from "../../types";
-import { projectPerformanceReviewDetail } from "../../types";
+import {
+	PERFORMANCE_REVIEW_MANAGER_SEQUENCE,
+	PERFORMANCE_REVIEW_SELF_SEQUENCE,
+} from "../../types";
+import { projectPerformanceReviewDetailForReader } from "../../performance/performance-field-projection";
 
 type PerformanceHost = {
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
+	listEmployees: HumanResourcesStore["listEmployees"];
+	listEmploymentsByEmployee: HumanResourcesStore["listEmploymentsByEmployee"];
 };
 
 function eventPayloadJson(value: Record<string, unknown>): string {
@@ -129,6 +161,12 @@ export type DrizzlePerformanceMethods = Pick<
 	| "openPerformanceCycle"
 	| "closePerformanceCycle"
 	| "cancelPerformanceCycle"
+	| "publishPerformanceCycle"
+	| "setPerformanceCycleReviewPeriods"
+	| "listPerformanceCycleReviewPeriods"
+	| "setPerformanceCycleEligibility"
+	| "getPerformanceCycleEligibility"
+	| "enrollEligibleCycleParticipants"
 	| "addCycleParticipant"
 	| "removeCycleParticipant"
 	| "listPerformanceCycles"
@@ -141,12 +179,18 @@ export type DrizzlePerformanceMethods = Pick<
 	| "approvePerformanceGoal"
 	| "rejectPerformanceGoal"
 	| "recordGoalProgress"
+	| "activatePerformanceGoal"
+	| "alignPerformanceGoal"
 	| "closePerformanceGoal"
 	| "cancelPerformanceGoal"
+	| "listGoalProgress"
 	| "listEmployeeGoals"
 	| "startPerformanceReview"
 	| "submitSelfAssessment"
 	| "submitManagerAssessment"
+	| "addDelegatedReviewer"
+	| "submitDelegatedAssessment"
+	| "calibratePerformanceReview"
 	| "returnPerformanceReviewForCorrection"
 	| "acknowledgePerformanceReview"
 	| "finalizePerformanceReview"
@@ -201,6 +245,31 @@ type ParticipantSqlRow = {
 	updated_at: Date;
 };
 
+type ReviewPeriodSqlRow = {
+	id: string;
+	organization_id: string;
+	cycle_id: string;
+	kind: string;
+	period_start: string;
+	period_end: string;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type EligibilitySqlRow = {
+	id: string;
+	organization_id: string;
+	cycle_id: string;
+	min_tenure_days: number | null;
+	allowed_employment_statuses: string;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
 type GoalSqlRow = {
 	id: string;
 	organization_id: string;
@@ -213,6 +282,10 @@ type GoalSqlRow = {
 	period_start: string;
 	period_end: string;
 	exception_outside_cycle: boolean;
+	goal_kind: string;
+	aligned_to_goal_id: string | null;
+	completion_note: string | null;
+	completion_evidence_reference: string | null;
 	status: string;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
@@ -230,6 +303,7 @@ type GoalProgressSqlRow = {
 	recorded_at: Date;
 	progress_note: string;
 	progress_value: string | null;
+	evidence_reference: string | null;
 	recorded_by: string;
 	created_at: Date;
 	updated_at: Date;
@@ -243,6 +317,7 @@ type ReviewSqlRow = {
 	employment_id: string;
 	overall_rating: string | null;
 	acknowledgement_note: string | null;
+	calibration_note: string | null;
 	status: string;
 	finalize_idempotency_key: string | null;
 	version: number;
@@ -259,6 +334,7 @@ type ReviewParticipantSqlRow = {
 	role: string;
 	employee_id: string | null;
 	user_id: string | null;
+	sequence_number: number;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -270,6 +346,7 @@ type AssessmentSqlRow = {
 	id: string;
 	organization_id: string;
 	review_id: string;
+	participant_id: string;
 	kind: string;
 	rating: string | null;
 	comments_sensitive: string | null;
@@ -400,6 +477,135 @@ function mapParticipantSql(
 	});
 }
 
+function mapReviewPeriodSql(
+	row: ReviewPeriodSqlRow,
+): Result<PerformanceCycleReviewPeriod> {
+	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
+	if (!cycleId.ok) return cycleId;
+	const kind = performanceCycleReviewPeriodKindSchema.safeParse(row.kind);
+	if (!kind.success) {
+		return fail("INTERNAL_ERROR", "Invalid review period kind");
+	}
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		cycleId: cycleId.data,
+		kind: kind.data,
+		periodStart: row.period_start,
+		periodEnd: row.period_end,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapEligibilitySql(
+	row: EligibilitySqlRow,
+): Result<PerformanceCycleEligibility> {
+	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
+	if (!cycleId.ok) return cycleId;
+	const statuses = row.allowed_employment_statuses
+		.split(",")
+		.map((value) => value.trim())
+		.filter((value) => value.length > 0);
+	const allowedEmploymentStatuses: PerformanceCycleEligibility["allowedEmploymentStatuses"] =
+		[];
+	for (const status of statuses) {
+		const parsed = employmentStatusSchema.safeParse(status);
+		if (!parsed.success) {
+			return fail(
+				"INTERNAL_ERROR",
+				"Invalid performance cycle eligibility employment status",
+			);
+		}
+		allowedEmploymentStatuses.push(parsed.data);
+	}
+	return ok({
+		id: row.id,
+		organizationId: row.organization_id,
+		cycleId: cycleId.data,
+		minTenureDays: row.min_tenure_days,
+		allowedEmploymentStatuses,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+async function loadCycleReviewPeriods(input: {
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+}): Promise<Result<PerformanceCycleReviewPeriod[]>> {
+	try {
+		const rows = await db
+			.select()
+			.from(hrPerformanceCycleReviewPeriod)
+			.where(
+				and(
+					eq(hrPerformanceCycleReviewPeriod.organizationId, input.organizationId),
+					eq(hrPerformanceCycleReviewPeriod.cycleId, input.cycleId),
+				),
+			);
+		const periods: PerformanceCycleReviewPeriod[] = [];
+		for (const row of rows) {
+			const mapped = mapReviewPeriodSql({
+				id: row.id,
+				organization_id: row.organizationId,
+				cycle_id: row.cycleId,
+				kind: row.kind,
+				period_start: row.periodStart,
+				period_end: row.periodEnd,
+				created_by: row.createdBy,
+				updated_by: row.updatedBy,
+				created_at: row.createdAt,
+				updated_at: row.updatedAt,
+			});
+			if (!mapped.ok) return mapped;
+			periods.push(mapped.data);
+		}
+		return ok(periods);
+	} catch (error) {
+		return mapPersistenceFailure(error, "Failed to load cycle review periods");
+	}
+}
+
+async function loadCycleEligibility(input: {
+	organizationId: string;
+	cycleId: HumanResourcesPerformanceCycleId;
+}): Promise<Result<PerformanceCycleEligibility | null>> {
+	try {
+		const rows = await db
+			.select()
+			.from(hrPerformanceCycleEligibility)
+			.where(
+				and(
+					eq(hrPerformanceCycleEligibility.organizationId, input.organizationId),
+					eq(hrPerformanceCycleEligibility.cycleId, input.cycleId),
+				),
+			)
+			.limit(1);
+		const row = rows[0];
+		if (!row) {
+			return ok(null);
+		}
+		return mapEligibilitySql({
+			id: row.id,
+			organization_id: row.organizationId,
+			cycle_id: row.cycleId,
+			min_tenure_days: row.minTenureDays,
+			allowed_employment_statuses: row.allowedEmploymentStatuses,
+			created_by: row.createdBy,
+			updated_by: row.updatedBy,
+			created_at: row.createdAt,
+			updated_at: row.updatedAt,
+		});
+	} catch (error) {
+		return mapPersistenceFailure(error, "Failed to load cycle eligibility");
+	}
+}
+
 function mapParticipant(
 	row: typeof hrPerformanceCycleParticipant.$inferSelect,
 ): Result<PerformanceCycleParticipant> {
@@ -429,6 +635,13 @@ function mapGoalSql(row: GoalSqlRow): Result<PerformanceGoal> {
 	if (!employmentId.ok) return employmentId;
 	const status = performanceGoalStatusSchema.safeParse(row.status);
 	if (!status.success) return fail("INTERNAL_ERROR", "Invalid goal status");
+	const goalKind = performanceGoalKindSchema.safeParse(row.goal_kind);
+	if (!goalKind.success) return fail("INTERNAL_ERROR", "Invalid goal kind");
+	const alignedToGoalId =
+		row.aligned_to_goal_id === null
+			? ok(null)
+			: parseHumanResourcesGoalId(row.aligned_to_goal_id);
+	if (!alignedToGoalId.ok) return alignedToGoalId;
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -441,6 +654,10 @@ function mapGoalSql(row: GoalSqlRow): Result<PerformanceGoal> {
 		periodStart: row.period_start,
 		periodEnd: row.period_end,
 		exceptionOutsideCycle: row.exception_outside_cycle,
+		goalKind: goalKind.data,
+		alignedToGoalId: alignedToGoalId.data,
+		completionNote: row.completion_note,
+		completionEvidenceReference: row.completion_evidence_reference,
 		status: status.data,
 		version: row.version,
 		createdBy: row.created_by,
@@ -465,6 +682,10 @@ function mapGoal(
 		period_start: row.periodStart,
 		period_end: row.periodEnd,
 		exception_outside_cycle: row.exceptionOutsideCycle,
+		goal_kind: row.goalKind,
+		aligned_to_goal_id: row.alignedToGoalId,
+		completion_note: row.completionNote,
+		completion_evidence_reference: row.completionEvidenceReference,
 		status: row.status,
 		create_idempotency_key: row.createIdempotencyKey,
 		create_request_fingerprint: row.createRequestFingerprint,
@@ -490,6 +711,7 @@ function mapGoalProgressSql(
 		recordedAt: row.recorded_at,
 		progressNote: row.progress_note,
 		progressValue: row.progress_value,
+		evidenceReference: row.evidence_reference,
 		recordedBy: row.recorded_by,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
@@ -506,6 +728,7 @@ function _mapGoalProgress(
 		recorded_at: row.recordedAt,
 		progress_note: row.progressNote,
 		progress_value: row.progressValue,
+		evidence_reference: row.evidenceReference,
 		recorded_by: row.recordedBy,
 		created_at: row.createdAt,
 		updated_at: row.updatedAt,
@@ -531,6 +754,7 @@ function mapReviewSql(row: ReviewSqlRow): Result<PerformanceReview> {
 		employmentId: employmentId.data,
 		overallRating: row.overall_rating,
 		acknowledgementNote: row.acknowledgement_note,
+		calibrationNote: row.calibration_note,
 		status: status.data,
 		version: row.version,
 		createdBy: row.created_by,
@@ -551,6 +775,7 @@ function mapReview(
 		employment_id: row.employmentId,
 		overall_rating: row.overallRating,
 		acknowledgement_note: row.acknowledgementNote,
+		calibration_note: row.calibrationNote,
 		status: row.status,
 		finalize_idempotency_key: row.finalizeIdempotencyKey,
 		version: row.version,
@@ -582,6 +807,7 @@ function mapReviewParticipantSql(
 		role,
 		employeeId,
 		userId: row.user_id,
+		sequenceNumber: row.sequence_number,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -597,12 +823,15 @@ function mapAssessmentSql(
 	if (!id.ok) return id;
 	const reviewId = parseHumanResourcesReviewId(row.review_id);
 	if (!reviewId.ok) return reviewId;
+	const participantId = parseHumanResourcesReviewParticipantId(row.participant_id);
+	if (!participantId.ok) return participantId;
 	const kind = performanceAssessmentKindSchema.safeParse(row.kind);
 	if (!kind.success) return fail("INTERNAL_ERROR", "Invalid assessment kind");
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		reviewId: reviewId.data,
+		participantId: participantId.data,
 		kind: kind.data,
 		rating: row.rating,
 		commentsSensitive: row.comments_sensitive,
@@ -622,6 +851,7 @@ function mapAssessment(
 		id: row.id,
 		organization_id: row.organizationId,
 		review_id: row.reviewId,
+		participant_id: row.participantId,
 		kind: row.kind,
 		rating: row.rating,
 		comments_sensitive: row.commentsSensitive,
@@ -902,6 +1132,47 @@ async function mutateGoalStatus(
 	}
 }
 
+async function loadAlignmentAncestorMap(input: {
+	organizationId: string;
+	startParentId: HumanResourcesGoalId;
+}): Promise<
+	Map<string, { id: string; alignedToGoalId: string | null }>
+> {
+	const map = new Map<string, { id: string; alignedToGoalId: string | null }>();
+	let cursor: string | null = input.startParentId;
+	while (cursor !== null) {
+		if (map.has(cursor)) {
+			break;
+		}
+		const rows: Array<{
+			id: string;
+			alignedToGoalId: string | null;
+		}> = await db
+			.select({
+				id: hrPerformanceGoal.id,
+				alignedToGoalId: hrPerformanceGoal.alignedToGoalId,
+			})
+			.from(hrPerformanceGoal)
+			.where(
+				and(
+					eq(hrPerformanceGoal.organizationId, input.organizationId),
+					eq(hrPerformanceGoal.id, cursor),
+				),
+			)
+			.limit(1);
+		const row = rows[0];
+		if (!row) {
+			break;
+		}
+		map.set(row.id, {
+			id: row.id,
+			alignedToGoalId: row.alignedToGoalId,
+		});
+		cursor = row.alignedToGoalId;
+	}
+	return map;
+}
+
 async function mutateReviewStatus(
 	host: DrizzlePerformanceMethods & PerformanceHost,
 	input: {
@@ -1127,7 +1398,9 @@ async function submitAssessment(
 		return invalidState(`Missing ${kind} assessment`);
 	}
 	const participant = detail.data.participants.find(
-		(item) => item.role === kind && item.employeeId === input.actorEmployeeId,
+		(item) =>
+			item.id === assessment.participantId &&
+			item.employeeId === input.actorEmployeeId,
 	);
 	if (!participant) {
 		return invalidInput(`Actor is not the assigned ${kind} participant`);
@@ -1359,7 +1632,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		if (existing.data.status !== "draft") {
+		if (!isPerformanceCycleConfigurable(existing.data.status)) {
 			return invalidState("Performance cycle can only be edited while draft");
 		}
 		const versionCheck = assertExpectedVersion(
@@ -1373,9 +1646,18 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const periodCheck = assertValidCyclePeriod({ periodStart, periodEnd });
 		if (!periodCheck.ok) return periodCheck;
 
+		let ratingScale = existing.data.ratingScale;
+		if (input.ratingScale !== undefined) {
+			const scaleCheck = assertRatingScaleUniqueCodes(input.ratingScale);
+			if (!scaleCheck.ok) return scaleCheck;
+			ratingScale = scaleCheck.data;
+		}
+
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const name = input.name ?? existing.data.name;
+		const weightingModel = input.weightingModel ?? existing.data.weightingModel;
+		const ratingScaleJson = JSON.stringify(ratingScale);
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[CycleSqlRow[]]>((sqlTag) => [
@@ -1385,6 +1667,8 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						SET name = ${name},
 							period_start = ${periodStart},
 							period_end = ${periodEnd},
+							rating_scale = ${ratingScaleJson}::jsonb,
+							weighting_model = ${weightingModel},
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
@@ -1443,6 +1727,20 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			"open",
 		);
 		if (!transition.ok) return transition;
+
+		const participants = await this.listCycleParticipants({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!participants.ok) return participants;
+		const activeParticipants = participants.data.filter(
+			(participant) => participant.status === "active",
+		);
+		if (activeParticipants.length === 0) {
+			return invalidState(
+				"Performance cycle must have at least one active participant before open",
+			);
+		}
 
 		const cycle = existing.data;
 		const nextVersion = input.expectedVersion + 1;
@@ -1648,6 +1946,484 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 	},
 
+	async publishPerformanceCycle(input, _ports, meta) {
+		const existing = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const transition = assertCycleStatusTransition(
+			existing.data.status,
+			"published",
+		);
+		if (!transition.ok) return transition;
+
+		const eligibility = await loadCycleEligibility({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!eligibility.ok) return eligibility;
+		const reviewPeriods = await loadCycleReviewPeriods({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!reviewPeriods.ok) return reviewPeriods;
+		const publishReady = assertCyclePublishReady({
+			ratingScale: existing.data.ratingScale,
+			eligibility: eligibility.data,
+			reviewPeriods: reviewPeriods.data,
+		});
+		if (!publishReady.ok) return publishReady;
+
+		const cycle = existing.data;
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[CycleSqlRow[]]>((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_performance_cycle
+						SET status = 'published',
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.cycleId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+							AND status = ${cycle.status}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_cycle', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance cycle",
+				});
+			}
+			return mapCycleSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to publish performance cycle");
+		}
+	},
+
+	async setPerformanceCycleReviewPeriods(input, _ports, meta) {
+		const existing = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		if (!isPerformanceCycleConfigurable(existing.data.status)) {
+			return invalidState(
+				"Review periods can only be configured while cycle is draft",
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const withinCycle = assertReviewPeriodsWithinCycle({
+			cyclePeriodStart: existing.data.periodStart,
+			cyclePeriodEnd: existing.data.periodEnd,
+			periods: input.periods,
+		});
+		if (!withinCycle.ok) return withinCycle;
+
+		const kinds = new Set(input.periods.map((period) => period.kind));
+		if (kinds.size !== input.periods.length) {
+			return invalidInput("Each review period kind may only be configured once");
+		}
+
+		const nextPeriods: PerformanceCycleReviewPeriod[] = input.periods.map(
+			(period) => ({
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				cycleId: input.cycleId,
+				kind: period.kind,
+				periodStart: period.periodStart,
+				periodEnd: period.periodEnd,
+				createdBy: input.actorUserId,
+				updatedBy: input.actorUserId,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			}),
+		);
+		const overlapCheck = assertReviewPeriodsNonOverlapping(nextPeriods);
+		if (!overlapCheck.ok) return overlapCheck;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const results = await runNeonHttpTransaction((sqlTag) => {
+				const statements = [
+					sqlTag`
+						WITH mutated AS (
+							UPDATE hr_performance_cycle
+							SET version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.cycleId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+								AND status = 'draft'
+							RETURNING *
+						),
+						deleted AS (
+							DELETE FROM hr_performance_cycle_review_period
+							WHERE organization_id = ${input.organizationId}
+								AND cycle_id = ${input.cycleId}
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_performance_cycle_review_period', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+				];
+				for (const period of nextPeriods) {
+					statements.push(sqlTag`
+						INSERT INTO hr_performance_cycle_review_period (
+							id, organization_id, cycle_id, kind, period_start, period_end,
+							created_by, updated_by
+						)
+						VALUES (
+							${period.id}, ${period.organizationId}, ${period.cycleId}, ${period.kind},
+							${period.periodStart}, ${period.periodEnd},
+							${period.createdBy}, ${period.updatedBy}
+						)
+						RETURNING *
+					`);
+				}
+				return statements;
+			});
+			const cycleRows = results[0] as CycleSqlRow[];
+			if (!cycleRows[0]) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance cycle",
+				});
+			}
+
+			const inserted: PerformanceCycleReviewPeriod[] = [];
+			for (let index = 1; index < results.length; index += 1) {
+				const row = (results[index] as ReviewPeriodSqlRow[])[0];
+				if (!row) {
+					return fail(
+						"INTERNAL_ERROR",
+						"Failed to set performance cycle review periods",
+					);
+				}
+				const mapped = mapReviewPeriodSql(row);
+				if (!mapped.ok) return mapped;
+				inserted.push(mapped.data);
+			}
+
+			return ok(inserted);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to set performance cycle review periods",
+			);
+		}
+	},
+
+	async listPerformanceCycleReviewPeriods(input) {
+		const cycle = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!cycle.ok) return cycle;
+		if (cycle.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		return loadCycleReviewPeriods({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+	},
+
+	async setPerformanceCycleEligibility(input, _ports, meta) {
+		const existing = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		if (!isPerformanceCycleConfigurable(existing.data.status)) {
+			return invalidState(
+				"Eligibility can only be configured while cycle is draft",
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const currentEligibility = await loadCycleEligibility({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!currentEligibility.ok) return currentEligibility;
+
+		const id = currentEligibility.data?.id ?? randomUUID();
+		const auditId = randomUUID();
+		const allowedStatuses = input.allowedEmploymentStatuses.join(",");
+		const nextVersion = input.expectedVersion + 1;
+		const cycleAuditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[EligibilitySqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH cycle_mutated AS (
+							UPDATE hr_performance_cycle
+							SET version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.cycleId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+								AND status = 'draft'
+							RETURNING *
+						),
+						mutated AS (
+							INSERT INTO hr_performance_cycle_eligibility (
+								id, organization_id, cycle_id, min_tenure_days,
+								allowed_employment_statuses, created_by, updated_by
+							)
+							VALUES (
+								${id}, ${input.organizationId}, ${input.cycleId}, ${input.minTenureDays},
+								${allowedStatuses}, ${input.actorUserId}, ${input.actorUserId}
+							)
+							ON CONFLICT (organization_id, cycle_id)
+							DO UPDATE SET
+								min_tenure_days = EXCLUDED.min_tenure_days,
+								allowed_employment_statuses = EXCLUDED.allowed_employment_statuses,
+								updated_by = EXCLUDED.updated_by,
+								updated_at = now()
+							RETURNING *
+						),
+						cycle_audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${cycleAuditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_performance_cycle', id, 'UPDATE', '[]'::jsonb
+							FROM cycle_mutated
+							RETURNING id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_performance_cycle_eligibility', id,
+								${currentEligibility.data === null ? "CREATE" : "UPDATE"}, '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, cycle_mutated, cycle_audited, audited
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance cycle",
+				});
+			}
+			return mapEligibilitySql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to set performance cycle eligibility",
+			);
+		}
+	},
+
+	async getPerformanceCycleEligibility(input) {
+		const cycle = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!cycle.ok) return cycle;
+		if (cycle.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		return loadCycleEligibility({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+	},
+
+	async enrollEligibleCycleParticipants(input, _ports, meta) {
+		const cycle = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!cycle.ok) return cycle;
+		if (cycle.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		if (!isPerformanceCycleParticipantEnrollable(cycle.data.status)) {
+			return invalidState(
+				"Eligible participants can only be enrolled while cycle is published or open",
+			);
+		}
+
+		const eligibility = await loadCycleEligibility({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!eligibility.ok) return eligibility;
+		if (eligibility.data === null) {
+			return invalidState(
+				"Performance cycle eligibility must be configured before enrollment",
+			);
+		}
+
+		const enrolled: PerformanceCycleParticipant[] = [];
+		let page = 1;
+		const pageSize = 100;
+
+		while (true) {
+			const employees = await this.listEmployees({
+				organizationId: input.organizationId,
+				page,
+				pageSize,
+			});
+			if (!employees.ok) return employees;
+			if (employees.data.employees.length === 0) {
+				break;
+			}
+
+			for (const employee of employees.data.employees) {
+				const employments = await this.listEmploymentsByEmployee({
+					organizationId: input.organizationId,
+					employeeId: employee.id,
+				});
+				if (!employments.ok) return employments;
+
+				for (const employmentRef of employments.data) {
+					const employment = await this.getEmploymentById({
+						organizationId: input.organizationId,
+						employmentId: employmentRef.id,
+					});
+					if (!employment.ok) return employment;
+					if (employment.data === null) {
+						continue;
+					}
+					if (
+						!isEmploymentEligibleForPerformanceCycle({
+							eligibility: eligibility.data,
+							employmentStatus: employment.data.status,
+							tenureDays: tenureDaysOn(
+								employment.data.startsOn,
+								input.asOfDate,
+							),
+						})
+					) {
+						continue;
+					}
+
+					const added = await this.addCycleParticipant(
+						{
+							organizationId: input.organizationId,
+							cycleId: input.cycleId,
+							employeeId: employee.id,
+							employmentId: employmentRef.id,
+							actorUserId: input.actorUserId,
+						},
+						_ports,
+						meta,
+					);
+					if (!added.ok) {
+						if (
+							added.code === "CONFLICT" &&
+							added.message ===
+								"Participant is already active in this cycle"
+						) {
+							continue;
+						}
+						return added;
+					}
+					enrolled.push(added.data);
+				}
+			}
+
+			if (
+				page * pageSize >= employees.data.totalCount ||
+				employees.data.employees.length < pageSize
+			) {
+				break;
+			}
+			page += 1;
+		}
+
+		return ok(enrolled);
+	},
+
 	async addCycleParticipant(input, _ports, meta) {
 		const cycle = await this.getPerformanceCycleById({
 			organizationId: input.organizationId,
@@ -1660,8 +2436,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		if (!isPerformanceCycleOpen(cycle.data.status)) {
-			return invalidState("Participants can only be added to open cycles");
+		if (!isPerformanceCycleParticipantEnrollable(cycle.data.status)) {
+			return invalidState(
+				"Participants can only be added while cycle is published or open",
+			);
 		}
 
 		const refs = await assertEmployeeEmployment(
@@ -1671,6 +2449,32 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.employmentId,
 		);
 		if (!refs.ok) return refs;
+
+		const eligibility = await loadCycleEligibility({
+			organizationId: input.organizationId,
+			cycleId: input.cycleId,
+		});
+		if (!eligibility.ok) return eligibility;
+		if (eligibility.data !== null) {
+			const employment = await this.getEmploymentById({
+				organizationId: input.organizationId,
+				employmentId: input.employmentId,
+			});
+			if (!employment.ok) return employment;
+			if (employment.data === null) {
+				return notFound(
+					"Employment not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const eligibilityCheck = assertEmploymentEligibleForPerformanceCycle({
+				eligibility: eligibility.data,
+				employmentStatus: employment.data.status,
+				employmentStartsOn: employment.data.startsOn,
+				asOfDate: cycle.data.periodStart,
+			});
+			if (!eligibilityCheck.ok) return eligibilityCheck;
+		}
 
 		try {
 			const existingRows = await db
@@ -2025,6 +2829,37 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesGoalId(id);
 		if (!brandedId.ok) return brandedId;
+
+		const initialStatus = record.goalKind === "manager" ? "approved" : "draft";
+
+		if (record.alignedToGoalId !== null) {
+			const parent = await this.getPerformanceGoalById({
+				organizationId: record.organizationId,
+				goalId: record.alignedToGoalId,
+			});
+			if (!parent.ok) return parent;
+			const ancestorMap = await loadAlignmentAncestorMap({
+				organizationId: record.organizationId,
+				startParentId: record.alignedToGoalId,
+			});
+			const alignment = assertGoalAlignment({
+				goalId: brandedId.data,
+				alignedToGoalId: record.alignedToGoalId,
+				parentGoal:
+					parent.data === null
+						? null
+						: {
+								id: parent.data.id,
+								cycleId: parent.data.cycleId,
+								goalKind: parent.data.goalKind,
+								alignedToGoalId: parent.data.alignedToGoalId,
+							},
+				goalCycleId: record.cycleId,
+				resolveParent: (parentId) => ancestorMap.get(parentId) ?? null,
+			});
+			if (!alignment.ok) return alignment;
+		}
+
 		const auditId = randomUUID();
 
 		try {
@@ -2034,7 +2869,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						INSERT INTO hr_performance_goal (
 							id, organization_id, cycle_id, employee_id, employment_id,
 							title, description, weight, period_start, period_end,
-							exception_outside_cycle, status,
+							exception_outside_cycle, goal_kind, aligned_to_goal_id, status,
 							create_idempotency_key, create_request_fingerprint,
 							version, created_by, updated_by
 						) VALUES (
@@ -2042,7 +2877,8 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 							${record.employeeId}, ${record.employmentId},
 							${record.title}, ${record.description}, ${record.weight},
 							${record.periodStart}, ${record.periodEnd},
-							${record.exceptionOutsideCycle}, 'draft',
+							${record.exceptionOutsideCycle}, ${record.goalKind},
+							${record.alignedToGoalId}, ${initialStatus},
 							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 							1, ${record.createdBy}, ${record.createdBy}
 						)
@@ -2099,7 +2935,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				HUMAN_RESOURCES_ERROR_NOT_FOUND,
 			);
 		}
-		const editable = assertGoalEditable(existing.data.status);
+		const editable = assertGoalEditable(
+			existing.data.status,
+			existing.data.goalKind,
+		);
 		if (!editable.ok) return editable;
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
@@ -2186,6 +3025,36 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async submitPerformanceGoal(input, _ports, meta) {
+		const existing = await this.getPerformanceGoalById({
+			organizationId: input.organizationId,
+			goalId: input.goalId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance goal not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		if (existing.data.goalKind === "manager") {
+			return invalidState("Manager-assigned goals cannot be submitted");
+		}
+		const cycle = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: existing.data.cycleId,
+		});
+		if (!cycle.ok) return cycle;
+		if (cycle.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const weightCheck = assertGoalWeightForModel({
+			weight: existing.data.weight,
+			weightingModel: cycle.data.weightingModel,
+		});
+		if (!weightCheck.ok) return weightCheck;
 		return mutateGoalStatus(this, input, "submitted", meta);
 	},
 
@@ -2193,8 +3062,174 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		return mutateGoalStatus(this, input, "rejected", meta);
 	},
 
+	async activatePerformanceGoal(input, _ports, meta) {
+		return mutateGoalStatus(this, input, "active", meta);
+	},
+
+	async alignPerformanceGoal(input, _ports, meta) {
+		const existing = await this.getPerformanceGoalById({
+			organizationId: input.organizationId,
+			goalId: input.goalId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance goal not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const parent =
+			input.alignedToGoalId === null
+				? ok(null)
+				: await this.getPerformanceGoalById({
+						organizationId: input.organizationId,
+						goalId: input.alignedToGoalId,
+					});
+		if (!parent.ok) return parent;
+
+		const ancestorMap =
+			input.alignedToGoalId === null
+				? new Map<string, { id: string; alignedToGoalId: string | null }>()
+				: await loadAlignmentAncestorMap({
+						organizationId: input.organizationId,
+						startParentId: input.alignedToGoalId,
+					});
+		const alignment = assertGoalAlignment({
+			goalId: existing.data.id,
+			alignedToGoalId: input.alignedToGoalId,
+			parentGoal:
+				parent.data === null
+					? null
+					: {
+							id: parent.data.id,
+							cycleId: parent.data.cycleId,
+							goalKind: parent.data.goalKind,
+							alignedToGoalId: parent.data.alignedToGoalId,
+						},
+			goalCycleId: existing.data.cycleId,
+			resolveParent: (parentId) => ancestorMap.get(parentId) ?? null,
+		});
+		if (!alignment.ok) return alignment;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[GoalSqlRow[]]>((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_performance_goal
+						SET aligned_to_goal_id = ${input.alignedToGoalId},
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.goalId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_goal', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance goal",
+				});
+			}
+			return mapGoalSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to align performance goal");
+		}
+	},
+
 	async closePerformanceGoal(input, _ports, meta) {
-		return mutateGoalStatus(this, input, "closed", meta);
+		const existing = await this.getPerformanceGoalById({
+			organizationId: input.organizationId,
+			goalId: input.goalId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance goal not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const transition = assertGoalStatusTransition(
+			existing.data.status,
+			"closed",
+		);
+		if (!transition.ok) return transition;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		const currentStatus = existing.data.status;
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[GoalSqlRow[]]>((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_performance_goal
+						SET status = 'closed',
+							completion_note = ${input.completionNote},
+							completion_evidence_reference = ${input.completionEvidenceReference},
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.goalId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+							AND status = ${currentStatus}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_goal', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance goal",
+				});
+			}
+			return mapGoalSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to close performance goal");
+		}
 	},
 
 	async cancelPerformanceGoal(input, _ports, meta) {
@@ -2359,11 +3394,11 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					WITH mutated AS (
 						INSERT INTO hr_performance_goal_progress (
 							id, organization_id, goal_id, recorded_at,
-							progress_note, progress_value, recorded_by
+							progress_note, progress_value, evidence_reference, recorded_by
 						) VALUES (
 							${idResult.data}, ${input.organizationId}, ${input.goalId},
 							${recordedAt}, ${input.progressNote}, ${input.progressValue},
-							${input.actorUserId}
+							${input.evidenceReference}, ${input.actorUserId}
 						)
 						RETURNING *
 					),
@@ -2387,6 +3422,40 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			return mapGoalProgressSql(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to record goal progress");
+		}
+	},
+
+	async listGoalProgress(input): Promise<
+		Result<PerformanceGoalProgressListPage>
+	> {
+		try {
+			const rows = await db
+				.select()
+				.from(hrPerformanceGoalProgress)
+				.where(
+					and(
+						eq(hrPerformanceGoalProgress.organizationId, input.organizationId),
+						eq(hrPerformanceGoalProgress.goalId, input.goalId),
+					),
+				)
+				.orderBy(desc(hrPerformanceGoalProgress.recordedAt));
+			const totalCount = rows.length;
+			const start = (input.page - 1) * input.pageSize;
+			const paged = rows.slice(start, start + input.pageSize);
+			const progress: PerformanceGoalProgress[] = [];
+			for (const row of paged) {
+				const mapped = _mapGoalProgress(row);
+				if (!mapped.ok) return mapped;
+				progress.push(mapped.data);
+			}
+			return ok({
+				progress,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to list goal progress");
 		}
 	},
 
@@ -2524,31 +3593,33 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					),
 					inserted_participants AS (
 						INSERT INTO hr_performance_review_participant (
-							id, organization_id, review_id, role, employee_id,
+							id, organization_id, review_id, role, employee_id, sequence_number,
 							version, created_by, updated_by
 						) VALUES
 							(
 								${selfParticipantId.data}, ${input.organizationId}, ${reviewIdResult.data},
-								'self', ${input.employeeId}, 1, ${input.actorUserId}, ${input.actorUserId}
+								'self', ${input.employeeId}, ${PERFORMANCE_REVIEW_SELF_SEQUENCE},
+								1, ${input.actorUserId}, ${input.actorUserId}
 							),
 							(
 								${managerParticipantId.data}, ${input.organizationId}, ${reviewIdResult.data},
-								'manager', ${input.managerEmployeeId}, 1, ${input.actorUserId}, ${input.actorUserId}
+								'manager', ${input.managerEmployeeId}, ${PERFORMANCE_REVIEW_MANAGER_SEQUENCE},
+								1, ${input.actorUserId}, ${input.actorUserId}
 							)
 						RETURNING review_id
 					),
 					inserted_assessments AS (
 						INSERT INTO hr_performance_assessment (
-							id, organization_id, review_id, kind,
+							id, organization_id, review_id, participant_id, kind,
 							version, created_by, updated_by
 						) VALUES
 							(
 								${selfAssessmentId.data}, ${input.organizationId}, ${reviewIdResult.data},
-								'self', 1, ${input.actorUserId}, ${input.actorUserId}
+								${selfParticipantId.data}, 'self', 1, ${input.actorUserId}, ${input.actorUserId}
 							),
 							(
 								${managerAssessmentId.data}, ${input.organizationId}, ${reviewIdResult.data},
-								'manager', 1, ${input.actorUserId}, ${input.actorUserId}
+								${managerParticipantId.data}, 'manager', 1, ${input.actorUserId}, ${input.actorUserId}
 							)
 						RETURNING review_id
 					),
@@ -2616,6 +3687,341 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			"manager_submitted",
 			meta,
 		);
+	},
+
+	async addDelegatedReviewer(input, _ports, meta) {
+		const existing = await this.getPerformanceReviewById({
+			organizationId: input.organizationId,
+			reviewId: input.reviewId,
+			includeConfidential: true,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const review = existing.data.review;
+		const immutable = assertReviewNotFinalized(review.status);
+		if (!immutable.ok) return immutable;
+		const versionCheck = assertExpectedVersion(
+			review.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		if (input.delegatedEmployeeId === review.employeeId) {
+			return invalidInput("Delegated reviewer cannot be the review employee");
+		}
+		if (
+			existing.data.participants.some(
+				(participant) => participant.employeeId === input.delegatedEmployeeId,
+			)
+		) {
+			return conflict("Employee is already a review participant");
+		}
+
+		const participantId = newBrandId(humanResourcesReviewParticipantIdSchema);
+		const assessmentId = newBrandId(humanResourcesAssessmentIdSchema);
+		if (!participantId.ok || !assessmentId.ok) {
+			return fail(
+				"INTERNAL_ERROR",
+				"Failed to allocate delegated reviewer identifiers",
+			);
+		}
+		const sequenceNumber = nextDelegatedSequenceNumber(
+			existing.data.participants,
+		);
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+					WITH inserted_participant AS (
+						INSERT INTO hr_performance_review_participant (
+							id, organization_id, review_id, role, employee_id, sequence_number,
+							version, created_by, updated_by
+						) VALUES (
+							${participantId.data}, ${input.organizationId}, ${input.reviewId},
+							'delegated', ${input.delegatedEmployeeId}, ${sequenceNumber},
+							1, ${input.actorUserId}, ${input.actorUserId}
+						)
+						RETURNING review_id
+					),
+					inserted_assessment AS (
+						INSERT INTO hr_performance_assessment (
+							id, organization_id, review_id, participant_id, kind,
+							version, created_by, updated_by
+						) VALUES (
+							${assessmentId.data}, ${input.organizationId}, ${input.reviewId},
+							${participantId.data}, 'delegated', 1, ${input.actorUserId}, ${input.actorUserId}
+						)
+						RETURNING review_id
+					),
+					mutated AS (
+						UPDATE hr_performance_review
+						SET version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.reviewId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_review', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited, inserted_participant, inserted_assessment
+				`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance review",
+				});
+			}
+			return mapReviewSql(row);
+		} catch (error) {
+			if (isPostgresUniqueViolation(error)) {
+				return conflict("Employee is already a review participant");
+			}
+			return mapPersistenceFailure(error, "Failed to add delegated reviewer");
+		}
+	},
+
+	async submitDelegatedAssessment(input, _ports, meta) {
+		const detail = await this.getPerformanceReviewById({
+			organizationId: input.organizationId,
+			reviewId: input.reviewId,
+			includeConfidential: true,
+		});
+		if (!detail.ok) return detail;
+		if (detail.data === null) {
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const review = detail.data.review;
+		const immutable = assertReviewNotFinalized(review.status);
+		if (!immutable.ok) return immutable;
+		const versionCheck = assertExpectedVersion(
+			review.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const participant = detail.data.participants.find(
+			(item) => item.id === input.participantId,
+		);
+		if (!participant || participant.role !== "delegated") {
+			return invalidInput("Participant is not a delegated reviewer");
+		}
+		if (participant.employeeId !== input.delegatedEmployeeId) {
+			return invalidInput("Actor is not the assigned delegated participant");
+		}
+		const priorCheck = assertPriorDelegatedAssessmentsSubmitted({
+			participants: detail.data.participants,
+			assessments: detail.data.assessments,
+			targetParticipantId: participant.id,
+		});
+		if (!priorCheck.ok) return priorCheck;
+
+		const assessment = detail.data.assessments.find(
+			(item) => item.participantId === participant.id,
+		);
+		if (!assessment) {
+			return invalidState("Missing delegated assessment");
+		}
+		if (assessment.submittedAt) {
+			return invalidState("Delegated assessment is already submitted");
+		}
+
+		const cycle = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: review.cycleId,
+		});
+		if (!cycle.ok) return cycle;
+		if (cycle.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const ratingCheck = validateRatingInScale(
+			input.rating,
+			cycle.data.ratingScale,
+		);
+		if (!ratingCheck.ok) return ratingCheck;
+
+		const nextReviewVersion = input.expectedVersion + 1;
+		const nextAssessmentVersion = assessment.version + 1;
+		const auditId = randomUUID();
+		const submittedAt = new Date();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+					WITH updated_assessment AS (
+						UPDATE hr_performance_assessment
+						SET rating = ${input.rating},
+							comments_sensitive = ${input.commentsSensitive},
+							submitted_at = ${submittedAt},
+							version = ${nextAssessmentVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${assessment.id}
+							AND organization_id = ${input.organizationId}
+							AND review_id = ${input.reviewId}
+							AND participant_id = ${participant.id}
+						RETURNING review_id
+					),
+					mutated AS (
+						UPDATE hr_performance_review
+						SET version = ${nextReviewVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.reviewId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_review', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited, updated_assessment
+				`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance review",
+				});
+			}
+			return mapReviewSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to submit delegated assessment",
+			);
+		}
+	},
+
+	async calibratePerformanceReview(input, _ports, meta) {
+		const existing = await this.getPerformanceReviewById({
+			organizationId: input.organizationId,
+			reviewId: input.reviewId,
+			includeConfidential: true,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const review = existing.data.review;
+		const immutable = assertReviewNotFinalized(review.status);
+		if (!immutable.ok) return immutable;
+		if (
+			review.status !== "manager_submitted" &&
+			review.status !== "acknowledged"
+		) {
+			return invalidState(
+				"Calibration is only allowed after manager submission or acknowledgement",
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			review.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const cycle = await this.getPerformanceCycleById({
+			organizationId: input.organizationId,
+			cycleId: review.cycleId,
+		});
+		if (!cycle.ok) return cycle;
+		if (cycle.data === null) {
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const ratingCheck = validateRatingInScale(
+			input.overallRating,
+			cycle.data.ratingScale,
+		);
+		if (!ratingCheck.ok) return ratingCheck;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+					WITH mutated AS (
+						UPDATE hr_performance_review
+						SET overall_rating = ${input.overallRating},
+							calibration_note = ${input.calibrationNote},
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.reviewId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_review', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance review",
+				});
+			}
+			return mapReviewSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to calibrate performance review");
+		}
 	},
 
 	async returnPerformanceReviewForCorrection(input, _ports, meta) {
@@ -3000,6 +4406,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					review_id: p.reviewId,
 					role: p.role,
 					employee_id: p.employeeId,
+					sequence_number: p.sequenceNumber,
 					user_id: p.userId,
 					version: p.version,
 					created_by: p.createdBy,
@@ -3028,7 +4435,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			}
 
 			return ok(
-				projectPerformanceReviewDetail(
+				projectPerformanceReviewDetailForReader(
 					{ review: review.data, participants, assessments },
 					input.includeConfidential,
 				),

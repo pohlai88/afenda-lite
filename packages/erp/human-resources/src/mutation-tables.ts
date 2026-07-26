@@ -1,4 +1,12 @@
-/** Human Resources sole-mutator tables — aligned with SCHEMA-OWNERSHIP-MANIFEST. */
+/** Human Resources sole-mutator tables — aligned with SCHEMA-OWNERSHIP-MANIFEST.
+ *
+ * Compensation agreement (HR — not payroll calculation):
+ *   hr_employee_compensation, hr_allowance_entitlement, hr_bonus_eligibility,
+ *   hr_benefit_plan, hr_benefit_eligibility, hr_benefit_enrollment (+ dependent).
+ * Pay-period earnings/deductions/net: @afenda/payroll (payroll_*).
+ * GL posting: @afenda/accounting. Disbursement: @afenda/payments.
+ * Authority: docs-V2/_scratch/erp/allowance-deduction-ownership.md
+ */
 export const HUMAN_RESOURCES_MUTATION_TABLES = [
 	"hr_person",
 	"hr_person_contact",
@@ -53,12 +61,14 @@ export const HUMAN_RESOURCES_MUTATION_TABLES = [
 	"hr_development_plan",
 	"hr_compensation_grade",
 	"hr_salary_band",
+	"hr_compensation_grade_progression_rule",
 	"hr_employee_compensation",
 	"hr_allowance_entitlement",
 	"hr_bonus_eligibility",
 	"hr_benefit_plan",
 	"hr_benefit_eligibility",
 	"hr_benefit_enrollment",
+	"hr_benefit_enrollment_dependent",
 	"hr_compensation_review_cycle",
 	"hr_compensation_review",
 	"hr_compensation_proposal",
@@ -71,6 +81,8 @@ export const HUMAN_RESOURCES_MUTATION_TABLES = [
 	"hr_leave_approval_decision",
 	"hr_performance_cycle",
 	"hr_performance_cycle_participant",
+	"hr_performance_cycle_review_period",
+	"hr_performance_cycle_eligibility",
 	"hr_performance_goal",
 	"hr_performance_goal_progress",
 	"hr_performance_review",
@@ -176,6 +188,7 @@ export const HUMAN_RESOURCES_AGGREGATES = [
 	"compensation_grade",
 	"salary_band",
 	"employee_compensation",
+	"allowance_entitlement",
 	"benefit_plan",
 	"benefit_enrollment",
 	"compensation_review",

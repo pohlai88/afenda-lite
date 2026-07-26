@@ -351,6 +351,48 @@
       "when": 1785109200000,
       "tag": "0048_hr_leave_policy_balance_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1785112800000,
+      "tag": "0049_hr_benefit_slice_85",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1785116400000,
+      "tag": "0050_drop_corporate_administration_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1785120000000,
+      "tag": "0051_hr_compensation_grade_bands_slice",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1785123600000,
+      "tag": "0052_hr_employee_compensation_agreement_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1785127200000,
+      "tag": "0053_hr_compensation_review_cycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1785213600000,
+      "tag": "0054_hr_performance_goal_slice_93",
+      "breakpoints": true
     }
   ]
 }

@@ -7,23 +7,30 @@ import type {
 	HumanResourcesPerformanceCycleId,
 	HumanResourcesPerformanceCycleParticipantId,
 	HumanResourcesReviewId,
+	HumanResourcesReviewParticipantId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { PerformanceRatingScale } from "../shared/performance-rating";
+import type { EmploymentStatus } from "../shared/employment-status";
 import type {
+	PerformanceCycleReviewPeriodKind,
 	PerformanceCycleStatus,
+	PerformanceGoalKind,
 	PerformanceGoalStatus,
 	PerformanceWeightingModel,
 } from "../shared/performance-status";
 import type {
 	EmployeePerformanceHistory,
 	PerformanceCycle,
+	PerformanceCycleEligibility,
 	PerformanceCycleListPage,
 	PerformanceCycleParticipant,
+	PerformanceCycleReviewPeriod,
 	PerformanceGoal,
 	PerformanceGoalListPage,
 	PerformanceGoalProgress,
+	PerformanceGoalProgressListPage,
 	PerformanceImprovementCheckpoint,
 	PerformanceImprovementPlan,
 	PerformanceImprovementPlanListPage,
@@ -67,6 +74,8 @@ export type PerformanceGoalCreateRecord = {
 	periodStart: string;
 	periodEnd: string;
 	exceptionOutsideCycle: boolean;
+	goalKind: PerformanceGoalKind;
+	alignedToGoalId: HumanResourcesGoalId | null;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -123,6 +132,8 @@ export type HumanResourcesPerformanceStore = {
 			name?: string;
 			periodStart?: string;
 			periodEnd?: string;
+			ratingScale?: PerformanceRatingScale;
+			weightingModel?: PerformanceWeightingModel;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -162,6 +173,67 @@ export type HumanResourcesPerformanceStore = {
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceCycle>>;
+
+	publishPerformanceCycle(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceCycle>>;
+
+	setPerformanceCycleReviewPeriods(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			periods: Array<{
+				kind: PerformanceCycleReviewPeriodKind;
+				periodStart: string;
+				periodEnd: string;
+			}>;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceCycleReviewPeriod[]>>;
+
+	listPerformanceCycleReviewPeriods(input: {
+		organizationId: string;
+		cycleId: HumanResourcesPerformanceCycleId;
+	}): Promise<Result<PerformanceCycleReviewPeriod[]>>;
+
+	setPerformanceCycleEligibility(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			minTenureDays: number | null;
+			allowedEmploymentStatuses: EmploymentStatus[];
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceCycleEligibility>>;
+
+	getPerformanceCycleEligibility(input: {
+		organizationId: string;
+		cycleId: HumanResourcesPerformanceCycleId;
+	}): Promise<Result<PerformanceCycleEligibility | null>>;
+
+	enrollEligibleCycleParticipants(
+		input: {
+			organizationId: string;
+			cycleId: HumanResourcesPerformanceCycleId;
+			asOfDate: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceCycleParticipant[]>>;
 
 	addCycleParticipant(
 		input: {
@@ -270,17 +342,43 @@ export type HumanResourcesPerformanceStore = {
 			goalId: HumanResourcesGoalId;
 			progressNote: string;
 			progressValue: string | null;
+			evidenceReference: string | null;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<PerformanceGoalProgress>>;
 
+	activatePerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceGoal>>;
+
+	alignPerformanceGoal(
+		input: {
+			organizationId: string;
+			goalId: HumanResourcesGoalId;
+			alignedToGoalId: HumanResourcesGoalId | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceGoal>>;
+
 	closePerformanceGoal(
 		input: {
 			organizationId: string;
 			goalId: HumanResourcesGoalId;
 			expectedVersion: number;
+			completionNote: string | null;
+			completionEvidenceReference: string | null;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
@@ -305,6 +403,13 @@ export type HumanResourcesPerformanceStore = {
 		pageSize: number;
 		status?: PerformanceGoalStatus;
 	}): Promise<Result<PerformanceGoalListPage>>;
+
+	listGoalProgress(input: {
+		organizationId: string;
+		goalId: HumanResourcesGoalId;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<PerformanceGoalProgressListPage>>;
 	// Performance Review
 	startPerformanceReview(
 		input: {
@@ -342,6 +447,46 @@ export type HumanResourcesPerformanceStore = {
 			actorUserId: string;
 			managerEmployeeId: HumanResourcesEmployeeId;
 			expectedVersion: number;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceReview>>;
+
+	addDelegatedReviewer(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			delegatedEmployeeId: HumanResourcesEmployeeId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceReview>>;
+
+	submitDelegatedAssessment(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			participantId: HumanResourcesReviewParticipantId;
+			rating: string;
+			commentsSensitive: string | null;
+			delegatedEmployeeId: HumanResourcesEmployeeId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<PerformanceReview>>;
+
+	calibratePerformanceReview(
+		input: {
+			organizationId: string;
+			reviewId: HumanResourcesReviewId;
+			overallRating: string;
+			calibrationNote: string | null;
+			expectedVersion: number;
+			actorUserId: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,

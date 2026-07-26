@@ -9,9 +9,14 @@ import { createEmployment } from "../src/core/employment";
 import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
+	createPerformanceGoal,
 	getPerformanceGoalById,
 	listEmployeeGoals,
+	submitPerformanceGoal,
 } from "../src/performance/goal";
+import {
+	createPerformanceCycle,
+} from "../src/performance/performance-cycle";
 import {
 	getPerformanceReviewById,
 	listEmployeePerformanceReviews,
@@ -28,6 +33,8 @@ import { getTalentProfileByEmployee } from "../src/talent/talent-profile";
 import type { PerformanceGoal, PerformanceReviewDetail } from "../src/types";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { mapActorToEmployee } from "./helpers/identity-resolver";
+import { publishAndOpenPerformanceCycle } from "./helpers/performance-cycle-harness";
 
 describe("End-to-End Authorization Parity Tests", () => {
 	const organizationId = "org-123";
@@ -111,6 +118,125 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(true);
+		});
+
+		it("should allow employee to create and submit own goals with goal.own.manage", async () => {
+			const authPort = createAuthPort({
+				[`${actorUserId1}:human-resources.performance.goal.own.manage`]: true,
+				[`${actorUserId1}:human-resources.employee.create`]: true,
+				[`${actorUserId1}:human-resources.employment.manage`]: true,
+				[`${actorUserId1}:human-resources.performance.manage`]: true,
+				[`${actorUserId1}:human-resources.performance.manager.manage`]: true,
+			});
+			const identityResolver = createIdentityResolver({
+				[actorUserId1]: employeeId1,
+			});
+			const ports = createMemoryMutationPorts();
+			const commandOptions = {
+				store: memoryStore,
+				authorization: authPort,
+				identityResolver,
+				ports,
+			};
+
+			const employee = await createEmployee(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-goal-own-emp`,
+					idempotencyKey: `idem-goal-own-emp-${correlationId}`,
+					employeeNumber: "E-GOAL-OWN",
+					legalName: "Goal Own Employee",
+				},
+				commandOptions,
+			);
+			expect(employee.ok).toBe(true);
+			if (!employee.ok) return;
+
+			await mapActorToEmployee(memoryStore, {
+				organizationId,
+				userId: actorUserId1,
+				employeeId: employee.data.id,
+				actorUserId: actorUserId1,
+				effectiveFrom: "2025-01-01",
+			});
+
+			const employment = await createEmployment(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-goal-own-employ`,
+					employeeId: employee.data.id,
+					startsOn: "2025-01-01",
+				},
+				commandOptions,
+			);
+			expect(employment.ok).toBe(true);
+			if (!employment.ok) return;
+
+			const cycle = await createPerformanceCycle(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-goal-own-cycle`,
+					idempotencyKey: `idem-goal-own-cycle-${correlationId}`,
+					code: "GOAL-OWN",
+					name: "Goal own cycle",
+					periodStart: "2025-01-01",
+					periodEnd: "2025-12-31",
+					ratingScale: { codes: ["meets"] },
+					weightingModel: "none",
+				},
+				commandOptions,
+			);
+			expect(cycle.ok).toBe(true);
+			if (!cycle.ok) return;
+
+			const published = await publishAndOpenPerformanceCycle(commandOptions, {
+				organizationId,
+				actorUserId: actorUserId1,
+				correlationIdPrefix: `${correlationId}-goal-own-open`,
+				cycle: cycle.data,
+				participant: {
+					employeeId: employee.data.id,
+					employmentId: employment.data.id,
+				},
+			});
+			expect(published.ok).toBe(true);
+			if (!published.ok) return;
+
+			const goal = await createPerformanceGoal(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-goal-own-create`,
+					idempotencyKey: `idem-goal-own-create-${correlationId}`,
+					cycleId: published.data.id,
+					employeeId: employee.data.id,
+					employmentId: employment.data.id,
+					goalKind: "employee",
+					title: "Own manage goal",
+					periodStart: "2025-01-01",
+					periodEnd: "2025-12-31",
+				},
+				commandOptions,
+			);
+			expect(goal.ok).toBe(true);
+			if (!goal.ok) return;
+
+			const submitted = await submitPerformanceGoal(
+				{
+					organizationId,
+					actorUserId: actorUserId1,
+					correlationId: `${correlationId}-goal-own-submit`,
+					goalId: goal.data.id,
+					expectedVersion: goal.data.version,
+				},
+				commandOptions,
+			);
+			expect(submitted.ok).toBe(true);
+			if (!submitted.ok) return;
+			expect(submitted.data.status).toBe("submitted");
 		});
 
 		it("should deny employee accessing other employee's performance goals - memory store", async () => {

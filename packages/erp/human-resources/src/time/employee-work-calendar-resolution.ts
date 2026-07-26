@@ -20,13 +20,17 @@ import {
 	selectScopedWorkCalendarAssignment,
 } from "./calendar-scope-resolution";
 import type { AssignmentContextQueryPort } from "./handoff/ports";
+import { resolveWorkCalendarLineageAtAsOf } from "./work-calendar-lineage";
 
 type EmployeeWorkCalendarStoreSlice = Pick<
 	HumanResourcesStore,
 	| "listWorkCalendarScopeAssignments"
+	| "listWorkCalendars"
 	| "resolveEmploymentCalendar"
 	| "getWorkCalendar"
 >;
+
+export type { EmployeeWorkCalendarStoreSlice };
 
 function isEffectiveOn(
 	assignment: { effectiveFrom: string; effectiveTo: string | null },
@@ -183,14 +187,18 @@ export async function resolveEmployeeWorkCalendar(
 		);
 	}
 
-	const calendar = await deps.store.getWorkCalendar({
-		organizationId: input.organizationId,
-		calendarId: selected.calendarId as HumanResourcesWorkCalendarId,
-	});
-	if (!calendar.ok) {
-		return calendar;
+	const effectiveCalendar = await resolveWorkCalendarLineageAtAsOf(
+		{
+			organizationId: input.organizationId,
+			calendarId: selected.calendarId as HumanResourcesWorkCalendarId,
+			asOf: input.asOf,
+		},
+		deps.store,
+	);
+	if (!effectiveCalendar.ok) {
+		return effectiveCalendar;
 	}
-	if (calendar.data === null || calendar.data.status !== "active") {
+	if (effectiveCalendar.data === null) {
 		return fail(
 			"NOT_FOUND",
 			"Work calendar not found.",
@@ -198,5 +206,5 @@ export async function resolveEmployeeWorkCalendar(
 		);
 	}
 
-	return ok({ calendarId: calendar.data.id });
+	return ok({ calendarId: effectiveCalendar.data.id });
 }

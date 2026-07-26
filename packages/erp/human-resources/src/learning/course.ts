@@ -5,6 +5,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
 	HUMAN_RESOURCES_COMMAND_COURSE_ARCHIVE,
 	HUMAN_RESOURCES_COMMAND_COURSE_CREATE,
 	HUMAN_RESOURCES_COMMAND_COURSE_UPDATE,
@@ -118,6 +119,32 @@ export async function updateCourse(
 				buildMutationMeta({
 					correlationId: data.correlationId,
 					operation: HUMAN_RESOURCES_COMMAND_COURSE_UPDATE,
+				}),
+			);
+		},
+	});
+}
+
+export async function activateCourse(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<LearningCourse>> {
+	return runLearningCommand(input, options, {
+		schema: courseStatusTransitionInputSchema,
+		invalidMessage: "Invalid course activate input",
+		command: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
+		execute: async (data, { store, ports }) => {
+			return await store.activateCourse(
+				{
+					organizationId: data.organizationId,
+					courseId: data.courseId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operation: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
 				}),
 			);
 		},

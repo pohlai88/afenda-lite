@@ -437,14 +437,6 @@ export async function approveLeaveRequest(
 				);
 			}
 
-			const managerCheck = await assertActorIsPrimaryManager(store, {
-				organizationId: data.organizationId,
-				employeeId: request.data.employeeId,
-				managerEmployeeId: managerIdentity.data.employeeId,
-				asOf: request.data.startDate,
-			});
-			if (!managerCheck.ok) return managerCheck;
-
 			const policy = await store.getLeavePolicyById({
 				organizationId: data.organizationId,
 				policyId: request.data.policyId,
@@ -452,6 +444,21 @@ export async function approveLeaveRequest(
 			if (!policy.ok) return policy;
 			if (policy.data === null) {
 				return fail("NOT_FOUND", "Leave policy not found");
+			}
+
+			const isAllowedSelfApproval =
+				policy.data.allowSelfApproval === true &&
+				request.data.createdBy === data.actorUserId &&
+				managerIdentity.data.employeeId === request.data.employeeId;
+
+			if (!isAllowedSelfApproval) {
+				const managerCheck = await assertActorIsPrimaryManager(store, {
+					organizationId: data.organizationId,
+					employeeId: request.data.employeeId,
+					managerEmployeeId: managerIdentity.data.employeeId,
+					asOf: request.data.startDate,
+				});
+				if (!managerCheck.ok) return managerCheck;
 			}
 
 			const selfApproval = assertNoSelfApproval({

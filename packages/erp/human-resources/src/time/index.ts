@@ -23,9 +23,12 @@ export * from "./handoff/approved-time-handoff";
 export type {
 	ApprovedLeaveFact,
 	ApprovedLeaveQueryPort,
+	AttendanceConnectorPullPort,
 	AttendanceSourceBatch,
 	AttendanceSourceEvent,
 	AttendanceSourcePort,
+	AttendanceSourcePreviewResult,
+	AttendanceSourceRejectedRow,
 } from "./handoff/ports";
 export {
 	allocateWorkedMinutesByCivilDate,

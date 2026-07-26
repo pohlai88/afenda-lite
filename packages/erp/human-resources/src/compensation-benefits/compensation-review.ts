@@ -5,20 +5,29 @@ import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION,
+	HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_GET,
+	HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_LIST_BY_EMPLOYEE,
 } from "../module-ids";
 import {
 	applyApprovedCompensationResultInputSchema,
 	createCompensationReviewDraftInputSchema,
 	finalizeCompensationReviewInputSchema,
+	getCompensationReviewInputSchema,
+	listCompensationReviewsByEmployeeInputSchema,
 	recordCompensationRecommendationInputSchema,
 } from "../schemas/compensation";
 import {
 	assertCurrencyExists,
 	runCompensationCommand,
+	runCompensationQuery,
 } from "../shared/compensation-command";
 import { fingerprintCompensationReviewDraft } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { CompensationReview, EmployeeCompensation } from "../types";
+import type {
+	CompensationReview,
+	CompensationReviewListPage,
+	EmployeeCompensation,
+} from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW =
 	"compensation_review" as const;
@@ -35,12 +44,14 @@ export async function createCompensationReviewDraft(
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
 		execute: (data, { store, ports }) => {
 			const fingerprint = fingerprintCompensationReviewDraft({
+				cycleId: data.cycleId,
 				employeeId: data.employeeId,
 				employmentId: data.employmentId,
 			});
 			return store.createCompensationReviewDraft(
 				{
 					organizationId: data.organizationId,
+					cycleId: data.cycleId,
 					employeeId: data.employeeId,
 					employmentId: data.employmentId,
 					createIdempotencyKey: data.idempotencyKey,
@@ -146,5 +157,39 @@ export async function applyApprovedCompensationResult(
 						HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
 				}),
 			),
+	});
+}
+
+export async function getCompensationReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CompensationReview | null>> {
+	return runCompensationQuery(input, options, {
+		schema: getCompensationReviewInputSchema,
+		invalidMessage: "Invalid compensation review get input",
+		query: HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_GET,
+		execute: (data, { store }) =>
+			store.getCompensationReview({
+				organizationId: data.organizationId,
+				reviewId: data.reviewId,
+			}),
+	});
+}
+
+export async function listCompensationReviewsByEmployee(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CompensationReviewListPage>> {
+	return runCompensationQuery(input, options, {
+		schema: listCompensationReviewsByEmployeeInputSchema,
+		invalidMessage: "Invalid compensation review list input",
+		query: HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_LIST_BY_EMPLOYEE,
+		execute: (data, { store }) =>
+			store.listCompensationReviewsByEmployee({
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 20,
+			}),
 	});
 }

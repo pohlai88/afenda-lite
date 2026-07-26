@@ -93,7 +93,12 @@ Implementation method: project skill `afenda-elite-payroll`.
 | Payroll domain commands, validation, business rules, and events for `payroll_*` | Database schema host (`@afenda/db`) |
 | Store adapters (`adapters/drizzle`, `adapters/memory`) | HR workforce records (`@afenda/human-resources`) |
 | Zod contracts under `src/schemas/` | Direct payment / journal inserts |
+| **Allowance calculation** — `payroll_earning_rule`, `payroll_recurring_earning`, earning `payroll_result_line` rows | `hr_allowance_entitlement`, `hr_employee_compensation` (HR agreement) |
+| **Deduction calculation** — `payroll_deduction_rule`, `payroll_recurring_deduction`, `payroll_statutory_*`, deduction `payroll_result_line` rows, gross-to-net on run | Benefit enrollment contribution **terms** on `hr_benefit_enrollment` (HR agreement) |
+| Disbursement/posting **requests** via `payroll.payment-requested.v1` and `payroll.posting-requested.v1` | `payment*`, `journal*` tables (Payments and Accounting own execution) |
 
-**Anti-goals:** owning `hr_employee` / `hr_employee_compensation`; nesting under `@afenda/human-resources`; peer package import of HR.
+**Anti-goals:** owning `hr_employee` / `hr_employee_compensation` / `hr_allowance_entitlement`; nesting under `@afenda/human-resources`; peer package import of HR; inserting into `payment` or `journal`.
+
+**Four-way ownership (Slice 8.6):** [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md)
 
 **Authority:** [docs-V2/_scratch/erp/human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) · [SCAFFOLDING.md](../SCAFFOLDING.md) · skill `afenda-elite-payroll`

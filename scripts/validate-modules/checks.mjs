@@ -81,12 +81,6 @@ export const LIVING_ERP_MANIFEST_PACKAGES = [
 		dir: "packages/erp/payroll",
 		manifestExport: "payrollModuleManifest",
 	},
-	{
-		id: "corporate-administration",
-		packageName: "@afenda/corporate-administration",
-		dir: "packages/erp/corporate-administration",
-		manifestExport: "corporateAdministrationModuleManifest",
-	},
 ];
 
 export const FORBIDDEN_PHASE_PACKAGE_DIRS = [
@@ -989,7 +983,6 @@ export const CATALOG_EXPECTED_PACKAGES = [
 	{ name: "@afenda/payments", path: "erp/payments" },
 	{ name: "@afenda/accounting", path: "erp/accounting" },
 	{ name: "@afenda/human-resources", path: "erp/human-resources" },
-	{ name: "@afenda/corporate-administration", path: "erp/corporate-administration" },
 	{ name: "@afenda/payroll", path: "erp/payroll" },
 	{ name: "@afenda/ai-the-machine", path: "intelligence/ai-the-machine" },
 ];

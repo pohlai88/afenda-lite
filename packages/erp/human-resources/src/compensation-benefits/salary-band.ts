@@ -4,18 +4,26 @@ import {
 	HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
 	HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
 	HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
+	HUMAN_RESOURCES_QUERY_SALARY_BAND_FIND_AS_OF,
+	HUMAN_RESOURCES_QUERY_SALARY_BAND_GET,
+	HUMAN_RESOURCES_QUERY_SALARY_BAND_LIST_BY_GRADE,
 } from "../module-ids";
 import {
 	archiveSalaryBandInputSchema,
 	createSalaryBandInputSchema,
+	findSalaryBandByGradeAndCurrencyAsOfInputSchema,
+	getSalaryBandInputSchema,
+	listSalaryBandsByGradeInputSchema,
 	supersedeSalaryBandInputSchema,
 } from "../schemas/compensation";
 import {
 	assertCurrencyExists,
 	runCompensationCommand,
+	runCompensationQuery,
 } from "../shared/compensation-command";
+import { notFound } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { SalaryBand } from "../types";
+import type { SalaryBand, SalaryBandListPage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_SALARY_BAND = "salary_band" as const;
 export type HumanResourcesSalaryBandAggregate =
@@ -75,7 +83,7 @@ export async function supersedeSalaryBand(
 			if (!currencyCheck.ok) {
 				return currencyCheck;
 			}
-			return store.supersedeSalaryBand(
+			const superseded = await store.supersedeSalaryBand(
 				{
 					organizationId: data.organizationId,
 					gradeId: data.gradeId,
@@ -85,6 +93,7 @@ export async function supersedeSalaryBand(
 					maxAmount: data.maxAmount,
 					effectiveFrom: data.effectiveFrom,
 					effectiveTo: data.effectiveTo ?? null,
+					supersededSalaryBandId: data.supersededSalaryBandId,
 					actorUserId: data.actorUserId,
 				},
 				ports,
@@ -93,6 +102,10 @@ export async function supersedeSalaryBand(
 					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
 				}),
 			);
+			if (!superseded.ok) {
+				return superseded;
+			}
+			return { ok: true, data: superseded.data.successor };
 		},
 	});
 }
@@ -119,5 +132,74 @@ export async function archiveSalaryBand(
 					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
 				}),
 			),
+	});
+}
+
+export async function getSalaryBand(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<SalaryBand>> {
+	return runCompensationQuery(input, options, {
+		schema: getSalaryBandInputSchema,
+		invalidMessage: "Invalid salary band get input",
+		query: HUMAN_RESOURCES_QUERY_SALARY_BAND_GET,
+		execute: async (data, { store }) => {
+			const band = await store.getSalaryBand({
+				organizationId: data.organizationId,
+				salaryBandId: data.salaryBandId,
+			});
+			if (!band.ok) {
+				return band;
+			}
+			if (band.data === null) {
+				return notFound("Salary band not found");
+			}
+			return { ok: true, data: band.data };
+		},
+	});
+}
+
+export async function listSalaryBandsByGrade(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<SalaryBandListPage>> {
+	return runCompensationQuery(input, options, {
+		schema: listSalaryBandsByGradeInputSchema,
+		invalidMessage: "Invalid salary band list input",
+		query: HUMAN_RESOURCES_QUERY_SALARY_BAND_LIST_BY_GRADE,
+		execute: (data, { store }) =>
+			store.listSalaryBandsByGrade({
+				organizationId: data.organizationId,
+				gradeId: data.gradeId,
+				page: data.page,
+				pageSize: data.pageSize,
+				status: data.status,
+			}),
+	});
+}
+
+export async function findSalaryBandByGradeAndCurrencyAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<SalaryBand>> {
+	return runCompensationQuery(input, options, {
+		schema: findSalaryBandByGradeAndCurrencyAsOfInputSchema,
+		invalidMessage: "Invalid salary band as-of input",
+		query: HUMAN_RESOURCES_QUERY_SALARY_BAND_FIND_AS_OF,
+		execute: async (data, { store }) => {
+			const band = await store.findSalaryBandByGradeAndCurrencyAsOf({
+				organizationId: data.organizationId,
+				gradeId: data.gradeId,
+				currencyCode: data.currencyCode,
+				asOf: data.asOf,
+			});
+			if (!band.ok) {
+				return band;
+			}
+			if (band.data === null) {
+				return notFound("Salary band not found for as-of date");
+			}
+			return { ok: true, data: band.data };
+		},
 	});
 }

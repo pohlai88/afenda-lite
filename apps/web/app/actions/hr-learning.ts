@@ -1,6 +1,7 @@
 "use server";
 
 import {
+	activateCourse,
 	archiveCourse,
 	assignLearning,
 	createCourse,
@@ -104,6 +105,41 @@ export async function archiveCourseAction(input: {
 				);
 			}
 			const result = await archiveCourse(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { course: mapped.data } };
+		},
+	});
+}
+
+export async function activateCourseAction(input: {
+	correlationId?: string;
+	courseId: string;
+	expectedVersion: number;
+}): Promise<ActionResult<{ course: LearningCourse }>> {
+	return runOperatorPermissionAction({
+		path: "activateCourseAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not activate course.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					courseId: z.string().uuid(),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid course activation request.",
+					parsed.details,
+				);
+			}
+			const result = await activateCourse(
 				withSessionContext(session, correlationId, parsed.data),
 				createHumanResourcesCommandOptions(),
 			);

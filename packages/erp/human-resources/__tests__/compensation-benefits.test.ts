@@ -12,24 +12,57 @@ import type { HumanResourcesPermission } from "../src/authorization";
 import {
 	enrolBenefit,
 	getApprovedCompensationHandoff,
+	waiveBenefit,
 } from "../src/compensation-benefits/benefit-enrollment";
+import {
+	addBenefitEnrollmentDependent,
+	endBenefitEnrollmentDependent,
+} from "../src/compensation-benefits/benefit-dependent";
+import {
+	getBenefitPlanEligibility,
+	setBenefitPlanEligibility,
+} from "../src/compensation-benefits/benefit-eligibility";
 import { createBenefitPlan } from "../src/compensation-benefits/benefit-plan";
-import { createCompensationGrade } from "../src/compensation-benefits/compensation-grade";
+import {
+	archiveCompensationGrade,
+	createCompensationGrade,
+	getCompensationGrade,
+	listCompensationGrades,
+	updateCompensationGrade,
+} from "../src/compensation-benefits/compensation-grade";
+import {
+	archiveCompensationGradeProgressionRule,
+	createCompensationGradeProgressionRule,
+	listCompensationGradeProgressionRulesFromGrade,
+	listEligibleProgressionTargets,
+} from "../src/compensation-benefits/compensation-grade-progression-rule";
 import {
 	applyApprovedCompensationResult,
 	createCompensationReviewDraft,
 	finalizeCompensationReview,
+	getCompensationReview,
 	recordCompensationRecommendation,
 } from "../src/compensation-benefits/compensation-review";
 import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
-import { createEmployeeCompensation } from "../src/compensation-benefits/employee-compensation";
-import { createSalaryBand } from "../src/compensation-benefits/salary-band";
+import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
+import {
+	approveEmployeeCompensation,
+	createEmployeeCompensation,
+} from "../src/compensation-benefits/employee-compensation";
+import {
+	createSalaryBand,
+	findSalaryBandByGradeAndCurrencyAsOf,
+	getSalaryBand,
+	listSalaryBandsByGrade,
+	supersedeSalaryBand,
+} from "../src/compensation-benefits/salary-band";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 } from "../src/error-codes";
 import {
 	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
@@ -62,8 +95,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 	const seedReady = {
 		...ready,
 		authorization: createGrantingHumanResourcesAuthorization([
-			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
-			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 		]),
 	};
 	const employee = await createEmployee(
@@ -187,6 +221,375 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 	});
 
+	it("allows active salary bands for the same grade in different currencies", async () => {
+		const ready = harness();
+		const grade = await seedGrade(ready);
+		expect(grade.ok).toBe(true);
+		if (!grade.ok) return;
+
+		const usd = await createSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-usd",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				minAmount: "50000",
+				midAmount: "70000",
+				maxAmount: "90000",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		const eur = await createSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-eur",
+				gradeId: grade.data.id,
+				currencyCode: "EUR",
+				minAmount: "45000",
+				midAmount: "65000",
+				maxAmount: "85000",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+
+		expect(usd.ok).toBe(true);
+		expect(eur.ok).toBe(true);
+	});
+
+	it("supersedes salary band, closes predecessor effectiveTo, and resolves as-of reads", async () => {
+		const ready = harness();
+		const grade = await seedGrade(ready);
+		expect(grade.ok).toBe(true);
+		if (!grade.ok) return;
+
+		const first = await createSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-v1",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				minAmount: "50000",
+				midAmount: "70000",
+				maxAmount: "90000",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const second = await supersedeSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-v2",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				minAmount: "55000",
+				midAmount: "75000",
+				maxAmount: "95000",
+				effectiveFrom: "2025-07-01",
+			},
+			ready,
+		);
+		expect(second.ok).toBe(true);
+		if (!second.ok) return;
+		expect(second.data.supersedesSalaryBandId).toBe(first.data.id);
+
+		const predecessor = await getSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-get-pre",
+				salaryBandId: first.data.id,
+			},
+			ready,
+		);
+		expect(predecessor.ok).toBe(true);
+		if (!predecessor.ok) return;
+		expect(predecessor.data.status).toBe("superseded");
+		expect(predecessor.data.effectiveTo).toBe("2025-06-30");
+
+		const beforeSupersede = await findSalaryBandByGradeAndCurrencyAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-asof-before",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				asOf: "2025-03-01",
+			},
+			ready,
+		);
+		expect(beforeSupersede.ok).toBe(true);
+		if (!beforeSupersede.ok) return;
+		expect(beforeSupersede.data.id).toBe(first.data.id);
+
+		const afterSupersede = await findSalaryBandByGradeAndCurrencyAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-asof-after",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				asOf: "2025-08-01",
+			},
+			ready,
+		);
+		expect(afterSupersede.ok).toBe(true);
+		if (!afterSupersede.ok) return;
+		expect(afterSupersede.data.id).toBe(second.data.id);
+	});
+
+	it("exposes grade and band query commands", async () => {
+		const ready = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ]);
+		const grade = await seedGrade({
+			...ready,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+			]),
+		});
+		expect(grade.ok).toBe(true);
+		if (!grade.ok) return;
+
+		const updated = await updateCompensationGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-grade-update",
+				gradeId: grade.data.id,
+				name: "Grade 1 Updated",
+				expectedVersion: grade.data.version,
+			},
+			{
+				...ready,
+				authorization: createGrantingHumanResourcesAuthorization([
+					HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+				]),
+			},
+		);
+		expect(updated.ok).toBe(true);
+		if (!updated.ok) return;
+
+		const got = await getCompensationGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-grade-get",
+				gradeId: grade.data.id,
+			},
+			ready,
+		);
+		expect(got.ok).toBe(true);
+		if (!got.ok) return;
+		expect(got.data.name).toBe("Grade 1 Updated");
+
+		const listed = await listCompensationGrades(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-grade-list",
+				page: 1,
+				pageSize: 10,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.grades.some((g) => g.id === grade.data.id)).toBe(true);
+
+		const band = await createSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-query",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				minAmount: "50000",
+				midAmount: "70000",
+				maxAmount: "90000",
+				effectiveFrom: "2025-01-01",
+			},
+			{
+				...ready,
+				authorization: createGrantingHumanResourcesAuthorization([
+					HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+				]),
+			},
+		);
+		expect(band.ok).toBe(true);
+		if (!band.ok) return;
+
+		const bands = await listSalaryBandsByGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-list",
+				gradeId: grade.data.id,
+				page: 1,
+				pageSize: 10,
+			},
+			ready,
+		);
+		expect(bands.ok).toBe(true);
+		if (!bands.ok) return;
+		expect(bands.data.bands.some((b) => b.id === band.data.id)).toBe(true);
+	});
+
+	it("blocks grade archive when active salary bands exist", async () => {
+		const manageReady = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]);
+		const grade = await seedGrade(manageReady);
+		expect(grade.ok).toBe(true);
+		if (!grade.ok) return;
+
+		const band = await createSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-archive-guard",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				minAmount: "50000",
+				midAmount: "70000",
+				maxAmount: "90000",
+				effectiveFrom: "2025-01-01",
+			},
+			manageReady,
+		);
+		expect(band.ok).toBe(true);
+		if (!band.ok) return;
+
+		const archived = await archiveCompensationGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-grade-archive-blocked",
+				gradeId: grade.data.id,
+				expectedVersion: grade.data.version,
+			},
+			manageReady,
+		);
+		expect(archived.ok).toBe(false);
+		if (archived.ok) return;
+		expect(humanResourcesCodeFromResult(archived)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		);
+	});
+
+	it("creates, lists, and archives compensation grade progression rules", async () => {
+		const manageReady = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]);
+		const readReady = {
+			...manageReady,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+			]),
+		};
+
+		const gradeA = await createCompensationGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-grade-a",
+				code: "GA",
+				name: "Grade A",
+			},
+			manageReady,
+		);
+		const gradeB = await createCompensationGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-grade-b",
+				code: "GB",
+				name: "Grade B",
+			},
+			manageReady,
+		);
+		expect(gradeA.ok).toBe(true);
+		expect(gradeB.ok).toBe(true);
+		if (!gradeA.ok || !gradeB.ok) return;
+
+		const sameGrade = await createCompensationGradeProgressionRule(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-prog-same",
+				fromGradeId: gradeA.data.id,
+				toGradeId: gradeA.data.id,
+				effectiveFrom: "2025-01-01",
+			},
+			manageReady,
+		);
+		expect(sameGrade.ok).toBe(false);
+
+		const rule = await createCompensationGradeProgressionRule(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-prog-create",
+				fromGradeId: gradeA.data.id,
+				toGradeId: gradeB.data.id,
+				effectiveFrom: "2025-01-01",
+				minMonthsInGrade: 12,
+			},
+			manageReady,
+		);
+		expect(rule.ok).toBe(true);
+		if (!rule.ok) return;
+
+		const targets = await listEligibleProgressionTargets(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-prog-targets",
+				fromGradeId: gradeA.data.id,
+				asOf: "2025-06-01",
+			},
+			readReady,
+		);
+		expect(targets.ok).toBe(true);
+		if (!targets.ok) return;
+		expect(targets.data).toHaveLength(1);
+		expect(targets.data[0]?.toGradeId).toBe(gradeB.data.id);
+
+		const listed = await listCompensationGradeProgressionRulesFromGrade(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-prog-list",
+				fromGradeId: gradeA.data.id,
+				page: 1,
+				pageSize: 10,
+				asOf: "2025-06-01",
+			},
+			readReady,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.rules).toHaveLength(1);
+
+		const archived = await archiveCompensationGradeProgressionRule(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-prog-archive",
+				progressionRuleId: rule.data.id,
+				expectedVersion: rule.data.version,
+			},
+			manageReady,
+		);
+		expect(archived.ok).toBe(true);
+		if (!archived.ok) return;
+		expect(archived.data.status).toBe("archived");
+	});
+
 	it("rejects unknown currency codes at the command boundary", async () => {
 		const ready = harness();
 		const grade = await seedGrade(ready);
@@ -288,6 +691,7 @@ describe("compensation & benefits (HR-07)", () => {
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 			HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
@@ -303,6 +707,7 @@ describe("compensation & benefits (HR-07)", () => {
 				employmentId: seeded.employment.id,
 				baseAmount: "85000",
 				currencyCode: "USD",
+				payFrequency: "monthly",
 				effectiveFrom: "2025-01-01",
 				reason: "Initial hire",
 			},
@@ -310,6 +715,19 @@ describe("compensation & benefits (HR-07)", () => {
 		);
 		expect(compensation.ok).toBe(true);
 		if (!compensation.ok) return;
+
+		const approved = await approveEmployeeCompensation(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-comp-approve",
+				compensationId: compensation.data.id,
+				expectedVersion: compensation.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
 
 		const plan = await createBenefitPlan(
 			{
@@ -354,7 +772,7 @@ describe("compensation & benefits (HR-07)", () => {
 		if (!handoff.ok) return;
 		expect(handoff.data).not.toBeNull();
 		if (handoff.data === null) return;
-		expect(handoff.data.activeCompensation?.id).toBe(compensation.data.id);
+		expect(handoff.data.activeCompensation?.id).toBe(approved.data.id);
 		expect(handoff.data.activeBenefitEnrollments).toHaveLength(1);
 		expect(handoff.data.activeBenefitEnrollments[0]?.id).toBe(
 			enrollment.data.id,
@@ -367,12 +785,20 @@ describe("compensation & benefits (HR-07)", () => {
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
 
+		const cycle = await seedOpenCompensationReviewCycle({
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			ready,
+			suffix: "blocked-rec",
+		});
+
 		const draft = await createCompensationReviewDraft(
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				correlationId: "corr-review-draft",
 				idempotencyKey: "idem-review",
+				cycleId: cycle.id,
 				employeeId: seeded.employee.id,
 				employmentId: seeded.employment.id,
 			},
@@ -487,6 +913,7 @@ describe("compensation & benefits (HR-07)", () => {
 		const ready = harness([
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 			HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
@@ -502,6 +929,7 @@ describe("compensation & benefits (HR-07)", () => {
 				employmentId: seeded.employment.id,
 				baseAmount: "80000",
 				currencyCode: "USD",
+				payFrequency: "monthly",
 				effectiveFrom: "2025-01-01",
 				reason: "Hire",
 			},
@@ -544,10 +972,20 @@ describe("compensation & benefits (HR-07)", () => {
 	});
 
 	it("applies finalized review into employee compensation", async () => {
-		const ready = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]);
+		const ready = harness([
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+		]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
+
+		const cycle = await seedOpenCompensationReviewCycle({
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			ready,
+			suffix: "apply",
+		});
 
 		const draft = await createCompensationReviewDraft(
 			{
@@ -555,6 +993,7 @@ describe("compensation & benefits (HR-07)", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-apply-draft",
 				idempotencyKey: "idem-apply-review",
+				cycleId: cycle.id,
 				employeeId: seeded.employee.id,
 				employmentId: seeded.employment.id,
 			},
@@ -608,12 +1047,373 @@ describe("compensation & benefits (HR-07)", () => {
 		if (!applied.ok) return;
 		expect(applied.data.baseAmount).toBe("92000");
 		expect(applied.data.currencyCode).toBe("USD");
+
+		const review = await getCompensationReview(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-apply-get-review",
+				reviewId: finalized.data.id,
+			},
+			ready,
+		);
+		expect(review.ok).toBe(true);
+		if (!review.ok) return;
+		expect(review.data?.appliedCompensationId).toBe(applied.data.id);
+		expect(review.data?.status).toBe("finalized");
+	});
+
+	describe("benefits slice 8.5", () => {
+		const benefitsReady = () =>
+			harness([HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE]);
+
+		it("creates and reads benefit plan eligibility", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-plan",
+					code: "HLTH-85",
+					name: "Health 8.5",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			const set = await setBenefitPlanEligibility(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-elig-set",
+					planId: plan.data.id,
+					minTenureDays: 90,
+					allowedEmploymentStatuses: ["active"],
+				},
+				ready,
+			);
+			expect(set.ok).toBe(true);
+			if (!set.ok) return;
+
+			const got = await getBenefitPlanEligibility(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-elig-get",
+					planId: plan.data.id,
+				},
+				ready,
+			);
+			expect(got.ok).toBe(true);
+			if (!got.ok) return;
+			expect(got.data?.minTenureDays).toBe(90);
+		});
+
+		it("blocks enrollment when employee fails eligibility", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-elig-block-plan",
+					code: "TENURE",
+					name: "Tenure gated",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			await setBenefitPlanEligibility(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-elig-block-set",
+					planId: plan.data.id,
+					minTenureDays: 365,
+					allowedEmploymentStatuses: ["active"],
+				},
+				ready,
+			);
+
+			const blocked = await enrolBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-elig-block-enrol",
+					idempotencyKey: "idem-85-elig-block",
+					employeeId: seeded.employee.id,
+					employmentId: seeded.employment.id,
+					planId: plan.data.id,
+					effectiveFrom: "2025-01-01",
+				},
+				ready,
+			);
+			expect(blocked.ok).toBe(false);
+			if (blocked.ok) return;
+			expect(humanResourcesCodeFromResult(blocked)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			);
+		});
+
+		it("enrols benefit with employee and employer contributions", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-enrol-plan",
+					code: "CONT",
+					name: "Contributions",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			const enrollment = await enrolBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-enrol",
+					idempotencyKey: "idem-85-enrol",
+					employeeId: seeded.employee.id,
+					employmentId: seeded.employment.id,
+					planId: plan.data.id,
+					effectiveFrom: "2025-01-01",
+					effectiveTo: "2025-12-31",
+					employeeContributionAmount: "100.00",
+					employerContributionAmount: "300.00",
+					contributionCurrencyCode: "USD",
+					contributionFrequency: "monthly",
+				},
+				ready,
+			);
+			expect(enrollment.ok).toBe(true);
+			if (!enrollment.ok) return;
+			expect(enrollment.data.employeeContributionAmount).toBe("100.00");
+			expect(enrollment.data.employerContributionAmount).toBe("300.00");
+			expect(enrollment.data.effectiveTo).toBe("2025-12-31");
+		});
+
+		it("waives an active benefit enrollment", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-waive-plan",
+					code: "WAIVE",
+					name: "Waivable",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			const enrollment = await enrolBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-waive-enrol",
+					idempotencyKey: "idem-85-waive-enrol",
+					employeeId: seeded.employee.id,
+					employmentId: seeded.employment.id,
+					planId: plan.data.id,
+					effectiveFrom: "2025-01-01",
+				},
+				ready,
+			);
+			expect(enrollment.ok).toBe(true);
+			if (!enrollment.ok) return;
+
+			const waived = await waiveBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-waive",
+					enrollmentId: enrollment.data.id,
+					expectedVersion: enrollment.data.version,
+					waiverReason: "Employee opted out",
+					effectiveTo: "2025-06-30",
+				},
+				ready,
+			);
+			expect(waived.ok).toBe(true);
+			if (!waived.ok) return;
+			expect(waived.data.status).toBe("waived");
+			expect(waived.data.waiverReason).toBe("Employee opted out");
+		});
+
+		it("adds and ends dependent coverage on enrollment", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-dep-plan",
+					code: "FAM",
+					name: "Family",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			const enrollment = await enrolBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-dep-enrol",
+					idempotencyKey: "idem-85-dep-enrol",
+					employeeId: seeded.employee.id,
+					employmentId: seeded.employment.id,
+					planId: plan.data.id,
+					effectiveFrom: "2025-01-01",
+				},
+				ready,
+			);
+			expect(enrollment.ok).toBe(true);
+			if (!enrollment.ok) return;
+
+			const dependent = await addBenefitEnrollmentDependent(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-dep-add",
+					enrollmentId: enrollment.data.id,
+					dependentName: "Alex Dependent",
+					relationship: "child",
+					effectiveFrom: "2025-02-01",
+				},
+				ready,
+			);
+			expect(dependent.ok).toBe(true);
+			if (!dependent.ok) return;
+
+			const ended = await endBenefitEnrollmentDependent(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-dep-end",
+					dependentId: dependent.data.id,
+					expectedVersion: dependent.data.version,
+					endsOn: "2025-12-31",
+				},
+				ready,
+			);
+			expect(ended.ok).toBe(true);
+			if (!ended.ok) return;
+			expect(ended.data.effectiveTo).toBe("2025-12-31");
+		});
+
+		it("rejects invalid benefit enrollment effective range", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-range-plan",
+					code: "RANGE",
+					name: "Range",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			const invalid = await enrolBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-range",
+					idempotencyKey: "idem-85-range",
+					employeeId: seeded.employee.id,
+					employmentId: seeded.employment.id,
+					planId: plan.data.id,
+					effectiveFrom: "2025-12-31",
+					effectiveTo: "2025-01-01",
+				},
+				ready,
+			);
+			expect(invalid.ok).toBe(false);
+			if (invalid.ok) return;
+			expect(humanResourcesCodeFromResult(invalid)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			);
+		});
+
+		it("rejects mismatched contribution currency without amounts", async () => {
+			const ready = benefitsReady();
+			const seeded = await seedEmployeeEmployment(ready);
+			expect(seeded.ok).toBe(true);
+			if (!seeded.ok) return;
+
+			const plan = await createBenefitPlan(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-contrib-plan",
+					code: "CUR",
+					name: "Currency",
+				},
+				ready,
+			);
+			expect(plan.ok).toBe(true);
+			if (!plan.ok) return;
+
+			const invalid = await enrolBenefit(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-85-contrib",
+					idempotencyKey: "idem-85-contrib",
+					employeeId: seeded.employee.id,
+					employmentId: seeded.employment.id,
+					planId: plan.data.id,
+					effectiveFrom: "2025-01-01",
+					contributionCurrencyCode: "USD",
+				},
+				ready,
+			);
+			expect(invalid.ok).toBe(false);
+			if (invalid.ok) return;
+			expect(humanResourcesCodeFromResult(invalid)).toBe(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			);
+		});
 	});
 
 	it("does not import @afenda/payroll from compensation-benefits modules", () => {
 		const root = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 		const modules = [
 			"src/compensation-benefits/compensation-grade.ts",
+			"src/compensation-benefits/compensation-grade-progression-rule.ts",
 			"src/compensation-benefits/salary-band.ts",
 			"src/compensation-benefits/employee-compensation.ts",
 			"src/compensation-benefits/compensation-review.ts",

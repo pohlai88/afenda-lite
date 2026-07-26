@@ -62,6 +62,15 @@ Accounting does not import transaction packages. Optional integrations with
 Sales, Purchasing, Inventory, Receivables, Payables, and Payments are
 events-only via `postFinancialSourceEvent`.
 
+### Payroll posting boundary (Slice 8.6)
+
+| Owns | Does not own |
+|------|----------------|
+| `journal`, `journal_line`, `ledger_posting`, `source_posting_link` — GL posting from payroll and other source events | Payroll-period allowance/deduction **calculation** (`payroll_*`) |
+| Consumes `payroll.posting-requested.v1` (app-saga) and applies posting profiles | `hr_*` compensation agreements; `payment*` disbursement |
+
+**Four-way ownership:** HR agreement → payroll calculation → **accounting posting** → payments disbursement. SSOT: [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
+
 ## Events
 
 - `accounting.journal.posted.v1`

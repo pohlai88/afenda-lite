@@ -80,19 +80,16 @@ No cluster-specific normalize defects beyond HR-XCUT-P2-004 (deprecated tenant c
 | **Verification** | `__tests__/overtime-approval-authority.test.ts` (memory green); Drizzle runtime parity pending when `REQUIRE_DATABASE_TESTS=1` |
 | **Repair mission** | HR-OPS-OVERTIME-APPROVAL-AUTHORITY — **COMPLETE** (implementation + Memory verification; Drizzle runtime pending) |
 
-#### HR-OPS-P1-002
+#### HR-OPS-P1-002 — **CLOSED** (2026-07-26 · Slice 7.4)
 
 | Field | Value |
 |---|---|
-| **Paths/symbols** | `src/leave/leave-request.ts#getApprovedLeaveHandoff` · `src/module.manifest.ts` · `permissions.ts` (`time.handoff.read`) |
-| **Conflicting authorities** | Time handoff query uses `human-resources.time.handoff.read`; leave handoff query maps to `leave-request.approve-team` |
-| **Observed disk** | Query permission on approved leave handoff requires manager approval permission, not a dedicated payroll/read handoff permission |
+| **Paths/symbols** | `src/leave/leave-request.ts#getApprovedLeaveHandoff` · `src/module.manifest.ts` · `permissions.ts` · `platform-permission-catalog.ts` |
+| **Conflicting authorities** | Was: time handoff uses `time.handoff.read`; leave handoff mapped to `approve-team` |
+| **Observed disk (closed)** | `human-resources.approved-leave-handoff.get` → `human-resources.leave.handoff.read`; catalog + manifest parity; matrix test green |
 | **Expected contract** | Payroll/integration consumers use least-privilege handoff read permission symmetric with time |
-| **Consequence** | Payroll jobs need manager approval permission or elevated role to read approved leave facts |
-| **Recommendation** | Add `leave.handoff.read` (or reuse cross-domain handoff permission) in manifest + permission catalog |
-| **Decision** | None |
-| **Repair mission** | HR-OPS-LEAVE-HANDOFF-PERMISSION |
-| **Verification** | Handoff query succeeds with handoff.read only; fails without |
+| **Repair mission** | HR-OPS-LEAVE-HANDOFF-PERMISSION — **COMPLETE** |
+| **Verification** | `requires leave.handoff.read (not leave-request.approve-team) for approved handoff query`; `pnpm --filter @afenda/human-resources test -- human-resources.leave` |
 
 #### HR-OPS-P2-003
 
@@ -214,19 +211,15 @@ pnpm --filter @afenda/db test -- hr-leave-overlap-exclusion-register
 | **Repair mission** | HR-OPS-TIME-AUTHORITY-EFFECTIVE-DATE |
 | **Verification** | Boundary test with local date ≠ UTC date; resolver picks expected assignment |
 
-#### HR-OPS-P1-006
+#### HR-OPS-P1-006 — **CLOSED** (2026-07-26)
 
 | Field | Value |
 |---|---|
-| **Paths/symbols** | `src/shared/time-guards.ts#assertOvertimeStatusTransition` · `adapters/memory/time.ts#approveOvertimeRequest` |
+| **Paths/symbols** | `adapters/memory/time.ts#approveOvertimeRequest` · `adapters/drizzle/time.ts#approveOvertimeRequest` |
 | **Conflicting authorities** | Idempotent command semantics vs duplicate audit/outbox facts |
-| **Observed disk** | `approved → approved` passes transition guard (`current === next` no-op); store still bumps version, inserts approval row, emits outbox event |
-| **Expected contract** | Either true idempotent no-op (no durable side effects) or explicit rejection on repeat approve |
-| **Consequence** | Duplicate approval audit rows and `human-resources.time.overtime.approved.v1` events on retry |
-| **Recommendation** | Reject repeat approve or short-circuit before audit/outbox when state unchanged |
-| **Decision** | None |
-| **Repair mission** | HR-OPS-OVERTIME-REAPPROVAL-NOOP |
-| **Verification** | `overtime-approval-authority.test.ts` "approved-to-approved retry" + Drizzle parity |
+| **Observed disk (prior)** | `approved → approved` passed transition guard; store bumped version, inserted approval row, emitted outbox |
+| **Repair** | Short-circuit identical approved retry (true no-op); `CONFLICT` on divergent `approvedMaximumMinutes` |
+| **Verification** | `overtime-approval-authority.test.ts` — repeat no-op + divergent reject + 17/17 memory green (2026-07-26) |
 
 ---
 
@@ -246,7 +239,7 @@ See [`04-repair-readiness.md`](04-repair-readiness.md).
 | HR-OPS-P1-003 | P1 | No leave Server Actions in apps/web |
 | HR-OPS-P1-004 | P1 | Effective-truth matrix excludes transactional leave/time tables |
 | HR-OPS-P1-005 | P1 | Employee work calendar resolution tests failing (assignment context chain) |
-| HR-OPS-P1-006 | P1 | Overtime approved→approved retry emits duplicate approval facts |
+| HR-OPS-P1-006 | P1 | Overtime approved→approved retry emits duplicate approval facts — **CLOSED** |
 | HR-OPS-P2-001 | P2 | Timesheet leave entry timezone UTC vs calendar expectation |
 | HR-OPS-P2-002 | P2 | Stale time command count comment in emission registry |
 | HR-OPS-P2-003 | P2 | Session resolution tie order undefined at equal timestamps |

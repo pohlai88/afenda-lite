@@ -64,7 +64,7 @@ Canonical IDs only. **Aliases** absorbed into parent findings.
 | HR-OPS-P1-002 | — | P1 | package contract | HR-ENT-12 | HR-OPS-LEAVE-HANDOFF-PERMISSION |
 | HR-OPS-P1-003 | — | P1 | missing product capability | HR-ENT-12 | HR-ENT-07-PRODUCT-LEAVE-ACTIONS |
 | HR-OPS-P1-005 | — | P1→**closed** | adapter parity defect | HR-ENT-16 | HR-OPS-TIME-CALENDAR-RESOLUTION-FIXTURES (**CLOSED** Slice 1.1) |
-| HR-OPS-P1-006 | — | P1 | command/query | HR-ENT-16 | HR-OPS-OVERTIME-REAPPROVAL-NOOP |
+| HR-OPS-P1-006 | — | P1 | command/query | HR-ENT-16 | HR-OPS-OVERTIME-REAPPROVAL-NOOP — **CLOSED** 2026-07-26 |
 | HR-COREORG-P1-002 | — | P1 | command/query | HR-ENT-16 | HR-COREORG-REHIRE-SEMANTICS |
 | HR-COREORG-P1-004 | — | P1 | non-blocking hygiene | HR-ENT-04 | Scratch doc refresh |
 | HR-COREORG-P1-005 | — | P1 | missing product capability | HR-ENT-12 | HR-COREORG-HIRE-ORCHESTRATION |
@@ -172,12 +172,12 @@ Executed during HR-AUD-04 only where audit findings conflicted.
 
 ---
 
-## Unaudited domains (record only)
+## Audited domains — compensation, performance, learning (2026-07-26)
 
-| Domain | Status | Authority conflict |
+| Domain | Status | Pack |
 |---|---|---|
-| compensation-benefits | unaudited-depth | AUD-00 Cluster C vs AUD-02/03 bounce |
-| performance | unaudited-depth | Same |
-| learning | unaudited-depth | Same; partial `hr-learning` Actions only |
+| compensation-benefits | **partial** (domain-depth) | [`35-compensation-performance-learning-cluster.md`](35-compensation-performance-learning-cluster.md) · [`cluster-c/`](cluster-c/) |
+| performance | **partial** (domain-depth) | Same |
+| learning | **partial** (domain-depth) | Same |
 
-Do not infer Pass/Gap for these domains until a dedicated cluster pack is produced.
+Supersedes prior unaudited-depth rows. Emission classification unchanged in [`HR-AUD-06-COMPENSATION-PERFORMANCE-LEARNING.md`](HR-AUD-06-COMPENSATION-PERFORMANCE-LEARNING.md).

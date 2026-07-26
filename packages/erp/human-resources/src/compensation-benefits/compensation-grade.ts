@@ -4,15 +4,23 @@ import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
+	HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_GET,
+	HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_LIST,
 } from "../module-ids";
 import {
 	archiveCompensationGradeInputSchema,
 	createCompensationGradeInputSchema,
+	getCompensationGradeInputSchema,
+	listCompensationGradesInputSchema,
 	updateCompensationGradeInputSchema,
 } from "../schemas/compensation";
-import { runCompensationCommand } from "../shared/compensation-command";
+import {
+	runCompensationCommand,
+	runCompensationQuery,
+} from "../shared/compensation-command";
+import { notFound } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { CompensationGrade } from "../types";
+import type { CompensationGrade, CompensationGradeListPage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE =
 	"compensation_grade" as const;
@@ -92,5 +100,47 @@ export async function archiveCompensationGrade(
 					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
 				}),
 			),
+	});
+}
+
+export async function getCompensationGrade(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CompensationGrade>> {
+	return runCompensationQuery(input, options, {
+		schema: getCompensationGradeInputSchema,
+		invalidMessage: "Invalid compensation grade get input",
+		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_GET,
+		execute: async (data, { store }) => {
+			const grade = await store.getCompensationGrade({
+				organizationId: data.organizationId,
+				gradeId: data.gradeId,
+			});
+			if (!grade.ok) {
+				return grade;
+			}
+			if (grade.data === null) {
+				return notFound("Compensation grade not found");
+			}
+			return { ok: true, data: grade.data };
+		},
+	});
+}
+
+export async function listCompensationGrades(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CompensationGradeListPage>> {
+	return runCompensationQuery(input, options, {
+		schema: listCompensationGradesInputSchema,
+		invalidMessage: "Invalid compensation grade list input",
+		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_LIST,
+		execute: (data, { store }) =>
+			store.listCompensationGrades({
+				organizationId: data.organizationId,
+				page: data.page,
+				pageSize: data.pageSize,
+				status: data.status,
+			}),
 	});
 }

@@ -244,6 +244,8 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to submit backdated leave requests.",
 	"human-resources.leave-request.sensitive-read":
 		"You do not have permission to read sensitive leave data.",
+	"human-resources.leave.handoff.read":
+		"You do not have permission to read approved leave handoff.",
 	"human-resources.attendance.manage":
 		"You do not have permission to manage attendance.",
 	"human-resources.time.calendar.read":
@@ -314,6 +316,14 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to read compensation.",
 	"human-resources.compensation.manage":
 		"You do not have permission to manage compensation.",
+	"human-resources.compensation-proposal.create":
+		"You do not have permission to create compensation proposals.",
+	"human-resources.compensation-proposal.amend":
+		"You do not have permission to amend compensation proposals.",
+	"human-resources.compensation-proposal.approve":
+		"You do not have permission to approve compensation proposals.",
+	"human-resources.compensation-proposal.read":
+		"You do not have permission to read compensation proposals.",
 	"human-resources.benefits.manage":
 		"You do not have permission to manage benefits.",
 	"human-resources.employee-case.open":

@@ -26,7 +26,15 @@ import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	parseExceptionDetectionRemarks,
 } from "../src/time/attendance/exception-detection";
-import { listUnresolvedAttendanceExceptions } from "../src/time/attendance/exceptions";
+import {
+	createAttendanceException,
+	excuseAttendanceException,
+	getAttendanceException,
+	listUnresolvedAttendanceExceptions,
+	rejectAttendanceException,
+	resolveAttendanceException,
+	reviewAttendanceException,
+} from "../src/time/attendance/exceptions";
 import { resolveAttendanceSession } from "../src/time/attendance/sessions";
 import {
 	assignEmploymentCalendar,
@@ -1201,6 +1209,201 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (!handoff.ok || handoff.data === null) return;
 		expect(handoff.data.paidLeaveMinutes).toBe(480);
 		expect(handoff.data.unpaidLeaveMinutes).toBe(0);
+	});
+
+	it("transitions attendance exceptions through manager review lifecycle parity", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-review-employee-${suffix}`,
+				idempotencyKey: `idem-review-employee-${suffix}`,
+				employeeNumber: `REV-${suffix}`,
+				legalName: `Review Parity Worker ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const excusedSeed = await createAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-excuse-seed-${suffix}`,
+				employeeId: employee.data.id,
+				exceptionType: "late_arrival",
+				severity: "warning",
+				remarks: "late",
+			},
+			ready,
+		);
+		expect(excusedSeed.ok).toBe(true);
+		if (!excusedSeed.ok) return;
+		expect(excusedSeed.data.reviewStatus).toBe("open");
+
+		const reviewedForExcuse = await reviewAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-excuse-review-${suffix}`,
+				exceptionId: excusedSeed.data.id,
+				expectedVersion: excusedSeed.data.version,
+			},
+			ready,
+		);
+		expect(reviewedForExcuse.ok).toBe(true);
+		if (!reviewedForExcuse.ok) return;
+		expect(reviewedForExcuse.data.reviewStatus).toBe("in_review");
+		expect(reviewedForExcuse.data.version).toBe(excusedSeed.data.version + 1);
+
+		const excused = await excuseAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-excuse-${suffix}`,
+				exceptionId: reviewedForExcuse.data.id,
+				resolution: "traffic",
+				expectedVersion: reviewedForExcuse.data.version,
+			},
+			ready,
+		);
+		expect(excused.ok).toBe(true);
+		if (!excused.ok) return;
+		expect(excused.data).toMatchObject({
+			reviewStatus: "excused",
+			resolution: "traffic",
+			version: reviewedForExcuse.data.version + 1,
+		});
+
+		const rejectedSeed = await createAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-reject-seed-${suffix}`,
+				employeeId: employee.data.id,
+				exceptionType: "early_departure",
+				severity: "warning",
+				remarks: "left early",
+			},
+			ready,
+		);
+		expect(rejectedSeed.ok).toBe(true);
+		if (!rejectedSeed.ok) return;
+
+		const reviewedForReject = await reviewAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-reject-review-${suffix}`,
+				exceptionId: rejectedSeed.data.id,
+				expectedVersion: rejectedSeed.data.version,
+			},
+			ready,
+		);
+		expect(reviewedForReject.ok).toBe(true);
+		if (!reviewedForReject.ok) return;
+
+		const rejected = await rejectAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-reject-${suffix}`,
+				exceptionId: reviewedForReject.data.id,
+				resolution: "unapproved leave",
+				expectedVersion: reviewedForReject.data.version,
+			},
+			ready,
+		);
+		expect(rejected.ok).toBe(true);
+		if (!rejected.ok) return;
+		expect(rejected.data).toMatchObject({
+			reviewStatus: "rejected",
+			resolution: "unapproved leave",
+			version: reviewedForReject.data.version + 1,
+		});
+
+		const resolvedSeed = await createAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-resolve-seed-${suffix}`,
+				employeeId: employee.data.id,
+				exceptionType: "missing_clock_out",
+				severity: "warning",
+				remarks: "missing out punch",
+			},
+			ready,
+		);
+		expect(resolvedSeed.ok).toBe(true);
+		if (!resolvedSeed.ok) return;
+
+		const reviewedForResolve = await reviewAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-resolve-review-${suffix}`,
+				exceptionId: resolvedSeed.data.id,
+				expectedVersion: resolvedSeed.data.version,
+			},
+			ready,
+		);
+		expect(reviewedForResolve.ok).toBe(true);
+		if (!reviewedForResolve.ok) return;
+
+		const resolved = await resolveAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-resolve-${suffix}`,
+				exceptionId: reviewedForResolve.data.id,
+				resolution: "manual correction filed",
+				expectedVersion: reviewedForResolve.data.version,
+			},
+			ready,
+		);
+		expect(resolved.ok).toBe(true);
+		if (!resolved.ok) return;
+		expect(resolved.data).toMatchObject({
+			reviewStatus: "resolved",
+			resolution: "manual correction filed",
+			version: reviewedForResolve.data.version + 1,
+		});
+
+		const fetchedExcused = await getAttendanceException(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-get-excused-${suffix}`,
+				exceptionId: excused.data.id,
+			},
+			ready,
+		);
+		expect(fetchedExcused.ok).toBe(true);
+		if (!fetchedExcused.ok || fetchedExcused.data === null) return;
+		expect(fetchedExcused.data.reviewStatus).toBe("excused");
+
+		const unresolved = await listUnresolvedAttendanceExceptions(
+			{
+				organizationId: ORG,
+				actorUserId: MANAGER,
+				correlationId: `corr-review-unresolved-${suffix}`,
+				employeeId: employee.data.id,
+			},
+			ready,
+		);
+		expect(unresolved.ok).toBe(true);
+		if (!unresolved.ok) return;
+		expect(
+			unresolved.data.some((row) => row.id === excused.data.id),
+		).toBe(false);
+		expect(
+			unresolved.data.some((row) => row.id === rejected.data.id),
+		).toBe(false);
+		expect(
+			unresolved.data.some((row) => row.id === resolved.data.id),
+		).toBe(false);
 	});
 }
 

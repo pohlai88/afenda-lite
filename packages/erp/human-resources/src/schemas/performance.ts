@@ -7,13 +7,17 @@ import {
 	humanResourcesPerformanceCycleIdSchema,
 	humanResourcesPerformanceCycleParticipantIdSchema,
 	humanResourcesReviewIdSchema,
+	humanResourcesReviewParticipantIdSchema,
 } from "../brands";
 import { performanceRatingScaleSchema } from "../shared/performance-rating";
 import {
+	performanceCycleReviewPeriodKindSchema,
 	performanceCycleStatusSchema,
+	performanceGoalKindSchema,
 	performanceGoalStatusSchema,
 	performanceWeightingModelSchema,
 } from "../shared/performance-status";
+import { employmentStatusSchema } from "../shared/employment-status";
 import {
 	humanResourcesExpectedVersionSchema,
 	humanResourcesIdempotencyKeySchema,
@@ -49,7 +53,58 @@ export const updatePerformanceCycleInputSchema =
 			name: z.string().trim().min(1).max(200).optional(),
 			periodStart: isoDateSchema.optional(),
 			periodEnd: isoDateSchema.optional(),
+			ratingScale: performanceRatingScaleSchema.optional(),
+			weightingModel: performanceWeightingModelSchema.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+const performanceCycleReviewPeriodInputSchema = z
+	.object({
+		kind: performanceCycleReviewPeriodKindSchema,
+		periodStart: isoDateSchema,
+		periodEnd: isoDateSchema,
+	})
+	.strict();
+
+export const setPerformanceCycleReviewPeriodsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			periods: z.array(performanceCycleReviewPeriodInputSchema),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const listPerformanceCycleReviewPeriodsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+		})
+		.strict();
+
+export const setPerformanceCycleEligibilityInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			minTenureDays: z.number().int().nonnegative().nullable(),
+			allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const getPerformanceCycleEligibilityInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+		})
+		.strict();
+
+export const enrollEligibleCycleParticipantsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			cycleId: humanResourcesPerformanceCycleIdSchema,
+			asOfDate: isoDateSchema.optional(),
 		})
 		.strict();
 
@@ -102,6 +157,8 @@ export const listCycleParticipantsInputSchema =
 		})
 		.strict();
 
+const performanceEvidenceReferenceSchema = z.string().trim().min(1).max(500);
+
 export const createPerformanceGoalInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
@@ -109,12 +166,14 @@ export const createPerformanceGoalInputSchema =
 			cycleId: humanResourcesPerformanceCycleIdSchema,
 			employeeId: humanResourcesEmployeeIdSchema,
 			employmentId: humanResourcesEmploymentIdSchema,
+			goalKind: performanceGoalKindSchema,
 			title: z.string().trim().min(1).max(200),
 			description: z.string().trim().max(2000).nullable().optional(),
 			weight: performanceWeightSchema.optional(),
 			periodStart: isoDateSchema,
 			periodEnd: isoDateSchema,
 			exceptionOutsideCycle: z.boolean().optional(),
+			alignedToGoalId: humanResourcesGoalIdSchema.nullable().optional(),
 		})
 		.strict();
 
@@ -139,11 +198,40 @@ export const performanceGoalStatusTransitionInputSchema =
 		})
 		.strict();
 
+export const closePerformanceGoalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			goalId: humanResourcesGoalIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+			completionNote: z.string().trim().max(2000).nullable().optional(),
+			completionEvidenceReference:
+				performanceEvidenceReferenceSchema.nullable().optional(),
+		})
+		.strict();
+
+export const alignPerformanceGoalInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			goalId: humanResourcesGoalIdSchema,
+			alignedToGoalId: humanResourcesGoalIdSchema.nullable(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
 export const recordGoalProgressInputSchema = humanResourcesMutationContextSchema
 	.extend({
 		goalId: humanResourcesGoalIdSchema,
 		progressNote: z.string().trim().min(1).max(2000),
 		progressValue: performanceWeightSchema.optional(),
+		evidenceReference: performanceEvidenceReferenceSchema.optional(),
+	})
+	.strict();
+
+export const listGoalProgressInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		goalId: humanResourcesGoalIdSchema,
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
 	})
 	.strict();
 
@@ -227,6 +315,37 @@ export const reopenPerformanceReviewInputSchema =
 		.extend({
 			reviewId: humanResourcesReviewIdSchema,
 			reason: z.string().trim().min(1).max(500),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const addDelegatedReviewerInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			delegatedEmployeeId: humanResourcesEmployeeIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const submitDelegatedAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			participantId: humanResourcesReviewParticipantIdSchema,
+			rating: z.string().trim().min(1).max(64),
+			commentsSensitive: z.string().trim().max(4000).nullable().optional(),
+			delegatedEmployeeId: humanResourcesEmployeeIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const calibratePerformanceReviewInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			reviewId: humanResourcesReviewIdSchema,
+			overallRating: z.string().trim().min(1).max(64),
+			calibrationNote: z.string().trim().max(2000).nullable().optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();

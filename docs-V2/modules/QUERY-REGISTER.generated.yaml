@@ -22,228 +22,6 @@ queries:
   - id: accounting.exceptions.list
     moduleId: accounting
     permission: accounting.exception.read
-  - id: corporate-administration.company.get
-    moduleId: corporate-administration
-    permission: corporate-administration.company.read
-  - id: corporate-administration.company.list
-    moduleId: corporate-administration
-    permission: corporate-administration.company.list
-  - id: corporate-administration.company.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.company.read
-  - id: corporate-administration.company-name.list
-    moduleId: corporate-administration
-    permission: corporate-administration.company.read
-  - id: corporate-administration.company-identifier.list
-    moduleId: corporate-administration
-    permission: corporate-administration.company.read
-  - id: corporate-administration.company-status.list
-    moduleId: corporate-administration
-    permission: corporate-administration.company.read
-  - id: corporate-administration.officer.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.officer.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.officer.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-body.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-body.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-body.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-membership.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-membership.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-membership.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.authority-mandate.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.authority-mandate.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.authority-mandate.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.premise.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.premise.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.premise.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-meeting.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-meeting.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.governance-meeting.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.resolution.get
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.resolution.list
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.resolution.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.governance.read
-  - id: corporate-administration.share-class.get
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-class.list
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-transaction.get
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-transaction.list
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-certificate.get
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-certificate.list
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.beneficial-owner-disclosure.get
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.beneficial-owner-disclosure.list
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-holding.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.share-holding.get-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.beneficial-owner-disclosure.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.share-capital.read
-  - id: corporate-administration.property.get
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.property.list
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.property.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.asset.get
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.asset.list
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.asset.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.intellectual-property.get
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.intellectual-property.list
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.intellectual-property.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.intellectual-property.list-expiring
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.insurance-policy.get
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.insurance-policy.list
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.insurance-policy.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.insurance-policy.list-expiring
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.charge.get
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.charge.list
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.charge.list-as-of
-    moduleId: corporate-administration
-    permission: corporate-administration.property-assets.read
-  - id: corporate-administration.licence-permit.get
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.licence-permit.list
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.bank-account-registration.get
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.bank-account-registration.list
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.bank-mandate.get
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.bank-mandate.list
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.group-control-relationship.get
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.group-control-relationship.list
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.material-agreement.get
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.material-agreement.list
-    moduleId: corporate-administration
-    permission: corporate-administration.licences-banking.read
-  - id: corporate-administration.corporate-document.get
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.read
-  - id: corporate-administration.corporate-document.list
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.read
-  - id: corporate-administration.filing-obligation.get
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.read
-  - id: corporate-administration.filing-obligation.list
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.read
-  - id: corporate-administration.filing-submission.get
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.read
-  - id: corporate-administration.filing-submission.list
-    moduleId: corporate-administration
-    permission: corporate-administration.documents-filings.read
-  - id: corporate-administration.filing.due-list
-    moduleId: corporate-administration
-    permission: corporate-administration.compliance.read
-  - id: corporate-administration.filing.overdue-list
-    moduleId: corporate-administration
-    permission: corporate-administration.compliance.read
-  - id: corporate-administration.records.search
-    moduleId: corporate-administration
-    permission: corporate-administration.compliance.read
   - id: fulfillment.delivery.get
     moduleId: fulfillment
     permission: fulfillment.delivery.read
@@ -397,7 +175,22 @@ queries:
   - id: human-resources.onboarding-tasks.list
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.onboarding-orientation.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-equipment-handoff.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-access-handoff.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
   - id: human-resources.probation-review.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.probation-reviews.list-by-employment
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.probation-assessments.list
     moduleId: human-resources
     permission: human-resources.employee.read
   - id: human-resources.employment-confirmation.get
@@ -413,6 +206,12 @@ queries:
     moduleId: human-resources
     permission: human-resources.employee.read
   - id: human-resources.clearance.get-by-offboarding-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-access-revocation.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-payroll-handoff.get-by-case
     moduleId: human-resources
     permission: human-resources.employee.read
   - id: human-resources.course.get
@@ -454,6 +253,51 @@ queries:
   - id: human-resources.compensation-proposal.list
     moduleId: human-resources
     permission: human-resources.compensation-proposal.read
+  - id: human-resources.compensation-grade.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-grade.list
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.salary-band.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.salary-band.list-by-grade
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.salary-band.find-as-of
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-grade-progression-rule.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-grade-progression-rule.list-from-grade
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-grade-progression-targets.list
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-review-cycle.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-review-cycle.list
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-review.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.compensation-review.list-by-employee
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.employee-compensation.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.employee-compensation.list
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.benefit-plan.eligibility.get
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
   - id: human-resources.leave-policy.get
     moduleId: human-resources
     permission: human-resources.leave-policy.read
@@ -486,7 +330,7 @@ queries:
     permission: human-resources.leave-request.approve-team
   - id: human-resources.approved-leave-handoff.get
     moduleId: human-resources
-    permission: human-resources.leave-request.approve-team
+    permission: human-resources.leave.handoff.read
   - id: human-resources.leave-policy.resolve-applicable
     moduleId: human-resources
     permission: human-resources.leave-policy.read

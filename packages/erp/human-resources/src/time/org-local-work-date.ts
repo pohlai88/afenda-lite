@@ -5,10 +5,13 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import type { HumanResourcesStore } from "../store";
-import { resolveEmployeeWorkCalendar } from "./employee-work-calendar-resolution";
+import {
+	resolveEmployeeWorkCalendar,
+	type EmployeeWorkCalendarStoreSlice,
+} from "./employee-work-calendar-resolution";
 import type { AssignmentContextQueryPort } from "./handoff/ports";
 import { civilDateInTimeZone } from "./legal-minute-allocation";
+import { lineageEligibleWorkCalendar } from "./work-calendar-lineage";
 
 /**
  * Canonical org-local civil work date (`yyyy-MM-dd`) for an instant in an IANA timezone.
@@ -42,12 +45,7 @@ export function resolveOvertimeAuthorityAsOf(input: {
 	return civilDateInTimeZone(input.requestedStartsAt, input.calendarTimezone);
 }
 
-type EmploymentCalendarStoreSlice = Pick<
-	HumanResourcesStore,
-	| "getWorkCalendar"
-	| "listWorkCalendarScopeAssignments"
-	| "resolveEmploymentCalendar"
->;
+type EmploymentCalendarStoreSlice = EmployeeWorkCalendarStoreSlice;
 
 async function loadActiveCalendarTimezone(input: {
 	organizationId: string;
@@ -61,7 +59,10 @@ async function loadActiveCalendarTimezone(input: {
 	if (!calendar.ok) {
 		return calendar;
 	}
-	if (calendar.data === null || calendar.data.status !== "active") {
+	if (
+		calendar.data === null ||
+		!lineageEligibleWorkCalendar(calendar.data)
+	) {
 		return fail(
 			"NOT_FOUND",
 			"Work calendar not found.",

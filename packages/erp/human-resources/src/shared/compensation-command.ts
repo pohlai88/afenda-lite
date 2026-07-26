@@ -16,7 +16,10 @@ import type { HumanResourcesPermission } from "../permissions";
 import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../permissions";
 import type { CurrencyLookupPort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
-import type { HumanResourcesResourceContext } from "./authorization-types";
+import type {
+	HumanResourcesFieldProjection,
+	HumanResourcesResourceContext,
+} from "./authorization-types";
 import { assertHumanResourcesSupplementalAuthorization } from "./contextual-authorization";
 import {
 	runParsedAuthorizedCommand,
@@ -142,6 +145,7 @@ export async function runCompensationCommand<
 export async function runCompensationQuery<
 	TSchema extends z.ZodType<ActorScoped>,
 	TOut,
+	TProjected = TOut,
 >(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
@@ -149,14 +153,23 @@ export async function runCompensationQuery<
 		schema: TSchema;
 		invalidMessage: string;
 		query: HumanResourcesQueryId;
+		resolveRequestedFields?: (
+			data: z.infer<TSchema>,
+		) => readonly string[] | undefined;
+		project?: (
+			value: TOut,
+			projection: import("./authorization-types").HumanResourcesFieldProjection | undefined,
+		) => TProjected;
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
-): Promise<Result<TOut>> {
+): Promise<Result<TProjected>> {
 	return runParsedAuthorizedQuery(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
 		parityResourceKind: "compensation",
+		resolveRequestedFields: config.resolveRequestedFields,
+		project: config.project,
 		resolveDeps: (opts) => {
 			const { store } = resolveCommandDeps(opts);
 			return ok({ store });

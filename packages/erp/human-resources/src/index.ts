@@ -4,10 +4,14 @@ import "server-only";
 export * from "./brands";
 export * from "./command-options";
 export * from "./compensation-benefits/benefit-enrollment";
+export * from "./compensation-benefits/benefit-eligibility";
+export * from "./compensation-benefits/benefit-dependent";
 export * from "./compensation-benefits/benefit-plan";
 export * from "./compensation-benefits/compensation-grade";
+export * from "./compensation-benefits/compensation-grade-progression-rule";
 export * from "./compensation-benefits/compensation-proposal";
 export * from "./compensation-benefits/compensation-review";
+export * from "./compensation-benefits/compensation-review-cycle";
 export * from "./compensation-benefits/currency-lookup";
 export * from "./compensation-benefits/employee-compensation";
 export * from "./compensation-benefits/salary-band";
@@ -34,6 +38,9 @@ export * from "./employee-relations/case-event";
 export * from "./employee-relations/employee-case";
 // Error codes and utilities
 export * from "./error-codes";
+export * from "./handoff/approved-payroll-handoff";
+export * from "./handoff/map-approved-payroll-handoff";
+export type * from "./handoff/ports";
 export * from "./hire-orchestration/hire-from-accepted-offer";
 export type * from "./hire-orchestration/types";
 export type * from "./identity-resolver";
@@ -69,6 +76,11 @@ export * from "./privacy/operations";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
 export { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 export { createProductionAttendanceSource } from "./production-attendance-source";
+export type {
+	AttendanceConnectorPullPort,
+	AttendanceSourcePreviewResult,
+} from "./production-attendance-source";
+export { createHttpAttendanceConnectorPull } from "./time/attendance/http-connector-pull";
 export { createProductionWorkCalendar } from "./production-work-calendar";
 export * from "./recruitment/application";
 export * from "./recruitment/candidate";

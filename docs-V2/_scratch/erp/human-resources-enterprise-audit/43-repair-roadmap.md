@@ -97,7 +97,7 @@ flowchart TD
 | **Status** | **CLOSED** — not an open/next blocker |
 | **HR-ENT** | HR-ENT-06 |
 | **Outcome** | Overtime approve path enforces time approval authority; HR-OPS-P1-001 **closed** |
-| **Residual** | None that reopen this finding; related overtime items (e.g. HR-OPS-P1-006 reapproval no-op) remain separate open findings |
+| **Residual** | None — HR-OPS-P1-006 closed 2026-07-26 (repeat-approval no-op in adapters + authority suite) |
 
 ---
 
@@ -208,7 +208,9 @@ flowchart TD
 | **Rollback** | Revert error mapping |
 | **Residual** | HR-COREORG-P1-002 closed |
 
-### HR-OPS-LEAVE-HANDOFF-PERMISSION
+**Consumer note:** payroll/integration jobs must grant `human-resources.leave.handoff.read`, not `leave-request.approve-team`. Remaining Slice 7.5 product Actions (request/cancel/balance/approval UI) still open.
+
+### HR-OPS-LEAVE-HANDOFF-PERMISSION — **CLOSED** (2026-07-26)
 
 | Field | Value |
 |---|---|
@@ -222,7 +224,7 @@ flowchart TD
 | **Commands** | `pnpm --filter @afenda/human-resources test -- human-resources.leave`; `pnpm --filter @afenda/db db:ensure-permission-catalog` |
 | **Migration risk** | **Low** — permission catalog seed |
 | **Rollback** | Revert permission + manifest |
-| **Residual** | HR-OPS-P1-002 closed |
+| **Residual** | HR-OPS-P1-002 **closed** |
 
 ### HR-ENT-WFP-VARIANCE-ACTUALS
 
@@ -340,7 +342,7 @@ flowchart TD
 | 4 | HR-COREORG-LIFECYCLE-SERIALIZE-PARITY | 4 | HR-ENT-18 | HR-COREORG-P2-002 | **CLOSED** (Slice 1.2) — not a blocker |
 | 5 | HR-OPS-TIME-CALENDAR-RESOLUTION-FIXTURES | 4 | HR-ENT-16 | HR-OPS-P1-005 | **CLOSED** (Slice 1.1) — not a blocker |
 | 6 | HR-OPS-LEAVE-EMISSION-REGISTRY | 5 | HR-ENT-13 | HR-OPS-P0-001 | **next vertical** (PR 3.0 registry infrastructure — [`00-phase3.md`](../../00-phase3.md)) |
-| 7 | HR-OPS-LEAVE-HANDOFF-PERMISSION | 5 | HR-ENT-12 | HR-OPS-P1-002 | open (roadmap) |
+| 7 | HR-OPS-LEAVE-HANDOFF-PERMISSION | 5 | HR-ENT-12 | HR-OPS-P1-002 | **CLOSED** (Slice 7.4) |
 | 8 | HR-ENT-04-AUTH-PRIVACY | 6 | HR-ENT-06/07 | HR-XCUT-P0-001/004 | **CLOSED** Slice 2.10 |
 | 9 | HR-ENT-07-PRODUCT-LEAVE-ACTIONS | 6 | HR-ENT-12 | HR-OPS-P1-003 | open (roadmap) |
 | 10 | HR-XCUT-EMISSION-REGISTRY | 7 | HR-ENT-13 | HR-XCUT-P0-003 | open (roadmap) |
@@ -355,7 +357,7 @@ flowchart TD
 
 | Risk | Mitigation |
 |---|---|
-| Unaudited comp/perf/learning domains | Schedule HR-AUD follow-on pack before Major HR-ENT-16 claims for those domains |
+| Unaudited comp/perf/learning domains | **Closed** — HR-AUD-06 domain-depth pack [`cluster-c/`](cluster-c/) + [`35-compensation-performance-learning-cluster.md`](35-compensation-performance-learning-cluster.md) (2026-07-26); residual = product Actions + payroll handoff |
 | DATABASE_URL not loaded in parity CI | Fix vitest env wiring before parity-dependent missions close |
 | OPEN-DECISION forks | **Mitigated** — Slice 0.2 ratified all nine IDs; cite ratified choices in owner missions (do not re-litigate) |
 | Concurrent disk drift vs audit | Re-spot-check at mission start; update Scratch finding status |

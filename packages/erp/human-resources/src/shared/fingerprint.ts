@@ -177,6 +177,18 @@ export function fingerprintEmployeeCompensationCreate(input: {
 	employmentId: string;
 	baseAmount: string;
 	currencyCode: string;
+	payFrequency: string;
+	effectiveFrom: string;
+	reason: string;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintEmployeeCompensationCorrection(input: {
+	predecessorId: string;
+	baseAmount: string;
+	currencyCode: string;
+	payFrequency: string;
 	effectiveFrom: string;
 	reason: string;
 }): string {
@@ -184,10 +196,29 @@ export function fingerprintEmployeeCompensationCreate(input: {
 }
 
 export function fingerprintCompensationReviewDraft(input: {
+	cycleId: string;
 	employeeId: string;
 	employmentId: string;
 }): string {
 	return sha256Fingerprint(input);
+}
+
+export function fingerprintCompensationReviewCycleCreate(input: {
+	code: string;
+	name: string;
+	periodStart: string;
+	periodEnd: string;
+	budgetTotalAmount: string;
+	budgetCurrencyCode: string;
+}): string {
+	return sha256Fingerprint({
+		code: input.code.trim(),
+		name: input.name.trim(),
+		periodStart: input.periodStart,
+		periodEnd: input.periodEnd,
+		budgetTotalAmount: input.budgetTotalAmount,
+		budgetCurrencyCode: input.budgetCurrencyCode,
+	});
 }
 
 export function fingerprintBenefitEnrollment(input: {
@@ -195,6 +226,29 @@ export function fingerprintBenefitEnrollment(input: {
 	employmentId: string;
 	planId: string;
 	effectiveFrom: string;
+	effectiveTo?: string | null;
+	employeeContributionAmount?: string | null;
+	employerContributionAmount?: string | null;
+	contributionCurrencyCode?: string | null;
+	contributionFrequency?: string | null;
+}): string {
+	return sha256Fingerprint({
+		employeeId: input.employeeId,
+		employmentId: input.employmentId,
+		planId: input.planId,
+		effectiveFrom: input.effectiveFrom,
+		effectiveTo: input.effectiveTo ?? null,
+		employeeContributionAmount: input.employeeContributionAmount ?? null,
+		employerContributionAmount: input.employerContributionAmount ?? null,
+		contributionCurrencyCode: input.contributionCurrencyCode ?? null,
+		contributionFrequency: input.contributionFrequency ?? null,
+	});
+}
+
+export function fingerprintBenefitWaiver(input: {
+	enrollmentId: string;
+	waiverReason: string;
+	effectiveTo: string | null;
 }): string {
 	return sha256Fingerprint(input);
 }
@@ -356,6 +410,7 @@ export function fingerprintPerformanceGoalCreate(input: {
 	cycleId: string;
 	employeeId: string;
 	employmentId: string;
+	goalKind: string;
 	title: string;
 	periodStart: string;
 	periodEnd: string;

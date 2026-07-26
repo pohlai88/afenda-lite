@@ -50,6 +50,24 @@ export function isRatingInScale(
 	return scale.codes.includes(rating);
 }
 
+export function assertRatingScaleUniqueCodes(
+	scale: PerformanceRatingScale,
+): Result<PerformanceRatingScale> {
+	const seen = new Set<string>();
+	for (const code of scale.codes) {
+		const normalized = code.trim();
+		if (seen.has(normalized)) {
+			return fail(
+				"VALIDATION_ERROR",
+				"Rating scale codes must be unique.",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			);
+		}
+		seen.add(normalized);
+	}
+	return ok({ codes: scale.codes.map((code) => code.trim()) });
+}
+
 export function validateRatingInScale(
 	rating: string,
 	scale: PerformanceRatingScale,

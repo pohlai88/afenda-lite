@@ -20,8 +20,9 @@ import {
 } from "../field-projection";
 
 function isPayrollHandoffOperation(operationId: string): boolean {
-	return operationId.startsWith(
-		"human-resources.approved-compensation-handoff.",
+	return (
+		operationId.startsWith("human-resources.approved-compensation-handoff.") ||
+		operationId.startsWith("human-resources.approved-payroll-handoff.")
 	);
 }
 
@@ -74,13 +75,17 @@ export const compensationPolicy: HumanResourcesAuthorizationPolicy = {
 	resourceRequired: true,
 	operationPrefixes: [
 		"human-resources.compensation-grade.",
+		"human-resources.compensation-grade-progression-",
 		"human-resources.salary-band.",
 		"human-resources.employee-compensation.",
 		"human-resources.compensation-review.",
+		"human-resources.compensation-review-cycle.",
 		"human-resources.compensation-proposal.",
 		"human-resources.benefit-plan.",
 		"human-resources.benefit-enrollment.",
+		"human-resources.benefit-enrollment-dependent.",
 		"human-resources.approved-compensation-handoff.",
+		"human-resources.approved-payroll-handoff.",
 	],
 	async evaluate(
 		request: HumanResourcesAuthorizationRequest,
