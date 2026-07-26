@@ -2,9 +2,9 @@ import { randomUUID } from "node:crypto";
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
-	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
 	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
 	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
 import {
@@ -49,6 +49,7 @@ import type {
 	WorkforcePlanVariance,
 } from "../../types";
 import { computeLineAvailability } from "../../workforce-planning/availability";
+import { computeWorkforcePlanVarianceLine } from "../../workforce-planning/variance";
 
 export type WorkforcePlanningMemoryState = {
 	headcountPlans: Map<string, HeadcountPlan>;
@@ -183,7 +184,7 @@ export type MemoryWorkforcePlanningMethods = Pick<
 
 export type WorkforcePlanningMemoryHost = Pick<
 	HumanResourcesStore,
-	"getRequisitionById"
+	"getRequisitionById" | "listWorkforcePlanActualAssignments"
 >;
 
 import { idempotencyMapKey } from "./shared";
@@ -1286,7 +1287,19 @@ export function createMemoryWorkforcePlanningMethods(
 		async getWorkforcePlanVariance(input: {
 			organizationId: string;
 			planId: HumanResourcesHeadcountPlanId;
+			asOf?: string;
 		}): Promise<Result<WorkforcePlanVariance>> {
+			const plan = state.headcountPlans.get(input.planId);
+			if (!plan || plan.organizationId !== input.organizationId) {
+				return notFound("Headcount plan not found");
+			}
+			const asOf = input.asOf ?? plan.periodEnd;
+			const actuals = await this.listWorkforcePlanActualAssignments({
+				organizationId: input.organizationId,
+				asOf,
+			});
+			if (!actuals.ok) return actuals;
+
 			const lines = linesForPlan(state, input.organizationId, input.planId);
 			const varianceLines = lines.map((line) => {
 				const availability = computeLineAvailability({
@@ -1297,17 +1310,13 @@ export function createMemoryWorkforcePlanningMethods(
 						line.id,
 					),
 				});
-				const plannedFte = Number(line.plannedFte);
-				const consumedFte = Number(availability.consumedFte);
-				const varianceHeadcount =
-					line.plannedHeadcount - availability.consumedHeadcount;
-				return {
-					...availability,
-					varianceFte: (plannedFte - consumedFte).toFixed(4),
-					varianceHeadcount,
-				};
+				return computeWorkforcePlanVarianceLine({
+					line,
+					availability,
+					actuals: actuals.data,
+				});
 			});
-			return ok({ planId: input.planId, lines: varianceLines });
+			return ok({ planId: input.planId, asOf, lines: varianceLines });
 		},
 	};
 }

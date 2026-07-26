@@ -1,6 +1,11 @@
 import type { Result } from "@afenda/errors/result";
 import { fail, ok } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
+import { getEmployment } from "../core/employment";
+import {
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND,
@@ -28,26 +33,21 @@ import {
 	runCompensationCommand,
 	runCompensationQuery,
 } from "../shared/compensation-command";
-import { EMPLOYEE_COMPENSATION_QUERY_FIELDS } from "../shared/employee-compensation-query-fields";
+import { notFound } from "../shared/domain-guards";
 import {
 	projectEmployeeCompensationByFieldAccess,
 	projectEmployeeCompensationListPage,
 } from "../shared/employee-compensation-projection";
-import { notFound } from "../shared/domain-guards";
+import { EMPLOYEE_COMPENSATION_QUERY_FIELDS } from "../shared/employee-compensation-query-fields";
 import {
-	fingerprintEmployeeCompensationCreate,
 	fingerprintEmployeeCompensationCorrection,
+	fingerprintEmployeeCompensationCreate,
 } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
 } from "../types";
-import { getEmployment } from "../core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	humanResourcesErrorDetails,
-} from "../error-codes";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_COMPENSATION =
 	"employee_compensation" as const;
@@ -148,7 +148,7 @@ export async function createEmployeeCompensation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
 				}),
 			);
 		},
@@ -192,7 +192,7 @@ export async function amendEmployeeCompensation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND,
 				}),
 			);
 		},
@@ -218,7 +218,7 @@ export async function approveEmployeeCompensation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_APPROVE,
 				}),
 			),
 	});
@@ -277,7 +277,7 @@ export async function scheduleEmployeeCompensationChange(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_SCHEDULE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_SCHEDULE,
 				}),
 			);
 		},
@@ -303,7 +303,7 @@ export async function activateEmployeeCompensation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE,
 				}),
 			),
 	});
@@ -354,7 +354,7 @@ export async function correctEmployeeCompensation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CORRECT,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CORRECT,
 				}),
 			);
 		},
@@ -381,7 +381,7 @@ export async function endEmployeeCompensation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
 				}),
 			),
 	});

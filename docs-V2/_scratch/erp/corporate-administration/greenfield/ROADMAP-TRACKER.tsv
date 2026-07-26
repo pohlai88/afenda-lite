@@ -1,6 +1,6 @@
 phase	slice_id	title	depends_on	status	goal
-0	CA-0.1	Authority, catalog and package scaffold	None	OPEN	Register the greenfield bounded context before domain coding and create a minimal buildable package with no fabricated behavior.
-0	CA-0.2	Core contracts, permissions, errors and reference ports	CA-0.1	OPEN	Define the stable greenfield contracts used by every later vertical.
+0	CA-0.1	Authority, catalog and package scaffold	None	DONE	Register the greenfield bounded context before domain coding and create a minimal buildable package with no fabricated behavior.
+0	CA-0.2	Core contracts, permissions, errors and reference ports	CA-0.1	DONE	Define the stable greenfield contracts used by every later vertical.
 0	CA-0.3	Database foundation and atomic mutation kernel	CA-0.2	OPEN	Build the same-transaction infrastructure required before material statutory writes.
 0	CA-0.4	First thin vertical — draft legal-company registration	CA-0.3	OPEN	Prove the complete package-to-database-to-Action-to-UI path with a real, deliberately narrow domain operation.
 1	CA-1.1	Legal-company registry and jurisdiction profile	Phase 0 DONE	OPEN	Expand the thin draft root into a jurisdiction-aware legal-company aggregate.

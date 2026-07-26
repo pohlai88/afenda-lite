@@ -1,8 +1,8 @@
 import {
+	type ApprovedPayrollHandoff,
 	DEFAULT_HANDOFF_ROUNDING_MODE,
 	deriveHandoffDecimalScale,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
-	type ApprovedPayrollHandoff,
 } from "@afenda/events/schemas";
 
 const BASE_ASSIGNMENT = {

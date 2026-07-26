@@ -4,7 +4,6 @@ export {
 	type ReceivablesAuthorizationPort,
 	type ReceivablesPermission,
 	requireReceivablesCommandPermission,
-	requireReceivablesPermission,
 	requireReceivablesQueryPermission,
 } from "./authorization";
 export type { ReceivablesCommandOptions } from "./command-options";

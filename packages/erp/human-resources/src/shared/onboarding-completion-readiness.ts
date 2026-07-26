@@ -1,4 +1,3 @@
-import type { WorkEligibility } from "../types";
 import {
 	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
 	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
@@ -6,12 +5,13 @@ import {
 	ONBOARDING_TASK_CODE_ORIENTATION,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
 } from "../lifecycle/onboarding-checklist";
+import type { WorkEligibility } from "../types";
 import type {
+	LifecycleTaskStatus,
 	OnboardingAccessHandoffStatus,
 	OnboardingEquipmentHandoffStatus,
 	OnboardingOrientationStatus,
 } from "./lifecycle-status";
-import type { LifecycleTaskStatus } from "./lifecycle-status";
 
 export const ONBOARDING_COMPLETION_MISSING_CODES = [
 	"mandatory_tasks",

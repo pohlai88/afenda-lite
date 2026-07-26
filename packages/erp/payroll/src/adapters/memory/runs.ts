@@ -8,13 +8,13 @@ import {
 	parsePayrollRunId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	mapConflict,
 	mapInvalidState,
 	mapNotFound,
 } from "../../shared/persistence-errors";
-import { assertPayrollRunTransition } from "../../runs/transitions";
 import type { PayrollRunsStore } from "../../store/runs";
 import type {
 	IdempotentPayrollRunRecord,
@@ -180,7 +180,10 @@ export function createMemoryRunsMethods(
 			ports: MutationPorts,
 		): Promise<Result<PayrollRun>> {
 			const latest = state.runs.get(input.runId);
-			if (latest === undefined || latest.organizationId !== input.organizationId) {
+			if (
+				latest === undefined ||
+				latest.organizationId !== input.organizationId
+			) {
 				return mapNotFound("Payroll run not found");
 			}
 
@@ -231,9 +234,13 @@ export function createMemoryRunsMethods(
 						? input.roundingPolicyJson
 						: latest.roundingPolicyJson,
 				finalizedAt:
-					input.finalizedAt !== undefined ? input.finalizedAt : latest.finalizedAt,
+					input.finalizedAt !== undefined
+						? input.finalizedAt
+						: latest.finalizedAt,
 				finalizedBy:
-					input.finalizedBy !== undefined ? input.finalizedBy : latest.finalizedBy,
+					input.finalizedBy !== undefined
+						? input.finalizedBy
+						: latest.finalizedBy,
 				version: latest.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,

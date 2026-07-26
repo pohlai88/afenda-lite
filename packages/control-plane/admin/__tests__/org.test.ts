@@ -19,16 +19,17 @@ vi.mock("@afenda/auth", () => ({
 	inviteOrgMember: (...args: unknown[]) => inviteOrgMember(...args),
 }));
 
-vi.mock("@afenda/db", async () => {
-	const actual =
-		await vi.importActual<typeof import("@afenda/db")>("@afenda/db");
-	return {
-		...actual,
-		db: {
-			select: (...args: unknown[]) => select(...args),
-		},
-	};
-});
+vi.mock("@afenda/db", () => ({
+	db: {
+		select: (...args: unknown[]) => select(...args),
+	},
+	inArray: vi.fn(() => ({ kind: "inArray" })),
+	max: vi.fn(() => ({ kind: "max" })),
+	platformRbacAudit: {
+		organizationId: "organization_id",
+		createdAt: "created_at",
+	},
+}));
 
 const createdOrg = {
 	id: "org-new",

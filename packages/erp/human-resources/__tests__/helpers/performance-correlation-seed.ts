@@ -11,7 +11,6 @@ import {
 	createPerformanceCycle,
 	listCycleParticipants,
 } from "../../src/performance/performance-cycle";
-import { publishAndOpenPerformanceCycle } from "./performance-cycle-harness";
 import {
 	startPerformanceReview,
 	submitManagerAssessment,
@@ -23,12 +22,11 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_IMPROVEMENT_PLAN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
-	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_REVIEW_REOPEN,
 } from "../../src/permissions";
 import { mapActorToEmployee } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
+import { publishAndOpenPerformanceCycle } from "./performance-cycle-harness";
 
 const RATING_SCALE = { codes: ["meets", "exceeds"] } as const;
 

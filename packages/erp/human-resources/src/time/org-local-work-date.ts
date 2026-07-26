@@ -6,8 +6,8 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
-	resolveEmployeeWorkCalendar,
 	type EmployeeWorkCalendarStoreSlice,
+	resolveEmployeeWorkCalendar,
 } from "./employee-work-calendar-resolution";
 import type { AssignmentContextQueryPort } from "./handoff/ports";
 import { civilDateInTimeZone } from "./legal-minute-allocation";
@@ -59,10 +59,7 @@ async function loadActiveCalendarTimezone(input: {
 	if (!calendar.ok) {
 		return calendar;
 	}
-	if (
-		calendar.data === null ||
-		!lineageEligibleWorkCalendar(calendar.data)
-	) {
+	if (calendar.data === null || !lineageEligibleWorkCalendar(calendar.data)) {
 		return fail(
 			"NOT_FOUND",
 			"Work calendar not found.",

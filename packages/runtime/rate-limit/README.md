@@ -70,12 +70,12 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Surface | Owner |
 |---------|-------|
 | Bucket policies · store resolve · `checkRateLimit` · `toRateLimitAppError` | `@afenda/rate-limit` |
-| `RATE_LIMITED` / `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../errors/README.md) |
+| `RATE_LIMITED` / `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../../foundation/errors/README.md) |
 | Upstash URL/token schema | `@afenda/env` |
 | BFF POST limit call sites | `@afenda/auth` |
 | Path A sign-in Action + ActionResult mapping | `apps/web` |
 
-**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -85,7 +85,7 @@ Do not add to this package: Next.js handlers, ActionResult envelopes, OpenAPI do
 
 | Topic | Link |
 |-------|------|
-| Auth / Neon Auth BFF · Path A sign-in | [docs-V2/auth](../../docs-V2/auth/README.md) |
-| Error vocabulary (`rateLimited` · `serviceUnavailable`) | [`@afenda/errors`](../errors/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Auth / Neon Auth BFF · Path A sign-in | [docs-V2/auth](../../../docs-V2/auth/README.md) |
+| Error vocabulary (`rateLimited` · `serviceUnavailable`) | [`@afenda/errors`](../../foundation/errors/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

@@ -28,7 +28,9 @@ const migration0035Path = fileURLToPath(
 const migration0018Sql = readFileSync(migration0018Path, "utf8");
 const migration0035Sql = readFileSync(migration0035Path, "utf8");
 
-const { registerPath, schemaPath } = resolveCoreorgRegisterPaths(import.meta.url);
+const { registerPath, schemaPath } = resolveCoreorgRegisterPaths(
+	import.meta.url,
+);
 const exclusionRegister = loadCoreorgExclusionRegister(registerPath);
 const hrSchemaSource = readFileSync(schemaPath, "utf8");
 const hrPgTableNames = listHrPgTableNames(hrSchemaSource);
@@ -52,11 +54,15 @@ describe("HR coreorg DB invariants migration (0018)", () => {
 		const result = assertAdditiveMigrationSql(migration0018Sql);
 		expect(result.ok).toBe(true);
 		expect(migration0018Sql).toContain("hr_coreorg_db_invariants_preflight");
-		expect(migration0018Sql).toContain('"hr_work_assignment_effective_range_ck"');
+		expect(migration0018Sql).toContain(
+			'"hr_work_assignment_effective_range_ck"',
+		);
 		expect(migration0018Sql).toContain(
 			'"hr_employment_contract_effective_range_ck"',
 		);
-		expect(migration0018Sql).toContain('"hr_reporting_line_effective_range_ck"');
+		expect(migration0018Sql).toContain(
+			'"hr_reporting_line_effective_range_ck"',
+		);
 		expect(migration0018Sql).toContain(
 			"CHECK (ends_on IS NULL OR starts_on <= ends_on)",
 		);
@@ -134,10 +140,10 @@ describe("HR coreorg DB invariants exclusion register", () => {
 		expect(registerInventory.duplicates).toEqual([]);
 		expect(registerInventory.extra).toEqual([]);
 		expect(registerInventory.missing).toEqual([]);
-		expect(registerInventory.ddlCount + registerInventory.notApplicableCount).toBe(
-			registerInventory.pgTableCount,
-		);
-		expect(registerInventory.scaffoldCount).toBe(8);
+		expect(
+			registerInventory.ddlCount + registerInventory.notApplicableCount,
+		).toBe(registerInventory.pgTableCount);
+		expect(registerInventory.scaffoldCount).toBe(5);
 	});
 
 	it("maps every database check constraint to Drizzle schema", () => {
@@ -159,9 +165,9 @@ describe("HR coreorg DB invariants exclusion register", () => {
 	});
 
 	it("documents org-scoped foreign keys via migration 0012", () => {
-		expect(exclusionRegister.categoryInventory.orgScopedForeignKeys.migration).toBe(
-			"0012_hr_tenant_foreign_keys.sql",
-		);
+		expect(
+			exclusionRegister.categoryInventory.orgScopedForeignKeys.migration,
+		).toBe("0012_hr_tenant_foreign_keys.sql");
 	});
 
 	it("records rollback for all eight effective-range constraints", () => {

@@ -118,7 +118,9 @@ const timeHandoff: ApprovedTimeHandoff = {
 	periodStart: "2025-01-01",
 	periodEnd: "2025-01-31",
 	regularMinutes: 9600,
-	overtime: [{ type: "weekday_overtime", minutes: 120, payrollApprovedMinutes: 90 }],
+	overtime: [
+		{ type: "weekday_overtime", minutes: 120, payrollApprovedMinutes: 90 },
+	],
 	publicHolidayMinutes: 0,
 	restDayMinutes: 0,
 	nightMinutes: 0,

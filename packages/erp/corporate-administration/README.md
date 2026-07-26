@@ -1,0 +1,43 @@
+# `@afenda/corporate-administration`
+
+Corporate Administration is the organization-scoped statutory and governance bounded context. CA-0.2 supplies its stable public contracts while the module lifecycle remains **scaffolded**. It exposes no business command, query, emitted event, persistence adapter, Action, route, or UI workflow.
+
+## Authority and ownership
+
+- Package identity: `@afenda/corporate-administration`
+- Module id/category/band: `corporate-administration` / `erp` / `R1-F`
+- Activation: `organization_toggle`
+- Reserved table prefix: `ca_`
+- Schema host: `@afenda/db`; future `ca_*` business writes remain sole-owned by this package
+- Master Data remains sole owner of parties, party roles, tax registrations, addresses, contacts, and `ref_*` reference data
+
+The package owns Corporate Administration identities and contracts. It does not move money, post journals, own workforce relationships, store document binaries, or implement a generic approval/workflow engine.
+
+## CA-0.2 public surface
+
+The root barrel exposes consumer-safe contracts for:
+
+- CA-owned, trusted-context, and opaque external-reference brands;
+- canonical dates, decimal strings, codes, effective ranges, cursor pagination, canonical JSON, and SHA-256 fingerprints;
+- trusted command/query contexts and fail-closed authorization;
+- 52 `corporate_administration.*` permission codes and 21 semantic failure reasons;
+- versioned `corporate_administration.<aggregate>.<past-tense-action>.v<version>` event identities;
+- required and optional reference/integration ports.
+
+The only package export subpaths are `.` and `./module-manifest`. Command and query registries, their authorization maps, and `events.emits` remain empty.
+
+## Boundaries
+
+Master Data identities are reused from its public root and foreign facts are resolved through tenant-explicit ports. Accounting and Payments are injected read/reference contracts with no peer-package dependency or write capability. Search projection never authorizes, and document-object contracts expose metadata, checksum, availability, and malware state only.
+
+CA-0.2 adds no tables, migrations, stores, adapters, business operations, emitted events, Actions, routes, or UI. Those surfaces belong to later approved slices.
+
+## Verify
+
+```bash
+pnpm --filter @afenda/corporate-administration check
+pnpm --filter @afenda/db test -- corporate-administration-retirement.test.ts
+pnpm test:validate-modules
+pnpm validate:modules:write
+pnpm governance:packages
+```

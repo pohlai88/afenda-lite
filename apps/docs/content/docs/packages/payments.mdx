@@ -105,6 +105,15 @@ Reports unbalanced transfer pairs, pending/rejected instructions on posted payme
 - Accounting auto-journal from payment events is out of this package (events are emitted)
 - Credit-document application targets (`customer_credit` / `supplier_credit`) — out of v1
 
+### Payroll disbursement boundary (Slice 8.6)
+
+| Owns | Does not own |
+|------|----------------|
+| `payment`, `payment_allocation`, `payment_account`, `payment_reversal` — money movement including net-pay disbursement (`direction = disbursement`) | Payroll-period allowance/deduction **calculation** (`payroll_*`) |
+| Consumes `payroll.payment-requested.v1` (app-saga) to create/post disbursements | `journal*` GL posting; `hr_*` compensation agreements |
+
+**Four-way ownership:** HR agreement → payroll calculation → accounting posting → **payments disbursement**. SSOT: [allowance-deduction-ownership.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/allowance-deduction-ownership.md).
+
 ### Ops
 
 ```bash

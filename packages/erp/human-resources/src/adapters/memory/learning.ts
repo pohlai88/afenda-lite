@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
+	HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
 	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 } from "@afenda/events/schemas";
@@ -13,11 +14,13 @@ import {
 	type HumanResourcesCourseId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesLearningAssignmentId,
+	type HumanResourcesLearningAttendanceId,
 	type HumanResourcesSessionId,
 	parseHumanResourcesCertificationId,
 	parseHumanResourcesCompletionId,
 	parseHumanResourcesCourseId,
 	parseHumanResourcesLearningAssignmentId,
+	parseHumanResourcesLearningAttendanceId,
 	parseHumanResourcesSessionId,
 } from "../../brands";
 import {
@@ -38,11 +41,14 @@ import {
 	assertCertificationCanExpire,
 	assertCertificationCanRevoke,
 	assertCertificationIssuable,
+	assertCertificationRenewable,
 	assertCompletionRecordable,
 	assertCourseActive,
 	assertCourseCanArchive,
 	assertCourseStatusTransition,
+	assertLearningAttendanceRecordable,
 	assertNoDuplicateCompletion,
+	assertNoDuplicateLearningAttendance,
 	assertSessionNotTerminal,
 	assertSessionSchedulable,
 } from "../../shared/learning-guards";
@@ -65,8 +71,10 @@ import type {
 	IdempotentCompletionRecord,
 	IdempotentCourseRecord,
 	IdempotentLearningAssignmentRecord,
+	IdempotentLearningAttendanceRecord,
 	IdempotentSessionRecord,
 	LearningAssignmentCreateRecord,
+	LearningAttendanceCreateRecord,
 	SessionCreateRecord,
 } from "../../store";
 import type {
@@ -76,6 +84,8 @@ import type {
 	EmployeeCertification,
 	LearningAssignment,
 	LearningAssignmentListPage,
+	LearningAttendance,
+	LearningAttendanceListPage,
 	LearningCompletion,
 	LearningCourse,
 	LearningSession,
@@ -83,6 +93,13 @@ import type {
 } from "../../types";
 import type { CoreMemoryState } from "./core";
 import { idempotencyMapKey } from "./shared";
+
+function attendanceAssignmentSessionKey(
+	assignmentId: HumanResourcesLearningAssignmentId,
+	sessionId: HumanResourcesSessionId,
+): string {
+	return `${assignmentId}:${sessionId}`;
+}
 
 export type LearningMemoryState = {
 	courses: Map<HumanResourcesCourseId, LearningCourse>;
@@ -97,6 +114,15 @@ export type LearningMemoryState = {
 	completions: Map<HumanResourcesCompletionId, LearningCompletion>;
 	completionByAssignmentId: Map<string, string>;
 	completionIdempotencyByKey: Map<string, IdempotentCompletionRecord>;
+	learningAttendance: Map<
+		HumanResourcesLearningAttendanceId,
+		LearningAttendance
+	>;
+	attendanceByAssignmentSession: Map<
+		string,
+		HumanResourcesLearningAttendanceId
+	>;
+	attendanceIdempotencyByKey: Map<string, IdempotentLearningAttendanceRecord>;
 	certifications: Map<HumanResourcesCertificationId, EmployeeCertification>;
 	certificationIdempotencyByKey: Map<string, IdempotentCertificationRecord>;
 };
@@ -116,6 +142,7 @@ export type MemoryLearningMethods = Pick<
 	| "startSession"
 	| "completeSession"
 	| "cancelSession"
+	| "assignSessionInstructor"
 	| "listSessions"
 	| "getLearningAssignmentById"
 	| "findLearningAssignmentByIdempotencyKey"
@@ -127,12 +154,19 @@ export type MemoryLearningMethods = Pick<
 	| "findCompletionByIdempotencyKey"
 	| "recordCompletion"
 	| "listCompletions"
+	| "getLearningAttendanceById"
+	| "findLearningAttendanceByIdempotencyKey"
+	| "findLearningAttendanceByAssignmentAndSession"
+	| "recordLearningAttendance"
+	| "listLearningAttendance"
 	| "getCertificationById"
 	| "findCertificationByIdempotencyKey"
 	| "issueCertification"
 	| "revokeCertification"
 	| "expireCertification"
+	| "renewCertification"
 	| "listCertifications"
+	| "listExpiringCertifications"
 	| "countActiveAssignmentsForCourse"
 	| "countEnrolledInSession"
 	| "findCompletionByAssignmentId"
@@ -149,6 +183,9 @@ export function createLearningMemoryState(): LearningMemoryState {
 		completions: new Map(),
 		completionByAssignmentId: new Map(),
 		completionIdempotencyByKey: new Map(),
+		learningAttendance: new Map(),
+		attendanceByAssignmentSession: new Map(),
+		attendanceIdempotencyByKey: new Map(),
 		certifications: new Map(),
 		certificationIdempotencyByKey: new Map(),
 	};
@@ -164,6 +201,9 @@ export function resetLearningMemoryState(state: LearningMemoryState): void {
 	state.completions.clear();
 	state.completionByAssignmentId.clear();
 	state.completionIdempotencyByKey.clear();
+	state.learningAttendance.clear();
+	state.attendanceByAssignmentSession.clear();
+	state.attendanceIdempotencyByKey.clear();
 	state.certifications.clear();
 	state.certificationIdempotencyByKey.clear();
 }
@@ -581,6 +621,7 @@ export function createMemoryLearningMethods(
 				actualStartsAt: null,
 				actualEndsAt: null,
 				capacity: record.capacity,
+				primaryInstructorUserId: record.primaryInstructorUserId,
 				status: "scheduled",
 				version: 1,
 				createdBy: record.createdBy,
@@ -779,6 +820,63 @@ export function createMemoryLearningMethods(
 			const updated: LearningSession = {
 				...session,
 				status: "cancelled",
+				version: session.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+
+			state.sessions.set(input.sessionId, updated);
+
+			const audit = await ports.audit.record({
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: meta.correlationId,
+				entity: "hr_learning_session",
+				entityId: updated.id,
+				action: "UPDATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.sessions.set(input.sessionId, session);
+				return audit;
+			}
+
+			return ok({ ...updated });
+		},
+
+		async assignSessionInstructor(
+			input: {
+				organizationId: string;
+				sessionId: HumanResourcesSessionId;
+				primaryInstructorUserId: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LearningSession>> {
+			const session = state.sessions.get(input.sessionId);
+			if (!session || session.organizationId !== input.organizationId) {
+				return notFound("Session not found");
+			}
+
+			const versionCheck = assertExpectedVersion(
+				session.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const terminalGuard = assertSessionNotTerminal(session.status);
+			if (!terminalGuard.ok) {
+				return terminalGuard;
+			}
+
+			const now = new Date();
+			const updated: LearningSession = {
+				...session,
+				primaryInstructorUserId: input.primaryInstructorUserId,
 				version: session.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1400,6 +1498,193 @@ export function createMemoryLearningMethods(
 			});
 		},
 
+		async getLearningAttendanceById(input: {
+			organizationId: string;
+			attendanceId: HumanResourcesLearningAttendanceId;
+		}): Promise<Result<LearningAttendance | null>> {
+			const attendance = state.learningAttendance.get(input.attendanceId);
+			if (!attendance || attendance.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+			return ok({ ...attendance });
+		},
+
+		async findLearningAttendanceByIdempotencyKey(input: {
+			organizationId: string;
+			idempotencyKey: string;
+		}): Promise<Result<IdempotentLearningAttendanceRecord | null>> {
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
+			const record = state.attendanceIdempotencyByKey.get(key);
+			if (!record) {
+				return ok(null);
+			}
+			return ok({ ...record, attendance: { ...record.attendance } });
+		},
+
+		async findLearningAttendanceByAssignmentAndSession(input: {
+			organizationId: string;
+			assignmentId: HumanResourcesLearningAssignmentId;
+			sessionId: HumanResourcesSessionId;
+		}): Promise<Result<LearningAttendance | null>> {
+			const attendanceId = state.attendanceByAssignmentSession.get(
+				attendanceAssignmentSessionKey(input.assignmentId, input.sessionId),
+			);
+			if (!attendanceId) {
+				return ok(null);
+			}
+			const attendance = state.learningAttendance.get(attendanceId);
+			if (!attendance || attendance.organizationId !== input.organizationId) {
+				return ok(null);
+			}
+			return ok({ ...attendance });
+		},
+
+		async recordLearningAttendance(
+			record: LearningAttendanceCreateRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LearningAttendance>> {
+			const idempotencyKey = idempotencyMapKey(
+				record.organizationId,
+				record.createIdempotencyKey,
+			);
+			const existing = state.attendanceIdempotencyByKey.get(idempotencyKey);
+			if (existing) {
+				if (
+					existing.createRequestFingerprint !== record.createRequestFingerprint
+				) {
+					return conflict("Idempotency key reused with different payload");
+				}
+				return ok({ ...existing.attendance });
+			}
+
+			const assignment = state.learningAssignments.get(record.assignmentId);
+			if (!assignment || assignment.organizationId !== record.organizationId) {
+				return notFound(
+					"Assignment not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			if (assignment.employeeId !== record.employeeId) {
+				return notFound(
+					"Attendance employee does not match assignment",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const session = state.sessions.get(record.sessionId);
+			if (!session || session.organizationId !== record.organizationId) {
+				return notFound(
+					"Session not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const recordableGuard = assertLearningAttendanceRecordable({
+				sessionStatus: session.status,
+				assignmentStatus: assignment.status,
+				assignmentSessionId: assignment.sessionId,
+				requestedSessionId: record.sessionId,
+			});
+			if (!recordableGuard.ok) {
+				return recordableGuard;
+			}
+
+			const duplicateKey = attendanceAssignmentSessionKey(
+				record.assignmentId,
+				record.sessionId,
+			);
+			const duplicateCheck = assertNoDuplicateLearningAttendance({
+				hasExistingAttendance:
+					state.attendanceByAssignmentSession.has(duplicateKey),
+			});
+			if (!duplicateCheck.ok) {
+				return duplicateCheck;
+			}
+
+			const idResult = parseHumanResourcesLearningAttendanceId(randomUUID());
+			if (!idResult.ok) {
+				return idResult;
+			}
+
+			const now = new Date();
+			const attendance: LearningAttendance = {
+				id: idResult.data,
+				organizationId: record.organizationId,
+				sessionId: record.sessionId,
+				assignmentId: record.assignmentId,
+				employeeId: record.employeeId,
+				status: record.status,
+				recordedAt: record.recordedAt,
+				recordedBy: record.recordedBy,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.learningAttendance.set(attendance.id, attendance);
+			state.attendanceByAssignmentSession.set(duplicateKey, attendance.id);
+			state.attendanceIdempotencyByKey.set(idempotencyKey, {
+				attendance: { ...attendance },
+				createIdempotencyKey: record.createIdempotencyKey,
+				createRequestFingerprint: record.createRequestFingerprint,
+			});
+
+			const audit = await ports.audit.record({
+				organizationId: attendance.organizationId,
+				actorUserId: attendance.createdBy,
+				correlationId: meta.correlationId,
+				entity: "hr_learning_attendance",
+				entityId: attendance.id,
+				action: "CREATE",
+				changes: [],
+			});
+			if (!audit.ok) {
+				state.learningAttendance.delete(attendance.id);
+				state.attendanceByAssignmentSession.delete(duplicateKey);
+				state.attendanceIdempotencyByKey.delete(idempotencyKey);
+				return audit;
+			}
+
+			return ok({ ...attendance });
+		},
+
+		async listLearningAttendance(input: {
+			organizationId: string;
+			page: number;
+			pageSize: number;
+			sessionId?: HumanResourcesSessionId;
+			employeeId?: HumanResourcesEmployeeId;
+		}): Promise<Result<LearningAttendanceListPage>> {
+			let filtered = Array.from(state.learningAttendance.values()).filter(
+				(a) => a.organizationId === input.organizationId,
+			);
+
+			if (input.sessionId !== undefined) {
+				filtered = filtered.filter((a) => a.sessionId === input.sessionId);
+			}
+			if (input.employeeId !== undefined) {
+				filtered = filtered.filter((a) => a.employeeId === input.employeeId);
+			}
+
+			filtered.sort((a, b) => b.recordedAt.getTime() - a.recordedAt.getTime());
+
+			const totalCount = filtered.length;
+			const start = (input.page - 1) * input.pageSize;
+			const attendance = filtered
+				.slice(start, start + input.pageSize)
+				.map((a) => ({ ...a }));
+
+			return ok({
+				attendanceRecords: attendance,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
 		// Employee Certification methods
 		async getCertificationById(input: {
 			organizationId: string;
@@ -1508,6 +1793,7 @@ export function createMemoryLearningMethods(
 				issuedOn: record.issuedOn,
 				expiresOn: record.expiresOn,
 				status: "active",
+				renewedFromCertificationId: null,
 				revokedAt: null,
 				revokedBy: null,
 				version: 1,
@@ -1706,6 +1992,166 @@ export function createMemoryLearningMethods(
 			return ok({ ...updated });
 		},
 
+		async renewCertification(
+			record: {
+				organizationId: string;
+				certificationId: HumanResourcesCertificationId;
+				employeeId: HumanResourcesEmployeeId;
+				courseId: HumanResourcesCourseId;
+				completionId: HumanResourcesCompletionId;
+				certificationCode: string;
+				issuedOn: string;
+				expiresOn: string | null;
+				createIdempotencyKey: string;
+				createRequestFingerprint: string;
+				expectedVersion: number;
+				createdBy: string;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<EmployeeCertification>> {
+			const idempotencyKey = idempotencyMapKey(
+				record.organizationId,
+				record.createIdempotencyKey,
+			);
+			const existing = state.certificationIdempotencyByKey.get(idempotencyKey);
+			if (existing) {
+				if (
+					existing.createRequestFingerprint !== record.createRequestFingerprint
+				) {
+					return conflict("Idempotency key reused with different payload");
+				}
+				return ok({ ...existing.certification });
+			}
+
+			const prior = state.certifications.get(record.certificationId);
+			if (!prior || prior.organizationId !== record.organizationId) {
+				return notFound(
+					"Certification not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const versionCheck = assertExpectedVersion(
+				prior.version,
+				record.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const completion = state.completions.get(record.completionId);
+			if (!completion || completion.organizationId !== record.organizationId) {
+				return notFound(
+					"Completion not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const renewableGuard = assertCertificationRenewable({
+				status: prior.status,
+				employeeId: record.employeeId,
+				courseId: record.courseId,
+				completionEmployeeId: completion.employeeId,
+				completionCourseId: completion.courseId,
+				completionOutcome: completion.outcome,
+			});
+			if (!renewableGuard.ok) {
+				return renewableGuard;
+			}
+
+			const todayDate = new Date().toISOString().slice(0, 10);
+			const issuableGuard = assertCertificationIssuable({
+				hasRequiredCompletion: completion.courseId === record.courseId,
+				issuedOn: record.issuedOn,
+				expiresOn: record.expiresOn,
+				todayDate,
+			});
+			if (!issuableGuard.ok) {
+				return issuableGuard;
+			}
+
+			const idResult = parseHumanResourcesCertificationId(randomUUID());
+			if (!idResult.ok) {
+				return idResult;
+			}
+
+			const now = new Date();
+			const certification: EmployeeCertification = {
+				id: idResult.data,
+				organizationId: record.organizationId,
+				employeeId: record.employeeId,
+				courseId: record.courseId,
+				completionId: record.completionId,
+				certificationCode: record.certificationCode,
+				issuedOn: record.issuedOn,
+				expiresOn: record.expiresOn,
+				status: "active",
+				renewedFromCertificationId: record.certificationId,
+				revokedAt: null,
+				revokedBy: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.certifications.set(certification.id, certification);
+			state.certificationIdempotencyByKey.set(idempotencyKey, {
+				certification: { ...certification },
+				createIdempotencyKey: record.createIdempotencyKey,
+				createRequestFingerprint: record.createRequestFingerprint,
+			});
+
+			const audit = await ports.audit.record(
+				buildCreateAuditFact({
+					context: {
+						organizationId: certification.organizationId,
+						actorUserId: certification.createdBy,
+						entity: "hr_employee_certification",
+						entityId: certification.id,
+						meta,
+					},
+					newValue: {
+						id: certification.id,
+						status: certification.status,
+						certificationCode: certification.certificationCode,
+						renewedFromCertificationId:
+							certification.renewedFromCertificationId,
+					},
+				}),
+			);
+			if (!audit.ok) {
+				state.certifications.delete(certification.id);
+				state.certificationIdempotencyByKey.delete(idempotencyKey);
+				return audit;
+			}
+
+			const outbox = await ports.outbox.append({
+				organizationId: certification.organizationId,
+				actorUserId: record.actorUserId,
+				correlationId: meta.correlationId,
+				type: HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
+				payload: {
+					organizationId: certification.organizationId,
+					entityType: "hr_employee_certification",
+					entityId: certification.id,
+					actorId: record.actorUserId,
+					correlationId: meta.correlationId,
+					renewedFromCertificationId: record.certificationId,
+				},
+			});
+			if (!outbox.ok) {
+				state.certifications.delete(certification.id);
+				state.certificationIdempotencyByKey.delete(idempotencyKey);
+				return outbox;
+			}
+
+			return ok({ ...certification });
+		},
+
 		async listCertifications(input: {
 			organizationId: string;
 			page: number;
@@ -1735,6 +2181,48 @@ export function createMemoryLearningMethods(
 			const certifications = filtered
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
+
+			return ok({
+				certifications,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async listExpiringCertifications(input: {
+			organizationId: string;
+			asOf: string;
+			withinDays: number;
+			page: number;
+			pageSize: number;
+		}): Promise<Result<CertificationListPage>> {
+			const windowEndDate = new Date(`${input.asOf}T00:00:00.000Z`);
+			windowEndDate.setUTCDate(windowEndDate.getUTCDate() + input.withinDays);
+			const windowEnd = windowEndDate.toISOString().slice(0, 10);
+
+			const filtered = Array.from(state.certifications.values())
+				.filter(
+					(certification) =>
+						certification.organizationId === input.organizationId &&
+						certification.status === "active" &&
+						certification.expiresOn !== null &&
+						certification.expiresOn >= input.asOf &&
+						certification.expiresOn <= windowEnd,
+				)
+				.sort((a, b) => {
+					const expiresCompare = (a.expiresOn ?? "").localeCompare(
+						b.expiresOn ?? "",
+					);
+					if (expiresCompare !== 0) return expiresCompare;
+					return a.id.localeCompare(b.id);
+				});
+
+			const totalCount = filtered.length;
+			const start = (input.page - 1) * input.pageSize;
+			const certifications = filtered
+				.slice(start, start + input.pageSize)
+				.map((certification) => ({ ...certification }));
 
 			return ok({
 				certifications,

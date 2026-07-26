@@ -57,6 +57,8 @@ function hrEvent(): DomainEvent {
 			entityId: "document-1",
 			actorId: "actor-1",
 			correlationId: "corr-1",
+			operation: "human-resources.employee-document.mark-nearing-expiry",
+			idempotencyKey: "employee-document-nearing-expiry-1",
 		},
 		metadata: { recipientUserId: "employee-user-1" },
 		status: "pending",
@@ -169,6 +171,8 @@ describe("Human Resources platform integrations", () => {
 			entityId: "employment-1",
 			actorId: "actor-1",
 			correlationId: "corr-1",
+			operation: "human-resources.employment.start",
+			idempotencyKey: "employment-start-1",
 		};
 		source.metadata = null;
 		const record = vi.fn();

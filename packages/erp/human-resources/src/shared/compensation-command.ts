@@ -16,10 +16,7 @@ import type { HumanResourcesPermission } from "../permissions";
 import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../permissions";
 import type { CurrencyLookupPort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
-import type {
-	HumanResourcesFieldProjection,
-	HumanResourcesResourceContext,
-} from "./authorization-types";
+import type { HumanResourcesResourceContext } from "./authorization-types";
 import { assertHumanResourcesSupplementalAuthorization } from "./contextual-authorization";
 import {
 	runParsedAuthorizedCommand,
@@ -158,7 +155,9 @@ export async function runCompensationQuery<
 		) => readonly string[] | undefined;
 		project?: (
 			value: TOut,
-			projection: import("./authorization-types").HumanResourcesFieldProjection | undefined,
+			projection:
+				| import("./authorization-types").HumanResourcesFieldProjection
+				| undefined,
 		) => TProjected;
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},

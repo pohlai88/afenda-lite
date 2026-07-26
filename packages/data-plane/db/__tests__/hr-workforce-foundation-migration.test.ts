@@ -12,9 +12,7 @@ describe("HR workforce foundation migration", () => {
 	it("creates person and worker tables with tenancy and idempotency indexes", () => {
 		expect(migrationSql).toContain('CREATE TABLE "hr_person"');
 		expect(migrationSql).toContain('CREATE TABLE "hr_worker"');
-		expect(migrationSql).toContain(
-			'"organization_id" text NOT NULL',
-		);
+		expect(migrationSql).toContain('"organization_id" text NOT NULL');
 		expect(migrationSql).toContain(
 			'CREATE UNIQUE INDEX "hr_person_org_create_idempotency_uidx"',
 		);
@@ -34,12 +32,8 @@ describe("HR workforce foundation migration", () => {
 		expect(migrationSql).toContain('"hr_worker_status_check"');
 		expect(migrationSql).toContain('"hr_worker_effective_dates_check"');
 		expect(migrationSql).toContain('"hr_worker_employee_id_check"');
-		expect(migrationSql).toContain(
-			'"hr_worker_org_person_fk"',
-		);
-		expect(migrationSql).toContain(
-			'"hr_worker_org_employee_fk"',
-		);
+		expect(migrationSql).toContain('"hr_worker_org_person_fk"');
+		expect(migrationSql).toContain('"hr_worker_org_employee_fk"');
 		expect(migrationSql).toContain(
 			'FOREIGN KEY ("organization_id","person_id")',
 		);

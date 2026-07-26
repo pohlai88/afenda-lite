@@ -93,7 +93,11 @@ export async function seedPayrollRunChain(harness: PayrollParityHarness) {
 		throw new Error(`seed period failed: ${period.message}`);
 	}
 
-	return { calendar: calendar.data, payGroup: payGroup.data, period: period.data };
+	return {
+		calendar: calendar.data,
+		payGroup: payGroup.data,
+		period: period.data,
+	};
 }
 
 export async function seedDraftRun(

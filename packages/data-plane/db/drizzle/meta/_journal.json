@@ -393,6 +393,20 @@
       "when": 1785213600000,
       "tag": "0054_hr_performance_goal_slice_93",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1785217200000,
+      "tag": "0055_hr_performance_cycle_slice_92",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1785220800000,
+      "tag": "0056_hr_performance_review_chain_calibration",
+      "breakpoints": true
     }
   ]
 }

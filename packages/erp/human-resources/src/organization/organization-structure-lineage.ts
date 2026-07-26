@@ -99,7 +99,9 @@ export type PositionDefinitionAtAsOf = {
 	definitionVersionId: string;
 };
 
-function isLineageEligible(version: { lineageStatus: LineageSegmentStatus }): boolean {
+function isLineageEligible(version: {
+	lineageStatus: LineageSegmentStatus;
+}): boolean {
 	return (
 		version.lineageStatus === "active" || version.lineageStatus === "superseded"
 	);
@@ -111,9 +113,7 @@ function findLineageLeaf<TVersion extends { id: string }>(
 ): TVersion | null {
 	const leaves = versions.filter(
 		(leaf) =>
-			!versions.some(
-				(candidate) => getPredecessorId(candidate) === leaf.id,
-			),
+			!versions.some((candidate) => getPredecessorId(candidate) === leaf.id),
 	);
 	if (leaves.length !== 1) {
 		return null;
@@ -128,8 +128,7 @@ export function resolveDepartmentStructureAsOf(input: {
 }): EffectiveLineageResolution<DepartmentStructureVersion> {
 	const lineageVersions = input.versions.filter(
 		(version) =>
-			version.departmentId === input.departmentId &&
-			isLineageEligible(version),
+			version.departmentId === input.departmentId && isLineageEligible(version),
 	);
 	const leaf = findLineageLeaf(
 		lineageVersions,
@@ -154,8 +153,7 @@ export function resolveJobDefinitionAsOf(input: {
 	asOf: string;
 }): EffectiveLineageResolution<JobDefinitionVersion> {
 	const lineageVersions = input.versions.filter(
-		(version) =>
-			version.jobId === input.jobId && isLineageEligible(version),
+		(version) => version.jobId === input.jobId && isLineageEligible(version),
 	);
 	const leaf = findLineageLeaf(
 		lineageVersions,

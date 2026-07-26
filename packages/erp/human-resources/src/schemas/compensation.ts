@@ -16,15 +16,17 @@ import {
 	humanResourcesSalaryBandIdSchema,
 } from "../brands";
 import {
+	benefitDependentRelationshipSchema,
+	compensationReviewCycleStatusSchema,
+	payFrequencySchema,
+} from "../shared/compensation-status";
+import { employmentStatusSchema } from "../shared/employment-status";
+import {
 	humanResourcesExpectedVersionSchema,
 	humanResourcesIdempotencyKeySchema,
 	humanResourcesMutationContextSchema,
 	isoDateSchema,
 } from "./common";
-import { payFrequencySchema } from "../shared/compensation-status";
-import { benefitDependentRelationshipSchema } from "../shared/compensation-status";
-import { employmentStatusSchema } from "../shared/employment-status";
-import { compensationReviewCycleStatusSchema } from "../shared/compensation-status";
 
 const moneyAmountSchema = handoffMoneyAmountSchema;
 const currencyCodeSchema = z
@@ -577,9 +579,7 @@ export const setBenefitPlanEligibilityInputSchema =
 		.extend({
 			planId: humanResourcesBenefitPlanIdSchema,
 			minTenureDays: z.number().int().nonnegative().nullable(),
-			allowedEmploymentStatuses: z
-				.array(employmentStatusSchema)
-				.min(1),
+			allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1),
 		})
 		.strict();
 

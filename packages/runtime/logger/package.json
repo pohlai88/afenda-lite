@@ -16,7 +16,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project logger"
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project logger"
 	},
 	"dependencies": {
 		"pino": "catalog:"

@@ -56,7 +56,8 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project human-resources-unit --project human-resources-parity",
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project human-resources-unit",
+		"test:parity": "vitest run --config ../../../testing/vitest.hr-parity.config.ts --project human-resources-parity --reporter=verbose",
 		"check": "pnpm typecheck && pnpm test"
 	},
 	"dependencies": {

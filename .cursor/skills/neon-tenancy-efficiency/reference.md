@@ -55,24 +55,21 @@ cd C:\JackProject\afenda-bolt\client-declaration-portal
 
 ## A — Full npm ladder (historical closed 2026-07-12 · Target-gated replay)
 
-**Replay** (no `env:compose` — retired). Prefer `validate:neon-env`, `audit:vercel` (key names), Neon Console pooler check, and MCP auth audits. Report gated Collapse scripts as `BLOCKED`.
+**Replay** (no `env:compose` — retired). Use `validate:neon-env`, Neon/Vercel Console pooler verification, live tenancy checks, and MCP auth audits. Removed command aliases are not controls.
 
 ```powershell
-cd C:\JackProject\afenda-bolt\client-declaration-portal
+cd C:\JackProject\afenda-bolt\afenda-lite
 # A0 — Preconditions (@afenda/env + .env.local already valid)
 pnpm validate:neon-env   # or successor Target script
 
 # A1 — Config / pooler / Vercel key-name drift (no compose)
-pnpm audit:vercel
-pnpm verify:vercel-db    # when present — DATABASE_URL must contain -pooler
+# Verify key names and the `-pooler` production URL through Vercel/Neon Console.
 
 # A2 — Tenancy integrity
 pnpm audit:tenancy-nulls
 pnpm check:tenancy-residue
-pnpm check:db-schema
 
 # A3 — Neon Auth production
-pnpm sync:neon-auth-manifest
 pnpm audit:neon-auth-production
 
 # A4 — Isolation proof (M3) — requires Target app
@@ -84,7 +81,7 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 | Step | Pass means |
 |------|------------|
 | Env | `@afenda/env` schema present; `.env.local` only local runtime file; no compose |
-| `verify:vercel-db` | `DATABASE_URL` contains `-pooler` |
+| Pooler verification | Production `DATABASE_URL` contains `-pooler`, verified without exposing its value |
 | `audit:tenancy-nulls` | Zero nulls on living hard tenant roots (`platform_role_assignment`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`) |
 | `check:tenancy-residue` | No soft `(NULL OR org)` residue |
 | Isolation e2e | Green only when Target app suite exists |
@@ -231,17 +228,15 @@ npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 
 ## Weekly anti-drift pack
 
-**Docs-first:** Console pooler + Neon MCP auth audit + SQL **B2 + B6**; skip gated product scripts (report `BLOCKED`).
+**Current checkout:** Console pooler + Neon MCP auth audit + SQL **B2 + B6**; removed command aliases are not controls.
 
 **Target (when scripts exist — no compose):**
 
 ```powershell
-cd C:\JackProject\afenda-bolt\client-declaration-portal
-pnpm audit:vercel
-pnpm verify:vercel-db
+cd C:\JackProject\afenda-bolt\afenda-lite
+pnpm validate:neon-env
 pnpm audit:tenancy-nulls
 pnpm check:tenancy-residue
-pnpm check:db-schema
 pnpm audit:neon-auth-production
 pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 ```

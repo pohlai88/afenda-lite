@@ -40,7 +40,10 @@ export const OFFBOARDING_ACCESS_REVOCATION_STATUSES = [
 export type OffboardingAccessRevocationStatus =
 	(typeof OFFBOARDING_ACCESS_REVOCATION_STATUSES)[number];
 
-export const OFFBOARDING_PAYROLL_HANDOFF_STATUSES = ["pending", "ready"] as const;
+export const OFFBOARDING_PAYROLL_HANDOFF_STATUSES = [
+	"pending",
+	"ready",
+] as const;
 export type OffboardingPayrollHandoffStatus =
 	(typeof OFFBOARDING_PAYROLL_HANDOFF_STATUSES)[number];
 
@@ -58,7 +61,10 @@ export const ONBOARDING_EQUIPMENT_HANDOFF_STATUSES = [
 export type OnboardingEquipmentHandoffStatus =
 	(typeof ONBOARDING_EQUIPMENT_HANDOFF_STATUSES)[number];
 
-export const ONBOARDING_ACCESS_HANDOFF_STATUSES = ["pending", "granted"] as const;
+export const ONBOARDING_ACCESS_HANDOFF_STATUSES = [
+	"pending",
+	"granted",
+] as const;
 export type OnboardingAccessHandoffStatus =
 	(typeof ONBOARDING_ACCESS_HANDOFF_STATUSES)[number];
 

@@ -53,7 +53,7 @@ export function buildEventTypeDomainMap(): ReadonlyMap<
 	return registryDomainEventScan.domainByEventType;
 }
 
-export function listDomainEventTypesFromLegacyRegistryView(
+export function listDomainEventTypesFromRegistry(
 	input: {
 		readonly emission: "audit_only" | "domain_event";
 		readonly eventTypes?: readonly HumanResourcesEventType[];

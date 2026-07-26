@@ -28,8 +28,3 @@ export const humanResourcesMutationContextSchema = z
 export type HumanResourcesMutationContext = z.infer<
 	typeof humanResourcesMutationContextSchema
 >;
-
-/** @deprecated Use `humanResourcesMutationContextSchema`. */
-export const humanResourcesTenantContextSchema =
-	humanResourcesMutationContextSchema;
-export type HumanResourcesTenantContext = HumanResourcesMutationContext;

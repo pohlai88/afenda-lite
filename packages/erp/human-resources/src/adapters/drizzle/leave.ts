@@ -44,8 +44,12 @@ import {
 } from "../../mutation-emission-registry";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { conflict, effectiveRangeOverlap, invalidState, notFound } from "../../shared/domain-guards";
-import { ACTIVE_LEAVE_OVERLAP_STATUSES } from "../../shared/leave-guards";
+import {
+	conflict,
+	effectiveRangeOverlap,
+	invalidState,
+	notFound,
+} from "../../shared/domain-guards";
 import {
 	type EmploymentStatus,
 	employmentStatusSchema,
@@ -55,6 +59,7 @@ import {
 	negateLeaveQuantity,
 } from "../../shared/leave-balance";
 import {
+	ACTIVE_LEAVE_OVERLAP_STATUSES,
 	assertLeaveEntitlementActive,
 	assertLeaveEntitlementStatusTransition,
 	assertLeavePolicyEditable,
@@ -115,8 +120,8 @@ import {
 	buildCreateLeaveRequestSql,
 	buildExpireEntitlementSql,
 	buildPolicyStatusTransitionSql,
-	buildSubmitLeaveRequestSql,
 	buildStatusTransitionSql,
+	buildSubmitLeaveRequestSql,
 } from "./leave-sql-builders";
 import {
 	type LeaveAdjustmentSqlRow,
@@ -345,7 +350,9 @@ function mapLeavePolicy(
 	if (!unit.success) return invalidState("Invalid leave policy unit");
 	const status = leavePolicyStatusSchema.safeParse(row.status);
 	if (!status.success) return invalidState("Invalid leave policy status");
-	const accrualBasis = leavePolicyAccrualBasisSchema.safeParse(row.accrualBasis);
+	const accrualBasis = leavePolicyAccrualBasisSchema.safeParse(
+		row.accrualBasis,
+	);
 	if (!accrualBasis.success) {
 		return invalidState("Invalid leave policy accrual basis");
 	}

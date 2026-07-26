@@ -18,15 +18,11 @@ describe("HR person and worker history migration", () => {
 		expect(migrationSql).toContain(
 			'CREATE TABLE "hr_worker_classification_version"',
 		);
-		expect(migrationSql).toContain(
-			'"supersedes_identity_version_id" uuid',
-		);
+		expect(migrationSql).toContain('"supersedes_identity_version_id" uuid');
 		expect(migrationSql).toContain(
 			'"supersedes_classification_version_id" uuid',
 		);
-		expect(migrationSql).toContain(
-			'INSERT INTO "hr_person_identity_version"',
-		);
+		expect(migrationSql).toContain('INSERT INTO "hr_person_identity_version"');
 		expect(migrationSql).toContain(
 			'INSERT INTO "hr_worker_classification_version"',
 		);

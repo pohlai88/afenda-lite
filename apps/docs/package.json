@@ -15,7 +15,7 @@
 		"fd:add:silent": "pnpm exec tsx scripts/cli-add-silent.mts",
 		"fd:customize": "cli customize",
 		"fd:tree": "cli tree",
-		"test": "vitest run --config ../../testing/vitest.config.ts --project docs",
+		"test": "vitest run --config ../../testing/vitest.unit.config.ts --project docs",
 		"predev": "pnpm generate:source",
 		"prebuild": "pnpm generate:source && pnpm generate:openapi-docs && pnpm generate:package-docs",
 		"pretypecheck": "pnpm generate:source",

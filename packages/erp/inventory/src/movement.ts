@@ -38,11 +38,11 @@ import {
 	INVENTORY_COMMAND_RELEASE,
 	INVENTORY_COMMAND_RESERVE,
 	INVENTORY_COMMAND_REVERSE,
-	type InventoryCommandId,
 	INVENTORY_QUERY_AVAILABILITY,
 	INVENTORY_QUERY_GET,
 	INVENTORY_QUERY_LIST,
 	INVENTORY_QUERY_RESERVATION_LIST,
+	type InventoryCommandId,
 } from "./module-ids";
 import { parseInventoryInput } from "./parse-input";
 import { INVENTORY_PERMISSION_ADJUSTMENT_POST } from "./permissions";
@@ -1025,7 +1025,9 @@ export async function postStockMovement(
 	}
 
 	if (movementResult.data.status === "cancelled") {
-		if (movementResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey) {
+		if (
+			movementResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey
+		) {
 			return ok(movementResult.data);
 		}
 		return inventoryFail(
@@ -1106,7 +1108,9 @@ export async function cancelStockMovement(
 	}
 
 	if (movementResult.data.status === "cancelled") {
-		if (movementResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey) {
+		if (
+			movementResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey
+		) {
 			return ok(movementResult.data);
 		}
 		return inventoryFail(

@@ -14,5 +14,5 @@ performance	improvement-plan	create;open;acknowledge;checkpoint;amend;complete;c
 learning	learning-course	create;update;archive (+ activate store-only)	get;list	schemas/learning.ts	course CRUD (+ activateCourse store)	Y	Y	hr_learning_course	yes (operational)	audit_only (activate classified)	human-resources.learning.test.ts	Partial
 learning	learning-session	create;start;complete;cancel	get;list	schemas/learning.ts	session store methods	Y	Y	hr_learning_session	yes (scheduled)	audit_only	same	Pass
 learning	learning-assignment	create;enrol;waive	get;list	schemas/learning.ts	assignment store methods	Y	Y	hr_learning_assignment	no	domain_event on create	same (duplicate active)	Pass
-learning	learning-completion	record	get by assignment;list	schemas/learning.ts	completion store methods	Y	Y	hr_learning_completion	no	audit_only (legacy)	same	Pass
+learning	learning-completion	record	get by assignment;list	schemas/learning.ts	completion store methods	Y	Y	hr_learning_completion	no	audit_only (canonical)	same	Pass
 learning	employee-certification	issue;revoke;expire	get;list	schemas/learning.ts	certification store methods	Y	Y	hr_employee_certification	no	mixed (expire domain_event)	same	Pass

@@ -7,6 +7,8 @@
 | Lenses | Normalize · Serialize · Stabilize · Standardize · Optimize · Enrich · Repair readiness |
 | Findings prefix | `HR-XCUT-{P0|P1|P2|P3}-###` |
 
+> **Historical baseline notice (2026-07-26):** This file preserves the findings as observed during the original audit; it is not the current inventory authority. The current package has **348 commands**, **198 queries**, **111 permissions**, **129 mutation tables**, a complete **348/348** emission registry, and a complete **129/129** effective-truth classification register. Closure evidence and current counts live in `00-authority-map.md`, the package README, and machine-generated module registers.
+
 Authority map: [`00-authority-map.md`](00-authority-map.md) · Canonical matrix: [`02-canonical-definitions.tsv`](02-canonical-definitions.tsv)
 
 ## Executive summary
@@ -53,13 +55,13 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 |---|---|
 | **Paths/symbols** | `src/schemas/common.ts#humanResourcesTenantContextSchema` |
 | **Conflicting authorities** | Deprecated alias vs `humanResourcesMutationContextSchema` |
-| **Observed disk** | Both names exported; comment marks tenant alias deprecated |
+| **Observed disk** | Retired alias removed; only `humanResourcesMutationContextSchema` remains exported |
 | **Expected contract** | Single mutation context name at boundaries |
 | **Consequence** | New code may import deprecated alias |
-| **Recommendation** | Domain-cluster audits flag deprecated imports; remove alias in dedicated hygiene slice |
-| **Decision** | None |
-| **Repair mission** | HR-XCUT-HYGIENE (future) |
-| **Verification** | No `humanResourcesTenantContextSchema` imports outside package |
+| **Recommendation** | Keep the canonical mutation-context name as the sole boundary export |
+| **Decision** | Removed by repository housekeeping on 2026-07-26 after a repository-wide zero-consumer scan |
+| **Repair mission** | Complete |
+| **Verification** | Source grep returns no declaration or import of `humanResourcesTenantContextSchema` |
 
 ---
 
@@ -219,9 +221,9 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 
 **Adapter delegation:** Memory reuses Drizzle `composeStoreSlices` — intentional DRY.
 
-**Compatibility layers:** `DrizzleHumanResourcesStore` deprecated alias; `humanResourcesTenantContextSchema` deprecated.
+**Compatibility layers:** The zero-consumer `DrizzleHumanResourcesStore` and `humanResourcesTenantContextSchema` aliases were removed on 2026-07-26. All `buildMutationMeta` callers now use canonical `operationId`; the former `operation` compatibility field is removed.
 
-**Maintenance scripts:** `scripts/fix-shard-imports.mjs`, `rewrite-time-types.mjs`, `shard-time-parity.mjs`, `time-types-fragment.ts.txt` — Time shard tooling.
+**Maintenance scripts:** One-time Time sharding and emission-compatibility generators were removed on 2026-07-26. `generate-mutation-inventory.mjs` remains because the governed fixture is actively verified.
 
 **Generated artifacts:** `tsconfig.tsbuildinfo` on disk; listed in root `.gitignore` (`*.tsbuildinfo`).
 
@@ -233,23 +235,23 @@ Memory and Drizzle report the **same** `HumanResourcesStore` capability surface 
 |---|---|
 | **Paths/symbols** | `packages/erp/human-resources/scripts/*.mjs` |
 | **Conflicting authorities** | None |
-| **Observed disk** | Three maintenance scripts + fragment remain after time shard split |
-| **Expected contract** | Scripts removed or documented in package README when obsolete |
-| **Consequence** | Confusion about whether re-sharding is required |
-| **Recommendation** | HR-AUD-02 (Time cluster) decides keep/delete with evidence from `time-slices-roadmap.md` |
-| **Decision** | Defer to HR-AUD-02 |
-| **Repair mission** | HR-AUD-02 |
-| **Verification** | Scripts referenced in README or deleted |
+| **Observed disk** | One-time Time sharding scripts and fragment are removed |
+| **Expected contract** | Only repeatable, governed generators remain |
+| **Consequence** | Closed; no obsolete re-sharding path is presented to maintainers |
+| **Recommendation** | Keep removed unless a new forward migration explicitly owns replacement tooling |
+| **Decision** | Removed by repository housekeeping on 2026-07-26 |
+| **Repair mission** | Complete |
+| **Verification** | Only `generate-mutation-inventory.mjs` remains under the HR script directory |
 
 #### HR-XCUT-P3-009
 
 | Field | Value |
 |---|---|
 | **Paths/symbols** | `src/adapters/drizzle/store.ts#DrizzleHumanResourcesStore` |
-| **Observed disk** | Deprecated alias exported |
-| **Recommendation** | Remove when zero importers (repo housekeeping) |
+| **Observed disk** | Alias removed after repository-wide zero-consumer verification |
+| **Recommendation** | Keep `createDrizzleHumanResourcesStore` as the sole constructor export |
 | **Repair mission** | afenda-elite-repo-housekeeping |
-| **Verification** | Knip/grep zero imports |
+| **Verification** | Source grep returns no declaration or import of the `DrizzleHumanResourcesStore` alias |
 
 ---
 

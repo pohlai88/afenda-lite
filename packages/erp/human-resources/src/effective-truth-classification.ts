@@ -731,6 +731,20 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		rationale: "Cluster C talent — profile assessment event record",
 	}),
 	row({
+		table: "hr_talent_profile_mobility",
+		category: "append-only-operational-fact",
+		domain: "talent",
+		cluster: "C",
+		rationale: "Cluster C talent — mobility preference event record",
+	}),
+	row({
+		table: "hr_talent_critical_role_readiness",
+		category: "append-only-operational-fact",
+		domain: "talent",
+		cluster: "C",
+		rationale: "Cluster C talent — critical role readiness event record",
+	}),
+	row({
 		table: "hr_talent_pool",
 		category: "versioned-current-fact",
 		domain: "talent",

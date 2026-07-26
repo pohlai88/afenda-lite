@@ -11,16 +11,16 @@ import path from "node:path";
 import {
 	BIOME_FORMATTER_LANGUAGES,
 	BIOME_LSP_BIN_PLATFORM_MAP,
+	deepEqual,
+	expectSetting,
 	FORBIDDEN_SETTING_KEYS,
+	missingExcludePatterns,
 	NODE_WRAPPER_LSP_BIN,
 	PRETTIER_DISABLE_LANGUAGES,
 	REQUIRED_SCALAR_SETTINGS,
 	REQUIRED_TS_WATCH_OPTIONS,
 	TAILWIND_FILES_EXCLUDE,
 	WATCHER_EXCLUDE_PATTERNS,
-	deepEqual,
-	expectSetting,
-	missingExcludePatterns,
 } from "./lib/editor-posture.mjs";
 import { resolveBiomeNativeBin } from "./lib/resolve-biome-native-bin.mjs";
 
@@ -106,11 +106,15 @@ function checkScalarPosture(settings) {
 function checkBiomeSettings(settings) {
 	const lspBin = settings["biome.lsp.bin"];
 	if (!lspBin || typeof lspBin !== "object") {
-		errors.push("biome.lsp.bin must be a platform map to native @biomejs/cli-* binaries");
+		errors.push(
+			"biome.lsp.bin must be a platform map to native @biomejs/cli-* binaries",
+		);
 		return;
 	}
 	if (!deepEqual(lspBin, BIOME_LSP_BIN_PLATFORM_MAP)) {
-		errors.push("biome.lsp.bin platform map must match scripts/lib/editor-posture.mjs");
+		errors.push(
+			"biome.lsp.bin platform map must match scripts/lib/editor-posture.mjs",
+		);
 	}
 	if (typeof lspBin === "string" && lspBin === NODE_WRAPPER_LSP_BIN) {
 		errors.push(
@@ -137,7 +141,9 @@ function checkBiomeSettings(settings) {
 		);
 		return;
 	}
-	debugLog("native biome version", { version: (versionResult.stdout || "").trim() });
+	debugLog("native biome version", {
+		version: (versionResult.stdout || "").trim(),
+	});
 
 	const resolved = resolveLspBinPath(lspBin);
 	if (!resolved || !existsSync(resolved)) {
@@ -157,7 +163,9 @@ function checkTypeScriptPosture(settings) {
 		return;
 	}
 	if (!deepEqual(watchOptions, REQUIRED_TS_WATCH_OPTIONS)) {
-		errors.push("typescript.tsserver.watchOptions must match editor posture SSOT");
+		errors.push(
+			"typescript.tsserver.watchOptions must match editor posture SSOT",
+		);
 	}
 }
 
@@ -200,7 +208,9 @@ function checkFormatters(settings) {
 			"editor.defaultFormatter"
 		] === "biomejs.biome"
 	) {
-		errors.push("[markdown] must not use biomejs.biome — Biome force-ignores md");
+		errors.push(
+			"[markdown] must not use biomejs.biome — Biome force-ignores md",
+		);
 	}
 
 	const prettierDisabled = settings["prettier.disableLanguages"];
@@ -279,7 +289,10 @@ function checkLspProxyStaysAlive() {
 		timeout: 2500,
 	});
 
-	if (child.error?.name === "Error" && child.error.message.includes("ETIMEDOUT")) {
+	if (
+		child.error?.name === "Error" &&
+		child.error.message.includes("ETIMEDOUT")
+	) {
 		debugLog("lsp-proxy smoke ok", { nativeBin });
 		return;
 	}
@@ -291,7 +304,9 @@ function checkLspProxyStaysAlive() {
 
 	const stderr = (child.stderr || "").trim();
 	if (stderr.includes("FATAL") || stderr.includes("INTERNAL")) {
-		errors.push(`biome lsp-proxy emitted fatal/internal diagnostics: ${stderr.slice(0, 500)}`);
+		errors.push(
+			`biome lsp-proxy emitted fatal/internal diagnostics: ${stderr.slice(0, 500)}`,
+		);
 		return;
 	}
 
@@ -320,7 +335,9 @@ if (errors.length > 0) {
 	for (const err of errors) {
 		console.error(`  - ${err}`);
 	}
-	console.error("Fix .vscode/settings.json — see docs-V2/lint/README.md#editor");
+	console.error(
+		"Fix .vscode/settings.json — see docs-V2/lint/README.md#editor",
+	);
 	process.exit(1);
 }
 

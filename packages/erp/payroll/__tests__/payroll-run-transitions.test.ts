@@ -39,9 +39,7 @@ describe("payroll run transitions", () => {
 	});
 
 	it("rejects illegal transitions", () => {
-		const allowedSet = new Set(
-			ALLOWED.map(([from, to]) => `${from}->${to}`),
-		);
+		const allowedSet = new Set(ALLOWED.map(([from, to]) => `${from}->${to}`));
 		for (const from of ALL_STATUSES) {
 			for (const to of ALL_STATUSES) {
 				if (from === to) continue;

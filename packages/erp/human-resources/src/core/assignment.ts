@@ -148,7 +148,7 @@ export async function createAssignment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
 				}),
 			);
 		},
@@ -234,7 +234,7 @@ export async function endAssignment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
+					operationId: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
 				}),
 			);
 		},

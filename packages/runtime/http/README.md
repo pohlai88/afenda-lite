@@ -6,7 +6,7 @@
 
 **When you need it** — Proxy / Actions / Route Handlers that must propagate correlation, attach rate-limit or timing headers onto Fetch `Headers`, or parse list query params without inventing a second wire envelope.
 
-**Who it's for** — Package consumers in `apps/web` (and future apps). Next-free leaf: no `@afenda/*` runtime deps, no `NextResponse`, no `{ success, data }` envelopes (use [`@afenda/errors`](../errors/README.md) + web JSON adapters).
+**Who it's for** — Package consumers in `apps/web` (and future apps). Next-free leaf: no `@afenda/*` runtime deps, no `NextResponse`, no `{ success, data }` envelopes (use [`@afenda/errors`](../../foundation/errors/README.md) + web JSON adapters).
 
 ## Consume
 
@@ -71,22 +71,22 @@ Full surface: [`src/index.ts`](./src/index.ts).
 | Surface | Owner |
 |---------|-------|
 | Correlation mint / header · compose · pagination · Retry-After / RateLimit / Server-Timing attach | `@afenda/http` |
-| Error codes · HTTP error body · `retryAfterSeconds` details parse | [`@afenda/errors`](../errors/README.md) |
+| Error codes · HTTP error body · `retryAfterSeconds` details parse | [`@afenda/errors`](../../foundation/errors/README.md) |
 | RH `NextResponse` JSON (`jsonData` / `jsonError`) | `apps/web/modules/platform/api/json-response.ts` |
 | Upstash / memory rate-limit store | [`@afenda/rate-limit`](../rate-limit/README.md) |
 | Security headers · CSP · CORS builders | [`@afenda/security`](../security/README.md) |
 
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
-Do not add to this package: Next.js handlers, ActionResult / `{ success, data }` envelopes, in-memory rate limiters, CORS/CSP/security-header maps (→ `@afenda/security`), Prisma helpers, header-trust “auth”, Zod body validators, or a second correlation header name. Do **not** grow this leaf into a Vierp-style `@afenda/api-middleware` god package — borrow/reject SSOT: [docs-V2/api/middleware-dna.md](../../docs-V2/api/middleware-dna.md).
+Do not add to this package: Next.js handlers, ActionResult / `{ success, data }` envelopes, in-memory rate limiters, CORS/CSP/security-header maps (→ `@afenda/security`), Prisma helpers, header-trust “auth”, Zod body validators, or a second correlation header name. Do **not** grow this leaf into a Vierp-style `@afenda/api-middleware` god package — borrow/reject SSOT: [docs-V2/api/middleware-dna.md](../../../docs-V2/api/middleware-dna.md).
 
 ## Authority
 
 | Topic | Link |
 |-------|------|
-| Correlation / observability | [docs-V2/observability](../../docs-V2/observability/README.md) |
-| ActionResult / RH envelopes | [docs-V2/api](../../docs-V2/api/README.md) · [`@afenda/errors`](../errors/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Correlation / observability | [docs-V2/observability](../../../docs-V2/observability/README.md) |
+| ActionResult / RH envelopes | [docs-V2/api](../../../docs-V2/api/README.md) · [`@afenda/errors`](../../foundation/errors/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

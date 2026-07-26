@@ -9,6 +9,7 @@ import {
 	humanResourcesReviewIdSchema,
 	humanResourcesReviewParticipantIdSchema,
 } from "../brands";
+import { employmentStatusSchema } from "../shared/employment-status";
 import { performanceRatingScaleSchema } from "../shared/performance-rating";
 import {
 	performanceCycleReviewPeriodKindSchema,
@@ -17,7 +18,6 @@ import {
 	performanceGoalStatusSchema,
 	performanceWeightingModelSchema,
 } from "../shared/performance-status";
-import { employmentStatusSchema } from "../shared/employment-status";
 import {
 	humanResourcesExpectedVersionSchema,
 	humanResourcesIdempotencyKeySchema,
@@ -32,6 +32,23 @@ const performanceWeightSchema = z
 	.nullable();
 
 const performanceCheckpointRecordOutcomeSchema = z.enum(["met", "missed"]);
+
+const performanceEvidenceReferenceSchema = z.string().trim().min(1).max(500);
+
+const improvementPlanMilestoneInputSchema = z
+	.object({
+		dueDate: isoDateSchema,
+	})
+	.strict();
+
+const improvementPlanOutcomeInputSchema = z
+	.object({
+		outcomeReason: z.string().trim().min(1).max(2000).optional(),
+		outcomeEvidenceReference: performanceEvidenceReferenceSchema
+			.nullable()
+			.optional(),
+	})
+	.strict();
 
 export const createPerformanceCycleInputSchema =
 	humanResourcesMutationContextSchema
@@ -122,6 +139,7 @@ export const addCycleParticipantInputSchema =
 			cycleId: humanResourcesPerformanceCycleIdSchema,
 			employeeId: humanResourcesEmployeeIdSchema,
 			employmentId: humanResourcesEmploymentIdSchema,
+			asOfDate: isoDateSchema.optional(),
 		})
 		.strict();
 
@@ -156,8 +174,6 @@ export const listCycleParticipantsInputSchema =
 			cycleId: humanResourcesPerformanceCycleIdSchema,
 		})
 		.strict();
-
-const performanceEvidenceReferenceSchema = z.string().trim().min(1).max(500);
 
 export const createPerformanceGoalInputSchema =
 	humanResourcesMutationContextSchema
@@ -204,8 +220,9 @@ export const closePerformanceGoalInputSchema =
 			goalId: humanResourcesGoalIdSchema,
 			expectedVersion: humanResourcesExpectedVersionSchema,
 			completionNote: z.string().trim().max(2000).nullable().optional(),
-			completionEvidenceReference:
-				performanceEvidenceReferenceSchema.nullable().optional(),
+			completionEvidenceReference: performanceEvidenceReferenceSchema
+				.nullable()
+				.optional(),
 		})
 		.strict();
 
@@ -390,6 +407,11 @@ export const createImprovementPlanInputSchema =
 			supportResources: z.string().trim().min(1).max(4000),
 			dueDate: isoDateSchema,
 			accountableManagerEmployeeId: humanResourcesEmployeeIdSchema,
+			milestones: z
+				.array(improvementPlanMilestoneInputSchema)
+				.min(1)
+				.max(12)
+				.optional(),
 		})
 		.strict();
 
@@ -401,6 +423,16 @@ export const improvementPlanStatusTransitionInputSchema =
 		})
 		.strict();
 
+export const completeImprovementPlanInputSchema =
+	improvementPlanStatusTransitionInputSchema
+		.extend(improvementPlanOutcomeInputSchema.shape)
+		.strict();
+
+export const closeImprovementPlanUnsuccessfulInputSchema =
+	improvementPlanStatusTransitionInputSchema
+		.extend(improvementPlanOutcomeInputSchema.shape)
+		.strict();
+
 export const recordImprovementCheckpointInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
@@ -408,6 +440,7 @@ export const recordImprovementCheckpointInputSchema =
 			sequenceNumber: z.number().int().positive(),
 			outcome: performanceCheckpointRecordOutcomeSchema,
 			notes: z.string().trim().max(2000).nullable().optional(),
+			evidenceReference: performanceEvidenceReferenceSchema.optional(),
 		})
 		.strict();
 
@@ -415,10 +448,23 @@ export const amendImprovementPlanInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			planId: humanResourcesImprovementPlanIdSchema,
+			performanceGap: z.string().trim().min(1).max(2000).optional(),
+			expectedOutcome: z.string().trim().min(1).max(2000).optional(),
 			measurableActions: z.string().trim().min(1).max(4000).optional(),
 			supportResources: z.string().trim().min(1).max(4000).optional(),
 			dueDate: isoDateSchema.optional(),
+			extensionReason: z.string().trim().min(1).max(2000).optional(),
+			extensionEvidenceReference: performanceEvidenceReferenceSchema
+				.nullable()
+				.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export const listImprovementPlanCheckpointsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			planId: humanResourcesImprovementPlanIdSchema,
 		})
 		.strict();
 

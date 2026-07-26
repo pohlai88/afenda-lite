@@ -23,5 +23,5 @@ export type PayrollStatutoryStore = {
 	}): Promise<Result<PayrollStatutoryResult[]>>;
 };
 
-export type { ReplaceStatutoryResultsForRunInput } from "../types";
 export type { PayrollRunId } from "../brands";
+export type { ReplaceStatutoryResultsForRunInput } from "../types";

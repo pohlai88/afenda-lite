@@ -1,18 +1,5 @@
 "use server";
 
-import {
-	startOnboarding,
-	completeOnboardingTask,
-	recordOnboardingOrientation,
-	recordOnboardingEquipmentHandoff,
-	recordOnboardingAccessHandoff,
-	completeOnboarding,
-	getOnboardingCase,
-	listOnboardingTasks,
-	getOnboardingOrientationByCase,
-	getOnboardingEquipmentHandoffByCase,
-	getOnboardingAccessHandoffByCase,
-} from "@afenda/human-resources";
 import type {
 	OnboardingAccessHandoff,
 	OnboardingCase,
@@ -21,17 +8,30 @@ import type {
 	OnboardingTask,
 } from "@afenda/human-resources";
 import {
-	startOnboardingInputSchema,
-	completeOnboardingTaskInputSchema,
-	recordOnboardingOrientationInputSchema,
-	recordOnboardingEquipmentHandoffInputSchema,
-	recordOnboardingAccessHandoffInputSchema,
+	completeOnboarding,
+	completeOnboardingTask,
+	getOnboardingAccessHandoffByCase,
+	getOnboardingCase,
+	getOnboardingEquipmentHandoffByCase,
+	getOnboardingOrientationByCase,
+	listOnboardingTasks,
+	recordOnboardingAccessHandoff,
+	recordOnboardingEquipmentHandoff,
+	recordOnboardingOrientation,
+	startOnboarding,
+} from "@afenda/human-resources";
+import {
 	completeOnboardingInputSchema,
+	completeOnboardingTaskInputSchema,
+	getOnboardingAccessHandoffByCaseInputSchema,
 	getOnboardingCaseInputSchema,
-	listOnboardingTasksInputSchema,
-	getOnboardingOrientationByCaseInputSchema,
 	getOnboardingEquipmentHandoffByCaseInputSchema,
-	getOnboardingAccessHandoffByCaseInputSchema
+	getOnboardingOrientationByCaseInputSchema,
+	listOnboardingTasksInputSchema,
+	recordOnboardingAccessHandoffInputSchema,
+	recordOnboardingEquipmentHandoffInputSchema,
+	recordOnboardingOrientationInputSchema,
+	startOnboardingInputSchema,
 } from "@afenda/human-resources/schemas";
 
 import {
@@ -47,10 +47,11 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-
 const startOnboardingActionSchema = hrActionSchema(startOnboardingInputSchema);
 
-export async function startOnboardingAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
+export async function startOnboardingAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "startOnboardingAction",
 		permission: "human-resources.onboarding.manage",
@@ -75,10 +76,13 @@ export async function startOnboardingAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const completeOnboardingTaskActionSchema = hrActionSchema(
+	completeOnboardingTaskInputSchema,
+);
 
-const completeOnboardingTaskActionSchema = hrActionSchema(completeOnboardingTaskInputSchema);
-
-export async function completeOnboardingTaskAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
+export async function completeOnboardingTaskAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "completeOnboardingTaskAction",
 		permission: "human-resources.onboarding.manage",
@@ -103,16 +107,22 @@ export async function completeOnboardingTaskAction(input: unknown): Promise<Acti
 	});
 }
 
+const recordOnboardingOrientationActionSchema = hrActionSchema(
+	recordOnboardingOrientationInputSchema,
+);
 
-const recordOnboardingOrientationActionSchema = hrActionSchema(recordOnboardingOrientationInputSchema);
-
-export async function recordOnboardingOrientationAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
+export async function recordOnboardingOrientationAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordOnboardingOrientationAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not record onboarding orientation.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(recordOnboardingOrientationActionSchema, input);
+			const parsed = parseSchema(
+				recordOnboardingOrientationActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -131,16 +141,22 @@ export async function recordOnboardingOrientationAction(input: unknown): Promise
 	});
 }
 
+const recordOnboardingEquipmentHandoffActionSchema = hrActionSchema(
+	recordOnboardingEquipmentHandoffInputSchema,
+);
 
-const recordOnboardingEquipmentHandoffActionSchema = hrActionSchema(recordOnboardingEquipmentHandoffInputSchema);
-
-export async function recordOnboardingEquipmentHandoffAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
+export async function recordOnboardingEquipmentHandoffAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordOnboardingEquipmentHandoffAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not record onboarding equipment handoff.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(recordOnboardingEquipmentHandoffActionSchema, input);
+			const parsed = parseSchema(
+				recordOnboardingEquipmentHandoffActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -159,16 +175,22 @@ export async function recordOnboardingEquipmentHandoffAction(input: unknown): Pr
 	});
 }
 
+const recordOnboardingAccessHandoffActionSchema = hrActionSchema(
+	recordOnboardingAccessHandoffInputSchema,
+);
 
-const recordOnboardingAccessHandoffActionSchema = hrActionSchema(recordOnboardingAccessHandoffInputSchema);
-
-export async function recordOnboardingAccessHandoffAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
+export async function recordOnboardingAccessHandoffAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordOnboardingAccessHandoffAction",
 		permission: "human-resources.onboarding.manage",
 		safeMessage: "Could not record onboarding access handoff.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(recordOnboardingAccessHandoffActionSchema, input);
+			const parsed = parseSchema(
+				recordOnboardingAccessHandoffActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -187,10 +209,13 @@ export async function recordOnboardingAccessHandoffAction(input: unknown): Promi
 	});
 }
 
+const completeOnboardingActionSchema = hrActionSchema(
+	completeOnboardingInputSchema,
+);
 
-const completeOnboardingActionSchema = hrActionSchema(completeOnboardingInputSchema);
-
-export async function completeOnboardingAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
+export async function completeOnboardingAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "completeOnboardingAction",
 		permission: "human-resources.onboarding.manage",
@@ -215,10 +240,13 @@ export async function completeOnboardingAction(input: unknown): Promise<ActionRe
 	});
 }
 
+const getOnboardingCaseActionSchema = hrActionSchema(
+	getOnboardingCaseInputSchema,
+);
 
-const getOnboardingCaseActionSchema = hrActionSchema(getOnboardingCaseInputSchema);
-
-export async function getOnboardingCaseAction(input: unknown): Promise<ActionResult<{ onboardingCase: OnboardingCase | null }>> {
+export async function getOnboardingCaseAction(
+	input: unknown,
+): Promise<ActionResult<{ onboardingCase: OnboardingCase | null }>> {
 	return runOperatorPermissionAction({
 		path: "getOnboardingCaseAction",
 		permission: "human-resources.employee.read",
@@ -243,10 +271,13 @@ export async function getOnboardingCaseAction(input: unknown): Promise<ActionRes
 	});
 }
 
+const listOnboardingTasksActionSchema = hrActionSchema(
+	listOnboardingTasksInputSchema,
+);
 
-const listOnboardingTasksActionSchema = hrActionSchema(listOnboardingTasksInputSchema);
-
-export async function listOnboardingTasksAction(input: unknown): Promise<ActionResult<{ tasks: OnboardingTask[] }>> {
+export async function listOnboardingTasksAction(
+	input: unknown,
+): Promise<ActionResult<{ tasks: OnboardingTask[] }>> {
 	return runOperatorPermissionAction({
 		path: "listOnboardingTasksAction",
 		permission: "human-resources.employee.read",
@@ -271,16 +302,22 @@ export async function listOnboardingTasksAction(input: unknown): Promise<ActionR
 	});
 }
 
+const getOnboardingOrientationByCaseActionSchema = hrActionSchema(
+	getOnboardingOrientationByCaseInputSchema,
+);
 
-const getOnboardingOrientationByCaseActionSchema = hrActionSchema(getOnboardingOrientationByCaseInputSchema);
-
-export async function getOnboardingOrientationByCaseAction(input: unknown): Promise<ActionResult<{ orientation: OnboardingOrientation | null }>> {
+export async function getOnboardingOrientationByCaseAction(
+	input: unknown,
+): Promise<ActionResult<{ orientation: OnboardingOrientation | null }>> {
 	return runOperatorPermissionAction({
 		path: "getOnboardingOrientationByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding orientation.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(getOnboardingOrientationByCaseActionSchema, input);
+			const parsed = parseSchema(
+				getOnboardingOrientationByCaseActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -299,16 +336,24 @@ export async function getOnboardingOrientationByCaseAction(input: unknown): Prom
 	});
 }
 
+const getOnboardingEquipmentHandoffByCaseActionSchema = hrActionSchema(
+	getOnboardingEquipmentHandoffByCaseInputSchema,
+);
 
-const getOnboardingEquipmentHandoffByCaseActionSchema = hrActionSchema(getOnboardingEquipmentHandoffByCaseInputSchema);
-
-export async function getOnboardingEquipmentHandoffByCaseAction(input: unknown): Promise<ActionResult<{ equipmentHandoff: OnboardingEquipmentHandoff | null }>> {
+export async function getOnboardingEquipmentHandoffByCaseAction(
+	input: unknown,
+): Promise<
+	ActionResult<{ equipmentHandoff: OnboardingEquipmentHandoff | null }>
+> {
 	return runOperatorPermissionAction({
 		path: "getOnboardingEquipmentHandoffByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding equipment handoff.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(getOnboardingEquipmentHandoffByCaseActionSchema, input);
+			const parsed = parseSchema(
+				getOnboardingEquipmentHandoffByCaseActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -327,16 +372,22 @@ export async function getOnboardingEquipmentHandoffByCaseAction(input: unknown):
 	});
 }
 
+const getOnboardingAccessHandoffByCaseActionSchema = hrActionSchema(
+	getOnboardingAccessHandoffByCaseInputSchema,
+);
 
-const getOnboardingAccessHandoffByCaseActionSchema = hrActionSchema(getOnboardingAccessHandoffByCaseInputSchema);
-
-export async function getOnboardingAccessHandoffByCaseAction(input: unknown): Promise<ActionResult<{ accessHandoff: OnboardingAccessHandoff | null }>> {
+export async function getOnboardingAccessHandoffByCaseAction(
+	input: unknown,
+): Promise<ActionResult<{ accessHandoff: OnboardingAccessHandoff | null }>> {
 	return runOperatorPermissionAction({
 		path: "getOnboardingAccessHandoffByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get onboarding access handoff.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(getOnboardingAccessHandoffByCaseActionSchema, input);
+			const parsed = parseSchema(
+				getOnboardingAccessHandoffByCaseActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",

@@ -17,7 +17,8 @@ import {
 import { assertPayrollRunTransition } from "./transitions";
 
 export const PAYROLL_AGGREGATE_FINALIZATION = "finalization" as const;
-export type PayrollFinalizationAggregate = typeof PAYROLL_AGGREGATE_FINALIZATION;
+export type PayrollFinalizationAggregate =
+	typeof PAYROLL_AGGREGATE_FINALIZATION;
 
 export async function finalizePayrollRun(
 	input: unknown,

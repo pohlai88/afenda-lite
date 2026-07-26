@@ -432,7 +432,7 @@ describe("Employee relations case lifecycle", () => {
 				actorUserId: OWNER,
 				correlationId: "corr-evidence",
 				caseId: opened.data.id,
-				documentRef: "s3://evidence/doc-1.pdf",
+				documentRef: `vault://organizations/${ORG}/case_evidence/doc-1?version=1`,
 			},
 			ready,
 		);

@@ -62,11 +62,11 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Surface | Owner |
 |---------|-------|
 | L1+L2 manager · resolve · keys/TTL · helpers · `toCacheAppError` | `@afenda/cache` |
-| `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../errors/README.md) |
+| `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../../foundation/errors/README.md) |
 | Upstash URL/token schema | `@afenda/env` |
 | Abuse limiting on the same Upstash instance | [`@afenda/rate-limit`](../rate-limit/README.md) |
 
-**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -76,6 +76,6 @@ Do not add to this package: Next.js handlers, ActionResult envelopes, OpenAPI ow
 
 | Topic | Link |
 |-------|------|
-| Error vocabulary (`serviceUnavailable`) | [`@afenda/errors`](../errors/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Error vocabulary (`serviceUnavailable`) | [`@afenda/errors`](../../foundation/errors/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

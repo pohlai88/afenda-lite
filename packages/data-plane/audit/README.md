@@ -2,7 +2,7 @@
 
 Rank-1 Platform general domain activity audit for Afenda-Lite: org-scoped writes to `platform_audit_log`, field-level diffs with sensitive masking, and query / export / purge helpers. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, or Action envelopes.
 
-**Not RBAC audit.** Privileged IAM mutations continue to use [`@afenda/admin/audit`](../admin/README.md) → `platform_rbac_audit`. Do not dual-write either table around these packages.
+**Not RBAC audit.** Privileged IAM mutations continue to use [`@afenda/admin/audit`](../../control-plane/admin/README.md) → `platform_rbac_audit`. Do not dual-write either table around these packages.
 
 Use this package from Platform / app server code when a domain mutation must leave an explicit activity trail. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
 
@@ -72,7 +72,7 @@ Inject `store` into recorder / query helpers in tests. Production callers omit `
 | Table schema · hard-tenant root | `@afenda/db` |
 | `Result` / error codes | `@afenda/errors` |
 
-**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · zod · server-only). Must not import Surfaces, `apps/*`, `@afenda/admin`, or `@afenda/auth`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · zod · server-only). Must not import Surfaces, `apps/*`, `@afenda/admin`, or `@afenda/auth`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -82,6 +82,6 @@ Do not add to this package: Prisma middleware / ORM auto-intercept, process-glob
 
 | Topic | Link |
 |-------|------|
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Data / hard tenant roots | [docs-V2/data](../../docs-V2/data/README.md) · [`@afenda/db`](../db/README.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Data / hard tenant roots | [docs-V2/data](../../../docs-V2/data/README.md) · [`@afenda/db`](../db/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

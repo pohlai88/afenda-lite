@@ -59,6 +59,8 @@ describe("@afenda/events query", () => {
 					entityId: "11111111-1111-4111-8111-111111111111",
 					actorId: "user-hr",
 					correlationId: "corr-hr",
+					operation: "human-resources.employee.create",
+					idempotencyKey: "idem-hr-ops",
 				},
 			}),
 		);

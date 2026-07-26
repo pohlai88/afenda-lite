@@ -5,6 +5,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
 	HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
@@ -20,6 +21,7 @@ import {
 import {
 	assessEmployeeCompetencyInputSchema,
 	createCompetencyInputSchema,
+	expireCompetencyAssessmentInputSchema,
 	getCompetencyByIdInputSchema,
 	getEmployeeCompetencyProfileInputSchema,
 	listCompetenciesInputSchema,
@@ -109,7 +111,7 @@ export async function createCompetency(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
 				}),
 			);
 		},
@@ -138,7 +140,7 @@ export async function updateCompetency(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
 				}),
 			);
 		},
@@ -164,7 +166,7 @@ export async function retireCompetency(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
 				}),
 			);
 		},
@@ -191,7 +193,7 @@ export async function mapCompetencyToJob(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
+					operationId: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
 				}),
 			);
 		},
@@ -217,7 +219,7 @@ export async function removeCompetencyFromJob(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
+					operationId: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
 				}),
 			);
 		},
@@ -245,6 +247,7 @@ export async function assessEmployeeCompetency(
 				scaleCode: data.scaleCode,
 				level: data.level,
 				effectiveOn: data.effectiveOn,
+				expiresOn: data.expiresOn ?? null,
 			});
 
 			const existingByKey =
@@ -278,6 +281,7 @@ export async function assessEmployeeCompetency(
 					assessorUserId: data.assessorUserId,
 					evidenceSource: data.evidenceSource,
 					effectiveOn: data.effectiveOn,
+					expiresOn: data.expiresOn ?? null,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -285,7 +289,7 @@ export async function assessEmployeeCompetency(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
 				}),
 			);
 		},
@@ -308,6 +312,7 @@ export async function supersedeCompetencyAssessment(
 				assessorUserId: data.assessorUserId,
 				level: data.level,
 				effectiveOn: data.effectiveOn,
+				expiresOn: data.expiresOn ?? null,
 			});
 
 			return await store.supersedeCompetencyAssessment(
@@ -318,6 +323,7 @@ export async function supersedeCompetencyAssessment(
 					assessorUserId: data.assessorUserId,
 					evidenceSource: data.evidenceSource,
 					effectiveOn: data.effectiveOn,
+					expiresOn: data.expiresOn ?? null,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					expectedVersion: data.expectedVersion,
@@ -326,7 +332,35 @@ export async function supersedeCompetencyAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
+				}),
+			);
+		},
+	});
+}
+
+export async function expireCompetencyAssessment(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CompetencyAssessment>> {
+	return runTalentCommand(input, options, {
+		schema: expireCompetencyAssessmentInputSchema,
+		invalidMessage: "Invalid competency assessment expire input",
+		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_EXPIRE,
+		resolveResource: (data, opts) =>
+			resolveCompetencyAssessmentResource(data, opts),
+		execute: async (data, { store, ports }) => {
+			return await store.expireCompetencyAssessment(
+				{
+					organizationId: data.organizationId,
+					assessmentId: data.assessmentId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_EXPIRE,
 				}),
 			);
 		},

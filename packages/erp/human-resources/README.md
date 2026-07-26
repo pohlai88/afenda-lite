@@ -6,7 +6,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
-**Disk inventory (2026-07-25):** **290** commands · **144** queries · **99** permissions · **106** `hr_*` mutation / hard-tenant tables · **106/106** effective-truth classification register · emission registry **169** / 290 (~58%). Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 3 Slice 3.4 lifecycle emissions **DONE**; Phase 4 Slice 4.1 effective-truth classification **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+**Disk inventory (2026-07-26):** **348** commands · **198** queries · **111** permissions · **129** `hr_*` mutation / hard-tenant tables · **129/129** effective-truth classification register · emission registry **348/348**. Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 3 Slice 3.4 lifecycle emissions **DONE**; Phase 4 Slice 4.1 effective-truth classification **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
 
 ## Consume
 
@@ -72,7 +72,7 @@ Person → Worker → Employee specialization
 
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **106** `hr_*` hard-tenant roots of **179** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
+**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **129** `hr_*` hard-tenant roots of **222** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
 ## Public surfaces
 

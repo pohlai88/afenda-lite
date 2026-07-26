@@ -25,7 +25,10 @@ if (!databaseUrl.includes("-pooler")) {
 }
 
 const performancePostureUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/foundation/env/src/neon-performance-posture.ts"),
+	resolve(
+		process.cwd(),
+		"packages/foundation/env/src/neon-performance-posture.ts",
+	),
 ).href;
 const {
 	evaluateConnectionPressure,

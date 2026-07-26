@@ -21,14 +21,14 @@
 
 | Slice | Title | Depends on | Status |
 |---|---|---|---|
-| CA-0.1 | Authority, catalog and package scaffold | None | OPEN |
-| CA-0.2 | Core contracts, permissions, errors and reference ports | CA-0.1 | OPEN |
+| CA-0.1 | Authority, catalog and package scaffold | None | DONE |
+| CA-0.2 | Core contracts, permissions, errors and reference ports | CA-0.1 | DONE |
 | CA-0.3 | Database foundation and atomic mutation kernel | CA-0.2 | OPEN |
 | CA-0.4 | First thin vertical — draft legal-company registration | CA-0.3 | OPEN |
 
 ## CA-0.1 — Authority, catalog and package scaffold
 
-**Status:** `OPEN`  
+**Status:** `DONE`
 **Depends on:** None  
 **Goal:** Register the greenfield bounded context before domain coding and create a minimal buildable package with no fabricated behavior.
 
@@ -44,7 +44,7 @@
 - Create `packages/erp/corporate-administration` with published name `@afenda/corporate-administration`, manifest id `corporate-administration`, category `erp`, activation mode `organization_toggle`, lifecycle `scaffolded` and table prefix `ca_*`.
 - Register the module roadmap, workspace edges, schema-ownership reservation and package catalog through their owning generators or governed files.
 - Declare only approved platform dependencies; do not add lateral peer-ERP imports.
-- Create the intended domain folder structure, package exports map and package README without stub commands or fake success.
+- Record the intended domain folder structure, create the package exports map and package README, and add physical domain folders only when a slice supplies real files—never placeholders or fake success.
 
 ### Required evidence
 
@@ -73,7 +73,7 @@ Implement the slice as a production vertical. Apply these binding rules:
 - Create `packages/erp/corporate-administration` with published name `@afenda/corporate-administration`, manifest id `corporate-administration`, category `erp`, activation mode `organization_toggle`, lifecycle `scaffolded` and table prefix `ca_*`.
 - Register the module roadmap, workspace edges, schema-ownership reservation and package catalog through their owning generators or governed files.
 - Declare only approved platform dependencies; do not add lateral peer-ERP imports.
-- Create the intended domain folder structure, package exports map and package README without stub commands or fake success.
+- Record the intended domain folder structure, create the package exports map and package README, and add physical domain folders only when a slice supplies real files—never placeholders or fake success.
 
 Add direct evidence for:
 - Package lint/typecheck with zero placeholder behavior
@@ -101,8 +101,8 @@ The package builds, is cataloged as scaffolded, has an approved dependency/owner
 
 ## CA-0.2 — Core contracts, permissions, errors and reference ports
 
-**Status:** `OPEN`  
-**Depends on:** CA-0.1  
+**Status:** `DONE`
+**Depends on:** CA-0.1
 **Goal:** Define the stable greenfield contracts used by every later vertical.
 
 ### Authoritative surface

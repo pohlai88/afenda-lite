@@ -377,21 +377,19 @@ export const createPayrollEarningRuleInputSchema = payrollMutationContextSchema
 		{ message: "fixed rules require amount; rate rules require rate" },
 	);
 
-export const updatePayrollEarningRuleInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			ruleId: payrollEarningRuleIdSchema,
-			...payrollAmountRateRuleFieldsSchema.shape,
-		})
-		.strict();
+export const updatePayrollEarningRuleInputSchema = payrollMutationContextSchema
+	.extend({
+		ruleId: payrollEarningRuleIdSchema,
+		...payrollAmountRateRuleFieldsSchema.shape,
+	})
+	.strict();
 
-export const archivePayrollEarningRuleInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			ruleId: payrollEarningRuleIdSchema,
-			expectedVersion: payrollExpectedVersionSchema,
-		})
-		.strict();
+export const archivePayrollEarningRuleInputSchema = payrollMutationContextSchema
+	.extend({
+		ruleId: payrollEarningRuleIdSchema,
+		expectedVersion: payrollExpectedVersionSchema,
+	})
+	.strict();
 
 export const supersedePayrollEarningRuleInputSchema =
 	payrollMutationContextSchema

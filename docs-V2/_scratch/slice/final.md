@@ -15,6 +15,8 @@
 | Baseline snapshot | 2026-07-24 |
 | Lifecycle | **Open** — Wave 0 complete; Wave 2 shared-platform boundary mission complete; module remains `scaffolded` |
 
+> **Historical snapshot notice (2026-07-26):** Numeric evidence below records the dated 2026-07-24 slice close and must not be read as current inventory. Current disk authority is **222** hard-tenant roots, including **129 `hr_*`** roots; see `packages/data-plane/db/src/hard-tenant-roots.ts`, the HR package README, and the enterprise-audit authority map.
+
 **Action this doc enables:** Paste the **Wave 0 compile block** (or wave-routing table row) into a **new** Agent chat. Implementing agent emits project PREFLIGHT; compile blocks do **not** include PREFLIGHT or skill dumps.
 
 **Problem (one line):** `@afenda/human-resources` has a strong domain kernel and mature Time slice, but breadth without shared workflow, privacy, integration, reporting, and operational foundations blocks an enterprise production claim.
@@ -31,7 +33,7 @@ It is **not** yet evidence of a complete enterprise HR product. Several domains 
 
 ---
 
-## Validated control-plane facts (2026-07-24)
+## Validated control-plane facts (2026-07-24 historical snapshot)
 
 ### Tenancy SSOT
 
@@ -41,7 +43,7 @@ It is **not** yet evidence of a complete enterprise HR product. Several domains 
 | `hr_*` subset | **106** (post Wave 1A Phase 1: +`hr_person`, +`hr_worker`) | Same array, entries `hr_employee` … `hr_worker` |
 | Null-org audit | **PASS-03** — registry and configured DB aligned: **179 audited, 0 skipped** after `0008_hr_workforce_foundation.sql` | `pnpm audit:tenancy-nulls` — see [time-remaining.md](../erp/time-remaining.md) PASS-03 |
 
-**Slice A aligned (2026-07-24):** SSOT, audit mirror, [AGENTS.md](../../../AGENTS.md), and [README](../../../packages/erp/human-resources/README.md) report **179** total hard-tenant roots and **106 `hr_*`**. The configured production branch now audits **179 / 179** after the separately authorized `0008_hr_workforce_foundation.sql` operator migration.
+**Slice A aligned (2026-07-24):** At that slice close, SSOT, audit mirror, [AGENTS.md](../../../AGENTS.md), and [README](../../../packages/erp/human-resources/README.md) reported **179** total hard-tenant roots and **106 `hr_*`**. The configured production branch then audited **179 / 179** after the separately authorized `0008_hr_workforce_foundation.sql` operator migration. Those counts are retained solely as dated migration evidence.
 
 ### Slice closeout — Slice B (test hygiene)
 

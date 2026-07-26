@@ -25,6 +25,8 @@ import type {
 	SuccessionCandidateStatus,
 	SuccessionPlanStatus,
 	SuccessionReadinessCode,
+	TalentMobilityDimension,
+	TalentMobilityPreference,
 	TalentPoolMemberStatus,
 	TalentProfileAssessmentMethodCode,
 } from "../shared/talent-status";
@@ -42,8 +44,10 @@ import type {
 	IdempotentCompetencyRecord,
 	IdempotentSuccessionCandidateRecord,
 	IdempotentSuccessionPlanRecord,
+	IdempotentTalentCriticalRoleReadinessRecord,
 	IdempotentTalentPoolMemberRecord,
 	IdempotentTalentPoolRecord,
+	IdempotentTalentProfileMobilityRecord,
 	IdempotentTalentProfileRecord,
 	JobCompetency,
 	JobCompetencyListPage,
@@ -52,11 +56,16 @@ import type {
 	SuccessionCandidateListPage,
 	SuccessionPlan,
 	SuccessionPlanListPage,
+	TalentCriticalRoleReadiness,
+	TalentCriticalRoleReadinessListPage,
 	TalentPool,
 	TalentPoolMember,
 	TalentPoolMemberListPage,
 	TalentProfile,
 	TalentProfileAssessment,
+	TalentProfileAssessmentListPage,
+	TalentProfileMobility,
+	TalentProfileMobilityListPage,
 } from "../types";
 
 /**
@@ -86,6 +95,7 @@ export type CompetencyAssessmentCreateRecord = {
 	assessorUserId: string;
 	evidenceSource: string;
 	effectiveOn: string;
+	expiresOn: string | null;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -98,6 +108,7 @@ export type CompetencyAssessmentSupersedeRecord = {
 	assessorUserId: string;
 	evidenceSource: string;
 	effectiveOn: string;
+	expiresOn: string | null;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	expectedVersion: number;
@@ -128,6 +139,33 @@ export type TalentPoolMemberCreateRecord = {
 	poolId: HumanResourcesTalentPoolId;
 	employeeId: HumanResourcesEmployeeId;
 	nominatorUserId: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type TalentProfileMobilityCreateRecord = {
+	organizationId: string;
+	talentProfileId: HumanResourcesTalentProfileId;
+	dimension: TalentMobilityDimension;
+	preferenceCode: TalentMobilityPreference;
+	scopeDetail: string | null;
+	evidenceSummary: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type CriticalRoleReadinessCreateRecord = {
+	organizationId: string;
+	talentProfileId: HumanResourcesTalentProfileId;
+	positionId: HumanResourcesPositionId;
+	readiness: SuccessionReadinessCode;
+	readinessEffectiveOn: string;
+	evidenceSummary: string;
+	assessorUserId: string;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -277,6 +315,17 @@ export type HumanResourcesTalentStore = {
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<CompetencyAssessment>>;
 
+	expireCompetencyAssessment(
+		input: {
+			organizationId: string;
+			assessmentId: HumanResourcesCompetencyAssessmentId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<CompetencyAssessment>>;
+
 	getEmployeeCompetencyProfile(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
@@ -355,6 +404,43 @@ export type HumanResourcesTalentStore = {
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<TalentProfileAssessment>>;
+
+	listTalentProfileAssessments(input: {
+		organizationId: string;
+		talentProfileId: HumanResourcesTalentProfileId;
+	}): Promise<Result<TalentProfileAssessmentListPage>>;
+
+	findTalentProfileMobilityByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentTalentProfileMobilityRecord | null>>;
+
+	recordTalentProfileMobility(
+		record: TalentProfileMobilityCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<TalentProfileMobility>>;
+
+	listTalentProfileMobility(input: {
+		organizationId: string;
+		talentProfileId: HumanResourcesTalentProfileId;
+	}): Promise<Result<TalentProfileMobilityListPage>>;
+
+	findCriticalRoleReadinessByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentTalentCriticalRoleReadinessRecord | null>>;
+
+	recordCriticalRoleReadiness(
+		record: CriticalRoleReadinessCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<TalentCriticalRoleReadiness>>;
+
+	listCriticalRoleReadiness(input: {
+		organizationId: string;
+		talentProfileId: HumanResourcesTalentProfileId;
+	}): Promise<Result<TalentCriticalRoleReadinessListPage>>;
 	// Talent — Talent pool
 	getTalentPoolById(input: {
 		organizationId: string;

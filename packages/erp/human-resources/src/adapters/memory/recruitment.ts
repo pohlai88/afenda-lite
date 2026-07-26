@@ -19,19 +19,17 @@ import {
 	parseHumanResourcesOfferId,
 	parseHumanResourcesRequisitionId,
 } from "../../brands";
+import { appendRegistryGatedOutbox } from "../../emissions/sql-side-effects";
 import {
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import { appendRegistryGatedOutbox } from "../../emissions/sql-side-effects";
-import {
-	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
-} from "../../module-ids";
+import { HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE } from "../../module-ids";
 import type { MutationPorts } from "../../ports";
+import type { ApplicationStatusHistory } from "../../shared/application-history";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
-import type { ApplicationStatusHistory } from "../../shared/application-history";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	ANONYMIZED_CANDIDATE_DISPLAY_NAME,
@@ -44,7 +42,6 @@ import {
 	assertCandidateNotAnonymized,
 	assertInterviewInterviewerAssignable,
 	assertInterviewSchedulable,
-	normalizeCandidateEmail,
 	assertInterviewStatusTransition,
 	assertOfferAcceptable,
 	assertOfferAmendable,
@@ -55,6 +52,7 @@ import {
 	assertRequisitionHiringManagerAssignable,
 	assertRequisitionOpenForApplication,
 	assertRequisitionStatusTransition,
+	normalizeCandidateEmail,
 } from "../../shared/recruitment-guards";
 import {
 	type ApplicationStatus,

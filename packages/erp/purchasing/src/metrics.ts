@@ -3,7 +3,8 @@
  * `@afenda/metrics` (R1-B). Apps/web Actions emit these after Result.
  */
 
-export const PURCHASING_METRIC_COMMAND = "afenda_purchasing_command_total" as const;
+export const PURCHASING_METRIC_COMMAND =
+	"afenda_purchasing_command_total" as const;
 
 /** Label keys for `PURCHASING_METRIC_COMMAND`. */
 export const PURCHASING_METRIC_LABEL_COMMAND = "command" as const;

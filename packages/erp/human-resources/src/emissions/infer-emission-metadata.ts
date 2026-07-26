@@ -3,7 +3,7 @@ import type { HumanResourcesCommandId } from "../module-ids";
 import type { HumanResourcesDomain } from "./types";
 
 /**
- * Deterministic domain/aggregate metadata for preserved legacy classifications.
+ * Deterministic domain/aggregate metadata for canonical Time classifications.
  * Structural only — does not change emission mode or event types.
  */
 export function inferEmissionMetadata(commandId: HumanResourcesCommandId): {

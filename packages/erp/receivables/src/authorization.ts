@@ -65,15 +65,3 @@ export function requireReceivablesQueryPermission(
 		permission: receivablesModuleManifest.authorization.queries[input.query],
 	});
 }
-
-/** @deprecated Prefer command/query helpers mapped from the module manifest. */
-export async function requireReceivablesPermission(
-	authorization: ReceivablesAuthorizationPort | undefined,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		permission: ReceivablesPermission;
-	},
-): Promise<Result<void>> {
-	return requirePermission(authorization, input);
-}

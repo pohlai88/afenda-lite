@@ -8,12 +8,12 @@ import {
 import { createMemoryOutputsMethods } from "./outputs";
 import { createMemoryRunsMethods } from "./runs";
 import { createMemorySetupMethods } from "./setup";
-import { createMemoryStatutoryMethods } from "./statutory";
 import {
 	createMemoryPayrollStoreState,
 	type MemoryPayrollStoreState,
 	resetMemoryPayrollStoreState,
 } from "./state";
+import { createMemoryStatutoryMethods } from "./statutory";
 
 export type MemoryPayrollStore = PayrollStore & {
 	readonly state: MemoryPayrollStoreState;

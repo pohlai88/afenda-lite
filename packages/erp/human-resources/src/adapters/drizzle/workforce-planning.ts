@@ -13,9 +13,9 @@ import {
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
-	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
 	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
 	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_RELEASED_EVENT,
+	HUMAN_RESOURCES_HEADCOUNT_RESERVED_EVENT,
 } from "@afenda/events/schemas";
 import {
 	type HumanResourcesHeadcountReservationId,
@@ -60,6 +60,7 @@ import type {
 	WorkforcePlanVariance,
 } from "../../types";
 import { computeLineAvailability } from "../../workforce-planning/availability";
+import { computeWorkforcePlanVarianceLine } from "../../workforce-planning/variance";
 
 type WorkforcePlanVarianceLine = WorkforcePlanVariance["lines"][number];
 
@@ -400,7 +401,10 @@ function mapHeadcountReservationSql(
 	});
 }
 
-type WorkforcePlanningHost = Pick<HumanResourcesStore, "getRequisitionById">;
+type WorkforcePlanningHost = Pick<
+	HumanResourcesStore,
+	"getRequisitionById" | "listWorkforcePlanActualAssignments"
+>;
 
 export type DrizzleWorkforcePlanningMethods = Pick<
 	HumanResourcesStore,
@@ -819,8 +823,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 		const supersedeAuditId = randomUUID();
-		const outboxId =
-			input.status === "approved" ? randomUUID() : null;
+		const outboxId = input.status === "approved" ? randomUUID() : null;
 		const outboxPayload =
 			input.status === "approved"
 				? headcountEventPayloadJson({
@@ -1856,6 +1859,21 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 
 	async getWorkforcePlanVariance(input) {
 		try {
+			const plan = await this.getHeadcountPlanById({
+				organizationId: input.organizationId,
+				planId: input.planId,
+			});
+			if (!plan.ok) return plan;
+			if (plan.data === null) {
+				return notFound("Headcount plan not found");
+			}
+			const asOf = input.asOf ?? plan.data.periodEnd;
+			const actuals = await this.listWorkforcePlanActualAssignments({
+				organizationId: input.organizationId,
+				asOf,
+			});
+			if (!actuals.ok) return actuals;
+
 			const lineRows = await db
 				.select()
 				.from(hrHeadcountPlanLine)
@@ -1878,16 +1896,15 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					line: line.data,
 					reservations: reservations.data,
 				});
-				const plannedFte = Number(line.data.plannedFte);
-				const consumedFte = Number(availability.consumedFte);
-				varianceLines.push({
-					...availability,
-					varianceFte: (plannedFte - consumedFte).toFixed(4),
-					varianceHeadcount:
-						line.data.plannedHeadcount - availability.consumedHeadcount,
-				});
+				varianceLines.push(
+					computeWorkforcePlanVarianceLine({
+						line: line.data,
+						availability,
+						actuals: actuals.data,
+					}),
+				);
 			}
-			return ok({ planId: input.planId, lines: varianceLines });
+			return ok({ planId: input.planId, asOf, lines: varianceLines });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

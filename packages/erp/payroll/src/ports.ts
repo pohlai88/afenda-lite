@@ -2,7 +2,11 @@ import type { Change } from "@afenda/audit";
 import type { Result } from "@afenda/errors/result";
 import type { PayrollEventType } from "@afenda/events";
 
-import type { PayrollPayGroupId, PayrollPeriodId, PayrollRunId } from "./brands";
+import type {
+	PayrollPayGroupId,
+	PayrollPeriodId,
+	PayrollRunId,
+} from "./brands";
 import type { ApprovedPayrollHandoffParsed } from "./inputs/parse-approved-payroll-handoff";
 import type { PayrollExceptionSeverity, PayrollRunType } from "./types";
 

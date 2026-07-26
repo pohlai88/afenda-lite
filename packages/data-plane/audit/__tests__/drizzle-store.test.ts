@@ -6,11 +6,27 @@ const select = vi.fn();
 const insert = vi.fn();
 const del = vi.fn();
 
-vi.mock("@afenda/db", async () => {
-	const actual =
-		await vi.importActual<typeof import("@afenda/db")>("@afenda/db");
+vi.mock("@afenda/db", () => {
+	const platformAuditLog = {
+		id: "id",
+		organizationId: "organizationId",
+		actorUserId: "actorUserId",
+		correlationId: "correlationId",
+		module: "module",
+		entity: "entity",
+		entityId: "entityId",
+		action: "action",
+		createdAt: "createdAt",
+	};
 	return {
-		...actual,
+		and: (...predicates: unknown[]) => ({ kind: "and", predicates }),
+		count: () => ({ kind: "count" }),
+		desc: (column: unknown) => ({ kind: "desc", column }),
+		eq: (column: unknown, value: unknown) => ({ kind: "eq", column, value }),
+		gte: (column: unknown, value: unknown) => ({ kind: "gte", column, value }),
+		lt: (column: unknown, value: unknown) => ({ kind: "lt", column, value }),
+		lte: (column: unknown, value: unknown) => ({ kind: "lte", column, value }),
+		platformAuditLog,
 		db: {
 			select: (...args: unknown[]) => select(...args),
 			insert: (...args: unknown[]) => insert(...args),

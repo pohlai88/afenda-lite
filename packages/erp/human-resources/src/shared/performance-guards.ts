@@ -6,9 +6,13 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type {
+	PerformanceCycleEligibility,
+	PerformanceCycleReviewPeriod,
+} from "../types";
 import { invalidInput, invalidState } from "./domain-guards";
-import { assertRatingScaleUniqueCodes } from "./performance-rating";
 import type { PerformanceRatingScale } from "./performance-rating";
+import { assertRatingScaleUniqueCodes } from "./performance-rating";
 import type {
 	PerformanceCheckpointOutcome,
 	PerformanceCycleReviewPeriodKind,
@@ -19,10 +23,6 @@ import type {
 	PerformanceReviewStatus,
 	PerformanceWeightingModel,
 } from "./performance-status";
-import type {
-	PerformanceCycleEligibility,
-	PerformanceCycleReviewPeriod,
-} from "../types";
 
 function alreadyInStatus(entity: string, status: string): Result<never> {
 	return fail(
@@ -114,9 +114,7 @@ export function assertReviewPeriodsNonOverlapping(
 			const previous = sorted[index - 1];
 			const current = sorted[index];
 			if (current && previous && current.periodStart <= previous.periodEnd) {
-				return invalidInput(
-					"Review periods of the same kind must not overlap",
-				);
+				return invalidInput("Review periods of the same kind must not overlap");
 			}
 		}
 	}
@@ -382,7 +380,9 @@ export function assertGoalAlignment(input: {
 		return invalidInput("Alignment parent goal was not found");
 	}
 	if (input.parentGoal.cycleId !== input.goalCycleId) {
-		return invalidInput("Alignment parent must belong to the same performance cycle");
+		return invalidInput(
+			"Alignment parent must belong to the same performance cycle",
+		);
 	}
 	if (input.parentGoal.goalKind !== "manager") {
 		return invalidInput("Alignment parent must be a manager-assigned goal");
@@ -425,9 +425,7 @@ export function assertManagerAssignedGoalMutation(input: {
 	goalKind: PerformanceGoalKind;
 }): Result<void> {
 	if (input.goalKind === "manager") {
-		return invalidState(
-			"Manager-assigned goals must be changed by a manager",
-		);
+		return invalidState("Manager-assigned goals must be changed by a manager");
 	}
 	return ok(undefined);
 }
@@ -443,6 +441,66 @@ export function assertCheckpointOutcomeTransition(
 		return invalidInput(
 			"Checkpoint outcome must be met or missed when recording",
 		);
+	}
+	return ok(undefined);
+}
+
+export function assertImprovementPlanMilestones(input: {
+	planDueDate: string;
+	milestones: Array<{ dueDate: string }>;
+}): Result<void> {
+	if (input.milestones.length === 0) {
+		return invalidInput("Improvement plan requires at least one milestone");
+	}
+	for (let index = 1; index < input.milestones.length; index += 1) {
+		const previous = input.milestones[index - 1];
+		const current = input.milestones[index];
+		if (!previous || !current) {
+			continue;
+		}
+		if (current.dueDate < previous.dueDate) {
+			return invalidInput(
+				"Improvement plan milestones must be sorted by due date",
+			);
+		}
+	}
+	for (const milestone of input.milestones) {
+		if (milestone.dueDate > input.planDueDate) {
+			return invalidInput(
+				"Improvement plan milestone due dates cannot exceed plan due date",
+			);
+		}
+	}
+	return ok(undefined);
+}
+
+export function assertNoPendingCheckpoints(
+	checkpoints: Array<{ outcome: PerformanceCheckpointOutcome }>,
+): Result<void> {
+	if (checkpoints.some((checkpoint) => checkpoint.outcome === "pending")) {
+		return invalidState(
+			"All improvement plan milestones must be reviewed before closing the plan",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertImprovementPlanExtension(input: {
+	currentDueDate: string;
+	nextDueDate: string | undefined;
+	extensionReason: string | undefined;
+}): Result<void> {
+	if (
+		input.nextDueDate === undefined ||
+		input.nextDueDate <= input.currentDueDate
+	) {
+		return ok(undefined);
+	}
+	if (
+		input.extensionReason === undefined ||
+		input.extensionReason.trim().length === 0
+	) {
+		return invalidInput("Extending an improvement plan requires a reason");
 	}
 	return ok(undefined);
 }

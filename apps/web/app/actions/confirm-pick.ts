@@ -23,7 +23,9 @@ const confirmPickFormSchema = z.object({
 	quantityPicked: z.coerce.number().positive(),
 	reservationId: z
 		.union([z.string().uuid(), z.literal(""), z.undefined()])
-		.transform((value) => (value === undefined || value === "" ? undefined : value)),
+		.transform((value) =>
+			value === undefined || value === "" ? undefined : value,
+		),
 });
 
 export async function confirmPickAction(

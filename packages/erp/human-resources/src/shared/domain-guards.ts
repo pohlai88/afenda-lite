@@ -31,6 +31,7 @@ export function cannotTransition(
 		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
 	);
 }
+
 import type { EmploymentStatus, PositionStatus } from "./employment-status";
 import { assertValidDateRange } from "./employment-status";
 

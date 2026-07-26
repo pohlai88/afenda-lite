@@ -33,6 +33,9 @@ import type { HumanResourcesAuthorizationRequest } from "../src/shared/authoriza
 import { authorizeHumanResourcesOperation } from "../src/shared/contextual-authorization";
 import {
 	COMPENSATION_FIELD_CLASSES,
+	PERFORMANCE_FIELD_CLASSES,
+	partitionPerformanceFieldsByTier,
+	redactedFieldsForResource,
 	TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
 	WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS,
 } from "../src/shared/field-projection";
@@ -464,6 +467,35 @@ describe("sensitive-domain policies", () => {
 		);
 		expect(result.data.projection?.allowedFields).toEqual(
 			expect.arrayContaining(["planId", "status"]),
+		);
+	});
+
+	it("exposes PERFORMANCE_FIELD_CLASSES tiers and redacts confidential inventory", () => {
+		expect(PERFORMANCE_FIELD_CLASSES.public).toContain("status");
+		expect(PERFORMANCE_FIELD_CLASSES.confidential).toContain("calibrationNote");
+		expect(PERFORMANCE_FIELD_CLASSES.manager).toContain("commentsSensitive");
+
+		const managerTier = partitionPerformanceFieldsByTier({
+			tier: "manager",
+			requestedFields: ["status", "overallRating", "rating", "calibrationNote"],
+		});
+		expect(managerTier).toContain("status");
+		expect(managerTier).toContain("rating");
+		expect(managerTier).not.toContain("overallRating");
+		expect(managerTier).not.toContain("calibrationNote");
+
+		const confidentialRedacted = redactedFieldsForResource(
+			"performance",
+			"sensitive",
+		);
+		expect(confidentialRedacted).toEqual(
+			expect.arrayContaining([
+				"overallRating",
+				"calibrationNote",
+				"acknowledgementNote",
+				"rating",
+				"commentsSensitive",
+			]),
 		);
 	});
 

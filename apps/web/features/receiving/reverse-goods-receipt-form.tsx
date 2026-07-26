@@ -20,7 +20,11 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: ReverseGoodsReceiptActionState = null;
 
-export function ReverseGoodsReceiptForm({ canReverse }: { canReverse: boolean }) {
+export function ReverseGoodsReceiptForm({
+	canReverse,
+}: {
+	canReverse: boolean;
+}) {
 	const [state, formAction, pending] = useActionState(
 		reverseGoodsReceiptAction,
 		initialState,

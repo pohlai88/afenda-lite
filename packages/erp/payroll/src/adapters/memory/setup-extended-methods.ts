@@ -18,14 +18,14 @@ import {
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { assertRuleNotLockedByFinalizedRun } from "../../shared/setup-rule-guards";
+import { mapInvalidState, mapNotFound } from "../../shared/persistence-errors";
 import {
-	ruleFinalizedUsageKey,
 	type PayrollRuleFinalizedUsageCheck,
 	type PayrollRuleFinalizedUsageInput,
 	type PayrollRuleKind,
+	ruleFinalizedUsageKey,
 } from "../../shared/rule-finalized-lock";
-import { mapInvalidState, mapNotFound } from "../../shared/persistence-errors";
+import { assertRuleNotLockedByFinalizedRun } from "../../shared/setup-rule-guards";
 import type { PayrollSetupStore } from "../../store/setup";
 import type {
 	PayrollCalendar,
@@ -115,7 +115,9 @@ export function createMemorySetupExtendedMethods(input: {
 		"isRuleVersionUsedByFinalizedRun"
 	> = {
 		async isRuleVersionUsedByFinalizedRun(checkInput) {
-			return ok(state.ruleFinalizedUsage.has(ruleFinalizedUsageKey(checkInput)));
+			return ok(
+				state.ruleFinalizedUsage.has(ruleFinalizedUsageKey(checkInput)),
+			);
 		},
 	};
 
@@ -139,7 +141,9 @@ export function createMemorySetupExtendedMethods(input: {
 			return versionCheck;
 		}
 		if (calendar.status === nextStatus) {
-			return mapInvalidState("Payroll calendar is already in the requested status");
+			return mapInvalidState(
+				"Payroll calendar is already in the requested status",
+			);
 		}
 
 		const now = new Date();
@@ -532,8 +536,7 @@ export function createMemorySetupExtendedMethods(input: {
 					code: existing.code,
 					name: record.name ?? existing.name,
 					ruleType: record.ruleType ?? existing.ruleType,
-					amount:
-						record.amount !== undefined ? record.amount : existing.amount,
+					amount: record.amount !== undefined ? record.amount : existing.amount,
 					rate: record.rate !== undefined ? record.rate : existing.rate,
 					currencyCode: record.currencyCode ?? existing.currencyCode,
 					ruleVersion: record.ruleVersion,
@@ -602,7 +605,9 @@ export function createMemorySetupExtendedMethods(input: {
 				amount: ruleInput.amount !== undefined ? ruleInput.amount : rule.amount,
 				rate: ruleInput.rate !== undefined ? ruleInput.rate : rule.rate,
 				taxTiming:
-					ruleInput.taxTiming !== undefined ? ruleInput.taxTiming : rule.taxTiming,
+					ruleInput.taxTiming !== undefined
+						? ruleInput.taxTiming
+						: rule.taxTiming,
 				effectiveTo:
 					ruleInput.effectiveTo !== undefined
 						? ruleInput.effectiveTo
@@ -724,8 +729,7 @@ export function createMemorySetupExtendedMethods(input: {
 					code: existing.code,
 					name: record.name ?? existing.name,
 					ruleType: record.ruleType ?? existing.ruleType,
-					amount:
-						record.amount !== undefined ? record.amount : existing.amount,
+					amount: record.amount !== undefined ? record.amount : existing.amount,
 					rate: record.rate !== undefined ? record.rate : existing.rate,
 					currencyCode: record.currencyCode ?? existing.currencyCode,
 					ruleVersion: record.ruleVersion,
@@ -792,8 +796,7 @@ export function createMemorySetupExtendedMethods(input: {
 			const updated: PayrollStatutoryRule = {
 				...rule,
 				name: ruleInput.name ?? rule.name,
-				jurisdictionCode:
-					ruleInput.jurisdictionCode ?? rule.jurisdictionCode,
+				jurisdictionCode: ruleInput.jurisdictionCode ?? rule.jurisdictionCode,
 				configJson: ruleInput.configJson ?? rule.configJson,
 				effectiveTo:
 					ruleInput.effectiveTo !== undefined
@@ -949,7 +952,9 @@ export function createMemorySetupExtendedMethods(input: {
 		},
 
 		async isRuleVersionUsedByFinalizedRun(checkInput) {
-			return ok(state.ruleFinalizedUsage.has(ruleFinalizedUsageKey(checkInput)));
+			return ok(
+				state.ruleFinalizedUsage.has(ruleFinalizedUsageKey(checkInput)),
+			);
 		},
 	};
 }

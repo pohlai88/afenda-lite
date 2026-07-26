@@ -65,14 +65,10 @@ function refineLeavePolicyBalanceRules(
 	const entitlementExpiryRule = data.entitlementExpiryRule ?? "none";
 
 	if (accrualBasis === "none") {
-		if (
-			data.accrualFrequency !== undefined &&
-			data.accrualFrequency !== null
-		) {
+		if (data.accrualFrequency !== undefined && data.accrualFrequency !== null) {
 			ctx.addIssue({
 				code: "custom",
-				message:
-					"Accrual frequency must be null when accrual basis is none",
+				message: "Accrual frequency must be null when accrual basis is none",
 				path: ["accrualFrequency"],
 			});
 		}
@@ -82,8 +78,7 @@ function refineLeavePolicyBalanceRules(
 		) {
 			ctx.addIssue({
 				code: "custom",
-				message:
-					"Accrual quantity must be null when accrual basis is none",
+				message: "Accrual quantity must be null when accrual basis is none",
 				path: ["accrualQuantityPerPeriod"],
 			});
 		}

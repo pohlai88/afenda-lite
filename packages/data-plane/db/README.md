@@ -20,7 +20,7 @@ import {
 const rows = await withOrg(platformRoleAssignment, orgId);
 ```
 
-`withOrg` applies `organization_id = $orgId` only. Do not `db.select()` on tenant tables without it. Product runtime `DATABASE_URL` must use a Neon **`-pooler`** host — see [docs-V2/tenancy](../../docs-V2/tenancy/README.md) · [neon-optimize](../../docs-V2/tenancy/neon-optimize.md).
+`withOrg` applies `organization_id = $orgId` only. Do not `db.select()` on tenant tables without it. Product runtime `DATABASE_URL` must use a Neon **`-pooler`** host — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [neon-optimize](../../../docs-V2/tenancy/neon-optimize.md).
 
 **Living consumers:** `@afenda/admin` (audit · health · usage · org-console); `apps/web` Identity / Platform domain adapters (`has-permission`, assign/revoke, RBAC list paths).
 
@@ -87,7 +87,7 @@ No subpath exports — barrel only (`.` in `package.json`).
 | Org-console / RBAC audit writers / health probes | `@afenda/admin` |
 | Identity permission checks · assign/revoke Actions | `apps/web` |
 
-**Layer:** Rank-1 Platform (`@neondatabase/serverless` · `drizzle-orm`; `drizzle-kit` in devDeps). Must **not** import `@afenda/auth`, `@afenda/env`, Surfaces, or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
+**Layer:** Rank-1 Platform (`@neondatabase/serverless` · `drizzle-orm`; `drizzle-kit` in devDeps). Must **not** import `@afenda/auth`, `@afenda/env`, Surfaces, or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
 
 ## Out of scope
 
@@ -97,7 +97,7 @@ Do not add to this package: `@afenda/env` imports, Neon Auth session clients, Ac
 
 | Topic | Link |
 |-------|------|
-| Data layer Scratch · schema craft checklist (reference → Drizzle) | [docs-V2/data](../../docs-V2/data/README.md) · [Schema craft checklist](../../docs-V2/data/README.md#schema-craft-checklist-reference--drizzle) |
-| Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) · [neon-optimize](../../docs-V2/tenancy/neon-optimize.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Data layer Scratch · schema craft checklist (reference → Drizzle) | [docs-V2/data](../../../docs-V2/data/README.md) · [Schema craft checklist](../../../docs-V2/data/README.md#schema-craft-checklist-reference--drizzle) |
+| Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [neon-optimize](../../../docs-V2/tenancy/neon-optimize.md) |
+| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

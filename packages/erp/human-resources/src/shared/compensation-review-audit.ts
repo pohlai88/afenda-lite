@@ -45,6 +45,10 @@ export function compensationReviewCycleAuditSnapshot(cycle: {
 	};
 }
 
-export function statusChange(field: string, oldValue: string, newValue: string): Change {
+export function statusChange(
+	field: string,
+	oldValue: string,
+	newValue: string,
+): Change {
 	return { field, oldValue, newValue };
 }

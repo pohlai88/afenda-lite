@@ -18,7 +18,7 @@ describe("HR hire attempt migration", () => {
 		expect(migrationSql).toContain("hr_hire_attempt_org_idempotency_uidx");
 		expect(migrationSql).toContain("hr_hire_attempt_org_offer_open_uidx");
 		expect(migrationSql).toContain(
-			'"status" IN (\'in_progress\', \'completed\')',
+			"\"status\" IN ('in_progress', 'completed')",
 		);
 	});
 });

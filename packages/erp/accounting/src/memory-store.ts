@@ -1,12 +1,12 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
 import { randomUUID } from "node:crypto";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import type {
-	AccountRoleMapping,
-	AccountType,
 	AccountingEffects,
 	AccountingPeriod,
 	AccountingPeriodStatus,
 	AccountingStore,
+	AccountRoleMapping,
+	AccountType,
 	ChartOfAccounts,
 	Journal,
 	JournalLine,
@@ -39,12 +39,22 @@ export function createMemoryStore(): AccountingStore {
 	const sourcePostingLinks: SourcePostingLink[] = [];
 	const postingExceptions: PostingException[] = [];
 
-	function findPeriod(organizationId: string, periodId: string): AccountingPeriod | undefined {
-		return periods.find((p) => p.organizationId === organizationId && p.id === periodId);
+	function findPeriod(
+		organizationId: string,
+		periodId: string,
+	): AccountingPeriod | undefined {
+		return periods.find(
+			(p) => p.organizationId === organizationId && p.id === periodId,
+		);
 	}
 
-	function findJournal(organizationId: string, journalId: string): Journal | undefined {
-		return journals.find((j) => j.organizationId === organizationId && j.id === journalId);
+	function findJournal(
+		organizationId: string,
+		journalId: string,
+	): Journal | undefined {
+		return journals.find(
+			(j) => j.organizationId === organizationId && j.id === journalId,
+		);
 	}
 
 	const store: AccountingStore = {
@@ -89,7 +99,8 @@ export function createMemoryStore(): AccountingStore {
 		async addLine(record): Promise<Result<JournalLine>> {
 			const journal = findJournal(record.organizationId, record.journalId);
 			if (!journal) return fail("NOT_FOUND", "Journal not found");
-			if (journal.status !== "draft") return fail("CONFLICT", "Journal is not in draft status");
+			if (journal.status !== "draft")
+				return fail("CONFLICT", "Journal is not in draft status");
 			const lineNumber = journal.lines.length + 1;
 			const line: JournalLine = {
 				id: randomUUID(),
@@ -111,15 +122,20 @@ export function createMemoryStore(): AccountingStore {
 		async post(record): Promise<Result<Journal>> {
 			const journal = findJournal(record.organizationId, record.journalId);
 			if (!journal) return fail("NOT_FOUND", "Journal not found");
-			if (journal.status !== "draft") return fail("CONFLICT", "Journal is not in draft status");
+			if (journal.status !== "draft")
+				return fail("CONFLICT", "Journal is not in draft status");
 			if (journal.version !== record.expectedVersion)
 				return fail("CONFLICT", "Version mismatch");
-			if (journal.lines.length === 0) return fail("VALIDATION_ERROR", "Journal has no lines");
+			if (journal.lines.length === 0)
+				return fail("VALIDATION_ERROR", "Journal has no lines");
 
 			const period = findPeriod(record.organizationId, journal.periodId);
 			if (!period) return fail("NOT_FOUND", "Period not found");
 			if (period.status !== "open")
-				return fail("CONFLICT", `Cannot post to period with status '${period.status}'`);
+				return fail(
+					"CONFLICT",
+					`Cannot post to period with status '${period.status}'`,
+				);
 
 			let totalDebit = 0;
 			let totalCredit = 0;
@@ -128,7 +144,10 @@ export function createMemoryStore(): AccountingStore {
 				totalCredit += Number.parseFloat(line.credit);
 			}
 			if (Math.abs(totalDebit - totalCredit) > 0.001)
-				return fail("VALIDATION_ERROR", "Journal does not balance: debits must equal credits");
+				return fail(
+					"VALIDATION_ERROR",
+					"Journal does not balance: debits must equal credits",
+				);
 
 			const now = new Date();
 			const prevStatus = journal.status;
@@ -195,7 +214,10 @@ export function createMemoryStore(): AccountingStore {
 			const period = findPeriod(record.organizationId, original.periodId);
 			if (!period) return fail("NOT_FOUND", "Period not found");
 			if (period.status !== "open")
-				return fail("CONFLICT", `Cannot reverse in period with status '${period.status}'`);
+				return fail(
+					"CONFLICT",
+					`Cannot reverse in period with status '${period.status}'`,
+				);
 
 			const now = new Date();
 			const reversalCode = `REV-${original.code}`;
@@ -368,7 +390,10 @@ export function createMemoryStore(): AccountingStore {
 			const period = findPeriod(record.organizationId, record.periodId);
 			if (!period) return fail("NOT_FOUND", "Period not found");
 			if (period.status !== "soft_closed" && period.status !== "closed")
-				return fail("CONFLICT", "Only soft-closed or closed periods can be reopened");
+				return fail(
+					"CONFLICT",
+					"Only soft-closed or closed periods can be reopened",
+				);
 			if (period.version !== record.expectedVersion)
 				return fail("CONFLICT", "Version mismatch");
 
@@ -389,16 +414,23 @@ export function createMemoryStore(): AccountingStore {
 		},
 
 		async list(filter): Promise<Result<Journal[]>> {
-			let filtered = journals.filter((j) => j.organizationId === filter.organizationId);
-			if (filter.status) filtered = filtered.filter((j) => j.status === filter.status);
-			if (filter.periodId) filtered = filtered.filter((j) => j.periodId === filter.periodId);
+			let filtered = journals.filter(
+				(j) => j.organizationId === filter.organizationId,
+			);
+			if (filter.status)
+				filtered = filtered.filter((j) => j.status === filter.status);
+			if (filter.periodId)
+				filtered = filtered.filter((j) => j.periodId === filter.periodId);
 			const start = (filter.page - 1) * filter.pageSize;
 			return ok(filtered.slice(start, start + filter.pageSize));
 		},
 
 		async trialBalance(filter): Promise<Result<TrialBalanceRow[]>> {
 			const allPostings = journals
-				.filter((j) => j.organizationId === filter.organizationId && j.status !== "draft")
+				.filter(
+					(j) =>
+						j.organizationId === filter.organizationId && j.status !== "draft",
+				)
 				.flatMap((j) => {
 					if (filter.periodId && j.periodId !== filter.periodId) return [];
 					return j.postings;
@@ -421,7 +453,9 @@ export function createMemoryStore(): AccountingStore {
 					balance: (totals.debit - totals.credit).toFixed(2),
 				});
 			}
-			return ok(rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode)));
+			return ok(
+				rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode)),
+			);
 		},
 
 		async createChartOfAccounts(record): Promise<Result<ChartOfAccounts>> {
@@ -430,7 +464,8 @@ export function createMemoryStore(): AccountingStore {
 					c.organizationId === record.organizationId &&
 					c.code.toUpperCase() === record.code.toUpperCase(),
 			);
-			if (existing) return fail("CONFLICT", "Chart of accounts code already exists");
+			if (existing)
+				return fail("CONFLICT", "Chart of accounts code already exists");
 
 			const now = new Date();
 			const coa: ChartOfAccounts = {
@@ -455,7 +490,8 @@ export function createMemoryStore(): AccountingStore {
 					a.organizationId === record.organizationId &&
 					a.normalizedCode === record.normalizedCode,
 			);
-			if (existing) return fail("CONFLICT", "Ledger account code already exists");
+			if (existing)
+				return fail("CONFLICT", "Ledger account code already exists");
 
 			const now = new Date();
 			const account: LedgerAccount = {
@@ -519,12 +555,18 @@ export function createMemoryStore(): AccountingStore {
 				(a) => a.organizationId === filter.organizationId,
 			);
 			if (filter.chartOfAccountId)
-				filtered = filtered.filter((a) => a.chartOfAccountId === filter.chartOfAccountId);
-			if (filter.status) filtered = filtered.filter((a) => a.status === filter.status);
+				filtered = filtered.filter(
+					(a) => a.chartOfAccountId === filter.chartOfAccountId,
+				);
+			if (filter.status)
+				filtered = filtered.filter((a) => a.status === filter.status);
 			return ok(filtered);
 		},
 
-		async resolveLedgerAccountByCode(organizationId, normalizedCode): Promise<Result<LedgerAccount | null>> {
+		async resolveLedgerAccountByCode(
+			organizationId,
+			normalizedCode,
+		): Promise<Result<LedgerAccount | null>> {
 			const account = ledgerAccounts.find(
 				(a) =>
 					a.organizationId === organizationId &&
@@ -563,9 +605,13 @@ export function createMemoryStore(): AccountingStore {
 			return ok(mapping);
 		},
 
-		async resolveAccountRole(organizationId, accountRole): Promise<Result<AccountRoleMapping | null>> {
+		async resolveAccountRole(
+			organizationId,
+			accountRole,
+		): Promise<Result<AccountRoleMapping | null>> {
 			const mapping = accountRoleMappings.find(
-				(m) => m.organizationId === organizationId && m.accountRole === accountRole,
+				(m) =>
+					m.organizationId === organizationId && m.accountRole === accountRole,
 			);
 			return ok(mapping ?? null);
 		},
@@ -614,7 +660,10 @@ export function createMemoryStore(): AccountingStore {
 			return ok(profile);
 		},
 
-		async getActivePostingProfile(organizationId, code): Promise<Result<PostingProfile | null>> {
+		async getActivePostingProfile(
+			organizationId,
+			code,
+		): Promise<Result<PostingProfile | null>> {
 			const active = postingProfiles
 				.filter(
 					(p) =>
@@ -626,7 +675,9 @@ export function createMemoryStore(): AccountingStore {
 			return ok(active[0] ?? null);
 		},
 
-		async findSourcePostingLink(record): Promise<Result<SourcePostingLink | null>> {
+		async findSourcePostingLink(
+			record,
+		): Promise<Result<SourcePostingLink | null>> {
 			const link = sourcePostingLinks.find(
 				(l) =>
 					l.organizationId === record.organizationId &&
@@ -690,7 +741,8 @@ export function createMemoryStore(): AccountingStore {
 			let filtered = postingExceptions.filter(
 				(e) => e.organizationId === filter.organizationId,
 			);
-			if (filter.status) filtered = filtered.filter((e) => e.status === filter.status);
+			if (filter.status)
+				filtered = filtered.filter((e) => e.status === filter.status);
 			return ok(filtered);
 		},
 
@@ -718,11 +770,14 @@ export function createMemoryStore(): AccountingStore {
 			let links = sourcePostingLinks.filter(
 				(l) => l.organizationId === filter.organizationId,
 			);
-			if (filter.journalId) links = links.filter((l) => l.journalId === filter.journalId);
+			if (filter.journalId)
+				links = links.filter((l) => l.journalId === filter.journalId);
 			if (filter.sourceModule)
 				links = links.filter((l) => l.sourceModule === filter.sourceModule);
 			if (filter.sourceAggregateId)
-				links = links.filter((l) => l.sourceAggregateId === filter.sourceAggregateId);
+				links = links.filter(
+					(l) => l.sourceAggregateId === filter.sourceAggregateId,
+				);
 			if (filter.sourceEventId)
 				links = links.filter((l) => l.sourceEventId === filter.sourceEventId);
 
@@ -734,7 +789,9 @@ export function createMemoryStore(): AccountingStore {
 			return ok(traces);
 		},
 
-		async getLedgerAccountActivity(filter): Promise<Result<LedgerAccountActivityRow[]>> {
+		async getLedgerAccountActivity(
+			filter,
+		): Promise<Result<LedgerAccountActivityRow[]>> {
 			const rows: LedgerAccountActivityRow[] = [];
 			for (const journal of journals) {
 				if (journal.organizationId !== filter.organizationId) continue;
@@ -742,7 +799,8 @@ export function createMemoryStore(): AccountingStore {
 				if (filter.periodId && journal.periodId !== filter.periodId) continue;
 
 				for (const posting of journal.postings) {
-					if (filter.accountCode && posting.accountCode !== filter.accountCode) continue;
+					if (filter.accountCode && posting.accountCode !== filter.accountCode)
+						continue;
 					rows.push({
 						journalId: journal.id,
 						journalCode: journal.code,

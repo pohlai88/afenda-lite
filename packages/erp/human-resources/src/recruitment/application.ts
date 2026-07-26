@@ -28,7 +28,11 @@ import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
 } from "../shared/recruitment-command";
-import type { ApplicationStatusHistory, ApplicationListPage, CandidateApplication } from "../types";
+import type {
+	ApplicationListPage,
+	ApplicationStatusHistory,
+	CandidateApplication,
+} from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_APPLICATION = "application" as const;
 export type HumanResourcesApplicationAggregate =
@@ -53,7 +57,7 @@ export async function createApplication(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
 				}),
 			),
 	});
@@ -90,7 +94,7 @@ async function transitionApplication(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: config.command,
+					operationId: config.command,
 				}),
 			),
 	});
@@ -161,7 +165,7 @@ export async function reopenApplication(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_APPLICATION_REOPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_APPLICATION_REOPEN,
 				}),
 			),
 	});

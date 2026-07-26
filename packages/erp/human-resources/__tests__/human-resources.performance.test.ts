@@ -3,6 +3,7 @@
  */
 
 import {
+	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
 	HUMAN_RESOURCES_PERFORMANCE_CYCLE_OPENED_EVENT,
 	HUMAN_RESOURCES_PERFORMANCE_REVIEW_FINALIZED_EVENT,
@@ -12,7 +13,7 @@ import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
+import { amendEmployment, createEmployment } from "../src/core/employment";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -32,8 +33,13 @@ import {
 } from "../src/performance/goal";
 import {
 	acknowledgeImprovementPlan,
+	amendImprovementPlan,
+	closeImprovementPlanUnsuccessful,
+	completeImprovementPlan,
 	createImprovementPlan,
 	getImprovementPlanById,
+	listActiveImprovementPlans,
+	listImprovementPlanCheckpoints,
 	openImprovementPlan,
 	recordImprovementCheckpoint,
 } from "../src/performance/improvement-plan";
@@ -49,7 +55,6 @@ import {
 	openPerformanceCycle,
 	publishPerformanceCycle,
 	removeCycleParticipant,
-	setPerformanceCycleEligibility,
 	setPerformanceCycleReviewPeriods,
 	updatePerformanceCycle,
 } from "../src/performance/performance-cycle";
@@ -71,10 +76,10 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_CONFIDENTIAL_READ,
+	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_IMPROVEMENT_PLAN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_REVIEW_REOPEN,
 } from "../src/permissions";
@@ -82,16 +87,16 @@ import { createMemoryHumanResourcesStore } from "../src/testing";
 import type { PerformanceReview } from "../src/types";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
-	DEFAULT_PERFORMANCE_CYCLE_REVIEW_PERIODS,
-	publishAndOpenPerformanceCycle,
-	publishPerformanceCycleReady,
-} from "./helpers/performance-cycle-harness";
-import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
 } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import {
+	DEFAULT_PERFORMANCE_CYCLE_REVIEW_PERIODS,
+	publishAndOpenPerformanceCycle,
+	publishPerformanceCycleReady,
+} from "./helpers/performance-cycle-harness";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 const ORG_A = "org-perf-a";
@@ -129,7 +134,7 @@ function harness(
 
 async function seedWorker(
 	ready: ReturnType<typeof harness>,
-	input: { organizationId: string; suffix: string },
+	input: { organizationId: string; suffix: string; startsOn?: string },
 ) {
 	const employee = await createEmployee(
 		{
@@ -161,7 +166,7 @@ async function seedWorker(
 			actorUserId: ACTOR,
 			correlationId: `corr-employ-${input.suffix}`,
 			employeeId: employee.data.id,
-			startsOn: "2025-01-01",
+			startsOn: input.startsOn ?? "2025-01-01",
 		},
 		ready,
 	);
@@ -227,10 +232,14 @@ async function seedOpenCycleWithParticipant(
 	if (!participants.ok || participants.data.length === 0) {
 		throw new Error("Failed to resolve cycle participant after open");
 	}
+	const participant = participants.data[0];
+	if (participant === undefined) {
+		throw new Error("Failed to resolve cycle participant after open");
+	}
 	return {
 		...worker,
 		cycle: opened.data,
-		participant: participants.data[0]!,
+		participant,
 	};
 }
 
@@ -389,20 +398,17 @@ describe("Performance cycle lifecycle", () => {
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
 
-		const opened = await publishAndOpenPerformanceCycle(
-			ready,
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationIdPrefix: "corr-open-1",
-				cycle: created.data,
-				ports,
-				participant: {
-					employeeId: worker.employee.id,
-					employmentId: worker.employment.id,
-				},
+		const opened = await publishAndOpenPerformanceCycle(ready, {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			correlationIdPrefix: "corr-open-1",
+			cycle: created.data,
+			ports,
+			participant: {
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
 			},
-		);
+		});
 		expect(opened.ok).toBe(true);
 		if (!opened.ok) return;
 		expect(opened.data.status).toBe("open");
@@ -779,6 +785,7 @@ describe("Slice 9.2 — Performance cycles", () => {
 		const eligible = await seedWorker(ready, {
 			organizationId: ORG_A,
 			suffix: "eligible",
+			startsOn: "2024-01-01",
 		});
 		const ineligible = await seedWorker(ready, {
 			organizationId: ORG_A,
@@ -794,6 +801,20 @@ describe("Slice 9.2 — Performance cycles", () => {
 		});
 		expect(published.ok).toBe(true);
 		if (!published.ok) return;
+
+		const terminated = await amendEmployment(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-92-ineligible-term",
+				employmentId: ineligible.employment.id,
+				status: "terminated",
+				expectedVersion: ineligible.employment.version,
+			},
+			ready,
+		);
+		expect(terminated.ok).toBe(true);
+		if (!terminated.ok) return;
 
 		const enrolled = await enrollEligibleCycleParticipants(
 			{
@@ -812,6 +833,11 @@ describe("Slice 9.2 — Performance cycles", () => {
 				(participant) => participant.employeeId === eligible.employee.id,
 			),
 		).toBe(true);
+		expect(
+			enrolled.data.some(
+				(participant) => participant.employeeId === ineligible.employee.id,
+			),
+		).toBe(false);
 
 		const blocked = await addCycleParticipant(
 			{
@@ -821,6 +847,7 @@ describe("Slice 9.2 — Performance cycles", () => {
 				cycleId: published.data.id,
 				employeeId: ineligible.employee.id,
 				employmentId: ineligible.employment.id,
+				asOfDate: "2025-06-01",
 			},
 			ready,
 		);
@@ -1317,7 +1344,6 @@ describe("Performance goals", () => {
 				goalId: activated.data.id,
 				progressNote: "Employee update",
 				progressValue: "25",
-				evidenceReference: null,
 			},
 			ready,
 		);
@@ -1530,17 +1556,21 @@ describe("Performance goals", () => {
 	});
 
 	it("denies employee goal manager actions and manager-kind create without manager scope", async () => {
-		const employeeOnly = harness([
-			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
-			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-			HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
-			HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
-		]);
-		const seeded = await seedOpenCycleWithParticipant(employeeOnly, {
+		const ready = harness();
+		const seeded = await seedOpenCycleWithParticipant(ready, {
 			organizationId: ORG_A,
 			suffix: "goal-authz",
 			weightingModel: "percent100",
 		});
+		const employeeOnly = {
+			...ready,
+			authorization: createGrantingHumanResourcesAuthorization([
+				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+				HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
+				HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
+			]),
+		};
 
 		const goal = await createPerformanceGoal(
 			{
@@ -1874,6 +1904,20 @@ describe("Performance review workflow", () => {
 			organizationId: ORG_A,
 			suffix: "redact",
 		});
+		const calibrated = await calibratePerformanceReview(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-redact-calibrate",
+				reviewId: seeded.review.id,
+				overallRating: "meets",
+				calibrationNote: "HR calibration note for redaction test",
+				expectedVersion: seeded.review.version,
+			},
+			fullReady,
+		);
+		expect(calibrated.ok).toBe(true);
+		if (!calibrated.ok) return;
 
 		const redacted = await getPerformanceReviewById(
 			{
@@ -1888,6 +1932,7 @@ describe("Performance review workflow", () => {
 		expect(redacted.ok).toBe(true);
 		if (!redacted.ok) return;
 		expect(redacted.data?.review.overallRating).toBeNull();
+		expect(redacted.data?.review.calibrationNote).toBeNull();
 		expect(redacted.data?.assessments[0]?.rating).toBeNull();
 		expect(redacted.data?.assessments[0]?.commentsSensitive).toBeNull();
 
@@ -2005,7 +2050,7 @@ describe("Performance review workflow", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-delegated-second-early",
 				reviewId: addSecond.data.id,
-				participantId: delegatedParticipants[1]!.id,
+				participantId: delegatedParticipants[1]?.id,
 				rating: "meets",
 				commentsSensitive: "Second reviewer confidential",
 				delegatedEmployeeId: reviewer2.employee.id,
@@ -2024,7 +2069,7 @@ describe("Performance review workflow", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-delegated-first",
 				reviewId: addSecond.data.id,
-				participantId: delegatedParticipants[0]!.id,
+				participantId: delegatedParticipants[0]?.id,
 				rating: "meets",
 				commentsSensitive: "First reviewer confidential",
 				delegatedEmployeeId: reviewer1.employee.id,
@@ -2051,7 +2096,7 @@ describe("Performance review workflow", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-delegated-second",
 				reviewId: firstSubmit.data.id,
-				participantId: delegatedParticipants[1]!.id,
+				participantId: delegatedParticipants[1]?.id,
 				rating: "exceeds",
 				commentsSensitive: "Second reviewer confidential",
 				delegatedEmployeeId: reviewer2.employee.id,
@@ -2266,6 +2311,399 @@ describe("Performance improvement plan", () => {
 			ready,
 		);
 		expect(acknowledged.ok).toBe(true);
+	});
+});
+
+describe("Performance improvement plan — Slice 9.5 lifecycle", () => {
+	it("runs full milestone lifecycle with objectives, extension, evidence, and completion", async () => {
+		const ready = harness();
+		const ports = createMemoryMutationPorts();
+		const seeded = await seedReviewAtManagerSubmitted(ready, {
+			organizationId: ORG_A,
+			suffix: "pip-95",
+		});
+		const finalized = await finalizeReview(
+			ready,
+			seeded.review,
+			"idem-pip-95-finalize",
+		);
+		if (!finalized.ok) throw new Error(finalized.code);
+
+		const plan = await createImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-create",
+				idempotencyKey: "idem-pip-95-create",
+				reviewId: finalized.data.id,
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				performanceGap: "Missed targets",
+				expectedOutcome: "Meet Q3 targets",
+				measurableActions: "Weekly check-ins",
+				supportResources: "Coaching",
+				dueDate: "2025-09-30",
+				accountableManagerEmployeeId: seeded.manager.employee.id,
+				milestones: [
+					{ dueDate: "2025-07-31" },
+					{ dueDate: "2025-08-31" },
+					{ dueDate: "2025-09-30" },
+				],
+			},
+			ready,
+		);
+		expect(plan.ok).toBe(true);
+		if (!plan.ok) return;
+		expect(plan.data.status).toBe("draft");
+
+		const checkpoints = await listImprovementPlanCheckpoints(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-list-checkpoints",
+				planId: plan.data.id,
+			},
+			ready,
+		);
+		expect(checkpoints.ok).toBe(true);
+		if (!checkpoints.ok) return;
+		expect(checkpoints.data.checkpoints).toHaveLength(3);
+		expect(
+			checkpoints.data.checkpoints.every(
+				(checkpoint) => checkpoint.outcome === "pending",
+			),
+		).toBe(true);
+
+		const opened = await openImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-open",
+				planId: plan.data.id,
+				expectedVersion: plan.data.version,
+			},
+			{ ...ready, ports },
+		);
+		expect(opened.ok).toBe(true);
+		if (!opened.ok) return;
+		expect(ports.outbox.calls).toContainEqual(
+			expect.objectContaining({
+				type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
+			}),
+		);
+
+		const active = await listActiveImprovementPlans(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-list-active",
+			},
+			ready,
+		);
+		expect(active.ok).toBe(true);
+		if (!active.ok) return;
+		expect(active.data.plans.some((row) => row.id === opened.data.id)).toBe(
+			true,
+		);
+
+		const amended = await amendImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-amend-objectives",
+				planId: opened.data.id,
+				expectedVersion: opened.data.version,
+				performanceGap: "Revised gap",
+				expectedOutcome: "Revised outcome",
+			},
+			ready,
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+		expect(amended.data.performanceGap).toBe("Revised gap");
+		expect(amended.data.expectedOutcome).toBe("Revised outcome");
+
+		const checkpoint1 = await recordImprovementCheckpoint(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-checkpoint-1",
+				planId: amended.data.id,
+				sequenceNumber: 1,
+				outcome: "met",
+				notes: "First milestone met",
+				evidenceReference: "doc://pip-95/milestone-1",
+			},
+			ready,
+		);
+		expect(checkpoint1.ok).toBe(true);
+		if (!checkpoint1.ok) return;
+		expect(checkpoint1.data.evidenceReference).toBe("doc://pip-95/milestone-1");
+
+		const extended = await amendImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-extend",
+				planId: amended.data.id,
+				expectedVersion: amended.data.version,
+				dueDate: "2025-10-31",
+				extensionReason: "Additional coaching time required",
+				extensionEvidenceReference: "doc://pip-95/extension",
+			},
+			ready,
+		);
+		expect(extended.ok).toBe(true);
+		if (!extended.ok) return;
+		expect(extended.data.dueDate).toBe("2025-10-31");
+		expect(extended.data.lastExtensionReason).toBe(
+			"Additional coaching time required",
+		);
+		expect(extended.data.lastExtensionEvidenceReference).toBe(
+			"doc://pip-95/extension",
+		);
+
+		const afterExtend = await listImprovementPlanCheckpoints(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-list-after-extend",
+				planId: extended.data.id,
+			},
+			ready,
+		);
+		expect(afterExtend.ok).toBe(true);
+		if (!afterExtend.ok) return;
+		expect(afterExtend.data.checkpoints).toHaveLength(4);
+		expect(afterExtend.data.checkpoints[3]?.sequenceNumber).toBe(4);
+		expect(afterExtend.data.checkpoints[3]?.outcome).toBe("pending");
+
+		for (const sequenceNumber of [2, 3, 4]) {
+			const recorded = await recordImprovementCheckpoint(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: `corr-pip-95-checkpoint-${sequenceNumber}`,
+					planId: extended.data.id,
+					sequenceNumber,
+					outcome: "met",
+					notes: `Milestone ${sequenceNumber} met`,
+				},
+				ready,
+			);
+			expect(recorded.ok).toBe(true);
+		}
+
+		const acknowledged = await acknowledgeImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-ack",
+				planId: extended.data.id,
+				expectedVersion: extended.data.version,
+			},
+			ready,
+		);
+		expect(acknowledged.ok).toBe(true);
+		if (!acknowledged.ok) return;
+
+		const completed = await completeImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-complete",
+				planId: acknowledged.data.id,
+				expectedVersion: acknowledged.data.version,
+				outcomeReason: "All milestones met",
+				outcomeEvidenceReference: "doc://pip-95/completion",
+			},
+			{ ...ready, ports },
+		);
+		expect(completed.ok).toBe(true);
+		if (!completed.ok) return;
+		expect(completed.data.status).toBe("completed");
+		expect(completed.data.outcomeReason).toBe("All milestones met");
+		expect(completed.data.outcomeEvidenceReference).toBe(
+			"doc://pip-95/completion",
+		);
+		expect(ports.outbox.calls).toContainEqual(
+			expect.objectContaining({
+				type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
+			}),
+		);
+	});
+
+	it("closes plan as unsuccessful when a milestone is missed", async () => {
+		const ready = harness();
+		const seeded = await seedReviewAtManagerSubmitted(ready, {
+			organizationId: ORG_A,
+			suffix: "pip-95-fail",
+		});
+		const finalized = await finalizeReview(
+			ready,
+			seeded.review,
+			"idem-pip-95-fail-finalize",
+		);
+		if (!finalized.ok) throw new Error(finalized.code);
+
+		const plan = await createImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-fail-create",
+				idempotencyKey: "idem-pip-95-fail-create",
+				reviewId: finalized.data.id,
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				performanceGap: "Missed targets",
+				expectedOutcome: "Meet Q3 targets",
+				measurableActions: "Weekly check-ins",
+				supportResources: "Coaching",
+				dueDate: "2025-09-30",
+				accountableManagerEmployeeId: seeded.manager.employee.id,
+				milestones: [{ dueDate: "2025-07-31" }, { dueDate: "2025-09-30" }],
+			},
+			ready,
+		);
+		expect(plan.ok).toBe(true);
+		if (!plan.ok) return;
+
+		const opened = await openImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-fail-open",
+				planId: plan.data.id,
+				expectedVersion: plan.data.version,
+			},
+			ready,
+		);
+		expect(opened.ok).toBe(true);
+		if (!opened.ok) return;
+
+		const missed = await recordImprovementCheckpoint(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-fail-checkpoint-1",
+				planId: opened.data.id,
+				sequenceNumber: 1,
+				outcome: "missed",
+				notes: "First milestone missed",
+			},
+			ready,
+		);
+		expect(missed.ok).toBe(true);
+		if (!missed.ok) return;
+
+		const reviewed = await recordImprovementCheckpoint(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-fail-checkpoint-2",
+				planId: opened.data.id,
+				sequenceNumber: 2,
+				outcome: "met",
+				notes: "Second milestone met",
+			},
+			ready,
+		);
+		expect(reviewed.ok).toBe(true);
+		if (!reviewed.ok) return;
+
+		const acknowledged = await acknowledgeImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-fail-ack",
+				planId: opened.data.id,
+				expectedVersion: opened.data.version,
+			},
+			ready,
+		);
+		expect(acknowledged.ok).toBe(true);
+		if (!acknowledged.ok) return;
+
+		const closed = await closeImprovementPlanUnsuccessful(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-fail-close",
+				planId: acknowledged.data.id,
+				expectedVersion: acknowledged.data.version,
+				outcomeReason: "Milestone 1 missed",
+				outcomeEvidenceReference: "doc://pip-95/failure",
+			},
+			ready,
+		);
+		expect(closed.ok).toBe(true);
+		if (!closed.ok) return;
+		expect(closed.data.status).toBe("unsuccessful");
+		expect(closed.data.outcomeReason).toBe("Milestone 1 missed");
+	});
+
+	it("rejects completion while checkpoints remain pending", async () => {
+		const ready = harness();
+		const seeded = await seedReviewAtManagerSubmitted(ready, {
+			organizationId: ORG_A,
+			suffix: "pip-95-pending",
+		});
+		const finalized = await finalizeReview(
+			ready,
+			seeded.review,
+			"idem-pip-95-pending-finalize",
+		);
+		if (!finalized.ok) throw new Error(finalized.code);
+
+		const plan = await createImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-pending-create",
+				idempotencyKey: "idem-pip-95-pending-create",
+				reviewId: finalized.data.id,
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				performanceGap: "Missed targets",
+				expectedOutcome: "Meet Q3 targets",
+				measurableActions: "Weekly check-ins",
+				supportResources: "Coaching",
+				dueDate: "2025-09-30",
+				accountableManagerEmployeeId: seeded.manager.employee.id,
+				milestones: [{ dueDate: "2025-07-31" }, { dueDate: "2025-09-30" }],
+			},
+			ready,
+		);
+		expect(plan.ok).toBe(true);
+		if (!plan.ok) return;
+
+		const opened = await openImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-pending-open",
+				planId: plan.data.id,
+				expectedVersion: plan.data.version,
+			},
+			ready,
+		);
+		expect(opened.ok).toBe(true);
+		if (!opened.ok) return;
+
+		const completed = await completeImprovementPlan(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-pip-95-pending-complete",
+				planId: opened.data.id,
+				expectedVersion: opened.data.version,
+			},
+			ready,
+		);
+		expect(completed.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(completed)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		);
 	});
 });
 

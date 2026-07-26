@@ -48,21 +48,13 @@ export function isEmployeeCompensationSuperseded(
 export function isEmployeeCompensationAsOfEligible(
 	status: EmployeeCompensationStatus,
 ): boolean {
-	return (
-		status === "active" ||
-		status === "ended" ||
-		status === "superseded"
-	);
+	return status === "active" || status === "ended" || status === "superseded";
 }
 
 export function isEmployeeCompensationCancellable(
 	status: EmployeeCompensationStatus,
 ): boolean {
-	return (
-		status === "draft" ||
-		status === "scheduled" ||
-		status === "active"
-	);
+	return status === "draft" || status === "scheduled" || status === "active";
 }
 
 export function isEmployeeCompensationCorrectable(

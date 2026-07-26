@@ -2,6 +2,11 @@
  * Memory vs Drizzle parity for performance management (HR-PERF-01).
  */
 
+import {
+	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
+	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
+} from "@afenda/events/schemas";
+import { and, db, eq, platformDomainEvent } from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
@@ -18,12 +23,16 @@ import {
 } from "../src/performance/goal";
 import {
 	acknowledgeImprovementPlan,
+	amendImprovementPlan,
+	closeImprovementPlanUnsuccessful,
+	completeImprovementPlan,
 	createImprovementPlan,
+	listActiveImprovementPlans,
+	listImprovementPlanCheckpoints,
 	openImprovementPlan,
 	recordImprovementCheckpoint,
 } from "../src/performance/improvement-plan";
 import {
-	addCycleParticipant,
 	createPerformanceCycle,
 	getPerformanceCycleById,
 	listCycleParticipants,
@@ -55,6 +64,20 @@ const RATING_SCALE = { codes: ["meets", "exceeds"] } as const;
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function resultMessage(result: {
+	ok: boolean;
+	code?: string;
+	message?: string;
+	details?: unknown;
+}): string {
+	if (result.ok) {
+		return "result ok";
+	}
+	const details =
+		result.details === undefined ? "" : ` ${JSON.stringify(result.details)}`;
+	return `${result.code ?? "UNKNOWN"} ${result.message ?? ""}${details}`.trim();
 }
 
 async function seedEmployeeEmployment(
@@ -106,6 +129,32 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 	const neonOrgs = createNeonOrgTracker();
 	const ORG = neonOrgs.trackOrg(`org-hr-perf-parity-${suffix}`);
 	const ACTOR = `user-hr-perf-parity-${suffix}`;
+
+	async function expectPipEvent(input: {
+		correlationId: string;
+		type: string;
+		ready: ReturnType<typeof createHrParityHarness>;
+	}): Promise<void> {
+		if (adapter === "drizzle") {
+			const events = await db
+				.select({ id: platformDomainEvent.id })
+				.from(platformDomainEvent)
+				.where(
+					and(
+						eq(platformDomainEvent.organizationId, ORG),
+						eq(platformDomainEvent.type, input.type),
+						eq(platformDomainEvent.correlationId, input.correlationId),
+					),
+				);
+			expect(events.length).toBeGreaterThan(0);
+			return;
+		}
+		expect(input.ready.ports.outbox.calls).toContainEqual(
+			expect.objectContaining({
+				type: input.type,
+			}),
+		);
+	}
 
 	afterAll(async () => {
 		if (adapter === "drizzle") {
@@ -250,7 +299,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(goal.ok).toBe(true);
+		expect(goal.ok, resultMessage(goal)).toBe(true);
 		if (!goal.ok) return;
 
 		const submitted = await submitPerformanceGoal(
@@ -361,7 +410,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(goal.ok).toBe(true);
+		expect(goal.ok, resultMessage(goal)).toBe(true);
 		if (!goal.ok) return;
 
 		const submitted = await submitPerformanceGoal(
@@ -509,7 +558,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(review.ok).toBe(true);
+		expect(review.ok, resultMessage(review)).toBe(true);
 		if (!review.ok) return;
 
 		const self = await submitSelfAssessment(
@@ -676,7 +725,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(plan.ok).toBe(true);
+		expect(plan.ok, resultMessage(plan)).toBe(true);
 		if (!plan.ok) return;
 
 		const openedPlan = await openImprovementPlan(
@@ -778,7 +827,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(goal.ok).toBe(true);
+		expect(goal.ok, resultMessage(goal)).toBe(true);
 		if (!goal.ok) return;
 
 		const submittedGoal = await submitPerformanceGoal(
@@ -819,7 +868,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(review.ok).toBe(true);
+		expect(review.ok, resultMessage(review)).toBe(true);
 		if (!review.ok) return;
 
 		const self = await submitSelfAssessment(
@@ -885,7 +934,7 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(plan.ok).toBe(true);
+		expect(plan.ok, resultMessage(plan)).toBe(true);
 		if (!plan.ok) return;
 
 		const history = await getEmployeePerformanceHistory(
@@ -915,6 +964,381 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			true,
 		);
 		expect(entry.overallRating).toBeNull();
+	});
+
+	it("improvement plan Slice 9.5 lifecycle with milestones, extension, and closure", async () => {
+		const ready = createHrParityHarness(adapter);
+		const worker = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: `pip95-emp-${suffix}`,
+		});
+		const manager = await seedEmployeeEmployment(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: `pip95-mgr-${suffix}`,
+		});
+
+		const cycle = await createPerformanceCycle(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-cycle-${suffix}`,
+				idempotencyKey: `idem-pip95-cycle-${suffix}`,
+				code: `PIP95-CYCLE-${suffix}`,
+				name: "PIP95 Cycle",
+				periodStart: "2025-01-01",
+				periodEnd: "2025-12-31",
+				ratingScale: RATING_SCALE,
+				weightingModel: "none",
+			},
+			ready,
+		);
+		expect(cycle.ok).toBe(true);
+		if (!cycle.ok) return;
+
+		const openedCycle = await publishAndOpenPerformanceCycle(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationIdPrefix: `corr-pip95-open-${suffix}`,
+			cycle: cycle.data,
+			participant: {
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+			},
+		});
+		expect(openedCycle.ok).toBe(true);
+		if (!openedCycle.ok) return;
+
+		const review = await startPerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-review-${suffix}`,
+				cycleId: openedCycle.data.id,
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+				managerEmployeeId: manager.employee.id,
+			},
+			ready,
+		);
+		expect(review.ok, resultMessage(review)).toBe(true);
+		if (!review.ok) return;
+
+		const self = await submitSelfAssessment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-self-${suffix}`,
+				reviewId: review.data.id,
+				rating: "meets",
+				actorEmployeeId: worker.employee.id,
+				expectedVersion: review.data.version,
+			},
+			ready,
+		);
+		expect(self.ok).toBe(true);
+		if (!self.ok) return;
+
+		const managerReview = await submitManagerAssessment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-mgr-${suffix}`,
+				reviewId: self.data.id,
+				rating: "meets",
+				managerEmployeeId: manager.employee.id,
+				expectedVersion: self.data.version,
+			},
+			ready,
+		);
+		expect(managerReview.ok).toBe(true);
+		if (!managerReview.ok) return;
+
+		const finalized = await finalizePerformanceReview(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-finalize-${suffix}`,
+				reviewId: managerReview.data.id,
+				overallRating: "meets",
+				idempotencyKey: `idem-pip95-finalize-${suffix}`,
+				expectedVersion: managerReview.data.version,
+			},
+			ready,
+		);
+		expect(finalized.ok).toBe(true);
+		if (!finalized.ok) return;
+
+		const plan = await createImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-create-${suffix}`,
+				idempotencyKey: `idem-pip95-create-${suffix}`,
+				reviewId: finalized.data.id,
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+				performanceGap: "Below expectations",
+				expectedOutcome: "Meet baseline",
+				measurableActions: "Weekly 1:1",
+				supportResources: "Mentor",
+				dueDate: "2025-09-30",
+				accountableManagerEmployeeId: manager.employee.id,
+				milestones: [
+					{ dueDate: "2025-07-31" },
+					{ dueDate: "2025-08-31" },
+					{ dueDate: "2025-09-30" },
+				],
+			},
+			ready,
+		);
+		expect(plan.ok, resultMessage(plan)).toBe(true);
+		if (!plan.ok) return;
+		expect(plan.data.status).toBe("draft");
+
+		const checkpoints = await listImprovementPlanCheckpoints(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-checkpoints-${suffix}`,
+				planId: plan.data.id,
+			},
+			ready,
+		);
+		expect(checkpoints.ok).toBe(true);
+		if (!checkpoints.ok) return;
+		expect(checkpoints.data.checkpoints).toHaveLength(3);
+
+		const openedPlan = await openImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-open-${suffix}`,
+				planId: plan.data.id,
+				expectedVersion: plan.data.version,
+			},
+			ready,
+		);
+		expect(openedPlan.ok).toBe(true);
+		if (!openedPlan.ok) return;
+		await expectPipEvent({
+			correlationId: `corr-pip95-open-${suffix}`,
+			type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
+			ready,
+		});
+
+		const active = await listActiveImprovementPlans(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-active-${suffix}`,
+			},
+			ready,
+		);
+		expect(active.ok).toBe(true);
+		if (!active.ok) return;
+		expect(active.data.plans.some((row) => row.id === openedPlan.data.id)).toBe(
+			true,
+		);
+
+		const amended = await amendImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-amend-${suffix}`,
+				planId: openedPlan.data.id,
+				expectedVersion: openedPlan.data.version,
+				performanceGap: "Revised parity gap",
+				expectedOutcome: "Revised parity outcome",
+			},
+			ready,
+		);
+		expect(amended.ok).toBe(true);
+		if (!amended.ok) return;
+
+		const checkpoint1 = await recordImprovementCheckpoint(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-checkpoint-1-${suffix}`,
+				planId: amended.data.id,
+				sequenceNumber: 1,
+				outcome: "met",
+				notes: "Parity milestone 1",
+				evidenceReference: `doc://pip95/${suffix}/m1`,
+			},
+			ready,
+		);
+		expect(checkpoint1.ok).toBe(true);
+		if (!checkpoint1.ok) return;
+
+		const extended = await amendImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-extend-${suffix}`,
+				planId: amended.data.id,
+				expectedVersion: amended.data.version,
+				dueDate: "2025-10-31",
+				extensionReason: "Parity extension reason",
+				extensionEvidenceReference: `doc://pip95/${suffix}/ext`,
+			},
+			ready,
+		);
+		expect(extended.ok).toBe(true);
+		if (!extended.ok) return;
+
+		const afterExtend = await listImprovementPlanCheckpoints(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-checkpoints-ext-${suffix}`,
+				planId: extended.data.id,
+			},
+			ready,
+		);
+		expect(afterExtend.ok).toBe(true);
+		if (!afterExtend.ok) return;
+		expect(afterExtend.data.checkpoints).toHaveLength(4);
+
+		for (const sequenceNumber of [2, 3, 4]) {
+			const recorded = await recordImprovementCheckpoint(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-pip95-checkpoint-${sequenceNumber}-${suffix}`,
+					planId: extended.data.id,
+					sequenceNumber,
+					outcome: "met",
+					notes: `Parity milestone ${sequenceNumber}`,
+				},
+				ready,
+			);
+			expect(recorded.ok).toBe(true);
+		}
+
+		const acknowledgedPlan = await acknowledgeImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-ack-${suffix}`,
+				planId: extended.data.id,
+				expectedVersion: extended.data.version,
+			},
+			ready,
+		);
+		expect(acknowledgedPlan.ok).toBe(true);
+		if (!acknowledgedPlan.ok) return;
+
+		const completedPlan = await completeImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-complete-${suffix}`,
+				planId: acknowledgedPlan.data.id,
+				expectedVersion: acknowledgedPlan.data.version,
+				outcomeReason: "Parity completion",
+				outcomeEvidenceReference: `doc://pip95/${suffix}/done`,
+			},
+			ready,
+		);
+		expect(completedPlan.ok).toBe(true);
+		if (!completedPlan.ok) return;
+		expect(completedPlan.data.status).toBe("completed");
+		await expectPipEvent({
+			correlationId: `corr-pip95-complete-${suffix}`,
+			type: HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
+			ready,
+		});
+
+		const failPlan = await createImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-fail-create-${suffix}`,
+				idempotencyKey: `idem-pip95-fail-create-${suffix}`,
+				reviewId: finalized.data.id,
+				employeeId: worker.employee.id,
+				employmentId: worker.employment.id,
+				performanceGap: "Below expectations",
+				expectedOutcome: "Meet baseline",
+				measurableActions: "Weekly 1:1",
+				supportResources: "Mentor",
+				dueDate: "2025-11-30",
+				accountableManagerEmployeeId: manager.employee.id,
+				milestones: [{ dueDate: "2025-10-31" }, { dueDate: "2025-11-30" }],
+			},
+			ready,
+		);
+		expect(failPlan.ok).toBe(true);
+		if (!failPlan.ok) return;
+
+		const openedFailPlan = await openImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-fail-open-${suffix}`,
+				planId: failPlan.data.id,
+				expectedVersion: failPlan.data.version,
+			},
+			ready,
+		);
+		expect(openedFailPlan.ok).toBe(true);
+		if (!openedFailPlan.ok) return;
+
+		await recordImprovementCheckpoint(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-fail-cp1-${suffix}`,
+				planId: openedFailPlan.data.id,
+				sequenceNumber: 1,
+				outcome: "missed",
+				notes: "Missed parity milestone",
+			},
+			ready,
+		);
+		await recordImprovementCheckpoint(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-fail-cp2-${suffix}`,
+				planId: openedFailPlan.data.id,
+				sequenceNumber: 2,
+				outcome: "met",
+				notes: "Met parity milestone",
+			},
+			ready,
+		);
+
+		const acknowledgedFailPlan = await acknowledgeImprovementPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-fail-ack-${suffix}`,
+				planId: openedFailPlan.data.id,
+				expectedVersion: openedFailPlan.data.version,
+			},
+			ready,
+		);
+		expect(acknowledgedFailPlan.ok).toBe(true);
+		if (!acknowledgedFailPlan.ok) return;
+
+		const closedFailPlan = await closeImprovementPlanUnsuccessful(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-pip95-fail-close-${suffix}`,
+				planId: acknowledgedFailPlan.data.id,
+				expectedVersion: acknowledgedFailPlan.data.version,
+				outcomeReason: "Parity unsuccessful closure",
+			},
+			ready,
+		);
+		expect(closedFailPlan.ok).toBe(true);
+		if (!closedFailPlan.ok) return;
+		expect(closedFailPlan.data.status).toBe("unsuccessful");
 	});
 }
 

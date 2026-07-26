@@ -42,7 +42,10 @@ function harness(ports?: MutationPorts) {
 	};
 }
 
-async function createDraftReceipt(ctx: ReturnType<typeof harness>, code: string) {
+async function createDraftReceipt(
+	ctx: ReturnType<typeof harness>,
+	code: string,
+) {
 	const created = await createStockMovement(
 		{
 			organizationId: ORG,

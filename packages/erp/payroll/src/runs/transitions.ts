@@ -35,5 +35,9 @@ export function assertPayrollRunTransition(
 	if (isPayrollRunTransitionAllowed(from, to)) {
 		return ok(undefined);
 	}
-	return fail("CONFLICT", message, payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE));
+	return fail(
+		"CONFLICT",
+		message,
+		payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
+	);
 }

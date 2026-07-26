@@ -15,8 +15,8 @@ import {
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
-	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEALED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ASSIGNED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_FINDING_RECORDED_EVENT,
@@ -2361,7 +2361,9 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		if (!eventId.ok) return eventId;
 		const auditId = randomUUID();
 		const outboxId = randomUUID();
-		const timelinePayloadJson = JSON.stringify({ reasonCode: input.reasonCode });
+		const timelinePayloadJson = JSON.stringify({
+			reasonCode: input.reasonCode,
+		});
 		const outboxPayload = entityPayloadJson({
 			organizationId: input.organizationId,
 			entityType: "hr_employee_case",

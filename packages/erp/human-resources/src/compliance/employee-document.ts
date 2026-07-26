@@ -145,7 +145,7 @@ export async function registerEmployeeDocument(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
 					idempotencyKey: data.idempotencyKey,
 				}),
 			);
@@ -195,7 +195,8 @@ export async function updateEmployeeDocumentMetadata(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
 				}),
 			);
 		},
@@ -222,7 +223,7 @@ export async function verifyEmployeeDocument(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
 				}),
 			),
 	});
@@ -248,7 +249,7 @@ export async function rejectEmployeeDocument(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
 				}),
 			),
 	});
@@ -273,7 +274,7 @@ export async function revokeEmployeeDocumentVerification(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
 				}),
 			),
@@ -299,7 +300,7 @@ export async function markEmployeeDocumentExpired(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
 				}),
 			),
 	});

@@ -1,15 +1,21 @@
 import { randomUUID } from "node:crypto";
 
-import { and, db, eq, hrEmployeeCompensation, runNeonHttpTransaction } from "@afenda/db";
+import {
+	and,
+	db,
+	eq,
+	hrEmployeeCompensation,
+	runNeonHttpTransaction,
+} from "@afenda/db";
 import { ok, type Result } from "@afenda/errors/result";
 import { HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT } from "@afenda/events/schemas";
 
 import {
-	parseHumanResourcesEmployeeCompensationId,
 	type HumanResourcesCompensationGradeId,
 	type HumanResourcesEmployeeCompensationId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesSalaryBandId,
+	parseHumanResourcesEmployeeCompensationId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
@@ -24,8 +30,8 @@ import {
 } from "../../shared/domain-guards";
 import {
 	dayBeforeIsoDate,
-	isEmployeeCompensationDraft,
 	isEmployeeCompensationCorrectable,
+	isEmployeeCompensationDraft,
 	isEmployeeCompensationScheduled,
 	resolveEmployeeCompensationApprovalStatus,
 } from "../../shared/employee-compensation-lifecycle";
@@ -140,7 +146,10 @@ export async function drizzleAmendEmployeeCompensation(
 		);
 	}
 	const comp = existing.data;
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be amended");
@@ -233,7 +242,10 @@ export async function drizzleAmendEmployeeCompensation(
 		}
 		return mapEmployeeCompensationSql(row);
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to amend employee compensation");
+		return mapPersistenceFailure(
+			error,
+			"Failed to amend employee compensation",
+		);
 	}
 }
 
@@ -260,13 +272,18 @@ export async function drizzleApproveEmployeeCompensation(
 		);
 	}
 	const comp = existing.data;
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be approved");
 	}
 
-	const nextStatus = resolveEmployeeCompensationApprovalStatus(comp.effectiveFrom);
+	const nextStatus = resolveEmployeeCompensationApprovalStatus(
+		comp.effectiveFrom,
+	);
 	if (nextStatus === "scheduled") {
 		const scheduled = await findEmployeeCompensationByEmploymentAndStatus(
 			input.organizationId,
@@ -478,7 +495,9 @@ export async function drizzleScheduleEmployeeCompensationChange(
 		);
 	}
 	if (!isEmployeeCompensationActive(active.data.status)) {
-		return invalidState("Scheduled changes require an active compensation agreement");
+		return invalidState(
+			"Scheduled changes require an active compensation agreement",
+		);
 	}
 	if (input.effectiveFrom <= active.data.effectiveFrom) {
 		return invalidState("Scheduled change must have a future effective date");
@@ -544,12 +563,19 @@ export async function drizzleActivateEmployeeCompensation(
 		);
 	}
 	const comp = existing.data;
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationScheduled(comp.status)) {
-		return invalidState("Only scheduled compensation agreements can be activated");
+		return invalidState(
+			"Only scheduled compensation agreements can be activated",
+		);
 	}
-	if (resolveEmployeeCompensationApprovalStatus(comp.effectiveFrom) !== "active") {
+	if (
+		resolveEmployeeCompensationApprovalStatus(comp.effectiveFrom) !== "active"
+	) {
 		return invalidState("Compensation effective date is still in the future");
 	}
 
@@ -721,7 +747,9 @@ export async function drizzleCorrectEmployeeCompensation(
 	}
 	const predecessor = predecessorResult.data;
 	if (!isEmployeeCompensationCorrectable(predecessor.status)) {
-		return invalidState("Compensation cannot be corrected in its current status");
+		return invalidState(
+			"Compensation cannot be corrected in its current status",
+		);
 	}
 
 	const reason =
@@ -765,7 +793,9 @@ export async function drizzleCorrectEmployeeCompensation(
 		actorId: input.actorUserId,
 		correlationId: meta.correlationId,
 	});
-	const predecessorEffectiveToForActiveEnd = dayBeforeIsoDate(input.effectiveFrom);
+	const predecessorEffectiveToForActiveEnd = dayBeforeIsoDate(
+		input.effectiveFrom,
+	);
 
 	try {
 		const [rows] = await runNeonHttpTransaction<[EmployeeCompensationSqlRow[]]>(
@@ -998,6 +1028,9 @@ export async function drizzleCorrectEmployeeCompensation(
 				return ok(replay.data);
 			}
 		}
-		return mapPersistenceFailure(error, "Failed to correct employee compensation");
+		return mapPersistenceFailure(
+			error,
+			"Failed to correct employee compensation",
+		);
 	}
 }

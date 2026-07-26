@@ -96,7 +96,7 @@ export async function createTalentPool(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
 				}),
 			);
 		},
@@ -126,7 +126,7 @@ export async function updateTalentPool(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
 				}),
 			);
 		},
@@ -154,7 +154,7 @@ export async function closeTalentPool(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
 				}),
 			);
 		},
@@ -217,7 +217,7 @@ export async function nominateTalentPoolMember(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
 				}),
 			);
 		},
@@ -246,7 +246,7 @@ export async function approveTalentPoolMember(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
 				}),
 			);
 		},
@@ -274,7 +274,7 @@ export async function removeTalentPoolMember(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
 				}),
 			);
 		},

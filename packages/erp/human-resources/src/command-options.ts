@@ -1,5 +1,6 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import { createProductionCurrencyLookup } from "./compensation-benefits/currency-lookup";
+import { createVaultDocumentReferenceAdapter } from "./compliance/vault-document-reference-adapter";
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 	humanResourcesErrorDetails,
@@ -9,6 +10,7 @@ import type {
 	ApprovedLeaveQueryPort,
 	AttendanceSourcePort,
 	CurrencyLookupPort,
+	DocumentObjectResolverPort,
 	DocumentReferencePort,
 	MutationPorts,
 	OrganizationDimensionDirectoryPort,
@@ -39,6 +41,7 @@ export type HumanResourcesCommandOptions = {
 	resourceAwareAuthorization?: HumanResourcesResourceAwareAuthorizationPort;
 	identityResolver?: HumanResourcesIdentityResolverPort;
 	privacy?: HumanResourcesPrivacyPort;
+	documentObjectResolver?: DocumentObjectResolverPort;
 };
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
@@ -105,8 +108,18 @@ export function requireAttendanceSource(
 export function requireDocumentReference(
 	options: HumanResourcesCommandOptions,
 ): Result<DocumentReferencePort> {
-	return requireCommandOptionPort(
-		options.documentReference,
+	if (options.documentReference !== undefined) {
+		return ok(options.documentReference);
+	}
+	if (options.documentObjectResolver !== undefined) {
+		return ok(
+			createVaultDocumentReferenceAdapter({
+				resolver: options.documentObjectResolver,
+			}),
+		);
+	}
+	return requireCommandOptionPort<DocumentReferencePort>(
+		undefined,
 		"Document reference adapter is required for this command.",
 	);
 }

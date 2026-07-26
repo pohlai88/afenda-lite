@@ -104,7 +104,7 @@ export async function createSuccessionPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
 				}),
 			);
 		},
@@ -132,7 +132,7 @@ export async function updateSuccessionPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
 				}),
 			);
 		},
@@ -196,7 +196,7 @@ export async function nominateSuccessionCandidate(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
+					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
 				}),
 			);
 		},
@@ -225,7 +225,7 @@ export async function assessSuccessionReadiness(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
 				}),
 			);
@@ -252,7 +252,7 @@ export async function approveSuccessionCandidate(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
 				}),
 			);
 		},
@@ -278,7 +278,7 @@ export async function removeSuccessionCandidate(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
+					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
 				}),
 			);
 		},
@@ -304,7 +304,7 @@ export async function closeSuccessionPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
 				}),
 			);
 		},

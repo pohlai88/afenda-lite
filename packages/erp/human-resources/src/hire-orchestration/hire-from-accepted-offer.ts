@@ -71,7 +71,7 @@ async function persistAttemptProgress(
 ): Promise<Result<HireAttempt>> {
 	const meta = buildMutationMeta({
 		correlationId: ctx.input.correlationId,
-		operation: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
+		operationId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 	});
 	return ctx.deps.store.updateHireAttemptProgress(
 		{
@@ -119,7 +119,9 @@ async function failSaga(
 	return cause;
 }
 
-async function verifyReservation(ctx: SagaContext): Promise<Result<HireAttempt>> {
+async function verifyReservation(
+	ctx: SagaContext,
+): Promise<Result<HireAttempt>> {
 	if (isHireStepComplete(ctx.attempt, "reservation_verified")) {
 		return ok(ctx.attempt);
 	}
@@ -159,7 +161,10 @@ async function verifyReservation(ctx: SagaContext): Promise<Result<HireAttempt>>
 }
 
 async function runPersonStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
-	if (isHireStepComplete(ctx.attempt, "person_created") && ctx.attempt.personId) {
+	if (
+		isHireStepComplete(ctx.attempt, "person_created") &&
+		ctx.attempt.personId
+	) {
 		return ok(ctx.attempt);
 	}
 
@@ -168,7 +173,10 @@ async function runPersonStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 			organizationId: ctx.input.organizationId,
 			actorUserId: ctx.input.actorUserId,
 			correlationId: ctx.input.correlationId,
-			idempotencyKey: hireStepIdempotencyKey(ctx.input.idempotencyKey, "person"),
+			idempotencyKey: hireStepIdempotencyKey(
+				ctx.input.idempotencyKey,
+				"person",
+			),
 			legalName: ctx.legalName,
 			preferredName: ctx.input.preferredName ?? null,
 		},
@@ -202,7 +210,10 @@ async function runEmployeeStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 			organizationId: ctx.input.organizationId,
 			actorUserId: ctx.input.actorUserId,
 			correlationId: ctx.input.correlationId,
-			idempotencyKey: hireStepIdempotencyKey(ctx.input.idempotencyKey, "employee"),
+			idempotencyKey: hireStepIdempotencyKey(
+				ctx.input.idempotencyKey,
+				"employee",
+			),
 			employeeNumber: ctx.input.employeeNumber,
 			legalName: ctx.legalName,
 		},
@@ -223,7 +234,9 @@ async function runEmployeeStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 	return ok(updated.data);
 }
 
-async function runEmploymentStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
+async function runEmploymentStep(
+	ctx: SagaContext,
+): Promise<Result<HireAttempt>> {
 	if (
 		isHireStepComplete(ctx.attempt, "employment_created") &&
 		ctx.attempt.employmentId
@@ -265,7 +278,10 @@ async function runEmploymentStep(ctx: SagaContext): Promise<Result<HireAttempt>>
 }
 
 async function runWorkerStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
-	if (isHireStepComplete(ctx.attempt, "worker_created") && ctx.attempt.workerId) {
+	if (
+		isHireStepComplete(ctx.attempt, "worker_created") &&
+		ctx.attempt.workerId
+	) {
 		return ok(ctx.attempt);
 	}
 
@@ -282,7 +298,10 @@ async function runWorkerStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 			organizationId: ctx.input.organizationId,
 			actorUserId: ctx.input.actorUserId,
 			correlationId: ctx.input.correlationId,
-			idempotencyKey: hireStepIdempotencyKey(ctx.input.idempotencyKey, "worker"),
+			idempotencyKey: hireStepIdempotencyKey(
+				ctx.input.idempotencyKey,
+				"worker",
+			),
 			workerType: "employee",
 			personId: ctx.attempt.personId,
 			employeeId: ctx.attempt.employeeId,
@@ -305,7 +324,9 @@ async function runWorkerStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 	return ok(updated.data);
 }
 
-async function runAssignmentStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
+async function runAssignmentStep(
+	ctx: SagaContext,
+): Promise<Result<HireAttempt>> {
 	if (
 		isHireStepComplete(ctx.attempt, "assignment_created") &&
 		ctx.attempt.assignmentId
@@ -352,7 +373,9 @@ async function runAssignmentStep(ctx: SagaContext): Promise<Result<HireAttempt>>
 	return ok(updated.data);
 }
 
-async function runOnboardingStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
+async function runOnboardingStep(
+	ctx: SagaContext,
+): Promise<Result<HireAttempt>> {
 	if (
 		isHireStepComplete(ctx.attempt, "onboarding_started") &&
 		ctx.attempt.onboardingCaseId
@@ -494,7 +517,9 @@ async function loadAcceptedOfferContext(
 		return fail(
 			"BAD_REQUEST",
 			"Offer must be accepted before hire orchestration",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			),
 		);
 	}
 
@@ -602,7 +627,11 @@ export async function hireFromAcceptedOffer(
 					);
 				}
 				if (existing.data.attempt.status === "completed") {
-					const offerLoaded = await loadAcceptedOfferContext(data, deps, options);
+					const offerLoaded = await loadAcceptedOfferContext(
+						data,
+						deps,
+						options,
+					);
 					if (!offerLoaded.ok) {
 						return offerLoaded;
 					}
@@ -640,7 +669,7 @@ export async function hireFromAcceptedOffer(
 			if (attempt === null) {
 				const meta = buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
+					operationId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 				});
 				const created = await deps.store.createHireAttempt(
 					{
@@ -680,7 +709,7 @@ export async function hireFromAcceptedOffer(
 				commandId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 				meta: buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
+					operationId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 				}),
 				organizationId: data.organizationId,
 				actorUserId: data.actorUserId,

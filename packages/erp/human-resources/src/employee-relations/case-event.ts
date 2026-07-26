@@ -43,7 +43,7 @@ export async function recordEmployeeCaseEvent(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
 				}),
 			),
 	});
@@ -83,7 +83,7 @@ export async function addEmployeeCaseEvidenceReference(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE,
 				}),
 			);
@@ -111,7 +111,7 @@ export async function redactEmployeeCaseEvidenceReference(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE,
 				}),
 			),

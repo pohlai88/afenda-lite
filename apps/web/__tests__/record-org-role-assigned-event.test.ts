@@ -125,6 +125,7 @@ describe("recordOrgRoleAssignedEvent", () => {
 			userId: "user-target",
 			roleId: "role-1",
 			assignmentId: "assign-1",
+			eventId: "evt-1",
 			actorUserId: "user-actor",
 			reactivated: false,
 		});

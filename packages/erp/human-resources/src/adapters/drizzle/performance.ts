@@ -33,7 +33,6 @@ import {
 	type HumanResourcesImprovementPlanId,
 	type HumanResourcesPerformanceCycleId,
 	type HumanResourcesReviewId,
-	type HumanResourcesReviewParticipantId,
 	humanResourcesAssessmentIdSchema,
 	humanResourcesGoalProgressIdSchema,
 	humanResourcesImprovementCheckpointIdSchema,
@@ -57,12 +56,9 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import { assertExpectedVersion } from "../../shared/concurrency";
+import { projectPerformanceReviewDetailForReader } from "../../performance/performance-field-projection";
 import { tenureDaysOn } from "../../shared/benefit-guards";
-import {
-	assertEmploymentEligibleForPerformanceCycle,
-	isEmploymentEligibleForPerformanceCycle,
-} from "../../shared/performance-cycle-eligibility";
+import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
 	invalidInput,
@@ -70,7 +66,13 @@ import {
 	missAfterOptimisticUpdate,
 	notFound,
 } from "../../shared/domain-guards";
+import { employmentStatusSchema } from "../../shared/employment-status";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
+import {
+	assertEmploymentEligibleForPerformanceCycle,
+	isEmploymentEligibleForPerformanceCycle,
+	performanceCycleEligibilityAsOfDate,
+} from "../../shared/performance-cycle-eligibility";
 import {
 	assertCheckpointOutcomeTransition,
 	assertCyclePublishReady,
@@ -81,8 +83,10 @@ import {
 	assertGoalStatusTransition,
 	assertGoalWeightForModel,
 	assertGoalWeightsSumTo100,
+	assertImprovementPlanExtension,
+	assertImprovementPlanMilestones,
 	assertImprovementPlanStatusTransition,
-	assertAllDelegatedAssessmentsSubmitted,
+	assertNoPendingCheckpoints,
 	assertPriorDelegatedAssessmentsSubmitted,
 	assertReviewNotFinalized,
 	assertReviewPeriodsNonOverlapping,
@@ -95,9 +99,7 @@ import {
 	assertRatingScaleUniqueCodes,
 	parseRatingScale,
 	validateRatingInScale,
-	type PerformanceRatingScale,
 } from "../../shared/performance-rating";
-import { employmentStatusSchema } from "../../shared/employment-status";
 import {
 	isPerformanceCycleConfigurable,
 	isPerformanceCycleOpen,
@@ -131,6 +133,7 @@ import type {
 	PerformanceGoalProgress,
 	PerformanceGoalProgressListPage,
 	PerformanceImprovementCheckpoint,
+	PerformanceImprovementCheckpointListPage,
 	PerformanceImprovementPlan,
 	PerformanceReview,
 	PerformanceReviewParticipant,
@@ -139,7 +142,6 @@ import {
 	PERFORMANCE_REVIEW_MANAGER_SEQUENCE,
 	PERFORMANCE_REVIEW_SELF_SEQUENCE,
 } from "../../types";
-import { projectPerformanceReviewDetailForReader } from "../../performance/performance-field-projection";
 
 type PerformanceHost = {
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
@@ -209,6 +211,7 @@ export type DrizzlePerformanceMethods = Pick<
 	| "closeImprovementPlanUnsuccessful"
 	| "cancelImprovementPlan"
 	| "listActiveImprovementPlans"
+	| "listImprovementPlanCheckpoints"
 	| "getEmployeePerformanceHistory"
 >;
 
@@ -371,6 +374,10 @@ type PlanSqlRow = {
 	due_date: string;
 	accountable_manager_employee_id: string;
 	status: string;
+	outcome_reason: string | null;
+	outcome_evidence_reference: string | null;
+	last_extension_reason: string | null;
+	last_extension_evidence_reference: string | null;
 	create_idempotency_key: string;
 	create_request_fingerprint: string;
 	version: number;
@@ -388,6 +395,7 @@ type CheckpointSqlRow = {
 	due_date: string;
 	outcome: string;
 	notes: string | null;
+	evidence_reference: string | null;
 	recorded_by: string | null;
 	recorded_at: Date | null;
 	created_at: Date;
@@ -544,7 +552,10 @@ async function loadCycleReviewPeriods(input: {
 			.from(hrPerformanceCycleReviewPeriod)
 			.where(
 				and(
-					eq(hrPerformanceCycleReviewPeriod.organizationId, input.organizationId),
+					eq(
+						hrPerformanceCycleReviewPeriod.organizationId,
+						input.organizationId,
+					),
 					eq(hrPerformanceCycleReviewPeriod.cycleId, input.cycleId),
 				),
 			);
@@ -581,7 +592,10 @@ async function loadCycleEligibility(input: {
 			.from(hrPerformanceCycleEligibility)
 			.where(
 				and(
-					eq(hrPerformanceCycleEligibility.organizationId, input.organizationId),
+					eq(
+						hrPerformanceCycleEligibility.organizationId,
+						input.organizationId,
+					),
 					eq(hrPerformanceCycleEligibility.cycleId, input.cycleId),
 				),
 			)
@@ -823,7 +837,9 @@ function mapAssessmentSql(
 	if (!id.ok) return id;
 	const reviewId = parseHumanResourcesReviewId(row.review_id);
 	if (!reviewId.ok) return reviewId;
-	const participantId = parseHumanResourcesReviewParticipantId(row.participant_id);
+	const participantId = parseHumanResourcesReviewParticipantId(
+		row.participant_id,
+	);
 	if (!participantId.ok) return participantId;
 	const kind = performanceAssessmentKindSchema.safeParse(row.kind);
 	if (!kind.success) return fail("INTERNAL_ERROR", "Invalid assessment kind");
@@ -893,6 +909,10 @@ function mapPlanSql(row: PlanSqlRow): Result<PerformanceImprovementPlan> {
 		dueDate: row.due_date,
 		accountableManagerEmployeeId: managerId.data,
 		status: status.data,
+		outcomeReason: row.outcome_reason,
+		outcomeEvidenceReference: row.outcome_evidence_reference,
+		lastExtensionReason: row.last_extension_reason,
+		lastExtensionEvidenceReference: row.last_extension_evidence_reference,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -917,6 +937,10 @@ function mapPlan(
 		due_date: row.dueDate,
 		accountable_manager_employee_id: row.accountableManagerEmployeeId,
 		status: row.status,
+		outcome_reason: row.outcomeReason,
+		outcome_evidence_reference: row.outcomeEvidenceReference,
+		last_extension_reason: row.lastExtensionReason,
+		last_extension_evidence_reference: row.lastExtensionEvidenceReference,
 		create_idempotency_key: row.createIdempotencyKey,
 		create_request_fingerprint: row.createRequestFingerprint,
 		version: row.version,
@@ -945,6 +969,7 @@ function mapCheckpointSql(
 		dueDate: row.due_date,
 		outcome: outcome.data,
 		notes: row.notes,
+		evidenceReference: row.evidence_reference,
 		recordedBy: row.recorded_by,
 		recordedAt: row.recorded_at,
 		createdAt: row.created_at,
@@ -963,6 +988,7 @@ function _mapCheckpoint(
 		due_date: row.dueDate,
 		outcome: row.outcome,
 		notes: row.notes,
+		evidence_reference: row.evidenceReference,
 		recorded_by: row.recordedBy,
 		recorded_at: row.recordedAt,
 		created_at: row.createdAt,
@@ -1135,9 +1161,7 @@ async function mutateGoalStatus(
 async function loadAlignmentAncestorMap(input: {
 	organizationId: string;
 	startParentId: HumanResourcesGoalId;
-}): Promise<
-	Map<string, { id: string; alignedToGoalId: string | null }>
-> {
+}): Promise<Map<string, { id: string; alignedToGoalId: string | null }>> {
 	const map = new Map<string, { id: string; alignedToGoalId: string | null }>();
 	let cursor: string | null = input.startParentId;
 	while (cursor !== null) {
@@ -1252,6 +1276,39 @@ async function mutateReviewStatus(
 		return mapPersistenceFailure(
 			error,
 			"Failed to update performance review status",
+		);
+	}
+}
+
+async function listImprovementPlanCheckpointsForPlan(input: {
+	organizationId: string;
+	planId: HumanResourcesImprovementPlanId;
+}): Promise<Result<PerformanceImprovementCheckpoint[]>> {
+	try {
+		const rows = await db
+			.select()
+			.from(hrPerformanceImprovementCheckpoint)
+			.where(
+				and(
+					eq(
+						hrPerformanceImprovementCheckpoint.organizationId,
+						input.organizationId,
+					),
+					eq(hrPerformanceImprovementCheckpoint.planId, input.planId),
+				),
+			)
+			.orderBy(hrPerformanceImprovementCheckpoint.sequenceNumber);
+		const checkpoints: PerformanceImprovementCheckpoint[] = [];
+		for (const row of rows) {
+			const mapped = _mapCheckpoint(row);
+			if (!mapped.ok) return mapped;
+			checkpoints.push(mapped.data);
+		}
+		return ok(checkpoints);
+	} catch (error) {
+		return mapPersistenceFailure(
+			error,
+			"Failed to list improvement plan checkpoints",
 		);
 	}
 }
@@ -2028,7 +2085,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			}
 			return mapCycleSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to publish performance cycle");
+			return mapPersistenceFailure(
+				error,
+				"Failed to publish performance cycle",
+			);
 		}
 	},
 
@@ -2064,7 +2124,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const kinds = new Set(input.periods.map((period) => period.kind));
 		if (kinds.size !== input.periods.length) {
-			return invalidInput("Each review period kind may only be configured once");
+			return invalidInput(
+				"Each review period kind may only be configured once",
+			);
 		}
 
 		const nextPeriods: PerformanceCycleReviewPeriod[] = input.periods.map(
@@ -2242,7 +2304,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 								allowed_employment_statuses, created_by, updated_by
 							)
 							VALUES (
-								${id}, ${input.organizationId}, ${input.cycleId}, ${input.minTenureDays},
+								${id}, ${input.organizationId}, ${input.cycleId}, ${input.minTenureDays}::integer,
 								${allowedStatuses}, ${input.actorUserId}, ${input.actorUserId}
 							)
 							ON CONFLICT (organization_id, cycle_id)
@@ -2394,6 +2456,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 							employeeId: employee.id,
 							employmentId: employmentRef.id,
 							actorUserId: input.actorUserId,
+							asOfDate: input.asOfDate,
 						},
 						_ports,
 						meta,
@@ -2401,8 +2464,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					if (!added.ok) {
 						if (
 							added.code === "CONFLICT" &&
-							added.message ===
-								"Participant is already active in this cycle"
+							added.message === "Participant is already active in this cycle"
 						) {
 							continue;
 						}
@@ -2471,7 +2533,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				eligibility: eligibility.data,
 				employmentStatus: employment.data.status,
 				employmentStartsOn: employment.data.startsOn,
-				asOfDate: cycle.data.periodStart,
+				asOfDate: performanceCycleEligibilityAsOfDate({
+					cyclePeriodStart: cycle.data.periodStart,
+					eligibilityAsOfDate: input.asOfDate,
+				}),
 			});
 			if (!eligibilityCheck.ok) return eligibilityCheck;
 		}
@@ -3425,9 +3490,9 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		}
 	},
 
-	async listGoalProgress(input): Promise<
-		Result<PerformanceGoalProgressListPage>
-	> {
+	async listGoalProgress(
+		input,
+	): Promise<Result<PerformanceGoalProgressListPage>> {
 		try {
 			const rows = await db
 				.select()
@@ -3826,7 +3891,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const participant = detail.data.participants.find(
 			(item) => item.id === input.participantId,
 		);
-		if (!participant || participant.role !== "delegated") {
+		if (participant?.role !== "delegated") {
 			return invalidInput("Participant is not a delegated reviewer");
 		}
 		if (participant.employeeId !== input.delegatedEmployeeId) {
@@ -4020,7 +4085,10 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			}
 			return mapReviewSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to calibrate performance review");
+			return mapPersistenceFailure(
+				error,
+				"Failed to calibrate performance review",
+			);
 		}
 	},
 
@@ -4651,56 +4719,70 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const idResult = parseHumanResourcesImprovementPlanId(randomUUID());
 		if (!idResult.ok) return idResult;
-		const checkpointId = newBrandId(
-			humanResourcesImprovementCheckpointIdSchema,
-		);
-		if (!checkpointId.ok) return checkpointId;
 		const auditId = randomUUID();
+		const checkpointIds: Array<Result<string>> = [];
+		for (const _milestone of record.milestones) {
+			const checkpointId = newBrandId(
+				humanResourcesImprovementCheckpointIdSchema,
+			);
+			if (!checkpointId.ok) return checkpointId;
+			checkpointIds.push(ok(checkpointId.data));
+		}
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PlanSqlRow[]]>((sqlTag) => [
-				sqlTag`
-					WITH inserted_plan AS (
-						INSERT INTO hr_performance_improvement_plan (
-							id, organization_id, review_id, employee_id, employment_id,
-							performance_gap, expected_outcome, measurable_actions, support_resources,
-							due_date, accountable_manager_employee_id, status,
-							create_idempotency_key, create_request_fingerprint,
-							version, created_by, updated_by
-						) VALUES (
-							${idResult.data}, ${record.organizationId}, ${record.reviewId},
-							${record.employeeId}, ${record.employmentId},
-							${record.performanceGap}, ${record.expectedOutcome},
-							${record.measurableActions}, ${record.supportResources},
-							${record.dueDate}, ${record.accountableManagerEmployeeId}, 'draft',
-							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
-							1, ${record.createdBy}, ${record.createdBy}
+			const [rows] = await runNeonHttpTransaction<[PlanSqlRow[]]>((sqlTag) => {
+				const statements = [
+					sqlTag`
+						WITH inserted_plan AS (
+							INSERT INTO hr_performance_improvement_plan (
+								id, organization_id, review_id, employee_id, employment_id,
+								performance_gap, expected_outcome, measurable_actions, support_resources,
+								due_date, accountable_manager_employee_id, status,
+								create_idempotency_key, create_request_fingerprint,
+								version, created_by, updated_by
+							) VALUES (
+								${idResult.data}, ${record.organizationId}, ${record.reviewId},
+								${record.employeeId}, ${record.employmentId},
+								${record.performanceGap}, ${record.expectedOutcome},
+								${record.measurableActions}, ${record.supportResources},
+								${record.dueDate}, ${record.accountableManagerEmployeeId}, 'draft',
+								${record.createIdempotencyKey}, ${record.createRequestFingerprint},
+								1, ${record.createdBy}, ${record.createdBy}
+							)
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, created_by, ${meta.correlationId},
+								'human-resources', 'hr_performance_improvement_plan', id, 'CREATE', '[]'::jsonb
+							FROM inserted_plan
+							RETURNING id
 						)
-						RETURNING *
-					),
-					inserted_checkpoint AS (
-						INSERT INTO hr_performance_improvement_checkpoint (
-							id, organization_id, plan_id, sequence_number, due_date, outcome
-						)
-						SELECT
-							${checkpointId.data}, organization_id, id, 1, due_date, 'pending'
-						FROM inserted_plan
-						RETURNING plan_id
-					),
-					audited AS (
-						INSERT INTO platform_audit_log (
-							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
-						)
-						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
-							'human-resources', 'hr_performance_improvement_plan', id, 'CREATE', '[]'::jsonb
-						FROM inserted_plan
-						RETURNING id
-					)
-					SELECT inserted_plan.* FROM inserted_plan, audited
-				`,
-			]);
+						SELECT inserted_plan.* FROM inserted_plan, audited
+					`,
+				];
+				for (const [index, milestone] of record.milestones.entries()) {
+					const checkpointId = checkpointIds[index];
+					if (!checkpointId?.ok) {
+						continue;
+					}
+					statements.push(
+						sqlTag`
+							INSERT INTO hr_performance_improvement_checkpoint (
+								id, organization_id, plan_id, sequence_number, due_date, outcome
+							) VALUES (
+								${checkpointId.data}, ${record.organizationId}, ${idResult.data},
+								${index + 1}, ${milestone.dueDate}, 'pending'
+							)
+						`,
+					);
+				}
+				return statements;
+			});
 			const row = rows[0];
 			if (!row)
 				return fail("INTERNAL_ERROR", "Failed to create improvement plan");
@@ -4880,6 +4962,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						UPDATE hr_performance_improvement_checkpoint
 						SET outcome = ${input.outcome},
 							notes = ${input.notes},
+							evidence_reference = ${input.evidenceReference},
 							recorded_by = ${input.actorUserId},
 							recorded_at = ${recordedAt},
 							updated_at = now()
@@ -4943,6 +5026,41 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		);
 		if (!versionCheck.ok) return versionCheck;
 
+		const extensionCheck = assertImprovementPlanExtension({
+			currentDueDate: existing.data.dueDate,
+			nextDueDate: input.dueDate,
+			extensionReason: input.extensionReason,
+		});
+		if (!extensionCheck.ok) return extensionCheck;
+
+		const nextDueDate = input.dueDate ?? existing.data.dueDate;
+		const extending = nextDueDate > existing.data.dueDate;
+		const existingCheckpoints = await listImprovementPlanCheckpointsForPlan({
+			organizationId: input.organizationId,
+			planId: input.planId,
+		});
+		if (!existingCheckpoints.ok) return existingCheckpoints;
+		if (extending) {
+			const milestoneValidation = assertImprovementPlanMilestones({
+				planDueDate: nextDueDate,
+				milestones: [
+					...existingCheckpoints.data.map((checkpoint) => ({
+						dueDate: checkpoint.dueDate,
+					})),
+					{ dueDate: nextDueDate },
+				],
+			});
+			if (!milestoneValidation.ok) return milestoneValidation;
+		}
+
+		const performanceGap =
+			input.performanceGap !== undefined
+				? input.performanceGap
+				: existing.data.performanceGap;
+		const expectedOutcome =
+			input.expectedOutcome !== undefined
+				? input.expectedOutcome
+				: existing.data.expectedOutcome;
 		const measurableActions =
 			input.measurableActions !== undefined
 				? input.measurableActions
@@ -4951,40 +5069,76 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			input.supportResources !== undefined
 				? input.supportResources
 				: existing.data.supportResources;
-		const dueDate = input.dueDate ?? existing.data.dueDate;
+		const lastExtensionReason = extending
+			? (input.extensionReason ?? null)
+			: existing.data.lastExtensionReason;
+		const lastExtensionEvidenceReference = extending
+			? (input.extensionEvidenceReference ?? null)
+			: existing.data.lastExtensionEvidenceReference;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
+		const extensionCheckpointId = extending
+			? newBrandId(humanResourcesImprovementCheckpointIdSchema)
+			: null;
+		if (extensionCheckpointId !== null && !extensionCheckpointId.ok) {
+			return extensionCheckpointId;
+		}
+		const nextSequence = extending
+			? existingCheckpoints.data.reduce(
+					(max, checkpoint) => Math.max(max, checkpoint.sequenceNumber),
+					0,
+				) + 1
+			: 0;
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PlanSqlRow[]]>((sqlTag) => [
-				sqlTag`
-					WITH mutated AS (
-						UPDATE hr_performance_improvement_plan
-						SET measurable_actions = ${measurableActions},
-							support_resources = ${supportResources},
-							due_date = ${dueDate},
-							version = ${nextVersion},
-							updated_by = ${input.actorUserId},
-							updated_at = now()
-						WHERE id = ${input.planId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-						RETURNING *
-					),
-					audited AS (
-						INSERT INTO platform_audit_log (
-							id, organization_id, actor_user_id, correlation_id, module, entity,
-							entity_id, action, changes
+			const [rows] = await runNeonHttpTransaction<[PlanSqlRow[]]>((sqlTag) => {
+				const statements = [
+					sqlTag`
+						WITH mutated AS (
+							UPDATE hr_performance_improvement_plan
+							SET performance_gap = ${performanceGap},
+								expected_outcome = ${expectedOutcome},
+								measurable_actions = ${measurableActions},
+								support_resources = ${supportResources},
+								due_date = ${nextDueDate},
+								last_extension_reason = ${lastExtensionReason},
+								last_extension_evidence_reference = ${lastExtensionEvidenceReference},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.planId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_performance_improvement_plan', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
 						)
-						SELECT
-							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
-							'human-resources', 'hr_performance_improvement_plan', id, 'UPDATE', '[]'::jsonb
-						FROM mutated
-						RETURNING id
-					)
-					SELECT mutated.* FROM mutated, audited
-				`,
-			]);
+						SELECT mutated.* FROM mutated, audited
+					`,
+				];
+				if (extending && extensionCheckpointId?.ok) {
+					statements.push(
+						sqlTag`
+							INSERT INTO hr_performance_improvement_checkpoint (
+								id, organization_id, plan_id, sequence_number, due_date, outcome
+							) VALUES (
+								${extensionCheckpointId.data}, ${input.organizationId}, ${input.planId},
+								${nextSequence}, ${nextDueDate}, 'pending'
+							)
+						`,
+					);
+				}
+				return statements;
+			});
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -5021,6 +5175,14 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		);
 		if (!transition.ok) return transition;
 
+		const checkpoints = await listImprovementPlanCheckpointsForPlan({
+			organizationId: input.organizationId,
+			planId: input.planId,
+		});
+		if (!checkpoints.ok) return checkpoints;
+		const pendingCheck = assertNoPendingCheckpoints(checkpoints.data);
+		if (!pendingCheck.ok) return pendingCheck;
+
 		const plan = existing.data;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -5039,6 +5201,8 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					WITH mutated AS (
 						UPDATE hr_performance_improvement_plan
 						SET status = 'completed',
+							outcome_reason = ${input.outcomeReason ?? null},
+							outcome_evidence_reference = ${input.outcomeEvidenceReference ?? null},
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
@@ -5091,7 +5255,85 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	},
 
 	async closeImprovementPlanUnsuccessful(input, _ports, meta) {
-		return mutatePlanStatus(this, input, "unsuccessful", meta);
+		const existing = await this.getImprovementPlanById({
+			organizationId: input.organizationId,
+			planId: input.planId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound(
+				"Improvement plan not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const transition = assertImprovementPlanStatusTransition(
+			existing.data.status,
+			"unsuccessful",
+		);
+		if (!transition.ok) return transition;
+
+		const checkpoints = await listImprovementPlanCheckpointsForPlan({
+			organizationId: input.organizationId,
+			planId: input.planId,
+		});
+		if (!checkpoints.ok) return checkpoints;
+		const pendingCheck = assertNoPendingCheckpoints(checkpoints.data);
+		if (!pendingCheck.ok) return pendingCheck;
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		const currentStatus = existing.data.status;
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[PlanSqlRow[]]>((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_performance_improvement_plan
+						SET status = 'unsuccessful',
+							outcome_reason = ${input.outcomeReason ?? null},
+							outcome_evidence_reference = ${input.outcomeEvidenceReference ?? null},
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.planId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+							AND status = ${currentStatus}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_performance_improvement_plan', id, 'UPDATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Improvement plan",
+				});
+			}
+			return mapPlanSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to close improvement plan unsuccessful",
+			);
+		}
 	},
 
 	async cancelImprovementPlan(input, _ports, meta) {
@@ -5131,6 +5373,26 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				"Failed to list active improvement plans",
 			);
 		}
+	},
+
+	async listImprovementPlanCheckpoints(input) {
+		const plan = await this.getImprovementPlanById({
+			organizationId: input.organizationId,
+			planId: input.planId,
+		});
+		if (!plan.ok) return plan;
+		if (plan.data === null) {
+			return notFound(
+				"Improvement plan not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
+		}
+		const checkpoints = await listImprovementPlanCheckpointsForPlan(input);
+		if (!checkpoints.ok) return checkpoints;
+		return ok({
+			checkpoints: checkpoints.data,
+			totalCount: checkpoints.data.length,
+		} satisfies PerformanceImprovementCheckpointListPage);
 	},
 
 	async getEmployeePerformanceHistory(input) {

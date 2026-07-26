@@ -1,7 +1,6 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { resolveAssignmentContext } from "../command-options";
 import type { HumanResourcesCommandOptions } from "../command-options";
+import { resolveAssignmentContext } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,

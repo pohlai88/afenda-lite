@@ -10,11 +10,6 @@ import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesPermission } from "../src/authorization";
 import {
-	enrolBenefit,
-	getApprovedCompensationHandoff,
-	waiveBenefit,
-} from "../src/compensation-benefits/benefit-enrollment";
-import {
 	addBenefitEnrollmentDependent,
 	endBenefitEnrollmentDependent,
 } from "../src/compensation-benefits/benefit-dependent";
@@ -22,6 +17,11 @@ import {
 	getBenefitPlanEligibility,
 	setBenefitPlanEligibility,
 } from "../src/compensation-benefits/benefit-eligibility";
+import {
+	enrolBenefit,
+	getApprovedCompensationHandoff,
+	waiveBenefit,
+} from "../src/compensation-benefits/benefit-enrollment";
 import { createBenefitPlan } from "../src/compensation-benefits/benefit-plan";
 import {
 	archiveCompensationGrade,
@@ -44,7 +44,6 @@ import {
 	recordCompensationRecommendation,
 } from "../src/compensation-benefits/compensation-review";
 import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
-import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
 import {
 	approveEmployeeCompensation,
 	createEmployeeCompensation,
@@ -74,6 +73,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -95,9 +95,9 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 	const seedReady = {
 		...ready,
 		authorization: createGrantingHumanResourcesAuthorization([
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 		]),
 	};
 	const employee = await createEmployee(
@@ -443,7 +443,9 @@ describe("compensation & benefits (HR-07)", () => {
 	});
 
 	it("blocks grade archive when active salary bands exist", async () => {
-		const manageReady = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]);
+		const manageReady = harness([
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+		]);
 		const grade = await seedGrade(manageReady);
 		expect(grade.ok).toBe(true);
 		if (!grade.ok) return;
@@ -483,7 +485,9 @@ describe("compensation & benefits (HR-07)", () => {
 	});
 
 	it("creates, lists, and archives compensation grade progression rules", async () => {
-		const manageReady = harness([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]);
+		const manageReady = harness([
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+		]);
 		const readReady = {
 			...manageReady,
 			authorization: createGrantingHumanResourcesAuthorization([

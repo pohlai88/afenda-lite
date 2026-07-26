@@ -66,7 +66,7 @@ export async function updatePersonPreferredName(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE,
 				}),
 			);
 		},
@@ -93,7 +93,8 @@ export async function setPersonPrivacyClassification(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET,
 				}),
 			);
 		},
@@ -155,7 +156,7 @@ export async function addPersonContact(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_ADD,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_ADD,
 				}),
 			);
 		},
@@ -203,7 +204,7 @@ export async function updatePersonContact(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_UPDATE,
 				}),
 			);
 		},
@@ -230,7 +231,7 @@ export async function retirePersonContact(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_RETIRE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_RETIRE,
 				}),
 			);
 		},
@@ -310,7 +311,7 @@ export async function addPersonIdentifier(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_ADD,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_ADD,
 				}),
 			);
 		},
@@ -338,7 +339,7 @@ export async function retirePersonIdentifier(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_RETIRE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_RETIRE,
 				}),
 			);
 		},

@@ -107,8 +107,8 @@ Do not add to this package: NATS / JetStream / Redis buses, Next.js / `ActionRes
 
 | Topic | Link |
 |-------|------|
-| Events Scratch | [docs-V2/events](../../docs-V2/events/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Sales consumer · outbox emitters | [`@afenda/sales`](../sales/README.md) · [arch-006-consumer-contract.md](../../docs-V2/master-data/arch-006-consumer-contract.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Events Scratch | [docs-V2/events](../../../docs-V2/events/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Sales consumer · outbox emitters | [`@afenda/sales`](../../erp/sales/README.md) · [arch-006-consumer-contract.md](../../../docs-V2/master-data/arch-006-consumer-contract.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

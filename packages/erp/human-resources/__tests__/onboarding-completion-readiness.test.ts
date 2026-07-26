@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { HumanResourcesEmployeeId, HumanResourcesWorkEligibilityId } from "../src/brands";
+import type {
+	HumanResourcesEmployeeId,
+	HumanResourcesWorkEligibilityId,
+} from "../src/brands";
 import {
 	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
 	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
@@ -14,7 +17,8 @@ import type { WorkEligibility } from "../src/types";
 const activeWorkEligibility: WorkEligibility = {
 	id: "00000000-0000-4000-8000-000000000001" as HumanResourcesWorkEligibilityId,
 	organizationId: "org-test",
-	employeeId: "00000000-0000-4000-8000-000000000002" as HumanResourcesEmployeeId,
+	employeeId:
+		"00000000-0000-4000-8000-000000000002" as HumanResourcesEmployeeId,
 	countryCode: "US",
 	jurisdiction: null,
 	status: "verified",

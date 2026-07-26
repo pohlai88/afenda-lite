@@ -6,12 +6,12 @@ import {
 	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
+	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
 	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
-	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
@@ -117,11 +117,13 @@ describe("mutation emission registry parity", () => {
 			expect(registryCommands.has(command)).toBe(true);
 		}
 		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
-			(HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS as readonly string[]).includes(
-				entry.command,
-			),
+			(
+				HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS as readonly string[]
+			).includes(entry.command),
 		);
-		expect(rows).toHaveLength(HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS.length);
+		expect(rows).toHaveLength(
+			HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS.length,
+		);
 	});
 
 	it("every recruitment command appears exactly once in the emission registry", () => {
@@ -235,19 +237,20 @@ describe("mutation emission registry parity", () => {
 		);
 	});
 
-	it.each(SLICE_36_CLASSIFIED_PACKS)(
-		"registers every classified $label command in the emission registry",
-		({ commandIds }) => {
-			const registryCommands = new Set(
-				HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
-			);
-			for (const command of commandIds) {
-				expect(registryCommands.has(command)).toBe(true);
-			}
-			const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
-				(commandIds as readonly string[]).includes(entry.command),
-			);
-			expect(rows).toHaveLength(commandIds.length);
-		},
-	);
+	it.each(
+		SLICE_36_CLASSIFIED_PACKS,
+	)("registers every classified $label command in the emission registry", ({
+		commandIds,
+	}) => {
+		const registryCommands = new Set(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map((entry) => entry.command),
+		);
+		for (const command of commandIds) {
+			expect(registryCommands.has(command)).toBe(true);
+		}
+		const rows = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.filter((entry) =>
+			(commandIds as readonly string[]).includes(entry.command),
+		);
+		expect(rows).toHaveLength(commandIds.length);
+	});
 });

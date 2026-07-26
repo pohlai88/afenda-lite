@@ -14,13 +14,9 @@ import type {
 	HireAttempt,
 	HireCompensationLogEntry,
 } from "../../hire-orchestration/types";
-import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict } from "../../shared/domain-guards";
-import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import type {
-	HireAttemptCreateRecord,
-	HireAttemptProgressUpdate,
 	HumanResourcesHireOrchestrationStore,
 	IdempotentHireAttemptRecord,
 } from "../../store/hire-orchestration";
@@ -30,7 +26,10 @@ export type HireOrchestrationMemoryState = {
 	idempotencyByKey: Map<string, IdempotentHireAttemptRecord>;
 };
 
-function idempotencyMapKey(organizationId: string, idempotencyKey: string): string {
+function idempotencyMapKey(
+	organizationId: string,
+	idempotencyKey: string,
+): string {
 	return `${organizationId}:${idempotencyKey}`;
 }
 
@@ -41,7 +40,9 @@ function cloneAttempt(attempt: HireAttempt): HireAttempt {
 	};
 }
 
-function cloneRecord(record: IdempotentHireAttemptRecord): IdempotentHireAttemptRecord {
+function cloneRecord(
+	record: IdempotentHireAttemptRecord,
+): IdempotentHireAttemptRecord {
 	return {
 		attempt: cloneAttempt(record.attempt),
 		requestFingerprint: record.requestFingerprint,

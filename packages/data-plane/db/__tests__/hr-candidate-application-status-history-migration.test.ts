@@ -30,7 +30,7 @@ describe("HR candidate application status history migration", () => {
 			"hr_candidate_application_status_history_change_kind_check",
 		);
 		expect(migrationSql).toContain(
-			'"change_kind" IN (\'create\', \'lifecycle\')',
+			"\"change_kind\" IN ('create', 'lifecycle')",
 		);
 		expect(migrationSql).toContain(
 			"hr_candidate_application_status_history_to_status_check",

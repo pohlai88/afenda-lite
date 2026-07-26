@@ -39,8 +39,7 @@ export async function createItemGroupAction(
 	return runMemberPermissionAction({
 		path: "createItemGroupAction",
 		permission: "master_data.manage",
-		safeMessage:
-			"Could not create item group. Try again or contact an admin.",
+		safeMessage: "Could not create item group. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const result = await createItemGroup(
 				{

@@ -361,6 +361,14 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_performance_cycle_review_period
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_performance_cycle_eligibility
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_performance_goal
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
@@ -406,6 +414,14 @@ tables:
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
     table: hr_talent_profile_assessment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_talent_profile_mobility
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_talent_critical_role_readiness
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"

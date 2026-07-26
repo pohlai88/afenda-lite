@@ -1,4 +1,5 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
+import type { HumanResourcesCandidateId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -37,7 +38,6 @@ import {
 	assertCandidateNotAnonymized,
 	normalizeCandidateEmail,
 } from "../shared/recruitment-guards";
-import type { HumanResourcesCandidateId } from "../brands";
 import type { HumanResourcesRecruitmentStore } from "../store/recruitment";
 import type {
 	Candidate,
@@ -108,7 +108,7 @@ export async function createCandidate(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
 				}),
 			);
 		},
@@ -149,7 +149,7 @@ export async function updateCandidateProfile(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
+					operationId: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
 				}),
 			);
 		},
@@ -188,7 +188,7 @@ export async function withdrawCandidateConsent(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
+					operationId: HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
 				}),
 			);
 		},
@@ -239,7 +239,7 @@ export async function changeCandidateRetention(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
+					operationId: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
 				}),
 			);
 		},
@@ -285,7 +285,7 @@ export async function anonymizeCandidate(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
+					operationId: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
 				}),
 			);
 		},

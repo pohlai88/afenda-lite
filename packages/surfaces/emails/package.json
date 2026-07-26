@@ -13,7 +13,7 @@
 		"email:dev": "email dev --dir ./src --port 3001",
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project emails"
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project emails"
 	},
 	"dependencies": {
 		"react-email": "^6.8.1"

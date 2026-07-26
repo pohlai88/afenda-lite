@@ -47,9 +47,7 @@ export function postgresSqlState(error: unknown): string | undefined {
 			}
 		}
 		current =
-			"cause" in current
-				? (current as { cause: unknown }).cause
-				: undefined;
+			"cause" in current ? (current as { cause: unknown }).cause : undefined;
 	}
 	return undefined;
 }
@@ -153,7 +151,9 @@ export async function deletePayrollConstraintOrg(
 	await db
 		.delete(payrollException)
 		.where(eq(payrollException.organizationId, organizationId));
-	await db.delete(payrollRun).where(eq(payrollRun.organizationId, organizationId));
+	await db
+		.delete(payrollRun)
+		.where(eq(payrollRun.organizationId, organizationId));
 	await db
 		.delete(payrollPeriod)
 		.where(eq(payrollPeriod.organizationId, organizationId));

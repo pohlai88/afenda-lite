@@ -72,8 +72,8 @@ Do not add to this package: WebSocket / JWT realtime servers, Redis as primary s
 
 | Topic | Link |
 |-------|------|
-| Notifications Scratch | [docs-V2/notifications](../../docs-V2/notifications/README.md) |
-| Events → inbox handlers | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../events/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Notifications Scratch | [docs-V2/notifications](../../../docs-V2/notifications/README.md) |
+| Events → inbox handlers | [docs-V2/events](../../../docs-V2/events/README.md) · [`@afenda/events`](../events/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

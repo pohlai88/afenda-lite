@@ -1,22 +1,22 @@
 import { expect } from "vitest";
-
+import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createBenefitPlan } from "../../src/compensation-benefits/benefit-plan";
-import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
 import {
 	createCompensationReviewDraft,
 	finalizeCompensationReview,
 	recordCompensationRecommendation,
 } from "../../src/compensation-benefits/compensation-review";
-import { seedOpenCompensationReviewCycle } from "./compensation-review-cycle-seed";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
+import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../../src/permissions";
+import { seedOpenCompensationReviewCycle } from "./compensation-review-cycle-seed";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 
 export async function seedCompensationCorrelationFixture(input: {
@@ -33,6 +33,7 @@ export async function seedCompensationCorrelationFixture(input: {
 		currency: createMemoryCurrencyLookup(),
 		authorization: createGrantingHumanResourcesAuthorization([
 			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 			HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 			HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,

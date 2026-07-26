@@ -5,6 +5,8 @@
 **Scope:** Close every P0 gap identified by the audit; retain the explicitly classified P1 workforce-management capabilities as observations, not false P0 claims.  
 **Completion rule:** This plan closes only when every `TIME-G*` row is `Closed`, its evidence command is green, and the Scratch roadmaps match disk.
 
+> **Historical evidence notice (2026-07-26):** The 176/177/179 tenancy totals below are dated migration checkpoints from 2026-07-24. They do not describe current inventory. Current disk authority contains **222** hard-tenant roots, including **129 `hr_*`** roots, with executable-audit parity enforced by the DB tenancy test.
+
 The Time P0 spine is substantially implemented, but it is not ready to be declared complete. The original audit found two failing repository gates and nine material implementation/evidence gaps. This file now records closure progress as of 2026-07-24; `Implemented` is not treated as `Verified` without the evidence commands recorded under **Authorization M01** and **Authorization C01-A**.
 
 ## Gap matrix

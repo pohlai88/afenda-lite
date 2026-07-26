@@ -1,10 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { and, db, eq, hrHireAttempt } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
-
-import { parseHumanResourcesHireAttemptId } from "../../brands";
-import type { HumanResourcesStore } from "../../store";
+import { ok } from "@afenda/errors/result";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, notFound } from "../../shared/domain-guards";
 import {
@@ -12,6 +9,7 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import type { HumanResourcesStore } from "../../store";
 import { mapHireAttemptRow } from "../memory/hire-orchestration";
 
 export const drizzleHireOrchestrationMethods: Pick<
@@ -186,8 +184,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 					employmentId: input.employmentId ?? existing.employmentId,
 					workerId: input.workerId ?? existing.workerId,
 					assignmentId: input.assignmentId ?? existing.assignmentId,
-					onboardingCaseId:
-						input.onboardingCaseId ?? existing.onboardingCaseId,
+					onboardingCaseId: input.onboardingCaseId ?? existing.onboardingCaseId,
 					compensationLog: input.compensationLog ?? existing.compensationLog,
 					status: input.status ?? existing.status,
 					version: nextVersion,
@@ -210,7 +207,10 @@ export const drizzleHireOrchestrationMethods: Pick<
 
 			return mapHireAttemptRow(updated);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to update hire attempt progress");
+			return mapPersistenceFailure(
+				error,
+				"Failed to update hire attempt progress",
+			);
 		}
 	},
 };

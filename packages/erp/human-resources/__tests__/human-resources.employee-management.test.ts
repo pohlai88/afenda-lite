@@ -2,12 +2,10 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesEmployeeId } from "../src/brands";
+import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-} from "../src/error-codes";
+import { HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED } from "../src/error-codes";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
@@ -15,7 +13,6 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERSON_READ,
 	HUMAN_RESOURCES_PERMISSION_SENSITIVE_IDENTIFIERS_READ,
 } from "../src/permissions";
-import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { getEmployeeProfile } from "../src/workforce-foundation/employee-management";
 import { createPerson } from "../src/workforce-foundation/person";
@@ -45,6 +42,14 @@ function adminHarness(): HumanResourcesCommandOptions {
 		ports,
 		authorization,
 	});
+}
+
+function requireHarnessDeps(admin: HumanResourcesCommandOptions) {
+	const { store, ports } = admin;
+	if (!store || !ports) {
+		throw new Error("Expected harness store and ports");
+	}
+	return { store, ports };
 }
 
 function readHarness(
@@ -169,7 +174,7 @@ async function seedEmployeeWithPerson(input: {
 			personId: person.data.id,
 			identifierType: "ssn",
 			identifierValue: "123-45-6789",
-			documentRef: "vault://ssn/1",
+			documentRef: `vault://organizations/${ORG_A}/identity_document/ssn-1?version=1`,
 			effectiveFrom: "2026-01-01",
 		},
 		input.ready,
@@ -187,14 +192,15 @@ describe("@afenda/human-resources employee management", () => {
 			employeeNumber: "e-100",
 			legalName: "Profile Subject",
 		});
+		const { store, ports } = requireHarnessDeps(admin);
 		const ready = readHarness(
 			[
 				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 				HUMAN_RESOURCES_PERMISSION_PERSON_READ,
 				HUMAN_RESOURCES_PERMISSION_SENSITIVE_IDENTIFIERS_READ,
 			],
-			admin.store!,
-			admin.ports!,
+			store,
+			ports,
 		);
 
 		const profile = await getEmployeeProfile(
@@ -226,10 +232,11 @@ describe("@afenda/human-resources employee management", () => {
 			employeeNumber: "E-SELF",
 			legalName: "Self Subject",
 		});
+		const { store, ports } = requireHarnessDeps(admin);
 		const ready = readHarness(
 			[HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ],
-			admin.store!,
-			admin.ports!,
+			store,
+			ports,
 		);
 
 		const profile = await getEmployeeProfile(
@@ -249,9 +256,9 @@ describe("@afenda/human-resources employee management", () => {
 		expect(profile.data.personalPhoneNumber).toBe("+1-555-0100");
 		expect(profile.data.homeAddress).toBe("123 Example Street");
 		expect(profile.data.identifierLast4).toBeNull();
-		expect(profile.data.identifiers?.every((row) => row.identifierLast4 === "")).toBe(
-			true,
-		);
+		expect(
+			profile.data.identifiers?.every((row) => row.identifierLast4 === ""),
+		).toBe(true);
 	});
 
 	it("allows manager read for direct reports with public-tier fields only", async () => {
@@ -268,10 +275,11 @@ describe("@afenda/human-resources employee management", () => {
 			employeeNumber: "E-RPT",
 			legalName: "Report Example",
 		});
+		const { store, ports } = requireHarnessDeps(admin);
 		const ready = readHarness(
 			[HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ],
-			admin.store!,
-			admin.ports!,
+			store,
+			ports,
 		);
 
 		const line = await assignPrimaryReportingLine(
@@ -316,14 +324,15 @@ describe("@afenda/human-resources employee management", () => {
 			employeeNumber: "E-HR",
 			legalName: "HR Subject",
 		});
+		const { store, ports } = requireHarnessDeps(admin);
 		const ready = readHarness(
 			[
 				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 				HUMAN_RESOURCES_PERMISSION_PERSON_READ,
 				HUMAN_RESOURCES_PERMISSION_SENSITIVE_IDENTIFIERS_READ,
 			],
-			admin.store!,
-			admin.ports!,
+			store,
+			ports,
 		);
 
 		const profile = await getEmployeeProfile(
@@ -341,7 +350,9 @@ describe("@afenda/human-resources employee management", () => {
 
 		expect(profile.data.personalPhoneNumber).toBe("+1-555-0100");
 		expect(profile.data.identifierLast4).not.toBeNull();
-		expect(profile.data.documentRef).toBe("vault://ssn/1");
+		expect(profile.data.documentRef).toBe(
+			`vault://organizations/${ORG_A}/identity_document/ssn-1?version=1`,
+		);
 	});
 
 	it("denies out-of-scope manager access", async () => {
@@ -358,10 +369,11 @@ describe("@afenda/human-resources employee management", () => {
 			employeeNumber: "E-UNRELATED",
 			legalName: "Unrelated Employee",
 		});
+		const { store, ports } = requireHarnessDeps(admin);
 		const ready = readHarness(
 			[HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ],
-			admin.store!,
-			admin.ports!,
+			store,
+			ports,
 		);
 
 		const denied = await getEmployeeProfile(
@@ -391,13 +403,14 @@ describe("@afenda/human-resources employee management", () => {
 			employeeNumber: "E-XORG",
 			legalName: "Cross Org",
 		});
+		const { store, ports } = requireHarnessDeps(admin);
 		const ready = readHarness(
 			[
 				HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 				HUMAN_RESOURCES_PERMISSION_PERSON_READ,
 			],
-			admin.store!,
-			admin.ports!,
+			store,
+			ports,
 		);
 
 		const crossOrg = await getEmployeeProfile(
@@ -412,9 +425,10 @@ describe("@afenda/human-resources employee management", () => {
 		);
 		expect(crossOrg.ok).toBe(false);
 		if (!crossOrg.ok) {
-			expect(["human_resources.not_found", "human_resources.authorization_denied"]).toContain(
-				humanResourcesCodeFromResult(crossOrg),
-			);
+			expect([
+				"human_resources.not_found",
+				"human_resources.authorization_denied",
+			]).toContain(humanResourcesCodeFromResult(crossOrg));
 		}
 	});
 });

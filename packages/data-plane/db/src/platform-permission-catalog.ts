@@ -13,6 +13,251 @@ import {
 	platformRolePermission,
 } from "./schema/platform";
 
+const CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
+	["corporate_administration.access", "Access Corporate Administration", false],
+	[
+		"corporate_administration.company.read",
+		"Read legal company records",
+		false,
+	],
+	[
+		"corporate_administration.company.manage",
+		"Manage legal company records",
+		true,
+	],
+	[
+		"corporate_administration.company.activate",
+		"Activate legal companies",
+		true,
+	],
+	[
+		"corporate_administration.company.dissolve",
+		"Dissolve legal companies",
+		true,
+	],
+	[
+		"corporate_administration.establishment.manage",
+		"Manage legal establishments",
+		true,
+	],
+	[
+		"corporate_administration.governance.read",
+		"Read corporate governance records",
+		false,
+	],
+	[
+		"corporate_administration.governance.manage",
+		"Manage corporate governance records",
+		true,
+	],
+	[
+		"corporate_administration.officer.manage",
+		"Manage corporate officers",
+		true,
+	],
+	[
+		"corporate_administration.meeting.manage",
+		"Manage corporate meetings",
+		true,
+	],
+	[
+		"corporate_administration.resolution.manage",
+		"Manage corporate resolutions",
+		true,
+	],
+	[
+		"corporate_administration.authority.read",
+		"Read corporate authority policies",
+		false,
+	],
+	[
+		"corporate_administration.authority.manage",
+		"Manage corporate authority policies",
+		true,
+	],
+	[
+		"corporate_administration.authority.publish",
+		"Publish corporate authority policies",
+		true,
+	],
+	["corporate_administration.seal.manage", "Manage corporate seals", true],
+	[
+		"corporate_administration.capital.read",
+		"Read share capital records",
+		false,
+	],
+	[
+		"corporate_administration.capital.configure",
+		"Configure share capital structures",
+		true,
+	],
+	["corporate_administration.capital.post", "Post capital transactions", true],
+	[
+		"corporate_administration.capital.reverse",
+		"Reverse capital transactions",
+		true,
+	],
+	[
+		"corporate_administration.ownership.read",
+		"Read legal ownership records",
+		false,
+	],
+	[
+		"corporate_administration.ownership.manage",
+		"Manage legal ownership records",
+		true,
+	],
+	[
+		"corporate_administration.ubo.read",
+		"Read beneficial ownership records",
+		true,
+	],
+	[
+		"corporate_administration.ubo.manage",
+		"Manage beneficial ownership records",
+		true,
+	],
+	[
+		"corporate_administration.ubo.attest",
+		"Attest beneficial ownership records",
+		true,
+	],
+	[
+		"corporate_administration.distribution.declare",
+		"Declare corporate distributions",
+		true,
+	],
+	[
+		"corporate_administration.assets.read",
+		"Read corporate asset records",
+		false,
+	],
+	[
+		"corporate_administration.assets.manage",
+		"Manage corporate asset records",
+		true,
+	],
+	[
+		"corporate_administration.licence.manage",
+		"Manage corporate licences",
+		true,
+	],
+	["corporate_administration.charge.manage", "Manage corporate charges", true],
+	[
+		"corporate_administration.banking.read",
+		"Read corporate banking references",
+		true,
+	],
+	[
+		"corporate_administration.banking.manage",
+		"Manage corporate banking references",
+		true,
+	],
+	[
+		"corporate_administration.bank_mandate.manage",
+		"Manage corporate bank mandates",
+		true,
+	],
+	[
+		"corporate_administration.group.read",
+		"Read corporate group structures",
+		false,
+	],
+	[
+		"corporate_administration.group.manage",
+		"Manage corporate group structures",
+		true,
+	],
+	[
+		"corporate_administration.related_party.manage",
+		"Manage related-party relationships",
+		true,
+	],
+	[
+		"corporate_administration.agreement.manage",
+		"Manage corporate agreements",
+		true,
+	],
+	[
+		"corporate_administration.corporate_action.manage",
+		"Manage corporate actions",
+		true,
+	],
+	[
+		"corporate_administration.corporate_action.approve_effect",
+		"Approve corporate action effects",
+		true,
+	],
+	[
+		"corporate_administration.document.read",
+		"Read corporate document metadata",
+		true,
+	],
+	[
+		"corporate_administration.document.manage",
+		"Manage corporate document references",
+		true,
+	],
+	[
+		"corporate_administration.register.certify",
+		"Certify corporate registers",
+		true,
+	],
+	[
+		"corporate_administration.compliance_rule.manage",
+		"Manage corporate compliance rules",
+		true,
+	],
+	[
+		"corporate_administration.filing.read",
+		"Read corporate filing records",
+		false,
+	],
+	["corporate_administration.filing.manage", "Manage corporate filings", true],
+	[
+		"corporate_administration.filing.waive",
+		"Waive corporate filing requirements",
+		true,
+	],
+	[
+		"corporate_administration.import.prepare",
+		"Prepare Corporate Administration imports",
+		true,
+	],
+	[
+		"corporate_administration.import.approve",
+		"Approve Corporate Administration imports",
+		true,
+	],
+	[
+		"corporate_administration.import.apply",
+		"Apply approved Corporate Administration imports",
+		true,
+	],
+	[
+		"corporate_administration.export",
+		"Export Corporate Administration records",
+		false,
+	],
+	[
+		"corporate_administration.reconcile",
+		"Reconcile Corporate Administration records",
+		true,
+	],
+	[
+		"corporate_administration.sensitive_export",
+		"Export sensitive Corporate Administration records",
+		true,
+	],
+	[
+		"corporate_administration.module_admin",
+		"Administer the Corporate Administration module",
+		true,
+	],
+] as const;
+
+const CORPORATE_ADMINISTRATION_MODULE = "corporate_administration";
+
 /** Seed permission codes (v1) — ARCH-023 §3.2 (shell after domain wipe). */
 export const PLATFORM_PERMISSION_V1 = [
 	{
@@ -513,6 +758,14 @@ export const PLATFORM_PERMISSION_V1 = [
 		description: "Resolve and retry financial posting exceptions",
 		sensitive: true,
 	},
+	...CORPORATE_ADMINISTRATION_PERMISSION_V1.map(
+		([code, description, sensitive]) => ({
+			code,
+			module: CORPORATE_ADMINISTRATION_MODULE,
+			description,
+			sensitive,
+		}),
+	),
 	{
 		code: "human-resources.employee.create",
 		module: "human_resources",

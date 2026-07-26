@@ -6,10 +6,7 @@ import { PAYROLL_EVENT_IDS } from "@afenda/events";
 import { describe, expect, it } from "vitest";
 
 import { payrollModuleManifest } from "../src/module.manifest";
-import {
-	PAYROLL_COMMAND_IDS,
-	PAYROLL_QUERY_IDS,
-} from "../src/module-ids";
+import { PAYROLL_COMMAND_IDS, PAYROLL_QUERY_IDS } from "../src/module-ids";
 import { PAYROLL_MUTATION_TABLES } from "../src/mutation-tables";
 import { PAYROLL_PERMISSION_CODES } from "../src/permissions";
 

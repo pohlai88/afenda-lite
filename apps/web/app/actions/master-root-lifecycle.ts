@@ -5,11 +5,11 @@ import {
 	activateItem,
 	activateItemGroup,
 	activateWarehouse,
+	type Item,
+	type ItemGroup,
 	inactiveItem,
 	inactiveItemGroup,
 	inactiveWarehouse,
-	type Item,
-	type ItemGroup,
 	type MasterCommandOptions,
 	retireItem,
 	retireItemGroup,
@@ -40,7 +40,10 @@ type LifecycleCommand<TEntity> = (
 	options?: MasterCommandOptions,
 ) => Promise<Result<TEntity>>;
 
-async function runRootLifecycle<TEntity, TData extends Record<string, unknown>>(input: {
+async function runRootLifecycle<
+	TEntity,
+	TData extends Record<string, unknown>,
+>(input: {
 	kind: LifecycleKind;
 	entityLabel: string;
 	path: string;
@@ -86,10 +89,12 @@ async function runRootLifecycle<TEntity, TData extends Record<string, unknown>>(
 }
 
 export type ItemLifecycleActionState = ActionResult<{ item: Item }> | null;
-export type ItemGroupLifecycleActionState =
-	ActionResult<{ itemGroup: ItemGroup }> | null;
-export type WarehouseLifecycleActionState =
-	ActionResult<{ warehouse: Warehouse }> | null;
+export type ItemGroupLifecycleActionState = ActionResult<{
+	itemGroup: ItemGroup;
+}> | null;
+export type WarehouseLifecycleActionState = ActionResult<{
+	warehouse: Warehouse;
+}> | null;
 
 export async function activateItemAction(
 	_prev: ItemLifecycleActionState,

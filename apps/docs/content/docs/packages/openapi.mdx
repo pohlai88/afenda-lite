@@ -15,7 +15,7 @@ description: "**What it is** — Rank-1 Platform Zod→OpenAPI glue for Afenda-L
 | Import path | Export key |
 | --- | --- |
 | `@afenda/openapi` | `.` |
-| `@afenda/openapi/document` | `./document` |
+| `@afenda/openapi/node` | `./node` |
 | `@afenda/openapi/zod` | `./zod` |
 
 ## Package README
@@ -24,41 +24,35 @@ description: "**What it is** — Rank-1 Platform Zod→OpenAPI glue for Afenda-L
 
 **What it does** — Extends Zod with `@asteasolutions/zod-to-openapi`, wraps inner response schemas as `{ data: T }`, stamps `operationId` / `x-afenda-status` / `x-afenda-document` onto generated documents, and writes generator-aligned YAML (header + stringify).
 
-**When you need it** — Regenerating [`docs-V2/api/OPEN-001-openapi.yaml`](https://github.com/pohlai88/afenda-lite/blob/main/packages/docs-V2/api/OPEN-001-openapi.yaml) from Zod, or defining RH schemas that must share the same OpenAPI-extended `z` prototype as the generator.
+**When you need it** — Regenerating [`docs-V2/api/OPEN-001-openapi.yaml`](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/api/OPEN-001-openapi.yaml) from Zod, or defining RH schemas that must share the same OpenAPI-extended `z` prototype as the generator.
 
-**Who it's for** — Root `scripts/generate-openapi.mts`, web platform schemas, and gates that consume the committed YAML. Next-free leaf: no `@afenda/*` runtime deps, no Next.js, no product Swagger UI (docs stay [`@afenda/docs`](https://github.com/pohlai88/afenda-lite/blob/main/packages/apps/docs) Fumadocs).
+**Who it's for** — Root `scripts/generate-openapi.mts`, web platform schemas, and gates that consume the committed YAML. Next-free leaf: no `@afenda/*` runtime deps, no Next.js, no product Swagger UI (docs stay [`@afenda/docs`](https://github.com/pohlai88/afenda-lite/blob/main/apps/docs) Fumadocs).
 
 ## Consume
 
 Workspace dependency — prefer subpaths for concern split:
 
 ```ts
-import { z } from "@afenda/openapi/zod";
+// Universal: schema definition and registration
+import { OpenAPIRegistry, OpenApiGeneratorV3, z } from "@afenda/openapi";
+
+// Node.js only: document stamping and file writing
 import {
-	OPENAPI_VERSION,
-	dataEnvelope,
-	stampAfendaDocument,
-	stampOperationMetadata,
-	writeOpenApiYaml,
-} from "@afenda/openapi/document";
+  OPENAPI_VERSION,
+  OPENAPI_DOCUMENT_ID,
+  dataEnvelope,
+  stampAfendaDocument,
+  stampOperationMetadata,
+  writeOpenApiYaml,
+} from "@afenda/openapi/node";
 
 const envelope = dataEnvelope(
-	z.object({ status: z.literal("ok") }),
-	"ExampleEnvelope",
+  z.object({ status: z.literal("ok") }),
+  "ExampleEnvelope",
 );
 ```
 
-Or the barrel:
-
-```ts
-import {
-	OPENAPI_VERSION,
-	dataEnvelope,
-	z,
-} from "@afenda/openapi";
-```
-
-**Living consumers:** `scripts/generate-openapi.mts` (composition root — registers paths from `apps/web` schemas); web schemas via `@/modules/platform/schemas/openapi-zod` re-export. Committed YAML + Spectral + api-now disk honesty stay at repo root (`pnpm openapi:generate` · `pnpm check:openapi`).
+**Living consumers:** `scripts/generate-openapi.mts` (composition root — registers paths from `apps/web` schemas); web platform schemas via `@/modules/platform/schemas/openapi-zod` re-export. Committed YAML + Spectral + api-now disk honesty stay at repo root (`pnpm openapi:generate` · `pnpm check:openapi`).
 
 ## Maintain
 
@@ -72,13 +66,15 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 ## Exports
 
-| Path | Role |
-|------|------|
-| `@afenda/openapi` | Barrel — `z` + document helpers + registry re-exports |
-| `@afenda/openapi/zod` | Single Zod instance extended for OPEN-001 generation |
-| `@afenda/openapi/document` | `dataEnvelope` · metadata stamps · YAML emit · `OPENAPI_VERSION` · `OPENAPI_DOCUMENT_ID` (`x-afenda-document.id`; not the Fumadocs SchemaRecord path key in `@afenda/docs`) |
+| Path | Runtime | Role |
+|------|---------|------|
+| `@afenda/openapi` | Universal | `OpenAPIRegistry`, `OpenApiGeneratorV3`, `z` |
+| `@afenda/openapi/zod` | Universal | Single Zod instance extended for OPEN-001 generation |
+| `@afenda/openapi/node` | Node.js | `dataEnvelope` · metadata stamps · YAML emit · `OPENAPI_VERSION` · `OPENAPI_DOCUMENT_ID` (`x-afenda-document.id`; not the Fumadocs SchemaRecord path key in `@afenda/docs`) |
 
-Full surface: [`src/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main/packages/runtime/openapi/src/index.ts).
+**Architecture:** Node-only functions (those using `node:fs`) are isolated in `/node`. Core utilities remain universal.
+
+Full surface: [`src/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main/packages/runtime/openapi/src/index.ts) · [`src/node/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main/packages/runtime/openapi/src/node/index.ts).
 
 ## Ownership
 
@@ -88,9 +84,9 @@ Full surface: [`src/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main
 | Health / error / RH Zod schemas | `apps/web/modules/platform/schemas/*` |
 | Path registration composition | `scripts/generate-openapi.mts` |
 | Drift · Spectral · api-now disk honesty | `scripts/check-openapi.mjs` |
-| Human docs UI | [`@afenda/docs`](https://github.com/pohlai88/afenda-lite/blob/main/packages/apps/docs) (Fumadocs — not product Swagger) |
+| Human docs UI | [`@afenda/docs`](https://github.com/pohlai88/afenda-lite/blob/main/apps/docs) (Fumadocs — not product Swagger) |
 
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/packages/docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/monorepo/README.md).
 
 ## Anti-goals
 
@@ -98,7 +94,7 @@ Full surface: [`src/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main
 |--------|-----|
 | Product Swagger / Scalar under `apps/web` | Docs SSOT is `@afenda/docs` |
 | Manual OAS builders (`createOpenAPISpec` / mutative path maps) | Zod registry is SSOT |
-| Hand-edit committed YAML to “pass” gates | Fix Zod / generator, then regenerate |
+| Hand-edit committed YAML to "pass" gates | Fix Zod / generator, then regenerate |
 | Import `apps/*` from this package | Packages never import apps |
 | OpenAPI 3.1 bump without docs cutover | Living artifact is OAS 3.0.3 |
 
@@ -106,8 +102,15 @@ Full surface: [`src/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main
 
 | Topic | Link |
 |-------|------|
-| API Scratch · REST · OPEN-001 | [docs-V2/api](https://github.com/pohlai88/afenda-lite/blob/main/packages/docs-V2/api/README.md) · [rest.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/docs-V2/api/rest.md) · [OPEN-001-openapi.yaml](https://github.com/pohlai88/afenda-lite/blob/main/packages/docs-V2/api/OPEN-001-openapi.yaml) |
-| Package DAG | [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/packages/docs-V2/monorepo/README.md) · [LAYERS.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| API contract farm | [afenda-elite-api-contract](https://github.com/pohlai88/afenda-lite/blob/main/packages/.cursor/skills/afenda-elite-api-contract/SKILL.md) · [openapi.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/.cursor/skills/afenda-elite-api-contract/openapi.md) |
-| Official docs site | [`@afenda/docs`](https://github.com/pohlai88/afenda-lite/blob/main/packages/apps/docs) |
-| Agent checkout posture | [AGENTS.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/AGENTS.md) |
+| API Scratch · REST · OPEN-001 | [docs-V2/api](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/api/README.md) · [rest.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/api/rest.md) · [OPEN-001-openapi.yaml](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/api/OPEN-001-openapi.yaml) |
+| Package DAG | [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/monorepo/README.md) · [LAYERS.md](https://github.com/pohlai88/afenda-lite/blob/main/.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| API contract farm | [afenda-elite-api-contract](https://github.com/pohlai88/afenda-lite/blob/main/.cursor/skills/afenda-elite-api-contract/SKILL.md) · [openapi.md](https://github.com/pohlai88/afenda-lite/blob/main/.cursor/skills/afenda-elite-api-contract/openapi.md) |
+| Official docs site | [`@afenda/docs`](https://github.com/pohlai88/afenda-lite/blob/main/apps/docs) |
+| Agent checkout posture | [AGENTS.md](https://github.com/pohlai88/afenda-lite/blob/main/AGENTS.md) |
+
+## Package Boundary Gates
+
+Automated import governance (via `pnpm governance:packages`) enforces:
+- ❌ No `@afenda/openapi/document` (legacy path — renamed to `/node`)
+- ❌ No `@afenda/openapi/src/*` (internal paths)
+- ✅ Only `.`, `./zod`, `./node` allowed

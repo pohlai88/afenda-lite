@@ -40,12 +40,12 @@ import type {
 	PayrollStatutoryRule,
 	PayrollStatutoryRuleCreateRecord,
 } from "../../types";
+import { createMemorySetupExtendedMethods } from "./setup-extended-methods";
 import {
 	type IdempotentEntityRecord,
 	idempotencyMapKey,
 	type SetupMemoryState,
 } from "./state";
-import { createMemorySetupExtendedMethods } from "./setup-extended-methods";
 
 function cloneCalendar(calendar: PayrollCalendar): PayrollCalendar {
 	return { ...calendar };

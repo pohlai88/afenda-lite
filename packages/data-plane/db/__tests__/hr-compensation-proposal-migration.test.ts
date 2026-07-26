@@ -21,8 +21,6 @@ describe("HR compensation proposal migration", () => {
 		expect(migrationSql).toContain(
 			"hr_employment_offer_org_application_active_uidx",
 		);
-		expect(migrationSql).toContain(
-			"status IN ('draft', 'approved', 'issued')",
-		);
+		expect(migrationSql).toContain("status IN ('draft', 'approved', 'issued')");
 	});
 });

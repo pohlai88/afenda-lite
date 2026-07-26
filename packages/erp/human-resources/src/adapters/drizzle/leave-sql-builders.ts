@@ -21,7 +21,9 @@ import {
 } from "./leave-transactions";
 
 function activeLeaveOverlapStatusSqlList(): string {
-	return ACTIVE_LEAVE_OVERLAP_STATUSES.map((status) => `'${status}'`).join(", ");
+	return ACTIVE_LEAVE_OVERLAP_STATUSES.map((status) => `'${status}'`).join(
+		", ",
+	);
 }
 
 /**
@@ -994,19 +996,19 @@ export function buildExpireEntitlementSql(params: {
 				eventType: params.eventType,
 				sourceModule: "human-resources",
 				correlationId: params.correlationId,
-			payload: `'${eventPayloadJson({
-				organizationId: params.organizationId,
-				entityType: "hr_leave_entitlement",
-				entityId: params.entitlementId,
-				actorId: params.actorUserId,
-				correlationId: params.correlationId,
-			})}'`,
-			fromCte: "updated_entitlement",
-			selectFields: {
-				organizationId: "organization_id",
-				actorUserId: `'${params.actorUserId}'`,
-			},
-		})
+				payload: `'${eventPayloadJson({
+					organizationId: params.organizationId,
+					entityType: "hr_leave_entitlement",
+					entityId: params.entitlementId,
+					actorId: params.actorUserId,
+					correlationId: params.correlationId,
+				})}'`,
+				fromCte: "updated_entitlement",
+				selectFields: {
+					organizationId: "organization_id",
+					actorUserId: `'${params.actorUserId}'`,
+				},
+			})
 		: "";
 
 	return `

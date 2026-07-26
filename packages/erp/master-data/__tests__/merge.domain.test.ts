@@ -300,9 +300,9 @@ describe("@afenda/master-data mergeParties", () => {
 			},
 			options,
 		);
-		expect(
-			sourceCustomer.ok && sourceSupplier.ok && targetCustomer.ok,
-		).toBe(true);
+		expect(sourceCustomer.ok && sourceSupplier.ok && targetCustomer.ok).toBe(
+			true,
+		);
 		if (!sourceCustomer.ok || !sourceSupplier.ok || !targetCustomer.ok) {
 			return;
 		}

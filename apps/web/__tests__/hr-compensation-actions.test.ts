@@ -348,14 +348,12 @@ describe("HR Compensation Server Actions", () => {
 				permission: "human-resources.compensation.read",
 			},
 			{
-				invoke: () =>
-					listEmployeeCompensationsByEmployeeAction({ employeeId }),
+				invoke: () => listEmployeeCompensationsByEmployeeAction({ employeeId }),
 				mock: hrCompMocks.listEmployeeCompensationsByEmployee,
 				permission: "human-resources.compensation.read",
 			},
 			{
-				invoke: () =>
-					createCompensationProposalAction({ applicationId }),
+				invoke: () => createCompensationProposalAction({ applicationId }),
 				mock: hrCompMocks.createCompensationProposal,
 				permission: "human-resources.compensation-proposal.create",
 			},

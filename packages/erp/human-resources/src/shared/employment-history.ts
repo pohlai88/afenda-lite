@@ -1,4 +1,7 @@
-import type { HumanResourcesEmployeeId, HumanResourcesEmploymentId } from "../brands";
+import type {
+	HumanResourcesEmployeeId,
+	HumanResourcesEmploymentId,
+} from "../brands";
 import type { EmploymentStatus } from "./employment-status";
 
 export const EMPLOYMENT_STATUS_CHANGE_KINDS = [

@@ -8,8 +8,8 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
-	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 	HUMAN_RESOURCES_EVENT_IDS,
@@ -72,15 +72,15 @@ describe("@afenda/events human-resources schema compatibility", () => {
 		}
 	});
 
-	it("accepts legacy payloads without operation/idempotencyKey", () => {
+	it("rejects payloads without operation and idempotencyKey", () => {
 		const parsed = humanResourcesEntityPayloadSchema.safeParse({
 			organizationId: "org-1",
 			entityType: "hr_work_eligibility",
 			entityId: "00000000-0000-4000-8000-000000000002",
 			actorId: "user-1",
-			correlationId: "corr-legacy",
+			correlationId: "corr-missing-mutation-identity",
 		});
-		expect(parsed.success).toBe(true);
+		expect(parsed.success).toBe(false);
 	});
 
 	it("validates catalog schemas for representative HR events", () => {

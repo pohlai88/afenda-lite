@@ -3,9 +3,9 @@ import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
 	HUMAN_RESOURCES_QUERY_CLEARANCE_GET_BY_OFFBOARDING_CASE,
@@ -34,7 +34,13 @@ import {
 	runLifecycleQuery,
 } from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { Clearance, OffboardingAccessRevocation, OffboardingCase, OffboardingPayrollHandoff, OffboardingTask } from "../types";
+import type {
+	Clearance,
+	OffboardingAccessRevocation,
+	OffboardingCase,
+	OffboardingPayrollHandoff,
+	OffboardingTask,
+} from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_OFFBOARDING = "offboarding" as const;
 export type HumanResourcesOffboardingAggregate =
@@ -66,7 +72,7 @@ export async function startOffboarding(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
 				}),
 			);
 		},
@@ -93,7 +99,7 @@ export async function completeOffboardingTask(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
 				}),
 			),
 	});
@@ -119,7 +125,8 @@ export async function recordExitInterview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
 				}),
 			),
 	});
@@ -145,7 +152,7 @@ export async function recordClearance(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
 				}),
 			),
 	});
@@ -172,7 +179,7 @@ export async function recordOffboardingAccessRevocation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
 				}),
 			),
@@ -200,7 +207,8 @@ export async function recordOffboardingPayrollHandoff(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
 				}),
 			),
 	});
@@ -225,7 +233,7 @@ export async function completeOffboarding(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
 				}),
 			),
 	});

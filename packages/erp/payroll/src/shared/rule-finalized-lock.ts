@@ -25,6 +25,8 @@ export type PayrollRuleFinalizedUsageCheck = {
 	ruleId: PayrollRuleId;
 };
 
-export function ruleFinalizedUsageKey(input: PayrollRuleFinalizedUsageCheck): string {
+export function ruleFinalizedUsageKey(
+	input: PayrollRuleFinalizedUsageCheck,
+): string {
 	return `${input.organizationId}:${input.ruleKind}:${input.ruleId}`;
 }

@@ -30,13 +30,6 @@ import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import { confirmEmployment } from "../src/lifecycle/confirmation";
 import {
-	extendProbation,
-	openProbation,
-	recordProbationAssessment,
-	recordProbationOutcome,
-} from "../src/lifecycle/probation";
-import { transferAssignment } from "../src/lifecycle/transfer";
-import {
 	completeOffboarding,
 	completeOffboardingTask,
 	getClearanceByOffboardingCase,
@@ -49,19 +42,26 @@ import {
 	recordOffboardingPayrollHandoff,
 	startOffboarding,
 } from "../src/lifecycle/offboarding";
+import {
+	extendProbation,
+	openProbation,
+	recordProbationAssessment,
+	recordProbationOutcome,
+} from "../src/lifecycle/probation";
+import { transferAssignment } from "../src/lifecycle/transfer";
 import { createPosition } from "../src/organization/position";
 import { isoDateTimeSchema } from "../src/schemas/common";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
-import {
-	completeOnboardingPath,
-	runEmploymentTerminationFlow,
-} from "./helpers/lifecycle-test-fixtures";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	seedDepartmentAndJob,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
+import {
+	completeOnboardingPath,
+	runEmploymentTerminationFlow,
+} from "./helpers/lifecycle-test-fixtures";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
@@ -236,12 +236,16 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				expect(previousAssignment.data.successorAssignmentId).toBe(
 					successorAssignment.data.id,
 				);
-				expect(previousAssignment.data.transferMovementId).toBe(transfer.data.id);
+				expect(previousAssignment.data.transferMovementId).toBe(
+					transfer.data.id,
+				);
 				expect(successorAssignment.data.startsOn).toBe("2025-03-01");
 				expect(successorAssignment.data.predecessorAssignmentId).toBe(
 					previousAssignment.data.id,
 				);
-				expect(successorAssignment.data.transferMovementId).toBe(transfer.data.id);
+				expect(successorAssignment.data.transferMovementId).toBe(
+					transfer.data.id,
+				);
 				expect(
 					successorAssignment.data.organizationDimensions?.legal_entity.key,
 				).toBe(TEST_ORGANIZATION_DIMENSION_KEYS.legalEntityKey);
@@ -359,7 +363,9 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 					idempotencyKey: `idem-off-start-${suffix}`,
 					employmentId: employment.data.id,
 					terminationId: termFlow.termination.id,
-					tasks: [{ code: "return_badge", title: "Return badge", mandatory: true }],
+					tasks: [
+						{ code: "return_badge", title: "Return badge", mandatory: true },
+					],
 				},
 				ready,
 			);

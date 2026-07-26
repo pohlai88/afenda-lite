@@ -7,8 +7,8 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
-	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
@@ -32,13 +32,16 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
-import { assertExpectedVersion } from "../../shared/concurrency";
-import { assertActivePosition, rehireRequiresEndedEmployment } from "../../shared/domain-guards";
 import {
 	assertAssignmentWithinEmployment,
 	assertNoAssignmentOverlap,
 	multiplePrimaryAssignmentsAtAsOf,
 } from "../../shared/assignment-guards";
+import { assertExpectedVersion } from "../../shared/concurrency";
+import {
+	assertActivePosition,
+	rehireRequiresEndedEmployment,
+} from "../../shared/domain-guards";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import { compareEmploymentContractsByLineage } from "../../shared/employment-contract-guards";
 import {
@@ -56,6 +59,7 @@ import type {
 	EmploymentStatusHistoryAppendRecord,
 	HumanResourcesStore,
 	IdempotentEmployeeRecord,
+	WorkforcePlanActualAssignment,
 } from "../../store";
 import type {
 	Employee,
@@ -130,6 +134,7 @@ export type MemoryCoreMethods = Pick<
 	| "findOpenAssignmentByEmployment"
 	| "findAssignmentByEmploymentAsOf"
 	| "listAssignmentsByEmployment"
+	| "listWorkforcePlanActualAssignments"
 	| "createAssignment"
 	| "endAssignment"
 >;
@@ -849,8 +854,7 @@ export function createMemoryCoreMethods(
 				toStatus: parsedStatus.data,
 				startsOnSnapshot: updated.startsOn,
 				endsOnSnapshot: updated.endsOn,
-				effectiveOn:
-					input.effectiveOn ?? updated.startsOn,
+				effectiveOn: input.effectiveOn ?? updated.startsOn,
 				changeKind: "correction",
 				reason: input.reason,
 				evidenceReference: input.evidenceReference,
@@ -981,9 +985,7 @@ export function createMemoryCoreMethods(
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
 			}
-			return ok(
-				resolution.record === null ? null : { ...resolution.record },
-			);
+			return ok(resolution.record === null ? null : { ...resolution.record });
 		},
 
 		async createEmploymentContract(
@@ -1453,6 +1455,55 @@ export function createMemoryCoreMethods(
 				)
 				.map((assignment) => ({ ...assignment }));
 			return ok(rows);
+		},
+
+		async listWorkforcePlanActualAssignments(input: {
+			organizationId: string;
+			asOf: string;
+		}): Promise<Result<WorkforcePlanActualAssignment[]>> {
+			const actuals: WorkforcePlanActualAssignment[] = [];
+			for (const assignment of state.assignments.values()) {
+				if (
+					assignment.organizationId !== input.organizationId ||
+					assignment.startsOn > input.asOf ||
+					(assignment.endsOn !== null && assignment.endsOn < input.asOf)
+				) {
+					continue;
+				}
+
+				const employment = state.employments.get(assignment.employmentId);
+				if (
+					!employment ||
+					employment.organizationId !== input.organizationId ||
+					employment.status !== "active" ||
+					employment.startsOn > input.asOf ||
+					(employment.endsOn !== null && employment.endsOn < input.asOf)
+				) {
+					continue;
+				}
+
+				const position = org.positions.get(assignment.positionId);
+				if (!position || position.organizationId !== input.organizationId) {
+					continue;
+				}
+
+				actuals.push({
+					employmentId: employment.id,
+					employeeId: employment.employeeId,
+					positionId: assignment.positionId,
+					departmentId: position.departmentId,
+					jobId: position.jobId,
+					locationCode: assignment.organizationDimensions?.location.key ?? null,
+					employmentStatus: employment.status,
+					employmentStartsOn: employment.startsOn,
+					employmentEndsOn: employment.endsOn,
+					assignmentStartsOn: assignment.startsOn,
+					assignmentEndsOn: assignment.endsOn,
+				});
+			}
+
+			actuals.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+			return ok(actuals);
 		},
 
 		async createAssignment(

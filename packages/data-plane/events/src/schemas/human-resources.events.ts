@@ -9,8 +9,8 @@ const humanResourcesEntityPayloadBase = z.object({
 	actorId: z.string().trim().min(1),
 	correlationId: z.string().trim().min(1),
 	causationId: z.string().trim().min(1).optional(),
-	operation: z.string().trim().min(1).optional(),
-	idempotencyKey: z.string().trim().min(1).optional(),
+	operation: z.string().trim().min(1),
+	idempotencyKey: z.string().trim().min(1),
 });
 
 export const humanResourcesEntityPayloadSchema =
@@ -239,6 +239,8 @@ export const HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT =
 	"human-resources.time.payroll_handoff.ready.v1" as const;
 export const HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT =
 	"human-resources.certification.expiring.v1" as const;
+export const HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT =
+	"human-resources.certification.renewed.v1" as const;
 export const HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT =
 	"human-resources.learning-assignment.created.v1" as const;
 export const HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT =
@@ -297,6 +299,8 @@ export const HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT =
 	"human-resources.employee-case.reopened.v1" as const;
 export const HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT =
 	"human-resources.competency.assessed.v1" as const;
+export const HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT =
+	"human-resources.competency-assessment.expired.v1" as const;
 export const HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT =
 	"human-resources.talent-profile.updated.v1" as const;
 export const HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT =
@@ -321,7 +325,8 @@ export const HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT =
 export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_PERSON_CREATED_EVENT]: humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_PERSON_CHANGED_EVENT]: humanResourcesEntityPayloadSchema,
-	[HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT]: humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_PERSON_CONTACT_RETIRED_EVENT]:
@@ -450,6 +455,8 @@ export const HumanResourcesEventSchemas = {
 		approvedPayrollHandoffSchema,
 	[HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT]:
 		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT]:
+		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT]:
@@ -507,6 +514,8 @@ export const HumanResourcesEventSchemas = {
 	[HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT]:
+		humanResourcesEntityPayloadSchema,
+	[HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT]:
 		humanResourcesEntityPayloadSchema,
 	[HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT]:
 		humanResourcesEntityPayloadSchema,
@@ -612,6 +621,7 @@ export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT,
 	HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT,
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
+	HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
 	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 	HUMAN_RESOURCES_PERFORMANCE_CYCLE_OPENED_EVENT,
@@ -641,6 +651,7 @@ export const HUMAN_RESOURCES_EVENT_IDS = [
 	HUMAN_RESOURCES_EMPLOYEE_CASE_CLOSED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_REOPENED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
+	HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_TALENT_PROFILE_UPDATED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBERSHIP_APPROVED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,

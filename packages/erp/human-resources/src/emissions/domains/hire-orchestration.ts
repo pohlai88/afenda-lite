@@ -5,9 +5,7 @@ import {
 	type HumanResourcesHireOrchestrationCommandId,
 } from "../../module-ids";
 
-import {
-	defineDomainEventEmission,
-} from "../define-emission";
+import { defineDomainEventEmission } from "../define-emission";
 import type { HumanResourcesMutationEmissionDefinition } from "../types";
 
 export const HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS = {
@@ -16,7 +14,9 @@ export const HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS = {
 		{
 			domain: "recruitment",
 			aggregateType: "hire_attempt",
-			eventTypes: [HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT] as const,
+			eventTypes: [
+				HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT,
+			] as const,
 		},
 	),
 } satisfies Record<

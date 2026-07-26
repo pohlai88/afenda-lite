@@ -25,6 +25,12 @@ import {
 	type EmployeeRelationsMemoryState,
 	resetEmployeeRelationsMemoryState,
 } from "./employee-relations";
+import {
+	createHireOrchestrationMemoryState,
+	createMemoryHireOrchestrationMethods,
+	type HireOrchestrationMemoryState,
+	resetHireOrchestrationMemoryState,
+} from "./hire-orchestration";
 import { createMemoryHumanResourcesIdentityStore } from "./identity";
 import {
 	createLearningMemoryState,
@@ -81,14 +87,8 @@ import {
 	type WorkforceFoundationMemoryState,
 } from "./workforce-foundation";
 import {
-	createHireOrchestrationMemoryState,
-	createMemoryHireOrchestrationMethods,
-	resetHireOrchestrationMemoryState,
-	type HireOrchestrationMemoryState,
-} from "./hire-orchestration";
-import {
-	createWorkforcePlanningMemoryState,
 	createMemoryWorkforcePlanningMethods,
+	createWorkforcePlanningMemoryState,
 	resetWorkforcePlanningMemoryState,
 	type WorkforcePlanningMemoryState,
 } from "./workforce-planning";

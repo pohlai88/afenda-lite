@@ -1,22 +1,19 @@
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
-	approvedPayrollHandoffSchema,
-	handoffDecimalScaleMatchesAmount,
 	type ApprovedPayrollHandoff,
-	type HandoffAssignment,
+	approvedPayrollHandoffSchema,
 	type HandoffApprovalEvidence,
+	type HandoffAssignment,
 	type HandoffCompensationComponent,
 	type HandoffLeaveFact,
 	type HandoffOvertimeFact,
 	type HandoffPayFrequency,
 	type HandoffSourceVersion,
 	type HandoffTimeFacts,
+	handoffDecimalScaleMatchesAmount,
 } from "@afenda/events/schemas";
-import { fail, ok, type Result } from "@afenda/errors/result";
 
-import {
-	PAYROLL_ERROR_VALIDATION,
-	payrollErrorDetails,
-} from "../error-codes";
+import { PAYROLL_ERROR_VALIDATION, payrollErrorDetails } from "../error-codes";
 import {
 	formatScaledToHandoffAmount,
 	parseDecimalToScaled,
@@ -58,7 +55,8 @@ export type ApprovedPayrollHandoffParsed = {
 };
 
 export type ParsedApprovedPayrollHandoffInput = ApprovedPayrollHandoffParsed;
-export type ParsedPayrollHandoffComponent = ApprovedPayrollHandoffParsedComponent;
+export type ParsedPayrollHandoffComponent =
+	ApprovedPayrollHandoffParsedComponent;
 
 function parseHandoffAmount(input: {
 	amount: string;
@@ -132,14 +130,10 @@ export function parseApprovedPayrollHandoff(
 ): Result<ApprovedPayrollHandoffParsed> {
 	const parsed = approvedPayrollHandoffSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Invalid approved payroll handoff input.",
-			{
-				...payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-				fieldErrors: parsed.error.flatten().fieldErrors,
-			},
-		);
+		return fail("BAD_REQUEST", "Invalid approved payroll handoff input.", {
+			...payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
+			fieldErrors: parsed.error.flatten().fieldErrors,
+		});
 	}
 
 	const handoff = parsed.data;

@@ -33,17 +33,12 @@ import type {
 	IdempotentPersonIdentifierRecord,
 	IdempotentPersonRecord,
 	IdempotentWorkerRecord,
-	PersonContactCreateRecord,
-	PersonCreateRecord,
-	PersonIdentifierCreateRecord,
-	WorkerCreateRecord,
 } from "../../store";
 import {
 	assertLineageSegmentMutable,
 	validateLineageSegmentEffectiveOn,
 } from "../../workforce-foundation/lineage-segment";
 import { resolvePersonIdentityAsOf } from "../../workforce-foundation/person-identity-lineage";
-import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
 import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
@@ -58,6 +53,7 @@ import type {
 	WorkerClassificationAtAsOf,
 	WorkerClassificationVersion,
 } from "../../workforce-foundation/types";
+import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
 import type { CoreMemoryState } from "./core";
 import { idempotencyMapKey } from "./shared";
 
@@ -108,7 +104,8 @@ function listWorkerClassificationVersionsForWorker(
 ): WorkerClassificationVersion[] {
 	return Array.from(state.workerClassificationVersions.values()).filter(
 		(version) =>
-			version.organizationId === organizationId && version.workerId === workerId,
+			version.organizationId === organizationId &&
+			version.workerId === workerId,
 	);
 }
 
@@ -159,11 +156,15 @@ export type WorkforceFoundationMemoryState = {
 	personIdentifiers: Map<string, PersonIdentifier>;
 	personIdempotencyByKey: Map<string, IdempotentPersonRecord>;
 	personContactIdempotencyByKey: Map<string, IdempotentPersonContactRecord>;
-	personIdentifierIdempotencyByKey: Map<string, IdempotentPersonIdentifierRecord>;
+	personIdentifierIdempotencyByKey: Map<
+		string,
+		IdempotentPersonIdentifierRecord
+	>;
 	workerIdempotencyByKey: Map<string, IdempotentWorkerRecord>;
 };
 
-export type MemoryWorkforceFoundationMethods = HumanResourcesWorkforceFoundationStore;
+export type MemoryWorkforceFoundationMethods =
+	HumanResourcesWorkforceFoundationStore;
 
 export function createWorkforceFoundationMemoryState(): WorkforceFoundationMemoryState {
 	return {
@@ -1363,7 +1364,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return ok(cloneWorker(worker));
 		},
 
-		async findWorkerAsOf(query): Promise<Result<WorkerClassificationAtAsOf | null>> {
+		async findWorkerAsOf(
+			query,
+		): Promise<Result<WorkerClassificationAtAsOf | null>> {
 			const worker = state.workers.get(query.workerId);
 			if (
 				worker === undefined ||

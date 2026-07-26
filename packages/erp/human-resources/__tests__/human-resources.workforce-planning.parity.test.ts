@@ -22,8 +22,8 @@ import {
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedRequisitionPipeline } from "./helpers/recruitment-requisition-fixture";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {

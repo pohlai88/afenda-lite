@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { ok, type Result } from "@afenda/errors/result";
 
 import type {
 	HumanResourcesAssignmentId,
@@ -36,9 +36,7 @@ function readOptionalString(
 	return value ?? null;
 }
 
-export function mapAssignmentLineageFields(
-	row: AssignmentLineageRow,
-): Result<{
+export function mapAssignmentLineageFields(row: AssignmentLineageRow): Result<{
 	predecessorAssignmentId: HumanResourcesAssignmentId | null;
 	successorAssignmentId: HumanResourcesAssignmentId | null;
 	transferMovementId: HumanResourcesEmploymentMovementId | null;

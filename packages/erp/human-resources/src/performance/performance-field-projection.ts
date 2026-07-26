@@ -78,7 +78,10 @@ export function projectPerformanceReviewDetailForReader(
 	canReadConfidential: boolean,
 ): PerformanceReviewDetail {
 	return {
-		review: projectPerformanceReviewForReader(input.review, canReadConfidential),
+		review: projectPerformanceReviewForReader(
+			input.review,
+			canReadConfidential,
+		),
 		participants: input.participants,
 		assessments: input.assessments.map((assessment) =>
 			projectPerformanceAssessmentForReader(assessment, canReadConfidential),

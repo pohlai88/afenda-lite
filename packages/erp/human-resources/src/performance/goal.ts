@@ -124,7 +124,7 @@ export async function createPerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE,
 				}),
 			);
 		},
@@ -166,7 +166,7 @@ export async function updatePerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
 				}),
 			),
 	});
@@ -197,7 +197,7 @@ export async function submitPerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT,
 				}),
 			),
 	});
@@ -222,7 +222,7 @@ export async function approvePerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
 				}),
 			),
 	});
@@ -247,7 +247,7 @@ export async function rejectPerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT,
 				}),
 			),
 	});
@@ -283,7 +283,7 @@ export async function recordGoalProgress(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS,
 				}),
 			),
 	});
@@ -308,7 +308,7 @@ export async function activatePerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ACTIVATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ACTIVATE,
 				}),
 			),
 	});
@@ -334,7 +334,7 @@ export async function alignPerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ALIGN,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ALIGN,
 				}),
 			),
 	});
@@ -355,14 +355,13 @@ export async function closePerformanceGoal(
 					goalId: data.goalId,
 					expectedVersion: data.expectedVersion,
 					completionNote: data.completionNote ?? null,
-					completionEvidenceReference:
-						data.completionEvidenceReference ?? null,
+					completionEvidenceReference: data.completionEvidenceReference ?? null,
 					actorUserId: data.actorUserId,
 				},
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE,
 				}),
 			),
 	});
@@ -409,7 +408,7 @@ export async function cancelPerformanceGoal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL,
 				}),
 			),
 	});

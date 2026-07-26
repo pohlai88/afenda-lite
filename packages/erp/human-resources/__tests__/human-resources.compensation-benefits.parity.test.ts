@@ -18,11 +18,6 @@ import {
 import { createBenefitPlan } from "../src/compensation-benefits/benefit-plan";
 import { createCompensationGrade } from "../src/compensation-benefits/compensation-grade";
 import { createCompensationGradeProgressionRule } from "../src/compensation-benefits/compensation-grade-progression-rule";
-import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
-import {
-	approveEmployeeCompensation,
-	createEmployeeCompensation,
-} from "../src/compensation-benefits/employee-compensation";
 import {
 	applyApprovedCompensationResult,
 	createCompensationReviewDraft,
@@ -30,6 +25,11 @@ import {
 	getCompensationReview,
 	recordCompensationRecommendation,
 } from "../src/compensation-benefits/compensation-review";
+import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
+import {
+	approveEmployeeCompensation,
+	createEmployeeCompensation,
+} from "../src/compensation-benefits/employee-compensation";
 import {
 	createSalaryBand,
 	findSalaryBandByGradeAndCurrencyAsOf,
@@ -37,12 +37,12 @@ import {
 } from "../src/compensation-benefits/salary-band";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
+import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
-import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {

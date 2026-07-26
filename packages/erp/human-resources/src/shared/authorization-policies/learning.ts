@@ -9,6 +9,7 @@ export const learningPolicy = createScopedPolicy({
 		"human-resources.course.",
 		"human-resources.session.",
 		"human-resources.learning-assignment.",
+		"human-resources.learning-attendance.",
 		"human-resources.completion.",
 		"human-resources.certification.",
 	],

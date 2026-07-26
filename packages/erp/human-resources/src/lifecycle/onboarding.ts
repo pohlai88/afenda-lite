@@ -44,9 +44,9 @@ import type {
 	WorkEligibility,
 } from "../types";
 import {
+	mergeOnboardingChecklist,
 	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-	mergeOnboardingChecklist,
 } from "./onboarding-checklist";
 
 export const HUMAN_RESOURCES_AGGREGATE_ONBOARDING = "onboarding" as const;
@@ -80,35 +80,41 @@ async function loadOnboardingCompletionContext(
 		return notFound("Onboarding case not found");
 	}
 
-	const [tasks, orientation, equipmentHandoff, accessHandoff, missingDocs, eligibility] =
-		await Promise.all([
-			store.listOnboardingTasks({
-				organizationId: input.organizationId,
-				onboardingCaseId: input.onboardingCaseId,
-			}),
-			store.getOnboardingOrientationByCase({
-				organizationId: input.organizationId,
-				onboardingCaseId: input.onboardingCaseId,
-			}),
-			store.getOnboardingEquipmentHandoffByCase({
-				organizationId: input.organizationId,
-				onboardingCaseId: input.onboardingCaseId,
-			}),
-			store.getOnboardingAccessHandoffByCase({
-				organizationId: input.organizationId,
-				onboardingCaseId: input.onboardingCaseId,
-			}),
-			store.listMissingRequiredDocuments({
-				organizationId: input.organizationId,
-				employeeId: onboardingCase.data.employeeId,
-				page: 1,
-				pageSize: 1,
-			}),
-			store.getActiveWorkEligibilityForEmployee({
-				organizationId: input.organizationId,
-				employeeId: onboardingCase.data.employeeId,
-			}),
-		]);
+	const [
+		tasks,
+		orientation,
+		equipmentHandoff,
+		accessHandoff,
+		missingDocs,
+		eligibility,
+	] = await Promise.all([
+		store.listOnboardingTasks({
+			organizationId: input.organizationId,
+			onboardingCaseId: input.onboardingCaseId,
+		}),
+		store.getOnboardingOrientationByCase({
+			organizationId: input.organizationId,
+			onboardingCaseId: input.onboardingCaseId,
+		}),
+		store.getOnboardingEquipmentHandoffByCase({
+			organizationId: input.organizationId,
+			onboardingCaseId: input.onboardingCaseId,
+		}),
+		store.getOnboardingAccessHandoffByCase({
+			organizationId: input.organizationId,
+			onboardingCaseId: input.onboardingCaseId,
+		}),
+		store.listMissingRequiredDocuments({
+			organizationId: input.organizationId,
+			employeeId: onboardingCase.data.employeeId,
+			page: 1,
+			pageSize: 1,
+		}),
+		store.getActiveWorkEligibilityForEmployee({
+			organizationId: input.organizationId,
+			employeeId: onboardingCase.data.employeeId,
+		}),
+	]);
 
 	if (!tasks.ok) return tasks;
 	if (!orientation.ok) return orientation;
@@ -215,7 +221,7 @@ export async function startOnboarding(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
+					operationId: HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
 				}),
 			);
 		},
@@ -262,7 +268,7 @@ export async function completeOnboardingTask(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+					operationId: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
 				}),
 			);
 		},
@@ -290,7 +296,7 @@ export async function recordOnboardingOrientation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ORIENTATION,
+					operationId: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ORIENTATION,
 				}),
 			),
 	});
@@ -317,7 +323,8 @@ export async function recordOnboardingEquipmentHandoff(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_EQUIPMENT_HANDOFF,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_EQUIPMENT_HANDOFF,
 				}),
 			),
 	});
@@ -344,7 +351,7 @@ export async function recordOnboardingAccessHandoff(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ACCESS_HANDOFF,
+					operationId: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ACCESS_HANDOFF,
 				}),
 			),
 	});
@@ -391,7 +398,7 @@ export async function completeOnboarding(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+					operationId: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
 				}),
 			);
 		},

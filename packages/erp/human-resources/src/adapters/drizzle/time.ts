@@ -110,6 +110,12 @@ import type {
 	WorkCalendarCreateRecord,
 } from "../../store/time";
 import {
+	filterAttendanceEventsForWorkDay,
+	resolveAttendanceEventSourceSequence,
+	resolveImportRowSourceSequence,
+	sortAttendanceEventsForSession,
+} from "../../time/attendance/event-order";
+import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	type ExceptionDetectionHost,
 	runAttendanceExceptionDetection,
@@ -123,12 +129,6 @@ import {
 	applyAutomaticBreakPolicy,
 	resolveSessionFromEvents,
 } from "../../time/attendance/session-resolution";
-import {
-	filterAttendanceEventsForWorkDay,
-	resolveAttendanceEventSourceSequence,
-	resolveImportRowSourceSequence,
-	sortAttendanceEventsForSession,
-} from "../../time/attendance/event-order";
 import {
 	approvedLeaveMinutesForDate,
 	buildAttendanceTimesheetEntryPlans,
@@ -6555,8 +6555,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!versionCheck.ok) return versionCheck;
 			if (existing.data.status === "approved") {
 				if (
-					existing.data.approvedMaximumMinutes ===
-					input.approvedMaximumMinutes
+					existing.data.approvedMaximumMinutes === input.approvedMaximumMinutes
 				) {
 					return ok(existing.data);
 				}

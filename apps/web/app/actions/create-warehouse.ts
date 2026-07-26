@@ -2,8 +2,8 @@
 
 import {
 	createWarehouse,
-	type Warehouse,
 	WAREHOUSE_LOCATION_TYPES,
+	type Warehouse,
 } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -45,8 +45,7 @@ export async function createWarehouseAction(
 	return runMemberPermissionAction({
 		path: "createWarehouseAction",
 		permission: "master_data.manage",
-		safeMessage:
-			"Could not create warehouse. Try again or contact an admin.",
+		safeMessage: "Could not create warehouse. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const result = await createWarehouse(
 				{

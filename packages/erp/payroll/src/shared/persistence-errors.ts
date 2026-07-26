@@ -82,7 +82,11 @@ export function mapPersistenceFailure(
 }
 
 export function mapNotFound(message: string): Result<never> {
-	return fail("NOT_FOUND", message, payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND));
+	return fail(
+		"NOT_FOUND",
+		message,
+		payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
+	);
 }
 
 export function mapConflict(message: string): Result<never> {

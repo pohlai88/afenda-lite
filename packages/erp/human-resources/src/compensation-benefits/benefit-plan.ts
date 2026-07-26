@@ -38,7 +38,7 @@ export async function createBenefitPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE,
 				}),
 			),
 	});
@@ -65,7 +65,7 @@ export async function updateBenefitPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE,
 				}),
 			),
 	});
@@ -90,7 +90,7 @@ export async function archiveBenefitPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,
 				}),
 			),
 	});

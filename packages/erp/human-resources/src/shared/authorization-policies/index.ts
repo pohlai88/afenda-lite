@@ -1,8 +1,8 @@
 import type { HumanResourcesAuthorizationPolicy } from "../authorization-policy-types";
 import { compensationPolicy } from "./compensation";
 import { compliancePolicy } from "./compliance";
-import { employeeRelationsCasePolicy } from "./employee-relations";
 import { employeeProfilePolicy } from "./employee-profile";
+import { employeeRelationsCasePolicy } from "./employee-relations";
 import { employeeSubjectPolicy } from "./employee-subject";
 import { learningPolicy } from "./learning";
 import { leavePolicy } from "./leave";
@@ -23,8 +23,8 @@ import { workforcePlanningPolicy } from "./workforce-planning";
 export {
 	compensationPolicy,
 	compliancePolicy,
-	employeeRelationsCasePolicy,
 	employeeProfilePolicy,
+	employeeRelationsCasePolicy,
 	employeeSubjectPolicy,
 	learningPolicy,
 	leavePolicy,

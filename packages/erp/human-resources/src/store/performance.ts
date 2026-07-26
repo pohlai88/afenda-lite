@@ -10,9 +10,9 @@ import type {
 	HumanResourcesReviewParticipantId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
+import type { EmploymentStatus } from "../shared/employment-status";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type { PerformanceRatingScale } from "../shared/performance-rating";
-import type { EmploymentStatus } from "../shared/employment-status";
 import type {
 	PerformanceCycleReviewPeriodKind,
 	PerformanceCycleStatus,
@@ -32,6 +32,7 @@ import type {
 	PerformanceGoalProgress,
 	PerformanceGoalProgressListPage,
 	PerformanceImprovementCheckpoint,
+	PerformanceImprovementCheckpointListPage,
 	PerformanceImprovementPlan,
 	PerformanceImprovementPlanListPage,
 	PerformanceReview,
@@ -96,6 +97,7 @@ export type ImprovementPlanCreateRecord = {
 	measurableActions: string;
 	supportResources: string;
 	dueDate: string;
+	milestones: Array<{ dueDate: string }>;
 	accountableManagerEmployeeId: HumanResourcesEmployeeId;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
@@ -242,6 +244,7 @@ export type HumanResourcesPerformanceStore = {
 			employeeId: HumanResourcesEmployeeId;
 			employmentId: HumanResourcesEmploymentId;
 			actorUserId: string;
+			asOfDate?: string;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -607,6 +610,7 @@ export type HumanResourcesPerformanceStore = {
 			sequenceNumber: number;
 			outcome: "met" | "missed";
 			notes: string | null;
+			evidenceReference: string | null;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
@@ -617,9 +621,13 @@ export type HumanResourcesPerformanceStore = {
 		input: {
 			organizationId: string;
 			planId: HumanResourcesImprovementPlanId;
+			performanceGap?: string;
+			expectedOutcome?: string;
 			measurableActions?: string;
 			supportResources?: string;
 			dueDate?: string;
+			extensionReason?: string;
+			extensionEvidenceReference?: string | null;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -633,6 +641,8 @@ export type HumanResourcesPerformanceStore = {
 			planId: HumanResourcesImprovementPlanId;
 			expectedVersion: number;
 			actorUserId: string;
+			outcomeReason?: string;
+			outcomeEvidenceReference?: string | null;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -644,6 +654,8 @@ export type HumanResourcesPerformanceStore = {
 			planId: HumanResourcesImprovementPlanId;
 			expectedVersion: number;
 			actorUserId: string;
+			outcomeReason?: string;
+			outcomeEvidenceReference?: string | null;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -665,6 +677,11 @@ export type HumanResourcesPerformanceStore = {
 		page: number;
 		pageSize: number;
 	}): Promise<Result<PerformanceImprovementPlanListPage>>;
+
+	listImprovementPlanCheckpoints(input: {
+		organizationId: string;
+		planId: HumanResourcesImprovementPlanId;
+	}): Promise<Result<PerformanceImprovementCheckpointListPage>>;
 
 	getEmployeePerformanceHistory(input: {
 		organizationId: string;

@@ -171,7 +171,9 @@ describe("HR Assignments Server Actions", () => {
 			operatorSession,
 			"human-resources.employee.read",
 		);
-		expect(hrAssignmentMocks.resolveEmployeeOrgContextAsOf).toHaveBeenCalledWith(
+		expect(
+			hrAssignmentMocks.resolveEmployeeOrgContextAsOf,
+		).toHaveBeenCalledWith(
 			expect.objectContaining({
 				employeeId,
 				asOf: "2026-01-15",

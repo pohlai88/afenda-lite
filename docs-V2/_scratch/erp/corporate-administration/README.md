@@ -10,10 +10,14 @@ This bundle is a source-ready replacement for the removed Afenda Corporate Admin
 - Package authority: `@afenda/corporate-administration`
 - Legal-company root: `ca_legal_company`
 
-Use either:
+The sole execution source is the modular pack under:
 
-- `Corporate-Admin.txt` for the complete single-document version; or
-- `docs-V2/_scratch/erp/corporate-administration-greenfield/` for the modular phase documents.
+```text
+docs-V2/_scratch/erp/corporate-administration/greenfield/
+```
+
+Retired concatenated text/all-in-one copies are intentionally absent. Do not recreate
+parallel execution authorities.
 
 The proposed package README is under:
 

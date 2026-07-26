@@ -210,12 +210,11 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 
 		for (const sourceComponent of mapped.data.components) {
 			const parsedComponent = parsed.data.components.find(
-				(c) => c.code === sourceComponent.code && c.kind === sourceComponent.kind,
+				(c) =>
+					c.code === sourceComponent.code && c.kind === sourceComponent.kind,
 			);
 			expect(parsedComponent?.amount).toBe(sourceComponent.amount);
-			expect(parsedComponent?.decimalScale).toBe(
-				sourceComponent.decimalScale,
-			);
+			expect(parsedComponent?.decimalScale).toBe(sourceComponent.decimalScale);
 		}
 	});
 });

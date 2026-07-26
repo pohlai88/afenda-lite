@@ -30,13 +30,13 @@ import {
 import { fingerprintRequisitionCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
-	assertRequisitionHasHiringManager,
-	assertRequisitionHiringManagerAssignable,
-} from "../shared/recruitment-guards";
-import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
 } from "../shared/recruitment-command";
+import {
+	assertRequisitionHasHiringManager,
+	assertRequisitionHiringManagerAssignable,
+} from "../shared/recruitment-guards";
 import type { RequisitionStatus } from "../shared/recruitment-status";
 import type { HumanResourcesStore } from "../store";
 import type { JobRequisition, RequisitionListPage } from "../types";
@@ -142,7 +142,7 @@ export async function createDraftRequisition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT,
+					operationId: HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT,
 				}),
 			);
 		},
@@ -185,7 +185,7 @@ export async function amendRequisition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
+					operationId: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
 				}),
 			);
 		},
@@ -243,7 +243,8 @@ export async function assignHiringManager(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
 				}),
 			);
 		},
@@ -291,7 +292,7 @@ async function transitionRequisition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: config.command,
+					operationId: config.command,
 				}),
 			);
 		},

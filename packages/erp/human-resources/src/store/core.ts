@@ -20,13 +20,13 @@ import type {
 	HumanResourcesOrganizationDimensions,
 	MutationPorts,
 } from "../ports";
+import type { EmploymentStatusChangeKind } from "../shared/employment-history";
 import type {
 	DepartmentStatus,
 	EmploymentStatus,
 	JobStatus,
 	PositionStatus,
 } from "../shared/employment-status";
-import type { EmploymentStatusChangeKind } from "../shared/employment-history";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	Department,
@@ -150,6 +150,20 @@ export type ReportingLineCreateRecord = {
 	startsOn: string;
 	endsOn: string | null;
 	createdBy: string;
+};
+
+export type WorkforcePlanActualAssignment = {
+	employmentId: HumanResourcesEmploymentId;
+	employeeId: HumanResourcesEmployeeId;
+	positionId: HumanResourcesPositionId;
+	departmentId: HumanResourcesDepartmentId | null;
+	jobId: HumanResourcesJobId | null;
+	locationCode: string | null;
+	employmentStatus: EmploymentStatus;
+	employmentStartsOn: string;
+	employmentEndsOn: string | null;
+	assignmentStartsOn: string;
+	assignmentEndsOn: string | null;
 };
 
 export type HumanResourcesCoreStore = {
@@ -339,7 +353,9 @@ export type HumanResourcesCoreStore = {
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
-	): Promise<Result<{ superseded: EmploymentContract; successor: EmploymentContract }>>;
+	): Promise<
+		Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
+	>;
 	// Department
 	getDepartmentById(input: {
 		organizationId: string;
@@ -565,6 +581,11 @@ export type HumanResourcesCoreStore = {
 		organizationId: string;
 		employmentId: HumanResourcesEmploymentId;
 	}): Promise<Result<WorkAssignment[]>>;
+
+	listWorkforcePlanActualAssignments(input: {
+		organizationId: string;
+		asOf: string;
+	}): Promise<Result<WorkforcePlanActualAssignment[]>>;
 
 	createAssignment(
 		record: AssignmentCreateRecord,

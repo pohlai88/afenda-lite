@@ -10,7 +10,7 @@ import {
 	NativeSelect,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState, type ReactNode } from "react";
+import { type ReactNode, useActionState } from "react";
 
 import {
 	activateItemAction,
@@ -48,9 +48,8 @@ function VersionedSelect({
 				disabled={disabled || options.length === 0}
 				onChange={(event) => {
 					const selected = options.find((row) => row.id === event.target.value);
-					const versionInput = event.currentTarget.form?.elements.namedItem(
-						"expectedVersion",
-					);
+					const versionInput =
+						event.currentTarget.form?.elements.namedItem("expectedVersion");
 					if (selected && versionInput instanceof HTMLInputElement) {
 						versionInput.value = String(selected.version);
 					}

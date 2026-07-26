@@ -1,7 +1,10 @@
 import { ok, type Result } from "@afenda/errors/result";
-
-import { alreadyInStatus, cannotTransition, invalidState } from "./domain-guards";
 import type { CompensationProposalStatus } from "./compensation-status";
+import {
+	alreadyInStatus,
+	cannotTransition,
+	invalidState,
+} from "./domain-guards";
 
 export function canTransitionCompensationProposalStatus(
 	current: CompensationProposalStatus,
@@ -31,7 +34,9 @@ export function assertCompensationProposalAmendable(
 	status: CompensationProposalStatus,
 ): Result<void> {
 	if (status !== "draft") {
-		return invalidState("Compensation proposal can only be amended while draft");
+		return invalidState(
+			"Compensation proposal can only be amended while draft",
+		);
 	}
 	return ok(undefined);
 }

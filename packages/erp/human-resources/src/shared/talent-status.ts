@@ -15,6 +15,7 @@ export type JobCompetencyStatus = (typeof JOB_COMPETENCY_STATUSES)[number];
 export const COMPETENCY_ASSESSMENT_STATUSES = [
 	"current",
 	"superseded",
+	"expired",
 ] as const;
 export type CompetencyAssessmentStatus =
 	(typeof COMPETENCY_ASSESSMENT_STATUSES)[number];
@@ -48,6 +49,36 @@ export const TALENT_POOL_MEMBER_STATUSES = [
 ] as const;
 export type TalentPoolMemberStatus =
 	(typeof TALENT_POOL_MEMBER_STATUSES)[number];
+
+export const TALENT_MOBILITY_DIMENSIONS = [
+	"geographic",
+	"functional",
+	"organizational",
+] as const;
+export type TalentMobilityDimension =
+	(typeof TALENT_MOBILITY_DIMENSIONS)[number];
+
+export const TALENT_MOBILITY_PREFERENCES = [
+	"open",
+	"limited",
+	"not_open",
+] as const;
+export type TalentMobilityPreference =
+	(typeof TALENT_MOBILITY_PREFERENCES)[number];
+
+export const TALENT_PROFILE_MOBILITY_STATUSES = [
+	"current",
+	"superseded",
+] as const;
+export type TalentProfileMobilityStatus =
+	(typeof TALENT_PROFILE_MOBILITY_STATUSES)[number];
+
+export const TALENT_CRITICAL_ROLE_READINESS_STATUSES = [
+	"current",
+	"superseded",
+] as const;
+export type TalentCriticalRoleReadinessStatus =
+	(typeof TALENT_CRITICAL_ROLE_READINESS_STATUSES)[number];
 
 export const CAREER_PLAN_STATUSES = [
 	"draft",
@@ -100,6 +131,16 @@ export const talentProfileAssessmentMethodCodeSchema = z.enum(
 );
 export const talentPoolStatusSchema = z.enum(TALENT_POOL_STATUSES);
 export const talentPoolMemberStatusSchema = z.enum(TALENT_POOL_MEMBER_STATUSES);
+export const talentMobilityDimensionSchema = z.enum(TALENT_MOBILITY_DIMENSIONS);
+export const talentMobilityPreferenceSchema = z.enum(
+	TALENT_MOBILITY_PREFERENCES,
+);
+export const talentProfileMobilityStatusSchema = z.enum(
+	TALENT_PROFILE_MOBILITY_STATUSES,
+);
+export const talentCriticalRoleReadinessStatusSchema = z.enum(
+	TALENT_CRITICAL_ROLE_READINESS_STATUSES,
+);
 export const careerPlanStatusSchema = z.enum(CAREER_PLAN_STATUSES);
 export const careerPlanActionStatusSchema = z.enum(CAREER_PLAN_ACTION_STATUSES);
 export const successionPlanStatusSchema = z.enum(SUCCESSION_PLAN_STATUSES);
@@ -137,6 +178,18 @@ export function isTalentPoolMemberActive(
 	status: TalentPoolMemberStatus,
 ): boolean {
 	return status === "nominated" || status === "approved";
+}
+
+export function isTalentProfileMobilityCurrent(
+	status: TalentProfileMobilityStatus,
+): boolean {
+	return status === "current";
+}
+
+export function isTalentCriticalRoleReadinessCurrent(
+	status: TalentCriticalRoleReadinessStatus,
+): boolean {
+	return status === "current";
 }
 
 export function isCareerPlanOpen(status: CareerPlanStatus): boolean {

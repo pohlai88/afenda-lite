@@ -48,7 +48,7 @@ const preflight = handleCorsPreflight({ request, config });
 
 Blank or `*` origins in the allow-list throw. Missing/unknown `Origin` → no `Access-Control-Allow-Origin` (preflight → 403). `frameAncestors: ["'none'"]` derives `X-Frame-Options: DENY` unless `frameOptions` is set explicitly.
 
-**Living consumer:** [`apps/web/next.config.ts`](../../apps/web/next.config.ts) → `securityHeadersForNext()` (DNS prefetch, `SAMEORIGIN`, `nosniff`, strict-origin referrer, Permissions-Policy). Strict CSP / HSTS stay package opt-in until a dedicated cutover.
+**Living consumer:** [`apps/web/next.config.ts`](../../../apps/web/next.config.ts) → `securityHeadersForNext()` (DNS prefetch, `SAMEORIGIN`, `nosniff`, strict-origin referrer, Permissions-Policy). Strict CSP / HSTS stay package opt-in until a dedicated cutover.
 
 ## Maintain
 
@@ -75,20 +75,20 @@ Full surface: [`src/index.ts`](./src/index.ts).
 | Security header list · CSP builder · CORS allow-list helpers | `@afenda/security` |
 | Apply headers to all routes via Next `headers()` | `apps/web/next.config.ts` |
 | Correlation header name / mint | [`@afenda/http`](../http/README.md) |
-| Session gate / Neon Auth | [`@afenda/auth`](../auth/README.md) · [docs-V2/auth](../../docs-V2/auth/README.md) |
+| Session gate / Neon Auth | [`@afenda/auth`](../../control-plane/auth/README.md) · [docs-V2/auth](../../../docs-V2/auth/README.md) |
 | Upstash rate limit | [`@afenda/rate-limit`](../rate-limit/README.md) |
-| `platform_audit_log` | [`@afenda/audit`](../audit/README.md) |
+| `platform_audit_log` | [`@afenda/audit`](../../data-plane/audit/README.md) |
 
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
-Do not add to this package: Next.js / Express / Pages middleware wrappers, Vierp-style RBAC matrices, in-memory CSRF or rate-limit stores, `sanitizeSQL`, API-key product surfaces, tutorial `{ success }` envelopes, or trusting client `x-user-id` / `x-tenant-id` as identity. Do **not** reassemble CORS/CSP/headers into `@afenda/api-middleware` — borrow/reject SSOT: [docs-V2/api/middleware-dna.md](../../docs-V2/api/middleware-dna.md).
+Do not add to this package: Next.js / Express / Pages middleware wrappers, Vierp-style RBAC matrices, in-memory CSRF or rate-limit stores, `sanitizeSQL`, API-key product surfaces, tutorial `{ success }` envelopes, or trusting client `x-user-id` / `x-tenant-id` as identity. Do **not** reassemble CORS/CSP/headers into `@afenda/api-middleware` — borrow/reject SSOT: [docs-V2/api/middleware-dna.md](../../../docs-V2/api/middleware-dna.md).
 
 ## Authority
 
 | Topic | Link |
 |-------|------|
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| API envelopes (not this package) | [docs-V2/api](../../docs-V2/api/README.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| API envelopes (not this package) | [docs-V2/api](../../../docs-V2/api/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

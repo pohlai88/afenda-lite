@@ -85,7 +85,9 @@ export async function ensureRequisitionHiringManager(
 	| { ok: true; requisition: JobRequisition }
 	| { ok: false; error: Awaited<ReturnType<typeof assignHiringManager>> }
 > {
-	if (input.requisition.hiringManagerEmployeeId === input.hiringManagerEmployeeId) {
+	if (
+		input.requisition.hiringManagerEmployeeId === input.hiringManagerEmployeeId
+	) {
 		return { ok: true, requisition: input.requisition };
 	}
 
@@ -113,10 +115,7 @@ export async function seedDefaultHiringManager(
 		actorUserId: string;
 		tag: string;
 	},
-): Promise<
-	| { ok: true; employeeId: HumanResourcesEmployeeId }
-	| { ok: false }
-> {
+): Promise<{ ok: true; employeeId: HumanResourcesEmployeeId } | { ok: false }> {
 	return seedActiveEmployee(ready, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,

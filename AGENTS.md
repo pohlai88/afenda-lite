@@ -284,7 +284,7 @@ Cross-tool pointers (do not duplicate this file): [`.cursorrules`](.cursorrules)
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Gate `pnpm check:docs-trunk-ban` (banned architecture trunks stay absent) |
 | Index ghosts | Grep/Glob may list deleted Living `docs/**` paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
-| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only**. Live when `docs/` absent: `pnpm checks` skips Living naming/integrity/module-quality · `check:docs-trunk-ban` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
+| Scripts | Removed Collapse-era command aliases are absent from root `package.json`; only executable forward controls are listed. Live when `docs/` is absent: `pnpm checks` skips Living naming/integrity/module-quality · `check:docs-trunk-ban` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
 
 **App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
@@ -374,7 +374,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**179** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting · **106 `hr_*`**) — inventory mirrored in `scripts/audit-tenancy-nulls.mjs` |
+| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (**222** tables via `HARD_TENANT_ROOT_TABLE_NAMES` SSOT in `packages/data-plane/db/src/hard-tenant-roots.ts`: platform_* six · master-data roots · ERP sales/purchasing/inventory/receiving/fulfillment/receivables/payables/payments/accounting/payroll · **129 `hr_*`**) — inventory and fixed SQL checks mirrored in `scripts/audit-tenancy-nulls.mjs`; parity enforced by `packages/data-plane/db/__tests__/tenancy.test.ts` |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 

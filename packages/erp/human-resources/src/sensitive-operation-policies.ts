@@ -115,6 +115,7 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 			"human-resources.course.",
 			"human-resources.session.",
 			"human-resources.learning-assignment.",
+			"human-resources.learning-attendance.",
 			"human-resources.completion.",
 			"human-resources.certification.",
 		],
@@ -141,6 +142,8 @@ export const HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES = [
 		operationPrefixes: [
 			"human-resources.talent-profile.",
 			"human-resources.talent-profile-assessment.",
+			"human-resources.talent-profile-mobility.",
+			"human-resources.critical-role-readiness.",
 			"human-resources.talent-pool.",
 			"human-resources.talent-pool-member.",
 			"human-resources.career-plan.",

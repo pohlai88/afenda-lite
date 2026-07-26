@@ -41,7 +41,10 @@ const {
 } = await import(neonContractUrl);
 
 const neonRecoveryUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/foundation/env/src/neon-recovery-posture.ts"),
+	resolve(
+		process.cwd(),
+		"packages/foundation/env/src/neon-recovery-posture.ts",
+	),
 ).href;
 const {
 	evaluateHistoryRetention,
@@ -51,7 +54,10 @@ const {
 } = await import(neonRecoveryUrl);
 
 const neonPerformanceUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/foundation/env/src/neon-performance-posture.ts"),
+	resolve(
+		process.cwd(),
+		"packages/foundation/env/src/neon-performance-posture.ts",
+	),
 ).href;
 const {
 	evaluateComputeAutoscaling,

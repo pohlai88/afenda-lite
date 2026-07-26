@@ -42,7 +42,8 @@ describe("event replay and consumer idempotency", () => {
 			documentType: "passport",
 			issuedOn: "2026-01-01",
 			expiresOn: "2030-01-01",
-			documentRef: "vault://passport/replay",
+			documentRef:
+				"vault://organizations/org-replay-cmd/passport/replay?version=1",
 			idempotencyKey: "idem-reg-replay",
 		};
 

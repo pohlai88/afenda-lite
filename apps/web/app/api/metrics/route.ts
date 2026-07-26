@@ -1,7 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 import { env } from "@afenda/env";
-import { PROMETHEUS_CONTENT_TYPE, renderPrometheusText } from "@afenda/metrics/node";
+import {
+	PROMETHEUS_CONTENT_TYPE,
+	renderPrometheusText,
+} from "@afenda/metrics/node";
 
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
 

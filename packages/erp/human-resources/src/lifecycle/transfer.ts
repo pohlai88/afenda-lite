@@ -86,7 +86,7 @@ export async function transferAssignment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+					operationId: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 				}),
 			);
 		},

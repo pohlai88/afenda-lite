@@ -4,30 +4,29 @@
  * a hostile on-disk tree that Living checkout must not contain.
  */
 
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	diffGeneratedRegisters,
-} from "./generate-registers.mjs";
-import {
 	reconcileWorkspaceEdges,
 	validateCandidatePackagesAbsent,
+	validateCatalogDiskParity,
 	validateCommandsQueries,
 	validateDeepImports,
 	validateDependencyDag,
 	validateErpAuthorizationPorts,
 	validateEventContracts,
 	validateEvents,
-	validateCatalogDiskParity,
 	validateForeignSchemaImports,
 	validateModuleIdentity,
 	validateModuleReferences,
 	validateMutationTablesExist,
 	validatePermissions,
 	validatePersistenceOwnership,
+	validateSchemaPrefixReservations,
 	validateSoleMutatorBoundary,
 } from "./checks.mjs";
+import { diffGeneratedRegisters } from "./generate-registers.mjs";
 
 /**
  * @returns {{ ok: boolean, message: string, matrix: { gate: string, expected: string, actual: string[] }[] }}
@@ -335,15 +334,43 @@ export function runNegativeFixtures() {
 			ownershipPath,
 			[
 				"tables:",
-				'  - table: sales_order',
+				"  - table: sales_order",
 				'    writeOwner: "@afenda/sales"',
 				"    kind: erp",
-				'  - table: md_party',
+				"  - table: md_party",
 				'    writeOwner: "@afenda/master-data"',
 				"    kind: erp",
 				"",
 			].join("\n"),
 			"utf8",
+		);
+		const prefixOwnershipPath = join(tmpRoot, "PREFIX-OWNERSHIP.yaml");
+		writeFileSync(
+			prefixOwnershipPath,
+			[
+				"prefixReservations:",
+				"  - prefix: ca_",
+				'    writeOwner: "@afenda/corporate-administration"',
+				"    moduleId: corporate-administration",
+				"",
+			].join("\n"),
+			"utf8",
+		);
+		misses.push(
+			expectFail(
+				"mutation table outside reserved schema prefix",
+				"mutation table outside reserved prefix ca_",
+				validateSchemaPrefixReservations(
+					[
+						baseManifest({
+							id: "corporate-administration",
+							packageName: "@afenda/corporate-administration",
+							mutationTables: ["not_ca_table"],
+						}),
+					],
+					prefixOwnershipPath,
+				),
+			) ?? "",
 		);
 		writeFileSync(
 			join(tmpRoot, "packages", "erp", "sales", "src", "steal.ts"),

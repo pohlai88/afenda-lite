@@ -25,10 +25,10 @@ describe("HR leave policy balance rules migration", () => {
 		expect(migrationSql).toContain(
 			'ADD COLUMN "carry_forward_max_quantity" text',
 		);
+		expect(migrationSql).toContain('ADD COLUMN "entitlement_expiry_rule" text');
 		expect(migrationSql).toContain(
-			'ADD COLUMN "entitlement_expiry_rule" text',
+			'ADD COLUMN "entitlement_expiry_days" integer',
 		);
-		expect(migrationSql).toContain('ADD COLUMN "entitlement_expiry_days" integer');
 		expect(migrationSql).toContain('"hr_leave_policy_accrual_basis_check"');
 		expect(migrationSql).toContain('"hr_leave_policy_accrual_config_check"');
 		expect(migrationSql).toContain('"hr_leave_policy_carry_forward_check"');

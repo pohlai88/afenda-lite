@@ -1,8 +1,8 @@
+import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createAssignment } from "../../src/core/assignment";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import { createPosition } from "../../src/organization/position";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./command-options";
 import { seedDepartmentAndJob } from "./seed-department-and-job";
 
@@ -50,7 +50,11 @@ export async function seedLifecycleEmploymentWithAssignment(
 		correlationId: `corr-life-org-${input.suffix}`,
 	});
 	if (orgSeed === null) {
-		return { ok: false as const, code: "NOT_FOUND" as const, message: "Org seed failed" };
+		return {
+			ok: false as const,
+			code: "NOT_FOUND" as const,
+			message: "Org seed failed",
+		};
 	}
 
 	const positionA = await createPosition(

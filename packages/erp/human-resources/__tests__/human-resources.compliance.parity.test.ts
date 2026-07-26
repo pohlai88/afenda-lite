@@ -103,7 +103,7 @@ describe.runIf(runDrizzleParity)("human-resources compliance parity", () => {
 					documentType: "passport",
 					issuedOn: "2026-01-01",
 					expiresOn: "2031-01-01",
-					documentRef: `vault://passport/${suffix}`,
+					documentRef: `vault://organizations/${organizationId}/passport/${suffix}?version=1`,
 					idempotencyKey: `idem-doc-${suffix}`,
 				},
 				ready,

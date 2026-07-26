@@ -31,7 +31,10 @@ import type { EmployeeCompensation } from "../../types";
 import type { CompensationBenefitsMemoryState } from "./compensation-benefits";
 import type { CoreMemoryState } from "./core";
 
-function idempotencyMapKey(organizationId: string, idempotencyKey: string): string {
+function idempotencyMapKey(
+	organizationId: string,
+	idempotencyKey: string,
+): string {
 	return `${organizationId}:${idempotencyKey}`;
 }
 
@@ -208,12 +211,8 @@ export async function memoryCreateEmployeeCompensation(
 	if (!employmentCheck.ok) return employmentCheck;
 
 	if (
-		findByStatus(
-			state,
-			record.organizationId,
-			record.employmentId,
-			"draft",
-		) !== null
+		findByStatus(state, record.organizationId, record.employmentId, "draft") !==
+		null
 	) {
 		return conflict("An open draft compensation agreement already exists");
 	}
@@ -297,7 +296,10 @@ export async function memoryAmendEmployeeCompensation(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be amended");
@@ -358,17 +360,26 @@ export async function memoryApproveEmployeeCompensation(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationDraft(comp.status)) {
 		return invalidState("Only draft compensation agreements can be approved");
 	}
 
-	const nextStatus = resolveEmployeeCompensationApprovalStatus(comp.effectiveFrom);
+	const nextStatus = resolveEmployeeCompensationApprovalStatus(
+		comp.effectiveFrom,
+	);
 	if (nextStatus === "scheduled") {
 		if (
-			findByStatus(state, input.organizationId, comp.employmentId, "scheduled") !==
-			null
+			findByStatus(
+				state,
+				input.organizationId,
+				comp.employmentId,
+				"scheduled",
+			) !== null
 		) {
 			return conflict("A scheduled compensation agreement already exists");
 		}
@@ -445,7 +456,9 @@ export async function memoryScheduleEmployeeCompensationChange(
 		);
 	}
 	if (!isEmployeeCompensationActive(active.status)) {
-		return invalidState("Scheduled changes require an active compensation agreement");
+		return invalidState(
+			"Scheduled changes require an active compensation agreement",
+		);
 	}
 	if (input.effectiveFrom <= active.effectiveFrom) {
 		return invalidState("Scheduled change must have a future effective date");
@@ -509,12 +522,19 @@ export async function memoryActivateEmployeeCompensation(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationScheduled(comp.status)) {
-		return invalidState("Only scheduled compensation agreements can be activated");
+		return invalidState(
+			"Only scheduled compensation agreements can be activated",
+		);
 	}
-	if (resolveEmployeeCompensationApprovalStatus(comp.effectiveFrom) !== "active") {
+	if (
+		resolveEmployeeCompensationApprovalStatus(comp.effectiveFrom) !== "active"
+	) {
 		return invalidState("Compensation effective date is still in the future");
 	}
 
@@ -557,7 +577,7 @@ export async function memoryActivateEmployeeCompensation(
 
 export async function memoryCorrectEmployeeCompensation(
 	state: CompensationBenefitsMemoryState,
-	core: CoreMemoryState,
+	_core: CoreMemoryState,
 	input: {
 		organizationId: string;
 		compensationId: HumanResourcesEmployeeCompensationId;
@@ -586,7 +606,9 @@ export async function memoryCorrectEmployeeCompensation(
 		);
 	}
 	if (!isEmployeeCompensationCorrectable(predecessor.status)) {
-		return invalidState("Compensation cannot be corrected in its current status");
+		return invalidState(
+			"Compensation cannot be corrected in its current status",
+		);
 	}
 
 	const reason =
@@ -710,7 +732,10 @@ export async function memoryEndEmployeeCompensation(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	const versionCheck = assertExpectedVersion(comp.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		comp.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	if (!isEmployeeCompensationCancellable(comp.status)) {
 		return invalidState("Compensation cannot be ended in its current status");

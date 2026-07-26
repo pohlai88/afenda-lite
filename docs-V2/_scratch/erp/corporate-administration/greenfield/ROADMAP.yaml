@@ -13,12 +13,12 @@ phases:
       - id: "CA-0.1"
         title: "Authority, catalog and package scaffold"
         depends_on: "None"
-        status: OPEN
+        status: DONE
         goal: "Register the greenfield bounded context before domain coding and create a minimal buildable package with no fabricated behavior."
       - id: "CA-0.2"
         title: "Core contracts, permissions, errors and reference ports"
         depends_on: "CA-0.1"
-        status: OPEN
+        status: DONE
         goal: "Define the stable greenfield contracts used by every later vertical."
       - id: "CA-0.3"
         title: "Database foundation and atomic mutation kernel"

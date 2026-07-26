@@ -29,7 +29,7 @@
 | `human-resources.improvement-plan.started.v1` | `improvement-plan.open` |
 | `human-resources.improvement-plan.completed.v1` | `improvement-plan.complete` |
 | `human-resources.learning-assignment.created.v1` | `learning-assignment.create` |
-| `human-resources.certification.expiring.v1` | `certification.expire` (legacy reclass) |
+| `human-resources.certification.expiring.v1` | `certification.expire` (canonical Learning classification) |
 
 ## Compensation-benefits (18)
 
@@ -113,7 +113,7 @@
 | `privacy.legal-hold.release` | audit_only | — | privacy_legal_hold |
 | `privacy.subject.anonymize` | audit_only | — | privacy_subject |
 
-## Legacy reclass
+## Historical reclassification
 
 | Command | Before | After |
 |---|---|---|
@@ -121,7 +121,7 @@
 
 ## Exit claim
 
-- **290/290** mutation-command classification
-- **106/106** event catalog entries for registry `domain_event` types
+- **348/348** mutation-command classification
+- **121/121** event catalog entries for registry `domain_event` types
 - **0** HR-AUD-06 CI exemptions
 - Unlocks Slices **3.6 DONE** · **3.7 DONE** · **3.8 DONE** · **Phase 3 DONE**

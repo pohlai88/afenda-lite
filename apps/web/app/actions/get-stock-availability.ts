@@ -1,6 +1,9 @@
 "use server";
 
-import { getStockAvailability, type StockAvailability } from "@afenda/inventory";
+import {
+	getStockAvailability,
+	type StockAvailability,
+} from "@afenda/inventory";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";

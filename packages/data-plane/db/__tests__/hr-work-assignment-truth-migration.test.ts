@@ -22,7 +22,9 @@ describe("HR work assignment truth migration", () => {
 		expect(migrationSql).toContain(
 			"hr_work_assignment_predecessor_assignment_fk",
 		);
-		expect(migrationSql).toContain("hr_work_assignment_successor_assignment_fk");
+		expect(migrationSql).toContain(
+			"hr_work_assignment_successor_assignment_fk",
+		);
 		expect(migrationSql).toContain("hr_work_assignment_transfer_movement_fk");
 		expect(migrationSql).toContain(
 			"hr_work_assignment_org_employment_starts_idx",

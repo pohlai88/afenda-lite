@@ -1,5 +1,10 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
+import type {
+	HumanResourcesCourseId,
+	HumanResourcesEmployeeId,
+	HumanResourcesSessionId,
+} from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
@@ -327,6 +332,74 @@ export function assertCertificationCanExpire(
 ): Result<void> {
 	if (status !== "active") {
 		return invalidState("Can only expire active certifications");
+	}
+	return ok(undefined);
+}
+
+// Learning Attendance Guards
+
+export function assertLearningAttendanceRecordable(input: {
+	sessionStatus: SessionStatus;
+	assignmentStatus: AssignmentStatus;
+	assignmentSessionId: HumanResourcesSessionId | null;
+	requestedSessionId: HumanResourcesSessionId;
+}): Result<void> {
+	if (
+		input.sessionStatus !== "in_progress" &&
+		input.sessionStatus !== "completed"
+	) {
+		return invalidState(
+			"Learning attendance can only be recorded for in-progress or completed sessions",
+		);
+	}
+	if (input.assignmentStatus !== "in_progress") {
+		return invalidState(
+			"Assignment must be in progress to record learning attendance",
+		);
+	}
+	if (
+		input.assignmentSessionId === null ||
+		input.assignmentSessionId !== input.requestedSessionId
+	) {
+		return invalidState("Assignment is not enrolled in the requested session");
+	}
+	return ok(undefined);
+}
+
+export function assertNoDuplicateLearningAttendance(input: {
+	hasExistingAttendance: boolean;
+}): Result<void> {
+	if (input.hasExistingAttendance) {
+		return conflict(
+			"Attendance already recorded for this assignment and session",
+		);
+	}
+	return ok(undefined);
+}
+
+// Certification Renewal Guards
+
+export function assertCertificationRenewable(input: {
+	status: CertificationStatus;
+	employeeId: HumanResourcesEmployeeId;
+	courseId: HumanResourcesCourseId;
+	completionEmployeeId: HumanResourcesEmployeeId;
+	completionCourseId: HumanResourcesCourseId;
+	completionOutcome: string;
+}): Result<void> {
+	if (input.status !== "expired") {
+		return invalidState("Can only renew expired certifications");
+	}
+	if (
+		input.employeeId !== input.completionEmployeeId ||
+		input.courseId !== input.completionCourseId
+	) {
+		return invalidState(
+			"Renewal completion does not match the certification employee and course",
+		);
+	}
+	if (input.completionOutcome !== "passed") {
+		return invalidState("Renewal requires a passed completion outcome");
 	}
 	return ok(undefined);
 }

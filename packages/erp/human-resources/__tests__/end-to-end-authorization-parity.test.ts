@@ -14,9 +14,7 @@ import {
 	listEmployeeGoals,
 	submitPerformanceGoal,
 } from "../src/performance/goal";
-import {
-	createPerformanceCycle,
-} from "../src/performance/performance-cycle";
+import { createPerformanceCycle } from "../src/performance/performance-cycle";
 import {
 	getPerformanceReviewById,
 	listEmployeePerformanceReviews,
@@ -31,9 +29,9 @@ import { getEmployeeCompetencyProfile } from "../src/talent/competency";
 import { listSuccessionPlans } from "../src/talent/succession-plan";
 import { getTalentProfileByEmployee } from "../src/talent/talent-profile";
 import type { PerformanceGoal, PerformanceReviewDetail } from "../src/types";
+import { mapActorToEmployee } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { mapActorToEmployee } from "./helpers/identity-resolver";
 import { publishAndOpenPerformanceCycle } from "./helpers/performance-cycle-harness";
 
 describe("End-to-End Authorization Parity Tests", () => {

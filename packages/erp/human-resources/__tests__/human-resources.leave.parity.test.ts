@@ -5,6 +5,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
+import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
 import {
 	accrueLeaveEntitlement,
 	carryForwardLeaveEntitlement,
@@ -21,8 +22,8 @@ import {
 	supersedeLeavePolicy,
 } from "../src/leave/leave-policy";
 import {
-	approveLeaveRequest,
 	amendLeaveRequest,
+	approveLeaveRequest,
 	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
 	getApprovedLeaveHandoff,
@@ -32,7 +33,6 @@ import {
 	withdrawLeaveRequest,
 } from "../src/leave/leave-request";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

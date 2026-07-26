@@ -39,7 +39,7 @@ Root gate after promote:
 pnpm check:ui-system
 ```
 
-Shadcn Studio DNA (Method A/B) is **not** `ui:add` into product routes — stage under `apps/web/shadcn-studio`, then promote. Method: [shadcn-ui skill](../../.cursor/skills/shadcn-ui/SKILL.md).
+Shadcn Studio DNA (Method A/B) is **not** `ui:add` into product routes — stage under `apps/web/shadcn-studio`, then promote. Method: [shadcn-ui skill](../../../.cursor/skills/shadcn-ui/SKILL.md).
 
 ## Maintain
 
@@ -81,7 +81,7 @@ Runtime deps include `radix-ui`, `class-variance-authority`, `clsx`, `tailwind-m
 | Studio DNA stage tree | `apps/web/shadcn-studio` (stage only — not Living product UI) |
 | App global CSS composition | `apps/web/globals.css` |
 
-**Layer:** Rank-2 Surfaces — may import Platform **client-safe** only; must stay free of server-only code and DB calls. Must not import `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
+**Layer:** Rank-2 Surfaces — may import Platform **client-safe** only; must stay free of server-only code and DB calls. Must not import `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
 
 ## Out of scope
 
@@ -91,7 +91,7 @@ Do not add to this package: paid/external registries on `components.json`, a gat
 
 | Topic | Link |
 |-------|------|
-| Product UI import rules · `ui:add` verify | [docs-V2/nextjs/ui](../../docs-V2/nextjs/ui.md) |
-| Package DAG / Surfaces rules | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| shadcn CLI · Studio DNA · ADR-010 workflow (Living ADR body dormant) | [shadcn-ui skill](../../.cursor/skills/shadcn-ui/SKILL.md) |
-| Agent checkout posture (barrel · tokens · no `@afenda/ui`) | [AGENTS.md](../../AGENTS.md) |
+| Product UI import rules · `ui:add` verify | [docs-V2/nextjs/ui](../../../docs-V2/nextjs/ui.md) |
+| Package DAG / Surfaces rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| shadcn CLI · Studio DNA · ADR-010 workflow (Living ADR body dormant) | [shadcn-ui skill](../../../.cursor/skills/shadcn-ui/SKILL.md) |
+| Agent checkout posture (barrel · tokens · no `@afenda/ui`) | [AGENTS.md](../../../AGENTS.md) |

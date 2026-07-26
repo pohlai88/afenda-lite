@@ -68,10 +68,20 @@ export function CreateWarehouseForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Code" required fieldId="warehouse-code" error={codeError}>
+			<FormField
+				label="Code"
+				required
+				fieldId="warehouse-code"
+				error={codeError}
+			>
 				<Input name="code" required autoComplete="off" disabled={pending} />
 			</FormField>
-			<FormField label="Name" required fieldId="warehouse-name" error={nameError}>
+			<FormField
+				label="Name"
+				required
+				fieldId="warehouse-name"
+				error={nameError}
+			>
 				<Input name="name" required autoComplete="off" disabled={pending} />
 			</FormField>
 			<FormField label="Location type" required fieldId="warehouse-location">

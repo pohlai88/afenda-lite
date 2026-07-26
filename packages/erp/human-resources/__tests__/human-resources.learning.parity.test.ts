@@ -6,9 +6,11 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
+	expireCertification,
 	getCertification,
 	issueCertification,
 	listCertifications,
+	renewCertification,
 	revokeCertification,
 } from "../src/learning/certification";
 import {
@@ -31,6 +33,11 @@ import {
 	waiveAssignment,
 } from "../src/learning/learning-assignment";
 import {
+	listLearningAttendance,
+	recordLearningAttendance,
+} from "../src/learning/learning-attendance";
+import {
+	assignSessionInstructor,
 	completeSession,
 	createSession,
 	getSession,
@@ -503,6 +510,85 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(revoked.data.status).toBe("revoked");
 	});
 
+	it("certification expiration", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: `cert-expire-${suffix}`,
+		});
+		const course = await seedCourse(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			code: `CERT-EXP-${suffix}`,
+		});
+		const assignment = await assignLearning(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cert-exp-assign-${suffix}`,
+				employeeId: employee.id,
+				courseId: course.id,
+				dueOn: null,
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const completion = await recordCompletion(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cert-exp-comp-${suffix}`,
+				assignmentId: assignment.data.id,
+				employeeId: employee.id,
+				courseId: course.id,
+				sessionId: null,
+				completedAt: "2025-08-01T12:00:00Z",
+				outcome: "passed",
+				assessorUserId: null,
+				notes: null,
+			},
+			ready,
+		);
+		expect(completion.ok).toBe(true);
+		if (!completion.ok) return;
+
+		const certification = await issueCertification(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cert-exp-issue-${suffix}`,
+				idempotencyKey: `idem-cert-exp-issue-${suffix}`,
+				employeeId: employee.id,
+				courseId: course.id,
+				completionId: completion.data.id,
+				certificationCode: `CERT-EXP-${suffix}`,
+				issuedOn: "2025-08-02",
+				expiresOn: "2026-08-02",
+			},
+			ready,
+		);
+		expect(certification.ok).toBe(true);
+		if (!certification.ok) return;
+		expect(certification.data.status).toBe("active");
+
+		const expired = await expireCertification(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-cert-expire-${suffix}`,
+				certificationId: certification.data.id,
+				expectedVersion: certification.data.version,
+			},
+			ready,
+		);
+		expect(expired.ok).toBe(true);
+		if (!expired.ok) return;
+		expect(expired.data.status).toBe("expired");
+	});
+
 	it("lists courses with pagination", async () => {
 		const ready = createHrParityHarness(adapter);
 		for (let i = 1; i <= 3; i++) {
@@ -759,6 +845,251 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(page.ok).toBe(true);
 		if (!page.ok) return;
 		expect(page.data.certifications.length).toBe(1);
+	});
+
+	it("assigns session instructor and records learning attendance", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: `slice97-${suffix}`,
+		});
+		const course = await seedCourse(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			code: `SLICE97-${suffix}`,
+		});
+		const session = await createSession(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-s-${suffix}`,
+				idempotencyKey: `idem-s97-s-${suffix}`,
+				courseId: course.id,
+				code: `S97-${suffix}`,
+				title: "Slice 9.7 Session",
+				scheduledStartsAt: "2025-08-01T09:00:00Z",
+				scheduledEndsAt: "2025-08-01T17:00:00Z",
+				capacity: 5,
+				primaryInstructorUserId: "instructor-parity",
+			},
+			ready,
+		);
+		expect(session.ok).toBe(true);
+		if (!session.ok) return;
+
+		const instructed = await assignSessionInstructor(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-i-${suffix}`,
+				sessionId: session.data.id,
+				primaryInstructorUserId: "instructor-parity-2",
+				expectedVersion: session.data.version,
+			},
+			ready,
+		);
+		expect(instructed.ok).toBe(true);
+		if (!instructed.ok) return;
+
+		const started = await startSession(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-start-${suffix}`,
+				sessionId: instructed.data.id,
+				expectedVersion: instructed.data.version,
+			},
+			ready,
+		);
+		expect(started.ok).toBe(true);
+		if (!started.ok) return;
+
+		const assignment = await assignLearning(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-a-${suffix}`,
+				employeeId: employee.id,
+				courseId: course.id,
+				sessionId: started.data.id,
+				dueOn: null,
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const enrolled = await enrolAssignment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-e-${suffix}`,
+				assignmentId: assignment.data.id,
+				expectedVersion: assignment.data.version,
+			},
+			ready,
+		);
+		expect(enrolled.ok).toBe(true);
+		if (!enrolled.ok) return;
+
+		const attendance = await recordLearningAttendance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-att-${suffix}`,
+				idempotencyKey: `idem-s97-att-${suffix}`,
+				sessionId: started.data.id,
+				assignmentId: enrolled.data.id,
+				status: "present",
+				recordedAt: "2025-08-01T10:00:00Z",
+			},
+			ready,
+		);
+		expect(attendance.ok).toBe(true);
+		if (!attendance.ok) return;
+
+		const listed = await listLearningAttendance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-s97-list-att-${suffix}`,
+				sessionId: started.data.id,
+			},
+			ready,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.attendanceRecords.length).toBe(1);
+	});
+
+	it("renews expired certification", async () => {
+		const ready = createHrParityHarness(adapter);
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: `renew-${suffix}`,
+		});
+		const course = await seedCourse(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			code: `RENEW-${suffix}`,
+		});
+		const assignment = await assignLearning(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-a-${suffix}`,
+				employeeId: employee.id,
+				courseId: course.id,
+				dueOn: null,
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const completion = await recordCompletion(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-c-${suffix}`,
+				assignmentId: assignment.data.id,
+				employeeId: employee.id,
+				courseId: course.id,
+				sessionId: null,
+				completedAt: "2024-05-01T12:00:00Z",
+				outcome: "passed",
+				assessorUserId: null,
+				notes: null,
+			},
+			ready,
+		);
+		expect(completion.ok).toBe(true);
+		if (!completion.ok) return;
+
+		const issued = await issueCertification(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-i-${suffix}`,
+				idempotencyKey: `idem-renew-i-${suffix}`,
+				employeeId: employee.id,
+				courseId: course.id,
+				completionId: completion.data.id,
+				certificationCode: `RENEW-${suffix}`,
+				issuedOn: "2024-05-02",
+				expiresOn: "2025-05-02",
+			},
+			ready,
+		);
+		expect(issued.ok).toBe(true);
+		if (!issued.ok) return;
+
+		const expired = await expireCertification(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-x-${suffix}`,
+				certificationId: issued.data.id,
+				expectedVersion: issued.data.version,
+			},
+			ready,
+		);
+		expect(expired.ok).toBe(true);
+		if (!expired.ok) return;
+
+		const renewalAssignment = await assignLearning(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-a2-${suffix}`,
+				employeeId: employee.id,
+				courseId: course.id,
+				dueOn: null,
+			},
+			ready,
+		);
+		expect(renewalAssignment.ok).toBe(true);
+		if (!renewalAssignment.ok) return;
+
+		const renewalCompletion = await recordCompletion(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-c2-${suffix}`,
+				assignmentId: renewalAssignment.data.id,
+				employeeId: employee.id,
+				courseId: course.id,
+				sessionId: null,
+				completedAt: "2025-06-01T12:00:00Z",
+				outcome: "passed",
+				assessorUserId: null,
+				notes: null,
+			},
+			ready,
+		);
+		expect(renewalCompletion.ok).toBe(true);
+		if (!renewalCompletion.ok) return;
+
+		const renewed = await renewCertification(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-renew-r-${suffix}`,
+				idempotencyKey: `idem-renew-r-${suffix}`,
+				certificationId: expired.data.id,
+				completionId: renewalCompletion.data.id,
+				certificationCode: `RENEW2-${suffix}`,
+				issuedOn: "2025-06-02",
+				expiresOn: "2026-06-02",
+				expectedVersion: expired.data.version,
+			},
+			ready,
+		);
+		expect(renewed.ok).toBe(true);
+		if (!renewed.ok) return;
+		expect(renewed.data.renewedFromCertificationId).toBe(expired.data.id);
 	});
 }
 

@@ -761,10 +761,7 @@ export async function getInvoiceableSalesOrder(
 	if (order.data === null) {
 		return ok(null);
 	}
-	if (
-		order.data.status === "draft" ||
-		order.data.status === "cancelled"
-	) {
+	if (order.data.status === "draft" || order.data.status === "cancelled") {
 		return fail("CONFLICT", "Sales order is not invoiceable");
 	}
 

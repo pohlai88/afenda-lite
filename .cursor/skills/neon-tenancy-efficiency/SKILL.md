@@ -131,11 +131,11 @@ Confirm branch/project IDs via Neon MCP / `pnpm validate:neon-env`. Do **not** r
 
 ### Step 1 — Config / pooler drift
 
-Docs-first: `npm run audit:vercel` / Console Connect (pooler) when available — key **names** only. Fix production `DATABASE_URL` pooler via approved Vercel sync path when shipping; never invent local compose.
+Run `pnpm validate:neon-env`, then verify the production `DATABASE_URL` pooler posture through the Vercel dashboard/CLI or Console Connect — key **names** only. Never invent local compose.
 
 ### Step 2 — Tenancy integrity
 
-When Target product tooling exists: `audit:tenancy-nulls` · `check:tenancy-residue` · `check:db-schema`. On docs-first: report scripts **gated/unavailable** — do not recover Collapse script bodies.
+Run the live controls `pnpm audit:tenancy-nulls` and `pnpm check:tenancy-residue`. Historical `check:db-schema` is removed and is not an audit control.
 
 ### Step 3 — Query / index health
 
@@ -147,7 +147,7 @@ Console target (ARCH-023 ops): protected default branch; autoscaling min sized f
 
 ### Step 5 — Auth + isolation
 
-Prefer `sync:neon-auth-manifest` / `audit:neon-auth-production` / Neon MCP when available. Isolation e2e requires Target app — do not claim pass on docs-first without the suite.
+Use `pnpm audit:neon-auth-production` and Neon MCP when available. The removed `sync:neon-auth-manifest` alias is not a control. Isolation e2e requires the current app suite—do not claim a pass without it.
 
 ### Step 6 — Report
 

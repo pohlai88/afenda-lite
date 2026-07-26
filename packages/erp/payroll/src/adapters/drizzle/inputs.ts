@@ -1,12 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import {
-	and,
-	db,
-	eq,
-	payrollPeriod,
-	payrollVariableInput,
-} from "@afenda/db";
+import { and, db, eq, payrollPeriod, payrollVariableInput } from "@afenda/db";
 import { ok, type Result } from "@afenda/errors/result";
 
 import {
@@ -177,10 +171,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 				.where(
 					and(
 						eq(payrollVariableInput.organizationId, input.organizationId),
-						eq(
-							payrollVariableInput.createIdempotencyKey,
-							input.idempotencyKey,
-						),
+						eq(payrollVariableInput.createIdempotencyKey, input.idempotencyKey),
 					),
 				)
 				.limit(1);

@@ -15,7 +15,6 @@ import {
 	HUMAN_RESOURCES_QUERY_POSITION_LIST,
 	HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
 } from "../module-ids";
-import type { PositionDefinitionAtAsOf } from "./organization-structure-lineage";
 import {
 	createPositionInputSchema,
 	getPositionAsOfInputSchema,
@@ -31,6 +30,7 @@ import {
 	runOrganizationQuery,
 } from "../shared/organization-command";
 import type { Position, PositionOccupancyAsOf } from "../types";
+import type { PositionDefinitionAtAsOf } from "./organization-structure-lineage";
 
 export async function createPosition(
 	input: unknown,
@@ -54,7 +54,7 @@ export async function createPosition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
 				}),
 			),
 	});
@@ -85,7 +85,7 @@ export async function updatePosition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
 				}),
 			),
 	});
@@ -111,7 +111,7 @@ export async function activatePosition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
+					operationId: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
 				}),
 			),
 	});
@@ -137,7 +137,7 @@ export async function freezePosition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
+					operationId: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
 				}),
 			),
 	});
@@ -163,7 +163,7 @@ export async function closePosition(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
 				}),
 			),
 	});

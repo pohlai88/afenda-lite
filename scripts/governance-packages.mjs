@@ -41,7 +41,9 @@ function run(command, args) {
 }
 
 async function main() {
-	console.log("governance:packages — validate:modules (catalog · edges · DAG · sole-mutator)");
+	console.log(
+		"governance:packages — validate:modules (catalog · edges · DAG · sole-mutator)",
+	);
 	await run("pnpm", ["validate:modules"]);
 	console.log("governance:packages OK");
 	console.log(

@@ -25,13 +25,13 @@ import {
 	organizationTreeInputSchema,
 	updateDepartmentInputSchema,
 } from "../schemas/organization";
-import type { DepartmentStructureAtAsOf } from "./organization-structure-lineage";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
 	runOrganizationCommand,
 	runOrganizationQuery,
 } from "../shared/organization-command";
 import type { Department, OrganizationTreePage } from "../types";
+import type { DepartmentStructureAtAsOf } from "./organization-structure-lineage";
 
 export const HUMAN_RESOURCES_AGGREGATE_DEPARTMENT = "department" as const;
 export type HumanResourcesDepartmentAggregate =
@@ -58,7 +58,7 @@ export async function createDepartment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 				}),
 			);
 		},
@@ -89,7 +89,7 @@ export async function updateDepartment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
 				}),
 			);
 		},
@@ -116,7 +116,7 @@ export async function activateDepartment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
+					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
 				}),
 			);
 		},
@@ -143,7 +143,7 @@ export async function archiveDepartment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
 				}),
 			);
 		},

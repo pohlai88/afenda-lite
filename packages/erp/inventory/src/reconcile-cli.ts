@@ -56,7 +56,10 @@ function readOrganizationId(argv: string[]): string | null {
 
 async function main(): Promise<void> {
 	loadEnvLocal();
-	if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim().length === 0) {
+	if (
+		!process.env.DATABASE_URL ||
+		process.env.DATABASE_URL.trim().length === 0
+	) {
 		console.error(
 			"@afenda/inventory reconcile DENIED: DATABASE_URL is required (env or repo-root .env.local)",
 		);

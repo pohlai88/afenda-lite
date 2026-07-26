@@ -30,11 +30,23 @@ export type CertificationStatus = (typeof CERTIFICATION_STATUSES)[number];
 export const COMPLETION_OUTCOMES = ["passed", "failed", "attended"] as const;
 export type CompletionOutcome = (typeof COMPLETION_OUTCOMES)[number];
 
+export const LEARNING_ATTENDANCE_STATUSES = [
+	"present",
+	"absent",
+	"late",
+	"excused",
+] as const;
+export type LearningAttendanceStatus =
+	(typeof LEARNING_ATTENDANCE_STATUSES)[number];
+
 export const courseStatusSchema = z.enum(COURSE_STATUSES);
 export const sessionStatusSchema = z.enum(SESSION_STATUSES);
 export const assignmentStatusSchema = z.enum(ASSIGNMENT_STATUSES);
 export const certificationStatusSchema = z.enum(CERTIFICATION_STATUSES);
 export const completionOutcomeSchema = z.enum(COMPLETION_OUTCOMES);
+export const learningAttendanceStatusSchema = z.enum(
+	LEARNING_ATTENDANCE_STATUSES,
+);
 
 export function isCourseActive(status: CourseStatus): boolean {
 	return status === "active";

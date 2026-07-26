@@ -99,6 +99,12 @@ import type {
 	WorkCalendarHolidayCreateRecord,
 } from "../../store/time";
 import {
+	filterAttendanceEventsForWorkDay,
+	resolveAttendanceEventSourceSequence,
+	resolveImportRowSourceSequence,
+	sortAttendanceEventsForSession,
+} from "../../time/attendance/event-order";
+import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	type ExceptionDetectionHost,
 	runAttendanceExceptionDetection,
@@ -112,12 +118,6 @@ import {
 	applyAutomaticBreakPolicy,
 	resolveSessionFromEvents,
 } from "../../time/attendance/session-resolution";
-import {
-	filterAttendanceEventsForWorkDay,
-	resolveAttendanceEventSourceSequence,
-	resolveImportRowSourceSequence,
-	sortAttendanceEventsForSession,
-} from "../../time/attendance/event-order";
 import {
 	approvedLeaveMinutesForDate,
 	buildAttendanceTimesheetEntryPlans,

@@ -738,7 +738,10 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				return reloaded;
 			}
 			if (reloaded.data === null) {
-				return fail("INTERNAL_ERROR", "Posted purchase order missing after write");
+				return fail(
+					"INTERNAL_ERROR",
+					"Posted purchase order missing after write",
+				);
 			}
 			return ok(reloaded.data);
 		} catch (error) {
@@ -1121,7 +1124,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 
 	async listOrders(filter: OrderListFilter): Promise<Result<PurchaseOrder[]>> {
 		try {
-			const conditions = [eq(purchaseOrder.organizationId, filter.organizationId)];
+			const conditions = [
+				eq(purchaseOrder.organizationId, filter.organizationId),
+			];
 			if (filter.status !== undefined) {
 				conditions.push(eq(purchaseOrder.status, filter.status));
 			}

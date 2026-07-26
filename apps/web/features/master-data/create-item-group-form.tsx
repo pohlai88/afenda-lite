@@ -59,10 +59,20 @@ export function CreateItemGroupForm({ canManage }: { canManage: boolean }) {
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField label="Code" required fieldId="item-group-code" error={codeError}>
+			<FormField
+				label="Code"
+				required
+				fieldId="item-group-code"
+				error={codeError}
+			>
 				<Input name="code" required autoComplete="off" disabled={pending} />
 			</FormField>
-			<FormField label="Name" required fieldId="item-group-name" error={nameError}>
+			<FormField
+				label="Name"
+				required
+				fieldId="item-group-name"
+				error={nameError}
+			>
 				<Input name="name" required autoComplete="off" disabled={pending} />
 			</FormField>
 			<Button type="submit" disabled={pending}>

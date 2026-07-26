@@ -131,7 +131,7 @@ export async function createTestHarness(options?: {
 
 	const meta = buildMutationMeta({
 		correlationId,
-		operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
+		operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
 	});
 
 	async function createHarnessEmployee(options?: {

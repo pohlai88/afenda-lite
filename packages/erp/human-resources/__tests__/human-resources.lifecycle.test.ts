@@ -51,8 +51,6 @@ import {
 } from "../src/lifecycle/onboarding";
 import {
 	GOVERNED_ONBOARDING_CHECKLIST,
-	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
-	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
 	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 	ONBOARDING_TASK_CODE_ORIENTATION,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
@@ -65,40 +63,38 @@ import {
 	recordProbationAssessment,
 	recordProbationOutcome,
 } from "../src/lifecycle/probation";
-import { transferAssignment } from "../src/lifecycle/transfer";
 import {
 	approveTermination,
 	finalizeTermination,
 	proposeTermination,
 } from "../src/lifecycle/termination";
+import { transferAssignment } from "../src/lifecycle/transfer";
+import { createPosition, freezePosition } from "../src/organization/position";
 import {
 	assignPrimaryReportingLine,
 	replacePrimaryReportingLine,
 } from "../src/organization/reporting-line";
-import { createPosition, freezePosition } from "../src/organization/position";
+import {
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+} from "../src/permissions";
+import { createMemoryHumanResourcesStore } from "../src/testing";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
 	endWorkCalendarAssignment,
 } from "../src/time/calendar";
 import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-} from "../src/permissions";
-import {
-	createMemoryHumanResourcesStore,
-} from "../src/testing";
-import {
 	createTestHumanResourcesCommandOptions,
 	TEST_ORGANIZATION_DIMENSION_KEYS,
 } from "./helpers/command-options";
-import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
-import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {
 	completeOnboardingPath,
 	finalizeEmploymentTermination,
 } from "./helpers/lifecycle-test-fixtures";
+import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG_A = "org-life-a";
@@ -1127,7 +1123,8 @@ describe("human-resources lifecycle", () => {
 					newEndsOn: "2025-05-01",
 					reason: "Additional ramp time required",
 					evidenceReference: "HR-EXT-001",
-					expectedVersion: stillOpen.data?.version ?? probation.data.version + 1,
+					expectedVersion:
+						stillOpen.data?.version ?? probation.data.version + 1,
 				},
 				ready,
 			);
@@ -1447,7 +1444,9 @@ describe("human-resources lifecycle", () => {
 
 			const transferEvent = ready.ports.outbox.calls
 				.slice(outboxBefore)
-				.find((call) => call.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT);
+				.find(
+					(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+				);
 			expect(transferEvent).toBeDefined();
 			expect(transferEvent?.payload.effectiveOn).toBe("2025-05-01");
 			expect(transferEvent?.correlationId).toBe("corr-s69-happy");
@@ -1701,9 +1700,9 @@ describe("human-resources lifecycle", () => {
 				managerOne.data.id,
 			);
 			expect(predecessor.data.workCalendarIdSnapshot).toBe(calendarOne.data.id);
-			expect(
-				predecessor.data.organizationDimensions?.legal_entity.key,
-			).toBe(TEST_ORGANIZATION_DIMENSION_KEYS.legalEntityKey);
+			expect(predecessor.data.organizationDimensions?.legal_entity.key).toBe(
+				TEST_ORGANIZATION_DIMENSION_KEYS.legalEntityKey,
+			);
 
 			expect(successor.data.managerEmployeeIdSnapshot).toBe(managerTwo.data.id);
 			expect(successor.data.workCalendarIdSnapshot).toBe(calendarTwo.data.id);
@@ -2134,7 +2133,9 @@ describe("human-resources lifecycle", () => {
 					idempotencyKey: "idem-s610-off-start",
 					employmentId: seeded.employment.id,
 					terminationId: termination.data.id,
-					tasks: [{ code: "return_laptop", title: "Return laptop", mandatory: true }],
+					tasks: [
+						{ code: "return_laptop", title: "Return laptop", mandatory: true },
+					],
 				},
 				ready,
 			);

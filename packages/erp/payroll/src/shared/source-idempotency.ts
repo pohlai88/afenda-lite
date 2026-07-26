@@ -12,9 +12,7 @@ export function resolveSourceIdempotentReplay<TEntity>(input: {
 	if (input.existing === null) {
 		return ok("create");
 	}
-	if (
-		input.existing.sourceRequestFingerprint !== input.requestFingerprint
-	) {
+	if (input.existing.sourceRequestFingerprint !== input.requestFingerprint) {
 		return mapConflict("External source input payload mismatch");
 	}
 	return ok(input.existing.entity);
@@ -30,9 +28,7 @@ export function resolveCreateIdempotentReplay<TEntity>(input: {
 	if (input.existing === null) {
 		return ok("create");
 	}
-	if (
-		input.existing.createRequestFingerprint !== input.requestFingerprint
-	) {
+	if (input.existing.createRequestFingerprint !== input.requestFingerprint) {
 		return mapConflict("Idempotency key conflict");
 	}
 	return ok(input.existing.entity);

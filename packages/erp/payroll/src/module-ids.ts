@@ -112,8 +112,7 @@ export const PAYROLL_QUERY_SETUP_DEDUCTION_RULE_GET =
 export const PAYROLL_QUERY_SETUP_STATUTORY_RULE_GET =
 	"payroll.setup.statutory-rule.get" as const;
 
-export const PAYROLL_QUERY_ASSIGNMENT_GET =
-	"payroll.assignment.get" as const;
+export const PAYROLL_QUERY_ASSIGNMENT_GET = "payroll.assignment.get" as const;
 export const PAYROLL_QUERY_INPUT_VARIABLE_GET =
 	"payroll.input.variable.get" as const;
 

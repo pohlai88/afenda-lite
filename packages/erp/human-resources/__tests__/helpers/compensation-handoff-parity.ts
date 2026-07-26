@@ -1,13 +1,13 @@
 import type { HumanResourcesPermission } from "../../src/authorization";
 import {
-	approveEmployeeCompensation,
-	createEmployeeCompensation,
-} from "../../src/compensation-benefits/employee-compensation";
-import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
-import {
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesPositionId,
 } from "../../src/brands";
+import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
+import {
+	approveEmployeeCompensation,
+	createEmployeeCompensation,
+} from "../../src/compensation-benefits/employee-compensation";
 import { createEmployee } from "../../src/core/employee";
 import { createEmployment } from "../../src/core/employment";
 import {

@@ -31,6 +31,8 @@ describe("HR work calendar scope migration", () => {
 		expect(migrationSql).toContain(
 			'"hr_work_calendar_scope_assignment_calendar_id_hr_work_calendar_id_fk"',
 		);
-		expect(migrationSql).not.toMatch(/UPDATE "hr_work_calendar_scope_assignment"/);
+		expect(migrationSql).not.toMatch(
+			/UPDATE "hr_work_calendar_scope_assignment"/,
+		);
 	});
 });

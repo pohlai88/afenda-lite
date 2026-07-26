@@ -61,7 +61,7 @@ export async function createDocumentRequirement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
 				}),
 			);
 		},
@@ -91,7 +91,7 @@ export async function updateDocumentRequirement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
 				}),
 			),
 	});
@@ -116,7 +116,7 @@ export async function publishDocumentRequirement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
+					operationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
 				}),
 			),
 	});
@@ -141,7 +141,7 @@ export async function retireDocumentRequirement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE,
+					operationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE,
 				}),
 			),
 	});

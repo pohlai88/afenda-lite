@@ -31,10 +31,23 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
+import {
+	type DepartmentStructureVersion,
+	findOpenDepartmentStructureVersion,
+	findOpenJobDefinitionVersion,
+	findOpenPositionDefinitionVersion,
+	type JobDefinitionVersion,
+	type PositionDefinitionAtAsOf,
+	type PositionDefinitionVersion,
+	resolveDepartmentStructureAsOf,
+	resolveJobDefinitionAsOf,
+	resolvePositionDefinitionAsOf,
+} from "../../organization/organization-structure-lineage";
 import type { MutationPorts } from "../../ports";
 import { buildHumanResourcesEntityEventPayload } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidInput, notFound } from "../../shared/domain-guards";
+import { previousIsoDate } from "../../shared/effective-dates";
 import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
 import {
 	assertValidDateRange,
@@ -69,19 +82,6 @@ import type {
 	Position,
 	ReportingLine,
 } from "../../types";
-import {
-	findOpenDepartmentStructureVersion,
-	findOpenJobDefinitionVersion,
-	findOpenPositionDefinitionVersion,
-	resolveDepartmentStructureAsOf,
-	resolveJobDefinitionAsOf,
-	resolvePositionDefinitionAsOf,
-	type DepartmentStructureVersion,
-	type JobDefinitionVersion,
-	type PositionDefinitionAtAsOf,
-	type PositionDefinitionVersion,
-} from "../../organization/organization-structure-lineage";
-import { previousIsoDate } from "../../shared/effective-dates";
 import {
 	assertLineageSegmentMutable,
 	validateLineageSegmentEffectiveOn,
@@ -463,7 +463,10 @@ export function createMemoryOrganizationMethods(
 				updatedAt: now,
 			};
 
-			state.departmentStructureVersions.set(closedPredecessor.id, closedPredecessor);
+			state.departmentStructureVersions.set(
+				closedPredecessor.id,
+				closedPredecessor,
+			);
 			state.departmentStructureVersions.set(successor.id, successor);
 			state.departments.set(input.departmentId, updated);
 

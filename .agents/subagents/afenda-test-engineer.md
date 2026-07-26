@@ -61,7 +61,7 @@ Recommend the **minimum** command — never default to `npm test` for slice-leve
 | Full client/operator journeys | `pnpm test:e2e:journey` |
 | Release / pre-merge full browser | `pnpm exec turbo run lint typecheck test` |
 
-Registry scripts (`check:copy`, `check:nav`, `check:proxy`) act as non-Vitest L0 substitutes.
+Removed registry-script aliases are not test evidence. Use current package boundary tests and executable `pnpm checks` controls.
 
 ## L4 Playwright (summary)
 

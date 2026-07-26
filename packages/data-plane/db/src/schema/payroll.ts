@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	check,
 	date,
@@ -12,7 +13,6 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 
 import { createErpScaffoldTable } from "./scaffold-table";
 
@@ -93,10 +93,7 @@ export const payrollPayGroup = pgTable(
 			t.calendarId,
 		),
 		uniqueIndex("payroll_pay_group_org_id_uidx").on(t.organizationId, t.id),
-		uniqueIndex("payroll_pay_group_org_code_uidx").on(
-			t.organizationId,
-			t.code,
-		),
+		uniqueIndex("payroll_pay_group_org_code_uidx").on(t.organizationId, t.code),
 		uniqueIndex("payroll_pay_group_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -186,10 +183,7 @@ export const payrollEarningRule = pgTable(
 			t.organizationId,
 			t.payGroupId,
 		),
-		uniqueIndex("payroll_earning_rule_org_id_uidx").on(
-			t.organizationId,
-			t.id,
-		),
+		uniqueIndex("payroll_earning_rule_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_earning_rule_org_code_from_uidx").on(
 			t.organizationId,
 			t.payGroupId,
@@ -480,10 +474,7 @@ export const payrollEmployeeAssignment = pgTable(
 		...payrollAuditColumns,
 	},
 	(t) => [
-		index("payroll_employee_assignment_org_id_idx").on(
-			t.organizationId,
-			t.id,
-		),
+		index("payroll_employee_assignment_org_id_idx").on(t.organizationId, t.id),
 		index("payroll_employee_assignment_org_employee_idx").on(
 			t.organizationId,
 			t.employeeId,
@@ -741,10 +732,7 @@ export const payrollRunEmployee = pgTable(
 	(t) => [
 		index("payroll_run_employee_org_id_idx").on(t.organizationId, t.id),
 		index("payroll_run_employee_org_run_idx").on(t.organizationId, t.runId),
-		uniqueIndex("payroll_run_employee_org_id_uidx").on(
-			t.organizationId,
-			t.id,
-		),
+		uniqueIndex("payroll_run_employee_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_run_employee_org_run_employee_uidx").on(
 			t.organizationId,
 			t.runId,
@@ -792,10 +780,7 @@ export const payrollResultLine = pgTable(
 	(t) => [
 		index("payroll_result_line_org_id_idx").on(t.organizationId, t.id),
 		index("payroll_result_line_org_run_idx").on(t.organizationId, t.runId),
-		uniqueIndex("payroll_result_line_org_id_uidx").on(
-			t.organizationId,
-			t.id,
-		),
+		uniqueIndex("payroll_result_line_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_result_line_org_run_employee_sequence_uidx").on(
 			t.organizationId,
 			t.runId,
@@ -809,7 +794,10 @@ export const payrollResultLine = pgTable(
 		}),
 		foreignKey({
 			columns: [t.organizationId, t.runEmployeeId],
-			foreignColumns: [payrollRunEmployee.organizationId, payrollRunEmployee.id],
+			foreignColumns: [
+				payrollRunEmployee.organizationId,
+				payrollRunEmployee.id,
+			],
 			name: "payroll_result_line_org_run_employee_fk",
 		}),
 		check(
@@ -856,10 +844,7 @@ export const payrollStatutoryResult = pgTable(
 	},
 	(t) => [
 		index("payroll_statutory_result_org_id_idx").on(t.organizationId, t.id),
-		index("payroll_statutory_result_org_run_idx").on(
-			t.organizationId,
-			t.runId,
-		),
+		index("payroll_statutory_result_org_run_idx").on(t.organizationId, t.runId),
 		uniqueIndex("payroll_statutory_result_org_id_uidx").on(
 			t.organizationId,
 			t.id,
@@ -878,7 +863,10 @@ export const payrollStatutoryResult = pgTable(
 		}),
 		foreignKey({
 			columns: [t.organizationId, t.runEmployeeId],
-			foreignColumns: [payrollRunEmployee.organizationId, payrollRunEmployee.id],
+			foreignColumns: [
+				payrollRunEmployee.organizationId,
+				payrollRunEmployee.id,
+			],
 			name: "payroll_statutory_result_org_run_employee_fk",
 		}),
 	],

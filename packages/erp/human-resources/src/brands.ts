@@ -386,6 +386,14 @@ export type HumanResourcesCertificationId = z.infer<
 	typeof humanResourcesCertificationIdSchema
 >;
 
+export const humanResourcesLearningAttendanceIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesLearningAttendanceId">();
+export type HumanResourcesLearningAttendanceId = z.infer<
+	typeof humanResourcesLearningAttendanceIdSchema
+>;
+
 export const humanResourcesPerformanceCycleIdSchema = z
 	.string()
 	.uuid()
@@ -980,7 +988,8 @@ export function parseHumanResourcesClearanceId(
 export function parseHumanResourcesOffboardingAccessRevocationId(
 	id: string,
 ): Result<HumanResourcesOffboardingAccessRevocationId> {
-	const parsed = humanResourcesOffboardingAccessRevocationIdSchema.safeParse(id);
+	const parsed =
+		humanResourcesOffboardingAccessRevocationIdSchema.safeParse(id);
 	if (!parsed.success) {
 		return fail(
 			"INTERNAL_ERROR",
@@ -1022,8 +1031,7 @@ export function parseHumanResourcesOnboardingOrientationId(
 export function parseHumanResourcesOnboardingEquipmentHandoffId(
 	id: string,
 ): Result<HumanResourcesOnboardingEquipmentHandoffId> {
-	const parsed =
-		humanResourcesOnboardingEquipmentHandoffIdSchema.safeParse(id);
+	const parsed = humanResourcesOnboardingEquipmentHandoffIdSchema.safeParse(id);
 	if (!parsed.success) {
 		return fail(
 			"INTERNAL_ERROR",
@@ -1253,6 +1261,20 @@ export function parseHumanResourcesCertificationId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid certification identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesLearningAttendanceId(
+	id: string,
+): Result<HumanResourcesLearningAttendanceId> {
+	const parsed = humanResourcesLearningAttendanceIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid learning attendance identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}
@@ -1754,6 +1776,22 @@ export type HumanResourcesTalentPoolMemberId = z.infer<
 	typeof humanResourcesTalentPoolMemberIdSchema
 >;
 
+export const humanResourcesTalentProfileMobilityIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesTalentProfileMobilityId">();
+export type HumanResourcesTalentProfileMobilityId = z.infer<
+	typeof humanResourcesTalentProfileMobilityIdSchema
+>;
+
+export const humanResourcesTalentCriticalRoleReadinessIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesTalentCriticalRoleReadinessId">();
+export type HumanResourcesTalentCriticalRoleReadinessId = z.infer<
+	typeof humanResourcesTalentCriticalRoleReadinessIdSchema
+>;
+
 export const humanResourcesCareerPlanIdSchema = z
 	.string()
 	.uuid()
@@ -2041,6 +2079,35 @@ export function parseHumanResourcesTalentPoolMemberId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid talent pool member identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesTalentProfileMobilityId(
+	id: string,
+): Result<HumanResourcesTalentProfileMobilityId> {
+	const parsed = humanResourcesTalentProfileMobilityIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid talent profile mobility identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesTalentCriticalRoleReadinessId(
+	id: string,
+): Result<HumanResourcesTalentCriticalRoleReadinessId> {
+	const parsed =
+		humanResourcesTalentCriticalRoleReadinessIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid talent critical role readiness identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

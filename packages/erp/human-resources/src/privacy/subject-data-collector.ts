@@ -538,6 +538,32 @@ export async function collectHumanResourcesSubjectData(
 		);
 	}
 
+	const learningAttendance = await collectAllPages(
+		(page) =>
+			input.store.listLearningAttendance({
+				organizationId: input.organizationId,
+				page,
+				pageSize: DEFAULT_PAGE_SIZE,
+				employeeId: input.subjectEmployeeId,
+			}),
+		(page) => page.attendanceRecords,
+	);
+	if (!learningAttendance.ok) {
+		return learningAttendance;
+	}
+	for (const attendance of learningAttendance.data) {
+		records.push(
+			exportRecord({
+				category: "learning",
+				entityType: "hr_learning_attendance",
+				entityId: attendance.id,
+				classification: "personal",
+				retentionClass: "workforce_core",
+				data: asExportData(attendance),
+			}),
+		);
+	}
+
 	const certifications = await collectAllPages(
 		(page) =>
 			input.store.listCertifications({

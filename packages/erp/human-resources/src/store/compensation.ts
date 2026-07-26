@@ -1,5 +1,6 @@
 import type { Result } from "@afenda/errors/result";
 import type {
+	HumanResourcesApplicationId,
 	HumanResourcesBenefitEnrollmentDependentId,
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
@@ -12,18 +13,17 @@ import type {
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentId,
 	HumanResourcesSalaryBandId,
-	HumanResourcesApplicationId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { EmploymentStatus } from "../shared/employment-status";
 import type {
-	BenefitPlanStatus,
 	BenefitDependentRelationship,
+	BenefitPlanStatus,
 	CompensationGradeStatus,
 	CompensationReviewCycleStatus,
 	PayFrequency,
 	SalaryBandStatus,
 } from "../shared/compensation-status";
+import type { EmploymentStatus } from "../shared/employment-status";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	ApprovedCompensationHandoff,

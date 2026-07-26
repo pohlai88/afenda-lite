@@ -40,7 +40,6 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import type { PayrollSetupStore } from "../../store/setup";
-import { createDrizzleSetupExtendedMethods } from "./setup-extended-methods";
 import type {
 	IdempotentPayrollCalendarRecord,
 	PayrollCalendar,
@@ -57,6 +56,7 @@ import type {
 	PayrollStatutoryRule,
 	PayrollStatutoryRuleCreateRecord,
 } from "../../types";
+import { createDrizzleSetupExtendedMethods } from "./setup-extended-methods";
 
 async function recordAudit(
 	ports: MutationPorts,

@@ -7,7 +7,11 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import { effectiveRangeOverlap, invalidInput, invalidState } from "./domain-guards";
+import {
+	effectiveRangeOverlap,
+	invalidInput,
+	invalidState,
+} from "./domain-guards";
 import type { EmploymentStatus } from "./employment-status";
 import { compareLeaveQuantity, computeLeaveBalance } from "./leave-balance";
 import type { ResolvedLeavePolicyBalanceRules } from "./leave-policy-balance-rules";
@@ -183,7 +187,9 @@ export function assertLeaveCarryForwardAllowed(input: {
 			input.balanceRules.carryForwardMaxQuantity,
 		) > 0
 	) {
-		return invalidInput("Carried quantity exceeds policy carry-forward maximum");
+		return invalidInput(
+			"Carried quantity exceeds policy carry-forward maximum",
+		);
 	}
 	return ok(undefined);
 }

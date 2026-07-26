@@ -15,11 +15,11 @@ import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
 
 import type {
-	AccountRoleMapping,
-	AccountType,
 	AccountingPeriod,
 	AccountingPeriodStatus,
 	AccountingStore,
+	AccountRoleMapping,
+	AccountType,
 	ChartOfAccounts,
 	Journal,
 	JournalLine,
@@ -85,7 +85,9 @@ function mapAccountRoleSql(row: AccountRoleMappingSqlRow): AccountRoleMapping {
 	};
 }
 
-function mapSourcePostingLinkSql(row: SourcePostingLinkSqlRow): SourcePostingLink {
+function mapSourcePostingLinkSql(
+	row: SourcePostingLinkSqlRow,
+): SourcePostingLink {
 	return {
 		id: row.id,
 		organizationId: row.organization_id,
@@ -103,7 +105,8 @@ function mapSourcePostingLinkSql(row: SourcePostingLinkSqlRow): SourcePostingLin
 }
 
 function periodStatus(value: string): AccountingPeriodStatus {
-	if (value === "open" || value === "soft_closed" || value === "closed") return value;
+	if (value === "open" || value === "soft_closed" || value === "closed")
+		return value;
 	throw new Error(`Invalid accounting_period.status: ${value}`);
 }
 
@@ -884,12 +887,19 @@ export class DrizzleAccountingStore implements AccountingStore {
 					RETURNING id
 				`,
 			]);
-			if (rows[0] === undefined) return fail("CONFLICT", "Chart of accounts code already exists");
+			if (rows[0] === undefined)
+				return fail("CONFLICT", "Chart of accounts code already exists");
 			return ok({
-				id, organizationId: record.organizationId, code: record.code,
-				name: record.name, status: "active" as const, version: 1,
-				createdBy: record.actorUserId, updatedBy: record.actorUserId,
-				createdAt: new Date(), updatedAt: new Date(),
+				id,
+				organizationId: record.organizationId,
+				code: record.code,
+				name: record.name,
+				status: "active" as const,
+				version: 1,
+				createdBy: record.actorUserId,
+				updatedBy: record.actorUserId,
+				createdAt: new Date(),
+				updatedAt: new Date(),
 			});
 		} catch (error) {
 			return failFromUnknown(error, "Failed to create chart of accounts");
@@ -915,17 +925,25 @@ export class DrizzleAccountingStore implements AccountingStore {
 					) RETURNING id
 				`,
 			]);
-			if (rows[0] === undefined) return fail("CONFLICT", "Ledger account code already exists");
+			if (rows[0] === undefined)
+				return fail("CONFLICT", "Ledger account code already exists");
 			const now = new Date();
 			return ok({
-				id, organizationId: record.organizationId,
+				id,
+				organizationId: record.organizationId,
 				chartOfAccountId: record.chartOfAccountId,
-				code: record.code, normalizedCode: record.normalizedCode,
-				name: record.name, accountType: record.accountType,
-				normalBalance: record.normalBalance, isControl: record.isControl,
-				status: "active" as const, version: 1,
-				createdBy: record.actorUserId, updatedBy: record.actorUserId,
-				createdAt: now, updatedAt: now,
+				code: record.code,
+				normalizedCode: record.normalizedCode,
+				name: record.name,
+				accountType: record.accountType,
+				normalBalance: record.normalBalance,
+				isControl: record.isControl,
+				status: "active" as const,
+				version: 1,
+				createdBy: record.actorUserId,
+				updatedBy: record.actorUserId,
+				createdAt: now,
+				updatedAt: now,
 			});
 		} catch (error) {
 			return failFromUnknown(error, "Failed to create ledger account");
@@ -1046,7 +1064,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 			);
 			const row = rows[0];
-			if (row === undefined) return fail("INTERNAL_ERROR", "Upsert returned nothing");
+			if (row === undefined)
+				return fail("INTERNAL_ERROR", "Upsert returned nothing");
 			return ok(mapAccountRoleSql(row));
 		} catch (error) {
 			return failFromUnknown(error, "Failed to map account role");
@@ -1136,7 +1155,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 			});
 			const profile = profileRows[0];
 			if (profile === undefined) {
-				return fail("INTERNAL_ERROR", "Posting profile upsert returned nothing");
+				return fail(
+					"INTERNAL_ERROR",
+					"Posting profile upsert returned nothing",
+				);
 			}
 			const now = new Date();
 			return ok({
@@ -1272,7 +1294,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			return ok({
-				id, organizationId: record.organizationId,
+				id,
+				organizationId: record.organizationId,
 				sourceModule: record.sourceModule,
 				sourceAggregateId: record.sourceAggregateId,
 				sourceEventId: record.sourceEventId,
@@ -1281,7 +1304,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 				postingRuleVersion: record.postingRuleVersion,
 				journalId: record.journalId,
 				causationId: record.causationId,
-				createdBy: record.actorUserId, createdAt: new Date(),
+				createdBy: record.actorUserId,
+				createdAt: new Date(),
 			});
 		} catch (error) {
 			return failFromUnknown(error, "Failed to create source posting link");
@@ -1311,18 +1335,25 @@ export class DrizzleAccountingStore implements AccountingStore {
 			]);
 			const now = new Date();
 			return ok({
-				id, organizationId: record.organizationId,
+				id,
+				organizationId: record.organizationId,
 				sourceModule: record.sourceModule,
 				sourceAggregateId: record.sourceAggregateId,
 				sourceEventId: record.sourceEventId,
 				sourceEventVersion: record.sourceEventVersion,
 				postingRuleCode: record.postingRuleCode,
-				reasonCode: record.reasonCode, message: record.message,
-				status: "open" as const, resolutionNote: null,
-				resolvedBy: null, resolvedAt: null,
-				payload: record.payload, version: 1,
-				createdBy: record.actorUserId, updatedBy: record.actorUserId,
-				createdAt: now, updatedAt: now,
+				reasonCode: record.reasonCode,
+				message: record.message,
+				status: "open" as const,
+				resolutionNote: null,
+				resolvedBy: null,
+				resolvedAt: null,
+				payload: record.payload,
+				version: 1,
+				createdBy: record.actorUserId,
+				updatedBy: record.actorUserId,
+				createdAt: now,
+				updatedAt: now,
 			});
 		} catch (error) {
 			return failFromUnknown(error, "Failed to create posting exception");
@@ -1437,7 +1468,8 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			const r = rows[0];
-			if (r === undefined) return fail("CONFLICT", "Exception resolve conflict");
+			if (r === undefined)
+				return fail("CONFLICT", "Exception resolve conflict");
 			return ok({
 				id: r.id,
 				organizationId: r.organization_id,

@@ -90,6 +90,9 @@ catalogs:
     react-dom:
       specifier: ^19.2.7
       version: 19.2.7
+    server-only:
+      specifier: 0.0.1
+      version: 0.0.1
     shadcn:
       specifier: ^4.13.0
       version: 4.13.0
@@ -735,6 +738,40 @@ importers:
         version: link:../../data-plane/events
       server-only:
         specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/erp/corporate-administration:
+    dependencies:
+      '@afenda/audit':
+        specifier: workspace:*
+        version: link:../../data-plane/audit
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../../data-plane/db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../../data-plane/events
+      '@afenda/master-data':
+        specifier: workspace:*
+        version: link:../master-data
+      server-only:
+        specifier: 'catalog:'
         version: 0.0.1
       zod:
         specifier: 'catalog:'

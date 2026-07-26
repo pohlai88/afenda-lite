@@ -75,6 +75,7 @@ Workforce and payroll bounded contexts. `activationMode: organization_toggle`.
 | ------ | -------------- | --------- | ---- |
 | [`human-resources`](./human-resources/README.md) | `@afenda/human-resources` | scaffolded | Employee · employment · recruitment · lifecycle · time · leave · performance · talent · learning · compensation (`hr_*`) |
 | [`payroll`](./payroll/README.md) | `@afenda/payroll` | active | Payroll setup · inputs · runs · statutory · payslips · reconciliation (`payroll_*`) |
+| [`corporate-administration`](./corporate-administration/README.md) | `@afenda/corporate-administration` | scaffolded | Statutory company · governance · ownership · filings (`ca_*` prefix reserved; CA-0.1 has no domain capability) |
 
 ## Boundaries
 

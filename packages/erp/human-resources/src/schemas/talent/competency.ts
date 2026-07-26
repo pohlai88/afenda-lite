@@ -87,6 +87,7 @@ export const assessEmployeeCompetencyInputSchema =
 			scaleCode: competencyScaleCodeSchema,
 			level: z.number().int().min(1).max(5),
 			effectiveOn: isoDateSchema,
+			expiresOn: isoDateSchema.nullable().optional(),
 		})
 		.strict();
 
@@ -103,12 +104,25 @@ export const supersedeCompetencyAssessmentInputSchema =
 			evidenceSource: z.string().trim().min(1).max(2000),
 			level: z.number().int().min(1).max(5),
 			effectiveOn: isoDateSchema,
+			expiresOn: isoDateSchema.nullable().optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
 
 export type SupersedeCompetencyAssessmentInput = z.infer<
 	typeof supersedeCompetencyAssessmentInputSchema
+>;
+
+export const expireCompetencyAssessmentInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			assessmentId: humanResourcesCompetencyAssessmentIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type ExpireCompetencyAssessmentInput = z.infer<
+	typeof expireCompetencyAssessmentInputSchema
 >;
 
 export const getCompetencyByIdInputSchema = humanResourcesMutationContextSchema

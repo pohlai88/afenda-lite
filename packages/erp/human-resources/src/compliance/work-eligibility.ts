@@ -119,7 +119,7 @@ export async function recordWorkEligibility(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
 					idempotencyKey: data.idempotencyKey,
 				}),
 			);
@@ -147,7 +147,7 @@ export async function verifyWorkEligibility(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
 				}),
 			),
 	});
@@ -172,7 +172,7 @@ export async function suspendWorkEligibility(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
 				}),
 			),
 	});
@@ -227,7 +227,7 @@ export async function renewWorkEligibility(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
 				}),
 			);
 		},
@@ -253,7 +253,7 @@ export async function closeWorkEligibility(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
 				}),
 			),
 	});

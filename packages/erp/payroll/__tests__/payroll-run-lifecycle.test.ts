@@ -9,7 +9,6 @@ import {
 	PAYROLL_PERMISSION_RUN_REVIEW,
 	PAYROLL_PERMISSION_SETUP_MANAGE,
 } from "../src/permissions";
-import { calculatePayrollRun } from "../src/runs/run-calculate-command";
 import {
 	listPayrollExceptionsForRun,
 	recordPayrollException,
@@ -18,6 +17,7 @@ import { finalizePayrollRun } from "../src/runs/finalization";
 import { createPayrollPeriod } from "../src/runs/payroll-period";
 import { createPayrollRun, getPayrollRun } from "../src/runs/payroll-run";
 import { reversePayrollRun } from "../src/runs/reversal";
+import { calculatePayrollRun } from "../src/runs/run-calculate-command";
 import { createPayrollCalendar } from "../src/setup/calendar";
 import { createPayrollPayGroup } from "../src/setup/pay-group";
 import {
@@ -309,7 +309,11 @@ describe("payroll run lifecycle commands", () => {
 	it("handles concurrent calculate attempts with one winner", async () => {
 		const organizationId = "org-run-lifecycle-conc-calc";
 		const actorUserId = "user-run-lifecycle-conc-calc";
-		const seeded = await seedOpenPeriod(organizationId, actorUserId, "conc-calc");
+		const seeded = await seedOpenPeriod(
+			organizationId,
+			actorUserId,
+			"conc-calc",
+		);
 		const options = {
 			...seeded.options,
 			calculator: createTestPayrollRunCalculator(),
@@ -352,7 +356,11 @@ describe("payroll run lifecycle commands", () => {
 	it("handles concurrent finalize attempts with one winner", async () => {
 		const organizationId = "org-run-lifecycle-conc-fin";
 		const actorUserId = "user-run-lifecycle-conc-fin";
-		const seeded = await seedOpenPeriod(organizationId, actorUserId, "conc-fin");
+		const seeded = await seedOpenPeriod(
+			organizationId,
+			actorUserId,
+			"conc-fin",
+		);
 		const options = {
 			...seeded.options,
 			calculator: createTestPayrollRunCalculator(),
@@ -565,7 +573,11 @@ describe("payroll run lifecycle commands", () => {
 	it("transitions calculating to failed when calculator returns blocking exceptions", async () => {
 		const organizationId = "org-run-lifecycle-calc-fail";
 		const actorUserId = "user-run-lifecycle-calc-fail";
-		const seeded = await seedOpenPeriod(organizationId, actorUserId, "calc-fail");
+		const seeded = await seedOpenPeriod(
+			organizationId,
+			actorUserId,
+			"calc-fail",
+		);
 		const options = {
 			...seeded.options,
 			calculator: createTestPayrollRunCalculator({

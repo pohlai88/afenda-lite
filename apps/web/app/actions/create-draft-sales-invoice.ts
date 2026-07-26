@@ -27,7 +27,12 @@ const schema = z.object({
 	customerName: z.string().trim().min(1).max(256),
 	currencyCode: z.string().trim().length(3),
 	idempotencyKey: z.string().trim().min(1).max(128),
-	manualReason: z.string().trim().min(1).max(512).default("Manual sales invoice"),
+	manualReason: z
+		.string()
+		.trim()
+		.min(1)
+		.max(512)
+		.default("Manual sales invoice"),
 });
 
 export async function createDraftSalesInvoiceAction(

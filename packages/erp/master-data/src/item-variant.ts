@@ -13,6 +13,7 @@ import {
 	resolveCommandDeps,
 } from "./command-options";
 import type { MasterFailureDetails } from "./contracts/reasons";
+import { retireItem } from "./item";
 import {
 	MASTER_COMMAND_ITEM_TEMPLATE_ACTIVATE,
 	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE,
@@ -32,7 +33,6 @@ import {
 	MASTER_QUERY_ITEM_VARIANT_LIST_BY_TEMPLATE,
 	type MasterCommandId,
 } from "./module-ids";
-import { retireItem } from "./item";
 import { parseMasterInput } from "./parse-input";
 import {
 	addItemTemplateAttributeInputSchema,

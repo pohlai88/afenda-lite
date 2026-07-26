@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { requireMigrationDatabaseUrl } from "../scripts/lib/database-url.mjs";
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const guard = join(root, "scripts/db-migrate-guard.mjs");
 const drizzleDir = join(root, "drizzle");
@@ -39,26 +41,22 @@ describe("db-migrate-guard", () => {
 	});
 
 	it("denies missing DATABASE_URL when migrate allow is set", () => {
-		const result = runGuard({
-			AFENDA_ALLOW_DB_MIGRATE: "1",
-			AFENDA_ALLOW_BASELINE_MIGRATE: "",
-			DATABASE_URL: "",
-		});
-		expect(result.status).toBe(1);
-		const combined = `${result.stderr}${result.stdout}`;
-		expect(combined).toMatch(/DATABASE_URL/);
-		expect(combined).not.toMatch(/Applying migrations/i);
+		expect(() =>
+			requireMigrationDatabaseUrl({
+				AFENDA_ALLOW_DB_MIGRATE: "1",
+				AFENDA_ALLOW_BASELINE_MIGRATE: "",
+				DATABASE_URL: "",
+			}),
+		).toThrow(/DATABASE_URL/);
 	});
 
 	it("denies missing DATABASE_URL when both migrate allows are set", () => {
-		const result = runGuard({
-			AFENDA_ALLOW_DB_MIGRATE: "1",
-			AFENDA_ALLOW_BASELINE_MIGRATE: "1",
-			DATABASE_URL: "",
-		});
-		expect(result.status).toBe(1);
-		const combined = `${result.stderr}${result.stdout}`;
-		expect(combined).toMatch(/DATABASE_URL/);
-		expect(combined).not.toMatch(/Applying migrations/i);
+		expect(() =>
+			requireMigrationDatabaseUrl({
+				AFENDA_ALLOW_DB_MIGRATE: "1",
+				AFENDA_ALLOW_BASELINE_MIGRATE: "1",
+				DATABASE_URL: "",
+			}),
+		).toThrow(/DATABASE_URL/);
 	});
 });

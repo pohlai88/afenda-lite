@@ -167,10 +167,7 @@ export function AddSalesOrderLineForm({
 					disabled={pending}
 				/>
 			</FormField>
-			<FormField
-				label="Tax classification (optional)"
-				fieldId="sales-line-tax"
-			>
+			<FormField label="Tax classification (optional)" fieldId="sales-line-tax">
 				<Input
 					id="sales-line-tax"
 					name="taxClassification"

@@ -42,8 +42,8 @@ Person → Worker → Employee (optional specialization)
 | Manifest band | `R1-F` |
 | Manifest lifecycle | `scaffolded` (honest posture) |
 | Payroll | Separate package `@afenda/payroll` — HR exposes handoff facts only |
-| Schema host | `@afenda/db` (`writeOwner: @afenda/human-resources` for 106 `hr_*` tables) |
-| Tenancy | Shared Neon schema; hard `organization_id` on 106 `hr_*` roots of 179 repo roots |
+| Schema host | `@afenda/db` (`writeOwner: @afenda/human-resources` for 129 `hr_*` tables) |
+| Tenancy | Shared Neon schema; hard `organization_id` on 129 `hr_*` roots of 222 repo roots |
 
 Authority: [`human-resource.md`](../human-resource.md) · [`packages/erp/human-resources/README.md`](../../../packages/erp/human-resources/README.md)
 
@@ -151,7 +151,7 @@ flowchart LR
 | Metric | Count | Source |
 |---|---:|---|
 | Drizzle `hr*` table exports | 107 | `packages/data-plane/db/src/schema/human-resources.ts` |
-| Hard-tenant `hr_*` roots | 106 | `packages/data-plane/db/src/hard-tenant-roots.ts` |
+| Hard-tenant `hr_*` roots | 129 | `packages/data-plane/db/src/hard-tenant-roots.ts` |
 | SCHEMA-OWNERSHIP rows | 106 | `docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml` |
 | Minimal scaffolds (id/org/timestamps only) | 8 | learning/comp/benefit scaffold tables |
 | Registry gap | 1 | `hr_user_employee` in schema but absent from hard-tenant + ownership manifests |
@@ -256,7 +256,7 @@ Full HR-ENT matrix: [`40-enterprise-completeness-matrix.tsv`](40-enterprise-comp
 - Client: `/client/human-resources`, `/manager`
 - Features: `human-resources-shell`, `attendance-control`, `operations-health`
 
-**Gap:** ~427 package API entry points (286 commands + 141 queries) vs **5** Action modules — product exposes a small fraction of package capability. Leave, recruitment, core employee admin, compliance, ER, WFP, performance, and compensation have no dedicated Action farms.
+**Current composition (2026-07-26):** 546 package operations (348 commands + 198 queries) and **493** exported Action adapters across **22** HR Action files. The earlier five-file composition gap is closed at the server boundary; product-route coverage and user-experience readiness remain separate concerns.
 
 ---
 
@@ -300,7 +300,7 @@ Full row-level scores: [`46-dual-score-matrix.tsv`](46-dual-score-matrix.tsv)
 | Product factor | /100 | Notes |
 |---|---:|---|
 | Domain readiness | 66 | Cluster A/B strong except recruitment/calendar; C thin on product evidence |
-| Product composition | 22 | 5 Action files vs 286 commands |
+| Product composition | 78 | 493 exported Action adapters across 22 HR Action files vs 546 package operations; route/UI coverage remains incomplete |
 | Authz/privacy consumption | 33 | Privacy unwired; authz fragmented; ER ACL improving |
 | HR-ENT completeness | 60 | 5 complete, 9 partial, 3 gap; HR-ENT-18 upgraded partial after live typecheck |
 | Cross-system handoffs | 75 | Time/leave/comp/WFP handoff queries exist; platform facts partial |

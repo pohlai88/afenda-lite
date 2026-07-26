@@ -12,10 +12,12 @@ import {
 	hrJobCompetency,
 	hrSuccessionCandidate,
 	hrSuccessionPlan,
+	hrTalentCriticalRoleReadiness,
 	hrTalentPool,
 	hrTalentPoolMember,
 	hrTalentProfile,
 	hrTalentProfileAssessment,
+	hrTalentProfileMobility,
 	inArray,
 	runNeonHttpTransaction,
 } from "@afenda/db";
@@ -23,6 +25,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
+	HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
@@ -42,11 +45,14 @@ import {
 	parseHumanResourcesPositionId,
 	parseHumanResourcesSuccessionCandidateId,
 	parseHumanResourcesSuccessionPlanId,
+	parseHumanResourcesTalentCriticalRoleReadinessId,
 	parseHumanResourcesTalentPoolId,
 	parseHumanResourcesTalentPoolMemberId,
 	parseHumanResourcesTalentProfileAssessmentId,
 	parseHumanResourcesTalentProfileId,
+	parseHumanResourcesTalentProfileMobilityId,
 } from "../../brands";
+import { fieldChangeJson } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -61,6 +67,7 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import {
+	assertAssessmentCanExpire,
 	assertAssessmentInputValid,
 	assertAssessmentSupersedable,
 	assertCareerPlanAcknowledgeable,
@@ -69,6 +76,7 @@ import {
 	assertCareerPlanOpen,
 	assertCareerPlanStatusTransition,
 	assertCompetencyStatusTransition,
+	assertCriticalRoleReadinessRecordable,
 	assertJobCompetencyMappable,
 	assertJobCompetencyRemovable,
 	assertProfileAssessmentConfirmable,
@@ -87,6 +95,7 @@ import {
 	assertTalentPoolOpen,
 	assertTalentProfileActive,
 	assertTalentProfileArchivable,
+	assertTalentProfileMobilityRecordable,
 } from "../../shared/talent-guards";
 import {
 	careerPlanActionStatusSchema,
@@ -98,10 +107,14 @@ import {
 	successionCandidateStatusSchema,
 	successionPlanStatusSchema,
 	successionReadinessCodeSchema,
+	talentCriticalRoleReadinessStatusSchema,
+	talentMobilityDimensionSchema,
+	talentMobilityPreferenceSchema,
 	talentPoolMemberStatusSchema,
 	talentPoolStatusSchema,
 	talentProfileAssessmentMethodCodeSchema,
 	talentProfileAssessmentStatusSchema,
+	talentProfileMobilityStatusSchema,
 	talentProfileStatusSchema,
 } from "../../shared/talent-status";
 import type { HumanResourcesStore } from "../../store";
@@ -116,10 +129,15 @@ import type {
 	PositionSuccessionCoverage,
 	SuccessionCandidate,
 	SuccessionPlan,
+	TalentCriticalRoleReadiness,
+	TalentCriticalRoleReadinessListPage,
 	TalentPool,
 	TalentPoolMember,
 	TalentProfile,
 	TalentProfileAssessment,
+	TalentProfileAssessmentListPage,
+	TalentProfileMobility,
+	TalentProfileMobilityListPage,
 } from "../../types";
 
 type TalentHost = {
@@ -147,6 +165,7 @@ export type DrizzleTalentMethods = Pick<
 	| "findCompetencyAssessmentByIdempotencyKey"
 	| "createCompetencyAssessment"
 	| "supersedeCompetencyAssessment"
+	| "expireCompetencyAssessment"
 	| "getEmployeeCompetencyProfile"
 	| "getTalentProfileById"
 	| "findTalentProfileByEmployeeId"
@@ -157,6 +176,13 @@ export type DrizzleTalentMethods = Pick<
 	| "getTalentProfileByEmployee"
 	| "recordTalentProfileAssessment"
 	| "confirmTalentProfileAssessment"
+	| "listTalentProfileAssessments"
+	| "findTalentProfileMobilityByIdempotencyKey"
+	| "recordTalentProfileMobility"
+	| "listTalentProfileMobility"
+	| "findCriticalRoleReadinessByIdempotencyKey"
+	| "recordCriticalRoleReadiness"
+	| "listCriticalRoleReadiness"
 	| "getTalentPoolById"
 	| "findTalentPoolByIdempotencyKey"
 	| "createTalentPool"
@@ -257,6 +283,7 @@ type CompetencyAssessmentSqlRow = {
 	scale_code: string;
 	level: number;
 	effective_on: string;
+	expires_on: string | null;
 	status: string;
 	supersedes_assessment_id: string | null;
 	superseded_by_assessment_id: string | null;
@@ -295,6 +322,45 @@ type TalentProfileAssessmentSqlRow = {
 	assessor_user_id: string;
 	status: string;
 	confirmed_at: Date | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type TalentProfileMobilitySqlRow = {
+	id: string;
+	organization_id: string;
+	talent_profile_id: string;
+	dimension: string;
+	preference_code: string;
+	scope_detail: string | null;
+	evidence_summary: string;
+	effective_from: string;
+	effective_to: string | null;
+	status: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type TalentCriticalRoleReadinessSqlRow = {
+	id: string;
+	organization_id: string;
+	talent_profile_id: string;
+	position_id: string;
+	readiness: string;
+	readiness_effective_on: string;
+	evidence_summary: string;
+	assessor_user_id: string;
+	status: string;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -547,6 +613,7 @@ function mapCompetencyAssessment(
 		scaleCode: scaleCode.data,
 		level: row.level,
 		effectiveOn: row.effectiveOn,
+		expiresOn: row.expiresOn,
 		status: status.data,
 		supersedesAssessmentId,
 		supersededByAssessmentId,
@@ -571,6 +638,7 @@ function mapCompetencyAssessmentSql(
 		scaleCode: row.scale_code,
 		level: row.level,
 		effectiveOn: row.effective_on,
+		expiresOn: row.expires_on,
 		status: row.status,
 		supersedesAssessmentId: row.supersedes_assessment_id,
 		supersededByAssessmentId: row.superseded_by_assessment_id,
@@ -678,6 +746,132 @@ function mapTalentProfileAssessmentSql(
 		assessorUserId: row.assessor_user_id,
 		status: row.status,
 		confirmedAt: row.confirmed_at,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapTalentProfileMobility(
+	row: typeof hrTalentProfileMobility.$inferSelect,
+): Result<TalentProfileMobility> {
+	const id = parseHumanResourcesTalentProfileMobilityId(row.id);
+	if (!id.ok) return id;
+	const talentProfileId = parseHumanResourcesTalentProfileId(
+		row.talentProfileId,
+	);
+	if (!talentProfileId.ok) return talentProfileId;
+	const dimension = talentMobilityDimensionSchema.safeParse(row.dimension);
+	if (!dimension.success) {
+		return fail("INTERNAL_ERROR", "Invalid talent profile mobility dimension");
+	}
+	const preferenceCode = talentMobilityPreferenceSchema.safeParse(
+		row.preferenceCode,
+	);
+	if (!preferenceCode.success) {
+		return fail("INTERNAL_ERROR", "Invalid talent profile mobility preference");
+	}
+	const status = talentProfileMobilityStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid talent profile mobility status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		talentProfileId: talentProfileId.data,
+		dimension: dimension.data,
+		preferenceCode: preferenceCode.data,
+		scopeDetail: row.scopeDetail,
+		evidenceSummary: row.evidenceSummary,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		status: status.data,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapTalentProfileMobilitySql(
+	row: TalentProfileMobilitySqlRow,
+): Result<TalentProfileMobility> {
+	return mapTalentProfileMobility({
+		id: row.id,
+		organizationId: row.organization_id,
+		talentProfileId: row.talent_profile_id,
+		dimension: row.dimension,
+		preferenceCode: row.preference_code,
+		scopeDetail: row.scope_detail,
+		evidenceSummary: row.evidence_summary,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		status: row.status,
+		createIdempotencyKey: row.create_idempotency_key,
+		createRequestFingerprint: row.create_request_fingerprint,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapCriticalRoleReadiness(
+	row: typeof hrTalentCriticalRoleReadiness.$inferSelect,
+): Result<TalentCriticalRoleReadiness> {
+	const id = parseHumanResourcesTalentCriticalRoleReadinessId(row.id);
+	if (!id.ok) return id;
+	const talentProfileId = parseHumanResourcesTalentProfileId(
+		row.talentProfileId,
+	);
+	if (!talentProfileId.ok) return talentProfileId;
+	const positionId = parseHumanResourcesPositionId(row.positionId);
+	if (!positionId.ok) return positionId;
+	const readiness = successionReadinessCodeSchema.safeParse(row.readiness);
+	if (!readiness.success) {
+		return fail("INTERNAL_ERROR", "Invalid critical role readiness code");
+	}
+	const status = talentCriticalRoleReadinessStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid critical role readiness status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		talentProfileId: talentProfileId.data,
+		positionId: positionId.data,
+		readiness: readiness.data,
+		readinessEffectiveOn: row.readinessEffectiveOn,
+		evidenceSummary: row.evidenceSummary,
+		assessorUserId: row.assessorUserId,
+		status: status.data,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapCriticalRoleReadinessSql(
+	row: TalentCriticalRoleReadinessSqlRow,
+): Result<TalentCriticalRoleReadiness> {
+	return mapCriticalRoleReadiness({
+		id: row.id,
+		organizationId: row.organization_id,
+		talentProfileId: row.talent_profile_id,
+		positionId: row.position_id,
+		readiness: row.readiness,
+		readinessEffectiveOn: row.readiness_effective_on,
+		evidenceSummary: row.evidence_summary,
+		assessorUserId: row.assessor_user_id,
+		status: row.status,
+		createIdempotencyKey: row.create_idempotency_key,
+		createRequestFingerprint: row.create_request_fingerprint,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -1646,6 +1840,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			evidenceSource: record.evidenceSource,
 			level: record.level,
 			effectiveOn: record.effectiveOn,
+			expiresOn: record.expiresOn,
 			todayDate: todayIsoDate(),
 		});
 		if (!validInput.ok) return validInput;
@@ -1690,7 +1885,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					mutated AS (
 						INSERT INTO hr_competency_assessment (
 							id, organization_id, employee_id, competency_id, assessor_user_id,
-							evidence_source, scale_code, level, effective_on, status,
+							evidence_source, scale_code, level, effective_on, expires_on, status,
 							supersedes_assessment_id, superseded_by_assessment_id,
 							create_idempotency_key, create_request_fingerprint,
 							version, created_by, updated_by
@@ -1699,7 +1894,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							${brandedId.data}, ${record.organizationId}, ${record.employeeId},
 							${record.competencyId}, ${record.assessorUserId},
 							${record.evidenceSource}, ${record.scaleCode}, ${record.level},
-							${record.effectiveOn}, 'current', NULL, NULL,
+							${record.effectiveOn}, ${record.expiresOn}, 'current', NULL, NULL,
 							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 							1, ${record.createdBy}, ${record.createdBy}
 						FROM competency
@@ -1819,6 +2014,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			evidenceSource: record.evidenceSource,
 			level: record.level,
 			effectiveOn: record.effectiveOn,
+			expiresOn: record.expiresOn,
 			todayDate: todayIsoDate(),
 		});
 		if (!validInput.ok) return validInput;
@@ -1864,7 +2060,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					mutated AS (
 						INSERT INTO hr_competency_assessment (
 							id, organization_id, employee_id, competency_id, assessor_user_id,
-							evidence_source, scale_code, level, effective_on, status,
+							evidence_source, scale_code, level, effective_on, expires_on, status,
 							supersedes_assessment_id, superseded_by_assessment_id,
 							create_idempotency_key, create_request_fingerprint,
 							version, created_by, updated_by
@@ -1872,7 +2068,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						SELECT
 							${brandedId.data}, s.organization_id, s.employee_id, s.competency_id,
 							${record.assessorUserId}, ${record.evidenceSource}, s.scale_code,
-							${record.level}, ${record.effectiveOn}, 'current',
+							${record.level}, ${record.effectiveOn}, ${record.expiresOn}, 'current',
 							s.id, NULL, ${record.createIdempotencyKey},
 							${record.createRequestFingerprint}, 1, ${record.createdBy},
 							${record.createdBy}
@@ -1934,6 +2130,99 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			return mapPersistenceFailure(
 				error,
 				"Failed to supersede competency assessment",
+			);
+		}
+	},
+
+	async expireCompetencyAssessment(input, _ports, meta) {
+		const existing = await this.getCompetencyAssessmentById({
+			organizationId: input.organizationId,
+			assessmentId: input.assessmentId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Competency assessment not found");
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		const expireCheck = assertAssessmentCanExpire(existing.data.status);
+		if (!expireCheck.ok) return expireCheck;
+
+		const nextVersion = input.expectedVersion + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			existing.data.status,
+			"expired",
+		);
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: input.organizationId,
+			entityType: "hr_competency_assessment",
+			entityId: input.assessmentId,
+			actorId: input.actorUserId,
+			correlationId: meta.correlationId,
+		});
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[CompetencyAssessmentSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_competency_assessment
+						SET status = 'expired',
+							version = ${nextVersion},
+							updated_by = ${input.actorUserId},
+							updated_at = now()
+						WHERE id = ${input.assessmentId}
+							AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion}
+							AND status = 'current'
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+							'human-resources', 'hr_competency_assessment', id, 'UPDATE',
+							${changesJson}::jsonb
+						FROM mutated
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT
+							${eventId}, organization_id,
+							${HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT},
+							'human-resources', ${meta.correlationId}, ${input.actorUserId},
+							${payloadJson}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited, outboxed
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Competency assessment",
+				});
+			}
+			return mapCompetencyAssessmentSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to expire competency assessment",
 			);
 		}
 	},
@@ -2505,6 +2794,447 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			return mapPersistenceFailure(
 				error,
 				"Failed to confirm talent profile assessment",
+			);
+		}
+	},
+
+	async listTalentProfileAssessments(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrTalentProfileAssessment)
+				.where(
+					and(
+						eq(hrTalentProfileAssessment.organizationId, input.organizationId),
+						eq(
+							hrTalentProfileAssessment.talentProfileId,
+							input.talentProfileId,
+						),
+					),
+				)
+				.orderBy(desc(hrTalentProfileAssessment.createdAt));
+			const assessments: TalentProfileAssessment[] = [];
+			for (const row of rows) {
+				const mapped = mapTalentProfileAssessment(row);
+				if (!mapped.ok) return mapped;
+				assessments.push(mapped.data);
+			}
+			return ok({ assessments } satisfies TalentProfileAssessmentListPage);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list talent profile assessments",
+			);
+		}
+	},
+
+	async findTalentProfileMobilityByIdempotencyKey(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrTalentProfileMobility)
+				.where(
+					and(
+						eq(hrTalentProfileMobility.organizationId, input.organizationId),
+						eq(
+							hrTalentProfileMobility.createIdempotencyKey,
+							input.idempotencyKey,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			const mobility = mapTalentProfileMobility(row);
+			if (!mobility.ok) return mobility;
+			if (
+				row.createIdempotencyKey === null ||
+				row.createRequestFingerprint === null
+			) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Talent profile mobility idempotency metadata is missing",
+				);
+			}
+			return ok({
+				mobility: mobility.data,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find talent profile mobility by idempotency key",
+			);
+		}
+	},
+
+	async recordTalentProfileMobility(record, _ports, meta) {
+		const existing = await this.findTalentProfileMobilityByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.createIdempotencyKey,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data !== null) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
+				return ok(existing.data.mobility);
+			}
+			return conflict("Idempotency key already used with different data");
+		}
+
+		const profile = await this.getTalentProfileById({
+			organizationId: record.organizationId,
+			talentProfileId: record.talentProfileId,
+		});
+		if (!profile.ok) return profile;
+		if (profile.data === null) {
+			return notFound("Talent profile not found");
+		}
+		const active = assertTalentProfileActive(profile.data.status);
+		if (!active.ok) return active;
+		const recordable = assertTalentProfileMobilityRecordable({
+			evidenceSummary: record.evidenceSummary,
+			effectiveFrom: record.effectiveFrom,
+			effectiveTo: record.effectiveTo,
+		});
+		if (!recordable.ok) return recordable;
+
+		const id = randomUUID();
+		const brandedId = parseHumanResourcesTalentProfileMobilityId(id);
+		if (!brandedId.ok) return brandedId;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[TalentProfileMobilitySqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+					WITH profile AS (
+						SELECT id
+						FROM hr_talent_profile
+						WHERE id = ${record.talentProfileId}
+							AND organization_id = ${record.organizationId}
+							AND status = 'active'
+					),
+					supersede_prev AS (
+						UPDATE hr_talent_profile_mobility m
+						SET status = 'superseded',
+							version = m.version + 1,
+							updated_by = ${record.createdBy},
+							updated_at = now()
+						FROM profile p
+						WHERE m.organization_id = ${record.organizationId}
+							AND m.talent_profile_id = p.id
+							AND m.dimension = ${record.dimension}
+							AND m.status = 'current'
+						RETURNING m.id
+					),
+					mutated AS (
+						INSERT INTO hr_talent_profile_mobility (
+							id, organization_id, talent_profile_id, dimension, preference_code,
+							scope_detail, evidence_summary, effective_from, effective_to, status,
+							create_idempotency_key, create_request_fingerprint,
+							version, created_by, updated_by
+						)
+						SELECT
+							${brandedId.data}, ${record.organizationId}, p.id, ${record.dimension},
+							${record.preferenceCode}, ${record.scopeDetail}, ${record.evidenceSummary},
+							${record.effectiveFrom}, ${record.effectiveTo}, 'current',
+							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
+							1, ${record.createdBy}, ${record.createdBy}
+						FROM profile p
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
+							'human-resources', 'hr_talent_profile_mobility', id, 'CREATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return notFound("Talent profile not found or not active");
+			}
+			return mapTalentProfileMobilitySql(row);
+		} catch (error) {
+			if (isCreateIdempotencyUniqueViolation(error)) {
+				const replay = await this.findTalentProfileMobilityByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!replay.ok) return replay;
+				if (replay.data === null) {
+					return mapPersistenceFailure(
+						error,
+						"Failed to record talent profile mobility",
+					);
+				}
+				if (
+					replay.data.createRequestFingerprint ===
+					record.createRequestFingerprint
+				) {
+					return ok(replay.data.mobility);
+				}
+				return conflict("Idempotency key already used with different data");
+			}
+			return mapPersistenceFailure(
+				error,
+				"Failed to record talent profile mobility",
+			);
+		}
+	},
+
+	async listTalentProfileMobility(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrTalentProfileMobility)
+				.where(
+					and(
+						eq(hrTalentProfileMobility.organizationId, input.organizationId),
+						eq(hrTalentProfileMobility.talentProfileId, input.talentProfileId),
+					),
+				)
+				.orderBy(desc(hrTalentProfileMobility.createdAt));
+			const mobilities: TalentProfileMobility[] = [];
+			for (const row of rows) {
+				const mapped = mapTalentProfileMobility(row);
+				if (!mapped.ok) return mapped;
+				mobilities.push(mapped.data);
+			}
+			return ok({ mobilities } satisfies TalentProfileMobilityListPage);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list talent profile mobility",
+			);
+		}
+	},
+
+	async findCriticalRoleReadinessByIdempotencyKey(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrTalentCriticalRoleReadiness)
+				.where(
+					and(
+						eq(
+							hrTalentCriticalRoleReadiness.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrTalentCriticalRoleReadiness.createIdempotencyKey,
+							input.idempotencyKey,
+						),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) return ok(null);
+			const readiness = mapCriticalRoleReadiness(row);
+			if (!readiness.ok) return readiness;
+			if (
+				row.createIdempotencyKey === null ||
+				row.createRequestFingerprint === null
+			) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Critical role readiness idempotency metadata is missing",
+				);
+			}
+			return ok({
+				readiness: readiness.data,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find critical role readiness by idempotency key",
+			);
+		}
+	},
+
+	async recordCriticalRoleReadiness(record, _ports, meta) {
+		const existing = await this.findCriticalRoleReadinessByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.createIdempotencyKey,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data !== null) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
+				return ok(existing.data.readiness);
+			}
+			return conflict("Idempotency key already used with different data");
+		}
+
+		const profile = await this.getTalentProfileById({
+			organizationId: record.organizationId,
+			talentProfileId: record.talentProfileId,
+		});
+		if (!profile.ok) return profile;
+		if (profile.data === null) {
+			return notFound("Talent profile not found");
+		}
+		const active = assertTalentProfileActive(profile.data.status);
+		if (!active.ok) return active;
+		const position = await this.getPositionById({
+			organizationId: record.organizationId,
+			positionId: record.positionId,
+		});
+		if (!position.ok) return position;
+		if (position.data === null) {
+			return notFound("Position not found");
+		}
+		const recordable = assertCriticalRoleReadinessRecordable({
+			evidenceSummary: record.evidenceSummary,
+			assessorUserId: record.assessorUserId,
+			readinessEffectiveOn: record.readinessEffectiveOn,
+		});
+		if (!recordable.ok) return recordable;
+
+		const id = randomUUID();
+		const brandedId = parseHumanResourcesTalentCriticalRoleReadinessId(id);
+		if (!brandedId.ok) return brandedId;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[TalentCriticalRoleReadinessSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
+					WITH profile AS (
+						SELECT id
+						FROM hr_talent_profile
+						WHERE id = ${record.talentProfileId}
+							AND organization_id = ${record.organizationId}
+							AND status = 'active'
+					),
+					position AS (
+						SELECT id
+						FROM hr_position
+						WHERE id = ${record.positionId}
+							AND organization_id = ${record.organizationId}
+					),
+					supersede_prev AS (
+						UPDATE hr_talent_critical_role_readiness r
+						SET status = 'superseded',
+							version = r.version + 1,
+							updated_by = ${record.createdBy},
+							updated_at = now()
+						FROM profile p, position pos
+						WHERE r.organization_id = ${record.organizationId}
+							AND r.talent_profile_id = p.id
+							AND r.position_id = pos.id
+							AND r.status = 'current'
+						RETURNING r.id
+					),
+					mutated AS (
+						INSERT INTO hr_talent_critical_role_readiness (
+							id, organization_id, talent_profile_id, position_id, readiness,
+							readiness_effective_on, evidence_summary, assessor_user_id, status,
+							create_idempotency_key, create_request_fingerprint,
+							version, created_by, updated_by
+						)
+						SELECT
+							${brandedId.data}, ${record.organizationId}, p.id, pos.id,
+							${record.readiness}, ${record.readinessEffectiveOn},
+							${record.evidenceSummary}, ${record.assessorUserId}, 'current',
+							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
+							1, ${record.createdBy}, ${record.createdBy}
+						FROM profile p, position pos
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes
+						)
+						SELECT
+							${auditId}, organization_id, ${record.createdBy}, ${meta.correlationId},
+							'human-resources', 'hr_talent_critical_role_readiness', id, 'CREATE', '[]'::jsonb
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const row = rows[0];
+			if (!row) {
+				return notFound("Talent profile or position not found");
+			}
+			return mapCriticalRoleReadinessSql(row);
+		} catch (error) {
+			if (isCreateIdempotencyUniqueViolation(error)) {
+				const replay = await this.findCriticalRoleReadinessByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!replay.ok) return replay;
+				if (replay.data === null) {
+					return mapPersistenceFailure(
+						error,
+						"Failed to record critical role readiness",
+					);
+				}
+				if (
+					replay.data.createRequestFingerprint ===
+					record.createRequestFingerprint
+				) {
+					return ok(replay.data.readiness);
+				}
+				return conflict("Idempotency key already used with different data");
+			}
+			return mapPersistenceFailure(
+				error,
+				"Failed to record critical role readiness",
+			);
+		}
+	},
+
+	async listCriticalRoleReadiness(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrTalentCriticalRoleReadiness)
+				.where(
+					and(
+						eq(
+							hrTalentCriticalRoleReadiness.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrTalentCriticalRoleReadiness.talentProfileId,
+							input.talentProfileId,
+						),
+					),
+				)
+				.orderBy(desc(hrTalentCriticalRoleReadiness.createdAt));
+			const readinessRecords: TalentCriticalRoleReadiness[] = [];
+			for (const row of rows) {
+				const mapped = mapCriticalRoleReadiness(row);
+				if (!mapped.ok) return mapped;
+				readinessRecords.push(mapped.data);
+			}
+			return ok({
+				readinessRecords,
+			} satisfies TalentCriticalRoleReadinessListPage);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list critical role readiness",
 			);
 		}
 	},

@@ -172,7 +172,9 @@ export type EmployeeProfile = {
 	employeeId: HumanResourcesEmployeeId;
 	employeeNumber: string;
 	legalName: string;
-	employmentStatus: import("../shared/employment-status").EmploymentStatus | null;
+	employmentStatus:
+		| import("../shared/employment-status").EmploymentStatus
+		| null;
 	employmentId: import("../brands").HumanResourcesEmploymentId | null;
 	personId: HumanResourcesPersonId | null;
 	personDisplayName: string | null;

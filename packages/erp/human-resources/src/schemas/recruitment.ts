@@ -38,7 +38,9 @@ export const createDraftRequisitionInputSchema =
 			jobId: humanResourcesJobIdSchema.nullable().optional(),
 			positionId: humanResourcesPositionIdSchema.nullable().optional(),
 			departmentId: humanResourcesDepartmentIdSchema.nullable().optional(),
-			hiringManagerEmployeeId: humanResourcesEmployeeIdSchema.nullable().optional(),
+			hiringManagerEmployeeId: humanResourcesEmployeeIdSchema
+				.nullable()
+				.optional(),
 		})
 		.strict();
 
@@ -53,20 +55,23 @@ export const amendRequisitionInputSchema = humanResourcesMutationContextSchema
 		jobId: humanResourcesJobIdSchema.nullable().optional(),
 		positionId: humanResourcesPositionIdSchema.nullable().optional(),
 		departmentId: humanResourcesDepartmentIdSchema.nullable().optional(),
-		hiringManagerEmployeeId: humanResourcesEmployeeIdSchema.nullable().optional(),
+		hiringManagerEmployeeId: humanResourcesEmployeeIdSchema
+			.nullable()
+			.optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
 
 export type AmendRequisitionInput = z.infer<typeof amendRequisitionInputSchema>;
 
-export const assignHiringManagerInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		requisitionId: humanResourcesRequisitionIdSchema,
-		hiringManagerEmployeeId: humanResourcesEmployeeIdSchema,
-		expectedVersion: humanResourcesExpectedVersionSchema,
-	})
-	.strict();
+export const assignHiringManagerInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			requisitionId: humanResourcesRequisitionIdSchema,
+			hiringManagerEmployeeId: humanResourcesEmployeeIdSchema,
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
 
 export type AssignHiringManagerInput = z.infer<
 	typeof assignHiringManagerInputSchema
@@ -164,14 +169,13 @@ export type ChangeCandidateRetentionInput = z.infer<
 	typeof changeCandidateRetentionInputSchema
 >;
 
-export const anonymizeCandidateInputSchema =
-	humanResourcesMutationContextSchema
-		.extend({
-			candidateId: humanResourcesCandidateIdSchema,
-			expectedVersion: humanResourcesExpectedVersionSchema,
-			asOf: z.string().date().optional(),
-		})
-		.strict();
+export const anonymizeCandidateInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		candidateId: humanResourcesCandidateIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+		asOf: z.string().date().optional(),
+	})
+	.strict();
 
 export type AnonymizeCandidateInput = z.infer<
 	typeof anonymizeCandidateInputSchema
@@ -205,8 +209,7 @@ export const detectCandidateDuplicatesInputSchema =
 		})
 		.strict()
 		.refine(
-			(value) =>
-				value.email !== undefined || value.displayName !== undefined,
+			(value) => value.email !== undefined || value.displayName !== undefined,
 			{
 				message: "Provide email and/or displayName for duplicate detection",
 			},
@@ -242,7 +245,8 @@ export type ApplicationStatusTransitionInput = z.infer<
 	typeof applicationStatusTransitionInputSchema
 >;
 
-export const reopenApplicationInputSchema = applicationStatusTransitionInputSchema;
+export const reopenApplicationInputSchema =
+	applicationStatusTransitionInputSchema;
 
 export type ReopenApplicationInput = z.infer<
 	typeof reopenApplicationInputSchema

@@ -21,8 +21,8 @@ import {
 	releaseHeadcountReservationInputSchema,
 	reserveHeadcountInputSchema,
 } from "../schemas/workforce-planning";
-import { fingerprintHeadcountReservation } from "../shared/fingerprint";
 import { conflict } from "../shared/domain-guards";
+import { fingerprintHeadcountReservation } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import { assertRequisitionAllowsHeadcountReservation } from "../shared/recruitment-guards";
 import {
@@ -182,7 +182,7 @@ export async function reserveHeadcount(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
 				}),
 			);
 		},
@@ -208,7 +208,7 @@ export async function releaseHeadcountReservation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
 				}),
 			),
 	});
@@ -233,7 +233,7 @@ export async function consumeHeadcountReservation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
 				}),
 			),
 	});

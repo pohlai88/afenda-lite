@@ -6,18 +6,31 @@ const select = vi.fn();
 const insert = vi.fn();
 const del = vi.fn();
 
-vi.mock("@afenda/db", async () => {
-	const actual =
-		await vi.importActual<typeof import("@afenda/db")>("@afenda/db");
-	return {
-		...actual,
-		db: {
-			select: (...args: unknown[]) => select(...args),
-			insert: (...args: unknown[]) => insert(...args),
-			delete: (...args: unknown[]) => del(...args),
-		},
-	};
-});
+vi.mock("@afenda/db", () => ({
+	and: vi.fn(() => ({ kind: "and" })),
+	count: vi.fn(() => ({ kind: "count" })),
+	db: {
+		select: (...args: unknown[]) => select(...args),
+		insert: (...args: unknown[]) => insert(...args),
+		delete: (...args: unknown[]) => del(...args),
+	},
+	desc: vi.fn(() => ({ kind: "desc" })),
+	eq: vi.fn(() => ({ kind: "eq" })),
+	gte: vi.fn(() => ({ kind: "gte" })),
+	lte: vi.fn(() => ({ kind: "lte" })),
+	platformRbacAudit: {
+		id: "id",
+		action: "action",
+		actorUserId: "actor_user_id",
+		organizationId: "organization_id",
+		targetType: "target_type",
+		targetId: "target_id",
+		roleId: "role_id",
+		permissionCode: "permission_code",
+		correlationId: "correlation_id",
+		createdAt: "created_at",
+	},
+}));
 
 const sampleRow = {
 	id: "11111111-1111-1111-1111-111111111111",

@@ -37,12 +37,12 @@ import type {
 	PayrollPeriodCloseInput,
 	PayrollPeriodCreateRecord,
 	PayrollPeriodUpdateInput,
+	PayrollRuleSupersedeResult,
 	PayrollStatutoryRule,
 	PayrollStatutoryRuleArchiveInput,
 	PayrollStatutoryRuleCreateRecord,
 	PayrollStatutoryRuleSupersedeRecord,
 	PayrollStatutoryRuleUpdateInput,
-	PayrollRuleSupersedeResult,
 } from "../types";
 
 /**
@@ -255,30 +255,6 @@ export type PayrollSetupStore = {
 };
 
 export type {
-	PayrollCalendarCreateRecord,
-	PayrollPayGroupCreateRecord,
-	PayrollPeriodCreateRecord,
-	PayrollEarningRuleCreateRecord,
-	PayrollDeductionRuleCreateRecord,
-	PayrollStatutoryRuleCreateRecord,
-	PayrollCalendarUpdateInput,
-	PayrollCalendarArchiveInput,
-	PayrollPayGroupUpdateInput,
-	PayrollPayGroupArchiveInput,
-	PayrollPeriodUpdateInput,
-	PayrollPeriodCloseInput,
-	PayrollEarningRuleUpdateInput,
-	PayrollEarningRuleArchiveInput,
-	PayrollEarningRuleSupersedeRecord,
-	PayrollDeductionRuleUpdateInput,
-	PayrollDeductionRuleArchiveInput,
-	PayrollDeductionRuleSupersedeRecord,
-	PayrollStatutoryRuleUpdateInput,
-	PayrollStatutoryRuleArchiveInput,
-	PayrollStatutoryRuleSupersedeRecord,
-} from "../types";
-
-export type {
 	PayrollCalendarId,
 	PayrollDeductionRuleId,
 	PayrollEarningRuleId,
@@ -286,3 +262,26 @@ export type {
 	PayrollPeriodId,
 	PayrollStatutoryRuleId,
 } from "../brands";
+export type {
+	PayrollCalendarArchiveInput,
+	PayrollCalendarCreateRecord,
+	PayrollCalendarUpdateInput,
+	PayrollDeductionRuleArchiveInput,
+	PayrollDeductionRuleCreateRecord,
+	PayrollDeductionRuleSupersedeRecord,
+	PayrollDeductionRuleUpdateInput,
+	PayrollEarningRuleArchiveInput,
+	PayrollEarningRuleCreateRecord,
+	PayrollEarningRuleSupersedeRecord,
+	PayrollEarningRuleUpdateInput,
+	PayrollPayGroupArchiveInput,
+	PayrollPayGroupCreateRecord,
+	PayrollPayGroupUpdateInput,
+	PayrollPeriodCloseInput,
+	PayrollPeriodCreateRecord,
+	PayrollPeriodUpdateInput,
+	PayrollStatutoryRuleArchiveInput,
+	PayrollStatutoryRuleCreateRecord,
+	PayrollStatutoryRuleSupersedeRecord,
+	PayrollStatutoryRuleUpdateInput,
+} from "../types";

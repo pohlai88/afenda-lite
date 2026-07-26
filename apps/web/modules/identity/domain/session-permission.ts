@@ -13,7 +13,10 @@ export type PermissionSession = {
 	role: PermissionBootstrapRole;
 };
 
-export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string> = {
+export const PERMISSION_DENIED_MESSAGE: Record<
+	PlatformPermissionCodeV1,
+	string
+> = {
 	"org.users.manage":
 		"You do not have permission to manage organization users.",
 	"org.roles.manage":
@@ -80,8 +83,7 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to record receiving discrepancies.",
 	"receiving.discrepancy.resolve":
 		"You do not have permission to resolve receiving discrepancies.",
-	"fulfillment.delivery.read":
-		"You do not have permission to read deliveries.",
+	"fulfillment.delivery.read": "You do not have permission to read deliveries.",
 	"fulfillment.delivery.create":
 		"You do not have permission to create deliveries.",
 	"fulfillment.delivery.update":
@@ -90,8 +92,7 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to confirm picking.",
 	"fulfillment.packing.confirm":
 		"You do not have permission to confirm packing.",
-	"fulfillment.delivery.post":
-		"You do not have permission to post deliveries.",
+	"fulfillment.delivery.post": "You do not have permission to post deliveries.",
 	"fulfillment.delivery.cancel":
 		"You do not have permission to cancel deliveries.",
 	"fulfillment.pod.record":
@@ -137,7 +138,8 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to manage payment application instructions.",
 	"payments.account.manage":
 		"You do not have permission to manage payment accounts.",
-	"payments.account.read": "You do not have permission to read payment accounts.",
+	"payments.account.read":
+		"You do not have permission to read payment accounts.",
 	"payments.availability.read":
 		"You do not have permission to read payment application availability.",
 	"accounting.journal.read":
@@ -394,8 +396,7 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to manage human-resources legal holds.",
 	"human-resources.privacy.anonymize.execute":
 		"You do not have permission to anonymize human-resources subject data.",
-	"payroll.setup.manage":
-		"You do not have permission to manage payroll setup.",
+	"payroll.setup.manage": "You do not have permission to manage payroll setup.",
 	"payroll.input.manage":
 		"You do not have permission to manage payroll inputs.",
 	"payroll.run.create": "You do not have permission to create payroll runs.",
@@ -404,8 +405,7 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 	"payroll.run.review": "You do not have permission to review payroll runs.",
 	"payroll.run.finalize":
 		"You do not have permission to finalize payroll runs.",
-	"payroll.run.reverse":
-		"You do not have permission to reverse payroll runs.",
+	"payroll.run.reverse": "You do not have permission to reverse payroll runs.",
 	"payroll.payslip.read-own":
 		"You do not have permission to read own payslips.",
 	"payroll.payslip.read-all":

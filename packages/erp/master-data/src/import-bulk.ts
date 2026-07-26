@@ -921,10 +921,7 @@ export async function upsertItemGroupsByCode(
 		return authorized;
 	}
 	const ctx = parsed.data;
-	return upsertByCodeGeneric(
-		{ ...ctx, entityType: "item_group" },
-		options,
-		{
+	return upsertByCodeGeneric({ ...ctx, entityType: "item_group" }, options, {
 		getByCode: async (organizationId, normalizedCode) => {
 			const result = await store.getItemGroupByCode(
 				organizationId,
@@ -966,8 +963,7 @@ export async function upsertItemGroupsByCode(
 				options,
 			),
 		isUnchanged: (existing, row) => existing.name === row.name,
-	},
-	);
+	});
 }
 
 export async function upsertItemsByCode(
@@ -1143,8 +1139,7 @@ export async function upsertWarehousesByCode(
 					code,
 					outcome: "rejected",
 					entityId: existing.id,
-					message:
-						"locationType is immutable on import; only name may update",
+					message: "locationType is immutable on import; only name may update",
 					reason: "MASTER_VALIDATION_FAILED",
 				};
 			}

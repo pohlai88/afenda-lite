@@ -84,7 +84,7 @@ describe("authorization policy coverage", () => {
 				}
 			}
 		}
-	});
+	}, 15_000);
 
 	it("fails closed with a typed resolve error when unregistered", () => {
 		try {

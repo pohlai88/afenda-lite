@@ -43,7 +43,11 @@ export const PERFORMANCE_REVIEW_STATUSES = [
 export type PerformanceReviewStatus =
 	(typeof PERFORMANCE_REVIEW_STATUSES)[number];
 
-export const PERFORMANCE_ASSESSMENT_KINDS = ["self", "manager", "delegated"] as const;
+export const PERFORMANCE_ASSESSMENT_KINDS = [
+	"self",
+	"manager",
+	"delegated",
+] as const;
 export type PerformanceAssessmentKind =
 	(typeof PERFORMANCE_ASSESSMENT_KINDS)[number];
 

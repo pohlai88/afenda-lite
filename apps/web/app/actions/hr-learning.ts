@@ -4,28 +4,37 @@ import {
 	activateCourse,
 	archiveCourse,
 	assignLearning,
+	assignSessionInstructor,
+	type CertificationListPage,
+	type CompletionListPage,
+	type CourseListPage,
+	cancelSession,
+	completeSession,
 	createCourse,
 	createSession,
+	type EmployeeCertification,
 	enrolAssignment,
 	expireCertification,
 	issueCertification,
+	type LearningAssignment,
+	type LearningAssignmentListPage,
+	type LearningAttendance,
+	type LearningAttendanceListPage,
+	type LearningCompletion,
+	type LearningCourse,
+	type LearningSession,
 	listCertifications,
 	listCompletions,
 	listCourses,
 	listLearningAssignments,
+	listLearningAttendance,
 	listSessions,
 	recordCompletion,
+	recordLearningAttendance,
+	renewCertification,
 	revokeCertification,
-	type CertificationListPage,
-	type CompletionListPage,
-	type CourseListPage,
-	type EmployeeCertification,
-	type LearningAssignment,
-	type LearningAssignmentListPage,
-	type LearningCompletion,
-	type LearningCourse,
-	type LearningSession,
 	type SessionListPage,
+	startSession,
 	waiveAssignment,
 } from "@afenda/human-resources";
 import { z } from "zod";
@@ -67,7 +76,11 @@ export async function createCourseAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", "Enter a valid course.", parsed.details);
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid course.",
+					parsed.details,
+				);
 			}
 			const result = await createCourse(
 				withSessionContext(session, correlationId, parsed.data),
@@ -273,6 +286,115 @@ export async function listSessionsAction(input?: {
 			const mapped = mapPackageResult(result);
 			if (!mapped.ok) return mapped;
 			return { ok: true, data: { page: mapped.data } };
+		},
+	});
+}
+
+export async function startSessionAction(input: {
+	correlationId?: string;
+	sessionId: string;
+	expectedVersion: number;
+	actualStartsAt?: string;
+}): Promise<ActionResult<{ session: LearningSession }>> {
+	return runOperatorPermissionAction({
+		path: "startSessionAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not start learning session.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					sessionId: z.string().uuid(),
+					expectedVersion: z.number().int().positive(),
+					actualStartsAt: z.string().datetime({ offset: true }).optional(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid session start request.",
+					parsed.details,
+				);
+			}
+			const result = await startSession(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { session: mapped.data } };
+		},
+	});
+}
+
+export async function completeSessionAction(input: {
+	correlationId?: string;
+	sessionId: string;
+	expectedVersion: number;
+	actualEndsAt?: string;
+}): Promise<ActionResult<{ session: LearningSession }>> {
+	return runOperatorPermissionAction({
+		path: "completeSessionAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not complete learning session.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					sessionId: z.string().uuid(),
+					expectedVersion: z.number().int().positive(),
+					actualEndsAt: z.string().datetime({ offset: true }).optional(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid session complete request.",
+					parsed.details,
+				);
+			}
+			const result = await completeSession(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { session: mapped.data } };
+		},
+	});
+}
+
+export async function cancelSessionAction(input: {
+	correlationId?: string;
+	sessionId: string;
+	expectedVersion: number;
+}): Promise<ActionResult<{ session: LearningSession }>> {
+	return runOperatorPermissionAction({
+		path: "cancelSessionAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not cancel learning session.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					sessionId: z.string().uuid(),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid session cancel request.",
+					parsed.details,
+				);
+			}
+			const result = await cancelSession(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { session: mapped.data } };
 		},
 	});
 }
@@ -534,6 +656,7 @@ export async function issueCertificationAction(input: {
 	idempotencyKey: string;
 	employeeId: string;
 	courseId: string;
+	completionId: string;
 	certificationCode: string;
 	issuedOn: string;
 	expiresOn?: string | null;
@@ -548,6 +671,7 @@ export async function issueCertificationAction(input: {
 					idempotencyKey: z.string().trim().min(1).max(128),
 					employeeId: z.string().uuid(),
 					courseId: z.string().uuid(),
+					completionId: z.string().uuid(),
 					certificationCode: z.string().trim().min(1).max(64),
 					issuedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 					expiresOn: z
@@ -636,6 +760,172 @@ export async function expireCertificationAction(input: {
 				);
 			}
 			const result = await expireCertification(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { certification: mapped.data } };
+		},
+	});
+}
+
+export async function assignSessionInstructorAction(input: {
+	correlationId?: string;
+	sessionId: string;
+	primaryInstructorUserId: string | null;
+	expectedVersion: number;
+}): Promise<ActionResult<{ session: LearningSession }>> {
+	return runOperatorPermissionAction({
+		path: "assignSessionInstructorAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not assign session instructor.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					sessionId: z.string().uuid(),
+					primaryInstructorUserId: z.string().trim().min(1).nullable(),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid session instructor assignment.",
+					parsed.details,
+				);
+			}
+			const result = await assignSessionInstructor(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { session: mapped.data } };
+		},
+	});
+}
+
+export async function recordLearningAttendanceAction(input: {
+	correlationId?: string;
+	idempotencyKey: string;
+	sessionId: string;
+	assignmentId: string;
+	employeeId?: string;
+	status: LearningAttendance["status"];
+	recordedAt: string;
+}): Promise<ActionResult<{ attendance: LearningAttendance }>> {
+	return runOperatorPermissionAction({
+		path: "recordLearningAttendanceAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not record learning attendance.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					idempotencyKey: z.string().trim().min(1).max(128),
+					sessionId: z.string().uuid(),
+					assignmentId: z.string().uuid(),
+					employeeId: z.string().uuid().optional(),
+					status: z.enum(["present", "absent", "late", "excused"]),
+					recordedAt: z.string().datetime({ offset: true }),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid learning attendance record.",
+					parsed.details,
+				);
+			}
+			const result = await recordLearningAttendance(
+				withSessionContext(session, correlationId, parsed.data),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { attendance: mapped.data } };
+		},
+	});
+}
+
+export async function listLearningAttendanceAction(input?: {
+	correlationId?: string;
+	page?: number;
+	pageSize?: number;
+	sessionId?: string;
+	employeeId?: string;
+}): Promise<ActionResult<{ page: LearningAttendanceListPage }>> {
+	return runOperatorPermissionAction({
+		path: "listLearningAttendanceAction",
+		permission: "human-resources.learning.manage",
+		safeMessage: "Could not list learning attendance.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema
+					.extend({
+						page: z.number().int().positive().optional(),
+						pageSize: z.number().int().positive().max(100).optional(),
+						sessionId: z.string().uuid().optional(),
+						employeeId: z.string().uuid().optional(),
+					})
+					.optional(),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter valid learning attendance filters.",
+					parsed.details,
+				);
+			}
+			const result = await listLearningAttendance(
+				withSessionContext(session, correlationId, parsed.data ?? {}),
+				createHumanResourcesCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { page: mapped.data } };
+		},
+	});
+}
+
+export async function renewCertificationAction(input: {
+	correlationId?: string;
+	idempotencyKey: string;
+	certificationId: string;
+	completionId: string;
+	certificationCode: string;
+	issuedOn: string;
+	expiresOn?: string | null;
+	expectedVersion: number;
+}): Promise<ActionResult<{ certification: EmployeeCertification }>> {
+	return runOperatorPermissionAction({
+		path: "renewCertificationAction",
+		permission: "human-resources.certification.manage",
+		safeMessage: "Could not renew certification.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(
+				mutationContextSchema.extend({
+					idempotencyKey: z.string().trim().min(1).max(128),
+					certificationId: z.string().uuid(),
+					completionId: z.string().uuid(),
+					certificationCode: z.string().trim().min(1).max(64),
+					issuedOn: z.string().date(),
+					expiresOn: z.string().date().nullable().optional(),
+					expectedVersion: z.number().int().positive(),
+				}),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter a valid certification renewal request.",
+					parsed.details,
+				);
+			}
+			const result = await renewCertification(
 				withSessionContext(session, correlationId, parsed.data),
 				createHumanResourcesCommandOptions(),
 			);

@@ -62,7 +62,8 @@ function contactValue(
 	contactType: PersonContact["contactType"],
 ): string | null {
 	const match = contacts.find(
-		(contact) => contact.contactType === contactType && contact.status === "active",
+		(contact) =>
+			contact.contactType === contactType && contact.status === "active",
 	);
 	return match?.valueText ?? null;
 }
@@ -244,7 +245,10 @@ export async function getEmployeeProfile(
 	let actor: HumanResourcesActorContext = resolveActorContextFromInput(
 		parsed.data,
 	);
-	if (actor.actorEmployeeId === undefined && options.identityResolver !== undefined) {
+	if (
+		actor.actorEmployeeId === undefined &&
+		options.identityResolver !== undefined
+	) {
 		const identity = await options.identityResolver.resolveEmployeeForActor({
 			organizationId: actor.organizationId,
 			actorUserId: actor.actorUserId,

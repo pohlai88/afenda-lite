@@ -1,9 +1,9 @@
-import { ok, type Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors/result";
 
 import type { HumanResourcesEmploymentId } from "../brands";
-import { notFound } from "./domain-guards";
 import type { CompensationReview, CompensationReviewCycle } from "../types";
 import { assertCompensationReviewWithinBudget } from "./compensation-review-budget";
+import { notFound } from "./domain-guards";
 
 export type CompensationReviewBudgetDeps = {
 	getCycle: () => Promise<Result<CompensationReviewCycle | null>>;

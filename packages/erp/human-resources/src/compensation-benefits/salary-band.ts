@@ -60,7 +60,7 @@ export async function createSalaryBand(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
 				}),
 			);
 		},
@@ -99,7 +99,7 @@ export async function supersedeSalaryBand(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
+					operationId: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
 				}),
 			);
 			if (!superseded.ok) {
@@ -129,7 +129,7 @@ export async function archiveSalaryBand(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
 				}),
 			),
 	});

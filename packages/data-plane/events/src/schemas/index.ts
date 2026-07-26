@@ -1,9 +1,21 @@
 import { AccountingEventSchemas } from "./accounting.events";
+import { FulfillmentEventSchemas } from "./fulfillment.events";
 import {
+	type ApprovedPayrollHandoff,
 	approvedPayrollHandoffSchema,
 	DEFAULT_HANDOFF_ROUNDING_MODE,
 	deriveHandoffDecimalScale,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
+	type HandoffApprovalEvidence,
+	type HandoffAssignment,
+	type HandoffCompensationComponent,
+	type HandoffLeaveFact,
+	type HandoffMoneyAmount,
+	type HandoffOvertimeFact,
+	type HandoffPayFrequency,
+	type HandoffRoundingMode,
+	type HandoffSourceVersion,
+	type HandoffTimeFacts,
 	handoffApprovalEvidenceSchema,
 	handoffAssignmentSchema,
 	handoffCompensationComponentKindSchema,
@@ -21,19 +33,7 @@ import {
 	handoffRoundingModeSchema,
 	handoffSourceVersionSchema,
 	handoffTimeFactsSchema,
-	type ApprovedPayrollHandoff,
-	type HandoffApprovalEvidence,
-	type HandoffAssignment,
-	type HandoffCompensationComponent,
-	type HandoffLeaveFact,
-	type HandoffMoneyAmount,
-	type HandoffOvertimeFact,
-	type HandoffPayFrequency,
-	type HandoffRoundingMode,
-	type HandoffSourceVersion,
-	type HandoffTimeFacts,
 } from "./hr-payroll-handoff";
-import { FulfillmentEventSchemas } from "./fulfillment.events";
 import { HumanResourcesEventSchemas } from "./human-resources.events";
 import { IdentityEventSchemas } from "./identity.events";
 import { InventoryEventSchemas } from "./inventory.events";
@@ -92,10 +92,12 @@ export {
 	HUMAN_RESOURCES_CANDIDATE_RETENTION_CHANGED_EVENT,
 	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
+	HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
 	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
 	HUMAN_RESOURCES_COMPENSATION_PROPOSAL_APPROVED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
+	HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
 	HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
@@ -367,10 +369,21 @@ export {
 } from "./sales.events";
 
 export {
+	type ApprovedPayrollHandoff,
 	approvedPayrollHandoffSchema,
 	DEFAULT_HANDOFF_ROUNDING_MODE,
 	deriveHandoffDecimalScale,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
+	type HandoffApprovalEvidence,
+	type HandoffAssignment,
+	type HandoffCompensationComponent,
+	type HandoffLeaveFact,
+	type HandoffMoneyAmount,
+	type HandoffOvertimeFact,
+	type HandoffPayFrequency,
+	type HandoffRoundingMode,
+	type HandoffSourceVersion,
+	type HandoffTimeFacts,
 	handoffApprovalEvidenceSchema,
 	handoffAssignmentSchema,
 	handoffCompensationComponentKindSchema,
@@ -388,17 +401,6 @@ export {
 	handoffRoundingModeSchema,
 	handoffSourceVersionSchema,
 	handoffTimeFactsSchema,
-	type ApprovedPayrollHandoff,
-	type HandoffApprovalEvidence,
-	type HandoffAssignment,
-	type HandoffCompensationComponent,
-	type HandoffLeaveFact,
-	type HandoffMoneyAmount,
-	type HandoffOvertimeFact,
-	type HandoffPayFrequency,
-	type HandoffRoundingMode,
-	type HandoffSourceVersion,
-	type HandoffTimeFacts,
 };
 
 export const AllEventSchemas = {

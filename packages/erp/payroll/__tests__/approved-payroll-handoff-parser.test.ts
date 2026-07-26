@@ -16,8 +16,6 @@ import {
 } from "../src/shared/money";
 import {
 	HANDOFF_FIXTURE_P1,
-	HANDOFF_FIXTURE_P10,
-	HANDOFF_FIXTURE_P11,
 	HANDOFF_FIXTURE_P2,
 	HANDOFF_FIXTURE_P3,
 	HANDOFF_FIXTURE_P4,
@@ -26,6 +24,8 @@ import {
 	HANDOFF_FIXTURE_P7,
 	HANDOFF_FIXTURE_P8,
 	HANDOFF_FIXTURE_P9,
+	HANDOFF_FIXTURE_P10,
+	HANDOFF_FIXTURE_P11,
 	HANDOFF_FIXTURE_SLICE_87,
 } from "./fixtures/approved-payroll-handoff-fixtures";
 

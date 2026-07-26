@@ -4,11 +4,11 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import { invalidInput, invalidState } from "./domain-guards";
 import type {
 	CompensationReviewCycleStatus,
 	CompensationReviewStatus,
 } from "./compensation-status";
+import { invalidInput, invalidState } from "./domain-guards";
 
 function alreadyInStatus(entity: string, status: string): Result<never> {
 	return fail(
@@ -35,7 +35,9 @@ export function assertValidReviewCyclePeriod(input: {
 	periodEnd: string;
 }): Result<true> {
 	if (input.periodEnd < input.periodStart) {
-		return invalidInput("Review cycle period end must be on or after period start");
+		return invalidInput(
+			"Review cycle period end must be on or after period start",
+		);
 	}
 	return ok(true);
 }
@@ -93,14 +95,12 @@ export function assertCanRecordCompensationRecommendation(
 	return ok(undefined);
 }
 
-export function assertCanFinalizeCompensationReview(
-	review: {
-		status: CompensationReviewStatus;
-		proposedBaseAmount: string | null;
-		proposedCurrencyCode: string | null;
-		effectiveFrom: string | null;
-	},
-): Result<void> {
+export function assertCanFinalizeCompensationReview(review: {
+	status: CompensationReviewStatus;
+	proposedBaseAmount: string | null;
+	proposedCurrencyCode: string | null;
+	effectiveFrom: string | null;
+}): Result<void> {
 	if (review.status !== "recorded") {
 		return invalidState("Compensation review must be recorded before approval");
 	}

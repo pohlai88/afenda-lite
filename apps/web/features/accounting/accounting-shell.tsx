@@ -46,7 +46,10 @@ export async function AccountingShell({ surface }: AccountingShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
 	await requirePermission(session, "accounting.journal.read");
-	const canManage = await sessionHasPermission(session, "accounting.journal.create");
+	const canManage = await sessionHasPermission(
+		session,
+		"accounting.journal.create",
+	);
 	const options = createAccountingCommandOptions();
 	const [journalsResult, trialBalanceResult] = await Promise.all([
 		listJournals(

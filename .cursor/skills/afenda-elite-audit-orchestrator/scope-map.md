@@ -32,23 +32,23 @@ Available `pnpm` checks and their typical exit codes:
 | `validate:neon-env` | Live | No | Neon Cloud ids vs `.env.local` |
 | `check:tenancy-residue` | Live | No | Soft dual-mode residue scan (N9 / ARCH-023 R1) |
 | `audit:tenancy-nulls` | Live | No | Living hard-root null `organization_id` audit (`platform_*` activity roots + `md_party` · `md_item_group` · `md_item` · `md_warehouse`; needs `DATABASE_URL`; CI on `main`) |
-| `check:copy` | Gated | Yes | → `collapse-script-unavailable` |
+| `check:copy` | Removed | — | Collapse-era alias removed; no live control |
 | `check:tsconfig-no-baseurl` | Live | No | TypeScript config validation |
-| `check:nav` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:proxy` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:db-schema` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:playground` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:production:*` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:brand-icons` | Gated | Yes | → `collapse-script-unavailable` |
+| `check:nav` | Removed | — | Collapse-era alias removed; no live control |
+| `check:proxy` | Removed | — | Collapse-era alias removed; no live control |
+| `check:db-schema` | Removed | — | Collapse-era alias removed; no live control |
+| `check:playground` | Removed | — | Removed with the absent playground surface |
+| `check:production:*` | Removed | — | Collapse-era aliases removed; no live controls |
+| `check:brand-icons` | Removed | — | Collapse-era alias removed; no live control |
 | `check:import-boundaries` | Removed | — | Removed 2026-07-17; live gates = Vitest boundary tests + ARCH-024 |
-| `check:ui-sync` | Gated | Yes | → `collapse-script-unavailable` |
+| `check:ui-sync` | Removed | — | Collapse-era alias removed; current UI controls are `check:ui-system` and package tests |
 | `check:fft-ui-registry*` | Removed | — | Removed 2026-07-17 from root `package.json` (were collapse aliases only) |
 | `check:reliance-graph-drift` · `check:reliance-coverage` · `export:reliance-graph` · `export:route-coverage` · `check:route-coverage-drift` | Removed | — | Removed 2026-07-17 with `reliance-graph.snapshot.json` / `route-coverage.snapshot.json` retire |
 | `check:reliance-mapping-drift` · `export:reliance-mapping` | Removed | — | Removed 2026-07-17 after `reliance-mapping.snapshot.json` retire |
 
-**Gated script rule:** Scripts that route through `collapse-script-unavailable.mjs` are inventory, not live controls. They exit non-zero and report as **Unevaluated**, pushing coverage to **Incomplete**.
+**Removed-script rule:** Historical Collapse-era command names are not current controls. Do not count their absence as missing coverage or recreate aliases without executable forward implementations.
 
-Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37. (2026-07-17: six reliance/route-coverage/import-boundaries inventory aliases removed.)
+Root `package.json` lists executable controls only; dead Collapse-era command aliases were removed on 2026-07-26. Recount scripts from disk rather than relying on historical totals.
 
 ## Scope discovery patterns
 

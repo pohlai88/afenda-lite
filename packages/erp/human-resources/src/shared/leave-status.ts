@@ -52,7 +52,8 @@ export const LEAVE_POLICY_ACCRUAL_BASES = [
 	"periodic",
 	"anniversary",
 ] as const;
-export type LeavePolicyAccrualBasis = (typeof LEAVE_POLICY_ACCRUAL_BASES)[number];
+export type LeavePolicyAccrualBasis =
+	(typeof LEAVE_POLICY_ACCRUAL_BASES)[number];
 
 export const LEAVE_POLICY_ACCRUAL_FREQUENCIES = ["monthly", "annual"] as const;
 export type LeavePolicyAccrualFrequency =

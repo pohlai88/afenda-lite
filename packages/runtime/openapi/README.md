@@ -4,9 +4,9 @@
 
 **What it does** — Extends Zod with `@asteasolutions/zod-to-openapi`, wraps inner response schemas as `{ data: T }`, stamps `operationId` / `x-afenda-status` / `x-afenda-document` onto generated documents, and writes generator-aligned YAML (header + stringify).
 
-**When you need it** — Regenerating [`docs-V2/api/OPEN-001-openapi.yaml`](../../docs-V2/api/OPEN-001-openapi.yaml) from Zod, or defining RH schemas that must share the same OpenAPI-extended `z` prototype as the generator.
+**When you need it** — Regenerating [`docs-V2/api/OPEN-001-openapi.yaml`](../../../docs-V2/api/OPEN-001-openapi.yaml) from Zod, or defining RH schemas that must share the same OpenAPI-extended `z` prototype as the generator.
 
-**Who it's for** — Root `scripts/generate-openapi.mts`, web platform schemas, and gates that consume the committed YAML. Next-free leaf: no `@afenda/*` runtime deps, no Next.js, no product Swagger UI (docs stay [`@afenda/docs`](../../apps/docs) Fumadocs).
+**Who it's for** — Root `scripts/generate-openapi.mts`, web platform schemas, and gates that consume the committed YAML. Next-free leaf: no `@afenda/*` runtime deps, no Next.js, no product Swagger UI (docs stay [`@afenda/docs`](../../../apps/docs) Fumadocs).
 
 ## Consume
 
@@ -64,9 +64,9 @@ Full surface: [`src/index.ts`](./src/index.ts) · [`src/node/index.ts`](./src/no
 | Health / error / RH Zod schemas | `apps/web/modules/platform/schemas/*` |
 | Path registration composition | `scripts/generate-openapi.mts` |
 | Drift · Spectral · api-now disk honesty | `scripts/check-openapi.mjs` |
-| Human docs UI | [`@afenda/docs`](../../apps/docs) (Fumadocs — not product Swagger) |
+| Human docs UI | [`@afenda/docs`](../../../apps/docs) (Fumadocs — not product Swagger) |
 
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Anti-goals
 
@@ -82,11 +82,11 @@ Full surface: [`src/index.ts`](./src/index.ts) · [`src/node/index.ts`](./src/no
 
 | Topic | Link |
 |-------|------|
-| API Scratch · REST · OPEN-001 | [docs-V2/api](../../docs-V2/api/README.md) · [rest.md](../../docs-V2/api/rest.md) · [OPEN-001-openapi.yaml](../../docs-V2/api/OPEN-001-openapi.yaml) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| API contract farm | [afenda-elite-api-contract](../../.cursor/skills/afenda-elite-api-contract/SKILL.md) · [openapi.md](../../.cursor/skills/afenda-elite-api-contract/openapi.md) |
-| Official docs site | [`@afenda/docs`](../../apps/docs) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| API Scratch · REST · OPEN-001 | [docs-V2/api](../../../docs-V2/api/README.md) · [rest.md](../../../docs-V2/api/rest.md) · [OPEN-001-openapi.yaml](../../../docs-V2/api/OPEN-001-openapi.yaml) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| API contract farm | [afenda-elite-api-contract](../../../.cursor/skills/afenda-elite-api-contract/SKILL.md) · [openapi.md](../../../.cursor/skills/afenda-elite-api-contract/openapi.md) |
+| Official docs site | [`@afenda/docs`](../../../apps/docs) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |
 
 ## Package Boundary Gates
 

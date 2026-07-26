@@ -29,7 +29,10 @@ import {
 	fingerprintLeaveAdjustment,
 	fingerprintLeaveEntitlementGrant,
 } from "../shared/fingerprint";
-import { computeLeaveBalance, sortLeaveAdjustmentsForLedger } from "../shared/leave-balance";
+import {
+	computeLeaveBalance,
+	sortLeaveAdjustmentsForLedger,
+} from "../shared/leave-balance";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
 import {
 	assertLeaveAccrualAllowed,
@@ -37,10 +40,6 @@ import {
 	assertLeaveCarryForwardAllowed,
 	assertLeavePolicyPublished,
 } from "../shared/leave-guards";
-import {
-	loadLeaveEntitlementForCommand,
-	loadPublishedLeavePolicyForEntitlement,
-} from "./entitlement-context";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	LeaveAdjustment,
@@ -49,6 +48,10 @@ import type {
 	LeaveEntitlement,
 	LeaveEntitlementListPage,
 } from "../types";
+import {
+	loadLeaveEntitlementForCommand,
+	loadPublishedLeavePolicyForEntitlement,
+} from "./entitlement-context";
 
 export const HUMAN_RESOURCES_AGGREGATE_ENTITLEMENT = "entitlement" as const;
 export type HumanResourcesEntitlementAggregate =
@@ -115,7 +118,7 @@ export async function grantLeaveEntitlement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
 				}),
 			);
 		},
@@ -137,10 +140,13 @@ export async function accrueLeaveEntitlement(
 			});
 			if (!entitlement.ok) return entitlement;
 
-			const policyContext = await loadPublishedLeavePolicyForEntitlement(store, {
-				organizationId: data.organizationId,
-				entitlement: entitlement.data,
-			});
+			const policyContext = await loadPublishedLeavePolicyForEntitlement(
+				store,
+				{
+					organizationId: data.organizationId,
+					entitlement: entitlement.data,
+				},
+			);
 			if (!policyContext.ok) return policyContext;
 
 			const accrualAllowed = assertLeaveAccrualAllowed({
@@ -173,7 +179,7 @@ export async function accrueLeaveEntitlement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
 				}),
 			);
 		},
@@ -195,10 +201,13 @@ export async function carryForwardLeaveEntitlement(
 			});
 			if (!source.ok) return source;
 
-			const policyContext = await loadPublishedLeavePolicyForEntitlement(store, {
-				organizationId: data.organizationId,
-				entitlement: source.data,
-			});
+			const policyContext = await loadPublishedLeavePolicyForEntitlement(
+				store,
+				{
+					organizationId: data.organizationId,
+					entitlement: source.data,
+				},
+			);
 			if (!policyContext.ok) return policyContext;
 
 			const sourceBalance = await store.getLeaveBalance({
@@ -240,7 +249,7 @@ export async function carryForwardLeaveEntitlement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
 				}),
 			);
 		},
@@ -266,7 +275,7 @@ export async function expireLeaveEntitlement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
 				}),
 			),
 	});
@@ -287,10 +296,13 @@ export async function adjustLeaveEntitlement(
 			});
 			if (!entitlement.ok) return entitlement;
 
-			const policyContext = await loadPublishedLeavePolicyForEntitlement(store, {
-				organizationId: data.organizationId,
-				entitlement: entitlement.data,
-			});
+			const policyContext = await loadPublishedLeavePolicyForEntitlement(
+				store,
+				{
+					organizationId: data.organizationId,
+					entitlement: entitlement.data,
+				},
+			);
 			if (!policyContext.ok) return policyContext;
 
 			const posted = await store.listPostedLeaveAdjustments({
@@ -329,7 +341,7 @@ export async function adjustLeaveEntitlement(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 				}),
 			);
 		},

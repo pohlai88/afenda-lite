@@ -2,19 +2,24 @@ import { randomUUID } from "node:crypto";
 
 import {
 	and,
+	asc,
 	db,
 	desc,
 	eq,
+	gte,
 	hrEmployeeCertification,
 	hrLearningAssignment,
+	hrLearningAttendance,
 	hrLearningCompletion,
 	hrLearningCourse,
 	hrLearningSession,
+	lte,
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
+	HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
 	HUMAN_RESOURCES_LEARNING_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 } from "@afenda/events/schemas";
@@ -25,6 +30,7 @@ import {
 	parseHumanResourcesCourseId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesLearningAssignmentId,
+	parseHumanResourcesLearningAttendanceId,
 	parseHumanResourcesSessionId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
@@ -42,11 +48,14 @@ import {
 	assertCertificationCanExpire,
 	assertCertificationCanRevoke,
 	assertCertificationIssuable,
+	assertCertificationRenewable,
 	assertCompletionRecordable,
 	assertCourseActive,
 	assertCourseCanArchive,
 	assertCourseStatusTransition,
+	assertLearningAttendanceRecordable,
 	assertNoDuplicateCompletion,
+	assertNoDuplicateLearningAttendance,
 	assertSessionSchedulable,
 	assertSessionStatusTransition,
 } from "../../shared/learning-guards";
@@ -55,6 +64,7 @@ import {
 	certificationStatusSchema,
 	completionOutcomeSchema,
 	courseStatusSchema,
+	learningAttendanceStatusSchema,
 	type SessionStatus,
 	sessionStatusSchema,
 } from "../../shared/learning-status";
@@ -67,6 +77,7 @@ import type { HumanResourcesStore } from "../../store";
 import type {
 	EmployeeCertification,
 	LearningAssignment,
+	LearningAttendance,
 	LearningCompletion,
 	LearningCourse,
 	LearningSession,
@@ -102,6 +113,7 @@ export type DrizzleLearningMethods = Pick<
 	| "startSession"
 	| "completeSession"
 	| "cancelSession"
+	| "assignSessionInstructor"
 	| "listSessions"
 	| "getLearningAssignmentById"
 	| "findLearningAssignmentByIdempotencyKey"
@@ -113,12 +125,19 @@ export type DrizzleLearningMethods = Pick<
 	| "findCompletionByIdempotencyKey"
 	| "recordCompletion"
 	| "listCompletions"
+	| "getLearningAttendanceById"
+	| "findLearningAttendanceByIdempotencyKey"
+	| "findLearningAttendanceByAssignmentAndSession"
+	| "recordLearningAttendance"
+	| "listLearningAttendance"
 	| "getCertificationById"
 	| "findCertificationByIdempotencyKey"
 	| "issueCertification"
 	| "revokeCertification"
 	| "expireCertification"
+	| "renewCertification"
 	| "listCertifications"
+	| "listExpiringCertifications"
 	| "countActiveAssignmentsForCourse"
 	| "countEnrolledInSession"
 	| "findCompletionByAssignmentId"
@@ -171,6 +190,7 @@ function mapSession(
 		actualStartsAt: row.actualStartsAt,
 		actualEndsAt: row.actualEndsAt,
 		capacity: row.capacity,
+		primaryInstructorUserId: row.primaryInstructorUserId,
 		status: status.data,
 		version: row.version,
 		createdBy: row.createdBy,
@@ -274,6 +294,15 @@ function mapCertification(
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid certification status");
 	}
+	let renewedFromCertificationId =
+		null as EmployeeCertification["renewedFromCertificationId"];
+	if (row.renewedFromCertificationId !== null) {
+		const parsed = parseHumanResourcesCertificationId(
+			row.renewedFromCertificationId,
+		);
+		if (!parsed.ok) return parsed;
+		renewedFromCertificationId = parsed.data;
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -284,8 +313,43 @@ function mapCertification(
 		issuedOn: row.issuedOn,
 		expiresOn: row.expiresOn,
 		status: status.data,
+		renewedFromCertificationId,
 		revokedAt: row.revokedAt,
 		revokedBy: row.revokedBy,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	});
+}
+
+function mapLearningAttendance(
+	row: typeof hrLearningAttendance.$inferSelect,
+): Result<LearningAttendance> {
+	const id = parseHumanResourcesLearningAttendanceId(row.id);
+	if (!id.ok) return id;
+	const sessionId = parseHumanResourcesSessionId(row.sessionId);
+	if (!sessionId.ok) return sessionId;
+	const assignmentId = parseHumanResourcesLearningAssignmentId(
+		row.assignmentId,
+	);
+	if (!assignmentId.ok) return assignmentId;
+	const employeeId = parseHumanResourcesEmployeeId(row.employeeId);
+	if (!employeeId.ok) return employeeId;
+	const status = learningAttendanceStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid learning attendance status");
+	}
+	return ok({
+		id: id.data,
+		organizationId: row.organizationId,
+		sessionId: sessionId.data,
+		assignmentId: assignmentId.data,
+		employeeId: employeeId.data,
+		status: status.data,
+		recordedAt: row.recordedAt,
+		recordedBy: row.recordedBy,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -322,6 +386,7 @@ type SessionSqlRow = {
 	actual_starts_at: Date | null;
 	actual_ends_at: Date | null;
 	capacity: number | null;
+	primary_instructor_user_id: string | null;
 	status: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
@@ -381,8 +446,27 @@ type CertificationSqlRow = {
 	issued_on: string;
 	expires_on: string | null;
 	status: string;
+	renewed_from_certification_id: string | null;
 	revoked_at: Date | null;
 	revoked_by: string | null;
+	create_idempotency_key: string | null;
+	create_request_fingerprint: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date;
+	updated_at: Date;
+};
+
+type LearningAttendanceSqlRow = {
+	id: string;
+	organization_id: string;
+	session_id: string;
+	assignment_id: string;
+	employee_id: string;
+	status: string;
+	recorded_at: Date;
+	recorded_by: string;
 	create_idempotency_key: string | null;
 	create_request_fingerprint: string | null;
 	version: number;
@@ -423,6 +507,7 @@ function mapSessionSql(row: SessionSqlRow): Result<LearningSession> {
 		actualStartsAt: row.actual_starts_at,
 		actualEndsAt: row.actual_ends_at,
 		capacity: row.capacity,
+		primaryInstructorUserId: row.primary_instructor_user_id,
 		status: row.status,
 		createIdempotencyKey: row.create_idempotency_key,
 		createRequestFingerprint: row.create_request_fingerprint,
@@ -492,8 +577,31 @@ function mapCertificationSql(
 		issuedOn: row.issued_on,
 		expiresOn: row.expires_on,
 		status: row.status,
+		renewedFromCertificationId: row.renewed_from_certification_id,
 		revokedAt: row.revoked_at,
 		revokedBy: row.revoked_by,
+		createIdempotencyKey: row.create_idempotency_key,
+		createRequestFingerprint: row.create_request_fingerprint,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	});
+}
+
+function mapLearningAttendanceSql(
+	row: LearningAttendanceSqlRow,
+): Result<LearningAttendance> {
+	return mapLearningAttendance({
+		id: row.id,
+		organizationId: row.organization_id,
+		sessionId: row.session_id,
+		assignmentId: row.assignment_id,
+		employeeId: row.employee_id,
+		status: row.status,
+		recordedAt: row.recorded_at,
+		recordedBy: row.recorded_by,
 		createIdempotencyKey: row.create_idempotency_key,
 		createRequestFingerprint: row.create_request_fingerprint,
 		version: row.version,
@@ -1037,7 +1145,8 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						mutated AS (
 							INSERT INTO hr_learning_session (
 								id, organization_id, course_id, code, title,
-								scheduled_starts_at, scheduled_ends_at, capacity, status,
+								scheduled_starts_at, scheduled_ends_at, capacity,
+								primary_instructor_user_id, status,
 								create_idempotency_key, create_request_fingerprint,
 								version, created_by, updated_by
 							)
@@ -1045,7 +1154,8 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 								${brandedId.data}, ${record.organizationId}, course.id, ${record.code},
 								${record.title}, ${record.scheduledStartsAt}::timestamptz,
 								${record.scheduledEndsAt}::timestamptz,
-								${record.capacity}, 'scheduled', ${record.createIdempotencyKey},
+								${record.capacity}, ${record.primaryInstructorUserId}, 'scheduled',
+								${record.createIdempotencyKey},
 								${record.createRequestFingerprint}, 1, ${record.createdBy},
 								${record.createdBy}
 							FROM course
@@ -1292,6 +1402,76 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			return mapSessionSql(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to cancel session");
+		}
+	},
+
+	async assignSessionInstructor(input, _ports, meta) {
+		const existing = await this.getSessionById({
+			organizationId: input.organizationId,
+			sessionId: input.sessionId,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data === null) {
+			return notFound("Session not found");
+		}
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+		if (
+			existing.data.status === "completed" ||
+			existing.data.status === "cancelled"
+		) {
+			return invalidState("Cannot modify completed or cancelled session");
+		}
+
+		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH mutated AS (
+							UPDATE hr_learning_session
+							SET primary_instructor_user_id = ${input.primaryInstructorUserId},
+								version = ${nextVersion},
+								updated_by = ${input.actorUserId},
+								updated_at = now()
+							WHERE id = ${input.sessionId}
+								AND organization_id = ${input.organizationId}
+								AND version = ${input.expectedVersion}
+								AND status IN ('scheduled', 'in_progress')
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.actorUserId}, ${meta.correlationId},
+								'human-resources', 'hr_learning_session', id, 'UPDATE', '[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Session",
+				});
+			}
+			return mapSessionSql(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to assign session instructor",
+			);
 		}
 	},
 
@@ -2176,6 +2356,303 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 	},
 
+	async getLearningAttendanceById(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrLearningAttendance)
+				.where(
+					and(
+						eq(hrLearningAttendance.id, input.attendanceId),
+						eq(hrLearningAttendance.organizationId, input.organizationId),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) {
+				return ok(null);
+			}
+			return mapLearningAttendance(row);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to get learning attendance");
+		}
+	},
+
+	async findLearningAttendanceByIdempotencyKey(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrLearningAttendance)
+				.where(
+					and(
+						eq(hrLearningAttendance.organizationId, input.organizationId),
+						eq(hrLearningAttendance.createIdempotencyKey, input.idempotencyKey),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) {
+				return ok(null);
+			}
+			const mapped = mapLearningAttendance(row);
+			if (!mapped.ok) return mapped;
+			return ok({
+				attendance: mapped.data,
+				createIdempotencyKey: input.idempotencyKey,
+				createRequestFingerprint: row.createRequestFingerprint ?? "",
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find learning attendance by idempotency key",
+			);
+		}
+	},
+
+	async findLearningAttendanceByAssignmentAndSession(input) {
+		try {
+			const rows = await db
+				.select()
+				.from(hrLearningAttendance)
+				.where(
+					and(
+						eq(hrLearningAttendance.organizationId, input.organizationId),
+						eq(hrLearningAttendance.assignmentId, input.assignmentId),
+						eq(hrLearningAttendance.sessionId, input.sessionId),
+					),
+				)
+				.limit(1);
+			const row = rows[0];
+			if (!row) {
+				return ok(null);
+			}
+			return mapLearningAttendance(row);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to find learning attendance by assignment and session",
+			);
+		}
+	},
+
+	async recordLearningAttendance(record, _ports, meta) {
+		const existing = await this.findLearningAttendanceByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.createIdempotencyKey,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data !== null) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
+				return ok(existing.data.attendance);
+			}
+			return conflict("Idempotency key already used with different data");
+		}
+
+		const assignment = await this.getLearningAssignmentById({
+			organizationId: record.organizationId,
+			assignmentId: record.assignmentId,
+		});
+		if (!assignment.ok) return assignment;
+		if (assignment.data === null) {
+			return notFound(
+				"Assignment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+		if (assignment.data.employeeId !== record.employeeId) {
+			return notFound(
+				"Attendance employee does not match assignment",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const session = await this.getSessionById({
+			organizationId: record.organizationId,
+			sessionId: record.sessionId,
+		});
+		if (!session.ok) return session;
+		if (session.data === null) {
+			return notFound(
+				"Session not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const recordableCheck = assertLearningAttendanceRecordable({
+			sessionStatus: session.data.status,
+			assignmentStatus: assignment.data.status,
+			assignmentSessionId: assignment.data.sessionId,
+			requestedSessionId: record.sessionId,
+		});
+		if (!recordableCheck.ok) return recordableCheck;
+
+		const duplicate = await this.findLearningAttendanceByAssignmentAndSession({
+			organizationId: record.organizationId,
+			assignmentId: record.assignmentId,
+			sessionId: record.sessionId,
+		});
+		if (!duplicate.ok) return duplicate;
+		const duplicateCheck = assertNoDuplicateLearningAttendance({
+			hasExistingAttendance: duplicate.data !== null,
+		});
+		if (!duplicateCheck.ok) return duplicateCheck;
+
+		const id = randomUUID();
+		const brandedId = parseHumanResourcesLearningAttendanceId(id);
+		if (!brandedId.ok) return brandedId;
+		const auditId = randomUUID();
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[LearningAttendanceSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH assignment AS (
+							SELECT id, organization_id, employee_id, session_id, status
+							FROM hr_learning_assignment
+							WHERE id = ${record.assignmentId}
+								AND organization_id = ${record.organizationId}
+								AND employee_id = ${record.employeeId}
+								AND status = 'in_progress'
+								AND session_id = ${record.sessionId}
+						),
+						session_ok AS (
+							SELECT id
+							FROM hr_learning_session
+							WHERE id = ${record.sessionId}
+								AND organization_id = ${record.organizationId}
+								AND status IN ('in_progress', 'completed')
+						),
+						mutated AS (
+							INSERT INTO hr_learning_attendance (
+								id, organization_id, session_id, assignment_id, employee_id,
+								status, recorded_at, recorded_by,
+								create_idempotency_key, create_request_fingerprint,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedId.data}, assignment.organization_id, ${record.sessionId},
+								assignment.id, assignment.employee_id, ${record.status},
+								${record.recordedAt}::timestamptz, ${record.recordedBy},
+								${record.createIdempotencyKey}, ${record.createRequestFingerprint},
+								1, ${record.createdBy}, ${record.createdBy}
+							FROM assignment
+							WHERE EXISTS (SELECT 1 FROM session_ok)
+								AND NOT EXISTS (
+									SELECT 1 FROM hr_learning_attendance existing
+									WHERE existing.organization_id = assignment.organization_id
+										AND existing.assignment_id = assignment.id
+										AND existing.session_id = ${record.sessionId}
+								)
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, created_by, ${meta.correlationId},
+								'human-resources', 'hr_learning_attendance', id, 'CREATE',
+								'[]'::jsonb
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				const recheck = await this.findLearningAttendanceByAssignmentAndSession(
+					{
+						organizationId: record.organizationId,
+						assignmentId: record.assignmentId,
+						sessionId: record.sessionId,
+					},
+				);
+				if (!recheck.ok) return recheck;
+				if (recheck.data !== null) {
+					return conflict(
+						"Attendance already recorded for this assignment and session",
+					);
+				}
+				return conflict("Unable to record learning attendance");
+			}
+			return mapLearningAttendanceSql(row);
+		} catch (error) {
+			if (isCreateIdempotencyUniqueViolation(error)) {
+				const replay = await this.findLearningAttendanceByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!replay.ok) return replay;
+				if (replay.data !== null) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
+						return ok(replay.data.attendance);
+					}
+					return conflict("Idempotency key already used with different data");
+				}
+			}
+			if (isPostgresUniqueViolation(error)) {
+				return conflict(
+					"Attendance already recorded for this assignment and session",
+				);
+			}
+			return mapPersistenceFailure(
+				error,
+				"Failed to record learning attendance",
+			);
+		}
+	},
+
+	async listLearningAttendance(input) {
+		try {
+			let query = db
+				.select()
+				.from(hrLearningAttendance)
+				.where(eq(hrLearningAttendance.organizationId, input.organizationId))
+				.$dynamic();
+
+			if (input.sessionId !== undefined) {
+				query = query.where(
+					eq(hrLearningAttendance.sessionId, input.sessionId),
+				);
+			}
+			if (input.employeeId !== undefined) {
+				query = query.where(
+					eq(hrLearningAttendance.employeeId, input.employeeId),
+				);
+			}
+
+			const rows = await query.orderBy(desc(hrLearningAttendance.recordedAt));
+			const totalCount = rows.length;
+			const start = (input.page - 1) * input.pageSize;
+			const paged = rows.slice(start, start + input.pageSize);
+
+			const attendance: LearningAttendance[] = [];
+			for (const row of paged) {
+				const mapped = mapLearningAttendance(row);
+				if (!mapped.ok) return mapped;
+				attendance.push(mapped.data);
+			}
+
+			return ok({
+				attendanceRecords: attendance,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to list learning attendance");
+		}
+	},
+
 	async getCertificationById(input) {
 		try {
 			const rows = await db
@@ -2553,6 +3030,186 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		}
 	},
 
+	async renewCertification(record, _ports, meta) {
+		const existing = await this.findCertificationByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.createIdempotencyKey,
+		});
+		if (!existing.ok) return existing;
+		if (existing.data !== null) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
+				return ok(existing.data.certification);
+			}
+			return conflict("Idempotency key already used with different data");
+		}
+
+		const prior = await this.getCertificationById({
+			organizationId: record.organizationId,
+			certificationId: record.certificationId,
+		});
+		if (!prior.ok) return prior;
+		if (prior.data === null) {
+			return notFound(
+				"Certification not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			prior.data.version,
+			record.expectedVersion,
+		);
+		if (!versionCheck.ok) return versionCheck;
+
+		const completion = await this.getCompletionById({
+			organizationId: record.organizationId,
+			completionId: record.completionId,
+		});
+		if (!completion.ok) return completion;
+		if (completion.data === null) {
+			return notFound(
+				"Completion not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const renewableCheck = assertCertificationRenewable({
+			status: prior.data.status,
+			employeeId: record.employeeId,
+			courseId: record.courseId,
+			completionEmployeeId: completion.data.employeeId,
+			completionCourseId: completion.data.courseId,
+			completionOutcome: completion.data.outcome,
+		});
+		if (!renewableCheck.ok) return renewableCheck;
+
+		const issuableCheck = assertCertificationIssuable({
+			hasRequiredCompletion: completion.data.courseId === record.courseId,
+			issuedOn: record.issuedOn,
+			expiresOn: record.expiresOn,
+			todayDate: new Date().toISOString().slice(0, 10),
+		});
+		if (!issuableCheck.ok) return issuableCheck;
+
+		const id = randomUUID();
+		const brandedId = parseHumanResourcesCertificationId(id);
+		if (!brandedId.ok) return brandedId;
+		const changesJson = fieldChangeJson("status", null, "active");
+		const newValueJson = valueSnapshotJson({
+			employeeId: record.employeeId,
+			courseId: record.courseId,
+			certificationCode: record.certificationCode,
+			status: "active",
+			renewedFromCertificationId: record.certificationId,
+		});
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_employee_certification",
+			entityId: brandedId.data,
+			actorId: record.actorUserId,
+			correlationId: meta.correlationId,
+			renewedFromCertificationId: record.certificationId,
+		});
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
+						WITH prior_cert AS (
+							SELECT id, organization_id, employee_id, course_id, status, version
+							FROM hr_employee_certification
+							WHERE id = ${record.certificationId}
+								AND organization_id = ${record.organizationId}
+								AND version = ${record.expectedVersion}
+								AND status = 'expired'
+						),
+						completion AS (
+							SELECT id, employee_id, course_id, outcome
+							FROM hr_learning_completion
+							WHERE id = ${record.completionId}
+								AND organization_id = ${record.organizationId}
+								AND outcome = 'passed'
+						),
+						mutated AS (
+							INSERT INTO hr_employee_certification (
+								id, organization_id, employee_id, course_id, completion_id,
+								certification_code, issued_on, expires_on, status,
+								renewed_from_certification_id,
+								create_idempotency_key, create_request_fingerprint,
+								version, created_by, updated_by
+							)
+							SELECT
+								${brandedId.data}, prior_cert.organization_id, prior_cert.employee_id,
+								prior_cert.course_id, completion.id, ${record.certificationCode},
+								${record.issuedOn}, ${record.expiresOn}, 'active',
+								prior_cert.id, ${record.createIdempotencyKey},
+								${record.createRequestFingerprint}, 1, ${record.createdBy},
+								${record.createdBy}
+							FROM prior_cert, completion
+							WHERE completion.employee_id = prior_cert.employee_id
+								AND completion.course_id = prior_cert.course_id
+							RETURNING *
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes, new_value
+							)
+							SELECT
+								${auditId}, organization_id, created_by, ${meta.correlationId},
+								'human-resources', 'hr_employee_certification', id, 'CREATE',
+								${changesJson}::jsonb, ${newValueJson}::jsonb
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								${HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT},
+								'human-resources', ${meta.correlationId}, ${record.actorUserId},
+								${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.* FROM mutated, audited, outboxed
+					`,
+				],
+			);
+			const row = rows[0];
+			if (!row) {
+				return conflict("Unable to renew certification");
+			}
+			return mapCertificationSql(row);
+		} catch (error) {
+			if (isCreateIdempotencyUniqueViolation(error)) {
+				const replay = await this.findCertificationByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!replay.ok) return replay;
+				if (replay.data !== null) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
+						return ok(replay.data.certification);
+					}
+					return conflict("Idempotency key already used with different data");
+				}
+			}
+			return mapPersistenceFailure(error, "Failed to renew certification");
+		}
+	},
+
 	async listCertifications(input) {
 		try {
 			let query = db
@@ -2595,6 +3252,53 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list certifications");
+		}
+	},
+
+	async listExpiringCertifications(input) {
+		try {
+			const windowEndDate = new Date(`${input.asOf}T00:00:00.000Z`);
+			windowEndDate.setUTCDate(windowEndDate.getUTCDate() + input.withinDays);
+			const windowEnd = windowEndDate.toISOString().slice(0, 10);
+
+			const rows = await db
+				.select()
+				.from(hrEmployeeCertification)
+				.where(
+					and(
+						eq(hrEmployeeCertification.organizationId, input.organizationId),
+						eq(hrEmployeeCertification.status, "active"),
+						gte(hrEmployeeCertification.expiresOn, input.asOf),
+						lte(hrEmployeeCertification.expiresOn, windowEnd),
+					),
+				)
+				.orderBy(
+					asc(hrEmployeeCertification.expiresOn),
+					asc(hrEmployeeCertification.id),
+				);
+
+			const totalCount = rows.length;
+			const start = (input.page - 1) * input.pageSize;
+			const paged = rows.slice(start, start + input.pageSize);
+
+			const certifications: EmployeeCertification[] = [];
+			for (const row of paged) {
+				const mapped = mapCertification(row);
+				if (!mapped.ok) return mapped;
+				certifications.push(mapped.data);
+			}
+
+			return ok({
+				certifications,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list expiring certifications",
+			);
 		}
 	},
 };

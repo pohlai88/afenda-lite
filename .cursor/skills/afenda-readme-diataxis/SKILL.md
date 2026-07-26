@@ -175,7 +175,7 @@ Root README must keep Afenda identity clear: **Afenda-Lite** (this checkout) vs 
 - Env: teach `@afenda/env` + `.env.local` — never compose / raw secret dumps.
 - UI: `@afenda/ui-system` barrel only if the README is for that package — do not revive `@afenda/ui`.
 - Do not claim multi-DB isolation or reopen ARCH-023 locks.
-- Do not teach `scripts/collapse-script-unavailable.mjs` wrappers as live operator controls.
+- Do not cite removed Collapse-era command names; root `package.json` contains executable forward controls only.
 
 ### 6. Verify (Indexion “drift” without Indexion)
 

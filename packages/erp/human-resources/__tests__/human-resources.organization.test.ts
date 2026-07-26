@@ -18,7 +18,7 @@ import {
 	getOrganizationTreeAsOf,
 	updateDepartment,
 } from "../src/organization/department";
-import { archiveJob, createJob, getJobAsOf, updateJob } from "../src/organization/job";
+import { archiveJob, getJobAsOf, updateJob } from "../src/organization/job";
 import {
 	closePosition,
 	createPosition,
@@ -776,6 +776,8 @@ describe("@afenda/human-resources organization structure", () => {
 });
 
 describe("@afenda/human-resources organization historical truth", () => {
+	const structureEffectiveFrom = new Date().toISOString().slice(0, 10);
+
 	it("preserves department structure lineage and resolves as-of after rename", async () => {
 		const ready = harness();
 		const department = await createDepartment(
@@ -812,7 +814,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-lineage-dept-before",
 				departmentId: department.data.id,
-				asOf: "2026-07-25",
+				asOf: structureEffectiveFrom,
 			},
 			ready,
 		);
@@ -956,16 +958,16 @@ describe("@afenda/human-resources organization historical truth", () => {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				correlationId: "corr-tree-before",
-				asOf: "2026-07-25",
+				asOf: structureEffectiveFrom,
 				rootDepartmentId: root.data.id,
 			},
 			ready,
 		);
 		expect(beforeTree.ok).toBe(true);
 		if (beforeTree.ok) {
-			expect(beforeTree.data.nodes.some((node) => node.id === child.data.id)).toBe(
-				true,
-			);
+			expect(
+				beforeTree.data.nodes.some((node) => node.id === child.data.id),
+			).toBe(true);
 		}
 
 		const reparented = await updateDepartment(

@@ -1,9 +1,9 @@
+import { ok } from "@afenda/errors/result";
 import type {
 	HumanResourcesPrivacyCase,
 	HumanResourcesPrivacyPort,
 	HumanResourcesPrivacyRequestContext,
 } from "@afenda/human-resources";
-import { ok } from "@afenda/errors/result";
 
 import { getPlatformPrivacyService } from "@/modules/privacy/server/get-platform-privacy-service";
 import type { PrivacySubjectCase } from "@/modules/privacy/types";

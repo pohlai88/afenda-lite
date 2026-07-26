@@ -39,10 +39,10 @@ export async function renewEmploymentContract(
 
 export {
 	createEmploymentContract,
-	supersedeEmploymentContract,
 	endEmploymentContract,
 	getCurrentEmploymentContract,
-	listEmploymentContracts,
 	getEmploymentContract,
 	getEmploymentContractAsOf,
+	listEmploymentContracts,
+	supersedeEmploymentContract,
 };

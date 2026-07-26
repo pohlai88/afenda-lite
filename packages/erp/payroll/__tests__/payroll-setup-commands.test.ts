@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-
+import type { PayrollAuthorizationPort } from "../src/authorization";
+import { PAYROLL_PERMISSION_SETUP_MANAGE } from "../src/permissions";
 import {
 	createPayrollCalendar,
 	getPayrollCalendar,
@@ -8,11 +9,7 @@ import {
 	createPayrollEarningRule,
 	updatePayrollEarningRule,
 } from "../src/setup/earning-rule";
-import {
-	createPayrollPayGroup,
-} from "../src/setup/pay-group";
-import { PAYROLL_PERMISSION_SETUP_MANAGE } from "../src/permissions";
-import type { PayrollAuthorizationPort } from "../src/authorization";
+import { createPayrollPayGroup } from "../src/setup/pay-group";
 import { createMemoryPayrollStore } from "../src/testing";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
@@ -82,7 +79,13 @@ async function seedCalendarPayGroup(
 		throw new Error(payGroup.message);
 	}
 
-	return { calendar: calendar.data, payGroup: payGroup.data, store, ports, authorization };
+	return {
+		calendar: calendar.data,
+		payGroup: payGroup.data,
+		store,
+		ports,
+		authorization,
+	};
 }
 
 describe("payroll setup commands", () => {
@@ -168,11 +171,8 @@ describe("payroll setup commands", () => {
 	});
 
 	it("rejects overlapping active earning rules via command surface", async () => {
-		const { payGroup, store, ports, authorization } = await seedCalendarPayGroup(
-			"org-overlap",
-			"user-overlap",
-			"overlap",
-		);
+		const { payGroup, store, ports, authorization } =
+			await seedCalendarPayGroup("org-overlap", "user-overlap", "overlap");
 		const options = { store, ports, authorization };
 
 		const first = await createPayrollEarningRule(
@@ -216,11 +216,8 @@ describe("payroll setup commands", () => {
 	});
 
 	it("blocks update when rule version is referenced by a finalized run", async () => {
-		const { payGroup, store, ports, authorization } = await seedCalendarPayGroup(
-			"org-lock",
-			"user-lock",
-			"lock",
-		);
+		const { payGroup, store, ports, authorization } =
+			await seedCalendarPayGroup("org-lock", "user-lock", "lock");
 		const options = { store, ports, authorization };
 
 		const created = await createPayrollEarningRule(

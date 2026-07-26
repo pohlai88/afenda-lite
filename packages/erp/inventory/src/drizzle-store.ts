@@ -53,10 +53,10 @@ import {
 } from "./store";
 import {
 	INVENTORY_MOVEMENT_SOURCES,
+	type InventoryMovementSource,
 	STOCK_MOVEMENT_STATUSES,
 	STOCK_MOVEMENT_TYPES,
 	STOCK_RESERVATION_STATUSES,
-	type InventoryMovementSource,
 	type StockAvailability,
 	type StockBalance,
 	type StockMovement,
@@ -153,7 +153,11 @@ function parseMovementSource(value: string): InventoryMovementSource {
 }
 
 function parseReservationStatus(value: string): StockReservationStatus {
-	return parseEnum(value, STOCK_RESERVATION_STATUSES, "stock_reservation.status");
+	return parseEnum(
+		value,
+		STOCK_RESERVATION_STATUSES,
+		"stock_reservation.status",
+	);
 }
 
 function mapLine(row: LineSqlRow): StockMovementLine {
@@ -223,7 +227,9 @@ function mapMovement(
 	};
 }
 
-function mapHeaderRow(header: typeof stockMovement.$inferSelect): MovementSqlRow {
+function mapHeaderRow(
+	header: typeof stockMovement.$inferSelect,
+): MovementSqlRow {
 	return {
 		id: header.id,
 		organization_id: header.organizationId,
@@ -403,9 +409,12 @@ function reservationNotFound(): Result<never> {
 	);
 }
 
-function getReservationRemainingQuantity(reservation: StockReservation): number {
+function getReservationRemainingQuantity(
+	reservation: StockReservation,
+): number {
 	return (
-		parseQuantity(reservation.quantity) - parseQuantity(reservation.consumedQuantity)
+		parseQuantity(reservation.quantity) -
+		parseQuantity(reservation.consumedQuantity)
 	);
 }
 
@@ -576,7 +585,8 @@ export class DrizzleInventoryStore implements InventoryStore {
 				)
 				.limit(1);
 			const onHand =
-				(row === undefined ? 0 : parseQuantity(row.onHand)) + effect.onHandDelta;
+				(row === undefined ? 0 : parseQuantity(row.onHand)) +
+				effect.onHandDelta;
 			const reserved =
 				(row === undefined ? 0 : parseQuantity(row.reserved)) +
 				effect.reservedDelta;
@@ -1549,7 +1559,10 @@ export class DrizzleInventoryStore implements InventoryStore {
 			]);
 			const createdRows = resultSets[1];
 			if (!Array.isArray(createdRows) || createdRows[0] === undefined) {
-				return fail("INTERNAL_ERROR", "Stock reservation create returned no row");
+				return fail(
+					"INTERNAL_ERROR",
+					"Stock reservation create returned no row",
+				);
 			}
 			return this.reloadReservation(
 				record.organizationId,
@@ -1884,7 +1897,9 @@ export class DrizzleInventoryStore implements InventoryStore {
 		filter: MovementListFilter,
 	): Promise<Result<StockMovement[]>> {
 		try {
-			const conditions = [eq(stockMovement.organizationId, filter.organizationId)];
+			const conditions = [
+				eq(stockMovement.organizationId, filter.organizationId),
+			];
 			if (filter.status !== undefined) {
 				conditions.push(eq(stockMovement.status, filter.status));
 			}
@@ -1958,10 +1973,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.select()
 				.from(stockReservation)
 				.where(and(...conditions))
-				.orderBy(
-					desc(stockReservation.updatedAt),
-					desc(stockReservation.id),
-				)
+				.orderBy(desc(stockReservation.updatedAt), desc(stockReservation.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 			return ok(rows.map((row) => mapReservation(row)));
@@ -1974,11 +1986,15 @@ export class DrizzleInventoryStore implements InventoryStore {
 		filter: AvailabilityFilter,
 	): Promise<Result<StockAvailability[]>> {
 		try {
-			const sequenceResult = await this.getLatestLedgerSequence(filter.organizationId);
+			const sequenceResult = await this.getLatestLedgerSequence(
+				filter.organizationId,
+			);
 			if (!sequenceResult.ok) {
 				return sequenceResult;
 			}
-			const conditions = [eq(stockBalance.organizationId, filter.organizationId)];
+			const conditions = [
+				eq(stockBalance.organizationId, filter.organizationId),
+			];
 			if (filter.warehouseId !== undefined) {
 				conditions.push(eq(stockBalance.warehouseId, filter.warehouseId));
 			}
@@ -2060,9 +2076,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		return this.getLatestLedgerSequence(organizationId);
 	}
 
-	async listLedgerEntries(
-		organizationId: string,
-	): Promise<
+	async listLedgerEntries(organizationId: string): Promise<
 		Result<
 			Array<{
 				warehouseId: string;
@@ -2076,7 +2090,10 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.select()
 				.from(stockLedgerEntry)
 				.where(eq(stockLedgerEntry.organizationId, organizationId))
-				.orderBy(asc(stockLedgerEntry.ledgerSequence), asc(stockLedgerEntry.id));
+				.orderBy(
+					asc(stockLedgerEntry.ledgerSequence),
+					asc(stockLedgerEntry.id),
+				);
 			return ok(
 				rows.map((row) => ({
 					warehouseId: row.warehouseId,
@@ -2102,9 +2119,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 		}
 	}
 
-	async listActiveReservations(
-		organizationId: string,
-	): Promise<
+	async listActiveReservations(organizationId: string): Promise<
 		Result<
 			Array<{
 				warehouseId: string;

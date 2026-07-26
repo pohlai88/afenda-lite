@@ -17,6 +17,13 @@ modules:
     lifecycle: active
     packageName: "@afenda/accounting"
   - activationMode: organization_toggle
+    aggregates: []
+    band: R1-F
+    category: erp
+    id: corporate-administration
+    lifecycle: scaffolded
+    packageName: "@afenda/corporate-administration"
+  - activationMode: organization_toggle
     aggregates:
       - delivery
     band: R1-F

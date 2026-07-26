@@ -7,6 +7,7 @@ import {
 	createHumanResourcesAuthorizationPort,
 	createHumanResourcesResourceAwareAuthorizationPort,
 } from "@/lib/erp/human-resources-authorization-port";
+import { createHumanResourcesDocumentObjectResolverPort } from "@/lib/erp/human-resources-document-object-resolver-port";
 import { createHumanResourcesDocumentReferencePort } from "@/lib/erp/human-resources-document-reference-port";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
 import { createHumanResourcesOrganizationDimensionPort } from "@/lib/erp/human-resources-organization-dimension-port";
@@ -15,6 +16,8 @@ import { createHumanResourcesWorkCalendarPort } from "@/lib/erp/human-resources-
 
 /** Composition-root options for `@afenda/human-resources` public APIs. */
 export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptions {
+	const documentObjectResolver =
+		createHumanResourcesDocumentObjectResolverPort();
 	return {
 		authorization: createHumanResourcesAuthorizationPort(),
 		resourceAwareAuthorization:
@@ -27,7 +30,10 @@ export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptio
 			query: createDrizzleAssignmentContextQuery(),
 		}),
 		attendanceSource: createHumanResourcesAttendanceSourcePort(),
-		documentReference: createHumanResourcesDocumentReferencePort(),
+		documentObjectResolver,
+		documentReference: createHumanResourcesDocumentReferencePort(
+			documentObjectResolver,
+		),
 		privacy: createHumanResourcesPrivacyPort(),
 	};
 }

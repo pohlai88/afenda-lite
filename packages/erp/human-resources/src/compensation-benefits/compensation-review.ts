@@ -61,7 +61,7 @@ export async function createCompensationReviewDraft(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
 				}),
 			);
 		},
@@ -100,7 +100,7 @@ export async function recordCompensationRecommendation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION,
 				}),
 			);
@@ -127,7 +127,7 @@ export async function finalizeCompensationReview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
 				}),
 			),
 	});
@@ -153,7 +153,7 @@ export async function applyApprovedCompensationResult(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
 				}),
 			),

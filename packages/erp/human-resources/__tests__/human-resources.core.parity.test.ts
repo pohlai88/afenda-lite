@@ -13,7 +13,11 @@ import {
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
-import { createAssignment, endAssignment, getAssignmentAsOf } from "../src/core/assignment";
+import {
+	createAssignment,
+	endAssignment,
+	getAssignmentAsOf,
+} from "../src/core/assignment";
 import { resolvePrimaryAssignmentAsOf } from "../src/core/assignment-management";
 import { createEmployee, updateEmployee } from "../src/core/employee";
 import {
@@ -24,12 +28,6 @@ import {
 	getEmploymentAsOf,
 	listEmploymentStatusHistory,
 } from "../src/core/employment";
-import {
-	reactivateEmployment,
-	rehireEmployment,
-	suspendEmployment,
-	terminateEmployment,
-} from "../src/core/employment-management";
 import {
 	correctEmploymentContract,
 	createEmploymentContract,
@@ -44,6 +42,11 @@ import {
 	renewEmploymentContract,
 } from "../src/core/employment-contract-management";
 import {
+	reactivateEmployment,
+	suspendEmployment,
+} from "../src/core/employment-management";
+import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
+import {
 	HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -54,10 +57,9 @@ import {
 	HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
-import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
+import { transferAssignment } from "../src/lifecycle/transfer";
 import { createPosition } from "../src/organization/position";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import { transferAssignment } from "../src/lifecycle/transfer";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
@@ -1308,7 +1310,12 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		});
 		expect(predecessor.ok).toBe(true);
 		expect(successor.ok).toBe(true);
-		if (!predecessor.ok || !successor.ok || !predecessor.data || !successor.data) {
+		if (
+			!predecessor.ok ||
+			!successor.ok ||
+			!predecessor.data ||
+			!successor.data
+		) {
 			return;
 		}
 		expect(predecessor.data.successorAssignmentId).toBe(successor.data.id);

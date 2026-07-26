@@ -11,18 +11,14 @@ export function loadCoreorgExclusionRegister(registerPath) {
 
 export function listHrPgTableNames(schemaSource) {
 	const names = [];
-	const pattern =
-		/export const hr\w+ = pgTable\(\s*\n\s*"(hr_[^"]+)"/g;
+	const pattern = /export const hr\w+ = pgTable\(\s*\n\s*"(hr_[^"]+)"/g;
 	for (const match of schemaSource.matchAll(pattern)) {
 		names.push(match[1]);
 	}
 	return names;
 }
 
-export function validateCoreorgRegisterInventory({
-	register,
-	pgTableNames,
-}) {
+export function validateCoreorgRegisterInventory({ register, pgTableNames }) {
 	const { ddl, notApplicable, scaffolds } =
 		register.categoryInventory.startEndRange;
 	const all = [...ddl, ...notApplicable, ...scaffolds];

@@ -562,12 +562,9 @@ export function RecordProofOfDeliveryForm({
 				</Alert>
 			) : null}
 			{state?.ok === false &&
-			[
-				deliveryError,
-				versionError,
-				recipientError,
-				outcomeError,
-			].every((message) => message === undefined) ? (
+			[deliveryError, versionError, recipientError, outcomeError].every(
+				(message) => message === undefined,
+			) ? (
 				<FormError>{state.message}</FormError>
 			) : null}
 			<DeliveryVersionFields
@@ -612,7 +609,10 @@ export function RecordProofOfDeliveryForm({
 					disabled={pending}
 				/>
 			</FormField>
-			<FormField label="Proof type (optional)" fieldId="delivery-pod-proof-type">
+			<FormField
+				label="Proof type (optional)"
+				fieldId="delivery-pod-proof-type"
+			>
 				<Input
 					id="delivery-pod-proof-type"
 					name="proofType"

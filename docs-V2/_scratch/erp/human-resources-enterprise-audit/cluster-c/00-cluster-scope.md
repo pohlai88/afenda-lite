@@ -22,7 +22,7 @@ This pack is a **three-domain subset** of AUD-00 Cluster C. Talent, compliance, 
 | `src/performance/` | performance | `store/performance.ts` | `adapters/{memory,drizzle}/performance.ts` |
 | `src/learning/` | learning | `store/learning.ts` | `adapters/{memory,drizzle}/learning.ts` |
 
-Matching layers: `src/schemas/{compensation,performance,learning}.ts` · `shared/{compensation,performance,learning}-command.ts` · `shared/authorization-policies/{compensation,performance,learning}.ts` · `emissions/domains/{compensation,performance,learning}.ts` · certification/completion legacy emissions.
+Matching layers: `src/schemas/{compensation,performance,learning}.ts` · `shared/{compensation,performance,learning}-command.ts` · `shared/authorization-policies/{compensation,performance,learning}.ts` · `emissions/domains/{compensation,performance,learning}.ts`, including certification/completion Learning emissions.
 
 ## Command / query inventory (disk 2026-07-26)
 
@@ -54,7 +54,7 @@ Excluded / scaffold: proposal table, goal/review/improvement operational rows, c
 
 ## Emission registry (consume-only)
 
-Phase 3 classifies **59** cluster-relevant mutation commands across the three domains (18 compensation + 30 performance + 11 learning in frozen matrix + privacy trio out of scope here). Domain packs: `emissions/domains/compensation.ts`, `performance.ts`, `learning.ts`; certification/completion in `emissions/legacy-classifications.ts`.
+Phase 3 classifies the frozen cluster matrix across Compensation, Performance, and Learning. Canonical domain packs are `emissions/domains/compensation.ts`, `performance.ts`, and `learning.ts`; certification/completion are owned by the Learning pack.
 
 **Do not** treat emission-matrix DONE as domain-depth DONE — this pack scores contract, correctness, authz, parity, and product evidence separately.
 

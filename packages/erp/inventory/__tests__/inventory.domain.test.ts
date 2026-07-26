@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { INVENTORY_ERROR_IDEMPOTENCY_CONFLICT, INVENTORY_ERROR_INSUFFICIENT_AVAILABLE } from "../src/error-codes";
+import {
+	INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
+	INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
+} from "../src/error-codes";
 import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
+	cancelReservation,
 	cancelStockMovement,
 	createReversalMovement,
 	createStockMovement,
-	cancelReservation,
 	expireReservation,
 	getStockAvailability,
 	getStockMovementById,

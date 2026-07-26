@@ -35,6 +35,7 @@ import {
 	hrEmploymentContract,
 	hrEmploymentMovement,
 	hrEmploymentOffer,
+	hrEmploymentStatusHistory,
 	hrExitInterview,
 	hrHeadcountPlan,
 	hrHeadcountPlanLine,
@@ -63,7 +64,9 @@ import {
 	hrOvertimeRequest,
 	hrPerformanceAssessment,
 	hrPerformanceCycle,
+	hrPerformanceCycleEligibility,
 	hrPerformanceCycleParticipant,
+	hrPerformanceCycleReviewPeriod,
 	hrPerformanceGoal,
 	hrPerformanceGoalProgress,
 	hrPerformanceImprovementCheckpoint,
@@ -437,6 +440,12 @@ export async function cleanupHumanResourcesNeonOrgs(
 			.delete(hrPerformanceCycleParticipant)
 			.where(eq(hrPerformanceCycleParticipant.organizationId, organizationId));
 		await db
+			.delete(hrPerformanceCycleReviewPeriod)
+			.where(eq(hrPerformanceCycleReviewPeriod.organizationId, organizationId));
+		await db
+			.delete(hrPerformanceCycleEligibility)
+			.where(eq(hrPerformanceCycleEligibility.organizationId, organizationId));
+		await db
 			.delete(hrPerformanceCycle)
 			.where(eq(hrPerformanceCycle.organizationId, organizationId));
 		await db
@@ -504,6 +513,9 @@ export async function cleanupHumanResourcesNeonOrgs(
 			await db
 				.delete(hrEmployeeCompensation)
 				.where(eq(hrEmployeeCompensation.organizationId, organizationId));
+			await db
+				.delete(hrEmploymentStatusHistory)
+				.where(eq(hrEmploymentStatusHistory.organizationId, organizationId));
 			try {
 				await db
 					.delete(hrEmployment)

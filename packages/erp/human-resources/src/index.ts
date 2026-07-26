@@ -3,9 +3,9 @@ import "server-only";
 
 export * from "./brands";
 export * from "./command-options";
-export * from "./compensation-benefits/benefit-enrollment";
-export * from "./compensation-benefits/benefit-eligibility";
 export * from "./compensation-benefits/benefit-dependent";
+export * from "./compensation-benefits/benefit-eligibility";
+export * from "./compensation-benefits/benefit-enrollment";
 export * from "./compensation-benefits/benefit-plan";
 export * from "./compensation-benefits/compensation-grade";
 export * from "./compensation-benefits/compensation-grade-progression-rule";
@@ -18,6 +18,7 @@ export * from "./compensation-benefits/salary-band";
 export * from "./compliance/document-requirement";
 export * from "./compliance/employee-compliance-summary";
 export * from "./compliance/employee-document";
+export * from "./compliance/expiry-operations";
 export * from "./compliance/policy-acknowledgement";
 export { createVaultDocumentReferenceAdapter } from "./compliance/vault-document-reference-adapter";
 export * from "./compliance/work-eligibility";
@@ -26,9 +27,9 @@ export * from "./core/assignment-management";
 // Command entry points
 export * from "./core/employee";
 export * from "./core/employment";
-export * from "./core/employment-management";
 export * from "./core/employment-contract";
 export * from "./core/employment-contract-management";
+export * from "./core/employment-management";
 export * from "./core/org-context";
 export * from "./effective-truth-adoption";
 export * from "./effective-truth-classification";
@@ -36,6 +37,7 @@ export * from "./employee-relations/case-action";
 export * from "./employee-relations/case-appeal";
 export * from "./employee-relations/case-event";
 export * from "./employee-relations/employee-case";
+export type * from "./employee-relations/types";
 // Error codes and utilities
 export * from "./error-codes";
 export * from "./handoff/approved-payroll-handoff";
@@ -49,6 +51,7 @@ export * from "./learning/certification";
 export * from "./learning/completion";
 export * from "./learning/course";
 export * from "./learning/learning-assignment";
+export * from "./learning/learning-attendance";
 export * from "./learning/learning-session";
 export * from "./leave/entitlement";
 export * from "./leave/leave-policy";
@@ -75,12 +78,11 @@ export * from "./privacy";
 export * from "./privacy/operations";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
 export { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
-export { createProductionAttendanceSource } from "./production-attendance-source";
 export type {
 	AttendanceConnectorPullPort,
 	AttendanceSourcePreviewResult,
 } from "./production-attendance-source";
-export { createHttpAttendanceConnectorPull } from "./time/attendance/http-connector-pull";
+export { createProductionAttendanceSource } from "./production-attendance-source";
 export { createProductionWorkCalendar } from "./production-work-calendar";
 export * from "./recruitment/application";
 export * from "./recruitment/candidate";
@@ -104,11 +106,14 @@ export type * from "./store";
 // Store resolver removed - internal only
 export * from "./talent/career-plan";
 export * from "./talent/competency";
+export * from "./talent/critical-role-readiness";
 export * from "./talent/succession-plan";
 export * from "./talent/talent-pool";
 export * from "./talent/talent-profile";
+export * from "./talent/talent-profile-mobility";
 export * from "./time";
 export * from "./time/attendance/dry-run";
+export { createHttpAttendanceConnectorPull } from "./time/attendance/http-connector-pull";
 export type {
 	ResolvedWorkCalendarContext,
 	WorkCalendarDayResolution,

@@ -52,7 +52,7 @@ export async function createCompensationGradeProgressionRule(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_CREATE,
 				}),
 			),
@@ -79,7 +79,7 @@ export async function archiveCompensationGradeProgressionRule(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_ARCHIVE,
 				}),
 			),

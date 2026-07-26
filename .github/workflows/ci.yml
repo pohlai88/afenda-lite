@@ -25,7 +25,7 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      # I5.5 — DB integration suites fail closed when missing (skip is not PASS).
+      # I5.5 — explicit DB lanes fail closed when missing (skip is not PASS).
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       CI: "true"
       REQUIRE_DATABASE_TESTS: "1"
@@ -71,8 +71,8 @@ jobs:
       - name: Package governance (catalog · edges · sole-mutator)
         run: pnpm governance:packages
 
-      - name: Typecheck · test
-        run: pnpm exec turbo run typecheck test
+      - name: Typecheck · unit test
+        run: pnpm exec turbo run typecheck test --concurrency=50%
 
       - name: HR Neon parity (serial)
         run: pnpm test:hr:parity

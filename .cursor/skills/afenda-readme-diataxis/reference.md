@@ -68,7 +68,7 @@ Defer deep tenancy locks, slice matrices, and module readiness claims to control
 | Revive `@afenda/ui` gateway | `@afenda/ui-system` only (ADR-010) |
 | Compose / multi-file env SSOT | `@afenda/env` + `.env.local` + ARCH-027 |
 | Collapse trees as current layout | Forbidden without named recovery this turn |
-| `collapse-script-unavailable` names as live controls | Inventory only until Approved forward slice |
+| Removed Collapse-era command names | Keep absent; introduce a command only with its executable forward implementation |
 
 ## Package README minimal skeleton
 

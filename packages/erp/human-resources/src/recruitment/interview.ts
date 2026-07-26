@@ -28,11 +28,11 @@ import {
 } from "../schemas/recruitment";
 import { actorHoldsAnyPermission } from "../shared/authorization-policy-helpers";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import { assertInterviewInterviewerAssignable } from "../shared/recruitment-guards";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
 } from "../shared/recruitment-command";
+import { assertInterviewInterviewerAssignable } from "../shared/recruitment-guards";
 import type {
 	Interview,
 	InterviewEvaluation,
@@ -64,7 +64,7 @@ export async function scheduleInterview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
+					operationId: HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
 				}),
 			),
 	});
@@ -89,7 +89,7 @@ export async function cancelInterview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_CANCEL,
+					operationId: HUMAN_RESOURCES_COMMAND_INTERVIEW_CANCEL,
 				}),
 			),
 	});
@@ -137,7 +137,7 @@ export async function assignInterviewInterviewer(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_ASSIGN_INTERVIEWER,
+					operationId: HUMAN_RESOURCES_COMMAND_INTERVIEW_ASSIGN_INTERVIEWER,
 				}),
 			);
 		},
@@ -167,7 +167,7 @@ export async function recordInterviewEvaluation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
+					operationId: HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
 				}),
 			),
 	});

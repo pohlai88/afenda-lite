@@ -9,6 +9,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
+	HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_CANDIDATE_APPROVED_EVENT,
 	HUMAN_RESOURCES_SUCCESSION_READINESS_CHANGED_EVENT,
 	HUMAN_RESOURCES_TALENT_POOL_MEMBER_REMOVED_EVENT,
@@ -25,10 +26,12 @@ import {
 	type HumanResourcesJobCompetencyId,
 	type HumanResourcesSuccessionCandidateId,
 	type HumanResourcesSuccessionPlanId,
+	type HumanResourcesTalentCriticalRoleReadinessId,
 	type HumanResourcesTalentPoolId,
 	type HumanResourcesTalentPoolMemberId,
 	type HumanResourcesTalentProfileAssessmentId,
 	type HumanResourcesTalentProfileId,
+	type HumanResourcesTalentProfileMobilityId,
 	parseHumanResourcesCareerPlanActionId,
 	parseHumanResourcesCareerPlanId,
 	parseHumanResourcesCompetencyAssessmentId,
@@ -36,10 +39,12 @@ import {
 	parseHumanResourcesJobCompetencyId,
 	parseHumanResourcesSuccessionCandidateId,
 	parseHumanResourcesSuccessionPlanId,
+	parseHumanResourcesTalentCriticalRoleReadinessId,
 	parseHumanResourcesTalentPoolId,
 	parseHumanResourcesTalentPoolMemberId,
 	parseHumanResourcesTalentProfileAssessmentId,
 	parseHumanResourcesTalentProfileId,
+	parseHumanResourcesTalentProfileMobilityId,
 } from "../../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -50,6 +55,7 @@ import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import type { EmploymentStatus } from "../../shared/employment-status";
 import {
+	assertAssessmentCanExpire,
 	assertAssessmentInputValid,
 	assertAssessmentSupersedable,
 	assertCareerPlanAcknowledgeable,
@@ -58,6 +64,7 @@ import {
 	assertCareerPlanOpen,
 	assertCareerPlanStatusTransition,
 	assertCompetencyStatusTransition,
+	assertCriticalRoleReadinessRecordable,
 	assertJobCompetencyMappable,
 	assertJobCompetencyRemovable,
 	assertProfileAssessmentConfirmable,
@@ -76,6 +83,7 @@ import {
 	assertTalentPoolOpen,
 	assertTalentProfileActive,
 	assertTalentProfileArchivable,
+	assertTalentProfileMobilityRecordable,
 } from "../../shared/talent-guards";
 import type { HumanResourcesStore } from "../../store";
 import type {
@@ -89,17 +97,24 @@ import type {
 	IdempotentCompetencyRecord,
 	IdempotentSuccessionCandidateRecord,
 	IdempotentSuccessionPlanRecord,
+	IdempotentTalentCriticalRoleReadinessRecord,
 	IdempotentTalentPoolMemberRecord,
 	IdempotentTalentPoolRecord,
+	IdempotentTalentProfileMobilityRecord,
 	IdempotentTalentProfileRecord,
 	JobCompetency,
 	PositionSuccessionCoverage,
 	SuccessionCandidate,
 	SuccessionPlan,
+	TalentCriticalRoleReadiness,
+	TalentCriticalRoleReadinessListPage,
 	TalentPool,
 	TalentPoolMember,
 	TalentProfile,
 	TalentProfileAssessment,
+	TalentProfileAssessmentListPage,
+	TalentProfileMobility,
+	TalentProfileMobilityListPage,
 } from "../../types";
 import { idempotencyMapKey } from "./shared";
 
@@ -120,6 +135,22 @@ export type TalentMemoryState = {
 	talentProfileAssessments: Map<
 		HumanResourcesTalentProfileAssessmentId,
 		TalentProfileAssessment
+	>;
+	talentProfileMobilities: Map<
+		HumanResourcesTalentProfileMobilityId,
+		TalentProfileMobility
+	>;
+	talentProfileMobilityIdempotency: Map<
+		string,
+		IdempotentTalentProfileMobilityRecord
+	>;
+	talentCriticalRoleReadiness: Map<
+		HumanResourcesTalentCriticalRoleReadinessId,
+		TalentCriticalRoleReadiness
+	>;
+	talentCriticalRoleReadinessIdempotency: Map<
+		string,
+		IdempotentTalentCriticalRoleReadinessRecord
 	>;
 	talentPools: Map<HumanResourcesTalentPoolId, TalentPool>;
 	talentPoolIdempotency: Map<string, IdempotentTalentPoolRecord>;
@@ -164,6 +195,7 @@ export type MemoryTalentMethods = Pick<
 	| "findCompetencyAssessmentByIdempotencyKey"
 	| "createCompetencyAssessment"
 	| "supersedeCompetencyAssessment"
+	| "expireCompetencyAssessment"
 	| "getEmployeeCompetencyProfile"
 	| "getTalentProfileById"
 	| "findTalentProfileByEmployeeId"
@@ -174,6 +206,13 @@ export type MemoryTalentMethods = Pick<
 	| "getTalentProfileByEmployee"
 	| "recordTalentProfileAssessment"
 	| "confirmTalentProfileAssessment"
+	| "listTalentProfileAssessments"
+	| "findTalentProfileMobilityByIdempotencyKey"
+	| "recordTalentProfileMobility"
+	| "listTalentProfileMobility"
+	| "findCriticalRoleReadinessByIdempotencyKey"
+	| "recordCriticalRoleReadiness"
+	| "listCriticalRoleReadiness"
 	| "getTalentPoolById"
 	| "findTalentPoolByIdempotencyKey"
 	| "createTalentPool"
@@ -286,6 +325,10 @@ export function createTalentMemoryState(): TalentMemoryState {
 		talentProfiles: new Map(),
 		talentProfileIdempotency: new Map(),
 		talentProfileAssessments: new Map(),
+		talentProfileMobilities: new Map(),
+		talentProfileMobilityIdempotency: new Map(),
+		talentCriticalRoleReadiness: new Map(),
+		talentCriticalRoleReadinessIdempotency: new Map(),
 		talentPools: new Map(),
 		talentPoolIdempotency: new Map(),
 		talentPoolMembers: new Map(),
@@ -309,6 +352,10 @@ export function resetTalentMemoryState(state: TalentMemoryState): void {
 	state.talentProfiles.clear();
 	state.talentProfileIdempotency.clear();
 	state.talentProfileAssessments.clear();
+	state.talentProfileMobilities.clear();
+	state.talentProfileMobilityIdempotency.clear();
+	state.talentCriticalRoleReadiness.clear();
+	state.talentCriticalRoleReadinessIdempotency.clear();
 	state.talentPools.clear();
 	state.talentPoolIdempotency.clear();
 	state.talentPoolMembers.clear();
@@ -858,6 +905,7 @@ export function createMemoryTalentMethods(
 				evidenceSource: record.evidenceSource,
 				level: record.level,
 				effectiveOn: record.effectiveOn,
+				expiresOn: record.expiresOn,
 				todayDate: todayIsoDate(),
 			});
 			if (!validInput.ok) {
@@ -895,6 +943,7 @@ export function createMemoryTalentMethods(
 				scaleCode: record.scaleCode,
 				level: record.level,
 				effectiveOn: record.effectiveOn,
+				expiresOn: record.expiresOn,
 				status: "current",
 				supersedesAssessmentId: null,
 				supersededByAssessmentId: null,
@@ -1001,6 +1050,7 @@ export function createMemoryTalentMethods(
 				evidenceSource: record.evidenceSource,
 				level: record.level,
 				effectiveOn: record.effectiveOn,
+				expiresOn: record.expiresOn,
 				todayDate: todayIsoDate(),
 			});
 			if (!validInput.ok) {
@@ -1033,6 +1083,7 @@ export function createMemoryTalentMethods(
 				scaleCode: source.data.scaleCode,
 				level: record.level,
 				effectiveOn: record.effectiveOn,
+				expiresOn: record.expiresOn,
 				status: "current",
 				supersedesAssessmentId: source.data.id,
 				supersededByAssessmentId: null,
@@ -1078,6 +1129,73 @@ export function createMemoryTalentMethods(
 			}
 
 			return ok({ ...assessment });
+		},
+
+		async expireCompetencyAssessment(input, ports, meta) {
+			const state = getState();
+			const assessmentResult = getCompetencyAssessmentInOrg(
+				state,
+				input.organizationId,
+				input.assessmentId,
+			);
+			if (!assessmentResult.ok) {
+				return assessmentResult;
+			}
+			const versionCheck = assertExpectedVersion(
+				assessmentResult.data.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const expireGuard = assertAssessmentCanExpire(
+				assessmentResult.data.status,
+			);
+			if (!expireGuard.ok) {
+				return expireGuard;
+			}
+
+			const now = new Date();
+			const updated: CompetencyAssessment = {
+				...assessmentResult.data,
+				status: "expired",
+				version: assessmentResult.data.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.competencyAssessments.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_competency_assessment",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.competencyAssessments.set(
+					assessmentResult.data.id,
+					assessmentResult.data,
+				);
+				return audit;
+			}
+
+			const outbox = await recordOutbox(ports, meta, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				type: HUMAN_RESOURCES_COMPETENCY_ASSESSMENT_EXPIRED_EVENT,
+				entityType: "hr_competency_assessment",
+				entityId: updated.id,
+			});
+			if (!outbox.ok) {
+				state.competencyAssessments.set(
+					assessmentResult.data.id,
+					assessmentResult.data,
+				);
+				return outbox;
+			}
+
+			return ok({ ...updated });
 		},
 
 		async getEmployeeCompetencyProfile(input) {
@@ -1493,6 +1611,310 @@ export function createMemoryTalentMethods(
 			}
 
 			return ok({ ...updated });
+		},
+
+		async listTalentProfileAssessments(input) {
+			const state = getState();
+			const assessments = Array.from(state.talentProfileAssessments.values())
+				.filter(
+					(assessment) =>
+						assessment.organizationId === input.organizationId &&
+						assessment.talentProfileId === input.talentProfileId,
+				)
+				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.map((assessment) => ({ ...assessment }));
+			return ok({
+				assessments,
+			} satisfies TalentProfileAssessmentListPage);
+		},
+
+		async findTalentProfileMobilityByIdempotencyKey(input) {
+			const state = getState();
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
+			const record = state.talentProfileMobilityIdempotency.get(key);
+			if (!record) {
+				return ok(null);
+			}
+			return ok({
+				mobility: { ...record.mobility },
+				createRequestFingerprint: record.createRequestFingerprint,
+			});
+		},
+
+		async recordTalentProfileMobility(record, ports, meta) {
+			const state = getState();
+			const idempotencyKey = idempotencyMapKey(
+				record.organizationId,
+				record.createIdempotencyKey,
+			);
+			const existingByKey =
+				state.talentProfileMobilityIdempotency.get(idempotencyKey);
+			if (existingByKey) {
+				if (
+					existingByKey.createRequestFingerprint !==
+					record.createRequestFingerprint
+				) {
+					return fail(
+						"CONFLICT",
+						"Idempotency key reused with different payload",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+					);
+				}
+				return ok({ ...existingByKey.mobility });
+			}
+
+			const profile = getTalentProfileInOrg(
+				state,
+				record.organizationId,
+				record.talentProfileId,
+			);
+			if (!profile.ok) {
+				return profile;
+			}
+			const active = assertTalentProfileActive(profile.data.status);
+			if (!active.ok) {
+				return active;
+			}
+			const recordable = assertTalentProfileMobilityRecordable({
+				evidenceSummary: record.evidenceSummary,
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: record.effectiveTo,
+			});
+			if (!recordable.ok) {
+				return recordable;
+			}
+
+			const now = new Date();
+			const previouslyCurrent = Array.from(
+				state.talentProfileMobilities.values(),
+			).filter(
+				(mobility) =>
+					mobility.organizationId === record.organizationId &&
+					mobility.talentProfileId === record.talentProfileId &&
+					mobility.dimension === record.dimension &&
+					mobility.status === "current",
+			);
+			for (const mobility of previouslyCurrent) {
+				state.talentProfileMobilities.set(mobility.id, {
+					...mobility,
+					status: "superseded",
+					version: mobility.version + 1,
+					updatedBy: record.createdBy,
+					updatedAt: now,
+				});
+			}
+
+			const idResult = parseHumanResourcesTalentProfileMobilityId(randomUUID());
+			if (!idResult.ok) {
+				return idResult;
+			}
+
+			const mobility: TalentProfileMobility = {
+				id: idResult.data,
+				organizationId: record.organizationId,
+				talentProfileId: record.talentProfileId,
+				dimension: record.dimension,
+				preferenceCode: record.preferenceCode,
+				scopeDetail: record.scopeDetail,
+				evidenceSummary: record.evidenceSummary,
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: record.effectiveTo,
+				status: "current",
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.talentProfileMobilities.set(mobility.id, mobility);
+			state.talentProfileMobilityIdempotency.set(idempotencyKey, {
+				mobility: { ...mobility },
+				createRequestFingerprint: record.createRequestFingerprint,
+			});
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				entity: "hr_talent_profile_mobility",
+				entityId: mobility.id,
+				action: "CREATE",
+			});
+			if (!audit.ok) {
+				state.talentProfileMobilities.delete(mobility.id);
+				state.talentProfileMobilityIdempotency.delete(idempotencyKey);
+				for (const prior of previouslyCurrent) {
+					state.talentProfileMobilities.set(prior.id, prior);
+				}
+				return audit;
+			}
+
+			return ok({ ...mobility });
+		},
+
+		async listTalentProfileMobility(input) {
+			const state = getState();
+			const mobilities = Array.from(state.talentProfileMobilities.values())
+				.filter(
+					(mobility) =>
+						mobility.organizationId === input.organizationId &&
+						mobility.talentProfileId === input.talentProfileId,
+				)
+				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.map((mobility) => ({ ...mobility }));
+			return ok({
+				mobilities,
+			} satisfies TalentProfileMobilityListPage);
+		},
+
+		async findCriticalRoleReadinessByIdempotencyKey(input) {
+			const state = getState();
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
+			const record = state.talentCriticalRoleReadinessIdempotency.get(key);
+			if (!record) {
+				return ok(null);
+			}
+			return ok({
+				readiness: { ...record.readiness },
+				createRequestFingerprint: record.createRequestFingerprint,
+			});
+		},
+
+		async recordCriticalRoleReadiness(record, ports, meta) {
+			const state = getState();
+			const idempotencyKey = idempotencyMapKey(
+				record.organizationId,
+				record.createIdempotencyKey,
+			);
+			const existingByKey =
+				state.talentCriticalRoleReadinessIdempotency.get(idempotencyKey);
+			if (existingByKey) {
+				if (
+					existingByKey.createRequestFingerprint !==
+					record.createRequestFingerprint
+				) {
+					return fail(
+						"CONFLICT",
+						"Idempotency key reused with different payload",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+					);
+				}
+				return ok({ ...existingByKey.readiness });
+			}
+
+			const profile = getTalentProfileInOrg(
+				state,
+				record.organizationId,
+				record.talentProfileId,
+			);
+			if (!profile.ok) {
+				return profile;
+			}
+			const active = assertTalentProfileActive(profile.data.status);
+			if (!active.ok) {
+				return active;
+			}
+			const position = await this.getPositionById({
+				organizationId: record.organizationId,
+				positionId: record.positionId,
+			});
+			if (!position.ok) {
+				return position;
+			}
+			if (position.data === null) {
+				return notFound("Position not found");
+			}
+			const recordable = assertCriticalRoleReadinessRecordable({
+				evidenceSummary: record.evidenceSummary,
+				assessorUserId: record.assessorUserId,
+				readinessEffectiveOn: record.readinessEffectiveOn,
+			});
+			if (!recordable.ok) {
+				return recordable;
+			}
+
+			const now = new Date();
+			const previouslyCurrent = Array.from(
+				state.talentCriticalRoleReadiness.values(),
+			).filter(
+				(readiness) =>
+					readiness.organizationId === record.organizationId &&
+					readiness.talentProfileId === record.talentProfileId &&
+					readiness.positionId === record.positionId &&
+					readiness.status === "current",
+			);
+			for (const readiness of previouslyCurrent) {
+				state.talentCriticalRoleReadiness.set(readiness.id, {
+					...readiness,
+					status: "superseded",
+					version: readiness.version + 1,
+					updatedBy: record.createdBy,
+					updatedAt: now,
+				});
+			}
+
+			const idResult = parseHumanResourcesTalentCriticalRoleReadinessId(
+				randomUUID(),
+			);
+			if (!idResult.ok) {
+				return idResult;
+			}
+
+			const readiness: TalentCriticalRoleReadiness = {
+				id: idResult.data,
+				organizationId: record.organizationId,
+				talentProfileId: record.talentProfileId,
+				positionId: record.positionId,
+				readiness: record.readiness,
+				readinessEffectiveOn: record.readinessEffectiveOn,
+				evidenceSummary: record.evidenceSummary,
+				assessorUserId: record.assessorUserId,
+				status: "current",
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.talentCriticalRoleReadiness.set(readiness.id, readiness);
+			state.talentCriticalRoleReadinessIdempotency.set(idempotencyKey, {
+				readiness: { ...readiness },
+				createRequestFingerprint: record.createRequestFingerprint,
+			});
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				entity: "hr_talent_critical_role_readiness",
+				entityId: readiness.id,
+				action: "CREATE",
+			});
+			if (!audit.ok) {
+				state.talentCriticalRoleReadiness.delete(readiness.id);
+				state.talentCriticalRoleReadinessIdempotency.delete(idempotencyKey);
+				for (const prior of previouslyCurrent) {
+					state.talentCriticalRoleReadiness.set(prior.id, prior);
+				}
+				return audit;
+			}
+
+			return ok({ ...readiness });
+		},
+
+		async listCriticalRoleReadiness(input) {
+			const state = getState();
+			const readinessRecords = Array.from(
+				state.talentCriticalRoleReadiness.values(),
+			)
+				.filter(
+					(readiness) =>
+						readiness.organizationId === input.organizationId &&
+						readiness.talentProfileId === input.talentProfileId,
+				)
+				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.map((readiness) => ({ ...readiness }));
+			return ok({
+				readinessRecords,
+			} satisfies TalentCriticalRoleReadinessListPage);
 		},
 
 		// Talent pool

@@ -39,7 +39,10 @@ export async function postRefundAction(
 		permission: "payments.refund.create",
 		safeMessage: "Could not post refund. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
-			const postingDenied = await forbidUnlessPermission(session, "payments.refund.post");
+			const postingDenied = await forbidUnlessPermission(
+				session,
+				"payments.refund.post",
+			);
 			if (postingDenied) return postingDenied;
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),

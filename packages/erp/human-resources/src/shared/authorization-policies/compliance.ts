@@ -162,6 +162,7 @@ export const compliancePolicy: HumanResourcesAuthorizationPolicy = {
 		"human-resources.work-eligibility.",
 		"human-resources.policy-acknowledgement.",
 		"human-resources.employee-compliance-summary.",
+		"human-resources.compliance.",
 	],
 	async evaluate(
 		request: HumanResourcesAuthorizationRequest,

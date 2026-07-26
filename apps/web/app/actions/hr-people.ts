@@ -580,9 +580,7 @@ export async function listPersonIdentifiersAction(input: {
 export async function detectPersonDuplicatesAction(input: {
 	correlationId?: string;
 	personId: string;
-}): Promise<
-	ActionResult<{ candidates: readonly PersonDuplicateCandidate[] }>
-> {
+}): Promise<ActionResult<{ candidates: readonly PersonDuplicateCandidate[] }>> {
 	return runOperatorPermissionAction({
 		path: "detectPersonDuplicatesAction",
 		permission: "human-resources.person.read",

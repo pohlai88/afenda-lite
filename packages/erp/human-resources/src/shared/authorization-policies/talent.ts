@@ -33,6 +33,8 @@ export const talentProfilePolicy = createScopedPolicy({
 	operationPrefixes: [
 		"human-resources.talent-profile.",
 		"human-resources.talent-profile-assessment.",
+		"human-resources.talent-profile-mobility.",
+		"human-resources.critical-role-readiness.",
 		"human-resources.talent-pool.",
 		"human-resources.talent-pool-member.",
 		"human-resources.career-plan.",

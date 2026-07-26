@@ -5,8 +5,8 @@ import {
 	db,
 	eq,
 	payrollDeductionRule,
-	payrollEmployeeAssignment,
 	payrollEarningRule,
+	payrollEmployeeAssignment,
 	payrollRecurringDeduction,
 	payrollRecurringEarning,
 } from "@afenda/db";
@@ -14,8 +14,8 @@ import { ok, type Result } from "@afenda/errors/result";
 
 import {
 	parsePayrollDeductionRuleId,
-	parsePayrollEmployeeAssignmentId,
 	parsePayrollEarningRuleId,
+	parsePayrollEmployeeAssignmentId,
 	parsePayrollPayGroupId,
 	parsePayrollRecurringDeductionId,
 	parsePayrollRecurringEarningId,
@@ -800,7 +800,10 @@ export const drizzleAssignmentRuleLookups = {
 			}
 			return mapEarningRuleRow(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to load payroll earning rule");
+			return mapPersistenceFailure(
+				error,
+				"Failed to load payroll earning rule",
+			);
 		}
 	},
 

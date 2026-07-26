@@ -9,9 +9,7 @@ export const payrollExpectedVersionSchema = z.number().int().positive();
 export const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const isoDateTimeSchema = z.string().datetime({ offset: true });
 
-export const payrollDecimalStringSchema = z
-	.string()
-	.regex(/^-?\d+(\.\d+)?$/);
+export const payrollDecimalStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/);
 
 export const payrollEmployeeIdSchema = z.string().trim().min(1).max(128);
 

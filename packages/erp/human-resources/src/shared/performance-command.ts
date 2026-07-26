@@ -149,12 +149,16 @@ export async function requirePerformanceGoalOwnScope(
 		return ok(undefined);
 	}
 
-	return requireOwnResourceAccess(identityResolver, { authorization }, {
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		targetEmployeeId: input.targetEmployeeId,
-		permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
-	});
+	return requireOwnResourceAccess(
+		identityResolver,
+		{ authorization },
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			targetEmployeeId: input.targetEmployeeId,
+			permission: HUMAN_RESOURCES_PERMISSION_PERFORMANCE_GOAL_OWN_MANAGE,
+		},
+	);
 }
 
 export async function requirePerformanceGoalManagerScope(

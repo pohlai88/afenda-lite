@@ -105,8 +105,7 @@ describe("HR Benefits Server Actions", () => {
 				mock: hrBenefitsMocks.updateBenefitPlan,
 			},
 			{
-				invoke: () =>
-					archiveBenefitPlanAction({ planId, expectedVersion: 1 }),
+				invoke: () => archiveBenefitPlanAction({ planId, expectedVersion: 1 }),
 				mock: hrBenefitsMocks.archiveBenefitPlan,
 			},
 			{

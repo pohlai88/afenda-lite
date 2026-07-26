@@ -1,13 +1,17 @@
 "use server";
 
 import {
+	type ApprovedLeaveHandoff,
 	amendLeaveRequest,
 	approveLeaveRequest,
 	archiveLeavePolicy,
 	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
 	createLeavePolicy,
-	type ApprovedLeaveHandoff,
+	getApprovedLeaveHandoff,
+	getLeaveBalance,
+	getLeaveEntitlement,
+	getLeavePolicy,
 	type LeaveBalance,
 	type LeaveBalanceReconciliation,
 	type LeaveEntitlement,
@@ -16,23 +20,19 @@ import {
 	type LeavePolicyListPage,
 	type LeaveRequest,
 	type LeaveRequestListPage,
-	type ResolvedLeavePolicy,
-	type TeamCalendarLeavePage,
-	getApprovedLeaveHandoff,
-	getLeaveBalance,
-	getLeaveEntitlement,
-	getLeavePolicy,
 	listLeaveEntitlements,
 	listLeavePolicies,
 	listPendingApprovalLeaveRequests,
 	listTeamCalendarLeaveRequests,
 	publishLeavePolicy,
+	type ResolvedLeavePolicy,
 	reconcileLeaveBalance,
 	rejectLeaveRequest,
 	resolveApplicableLeavePolicy,
 	returnLeaveRequest,
 	submitLeaveRequest,
 	supersedeLeavePolicy,
+	type TeamCalendarLeavePage,
 	updateLeavePolicy,
 	withdrawLeaveRequest,
 } from "@afenda/human-resources";
@@ -62,8 +62,8 @@ import {
 } from "@afenda/human-resources/schemas";
 
 import {
-	hrActionSchema,
 	type HrActionInput,
+	hrActionSchema,
 	parseHrStampedPackageInput,
 	withHrSessionContext as withSessionContext,
 } from "@/app/actions/hr-mutation-context";
@@ -246,10 +246,7 @@ export async function cancelApprovedLeaveRequestAction(
 		permission: "human-resources.leave-request.approve-team",
 		safeMessage: "Could not cancel approved leave request.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(
-				cancelApprovedLeaveRequestActionSchema,
-				input,
-			);
+			const parsed = parseSchema(cancelApprovedLeaveRequestActionSchema, input);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -297,7 +294,9 @@ export async function getLeaveBalanceAction(
 
 export async function reconcileLeaveBalanceAction(
 	input: HrActionInput<typeof getLeaveBalanceInputSchema>,
-): Promise<ActionResult<{ reconciliation: LeaveBalanceReconciliation | null }>> {
+): Promise<
+	ActionResult<{ reconciliation: LeaveBalanceReconciliation | null }>
+> {
 	return runOperatorPermissionAction({
 		path: "reconcileLeaveBalanceAction",
 		permission: "human-resources.leave-entitlement.read",
@@ -458,9 +457,7 @@ export async function returnLeaveRequestAction(
 }
 
 export async function listPendingApprovalLeaveRequestsAction(
-	input: HrActionInput<
-		typeof listPendingApprovalLeaveRequestsInputSchema
-	>,
+	input: HrActionInput<typeof listPendingApprovalLeaveRequestsInputSchema>,
 ): Promise<ActionResult<{ page: LeaveRequestListPage }>> {
 	return runOperatorPermissionAction({
 		path: "listPendingApprovalLeaveRequestsAction",

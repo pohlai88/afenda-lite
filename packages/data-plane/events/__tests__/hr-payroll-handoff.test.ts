@@ -72,12 +72,13 @@ describe("hr payroll handoff contract", () => {
 	});
 
 	it("registers typed payload for payroll handoff ready event", () => {
-		expect(AllEventSchemas[HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT]).toBe(
-			approvedPayrollHandoffSchema,
-		);
-		const eventParsed = AllEventSchemas[
-			HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT
-		].safeParse(validHandoff);
+		expect(
+			AllEventSchemas[HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT],
+		).toBe(approvedPayrollHandoffSchema);
+		const eventParsed =
+			AllEventSchemas[
+				HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT
+			].safeParse(validHandoff);
 		expect(eventParsed.success).toBe(true);
 	});
 });

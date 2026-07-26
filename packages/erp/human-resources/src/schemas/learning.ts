@@ -5,6 +5,7 @@ import {
 	humanResourcesCourseIdSchema,
 	humanResourcesEmployeeIdSchema,
 	humanResourcesLearningAssignmentIdSchema,
+	humanResourcesLearningAttendanceIdSchema,
 	humanResourcesSessionIdSchema,
 } from "../brands";
 import {
@@ -12,6 +13,7 @@ import {
 	certificationStatusSchema,
 	completionOutcomeSchema,
 	courseStatusSchema,
+	learningAttendanceStatusSchema,
 	sessionStatusSchema,
 } from "../shared/learning-status";
 import {
@@ -88,6 +90,9 @@ export const createSessionInputSchema = humanResourcesMutationContextSchema
 		scheduledStartsAt: isoDateTimeSchema,
 		scheduledEndsAt: isoDateTimeSchema,
 		capacity: z.number().int().positive().nullable().optional(),
+		primaryInstructorUserId: humanResourcesActorUserIdSchema
+			.nullable()
+			.optional(),
 	})
 	.strict();
 
@@ -125,6 +130,19 @@ export const listSessionsInputSchema = humanResourcesMutationContextSchema
 	.strict();
 
 export type ListSessionsInput = z.infer<typeof listSessionsInputSchema>;
+
+export const assignSessionInstructorInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			sessionId: humanResourcesSessionIdSchema,
+			primaryInstructorUserId: humanResourcesActorUserIdSchema.nullable(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
+
+export type AssignSessionInstructorInput = z.infer<
+	typeof assignSessionInstructorInputSchema
+>;
 
 // Learning Assignment schemas
 export const createLearningAssignmentInputSchema =
@@ -232,6 +250,48 @@ export const listCompletionsInputSchema = humanResourcesMutationContextSchema
 
 export type ListCompletionsInput = z.infer<typeof listCompletionsInputSchema>;
 
+// Learning Attendance schemas
+export const recordLearningAttendanceInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			idempotencyKey: humanResourcesIdempotencyKeySchema,
+			sessionId: humanResourcesSessionIdSchema,
+			assignmentId: humanResourcesLearningAssignmentIdSchema,
+			employeeId: humanResourcesEmployeeIdSchema.optional(),
+			status: learningAttendanceStatusSchema,
+			recordedAt: isoDateTimeSchema,
+		})
+		.strict();
+
+export type RecordLearningAttendanceInput = z.infer<
+	typeof recordLearningAttendanceInputSchema
+>;
+
+export const getLearningAttendanceInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			attendanceId: humanResourcesLearningAttendanceIdSchema,
+		})
+		.strict();
+
+export type GetLearningAttendanceInput = z.infer<
+	typeof getLearningAttendanceInputSchema
+>;
+
+export const listLearningAttendanceInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+			sessionId: humanResourcesSessionIdSchema.optional(),
+			employeeId: humanResourcesEmployeeIdSchema.optional(),
+		})
+		.strict();
+
+export type ListLearningAttendanceInput = z.infer<
+	typeof listLearningAttendanceInputSchema
+>;
+
 // Employee Certification schemas
 export const issueCertificationInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -247,6 +307,22 @@ export const issueCertificationInputSchema = humanResourcesMutationContextSchema
 
 export type IssueCertificationInput = z.infer<
 	typeof issueCertificationInputSchema
+>;
+
+export const renewCertificationInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		certificationId: humanResourcesCertificationIdSchema,
+		completionId: humanResourcesCompletionIdSchema,
+		certificationCode: z.string().trim().min(1).max(64),
+		issuedOn: isoDateSchema,
+		expiresOn: isoDateSchema.nullable().optional(),
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
+
+export type RenewCertificationInput = z.infer<
+	typeof renewCertificationInputSchema
 >;
 
 export const certificationStatusTransitionInputSchema =
@@ -281,4 +357,18 @@ export const listCertificationsInputSchema = humanResourcesMutationContextSchema
 
 export type ListCertificationsInput = z.infer<
 	typeof listCertificationsInputSchema
+>;
+
+export const listExpiringCertificationsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			asOf: isoDateSchema,
+			withinDays: z.number().int().positive().max(365).optional(),
+			page: z.number().int().positive().optional(),
+			pageSize: z.number().int().positive().max(100).optional(),
+		})
+		.strict();
+
+export type ListExpiringCertificationsInput = z.infer<
+	typeof listExpiringCertificationsInputSchema
 >;

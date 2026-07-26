@@ -25,7 +25,7 @@ CREATE UNIQUE INDEX "hr_performance_cycle_org_code_uidx" ON "hr_performance_cycl
 --> statement-breakpoint
 CREATE UNIQUE INDEX "hr_performance_cycle_org_create_idempotency_uidx" ON "hr_performance_cycle" USING btree ("organization_id","create_idempotency_key");
 --> statement-breakpoint
-ALTER TABLE "hr_performance_cycle" ADD CONSTRAINT "hr_performance_cycle_status_check" CHECK ("status" IN ('draft', 'open', 'closed', 'cancelled'));
+ALTER TABLE "hr_performance_cycle" ADD CONSTRAINT "hr_performance_cycle_status_check" CHECK ("status" IN ('draft', 'published', 'open', 'closed', 'cancelled'));
 --> statement-breakpoint
 ALTER TABLE "hr_performance_cycle" ADD CONSTRAINT "hr_performance_cycle_weighting_model_check" CHECK ("weighting_model" IN ('none', 'percent100'));
 --> statement-breakpoint
@@ -228,6 +228,10 @@ CREATE TABLE "hr_performance_improvement_plan" (
 	"due_date" date NOT NULL,
 	"accountable_manager_employee_id" uuid NOT NULL,
 	"status" text NOT NULL,
+	"outcome_reason" text,
+	"outcome_evidence_reference" text,
+	"last_extension_reason" text,
+	"last_extension_evidence_reference" text,
 	"create_idempotency_key" text NOT NULL,
 	"create_request_fingerprint" text NOT NULL,
 	"version" integer DEFAULT 1 NOT NULL,
@@ -261,6 +265,7 @@ CREATE TABLE "hr_performance_improvement_checkpoint" (
 	"due_date" date NOT NULL,
 	"outcome" text NOT NULL,
 	"notes" text,
+	"evidence_reference" text,
 	"recorded_by" text,
 	"recorded_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

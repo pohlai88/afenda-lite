@@ -46,7 +46,7 @@ export async function addHeadcountPlanLine(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
 				}),
 			),
 	});
@@ -80,7 +80,7 @@ export async function updateHeadcountPlanLine(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
 				}),
 			),
 	});
@@ -105,7 +105,7 @@ export async function removeHeadcountPlanLine(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
 				}),
 			),
 	});

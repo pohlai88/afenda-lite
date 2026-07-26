@@ -38,7 +38,9 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
+import { projectPerformanceReviewDetailForReader } from "../../performance/performance-field-projection";
 import type { MutationPorts } from "../../ports";
+import { tenureDaysOn } from "../../shared/benefit-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -47,12 +49,13 @@ import {
 	notFound,
 } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
-import { tenureDaysOn } from "../../shared/benefit-guards";
 import {
 	assertEmploymentEligibleForPerformanceCycle,
 	isEmploymentEligibleForPerformanceCycle,
+	performanceCycleEligibilityAsOfDate,
 } from "../../shared/performance-cycle-eligibility";
 import {
+	assertAllDelegatedAssessmentsSubmitted,
 	assertCheckpointOutcomeTransition,
 	assertCyclePublishReady,
 	assertCycleStatusTransition,
@@ -62,8 +65,10 @@ import {
 	assertGoalStatusTransition,
 	assertGoalWeightForModel,
 	assertGoalWeightsSumTo100,
+	assertImprovementPlanExtension,
+	assertImprovementPlanMilestones,
 	assertImprovementPlanStatusTransition,
-	assertAllDelegatedAssessmentsSubmitted,
+	assertNoPendingCheckpoints,
 	assertPriorDelegatedAssessmentsSubmitted,
 	assertReviewNotFinalized,
 	assertReviewPeriodsNonOverlapping,
@@ -74,8 +79,8 @@ import {
 } from "../../shared/performance-guards";
 import {
 	assertRatingScaleUniqueCodes,
-	validateRatingInScale,
 	type PerformanceRatingScale,
+	validateRatingInScale,
 } from "../../shared/performance-rating";
 import {
 	isPerformanceCycleConfigurable,
@@ -107,6 +112,7 @@ import type {
 	PerformanceGoalListPage,
 	PerformanceGoalProgress,
 	PerformanceImprovementCheckpoint,
+	PerformanceImprovementCheckpointListPage,
 	PerformanceImprovementPlan,
 	PerformanceImprovementPlanListPage,
 	PerformanceReview,
@@ -118,7 +124,6 @@ import {
 	PERFORMANCE_REVIEW_MANAGER_SEQUENCE,
 	PERFORMANCE_REVIEW_SELF_SEQUENCE,
 } from "../../types";
-import { projectPerformanceReviewDetailForReader } from "../../performance/performance-field-projection";
 
 export type PerformanceMemoryState = {
 	cycles: Map<HumanResourcesPerformanceCycleId, PerformanceCycle>;
@@ -209,6 +214,7 @@ export type PerformanceMemoryMethods = Pick<
 	| "closeImprovementPlanUnsuccessful"
 	| "cancelImprovementPlan"
 	| "listActiveImprovementPlans"
+	| "listImprovementPlanCheckpoints"
 	| "getEmployeePerformanceHistory"
 >;
 
@@ -411,6 +417,20 @@ function getPlan(
 		);
 	}
 	return ok(plan);
+}
+
+function checkpointsForPlan(
+	state: PerformanceMemoryState,
+	organizationId: string,
+	planId: HumanResourcesImprovementPlanId,
+): PerformanceImprovementCheckpoint[] {
+	return Array.from(state.checkpoints.values())
+		.filter(
+			(checkpoint) =>
+				checkpoint.organizationId === organizationId &&
+				checkpoint.planId === planId,
+		)
+		.sort((left, right) => left.sequenceNumber - right.sequenceNumber);
 }
 
 function isActiveParticipant(
@@ -990,7 +1010,9 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 
 			const kinds = new Set(input.periods.map((period) => period.kind));
 			if (kinds.size !== input.periods.length) {
-				return invalidInput("Each review period kind may only be configured once");
+				return invalidInput(
+					"Each review period kind may only be configured once",
+				);
 			}
 
 			const now = new Date();
@@ -1058,11 +1080,9 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return cycle;
 			}
 			return ok(
-				reviewPeriodsForCycle(
-					state,
-					input.organizationId,
-					input.cycleId,
-				).map((period) => ({ ...period })),
+				reviewPeriodsForCycle(state, input.organizationId, input.cycleId).map(
+					(period) => ({ ...period }),
+				),
 			);
 		},
 
@@ -1256,6 +1276,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 								cycleId: input.cycleId,
 								employeeId: employee.id,
 								employmentId: employmentRef.id,
+								asOfDate: input.asOfDate,
 								actorUserId: input.actorUserId,
 							},
 							ports,
@@ -1264,8 +1285,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 						if (!added.ok) {
 							if (
 								added.code === "CONFLICT" &&
-								added.message ===
-									"Participant is already active in this cycle"
+								added.message === "Participant is already active in this cycle"
 							) {
 								continue;
 							}
@@ -1293,6 +1313,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				cycleId: HumanResourcesPerformanceCycleId;
 				employeeId: HumanResourcesEmployeeId;
 				employmentId: HumanResourcesEmploymentId;
+				asOfDate?: string;
 				actorUserId: string;
 			},
 			ports: MutationPorts,
@@ -1342,7 +1363,10 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 					eligibility,
 					employmentStatus: employment.data.status,
 					employmentStartsOn: employment.data.startsOn,
-					asOfDate: cycleResult.data.periodStart,
+					asOfDate: performanceCycleEligibilityAsOfDate({
+						cyclePeriodStart: cycleResult.data.periodStart,
+						eligibilityAsOfDate: input.asOfDate,
+					}),
 				});
 				if (!eligibilityCheck.ok) {
 					return eligibilityCheck;
@@ -1659,7 +1683,11 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 							: null,
 					goalCycleId: goal.cycleId,
 					resolveParent: (parentId) => {
-						const resolved = getGoal(state, record.organizationId, parentId as HumanResourcesGoalId);
+						const resolved = getGoal(
+							state,
+							record.organizationId,
+							parentId as HumanResourcesGoalId,
+						);
 						if (!resolved.ok) return null;
 						return {
 							id: resolved.data.id,
@@ -2184,7 +2212,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			page: number;
 			pageSize: number;
 		}): Promise<Result<import("../../types").PerformanceGoalProgressListPage>> {
-			let filtered = Array.from(state.goalProgress.values()).filter(
+			const filtered = Array.from(state.goalProgress.values()).filter(
 				(entry) =>
 					entry.organizationId === input.organizationId &&
 					entry.goalId === input.goalId,
@@ -2639,7 +2667,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			const participant = participants.find(
 				(item) => item.id === input.participantId,
 			);
-			if (!participant || participant.role !== "delegated") {
+			if (participant?.role !== "delegated") {
 				return invalidInput("Participant is not a delegated reviewer");
 			}
 			if (participant.employeeId !== input.delegatedEmployeeId) {
@@ -2665,7 +2693,11 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return invalidState("Delegated assessment is already submitted");
 			}
 
-			const cycleResult = getCycle(state, review.organizationId, review.cycleId);
+			const cycleResult = getCycle(
+				state,
+				review.organizationId,
+				review.cycleId,
+			);
 			if (!cycleResult.ok) {
 				return cycleResult;
 			}
@@ -2755,7 +2787,11 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return versionCheck;
 			}
 
-			const cycleResult = getCycle(state, review.organizationId, review.cycleId);
+			const cycleResult = getCycle(
+				state,
+				review.organizationId,
+				review.cycleId,
+			);
 			if (!cycleResult.ok) {
 				return cycleResult;
 			}
@@ -3254,6 +3290,10 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				dueDate: record.dueDate,
 				accountableManagerEmployeeId: record.accountableManagerEmployeeId,
 				status: "draft",
+				outcomeReason: null,
+				outcomeEvidenceReference: null,
+				lastExtensionReason: null,
+				lastExtensionEvidenceReference: null,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -3266,34 +3306,41 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
 
-			const checkpointId = newBrandId(
-				humanResourcesImprovementCheckpointIdSchema,
-			);
-			if (!checkpointId.ok) {
-				state.improvementPlans.delete(plan.id);
-				state.planIdempotency.delete(key);
-				return checkpointId;
-			}
-			const checkpoint: PerformanceImprovementCheckpoint = {
-				id: checkpointId.data,
-				organizationId: plan.organizationId,
-				planId: plan.id,
-				sequenceNumber: 1,
-				dueDate: plan.dueDate,
-				outcome: "pending",
-				notes: null,
-				recordedBy: null,
-				recordedAt: null,
-				createdAt: now,
-				updatedAt: now,
-			};
-			state.checkpoints.set(checkpoint.id, checkpoint);
-
 			const rollback: Array<() => void> = [
 				() => state.improvementPlans.delete(plan.id),
 				() => state.planIdempotency.delete(key),
-				() => state.checkpoints.delete(checkpoint.id),
 			];
+			const createdCheckpointIds: string[] = [];
+
+			for (const [index, milestone] of record.milestones.entries()) {
+				const checkpointId = newBrandId(
+					humanResourcesImprovementCheckpointIdSchema,
+				);
+				if (!checkpointId.ok) {
+					for (const undo of rollback) undo();
+					for (const checkpointIdToDelete of createdCheckpointIds) {
+						state.checkpoints.delete(checkpointIdToDelete);
+					}
+					return checkpointId;
+				}
+				const checkpoint: PerformanceImprovementCheckpoint = {
+					id: checkpointId.data,
+					organizationId: plan.organizationId,
+					planId: plan.id,
+					sequenceNumber: index + 1,
+					dueDate: milestone.dueDate,
+					outcome: "pending",
+					notes: null,
+					evidenceReference: null,
+					recordedBy: null,
+					recordedAt: null,
+					createdAt: now,
+					updatedAt: now,
+				};
+				state.checkpoints.set(checkpoint.id, checkpoint);
+				createdCheckpointIds.push(checkpoint.id);
+				rollback.push(() => state.checkpoints.delete(checkpoint.id));
+			}
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: plan.organizationId,
@@ -3408,6 +3455,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				sequenceNumber: number;
 				outcome: "met" | "missed";
 				notes: string | null;
+				evidenceReference: string | null;
 				actorUserId: string;
 			},
 			ports: MutationPorts,
@@ -3418,12 +3466,11 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return planResult;
 			}
 
-			const checkpoint = Array.from(state.checkpoints.values()).find(
-				(item) =>
-					item.organizationId === input.organizationId &&
-					item.planId === input.planId &&
-					item.sequenceNumber === input.sequenceNumber,
-			);
+			const checkpoint = checkpointsForPlan(
+				state,
+				input.organizationId,
+				input.planId,
+			).find((item) => item.sequenceNumber === input.sequenceNumber);
 			if (!checkpoint) {
 				return notFound(
 					"Improvement checkpoint not found",
@@ -3445,6 +3492,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				...checkpoint,
 				outcome: input.outcome,
 				notes: input.notes,
+				evidenceReference: input.evidenceReference,
 				recordedBy: input.actorUserId,
 				recordedAt: now,
 				updatedAt: now,
@@ -3470,9 +3518,13 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			input: {
 				organizationId: string;
 				planId: HumanResourcesImprovementPlanId;
+				performanceGap?: string;
+				expectedOutcome?: string;
 				measurableActions?: string;
 				supportResources?: string;
 				dueDate?: string;
+				extensionReason?: string;
+				extensionEvidenceReference?: string | null;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -3495,10 +3547,49 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return versionCheck;
 			}
 
+			const extensionCheck = assertImprovementPlanExtension({
+				currentDueDate: plan.dueDate,
+				nextDueDate: input.dueDate,
+				extensionReason: input.extensionReason,
+			});
+			if (!extensionCheck.ok) {
+				return extensionCheck;
+			}
+
+			const nextDueDate = input.dueDate ?? plan.dueDate;
+			const extending = nextDueDate > plan.dueDate;
+			const existingCheckpoints = checkpointsForPlan(
+				state,
+				input.organizationId,
+				input.planId,
+			);
+			if (extending) {
+				const milestoneValidation = assertImprovementPlanMilestones({
+					planDueDate: nextDueDate,
+					milestones: [
+						...existingCheckpoints.map((checkpoint) => ({
+							dueDate: checkpoint.dueDate,
+						})),
+						{ dueDate: nextDueDate },
+					],
+				});
+				if (!milestoneValidation.ok) {
+					return milestoneValidation;
+				}
+			}
+
 			const previous = { ...plan };
 			const now = new Date();
 			const updated: PerformanceImprovementPlan = {
 				...plan,
+				performanceGap:
+					input.performanceGap !== undefined
+						? input.performanceGap
+						: plan.performanceGap,
+				expectedOutcome:
+					input.expectedOutcome !== undefined
+						? input.expectedOutcome
+						: plan.expectedOutcome,
 				measurableActions:
 					input.measurableActions !== undefined
 						? input.measurableActions
@@ -3507,12 +3598,52 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 					input.supportResources !== undefined
 						? input.supportResources
 						: plan.supportResources,
-				dueDate: input.dueDate ?? plan.dueDate,
+				dueDate: nextDueDate,
+				lastExtensionReason: extending
+					? (input.extensionReason ?? null)
+					: plan.lastExtensionReason,
+				lastExtensionEvidenceReference: extending
+					? (input.extensionEvidenceReference ?? null)
+					: plan.lastExtensionEvidenceReference,
 				version: plan.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
 			state.improvementPlans.set(updated.id, updated);
+
+			const rollback: Array<() => void> = [
+				() => state.improvementPlans.set(previous.id, previous),
+			];
+			if (extending) {
+				const checkpointId = newBrandId(
+					humanResourcesImprovementCheckpointIdSchema,
+				);
+				if (!checkpointId.ok) {
+					state.improvementPlans.set(previous.id, previous);
+					return checkpointId;
+				}
+				const nextSequence =
+					existingCheckpoints.reduce(
+						(max, checkpoint) => Math.max(max, checkpoint.sequenceNumber),
+						0,
+					) + 1;
+				const checkpoint: PerformanceImprovementCheckpoint = {
+					id: checkpointId.data,
+					organizationId: updated.organizationId,
+					planId: updated.id,
+					sequenceNumber: nextSequence,
+					dueDate: nextDueDate,
+					outcome: "pending",
+					notes: null,
+					evidenceReference: null,
+					recordedBy: null,
+					recordedAt: null,
+					createdAt: now,
+					updatedAt: now,
+				};
+				state.checkpoints.set(checkpoint.id, checkpoint);
+				rollback.push(() => state.checkpoints.delete(checkpoint.id));
+			}
 
 			const audit = await recordAudit(ports, meta, {
 				organizationId: updated.organizationId,
@@ -3522,7 +3653,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				action: "UPDATE",
 			});
 			if (!audit.ok) {
-				state.improvementPlans.set(previous.id, previous);
+				for (const undo of rollback) undo();
 				return audit;
 			}
 
@@ -3535,6 +3666,8 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				planId: HumanResourcesImprovementPlanId;
 				expectedVersion: number;
 				actorUserId: string;
+				outcomeReason?: string;
+				outcomeEvidenceReference?: string | null;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
@@ -3559,11 +3692,20 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				return transition;
 			}
 
+			const pendingCheck = assertNoPendingCheckpoints(
+				checkpointsForPlan(state, input.organizationId, input.planId),
+			);
+			if (!pendingCheck.ok) {
+				return pendingCheck;
+			}
+
 			const previous = { ...plan };
 			const now = new Date();
 			const updated: PerformanceImprovementPlan = {
 				...plan,
 				status: "completed",
+				outcomeReason: input.outcomeReason ?? null,
+				outcomeEvidenceReference: input.outcomeEvidenceReference ?? null,
 				version: plan.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -3606,18 +3748,65 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				planId: HumanResourcesImprovementPlanId;
 				expectedVersion: number;
 				actorUserId: string;
+				outcomeReason?: string;
+				outcomeEvidenceReference?: string | null;
 			},
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<PerformanceImprovementPlan>> {
-			return transitionPlanStatus(
-				state,
-				ports,
-				meta,
-				input,
-				"unsuccessful",
-				assertImprovementPlanStatusTransition,
+			const current = getPlan(state, input.organizationId, input.planId);
+			if (!current.ok) {
+				return current;
+			}
+			const plan = current.data;
+			const versionCheck = assertExpectedVersion(
+				plan.version,
+				input.expectedVersion,
 			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const transition = assertImprovementPlanStatusTransition(
+				plan.status,
+				"unsuccessful",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const pendingCheck = assertNoPendingCheckpoints(
+				checkpointsForPlan(state, input.organizationId, input.planId),
+			);
+			if (!pendingCheck.ok) {
+				return pendingCheck;
+			}
+
+			const previous = { ...plan };
+			const now = new Date();
+			const updated: PerformanceImprovementPlan = {
+				...plan,
+				status: "unsuccessful",
+				outcomeReason: input.outcomeReason ?? null,
+				outcomeEvidenceReference: input.outcomeEvidenceReference ?? null,
+				version: plan.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.improvementPlans.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, meta, {
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				entity: "hr_performance_improvement_plan",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.improvementPlans.set(previous.id, previous);
+				return audit;
+			}
+
+			return ok({ ...updated });
 		},
 
 		async cancelImprovementPlan(
@@ -3662,6 +3851,34 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				totalCount,
 				page: input.page,
 				pageSize: input.pageSize,
+			});
+		},
+
+		async listImprovementPlanCheckpoints(input: {
+			organizationId: string;
+			planId: HumanResourcesImprovementPlanId;
+		}): Promise<Result<PerformanceImprovementCheckpointListPage>> {
+			const plan = await this.getImprovementPlanById({
+				organizationId: input.organizationId,
+				planId: input.planId,
+			});
+			if (!plan.ok) {
+				return plan;
+			}
+			if (plan.data === null) {
+				return notFound(
+					"Improvement plan not found",
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				);
+			}
+			const checkpoints = checkpointsForPlan(
+				state,
+				input.organizationId,
+				input.planId,
+			).map((checkpoint) => ({ ...checkpoint }));
+			return ok({
+				checkpoints,
+				totalCount: checkpoints.length,
 			});
 		},
 

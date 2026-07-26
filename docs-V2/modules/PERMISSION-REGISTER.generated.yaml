@@ -52,6 +52,162 @@ permissions:
   - code: accounting.exception.manage
     moduleId: accounting
     namespace: accounting
+  - code: corporate_administration.access
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.company.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.company.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.company.activate
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.company.dissolve
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.establishment.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.governance.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.governance.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.officer.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.meeting.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.resolution.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.authority.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.authority.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.authority.publish
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.seal.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.capital.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.capital.configure
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.capital.post
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.capital.reverse
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.ownership.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.ownership.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.ubo.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.ubo.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.ubo.attest
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.distribution.declare
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.assets.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.assets.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.licence.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.charge.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.banking.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.banking.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.bank_mandate.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.group.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.group.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.related_party.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.agreement.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.corporate_action.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.corporate_action.approve_effect
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.document.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.document.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.register.certify
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.compliance_rule.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.filing.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.filing.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.filing.waive
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.import.prepare
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.import.approve
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.import.apply
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.export
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.reconcile
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.sensitive_export
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.module_admin
+    moduleId: corporate-administration
+    namespace: corporate_administration
   - code: fulfillment.delivery.read
     moduleId: fulfillment
     namespace: fulfillment
@@ -266,6 +422,9 @@ permissions:
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.performance.own.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.goal.own.manage
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.performance.manager.manage

@@ -6,8 +6,8 @@ import {
 } from "@afenda/events/schemas";
 import {
 	type HumanResourcesApplicationId,
-	type HumanResourcesBenefitEnrollmentId,
 	type HumanResourcesBenefitEnrollmentDependentId,
+	type HumanResourcesBenefitEnrollmentId,
 	type HumanResourcesBenefitPlanId,
 	type HumanResourcesCompensationGradeId,
 	type HumanResourcesCompensationGradeProgressionRuleId,
@@ -18,8 +18,8 @@ import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesSalaryBandId,
-	parseHumanResourcesBenefitEnrollmentId,
 	parseHumanResourcesBenefitEnrollmentDependentId,
+	parseHumanResourcesBenefitEnrollmentId,
 	parseHumanResourcesBenefitPlanId,
 	parseHumanResourcesCompensationGradeId,
 	parseHumanResourcesCompensationGradeProgressionRuleId,
@@ -34,6 +34,13 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
+import { buildCreateAuditFact } from "../../shared/audit-facts";
+import {
+	assertBenefitContributionFacts,
+	assertEffectiveRange,
+	isEmployeeEligibleForBenefitPlan,
+	tenureDaysOn,
+} from "../../shared/benefit-guards";
 import {
 	compareMoneyOrder,
 	rangesOverlap,
@@ -42,9 +49,8 @@ import {
 	assertCompensationProposalAmendable,
 	assertCompensationProposalStatusTransition,
 } from "../../shared/compensation-proposal-guards";
-import { assertReviewCycleOpenForMutation } from "../../shared/compensation-review-guards";
-import { buildCreateAuditFact } from "../../shared/audit-facts";
 import { compensationReviewAuditSnapshot } from "../../shared/compensation-review-audit";
+import { assertReviewCycleOpenForMutation } from "../../shared/compensation-review-guards";
 import {
 	isBenefitEnrollmentActive,
 	isBenefitEnrollmentOpen,
@@ -55,14 +61,13 @@ import {
 	isEmployeeCompensationActive,
 	isSalaryBandActive,
 } from "../../shared/compensation-status";
-import {
-	assertBenefitContributionFacts,
-	assertEffectiveRange,
-	isEmployeeEligibleForBenefitPlan,
-	tenureDaysOn,
-} from "../../shared/benefit-guards";
-import { conflict, invalidInput, invalidState, notFound } from "../../shared/domain-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
+import {
+	conflict,
+	invalidInput,
+	invalidState,
+	notFound,
+} from "../../shared/domain-guards";
 import { previousIsoDate } from "../../shared/effective-dates";
 import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
@@ -90,7 +95,6 @@ import type {
 	SalaryBand,
 	SalaryBandListPage,
 } from "../../types";
-import type { CoreMemoryState } from "./core";
 import {
 	createMemoryCompensationReviewCycleMethods,
 	createMemoryReviewLifecycleDeps,
@@ -98,7 +102,7 @@ import {
 	memoryFinalizeCompensationReview,
 	memoryRecordCompensationRecommendation,
 } from "./compensation-review-cycle";
-import type { RecruitmentMemoryState } from "./recruitment";
+import type { CoreMemoryState } from "./core";
 import {
 	memoryActivateEmployeeCompensation,
 	memoryAmendEmployeeCompensation,
@@ -110,6 +114,7 @@ import {
 	memoryNewEmployeeCompensationFromReview,
 	memoryScheduleEmployeeCompensationChange,
 } from "./employee-compensation-lifecycle";
+import type { RecruitmentMemoryState } from "./recruitment";
 import { idempotencyMapKey } from "./shared";
 
 function benefitEligibilityMapKey(
@@ -661,7 +666,9 @@ export function createMemoryCompensationBenefitsMethods(
 					return notFound("No active salary band to supersede");
 				}
 				if (activeBands.length > 1) {
-					return conflict("Ambiguous active salary band for grade and currency");
+					return conflict(
+						"Ambiguous active salary band for grade and currency",
+					);
 				}
 				predecessor = activeBands[0];
 			}
@@ -795,7 +802,10 @@ export function createMemoryCompensationBenefitsMethods(
 				return auditSupersede;
 			}
 
-			return ok({ superseded: { ...supersededBand }, successor: { ...newBand } });
+			return ok({
+				superseded: { ...supersededBand },
+				successor: { ...newBand },
+			});
 		},
 
 		async archiveSalaryBand(
@@ -1136,13 +1146,7 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async createEmployeeCompensation(record, ports, meta) {
-			return memoryCreateEmployeeCompensation(
-				state,
-				core,
-				record,
-				ports,
-				meta,
-			);
+			return memoryCreateEmployeeCompensation(state, core, record, ports, meta);
 		},
 
 		async amendEmployeeCompensation(input, ports, meta) {
@@ -1168,13 +1172,7 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async correctEmployeeCompensation(input, ports, meta) {
-			return memoryCorrectEmployeeCompensation(
-				state,
-				core,
-				input,
-				ports,
-				meta,
-			);
+			return memoryCorrectEmployeeCompensation(state, core, input, ports, meta);
 		},
 
 		async endEmployeeCompensation(input, ports, meta) {
@@ -2682,7 +2680,9 @@ export function createMemoryCompensationBenefitsMethods(
 			organizationId: string;
 			dependentId: HumanResourcesBenefitEnrollmentDependentId;
 		}): Promise<Result<BenefitEnrollmentDependent | null>> {
-			const dependent = state.benefitEnrollmentDependents.get(input.dependentId);
+			const dependent = state.benefitEnrollmentDependents.get(
+				input.dependentId,
+			);
 			if (!dependent || dependent.organizationId !== input.organizationId) {
 				return ok(null);
 			}
@@ -2793,7 +2793,9 @@ export function createMemoryCompensationBenefitsMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<BenefitEnrollmentDependent>> {
-			const dependent = state.benefitEnrollmentDependents.get(input.dependentId);
+			const dependent = state.benefitEnrollmentDependents.get(
+				input.dependentId,
+			);
 			if (!dependent || dependent.organizationId !== input.organizationId) {
 				return notFound(
 					"Benefit enrollment dependent not found",

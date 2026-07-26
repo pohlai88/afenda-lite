@@ -1,13 +1,15 @@
-import {
-	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
-} from "@afenda/events/schemas";
 import { randomUUID } from "node:crypto";
+import { HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import type { MemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import { parseHumanResourcesAssignmentId } from "../src/brands";
 
-import { createAssignment, endAssignment, getAssignmentAsOf } from "../src/core/assignment";
+import {
+	createAssignment,
+	endAssignment,
+	getAssignmentAsOf,
+} from "../src/core/assignment";
 import { resolvePrimaryAssignmentAsOf } from "../src/core/assignment-management";
 import {
 	createEmployee,
@@ -21,13 +23,6 @@ import {
 	getEmploymentAsOf,
 	listEmploymentStatusHistory,
 } from "../src/core/employment";
-import {
-	hireEmployment,
-	reactivateEmployment,
-	rehireEmployment,
-	suspendEmployment,
-	terminateEmployment,
-} from "../src/core/employment-management";
 import {
 	correctEmploymentContract,
 	createEmploymentContract,
@@ -43,6 +38,14 @@ import {
 	renewEmploymentContract,
 } from "../src/core/employment-contract-management";
 import {
+	hireEmployment,
+	reactivateEmployment,
+	rehireEmployment,
+	suspendEmployment,
+	terminateEmployment,
+} from "../src/core/employment-management";
+import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
+import {
 	HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -55,20 +58,19 @@ import {
 	HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
-import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
 import { transferAssignment } from "../src/lifecycle/transfer";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { createPosition } from "../src/organization/position";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { withDefaultAssignmentLineage } from "../src/shared/assignment-lineage-map";
-import {
-	assignEmploymentCalendar,
-	createWorkCalendar,
-} from "../src/time/calendar";
 import {
 	createMemoryHumanResourcesStore,
 	createMemoryOrganizationDimensionDirectory,
 } from "../src/testing";
+import {
+	assignEmploymentCalendar,
+	createWorkCalendar,
+} from "../src/time/calendar";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { createFailingOrganizationDimensionDirectory } from "./helpers/failing-organization-dimension-directory";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -858,7 +860,10 @@ describe("@afenda/human-resources core operations", () => {
 	});
 
 	describe("employment management (Slice 5.4)", () => {
-		async function seedEmployee(ready: ReturnType<typeof harness>, suffix: string) {
+		async function seedEmployee(
+			ready: ReturnType<typeof harness>,
+			suffix: string,
+		) {
 			return createEmployee(
 				{
 					organizationId: ORG_A,
@@ -1223,8 +1228,7 @@ describe("@afenda/human-resources core operations", () => {
 			if (!history.ok) return;
 			expect(
 				history.data.history.some(
-					(row) =>
-						row.changeKind === "create" && row.toStatus === "active",
+					(row) => row.changeKind === "create" && row.toStatus === "active",
 				),
 			).toBe(true);
 			expect(
@@ -3048,7 +3052,12 @@ describe("@afenda/human-resources core operations", () => {
 			});
 			expect(predecessor.ok).toBe(true);
 			expect(successor.ok).toBe(true);
-			if (!predecessor.ok || !successor.ok || !predecessor.data || !successor.data) {
+			if (
+				!predecessor.ok ||
+				!successor.ok ||
+				!predecessor.data ||
+				!successor.data
+			) {
 				return;
 			}
 			expect(predecessor.data.endsOn).toBe("2026-02-28");
@@ -3367,7 +3376,11 @@ describe("@afenda/human-resources core operations", () => {
 			expect(position.ok).toBe(true);
 			if (!position.ok) return null;
 
-			return { employee: employee.data, employment: employment.data, position: position.data };
+			return {
+				employee: employee.data,
+				employment: employment.data,
+				position: position.data,
+			};
 		}
 
 		it("rejects assignment outside employment range", async () => {

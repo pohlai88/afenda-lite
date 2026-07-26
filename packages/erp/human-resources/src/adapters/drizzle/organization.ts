@@ -51,6 +51,20 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
+import {
+	type DepartmentStructureAtAsOf,
+	type DepartmentStructureVersion,
+	findOpenDepartmentStructureVersion,
+	findOpenJobDefinitionVersion,
+	findOpenPositionDefinitionVersion,
+	type JobDefinitionAtAsOf,
+	type JobDefinitionVersion,
+	type PositionDefinitionAtAsOf,
+	type PositionDefinitionVersion,
+	resolveDepartmentStructureAsOf,
+	resolveJobDefinitionAsOf,
+	resolvePositionDefinitionAsOf,
+} from "../../organization/organization-structure-lineage";
 import type { MutationPorts } from "../../ports";
 import { humanResourcesEntityEventPayloadJson } from "../../shared/audit-facts";
 import { assertExpectedVersion } from "../../shared/concurrency";
@@ -95,24 +109,6 @@ import type {
 	PositionCreateRecord,
 	ReportingLineCreateRecord,
 } from "../../store";
-import {
-	findOpenDepartmentStructureVersion,
-	findOpenJobDefinitionVersion,
-	findOpenPositionDefinitionVersion,
-	resolveDepartmentStructureAsOf,
-	resolveJobDefinitionAsOf,
-	resolvePositionDefinitionAsOf,
-	type DepartmentStructureAtAsOf,
-	type DepartmentStructureVersion,
-	type JobDefinitionAtAsOf,
-	type JobDefinitionVersion,
-	type PositionDefinitionAtAsOf,
-	type PositionDefinitionVersion,
-} from "../../organization/organization-structure-lineage";
-import {
-	assertLineageSegmentMutable,
-	validateLineageSegmentEffectiveOn,
-} from "../../workforce-foundation/lineage-segment";
 import type {
 	Department,
 	Job,
@@ -120,6 +116,10 @@ import type {
 	Position,
 	ReportingLine,
 } from "../../types";
+import {
+	assertLineageSegmentMutable,
+	validateLineageSegmentEffectiveOn,
+} from "../../workforce-foundation/lineage-segment";
 
 function mapNullableDepartmentId(
 	value: string | null,
@@ -598,7 +598,10 @@ async function listJobDefinitionVersions(input: {
 		}
 		return ok(versions);
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to list job definition versions");
+		return mapPersistenceFailure(
+			error,
+			"Failed to list job definition versions",
+		);
 	}
 }
 
@@ -995,8 +998,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		);
 		if (!versionCheck.ok) return versionCheck;
 
-		const nextName =
-			input.name !== undefined ? input.name : existing.data.name;
+		const nextName = input.name !== undefined ? input.name : existing.data.name;
 		const nextParent =
 			input.parentDepartmentId !== undefined
 				? input.parentDepartmentId

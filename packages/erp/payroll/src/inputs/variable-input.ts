@@ -15,6 +15,7 @@ import {
 	getPayrollVariableInputInputSchema,
 } from "../schemas/inputs";
 import { buildPayrollCreateFingerprint } from "../shared/create-fingerprint";
+import { isEffectiveOnDate } from "../shared/effective-date";
 import {
 	assertCurrencyAlignment,
 	assertEmployeeEligibleForPayroll,
@@ -22,7 +23,6 @@ import {
 	assertInputBeforeCutoff,
 	requirePayrollEmployeeAtDate,
 } from "../shared/employee-eligibility";
-import { isEffectiveOnDate } from "../shared/effective-date";
 import {
 	runPayrollSetupCommand,
 	runPayrollSetupQuery,

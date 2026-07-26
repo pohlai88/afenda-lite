@@ -81,7 +81,10 @@ export function resolveBiomeNativeBin(
  * @param {string} [platform]
  * @param {string} [arch]
  */
-export function hoistedBiomeLspBinSetting(platform = process.platform, arch = process.arch) {
+export function hoistedBiomeLspBinSetting(
+	platform = process.platform,
+	arch = process.arch,
+) {
 	const key = `${platform}-${arch}`;
 	const spec = BIOME_NATIVE_BY_PLATFORM[key];
 	if (!spec) {

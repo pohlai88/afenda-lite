@@ -5,19 +5,15 @@ import {
 	db,
 	desc,
 	eq,
-	gte,
 	hrBenefitEnrollment,
 	hrBenefitPlan,
 	hrCompensationGrade,
 	hrCompensationGradeProgressionRule,
 	hrCompensationProposal,
 	hrCompensationReview,
-	hrCompensationReviewCycle,
 	hrEmployeeCompensation,
 	hrEmployment,
 	hrSalaryBand,
-	isNull,
-	lte,
 	or,
 	runNeonHttpTransaction,
 } from "@afenda/db";
@@ -48,7 +44,7 @@ import {
 	assertBenefitContributionFacts,
 	assertEffectiveRange,
 } from "../../shared/benefit-guards";
-import { compareMoneyOrder, rangesOverlap } from "../../shared/compensation-money";
+import { compareMoneyOrder } from "../../shared/compensation-money";
 import {
 	assertCompensationProposalAmendable,
 	assertCompensationProposalStatusTransition,
@@ -62,25 +58,20 @@ import {
 import {
 	benefitEnrollmentStatusSchema,
 	benefitPlanStatusSchema,
-	compensationGradeStatusSchema,
 	compensationGradeProgressionRuleStatusSchema,
+	compensationGradeStatusSchema,
 	compensationProposalStatusSchema,
 	compensationReviewStatusSchema,
 	employeeCompensationStatusSchema,
-	isCompensationGradeActive,
-	isCompensationGradeProgressionRuleActive,
-	isCompensationReviewFinalized,
-	isEmployeeCompensationActive,
 	isBenefitEnrollmentActive,
 	isBenefitEnrollmentOpen,
-	isBenefitPlanActive,
+	isCompensationGradeActive,
+	isCompensationReviewFinalized,
 	isSalaryBandActive,
 	payFrequencySchema,
 	salaryBandStatusSchema,
 } from "../../shared/compensation-status";
 import { assertExpectedVersion } from "../../shared/concurrency";
-import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
-
 import {
 	conflict,
 	invalidInput,
@@ -89,6 +80,7 @@ import {
 	notFound,
 } from "../../shared/domain-guards";
 import { previousIsoDate } from "../../shared/effective-dates";
+import { selectUniqueEffectiveRangeRecord } from "../../shared/effective-range";
 import {
 	isEmployeeCompensationAsOfEligible,
 	isEmployeeCompensationCancellable,
@@ -113,6 +105,7 @@ import type {
 } from "../../types";
 import {
 	assertDrizzleBenefitEnrollmentPreconditions,
+	type BenefitEnrollmentSqlRow,
 	drizzleAddBenefitEnrollmentDependent,
 	drizzleEndBenefitEnrollmentDependent,
 	drizzleGetBenefitEnrollmentDependent,
@@ -122,16 +115,15 @@ import {
 	drizzleWaiveBenefit,
 	mapBenefitEnrollmentFromDbRow,
 	mapBenefitEnrollmentSql,
-	type BenefitEnrollmentSqlRow,
 } from "./benefit-methods-drizzle";
+import { drizzleCompensationReviewCycleMethods } from "./compensation-review-cycle-drizzle";
 import {
-	drizzleAmendEmployeeCompensation,
 	drizzleActivateEmployeeCompensation,
+	drizzleAmendEmployeeCompensation,
 	drizzleApproveEmployeeCompensation,
 	drizzleCorrectEmployeeCompensation,
 	drizzleScheduleEmployeeCompensationChange,
 } from "./employee-compensation-lifecycle-drizzle";
-import { drizzleCompensationReviewCycleMethods } from "./compensation-review-cycle-drizzle";
 
 type ReviewBudgetHost = Pick<
 	HumanResourcesStore,
@@ -142,9 +134,11 @@ async function assertDrizzleReviewCycleOpen(
 	organizationId: string,
 	cycleId: CompensationReview["cycleId"],
 ): Promise<Result<true>> {
-	const cycle = await drizzleCompensationReviewCycleMethods.getCompensationReviewCycle(
-		{ organizationId, cycleId },
-	);
+	const cycle =
+		await drizzleCompensationReviewCycleMethods.getCompensationReviewCycle({
+			organizationId,
+			cycleId,
+		});
 	if (!cycle.ok) return cycle;
 	if (cycle.data === null) {
 		return notFound("Compensation review cycle not found");
@@ -479,7 +473,10 @@ function mapSalaryBand(
 		return fail("INTERNAL_ERROR", "Invalid salary band status");
 	}
 	let supersedesSalaryBandId = null as SalaryBand["supersedesSalaryBandId"];
-	if (row.supersedesSalaryBandId !== null && row.supersedesSalaryBandId !== undefined) {
+	if (
+		row.supersedesSalaryBandId !== null &&
+		row.supersedesSalaryBandId !== undefined
+	) {
 		const parsed = parseHumanResourcesSalaryBandId(row.supersedesSalaryBandId);
 		if (!parsed.ok) return parsed;
 		supersedesSalaryBandId = parsed.data;
@@ -542,7 +539,10 @@ function mapEmployeeCompensation(
 	}
 	const payFrequency = payFrequencySchema.safeParse(row.payFrequency);
 	if (!payFrequency.success) {
-		return fail("INTERNAL_ERROR", "Invalid employee compensation pay frequency");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employee compensation pay frequency",
+		);
 	}
 	const status = employeeCompensationStatusSchema.safeParse(row.status);
 	if (!status.success) {
@@ -1344,7 +1344,9 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					return notFound("No active salary band to supersede");
 				}
 				if (rows.length > 1) {
-					return conflict("Ambiguous active salary band for grade and currency");
+					return conflict(
+						"Ambiguous active salary band for grade and currency",
+					);
 				}
 				const activeRow = rows[0];
 				if (!activeRow) {
@@ -1590,7 +1592,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			});
 			return ok(selected);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to resolve salary band as of");
+			return mapPersistenceFailure(
+				error,
+				"Failed to resolve salary band as of",
+			);
 		}
 	},
 
@@ -1605,10 +1610,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							hrCompensationGradeProgressionRule.organizationId,
 							input.organizationId,
 						),
-						eq(
-							hrCompensationGradeProgressionRule.id,
-							input.progressionRuleId,
-						),
+						eq(hrCompensationGradeProgressionRule.id, input.progressionRuleId),
 					),
 				)
 				.limit(1);
@@ -3276,7 +3278,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		try {
 			const openRows = await db
-				.select({ id: hrBenefitEnrollment.id, status: hrBenefitEnrollment.status })
+				.select({
+					id: hrBenefitEnrollment.id,
+					status: hrBenefitEnrollment.status,
+				})
 				.from(hrBenefitEnrollment)
 				.where(
 					and(
@@ -3295,7 +3300,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				);
 			}
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to check benefit enrollments");
+			return mapPersistenceFailure(
+				error,
+				"Failed to check benefit enrollments",
+			);
 		}
 
 		const nextVersion = input.expectedVersion + 1;

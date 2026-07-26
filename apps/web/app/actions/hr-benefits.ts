@@ -1,5 +1,11 @@
 "use server";
 
+import type {
+	BenefitEnrollment,
+	BenefitEnrollmentDependent,
+	BenefitPlan,
+	BenefitPlanEligibility,
+} from "@afenda/human-resources";
 import {
 	addBenefitEnrollmentDependent,
 	archiveBenefitPlan,
@@ -12,12 +18,6 @@ import {
 	setBenefitPlanEligibility,
 	updateBenefitPlan,
 	waiveBenefit,
-} from "@afenda/human-resources";
-import type {
-	BenefitEnrollment,
-	BenefitEnrollmentDependent,
-	BenefitPlan,
-	BenefitPlanEligibility,
 } from "@afenda/human-resources";
 import {
 	addBenefitEnrollmentDependentInputSchema,
@@ -40,9 +40,15 @@ import {
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-const createBenefitPlanActionSchema = hrActionSchema(createBenefitPlanInputSchema);
-const updateBenefitPlanActionSchema = hrActionSchema(updateBenefitPlanInputSchema);
-const archiveBenefitPlanActionSchema = hrActionSchema(archiveBenefitPlanInputSchema);
+const createBenefitPlanActionSchema = hrActionSchema(
+	createBenefitPlanInputSchema,
+);
+const updateBenefitPlanActionSchema = hrActionSchema(
+	updateBenefitPlanInputSchema,
+);
+const archiveBenefitPlanActionSchema = hrActionSchema(
+	archiveBenefitPlanInputSchema,
+);
 const setBenefitPlanEligibilityActionSchema = hrActionSchema(
 	setBenefitPlanEligibilityInputSchema,
 );
@@ -51,7 +57,9 @@ const getBenefitPlanEligibilityActionSchema = hrActionSchema(
 );
 const enrolBenefitActionSchema = hrActionSchema(enrolBenefitInputSchema);
 const waiveBenefitActionSchema = hrActionSchema(waiveBenefitInputSchema);
-const endBenefitEnrollmentActionSchema = hrActionSchema(endBenefitEnrollmentInputSchema);
+const endBenefitEnrollmentActionSchema = hrActionSchema(
+	endBenefitEnrollmentInputSchema,
+);
 const cancelBenefitEnrollmentActionSchema = hrActionSchema(
 	cancelBenefitEnrollmentInputSchema,
 );

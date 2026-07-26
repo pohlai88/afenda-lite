@@ -20,7 +20,7 @@ function isDocumentKind(value: string): value is DocumentKind {
 
 /**
  * Test-only document reference port.
- * Accepts canonical vault://organizations/... refs and legacy vault://{kind}/{id} fixtures.
+ * Enforces the canonical organization-scoped vault reference contract.
  */
 export function createMemoryDocumentReferencePort(): DocumentReferencePort {
 	return {
@@ -91,38 +91,11 @@ export function createMemoryDocumentReferencePort(): DocumentReferencePort {
 				});
 			}
 
-			// Legacy test fixture: vault://{kind}/{id}
-			if (lower.startsWith("vault://")) {
-				const withoutScheme = trimmed.slice("vault://".length);
-				const [kindRaw = "", documentId = ""] = withoutScheme.split("/");
-				const kind: DocumentKind = isDocumentKind(kindRaw) ? kindRaw : "other";
-				if (
-					input.allowedKinds !== undefined &&
-					!input.allowedKinds.includes(kind)
-				) {
-					return fail(
-						"VALIDATION_ERROR",
-						`Document kind "${kind}" is not allowed for this command.`,
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-					);
-				}
-				return ok({
-					reference: trimmed,
-					organizationId: input.organizationId,
-					documentKind: kind,
-					documentId: documentId.length > 0 ? documentId : "legacy",
-					version: null,
-				});
-			}
-
-			// Other non-empty refs (e.g. s3:// in older fixtures) — accept for memory tests
-			return ok({
-				reference: trimmed,
-				organizationId: input.organizationId,
-				documentKind: "other",
-				documentId: "legacy",
-				version: null,
-			});
+			return fail(
+				"VALIDATION_ERROR",
+				"Document reference must match vault://organizations/{organizationId}/{documentKind}/{documentId}.",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			);
 		},
 	};
 }

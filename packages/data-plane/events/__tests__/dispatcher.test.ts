@@ -103,6 +103,7 @@ describe("@afenda/events dispatcher", () => {
 					actorId: "user-actor",
 					correlationId: "corr-hr-replay",
 					operation: "human-resources.employee-document.register",
+					idempotencyKey: "idem-hr-replay",
 				},
 			}),
 		);

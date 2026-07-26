@@ -24,11 +24,11 @@ import type {
 } from "../shared/recruitment-status";
 import type {
 	ApplicationListPage,
+	ApplicationStatusHistory,
 	Candidate,
 	CandidateApplication,
 	CandidateDuplicateMatch,
 	CandidateListPage,
-	ApplicationStatusHistory,
 	EmploymentOffer,
 	Interview,
 	InterviewEvaluation,

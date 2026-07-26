@@ -80,7 +80,7 @@ export async function recordEmployeeCaseAppeal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
 				}),
 			);
 		},
@@ -108,7 +108,7 @@ export async function resolveEmployeeCaseAppeal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
 				}),
 			),
 	});

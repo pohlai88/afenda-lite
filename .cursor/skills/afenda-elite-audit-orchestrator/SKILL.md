@@ -138,7 +138,7 @@ The repo is deliberately docs-first; without these controls the orchestrator man
 - **Forward-recorded work is not a gap.** If a farm `completeness.md` marks a slice `Recorded (forward)` / `Intentional` / `Draft — not Living SSOT`, report it as **Observation**, not Missing.
 - **Absent-by-design is not missing.** Trees listed "Absent by design" in AGENTS.md / ARCH-028 (root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, playground) must never be reported as implementation gaps.
 - **Docs-first vs Target.** Logical `modules/*` paths in farm companions are Target shape; on this checkout physical home is under `apps/web/**`. Do not flag logical-vs-physical as drift.
-- **Gated scripts are not failures.** `collapse-script-unavailable` scripts are inventory, not live controls → **Unevaluated**, and they push coverage to **Incomplete**.
+- **Removed scripts are not controls.** Collapse-era command aliases are absent from `package.json`; do not count or execute historical command names.
 - **Closed/Draft lifecycle.** A `Closed`/`Draft` controlled doc that under-claims is not a gap; readiness is a separate axis from lifecycle.
 
 ## Evidence-gathering rule — precise patterns (mandatory)

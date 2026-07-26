@@ -24,7 +24,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project payments",
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project payments",
 		"check": "pnpm typecheck && pnpm test",
 		"reconcile": "tsx src/reconcile-cli.ts"
 	},

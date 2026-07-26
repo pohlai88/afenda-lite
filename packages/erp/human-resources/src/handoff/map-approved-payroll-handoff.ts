@@ -1,3 +1,4 @@
+import { fail, ok, type Result } from "@afenda/errors/result";
 import type { ApprovedPayrollHandoff } from "@afenda/events/schemas";
 import {
 	approvedPayrollHandoffSchema,
@@ -5,7 +6,6 @@ import {
 	deriveHandoffDecimalScale,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
 } from "@afenda/events/schemas";
-import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -208,7 +208,6 @@ export function mapApprovedPayrollHandoff(
 		);
 	}
 
-	let components: ApprovedPayrollHandoff["components"];
 	const builtComponents = buildComponents(
 		compensation,
 		input.compensationHandoff.activeBenefitEnrollments,
@@ -216,7 +215,7 @@ export function mapApprovedPayrollHandoff(
 	if (!builtComponents.ok) {
 		return builtComponents;
 	}
-	components = builtComponents.data;
+	const components = builtComponents.data;
 
 	const approvalEvidenceResult = resolveApprovalEvidence({
 		compensation,
@@ -230,7 +229,9 @@ export function mapApprovedPayrollHandoff(
 
 	const leavePolicyVersion = input.leaveHandoffs.reduce<number | undefined>(
 		(max, fact) =>
-			max === undefined ? fact.policyVersion : Math.max(max, fact.policyVersion),
+			max === undefined
+				? fact.policyVersion
+				: Math.max(max, fact.policyVersion),
 		undefined,
 	);
 
@@ -264,9 +265,7 @@ export function mapApprovedPayrollHandoff(
 		overtimeFacts: mapOvertimeFacts(input.timeHandoff),
 		sourceVersion: {
 			compensationVersion: compensation.version,
-			...(leavePolicyVersion !== undefined
-				? { leavePolicyVersion }
-				: {}),
+			...(leavePolicyVersion !== undefined ? { leavePolicyVersion } : {}),
 			...(input.timeHandoff
 				? { timesheetVersion: input.timeHandoff.timesheetVersion }
 				: {}),

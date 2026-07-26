@@ -1,40 +1,39 @@
 "use server";
 
-import {
-	startOffboarding,
-	completeOffboardingTask,
-	recordExitInterview,
-	recordClearance,
-	recordOffboardingAccessRevocation,
-	recordOffboardingPayrollHandoff,
-	completeOffboarding,
-	getOffboardingCase,
-	listOffboardingTasks,
-	getClearanceByOffboardingCase,
-	getOffboardingAccessRevocationByCase,
-	getOffboardingPayrollHandoffByCase,
-} from "@afenda/human-resources";
 import type {
 	Clearance,
-	ExitInterview,
 	OffboardingAccessRevocation,
 	OffboardingCase,
 	OffboardingPayrollHandoff,
 	OffboardingTask,
 } from "@afenda/human-resources";
 import {
-	startOffboardingInputSchema,
-	completeOffboardingTaskInputSchema,
-	recordExitInterviewInputSchema,
-	recordClearanceInputSchema,
-	recordOffboardingAccessRevocationInputSchema,
-	recordOffboardingPayrollHandoffInputSchema,
+	completeOffboarding,
+	completeOffboardingTask,
+	getClearanceByOffboardingCase,
+	getOffboardingAccessRevocationByCase,
+	getOffboardingCase,
+	getOffboardingPayrollHandoffByCase,
+	listOffboardingTasks,
+	recordClearance,
+	recordExitInterview,
+	recordOffboardingAccessRevocation,
+	recordOffboardingPayrollHandoff,
+	startOffboarding,
+} from "@afenda/human-resources";
+import {
 	completeOffboardingInputSchema,
-	getOffboardingCaseInputSchema,
-	listOffboardingTasksInputSchema,
+	completeOffboardingTaskInputSchema,
 	getClearanceByOffboardingCaseInputSchema,
 	getOffboardingAccessRevocationByCaseInputSchema,
-	getOffboardingPayrollHandoffByCaseInputSchema
+	getOffboardingCaseInputSchema,
+	getOffboardingPayrollHandoffByCaseInputSchema,
+	listOffboardingTasksInputSchema,
+	recordClearanceInputSchema,
+	recordExitInterviewInputSchema,
+	recordOffboardingAccessRevocationInputSchema,
+	recordOffboardingPayrollHandoffInputSchema,
+	startOffboardingInputSchema,
 } from "@afenda/human-resources/schemas";
 
 import {
@@ -50,10 +49,13 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
+const startOffboardingActionSchema = hrActionSchema(
+	startOffboardingInputSchema,
+);
 
-const startOffboardingActionSchema = hrActionSchema(startOffboardingInputSchema);
-
-export async function startOffboardingAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function startOffboardingAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "startOffboardingAction",
 		permission: "human-resources.offboarding.manage",
@@ -78,10 +80,13 @@ export async function startOffboardingAction(input: unknown): Promise<ActionResu
 	});
 }
 
+const completeOffboardingTaskActionSchema = hrActionSchema(
+	completeOffboardingTaskInputSchema,
+);
 
-const completeOffboardingTaskActionSchema = hrActionSchema(completeOffboardingTaskInputSchema);
-
-export async function completeOffboardingTaskAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function completeOffboardingTaskAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "completeOffboardingTaskAction",
 		permission: "human-resources.offboarding.manage",
@@ -106,10 +111,13 @@ export async function completeOffboardingTaskAction(input: unknown): Promise<Act
 	});
 }
 
+const recordExitInterviewActionSchema = hrActionSchema(
+	recordExitInterviewInputSchema,
+);
 
-const recordExitInterviewActionSchema = hrActionSchema(recordExitInterviewInputSchema);
-
-export async function recordExitInterviewAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function recordExitInterviewAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordExitInterviewAction",
 		permission: "human-resources.offboarding.manage",
@@ -134,10 +142,11 @@ export async function recordExitInterviewAction(input: unknown): Promise<ActionR
 	});
 }
 
-
 const recordClearanceActionSchema = hrActionSchema(recordClearanceInputSchema);
 
-export async function recordClearanceAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function recordClearanceAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordClearanceAction",
 		permission: "human-resources.offboarding.manage",
@@ -162,16 +171,22 @@ export async function recordClearanceAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const recordOffboardingAccessRevocationActionSchema = hrActionSchema(
+	recordOffboardingAccessRevocationInputSchema,
+);
 
-const recordOffboardingAccessRevocationActionSchema = hrActionSchema(recordOffboardingAccessRevocationInputSchema);
-
-export async function recordOffboardingAccessRevocationAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function recordOffboardingAccessRevocationAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordOffboardingAccessRevocationAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not record offboarding access revocation.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(recordOffboardingAccessRevocationActionSchema, input);
+			const parsed = parseSchema(
+				recordOffboardingAccessRevocationActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -190,16 +205,22 @@ export async function recordOffboardingAccessRevocationAction(input: unknown): P
 	});
 }
 
+const recordOffboardingPayrollHandoffActionSchema = hrActionSchema(
+	recordOffboardingPayrollHandoffInputSchema,
+);
 
-const recordOffboardingPayrollHandoffActionSchema = hrActionSchema(recordOffboardingPayrollHandoffInputSchema);
-
-export async function recordOffboardingPayrollHandoffAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function recordOffboardingPayrollHandoffAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "recordOffboardingPayrollHandoffAction",
 		permission: "human-resources.offboarding.manage",
 		safeMessage: "Could not record offboarding payroll handoff.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(recordOffboardingPayrollHandoffActionSchema, input);
+			const parsed = parseSchema(
+				recordOffboardingPayrollHandoffActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -218,10 +239,13 @@ export async function recordOffboardingPayrollHandoffAction(input: unknown): Pro
 	});
 }
 
+const completeOffboardingActionSchema = hrActionSchema(
+	completeOffboardingInputSchema,
+);
 
-const completeOffboardingActionSchema = hrActionSchema(completeOffboardingInputSchema);
-
-export async function completeOffboardingAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
+export async function completeOffboardingAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase }>> {
 	return runOperatorPermissionAction({
 		path: "completeOffboardingAction",
 		permission: "human-resources.offboarding.manage",
@@ -246,10 +270,13 @@ export async function completeOffboardingAction(input: unknown): Promise<ActionR
 	});
 }
 
+const getOffboardingCaseActionSchema = hrActionSchema(
+	getOffboardingCaseInputSchema,
+);
 
-const getOffboardingCaseActionSchema = hrActionSchema(getOffboardingCaseInputSchema);
-
-export async function getOffboardingCaseAction(input: unknown): Promise<ActionResult<{ offboardingCase: OffboardingCase | null }>> {
+export async function getOffboardingCaseAction(
+	input: unknown,
+): Promise<ActionResult<{ offboardingCase: OffboardingCase | null }>> {
 	return runOperatorPermissionAction({
 		path: "getOffboardingCaseAction",
 		permission: "human-resources.employee.read",
@@ -274,10 +301,13 @@ export async function getOffboardingCaseAction(input: unknown): Promise<ActionRe
 	});
 }
 
+const listOffboardingTasksActionSchema = hrActionSchema(
+	listOffboardingTasksInputSchema,
+);
 
-const listOffboardingTasksActionSchema = hrActionSchema(listOffboardingTasksInputSchema);
-
-export async function listOffboardingTasksAction(input: unknown): Promise<ActionResult<{ tasks: OffboardingTask[] }>> {
+export async function listOffboardingTasksAction(
+	input: unknown,
+): Promise<ActionResult<{ tasks: OffboardingTask[] }>> {
 	return runOperatorPermissionAction({
 		path: "listOffboardingTasksAction",
 		permission: "human-resources.employee.read",
@@ -302,16 +332,22 @@ export async function listOffboardingTasksAction(input: unknown): Promise<Action
 	});
 }
 
+const getClearanceByOffboardingCaseActionSchema = hrActionSchema(
+	getClearanceByOffboardingCaseInputSchema,
+);
 
-const getClearanceByOffboardingCaseActionSchema = hrActionSchema(getClearanceByOffboardingCaseInputSchema);
-
-export async function getClearanceByOffboardingCaseAction(input: unknown): Promise<ActionResult<{ clearance: Clearance | null }>> {
+export async function getClearanceByOffboardingCaseAction(
+	input: unknown,
+): Promise<ActionResult<{ clearance: Clearance | null }>> {
 	return runOperatorPermissionAction({
 		path: "getClearanceByOffboardingCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get clearance.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(getClearanceByOffboardingCaseActionSchema, input);
+			const parsed = parseSchema(
+				getClearanceByOffboardingCaseActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -330,16 +366,24 @@ export async function getClearanceByOffboardingCaseAction(input: unknown): Promi
 	});
 }
 
+const getOffboardingAccessRevocationByCaseActionSchema = hrActionSchema(
+	getOffboardingAccessRevocationByCaseInputSchema,
+);
 
-const getOffboardingAccessRevocationByCaseActionSchema = hrActionSchema(getOffboardingAccessRevocationByCaseInputSchema);
-
-export async function getOffboardingAccessRevocationByCaseAction(input: unknown): Promise<ActionResult<{ accessRevocation: OffboardingAccessRevocation | null }>> {
+export async function getOffboardingAccessRevocationByCaseAction(
+	input: unknown,
+): Promise<
+	ActionResult<{ accessRevocation: OffboardingAccessRevocation | null }>
+> {
 	return runOperatorPermissionAction({
 		path: "getOffboardingAccessRevocationByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get offboarding access revocation.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(getOffboardingAccessRevocationByCaseActionSchema, input);
+			const parsed = parseSchema(
+				getOffboardingAccessRevocationByCaseActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -358,16 +402,22 @@ export async function getOffboardingAccessRevocationByCaseAction(input: unknown)
 	});
 }
 
+const getOffboardingPayrollHandoffByCaseActionSchema = hrActionSchema(
+	getOffboardingPayrollHandoffByCaseInputSchema,
+);
 
-const getOffboardingPayrollHandoffByCaseActionSchema = hrActionSchema(getOffboardingPayrollHandoffByCaseInputSchema);
-
-export async function getOffboardingPayrollHandoffByCaseAction(input: unknown): Promise<ActionResult<{ payrollHandoff: OffboardingPayrollHandoff | null }>> {
+export async function getOffboardingPayrollHandoffByCaseAction(
+	input: unknown,
+): Promise<ActionResult<{ payrollHandoff: OffboardingPayrollHandoff | null }>> {
 	return runOperatorPermissionAction({
 		path: "getOffboardingPayrollHandoffByCaseAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not get offboarding payroll handoff.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(getOffboardingPayrollHandoffByCaseActionSchema, input);
+			const parsed = parseSchema(
+				getOffboardingPayrollHandoffByCaseActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",

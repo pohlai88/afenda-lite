@@ -24,7 +24,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project admin"
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project admin"
 	},
 	"dependencies": {
 		"@afenda/auth": "workspace:*",

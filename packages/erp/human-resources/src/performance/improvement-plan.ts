@@ -15,13 +15,17 @@ import {
 	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
 	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_GET,
 	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_ACTIVE,
+	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_CHECKPOINTS,
 } from "../module-ids";
 import {
 	amendImprovementPlanInputSchema,
+	closeImprovementPlanUnsuccessfulInputSchema,
+	completeImprovementPlanInputSchema,
 	createImprovementPlanInputSchema,
 	getImprovementPlanByIdInputSchema,
 	improvementPlanStatusTransitionInputSchema,
 	listActiveImprovementPlansInputSchema,
+	listImprovementPlanCheckpointsInputSchema,
 	recordImprovementCheckpointInputSchema,
 } from "../schemas/performance";
 import { fingerprintImprovementPlanCreate } from "../shared/fingerprint";
@@ -30,8 +34,10 @@ import {
 	runPerformanceCommand,
 	runPerformanceQuery,
 } from "../shared/performance-command";
+import { assertImprovementPlanMilestones } from "../shared/performance-guards";
 import type {
 	PerformanceImprovementCheckpoint,
+	PerformanceImprovementCheckpointListPage,
 	PerformanceImprovementPlan,
 	PerformanceImprovementPlanListPage,
 } from "../types";
@@ -40,6 +46,21 @@ export const HUMAN_RESOURCES_AGGREGATE_IMPROVEMENT_PLAN =
 	"improvement-plan" as const;
 export type HumanResourcesImprovementPlanAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_IMPROVEMENT_PLAN;
+
+function resolveImprovementPlanMilestones(input: {
+	dueDate: string;
+	milestones?: Array<{ dueDate: string }>;
+}): Result<Array<{ dueDate: string }>> {
+	const milestones = input.milestones ?? [{ dueDate: input.dueDate }];
+	const validation = assertImprovementPlanMilestones({
+		planDueDate: input.dueDate,
+		milestones,
+	});
+	if (!validation.ok) {
+		return validation;
+	}
+	return ok(milestones);
+}
 
 export async function createImprovementPlan(
 	input: unknown,
@@ -50,11 +71,20 @@ export async function createImprovementPlan(
 		invalidMessage: "Invalid improvement plan create input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
 		execute: async (data, { store, ports }) => {
+			const milestones = resolveImprovementPlanMilestones({
+				dueDate: data.dueDate,
+				milestones: data.milestones,
+			});
+			if (!milestones.ok) {
+				return milestones;
+			}
+
 			const requestFingerprint = fingerprintImprovementPlanCreate({
 				reviewId: data.reviewId,
 				employeeId: data.employeeId,
 				employmentId: data.employmentId,
 				dueDate: data.dueDate,
+				milestones: milestones.data,
 			});
 
 			const existingByKey = await store.findImprovementPlanByIdempotencyKey({
@@ -88,6 +118,7 @@ export async function createImprovementPlan(
 					measurableActions: data.measurableActions,
 					supportResources: data.supportResources,
 					dueDate: data.dueDate,
+					milestones: milestones.data,
 					accountableManagerEmployeeId: data.accountableManagerEmployeeId,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
@@ -96,7 +127,7 @@ export async function createImprovementPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
 				}),
 			);
 		},
@@ -122,7 +153,7 @@ export async function openImprovementPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
 				}),
 			),
 	});
@@ -147,7 +178,7 @@ export async function acknowledgeImprovementPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE,
+					operationId: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE,
 				}),
 			),
 	});
@@ -169,12 +200,14 @@ export async function recordImprovementCheckpoint(
 					sequenceNumber: data.sequenceNumber,
 					outcome: data.outcome,
 					notes: data.notes ?? null,
+					evidenceReference: data.evidenceReference ?? null,
 					actorUserId: data.actorUserId,
 				},
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
 				}),
 			),
 	});
@@ -193,16 +226,20 @@ export async function amendImprovementPlan(
 				{
 					organizationId: data.organizationId,
 					planId: data.planId,
+					performanceGap: data.performanceGap,
+					expectedOutcome: data.expectedOutcome,
 					measurableActions: data.measurableActions,
 					supportResources: data.supportResources,
 					dueDate: data.dueDate,
+					extensionReason: data.extensionReason,
+					extensionEvidenceReference: data.extensionEvidenceReference ?? null,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND,
+					operationId: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND,
 				}),
 			),
 	});
@@ -213,7 +250,7 @@ export async function completeImprovementPlan(
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
 	return runPerformanceCommand(input, options, {
-		schema: improvementPlanStatusTransitionInputSchema,
+		schema: completeImprovementPlanInputSchema,
 		invalidMessage: "Invalid improvement plan complete input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
 		execute: (data, { store, ports }) =>
@@ -223,11 +260,13 @@ export async function completeImprovementPlan(
 					planId: data.planId,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
+					outcomeReason: data.outcomeReason,
+					outcomeEvidenceReference: data.outcomeEvidenceReference ?? null,
 				},
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
+					operationId: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
 				}),
 			),
 	});
@@ -238,7 +277,7 @@ export async function closeImprovementPlanUnsuccessful(
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
 	return runPerformanceCommand(input, options, {
-		schema: improvementPlanStatusTransitionInputSchema,
+		schema: closeImprovementPlanUnsuccessfulInputSchema,
 		invalidMessage: "Invalid improvement plan close unsuccessful input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL,
 		execute: (data, { store, ports }) =>
@@ -248,11 +287,13 @@ export async function closeImprovementPlanUnsuccessful(
 					planId: data.planId,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
+					outcomeReason: data.outcomeReason,
+					outcomeEvidenceReference: data.outcomeEvidenceReference ?? null,
 				},
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL,
 				}),
 			),
@@ -278,7 +319,7 @@ export async function cancelImprovementPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL,
+					operationId: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL,
 				}),
 			),
 	});
@@ -313,6 +354,22 @@ export async function listActiveImprovementPlans(
 				organizationId: data.organizationId,
 				page: data.page ?? 1,
 				pageSize: data.pageSize ?? 20,
+			}),
+	});
+}
+
+export async function listImprovementPlanCheckpoints(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceImprovementCheckpointListPage>> {
+	return runPerformanceQuery(input, options, {
+		schema: listImprovementPlanCheckpointsInputSchema,
+		invalidMessage: "Invalid improvement plan checkpoints list input",
+		query: HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_CHECKPOINTS,
+		execute: (data, { store }) =>
+			store.listImprovementPlanCheckpoints({
+				organizationId: data.organizationId,
+				planId: data.planId,
 			}),
 	});
 }

@@ -65,6 +65,7 @@ export {
 	INVENTORY_PERMISSION_RESERVATION_CREATE,
 	INVENTORY_PERMISSION_RESERVATION_RELEASE,
 } from "./permissions";
+export { reconcileInventory } from "./reconcile";
 export {
 	addStockMovementLineInputSchema,
 	cancelReservationInputSchema,
@@ -97,10 +98,10 @@ export type {
 export { reservationTerminalEventType } from "./store";
 export {
 	INVENTORY_MOVEMENT_SOURCES,
+	type InventoryMovementSource,
 	STOCK_MOVEMENT_STATUSES,
 	STOCK_MOVEMENT_TYPES,
 	STOCK_RESERVATION_STATUSES,
-	type InventoryMovementSource,
 	type StockAvailability,
 	type StockBalance,
 	type StockLedgerEntry,
@@ -111,4 +112,3 @@ export {
 	type StockReservation,
 	type StockReservationStatus,
 } from "./types";
-export { reconcileInventory } from "./reconcile";

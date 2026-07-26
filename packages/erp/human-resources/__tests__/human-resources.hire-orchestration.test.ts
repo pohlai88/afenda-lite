@@ -13,21 +13,26 @@ import {
 } from "../src/error-codes";
 import { hireFromAcceptedOffer } from "../src/hire-orchestration/hire-from-accepted-offer";
 import { hireStepIdempotencyKey } from "../src/hire-orchestration/types";
-import { getOnboardingCase, listOnboardingTasks } from "../src/lifecycle/onboarding";
+import {
+	getOnboardingCase,
+	listOnboardingTasks,
+} from "../src/lifecycle/onboarding";
 import { GOVERNED_ONBOARDING_CHECKLIST } from "../src/lifecycle/onboarding-checklist";
 import { HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER } from "../src/module-ids";
+import { createPosition } from "../src/organization/position";
 import {
 	createApplication,
 	moveApplicationToInReview,
 } from "../src/recruitment/application";
 import { createCandidate } from "../src/recruitment/candidate";
 import { acceptOffer } from "../src/recruitment/offer";
-import { createAndIssueOffer } from "./helpers/offer-lifecycle-fixture";
-import { createPosition } from "../src/organization/position";
 import { fingerprintHireFromAcceptedOffer } from "../src/shared/fingerprint";
 import { buildMutationMeta } from "../src/shared/mutation-meta";
 import { createPerson } from "../src/workforce-foundation/person";
-import { createWorker, getWorkerById } from "../src/workforce-foundation/worker";
+import {
+	createWorker,
+	getWorkerById,
+} from "../src/workforce-foundation/worker";
 import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
@@ -42,6 +47,7 @@ import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { createFailingOrganizationDimensionDirectory } from "./helpers/failing-organization-dimension-directory";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
+import { createAndIssueOffer } from "./helpers/offer-lifecycle-fixture";
 import { seedRequisitionPipeline } from "./helpers/recruitment-requisition-fixture";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
@@ -148,8 +154,7 @@ async function seedAcceptedOfferPipeline(
 	ready: ReturnType<typeof createHrParityHarness>,
 	tag: string,
 ): Promise<
-	| { ok: true; data: AcceptedOfferSeed }
-	| { ok: false; error: { code: string } }
+	{ ok: true; data: AcceptedOfferSeed } | { ok: false; error: { code: string } }
 > {
 	const approved = await approvePlanPipeline(ready, {
 		organizationId: ORG,
@@ -315,7 +320,9 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		expect(hired.data.attempt.status).toBe("completed");
 		expect(hired.data.handoff.offerId).toBe(seeded.data.offerId);
 		expect(hired.data.personId).toBe(hired.data.attempt.personId);
-		expect(hired.data.onboardingCaseId).toBe(hired.data.attempt.onboardingCaseId);
+		expect(hired.data.onboardingCaseId).toBe(
+			hired.data.attempt.onboardingCaseId,
+		);
 
 		const onboarding = await getOnboardingCase(
 			{
@@ -518,7 +525,7 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 
 		const meta = buildMutationMeta({
 			correlationId,
-			operation: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
+			operationId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 		});
 
 		const created = await store.createHireAttempt(

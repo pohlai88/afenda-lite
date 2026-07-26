@@ -15,7 +15,6 @@ import {
 import {
 	compareAttendanceEventsForSession,
 	resolveAttendanceEventSourceSequence,
-	resolveImportRowSourceSequence,
 	sortAttendanceEventsForSession,
 } from "../src/time/attendance/event-order";
 import { listAttendanceEvents } from "../src/time/attendance/events";
@@ -170,10 +169,7 @@ describe("human-resources.time event order", () => {
 			sourceSequence: 0,
 		});
 		const sorted = sortAttendanceEventsForSession([laterId, earlierId]);
-		expect(sorted.map((event) => event.id)).toEqual([
-			earlierId.id,
-			laterId.id,
-		]);
+		expect(sorted.map((event) => event.id)).toEqual([earlierId.id, laterId.id]);
 	});
 
 	it("produces stable session minutes and resolution status across shuffles", () => {

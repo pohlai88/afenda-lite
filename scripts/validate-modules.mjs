@@ -15,13 +15,13 @@ import {
 	loadRoadmapModules,
 	SCHEMA_SYMBOL_TO_TABLE,
 	validateCandidatePackagesAbsent,
+	validateCatalogDiskParity,
 	validateCommandsQueries,
 	validateDeepImports,
 	validateDependencyDag,
 	validateErpAuthorizationPorts,
 	validateEventContracts,
 	validateEvents,
-	validateCatalogDiskParity,
 	validateForeignSchemaImports,
 	validateMetricsImports,
 	validateModuleIdentity,
@@ -30,6 +30,7 @@ import {
 	validateOpenApiImports,
 	validatePermissions,
 	validatePersistenceOwnership,
+	validateSchemaPrefixReservations,
 	validateSoleMutatorBoundary,
 	validateWorkspaceEdges,
 } from "./validate-modules/checks.mjs";
@@ -99,12 +100,11 @@ async function main() {
 
 	const manifests = await loadLivingManifests();
 	const platformCodes = await loadPlatformPermissionCodes();
-	const roadmap = loadRoadmapModules(
-		join(modulesDir, "MODULE-ROADMAP.yaml"),
-	);
+	const roadmap = loadRoadmapModules(join(modulesDir, "MODULE-ROADMAP.yaml"));
 	const knownTables = new Set(Object.values(SCHEMA_SYMBOL_TO_TABLE));
 	const eventsMod = await import(
-		pathToFileURL(join(root, "packages/data-plane/events/src/schemas/index.ts")).href
+		pathToFileURL(join(root, "packages/data-plane/events/src/schemas/index.ts"))
+			.href
 	);
 	const knownEvents = new Set(Object.keys(eventsMod.AllEventSchemas));
 
@@ -137,8 +137,14 @@ async function main() {
 			join(modulesDir, "SCHEMA-OWNERSHIP-MANIFEST.yaml"),
 		),
 	);
+	errors.push(
+		...validateSchemaPrefixReservations(
+			manifests,
+			join(modulesDir, "SCHEMA-OWNERSHIP-MANIFEST.yaml"),
+		),
+	);
 	errors.push(...validateCatalogDiskParity(root));
-	errors.push(...validateErpAuthorizationPorts(root));
+	errors.push(...validateErpAuthorizationPorts(root, manifests));
 	errors.push(...validateCandidatePackagesAbsent(root, roadmap));
 
 	const rendered = buildGeneratedRegisters(manifests, modulesDir, { write });
@@ -164,9 +170,7 @@ async function main() {
 	}
 
 	console.log("validate:modules OK");
-	console.log(
-		` manifests: ${manifests.map((m) => m.id).join(", ")}`,
-	);
+	console.log(` manifests: ${manifests.map((m) => m.id).join(", ")}`);
 	console.log(
 		` generated registers: ${Object.keys(rendered).length} files${write ? " (written)" : " (matched)"}`,
 	);

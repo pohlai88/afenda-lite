@@ -40,7 +40,10 @@ import type { Employment, EmploymentContract } from "../types";
 
 async function loadEmploymentForContract(
 	store: HumanResourcesCoreStore,
-	data: { organizationId: string; employmentId: EmploymentContract["employmentId"] },
+	data: {
+		organizationId: string;
+		employmentId: EmploymentContract["employmentId"];
+	},
 ): Promise<Result<Employment>> {
 	const employment = await store.getEmploymentById({
 		organizationId: data.organizationId,
@@ -194,7 +197,7 @@ export async function createEmploymentContract(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
 				}),
 			);
 		},
@@ -273,7 +276,7 @@ export async function correctEmploymentContract(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
 				}),
 			);
 		},
@@ -283,7 +286,9 @@ export async function correctEmploymentContract(
 export async function supersedeEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<{ superseded: EmploymentContract; successor: EmploymentContract }>> {
+): Promise<
+	Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
+> {
 	return runCoreCommand(input, options, {
 		schema: supersedeEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract supersede input",
@@ -397,7 +402,7 @@ export async function supersedeEmploymentContract(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
 				}),
 			);
 		},
@@ -453,7 +458,7 @@ export async function endEmploymentContract(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
 				}),
 			);
 		},

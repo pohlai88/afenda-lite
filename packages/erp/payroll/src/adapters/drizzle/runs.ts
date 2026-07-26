@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, db, eq, payrollException, payrollRun } from "@afenda/db";
 import type { Change } from "@afenda/audit";
+import { and, db, eq, payrollException, payrollRun } from "@afenda/db";
 import { ok, type Result } from "@afenda/errors/result";
 
 import {
@@ -11,6 +11,7 @@ import {
 	parsePayrollRunId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	isCreateIdempotencyUniqueViolation,
@@ -20,7 +21,6 @@ import {
 	mapNotFound,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
-import { assertPayrollRunTransition } from "../../runs/transitions";
 import type { PayrollRunsStore } from "../../store/runs";
 import type {
 	IdempotentPayrollRunRecord,

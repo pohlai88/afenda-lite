@@ -3,8 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * Docs-first checkout: only run gates whose scripts exist on disk.
- * Collapse-era product/ops gates are absent by design (ARCH-028 anti-contamination).
+ * Run only forward gates whose executable scripts and required surfaces exist on disk.
  */
 const preferred = [
 	"check:docs-naming",
@@ -21,7 +20,6 @@ function scriptExists(scriptName) {
 	const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 	const cmd = pkg.scripts?.[scriptName];
 	if (!cmd) return false;
-	if (String(cmd).includes("collapse-script-unavailable.mjs")) return false;
 	// Living docs/ removed (cutover 71176a0) — Scratch docs-V2; skip Living gates.
 	if (
 		(scriptName === "check:docs-naming" ||
@@ -71,9 +69,7 @@ async function main() {
 		process.exit(1);
 	}
 	await Promise.all(checks.map((script) => runCheck(script)));
-	console.log(
-		`checks OK (${checks.length} docs-capable gates; Collapse-era product gates skipped per ARCH-028)`,
-	);
+	console.log(`checks OK (${checks.length} executable forward gates)`);
 }
 
 main().catch((error) => {

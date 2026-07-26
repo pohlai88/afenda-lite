@@ -221,7 +221,9 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/list-sales-invoices.ts": ["receivables.invoice.read"],
 			"app/actions/get-customer-balance.ts": ["receivables.balance.read"],
 			"app/actions/get-customer-aging.ts": ["receivables.aging.read"],
-			"app/actions/create-draft-sales-invoice.ts": ["receivables.invoice.create"],
+			"app/actions/create-draft-sales-invoice.ts": [
+				"receivables.invoice.create",
+			],
 			"app/actions/add-sales-invoice-line.ts": ["receivables.invoice.update"],
 			"app/actions/post-sales-invoice.ts": ["receivables.invoice.post"],
 			"app/actions/issue-credit-note.ts": ["receivables.credit_note.issue"],
@@ -244,21 +246,28 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/post-supplier-credit-note.ts": ["payables.manage"],
 			"app/actions/apply-supplier-credit.ts": ["payables.manage"],
 			"app/actions/apply-supplier-payment.ts": ["payables.manage"],
-			"app/actions/reverse-supplier-payment-application.ts": ["payables.manage"],
+			"app/actions/reverse-supplier-payment-application.ts": [
+				"payables.manage",
+			],
 			"app/actions/cancel-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/get-payment.ts": ["payments.payment.read"],
 			"app/actions/list-payments.ts": ["payments.payment.read"],
 			"app/actions/create-draft-payment.ts": ["payments.payment.create"],
 			"app/actions/create-payment-account.ts": ["payments.account.manage"],
 			"app/actions/list-payment-accounts.ts": ["payments.account.read"],
-			"app/actions/add-payment-application-instruction.ts": ["payments.application_instruction.manage"],
+			"app/actions/add-payment-application-instruction.ts": [
+				"payments.application_instruction.manage",
+			],
 			"app/actions/create-and-post-payment-transfer.ts": [
 				"payments.transfer.create",
 				"payments.transfer.post",
 			],
 			"app/actions/post-payment.ts": ["payments.payment.post"],
 			"app/actions/reverse-payment.ts": ["payments.payment.reverse"],
-			"app/actions/post-refund.ts": ["payments.refund.create", "payments.refund.post"],
+			"app/actions/post-refund.ts": [
+				"payments.refund.create",
+				"payments.refund.post",
+			],
 			"app/actions/get-payment-application-availability.ts": [
 				"payments.availability.read",
 			],
@@ -274,9 +283,7 @@ describe("N11 product authorization wiring", () => {
 				"accounting.period.soft_close",
 			],
 			"app/actions/close-accounting-period.ts": ["accounting.period.close"],
-			"app/actions/reopen-accounting-period.ts": [
-				"accounting.period.reopen",
-			],
+			"app/actions/reopen-accounting-period.ts": ["accounting.period.reopen"],
 			"features/org-admin/org-admin-shell.tsx": [
 				"org.roles.manage",
 				"clients.invite",

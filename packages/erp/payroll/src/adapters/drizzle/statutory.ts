@@ -1,10 +1,4 @@
-import {
-	and,
-	db,
-	eq,
-	payrollRun,
-	payrollStatutoryResult,
-} from "@afenda/db";
+import { and, db, eq, payrollRun, payrollStatutoryResult } from "@afenda/db";
 import { ok, type Result } from "@afenda/errors/result";
 
 import {

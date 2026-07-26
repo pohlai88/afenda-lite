@@ -116,6 +116,7 @@ export function assertAssessmentInputValid(input: {
 	evidenceSource: string;
 	level: number;
 	effectiveOn: string;
+	expiresOn: string | null;
 	todayDate: string;
 }): Result<void> {
 	const competencyActive = assertCompetencyActive(input.competencyStatus);
@@ -138,6 +139,18 @@ export function assertAssessmentInputValid(input: {
 	}
 	if (input.effectiveOn > input.todayDate) {
 		return invalidInput("Assessment effective date cannot be in the future");
+	}
+	if (input.expiresOn !== null && input.expiresOn <= input.effectiveOn) {
+		return invalidInput("Assessment expiry date must be after effective date");
+	}
+	return ok(undefined);
+}
+
+export function assertAssessmentCanExpire(
+	status: CompetencyAssessmentStatus,
+): Result<void> {
+	if (status !== "current") {
+		return invalidState("Can only expire current competency assessments");
 	}
 	return ok(undefined);
 }
@@ -186,6 +199,41 @@ export function assertProfileAssessmentConfirmable(
 ): Result<void> {
 	if (status !== "draft") {
 		return invalidState("Only a draft assessment can be confirmed");
+	}
+	return ok(undefined);
+}
+
+export function assertTalentProfileMobilityRecordable(input: {
+	evidenceSummary: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+}): Result<void> {
+	if (input.evidenceSummary.trim().length === 0) {
+		return invalidInput("Talent profile mobility requires evidence summary");
+	}
+	if (input.effectiveTo !== null && input.effectiveTo < input.effectiveFrom) {
+		return invalidInput(
+			"Mobility effectiveTo must be on or after effectiveFrom",
+		);
+	}
+	return ok(undefined);
+}
+
+export function assertCriticalRoleReadinessRecordable(input: {
+	evidenceSummary: string;
+	assessorUserId: string;
+	readinessEffectiveOn: string;
+}): Result<void> {
+	if (input.evidenceSummary.trim().length === 0) {
+		return invalidInput("Critical role readiness requires evidence summary");
+	}
+	if (input.assessorUserId.trim().length === 0) {
+		return invalidInput("Critical role readiness requires an assessor");
+	}
+	if (input.readinessEffectiveOn > new Date().toISOString().slice(0, 10)) {
+		return invalidInput(
+			"Critical role readiness effective date cannot be in the future",
+		);
 	}
 	return ok(undefined);
 }

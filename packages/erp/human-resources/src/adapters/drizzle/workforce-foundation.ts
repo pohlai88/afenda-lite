@@ -26,18 +26,19 @@ import {
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 } from "@afenda/events/schemas";
 import {
-	parseHumanResourcesEmployeeId,
-	parseHumanResourcesPersonId,
-	parseHumanResourcesWorkerId,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesPersonId,
 	type HumanResourcesWorkerId,
+	parseHumanResourcesEmployeeId,
+	parseHumanResourcesPersonId,
+	parseHumanResourcesWorkerId,
 } from "../../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
+import type { HumanResourcesRetentionClassification } from "../../privacy";
 import {
 	eventPayloadJson,
 	fieldChangeJson,
@@ -59,7 +60,6 @@ import {
 	validateLineageSegmentEffectiveOn,
 } from "../../workforce-foundation/lineage-segment";
 import { resolvePersonIdentityAsOf } from "../../workforce-foundation/person-identity-lineage";
-import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
 import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
@@ -74,7 +74,7 @@ import type {
 	WorkerClassificationAtAsOf,
 	WorkerClassificationVersion,
 } from "../../workforce-foundation/types";
-import type { HumanResourcesRetentionClassification } from "../../privacy";
+import { resolveWorkerClassificationAsOf } from "../../workforce-foundation/worker-classification-lineage";
 
 type PersonSqlRow = {
 	id: string;
@@ -232,7 +232,10 @@ function mapWorkerClassificationVersionRow(
 		row.worker_type !== "contingent_worker" &&
 		row.worker_type !== "intern"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid worker type in classification storage");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid worker type in classification storage",
+		);
 	}
 	return ok({
 		id: row.id,
@@ -240,7 +243,8 @@ function mapWorkerClassificationVersionRow(
 		workerId: workerId.data,
 		workerType: row.worker_type,
 		employeeId: employeeId === null ? null : employeeId.data,
-		workerStatus: row.worker_status as WorkerClassificationVersion["workerStatus"],
+		workerStatus:
+			row.worker_status as WorkerClassificationVersion["workerStatus"],
 		effectiveFrom: row.effective_from,
 		effectiveTo: row.effective_to,
 		supersedesClassificationVersionId: row.supersedes_classification_version_id,
@@ -521,7 +525,10 @@ async function updatePersonScalarFieldDrizzle(input: {
 		}
 		return mapPersonRow(row);
 	} catch (error) {
-		return mapPersistenceFailure(error, "Workforce foundation persistence failed");
+		return mapPersistenceFailure(
+			error,
+			"Workforce foundation persistence failed",
+		);
 	}
 }
 
@@ -985,7 +992,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async updatePersonPreferredName(input, _ports, meta): Promise<Result<Person>> {
+		async updatePersonPreferredName(
+			input,
+			_ports,
+			meta,
+		): Promise<Result<Person>> {
 			return updatePersonScalarFieldDrizzle({
 				organizationId: input.organizationId,
 				personId: input.personId,
@@ -1033,7 +1044,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				const mapped = mapPersonContactRow(row as unknown as PersonContactSqlRow);
+				const mapped = mapPersonContactRow(
+					row as unknown as PersonContactSqlRow,
+				);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -1049,7 +1062,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async addPersonContact(record, _ports, meta): Promise<Result<PersonContact>> {
+		async addPersonContact(
+			record,
+			_ports,
+			meta,
+		): Promise<Result<PersonContact>> {
 			const entityId = randomUUID();
 			const auditId = randomUUID();
 			const eventId = randomUUID();
@@ -1106,7 +1123,10 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				);
 				const row = rows[0];
 				if (row === undefined) {
-					return fail("INTERNAL_ERROR", "Person contact create returned no row");
+					return fail(
+						"INTERNAL_ERROR",
+						"Person contact create returned no row",
+					);
 				}
 				return mapPersonContactRow(row);
 			} catch (error) {
@@ -1129,7 +1149,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async updatePersonContact(input, _ports, meta): Promise<Result<PersonContact>> {
+		async updatePersonContact(
+			input,
+			_ports,
+			meta,
+		): Promise<Result<PersonContact>> {
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
@@ -1199,7 +1223,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async retirePersonContact(input, _ports, meta): Promise<Result<PersonContact>> {
+		async retirePersonContact(
+			input,
+			_ports,
+			meta,
+		): Promise<Result<PersonContact>> {
 			const auditId = randomUUID();
 			const eventId = randomUUID();
 			const nextVersion = input.expectedVersion + 1;
@@ -1292,7 +1320,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const contacts: PersonContact[] = [];
 				for (const row of rows) {
-					const mapped = mapPersonContactRow(row as unknown as PersonContactSqlRow);
+					const mapped = mapPersonContactRow(
+						row as unknown as PersonContactSqlRow,
+					);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -1557,11 +1587,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
 					);
 				}
-				const matches = new Map<
-					string,
-					Set<PersonDuplicateMatchReason>
-				>();
-				const addMatch = (personId: string, reason: PersonDuplicateMatchReason) => {
+				const matches = new Map<string, Set<PersonDuplicateMatchReason>>();
+				const addMatch = (
+					personId: string,
+					reason: PersonDuplicateMatchReason,
+				) => {
 					if (personId === input.personId) {
 						return;
 					}
@@ -1626,7 +1656,10 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						.where(
 							and(
 								eq(hrPersonIdentifier.organizationId, input.organizationId),
-								eq(hrPersonIdentifier.identifierType, identifier.identifierType),
+								eq(
+									hrPersonIdentifier.identifierType,
+									identifier.identifierType,
+								),
 								eq(
 									hrPersonIdentifier.identifierFingerprint,
 									identifier.identifierFingerprint,
@@ -1696,7 +1729,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 		},
 
-		async findWorkerAsOf(input): Promise<Result<WorkerClassificationAtAsOf | null>> {
+		async findWorkerAsOf(
+			input,
+		): Promise<Result<WorkerClassificationAtAsOf | null>> {
 			try {
 				const workerResult = await this.getWorkerById({
 					organizationId: input.organizationId,

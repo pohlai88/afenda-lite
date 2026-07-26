@@ -44,5 +44,5 @@ export type PayrollOutputsStore = {
 	): Promise<Result<{ deleted: true }>>;
 };
 
-export type { ReplaceRunCalculationOutputsInput } from "../types";
 export type { PayrollRunId } from "../brands";
+export type { ReplaceRunCalculationOutputsInput } from "../types";

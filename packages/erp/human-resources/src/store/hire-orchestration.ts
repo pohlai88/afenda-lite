@@ -1,12 +1,12 @@
 import type { Result } from "@afenda/errors/result";
 import type { HumanResourcesOfferId } from "../brands";
-import type { MutationPorts } from "../ports";
-import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	HireAttempt,
 	HireCompensationLogEntry,
 	HireSagaStep,
 } from "../hire-orchestration/types";
+import type { MutationPorts } from "../ports";
+import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 
 export type IdempotentHireAttemptRecord = {
 	attempt: HireAttempt;

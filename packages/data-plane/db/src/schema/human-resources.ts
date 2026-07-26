@@ -284,9 +284,9 @@ export const hrPersonIdentityVersion = pgTable(
 		legalName: text("legal_name").notNull(),
 		effectiveFrom: date("effective_from").notNull(),
 		effectiveTo: date("effective_to"),
-		supersedesIdentityVersionId: uuid("supersedes_identity_version_id").references(
-			(): AnyPgColumn => hrPersonIdentityVersion.id,
-		),
+		supersedesIdentityVersionId: uuid(
+			"supersedes_identity_version_id",
+		).references((): AnyPgColumn => hrPersonIdentityVersion.id),
 		lineageStatus: text("lineage_status").notNull(),
 		reasonCode: text("reason_code").notNull(),
 		evidenceRef: text("evidence_ref"),
@@ -492,9 +492,9 @@ export const hrDepartmentStructureVersion = pgTable(
 		parentDepartmentId: uuid("parent_department_id"),
 		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
 		effectiveTo: date("effective_to", { mode: "string" }),
-		supersedesStructureVersionId: uuid("supersedes_structure_version_id").references(
-			(): AnyPgColumn => hrDepartmentStructureVersion.id,
-		),
+		supersedesStructureVersionId: uuid(
+			"supersedes_structure_version_id",
+		).references((): AnyPgColumn => hrDepartmentStructureVersion.id),
 		lineageStatus: text("lineage_status").notNull(),
 		reasonCode: text("reason_code").notNull(),
 		evidenceRef: text("evidence_ref"),
@@ -513,7 +513,10 @@ export const hrDepartmentStructureVersion = pgTable(
 			t.organizationId,
 			t.departmentId,
 		),
-		index("hr_department_structure_version_org_id_idx").on(t.organizationId, t.id),
+		index("hr_department_structure_version_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
 		uniqueIndex("hr_department_structure_version_org_department_open_uidx")
 			.on(t.organizationId, t.departmentId)
 			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
@@ -570,9 +573,9 @@ export const hrJobDefinitionVersion = pgTable(
 		title: text("title").notNull(),
 		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
 		effectiveTo: date("effective_to", { mode: "string" }),
-		supersedesDefinitionVersionId: uuid("supersedes_definition_version_id").references(
-			(): AnyPgColumn => hrJobDefinitionVersion.id,
-		),
+		supersedesDefinitionVersionId: uuid(
+			"supersedes_definition_version_id",
+		).references((): AnyPgColumn => hrJobDefinitionVersion.id),
 		lineageStatus: text("lineage_status").notNull(),
 		reasonCode: text("reason_code").notNull(),
 		evidenceRef: text("evidence_ref"),
@@ -587,7 +590,10 @@ export const hrJobDefinitionVersion = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_job_definition_version_org_job_idx").on(t.organizationId, t.jobId),
+		index("hr_job_definition_version_org_job_idx").on(
+			t.organizationId,
+			t.jobId,
+		),
 		index("hr_job_definition_version_org_id_idx").on(t.organizationId, t.id),
 		uniqueIndex("hr_job_definition_version_org_job_open_uidx")
 			.on(t.organizationId, t.jobId)
@@ -737,9 +743,9 @@ export const hrPositionDefinitionVersion = pgTable(
 		jobId: uuid("job_id"),
 		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
 		effectiveTo: date("effective_to", { mode: "string" }),
-		supersedesDefinitionVersionId: uuid("supersedes_definition_version_id").references(
-			(): AnyPgColumn => hrPositionDefinitionVersion.id,
-		),
+		supersedesDefinitionVersionId: uuid(
+			"supersedes_definition_version_id",
+		).references((): AnyPgColumn => hrPositionDefinitionVersion.id),
 		lineageStatus: text("lineage_status").notNull(),
 		reasonCode: text("reason_code").notNull(),
 		evidenceRef: text("evidence_ref"),
@@ -758,7 +764,10 @@ export const hrPositionDefinitionVersion = pgTable(
 			t.organizationId,
 			t.positionId,
 		),
-		index("hr_position_definition_version_org_id_idx").on(t.organizationId, t.id),
+		index("hr_position_definition_version_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
 		uniqueIndex("hr_position_definition_version_org_position_open_uidx")
 			.on(t.organizationId, t.positionId)
 			.where(sql`${t.effectiveTo} IS NULL AND ${t.lineageStatus} = 'active'`),
@@ -996,9 +1005,9 @@ export const hrReportingLine = pgTable(
 		supersedesReportingLineId: uuid("supersedes_reporting_line_id").references(
 			(): AnyPgColumn => hrReportingLine.id,
 		),
-		supersededByReportingLineId: uuid("superseded_by_reporting_line_id").references(
-			(): AnyPgColumn => hrReportingLine.id,
-		),
+		supersededByReportingLineId: uuid(
+			"superseded_by_reporting_line_id",
+		).references((): AnyPgColumn => hrReportingLine.id),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -1242,11 +1251,9 @@ export const hrCandidateApplicationStatusHistory = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_candidate_application_status_history_org_application_created_idx").on(
-			t.organizationId,
-			t.applicationId,
-			t.createdAt,
-		),
+		index(
+			"hr_candidate_application_status_history_org_application_created_idx",
+		).on(t.organizationId, t.applicationId, t.createdAt),
 		index("hr_candidate_application_status_history_org_candidate_idx").on(
 			t.organizationId,
 			t.candidateId,
@@ -1649,10 +1656,7 @@ export const hrOnboardingAccessHandoff = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("hr_onboarding_access_handoff_org_id_idx").on(
-			t.organizationId,
-			t.id,
-		),
+		index("hr_onboarding_access_handoff_org_id_idx").on(t.organizationId, t.id),
 		uniqueIndex("hr_onboarding_access_handoff_org_case_uidx").on(
 			t.organizationId,
 			t.onboardingCaseId,
@@ -2137,6 +2141,7 @@ export const hrLearningSession = pgTable(
 		/** scheduled | in_progress | completed | cancelled */
 		status: text("status").notNull(),
 		capacity: integer("capacity"),
+		primaryInstructorUserId: text("primary_instructor_user_id"),
 		createIdempotencyKey: text("create_idempotency_key"),
 		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
@@ -2311,6 +2316,9 @@ export const hrEmployeeCertification = pgTable(
 		status: text("status").notNull(),
 		revokedAt: timestamp("revoked_at", { withTimezone: true }),
 		revokedBy: text("revoked_by"),
+		renewedFromCertificationId: uuid(
+			"renewed_from_certification_id",
+		).references((): AnyPgColumn => hrEmployeeCertification.id),
 		createIdempotencyKey: text("create_idempotency_key"),
 		createRequestFingerprint: text("create_request_fingerprint"),
 		version: integer("version").notNull().default(1),
@@ -2356,8 +2364,59 @@ export const hrEmployeeCertification = pgTable(
 );
 
 export const hrLearningProgram = createErpScaffoldTable("hr_learning_program");
-export const hrLearningAttendance = createErpScaffoldTable(
+export const hrLearningAttendance = pgTable(
 	"hr_learning_attendance",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		sessionId: uuid("session_id")
+			.notNull()
+			.references(() => hrLearningSession.id),
+		assignmentId: uuid("assignment_id")
+			.notNull()
+			.references(() => hrLearningAssignment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** present | absent | late | excused */
+		status: text("status").notNull(),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+		recordedBy: text("recorded_by").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_learning_attendance_org_id_idx").on(t.organizationId, t.id),
+		index("hr_learning_attendance_org_session_idx").on(
+			t.organizationId,
+			t.sessionId,
+		),
+		index("hr_learning_attendance_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		uniqueIndex("hr_learning_attendance_org_assignment_session_uidx").on(
+			t.organizationId,
+			t.assignmentId,
+			t.sessionId,
+		),
+		uniqueIndex("hr_learning_attendance_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_learning_attendance_status_check",
+			sql`${t.status} IN ('present', 'absent', 'late', 'excused')`,
+		),
+	],
 );
 export const hrLearningAssessment = createErpScaffoldTable(
 	"hr_learning_assessment",
@@ -2609,10 +2668,7 @@ export const hrBenefitEligibility = pgTable(
 	},
 	(t) => [
 		index("hr_benefit_eligibility_org_id_idx").on(t.organizationId, t.id),
-		index("hr_benefit_eligibility_org_plan_idx").on(
-			t.organizationId,
-			t.planId,
-		),
+		index("hr_benefit_eligibility_org_plan_idx").on(t.organizationId, t.planId),
 		uniqueIndex("hr_benefit_eligibility_org_plan_uidx").on(
 			t.organizationId,
 			t.planId,
@@ -2842,7 +2898,9 @@ export const hrLeavePolicy = pgTable(
 		accrualBasis: text("accrual_basis").notNull().default("none"),
 		accrualFrequency: text("accrual_frequency"),
 		accrualQuantityPerPeriod: text("accrual_quantity_per_period"),
-		carryForwardEnabled: boolean("carry_forward_enabled").notNull().default(false),
+		carryForwardEnabled: boolean("carry_forward_enabled")
+			.notNull()
+			.default(false),
 		carryForwardMaxQuantity: text("carry_forward_max_quantity"),
 		entitlementExpiryRule: text("entitlement_expiry_rule")
 			.notNull()
@@ -3612,6 +3670,10 @@ export const hrPerformanceImprovementPlan = pgTable(
 			.notNull()
 			.references(() => hrEmployee.id),
 		status: text("status").notNull(),
+		outcomeReason: text("outcome_reason"),
+		outcomeEvidenceReference: text("outcome_evidence_reference"),
+		lastExtensionReason: text("last_extension_reason"),
+		lastExtensionEvidenceReference: text("last_extension_evidence_reference"),
 		createIdempotencyKey: text("create_idempotency_key").notNull(),
 		createRequestFingerprint: text("create_request_fingerprint").notNull(),
 		version: integer("version").notNull().default(1),
@@ -3655,6 +3717,7 @@ export const hrPerformanceImprovementCheckpoint = pgTable(
 		dueDate: date("due_date").notNull(),
 		outcome: text("outcome").notNull(),
 		notes: text("notes"),
+		evidenceReference: text("evidence_reference"),
 		recordedBy: text("recorded_by"),
 		recordedAt: timestamp("recorded_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -3961,6 +4024,7 @@ export const hrCompetencyAssessment = pgTable(
 		scaleCode: text("scale_code").notNull(),
 		level: integer("level").notNull(),
 		effectiveOn: date("effective_on").notNull(),
+		expiresOn: date("expires_on"),
 		status: text("status").notNull(),
 		supersedesAssessmentId: uuid("supersedes_assessment_id").references(
 			(): AnyPgColumn => hrCompetencyAssessment.id,
@@ -3995,7 +4059,7 @@ export const hrCompetencyAssessment = pgTable(
 			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
 		check(
 			"hr_competency_assessment_status_check",
-			sql`${t.status} IN ('current', 'superseded')`,
+			sql`${t.status} IN ('current', 'superseded', 'expired')`,
 		),
 		check(
 			"hr_competency_assessment_scale_code_check",
@@ -4004,6 +4068,10 @@ export const hrCompetencyAssessment = pgTable(
 		check(
 			"hr_competency_assessment_level_check",
 			sql`${t.level} >= 1 AND ${t.level} <= 5`,
+		),
+		check(
+			"hr_competency_assessment_expires_after_effective_ck",
+			sql`${t.expiresOn} IS NULL OR ${t.expiresOn} > ${t.effectiveOn}`,
 		),
 	],
 );
@@ -4164,6 +4232,126 @@ export const hrTalentPoolMember = pgTable(
 		check(
 			"hr_talent_pool_member_status_check",
 			sql`${t.status} IN ('nominated', 'approved', 'removed')`,
+		),
+	],
+);
+
+export const hrTalentProfileMobility = pgTable(
+	"hr_talent_profile_mobility",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		talentProfileId: uuid("talent_profile_id")
+			.notNull()
+			.references(() => hrTalentProfile.id),
+		dimension: text("dimension").notNull(),
+		preferenceCode: text("preference_code").notNull(),
+		scopeDetail: text("scope_detail"),
+		evidenceSummary: text("evidence_summary").notNull(),
+		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "string" }),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_talent_profile_mobility_org_id_idx").on(t.organizationId, t.id),
+		index("hr_talent_profile_mobility_org_profile_idx").on(
+			t.organizationId,
+			t.talentProfileId,
+		),
+		uniqueIndex("hr_talent_profile_mobility_org_profile_dimension_current_uidx")
+			.on(t.organizationId, t.talentProfileId, t.dimension)
+			.where(sql`${t.status} = 'current'`),
+		uniqueIndex("hr_talent_profile_mobility_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_talent_profile_mobility_dimension_check",
+			sql`${t.dimension} IN ('geographic', 'functional', 'organizational')`,
+		),
+		check(
+			"hr_talent_profile_mobility_preference_code_check",
+			sql`${t.preferenceCode} IN ('open', 'limited', 'not_open')`,
+		),
+		check(
+			"hr_talent_profile_mobility_status_check",
+			sql`${t.status} IN ('current', 'superseded')`,
+		),
+		check(
+			"hr_talent_profile_mobility_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+	],
+);
+
+export const hrTalentCriticalRoleReadiness = pgTable(
+	"hr_talent_critical_role_readiness",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		talentProfileId: uuid("talent_profile_id")
+			.notNull()
+			.references(() => hrTalentProfile.id),
+		positionId: uuid("position_id")
+			.notNull()
+			.references(() => hrPosition.id),
+		readiness: text("readiness").notNull(),
+		readinessEffectiveOn: date("readiness_effective_on", {
+			mode: "string",
+		}).notNull(),
+		evidenceSummary: text("evidence_summary").notNull(),
+		assessorUserId: text("assessor_user_id").notNull(),
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key"),
+		createRequestFingerprint: text("create_request_fingerprint"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_talent_critical_role_readiness_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("hr_talent_critical_role_readiness_org_profile_idx").on(
+			t.organizationId,
+			t.talentProfileId,
+		),
+		index("hr_talent_critical_role_readiness_org_position_idx").on(
+			t.organizationId,
+			t.positionId,
+		),
+		uniqueIndex(
+			"hr_talent_critical_role_readiness_org_profile_position_current_uidx",
+		)
+			.on(t.organizationId, t.talentProfileId, t.positionId)
+			.where(sql`${t.status} = 'current'`),
+		uniqueIndex("hr_talent_critical_role_readiness_org_create_idempotency_uidx")
+			.on(t.organizationId, t.createIdempotencyKey)
+			.where(sql`${t.createIdempotencyKey} IS NOT NULL`),
+		check(
+			"hr_talent_critical_role_readiness_status_check",
+			sql`${t.status} IN ('current', 'superseded')`,
+		),
+		check(
+			"hr_talent_critical_role_readiness_readiness_check",
+			sql`${t.readiness} IN ('not_ready', 'ready_soon', 'ready_now', 'emerging')`,
 		),
 	],
 );

@@ -19,11 +19,11 @@ import {
 	buildStatusTransitionAuditFact,
 	buildUpdateAuditFact,
 } from "../../shared/audit-facts";
-import { assertCompensationReviewBudgetForMutation } from "../../shared/compensation-review-budget-loader";
 import {
 	compensationReviewAuditSnapshot,
 	compensationReviewCycleAuditSnapshot,
 } from "../../shared/compensation-review-audit";
+import { assertCompensationReviewBudgetForMutation } from "../../shared/compensation-review-budget-loader";
 import {
 	assertCanFinalizeCompensationReview,
 	assertCanRecordCompensationRecommendation,
@@ -46,7 +46,6 @@ import type {
 	CompensationReview,
 	CompensationReviewCycle,
 	CompensationReviewCycleListPage,
-	EmployeeCompensation,
 } from "../../types";
 import type { CompensationBenefitsMemoryState } from "./compensation-benefits";
 import { idempotencyMapKey } from "./shared";
@@ -83,7 +82,7 @@ function listReviewsByCycle(
 
 async function recordAudit(
 	ports: MutationPorts,
-	meta: HumanResourcesMutationMeta,
+	_meta: HumanResourcesMutationMeta,
 	fact: ReturnType<typeof buildCreateAuditFact>,
 ): Promise<Result<{ id: string }>> {
 	return ports.audit.record(fact);
@@ -158,10 +157,7 @@ export function createMemoryCompensationReviewCycleMethods(
 		},
 
 		async findCompensationReviewCycleByIdempotencyKey(input) {
-			const key = idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.cycleIdempotencyByKey.get(key) ?? null;
 			return ok(
 				record === null
@@ -189,7 +185,9 @@ export function createMemoryCompensationReviewCycleMethods(
 				return conflict("Idempotency key already used with different data");
 			}
 
-			const duplicate = Array.from(state.compensationReviewCycles.values()).find(
+			const duplicate = Array.from(
+				state.compensationReviewCycles.values(),
+			).find(
 				(cycle) =>
 					cycle.organizationId === record.organizationId &&
 					cycle.code === record.code,
@@ -210,7 +208,9 @@ export function createMemoryCompensationReviewCycleMethods(
 				return periodCheck;
 			}
 
-			const idResult = parseHumanResourcesCompensationReviewCycleId(randomUUID());
+			const idResult = parseHumanResourcesCompensationReviewCycleId(
+				randomUUID(),
+			);
 			if (!idResult.ok) return idResult;
 
 			const now = new Date();
@@ -269,7 +269,13 @@ export function createMemoryCompensationReviewCycleMethods(
 		},
 
 		async cancelCompensationReviewCycle(input, ports, meta) {
-			return transitionReviewCycleStatus(state, input, ports, meta, "cancelled");
+			return transitionReviewCycleStatus(
+				state,
+				input,
+				ports,
+				meta,
+				"cancelled",
+			);
 		},
 
 		async listCompensationReviewCycles(input) {
@@ -324,7 +330,10 @@ async function transitionReviewCycleStatus(
 		input.expectedVersion,
 	);
 	if (!versionCheck.ok) return versionCheck;
-	const transition = assertReviewCycleStatusTransition(cycle.status, nextStatus);
+	const transition = assertReviewCycleStatusTransition(
+		cycle.status,
+		nextStatus,
+	);
 	if (!transition.ok) return transition;
 
 	const previous = cloneCycle(cycle);

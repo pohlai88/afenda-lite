@@ -16,7 +16,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project env"
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project env"
 	},
 	"dependencies": {
 		"@t3-oss/env-nextjs": "^0.13.11",

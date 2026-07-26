@@ -89,7 +89,7 @@ export async function assignLearning(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
 				}),
 			);
 		},
@@ -116,7 +116,7 @@ export async function enrolAssignment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL,
+					operationId: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL,
 				}),
 			);
 		},
@@ -142,7 +142,7 @@ export async function waiveAssignment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE,
 				}),
 			);
 		},

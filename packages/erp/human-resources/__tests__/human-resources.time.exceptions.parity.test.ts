@@ -1395,15 +1395,15 @@ function defineTimeExceptionsParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(unresolved.ok).toBe(true);
 		if (!unresolved.ok) return;
-		expect(
-			unresolved.data.some((row) => row.id === excused.data.id),
-		).toBe(false);
-		expect(
-			unresolved.data.some((row) => row.id === rejected.data.id),
-		).toBe(false);
-		expect(
-			unresolved.data.some((row) => row.id === resolved.data.id),
-		).toBe(false);
+		expect(unresolved.data.some((row) => row.id === excused.data.id)).toBe(
+			false,
+		);
+		expect(unresolved.data.some((row) => row.id === rejected.data.id)).toBe(
+			false,
+		);
+		expect(unresolved.data.some((row) => row.id === resolved.data.id)).toBe(
+			false,
+		);
 	});
 }
 

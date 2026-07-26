@@ -2,7 +2,7 @@
 
 Rank-1 Platform product search for Afenda-Lite: org-scoped Postgres full-text search over `platform_search_document`. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, or Action envelopes.
 
-**Not docs search.** Official docs stay on bundled Orama in `@afenda/docs` ([`docs-V2/docs/search-orama.md`](../../docs-V2/docs/search-orama.md)). Do not wire Algolia, Orama Cloud, Mixedbread, Typesense, Meilisearch, or FlexSearch here.
+**Not docs search.** Official docs stay on bundled Orama in `@afenda/docs` ([`docs-V2/docs/search-orama.md`](../../../docs-V2/docs/search-orama.md)). Do not wire Algolia, Orama Cloud, Mixedbread, Typesense, Meilisearch, or FlexSearch here.
 
 Use this package from Platform / app server code when a domain entity must be upserted into the shared search index and queried with a hard `organizationId` predicate. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
 
@@ -71,8 +71,8 @@ Do not add to this package: Next.js / Surfaces / `apps/*` imports, dual-write of
 
 | Topic | Link |
 |-------|------|
-| Product search Scratch | [docs-V2/search](../../docs-V2/search/README.md) |
-| Docs Orama (not this package) | [docs-V2/docs/search-orama.md](../../docs-V2/docs/search-orama.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Product search Scratch | [docs-V2/search](../../../docs-V2/search/README.md) |
+| Docs Orama (not this package) | [docs-V2/docs/search-orama.md](../../../docs-V2/docs/search-orama.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

@@ -7,11 +7,11 @@ import type {
 	HumanResourcesCompensationProposalId,
 } from "../../src/brands";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
 import {
 	approveCompensationProposal,
 	createCompensationProposal,
 } from "../../src/compensation-benefits/compensation-proposal";
+import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
 import {
 	amendOfferDraft,
 	approveOffer,

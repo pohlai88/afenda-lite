@@ -40,17 +40,8 @@ export const EMPLOYEE_PROFILE_FIELD_TIERS = {
 		"workerStatus",
 		"organizationEntry",
 	],
-	self: [
-		"personalPhoneNumber",
-		"homeAddress",
-		"emergencyContacts",
-		"contacts",
-	],
-	sensitive: [
-		...PERSONAL_IDENTIFIER_MASK_FIELDS,
-		"identifiers",
-		"bankAccount",
-	],
+	self: ["personalPhoneNumber", "homeAddress", "emergencyContacts", "contacts"],
+	sensitive: [...PERSONAL_IDENTIFIER_MASK_FIELDS, "identifiers", "bankAccount"],
 } as const;
 
 export function employeeProfileQueryRequestedFields(): readonly string[] {
@@ -193,7 +184,10 @@ function redactProfileField(
 		case "contacts":
 			return { ...profile, [field]: null };
 		case "identifiers":
-			return { ...profile, identifiers: redactNestedIdentifiers(profile.identifiers) };
+			return {
+				...profile,
+				identifiers: redactNestedIdentifiers(profile.identifiers),
+			};
 		default:
 			return profile;
 	}
@@ -213,7 +207,7 @@ export function projectEmployeeProfileFields(input: {
 	});
 	const denied = new Set<string>([
 		...tierProjection.deniedFields,
-		...input.projection?.deniedFields ?? [],
+		...(input.projection?.deniedFields ?? []),
 	]);
 	let profile = { ...input.profile };
 	const redactedFields: string[] = [];

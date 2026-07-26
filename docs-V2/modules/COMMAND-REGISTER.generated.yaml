@@ -382,6 +382,9 @@ commands:
   - id: human-resources.session.cancel
     moduleId: human-resources
     permission: human-resources.learning.manage
+  - id: human-resources.session.assign-instructor
+    moduleId: human-resources
+    permission: human-resources.learning.manage
   - id: human-resources.learning-assignment.create
     moduleId: human-resources
     permission: human-resources.learning.manage
@@ -394,6 +397,9 @@ commands:
   - id: human-resources.completion.record
     moduleId: human-resources
     permission: human-resources.learning.manage
+  - id: human-resources.learning-attendance.record
+    moduleId: human-resources
+    permission: human-resources.learning.manage
   - id: human-resources.certification.issue
     moduleId: human-resources
     permission: human-resources.certification.manage
@@ -401,6 +407,9 @@ commands:
     moduleId: human-resources
     permission: human-resources.certification.manage
   - id: human-resources.certification.expire
+    moduleId: human-resources
+    permission: human-resources.certification.manage
+  - id: human-resources.certification.renew
     moduleId: human-resources
     permission: human-resources.certification.manage
   - id: human-resources.compensation-grade.create
@@ -664,6 +673,18 @@ commands:
   - id: human-resources.performance-cycle.cancel
     moduleId: human-resources
     permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.publish
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.set-review-periods
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.set-eligibility
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.enroll-eligible
+    moduleId: human-resources
+    permission: human-resources.performance.manage
   - id: human-resources.performance-cycle.add-participant
     moduleId: human-resources
     permission: human-resources.performance.manage
@@ -672,13 +693,13 @@ commands:
     permission: human-resources.performance.manage
   - id: human-resources.performance-goal.create
     moduleId: human-resources
-    permission: human-resources.performance.manager.manage
+    permission: human-resources.performance.goal.own.manage
   - id: human-resources.performance-goal.update
     moduleId: human-resources
-    permission: human-resources.performance.manager.manage
+    permission: human-resources.performance.goal.own.manage
   - id: human-resources.performance-goal.submit
     moduleId: human-resources
-    permission: human-resources.performance.manager.manage
+    permission: human-resources.performance.goal.own.manage
   - id: human-resources.performance-goal.approve
     moduleId: human-resources
     permission: human-resources.performance.manager.manage
@@ -687,11 +708,17 @@ commands:
     permission: human-resources.performance.manager.manage
   - id: human-resources.performance-goal.record-progress
     moduleId: human-resources
-    permission: human-resources.performance.manager.manage
+    permission: human-resources.performance.goal.own.manage
   - id: human-resources.performance-goal.close
     moduleId: human-resources
     permission: human-resources.performance.manager.manage
   - id: human-resources.performance-goal.cancel
+    moduleId: human-resources
+    permission: human-resources.performance.goal.own.manage
+  - id: human-resources.performance-goal.activate
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-goal.align
     moduleId: human-resources
     permission: human-resources.performance.manager.manage
   - id: human-resources.performance-review.start
@@ -715,6 +742,15 @@ commands:
   - id: human-resources.performance-review.reopen
     moduleId: human-resources
     permission: human-resources.performance.review.reopen
+  - id: human-resources.performance-review.add-delegated-reviewer
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.submit-delegated-assessment
+    moduleId: human-resources
+    permission: human-resources.performance.manager.manage
+  - id: human-resources.performance-review.calibrate
+    moduleId: human-resources
+    permission: human-resources.performance.manage
   - id: human-resources.improvement-plan.create
     moduleId: human-resources
     permission: human-resources.performance.improvement-plan.manage
@@ -760,6 +796,9 @@ commands:
   - id: human-resources.competency-assessment.supersede
     moduleId: human-resources
     permission: human-resources.competency.assess
+  - id: human-resources.competency-assessment.expire
+    moduleId: human-resources
+    permission: human-resources.competency.assess
   - id: human-resources.talent-profile.create
     moduleId: human-resources
     permission: human-resources.talent.admin
@@ -773,6 +812,12 @@ commands:
     moduleId: human-resources
     permission: human-resources.talent.admin
   - id: human-resources.talent-profile.archive
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.talent-profile-mobility.record
+    moduleId: human-resources
+    permission: human-resources.talent.admin
+  - id: human-resources.critical-role-readiness.record
     moduleId: human-resources
     permission: human-resources.talent.admin
   - id: human-resources.talent-pool.create

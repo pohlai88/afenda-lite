@@ -7,7 +7,7 @@ export {
 	buildEventTypeDomainMap,
 	CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES,
 	type ClassifiedHumanResourcesDomainEventType,
-	listDomainEventTypesFromLegacyRegistryView,
+	listDomainEventTypesFromRegistry,
 	parseHumanResourcesEventVersion,
 } from "./classified-event-types";
 export { documentedNoConsumerReason } from "./documented-no-consumer-reasons";

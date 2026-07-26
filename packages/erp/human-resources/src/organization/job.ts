@@ -13,7 +13,6 @@ import {
 	HUMAN_RESOURCES_QUERY_JOB_GET,
 	HUMAN_RESOURCES_QUERY_JOB_LIST,
 } from "../module-ids";
-import type { JobDefinitionAtAsOf } from "./organization-structure-lineage";
 import {
 	createJobInputSchema,
 	getJobAsOfInputSchema,
@@ -28,6 +27,7 @@ import {
 	runOrganizationQuery,
 } from "../shared/organization-command";
 import type { Job } from "../types";
+import type { JobDefinitionAtAsOf } from "./organization-structure-lineage";
 
 export const HUMAN_RESOURCES_AGGREGATE_JOB = "job" as const;
 export type HumanResourcesJobAggregate = typeof HUMAN_RESOURCES_AGGREGATE_JOB;
@@ -52,7 +52,7 @@ export async function createJob(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
 				}),
 			),
 	});
@@ -81,7 +81,7 @@ export async function updateJob(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
 				}),
 			),
 	});
@@ -107,7 +107,7 @@ export async function activateJob(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+					operationId: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
 				}),
 			),
 	});
@@ -133,7 +133,7 @@ export async function archiveJob(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
 				}),
 			),
 	});

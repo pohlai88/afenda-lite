@@ -662,8 +662,8 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					<CardHeader>
 						<CardTitle>Create item group</CardTitle>
 						<CardDescription>
-							Draft group for catalog hierarchy. Activate before attaching
-							items that require an active group.
+							Draft group for catalog hierarchy. Activate before attaching items
+							that require an active group.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -679,7 +679,9 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{itemGroups.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No item groups yet.</p>
+							<p className="text-sm text-muted-foreground">
+								No item groups yet.
+							</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{itemGroups.map((group) => (
@@ -720,8 +722,8 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					<CardHeader>
 						<CardTitle>Create item</CardTitle>
 						<CardDescription>
-							Draft catalog item (non-variant). Variants use Create item
-							variant under an active template.
+							Draft catalog item (non-variant). Variants use Create item variant
+							under an active template.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -806,7 +808,9 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						{warehouses.length === 0 ? (
-							<p className="text-sm text-muted-foreground">No warehouses yet.</p>
+							<p className="text-sm text-muted-foreground">
+								No warehouses yet.
+							</p>
 						) : (
 							<ul className="divide-y divide-border">
 								{warehouses.map((warehouse) => (

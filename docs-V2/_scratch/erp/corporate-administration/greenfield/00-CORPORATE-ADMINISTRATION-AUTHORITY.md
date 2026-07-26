@@ -47,6 +47,16 @@ The following rules are binding:
 7. A missing external dependency makes the affected verification lane `BLOCKED`, never silently passed.
 8. Placeholder code, compile-only shells, skipped required tests and zero-test matches do not count as implementation.
 
+### 2.1 Retired pre-greenfield implementation
+
+The pre-greenfield Corporate Administration source is removed. Migration
+`0050_drop_corporate_administration_module.sql` drops every legacy `ca_*` table.
+Earlier CA SQL migrations remain only as immutable forward-migration history; they
+are not schemas, contracts, or implementation evidence for this greenfield package.
+The DB schema barrel exports no CA tables, the obsolete TypeScript schema source is
+absent, and legacy `corporate-administration.*` permission codes are cleanup-only
+entries excluded from the living permission catalog.
+
 ## 3. Canonical identity model
 
 | Identifier | Meaning | Authority |

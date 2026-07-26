@@ -1,7 +1,7 @@
 "use server";
 
-import { hireFromAcceptedOffer } from "@afenda/human-resources";
 import type { HireFromAcceptedOfferResult } from "@afenda/human-resources";
+import { hireFromAcceptedOffer } from "@afenda/human-resources";
 import { hireFromAcceptedOfferInputSchema } from "@afenda/human-resources/schemas";
 
 import {
@@ -17,10 +17,13 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
+const hireFromAcceptedOfferActionSchema = hrActionSchema(
+	hireFromAcceptedOfferInputSchema,
+);
 
-const hireFromAcceptedOfferActionSchema = hrActionSchema(hireFromAcceptedOfferInputSchema);
-
-export async function hireFromAcceptedOfferAction(input: unknown): Promise<ActionResult<{ result: HireFromAcceptedOfferResult }>> {
+export async function hireFromAcceptedOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ result: HireFromAcceptedOfferResult }>> {
 	return runOperatorPermissionAction({
 		path: "hireFromAcceptedOfferAction",
 		permission: "human-resources.hire.orchestrate",

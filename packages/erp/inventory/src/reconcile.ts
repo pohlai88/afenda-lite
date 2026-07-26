@@ -35,7 +35,11 @@ function sameNumericString(left: string, right: string): boolean {
 	return parseQuantity(left) === parseQuantity(right);
 }
 
-function addQuantity(map: Map<string, number>, key: string, delta: string): void {
+function addQuantity(
+	map: Map<string, number>,
+	key: string,
+	delta: string,
+): void {
 	map.set(key, (map.get(key) ?? 0) + parseQuantity(delta));
 }
 
@@ -55,8 +59,12 @@ export function reconcileInventory(input: ReconcileInput): ReconcileResult {
 		const key = keyFor(reservation.warehouseId, reservation.itemId);
 		keys.add(key);
 		const remainingQuantity =
-			parseQuantity(reservation.quantity) - parseQuantity(reservation.consumedQuantity);
-		reservationTotals.set(key, (reservationTotals.get(key) ?? 0) + remainingQuantity);
+			parseQuantity(reservation.quantity) -
+			parseQuantity(reservation.consumedQuantity);
+		reservationTotals.set(
+			key,
+			(reservationTotals.get(key) ?? 0) + remainingQuantity,
+		);
 	}
 
 	for (const balance of input.balances) {

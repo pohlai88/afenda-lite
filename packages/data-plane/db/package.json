@@ -16,7 +16,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project db",
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project db",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node ./scripts/db-migrate-guard.mjs",
 		"db:check": "node ./scripts/db-check.mjs",

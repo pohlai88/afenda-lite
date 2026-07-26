@@ -39,7 +39,8 @@ export function resolveLeavePolicyBalanceRulesFromInput(
 	input: LeavePolicyBalanceRuleInput,
 ): ResolvedLeavePolicyBalanceRules {
 	return {
-		accrualBasis: input.accrualBasis ?? DEFAULT_LEAVE_POLICY_BALANCE_RULES.accrualBasis,
+		accrualBasis:
+			input.accrualBasis ?? DEFAULT_LEAVE_POLICY_BALANCE_RULES.accrualBasis,
 		accrualFrequency: input.accrualFrequency ?? null,
 		accrualQuantityPerPeriod: input.accrualQuantityPerPeriod ?? null,
 		carryForwardEnabled:

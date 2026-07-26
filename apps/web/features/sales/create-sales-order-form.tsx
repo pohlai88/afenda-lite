@@ -117,10 +117,7 @@ export function CreateSalesOrderForm({ canCreate }: CreateSalesOrderFormProps) {
 					placeholder="USD"
 				/>
 			</FormField>
-			<FormField
-				label="Exchange rate (optional)"
-				fieldId="sales-order-fx"
-			>
+			<FormField label="Exchange rate (optional)" fieldId="sales-order-fx">
 				<Input
 					id="sales-order-fx"
 					name="exchangeRate"

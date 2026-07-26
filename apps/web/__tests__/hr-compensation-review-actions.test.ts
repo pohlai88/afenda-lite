@@ -190,8 +190,7 @@ describe("HR Compensation Review Server Actions", () => {
 				permission: "human-resources.compensation.read",
 			},
 			{
-				invoke: () =>
-					listCompensationReviewsByEmployeeAction({ employeeId }),
+				invoke: () => listCompensationReviewsByEmployeeAction({ employeeId }),
 				mock: hrReviewMocks.listCompensationReviewsByEmployee,
 				permission: "human-resources.compensation.read",
 			},

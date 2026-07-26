@@ -13,7 +13,10 @@ export const { hasDatabase } = resolveDatabaseUrlForTests();
 export type SystemRoleTemplateKey = "org_admin" | "editor" | "viewer";
 
 let fixturesPromise: Promise<void> | undefined;
-const templateRoleIdPromises = new Map<SystemRoleTemplateKey, Promise<string>>();
+const templateRoleIdPromises = new Map<
+	SystemRoleTemplateKey,
+	Promise<string>
+>();
 
 /** Seeds ARCH-023 system role templates required by assign/revoke integration tests. */
 export function ensureIdentityDatabaseFixtures(): Promise<void> {

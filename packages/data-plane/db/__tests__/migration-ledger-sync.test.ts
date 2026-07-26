@@ -57,10 +57,7 @@ describe("0017_hr_candidate_consent migration journal row", () => {
 		);
 		const { fileURLToPath } = await import("node:url");
 		const { dirname, join } = await import("node:path");
-		const root = join(
-			dirname(fileURLToPath(import.meta.url)),
-			"..",
-		);
+		const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 		const row = loadMigrationJournalRows(join(root, "drizzle")).find(
 			(entry) => entry.tag === "0017_hr_candidate_consent",
 		);

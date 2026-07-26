@@ -110,7 +110,9 @@ export const correctEmploymentInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
-export type CorrectEmploymentInput = z.infer<typeof correctEmploymentInputSchema>;
+export type CorrectEmploymentInput = z.infer<
+	typeof correctEmploymentInputSchema
+>;
 
 export const getEmploymentAsOfInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -119,7 +121,9 @@ export const getEmploymentAsOfInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
-export type GetEmploymentAsOfInput = z.infer<typeof getEmploymentAsOfInputSchema>;
+export type GetEmploymentAsOfInput = z.infer<
+	typeof getEmploymentAsOfInputSchema
+>;
 
 export const listEmploymentStatusHistoryInputSchema =
 	humanResourcesMutationContextSchema

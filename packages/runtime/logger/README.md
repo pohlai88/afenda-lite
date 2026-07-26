@@ -61,7 +61,7 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Correlation mint / header (`x-correlation-id`) | `@afenda/http` |
 | When to emit product events | Call-site Actions / BFF / proxy |
 
-**Layer:** Rank-1 Platform **leaf** (`pino` only; no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (`pino` only; no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -71,6 +71,6 @@ Do not add to this package: Next.js handlers, `pino-http` auto access logs, Asyn
 
 | Topic | Link |
 |-------|------|
-| Correlation · product logs · ops path | [docs-V2/observability](../../docs-V2/observability/README.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Correlation · product logs · ops path | [docs-V2/observability](../../../docs-V2/observability/README.md) |
+| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

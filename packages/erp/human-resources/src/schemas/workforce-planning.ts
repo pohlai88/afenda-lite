@@ -199,5 +199,6 @@ export const getWorkforcePlanVarianceInputSchema =
 	humanResourcesMutationContextSchema
 		.extend({
 			planId: humanResourcesHeadcountPlanIdSchema,
+			asOf: isoDateSchema.optional(),
 		})
 		.strict();

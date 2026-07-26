@@ -1,14 +1,11 @@
 import { z } from "zod";
 
-export const HANDOFF_PAYROLL_CONTRACT_VERSION = "hr.payroll-handoff.v1" as const;
+export const HANDOFF_PAYROLL_CONTRACT_VERSION =
+	"hr.payroll-handoff.v1" as const;
 
-export const handoffMoneyAmountSchema = z
-	.string()
-	.regex(/^\d+(\.\d{1,4})?$/);
+export const handoffMoneyAmountSchema = z.string().regex(/^\d+(\.\d{1,4})?$/);
 
-export const handoffQuantitySchema = z
-	.string()
-	.regex(/^\d+(\.\d+)?$/);
+export const handoffQuantitySchema = z.string().regex(/^\d+(\.\d+)?$/);
 
 export const handoffRoundingModeSchema = z.enum([
 	"half_even",
@@ -112,7 +109,12 @@ export const handoffOvertimeFactSchema = z
 	.object({
 		overtimeType: handoffOvertimeTypeSchema,
 		approvedMinutes: z.number().int().nonnegative(),
-		payrollApprovedMinutes: z.number().int().nonnegative().nullable().optional(),
+		payrollApprovedMinutes: z
+			.number()
+			.int()
+			.nonnegative()
+			.nullable()
+			.optional(),
 		timesheetId: z.string().trim().min(1).max(128),
 		sourceVersion: z.number().int().positive(),
 	})
@@ -157,7 +159,9 @@ export const approvedPayrollHandoffSchema = z
 	})
 	.strict()
 	.superRefine((value, ctx) => {
-		if (!handoffDecimalScaleMatchesAmount(value.baseAmount, value.decimalScale)) {
+		if (
+			!handoffDecimalScaleMatchesAmount(value.baseAmount, value.decimalScale)
+		) {
 			ctx.addIssue({
 				code: "custom",
 				message: "decimalScale must match baseAmount fractional digits",
@@ -194,7 +198,9 @@ export type HandoffSourceVersion = z.infer<typeof handoffSourceVersionSchema>;
 export type HandoffApprovalEvidence = z.infer<
 	typeof handoffApprovalEvidenceSchema
 >;
-export type ApprovedPayrollHandoff = z.infer<typeof approvedPayrollHandoffSchema>;
+export type ApprovedPayrollHandoff = z.infer<
+	typeof approvedPayrollHandoffSchema
+>;
 
 export const DEFAULT_HANDOFF_ROUNDING_MODE: HandoffRoundingMode = "half_even";
 

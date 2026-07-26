@@ -105,10 +105,7 @@ export type AttendanceSourcePreviewResult = {
  * Thin pull transport wired at composition root. HR does not implement device drivers.
  */
 export type AttendanceConnectorPullPort = {
-	pull(input: {
-		organizationId: string;
-		cursor?: string;
-	}): Promise<
+	pull(input: { organizationId: string; cursor?: string }): Promise<
 		Result<{
 			events: readonly AttendanceSourceEvent[];
 			nextCursor?: string;

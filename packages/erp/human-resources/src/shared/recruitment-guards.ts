@@ -184,7 +184,8 @@ export function assertCandidateAnonymizationEligible(input: {
 	return ok(undefined);
 }
 
-export const ANONYMIZED_CANDIDATE_DISPLAY_NAME = "Anonymized Candidate" as const;
+export const ANONYMIZED_CANDIDATE_DISPLAY_NAME =
+	"Anonymized Candidate" as const;
 
 export function anonymizedCandidateEmail(candidateId: string): string {
 	return `anonymized+${candidateId}@invalid.local`;

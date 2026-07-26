@@ -30,7 +30,7 @@ describe("HR termination offboarding facts migration", () => {
 			'CREATE TABLE "hr_offboarding_payroll_handoff"',
 		);
 		expect(migrationSql).toContain("hr_termination_org_employment_draft_uidx");
-		expect(migrationSql).toContain('"status" IN (\'pending\', \'revoked\')');
-		expect(migrationSql).toContain('"status" IN (\'pending\', \'ready\')');
+		expect(migrationSql).toContain("\"status\" IN ('pending', 'revoked')");
+		expect(migrationSql).toContain("\"status\" IN ('pending', 'ready')");
 	});
 });

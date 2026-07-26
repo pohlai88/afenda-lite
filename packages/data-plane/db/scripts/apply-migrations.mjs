@@ -104,7 +104,9 @@ for (const tag of tags) {
 		for (const statement of statements) {
 			await sql.query(statement);
 		}
-		console.log(`apply-migrations: ${tag} applied ${statements.length} statements`);
+		console.log(
+			`apply-migrations: ${tag} applied ${statements.length} statements`,
+		);
 	} else if (probeExists === true) {
 		console.log(`apply-migrations: ${tag} DDL present; journal only`);
 	} else {
@@ -115,5 +117,7 @@ for (const tag of tags) {
 		INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
 		VALUES (${hash}, ${createdAt})
 	`;
-	console.log(`apply-migrations: ${tag} recorded in drizzle.__drizzle_migrations`);
+	console.log(
+		`apply-migrations: ${tag} recorded in drizzle.__drizzle_migrations`,
+	);
 }

@@ -6,9 +6,10 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesPermission } from "../src/authorization";
+import { createEmployee } from "../src/core/employee";
 import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -69,12 +70,15 @@ import {
 	placeRequisitionOnHold,
 	submitRequisition,
 } from "../src/recruitment/requisition";
-import { createEmployee } from "../src/core/employee";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	createAndIssueOffer,
+	seedApprovedCompensationProposal,
+	withOfferLifecycleDeps,
+} from "./helpers/offer-lifecycle-fixture";
 import {
 	ALTERNATE_INTERVIEW_SCORECARD,
 	SAMPLE_INTERVIEW_SCORECARD,
@@ -84,11 +88,7 @@ import {
 	seedDefaultHiringManager,
 	seedRequisitionPipeline,
 } from "./helpers/recruitment-requisition-fixture";
-import {
-	createAndIssueOffer,
-	seedApprovedCompensationProposal,
-	withOfferLifecycleDeps,
-} from "./helpers/offer-lifecycle-fixture";
+import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG_A = "org-recruit-a";

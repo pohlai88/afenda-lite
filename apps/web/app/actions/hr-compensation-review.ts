@@ -1,5 +1,12 @@
 "use server";
 
+import type {
+	CompensationReview,
+	CompensationReviewCycle,
+	CompensationReviewCycleListPage,
+	CompensationReviewListPage,
+	EmployeeCompensation,
+} from "@afenda/human-resources";
 import {
 	applyApprovedCompensationResult,
 	cancelCompensationReviewCycle,
@@ -13,13 +20,6 @@ import {
 	listCompensationReviewsByEmployee,
 	openCompensationReviewCycle,
 	recordCompensationRecommendation,
-} from "@afenda/human-resources";
-import type {
-	CompensationReview,
-	CompensationReviewCycle,
-	CompensationReviewCycleListPage,
-	CompensationReviewListPage,
-	EmployeeCompensation,
 } from "@afenda/human-resources";
 import {
 	applyApprovedCompensationResultInputSchema,
@@ -84,7 +84,10 @@ const COMPENSATION_READ = "human-resources.compensation.read" as const;
 export async function createCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<CompensationReviewCycle, { cycle: CompensationReviewCycle }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewCycle,
+		{ cycle: CompensationReviewCycle }
+	>({
 		path: "createCompensationReviewCycleAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not create compensation review cycle.",
@@ -99,7 +102,10 @@ export async function createCompensationReviewCycleAction(
 export async function openCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<CompensationReviewCycle, { cycle: CompensationReviewCycle }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewCycle,
+		{ cycle: CompensationReviewCycle }
+	>({
 		path: "openCompensationReviewCycleAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not open compensation review cycle.",
@@ -114,7 +120,10 @@ export async function openCompensationReviewCycleAction(
 export async function closeCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<CompensationReviewCycle, { cycle: CompensationReviewCycle }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewCycle,
+		{ cycle: CompensationReviewCycle }
+	>({
 		path: "closeCompensationReviewCycleAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not close compensation review cycle.",
@@ -129,7 +138,10 @@ export async function closeCompensationReviewCycleAction(
 export async function cancelCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle }>> {
-	return runHrHumanResourcesAction<CompensationReviewCycle, { cycle: CompensationReviewCycle }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewCycle,
+		{ cycle: CompensationReviewCycle }
+	>({
 		path: "cancelCompensationReviewCycleAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not cancel compensation review cycle.",
@@ -144,7 +156,10 @@ export async function cancelCompensationReviewCycleAction(
 export async function getCompensationReviewCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: CompensationReviewCycle | null }>> {
-	return runHrHumanResourcesAction<CompensationReviewCycle | null, { cycle: CompensationReviewCycle | null }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewCycle | null,
+		{ cycle: CompensationReviewCycle | null }
+	>({
 		path: "getCompensationReviewCycleAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get compensation review cycle.",
@@ -159,7 +174,10 @@ export async function getCompensationReviewCycleAction(
 export async function listCompensationReviewCyclesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationReviewCycleListPage }>> {
-	return runHrHumanResourcesAction<CompensationReviewCycleListPage, { page: CompensationReviewCycleListPage }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewCycleListPage,
+		{ page: CompensationReviewCycleListPage }
+	>({
 		path: "listCompensationReviewCyclesAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list compensation review cycles.",
@@ -174,7 +192,10 @@ export async function listCompensationReviewCyclesAction(
 export async function createCompensationReviewDraftAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview }>> {
-	return runHrHumanResourcesAction<CompensationReview, { review: CompensationReview }>({
+	return runHrHumanResourcesAction<
+		CompensationReview,
+		{ review: CompensationReview }
+	>({
 		path: "createCompensationReviewDraftAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not create compensation review draft.",
@@ -189,7 +210,10 @@ export async function createCompensationReviewDraftAction(
 export async function recordCompensationRecommendationAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview }>> {
-	return runHrHumanResourcesAction<CompensationReview, { review: CompensationReview }>({
+	return runHrHumanResourcesAction<
+		CompensationReview,
+		{ review: CompensationReview }
+	>({
 		path: "recordCompensationRecommendationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not record compensation recommendation.",
@@ -204,7 +228,10 @@ export async function recordCompensationRecommendationAction(
 export async function finalizeCompensationReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview }>> {
-	return runHrHumanResourcesAction<CompensationReview, { review: CompensationReview }>({
+	return runHrHumanResourcesAction<
+		CompensationReview,
+		{ review: CompensationReview }
+	>({
 		path: "finalizeCompensationReviewAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not finalize compensation review.",
@@ -219,7 +246,10 @@ export async function finalizeCompensationReviewAction(
 export async function applyApprovedCompensationResultAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "applyApprovedCompensationResultAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not apply approved compensation result.",
@@ -234,7 +264,10 @@ export async function applyApprovedCompensationResultAction(
 export async function getCompensationReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: CompensationReview | null }>> {
-	return runHrHumanResourcesAction<CompensationReview | null, { review: CompensationReview | null }>({
+	return runHrHumanResourcesAction<
+		CompensationReview | null,
+		{ review: CompensationReview | null }
+	>({
 		path: "getCompensationReviewAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get compensation review.",
@@ -249,7 +282,10 @@ export async function getCompensationReviewAction(
 export async function listCompensationReviewsByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationReviewListPage }>> {
-	return runHrHumanResourcesAction<CompensationReviewListPage, { page: CompensationReviewListPage }>({
+	return runHrHumanResourcesAction<
+		CompensationReviewListPage,
+		{ page: CompensationReviewListPage }
+	>({
 		path: "listCompensationReviewsByEmployeeAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list compensation reviews.",

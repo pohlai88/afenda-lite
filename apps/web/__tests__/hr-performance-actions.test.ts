@@ -20,17 +20,58 @@ const permissionMocks = vi.hoisted(() => ({
 }));
 
 const hrPerfMocks = vi.hoisted(() => ({
+	acknowledgeImprovementPlan: vi.fn(),
+	acknowledgePerformanceReview: vi.fn(),
+	activatePerformanceGoal: vi.fn(),
+	addCycleParticipant: vi.fn(),
+	alignPerformanceGoal: vi.fn(),
+	amendImprovementPlan: vi.fn(),
+	approvePerformanceGoal: vi.fn(),
+	calibratePerformanceReview: vi.fn(),
+	cancelImprovementPlan: vi.fn(),
+	cancelPerformanceCycle: vi.fn(),
+	cancelPerformanceGoal: vi.fn(),
+	closeImprovementPlanUnsuccessful: vi.fn(),
+	closePerformanceCycle: vi.fn(),
+	closePerformanceGoal: vi.fn(),
+	completeImprovementPlan: vi.fn(),
 	createPerformanceCycle: vi.fn(),
 	openPerformanceCycle: vi.fn(),
 	getPerformanceCycleById: vi.fn(),
 	listPerformanceCycles: vi.fn(),
 	createPerformanceGoal: vi.fn(),
+	enrollEligibleCycleParticipants: vi.fn(),
+	finalizePerformanceReview: vi.fn(),
+	getImprovementPlanById: vi.fn(),
+	getPerformanceCycleEligibility: vi.fn(),
+	getPerformanceGoalById: vi.fn(),
 	listEmployeeGoals: vi.fn(),
+	listGoalProgress: vi.fn(),
+	listImprovementPlanCheckpoints: vi.fn(),
+	listPerformanceCycleReviewPeriods: vi.fn(),
 	startPerformanceReview: vi.fn(),
+	submitSelfAssessment: vi.fn(),
+	submitManagerAssessment: vi.fn(),
+	submitPerformanceGoal: vi.fn(),
+	updatePerformanceCycle: vi.fn(),
+	updatePerformanceGoal: vi.fn(),
+	listActiveImprovementPlans: vi.fn(),
+	listCycleParticipants: vi.fn(),
 	getPerformanceReviewById: vi.fn(),
 	listEmployeePerformanceReviews: vi.fn(),
 	listReviewsPendingManagerAction: vi.fn(),
 	createImprovementPlan: vi.fn(),
+	getEmployeePerformanceHistory: vi.fn(),
+	openImprovementPlan: vi.fn(),
+	publishPerformanceCycle: vi.fn(),
+	recordGoalProgress: vi.fn(),
+	recordImprovementCheckpoint: vi.fn(),
+	rejectPerformanceGoal: vi.fn(),
+	removeCycleParticipant: vi.fn(),
+	reopenPerformanceReview: vi.fn(),
+	returnPerformanceReviewForCorrection: vi.fn(),
+	setPerformanceCycleEligibility: vi.fn(),
+	setPerformanceCycleReviewPeriods: vi.fn(),
 }));
 
 vi.mock("@afenda/auth", () => ({
@@ -50,6 +91,7 @@ vi.mock("@afenda/human-resources", async (importOriginal) => {
 		await importOriginal<typeof import("@afenda/human-resources")>();
 	return {
 		...actual,
+		...hrPerfMocks,
 		createPerformanceCycle: hrPerfMocks.createPerformanceCycle,
 		openPerformanceCycle: hrPerfMocks.openPerformanceCycle,
 		getPerformanceCycleById: hrPerfMocks.getPerformanceCycleById,
@@ -59,8 +101,10 @@ vi.mock("@afenda/human-resources", async (importOriginal) => {
 		startPerformanceReview: hrPerfMocks.startPerformanceReview,
 		getPerformanceReviewById: hrPerfMocks.getPerformanceReviewById,
 		listEmployeePerformanceReviews: hrPerfMocks.listEmployeePerformanceReviews,
-		listReviewsPendingManagerAction: hrPerfMocks.listReviewsPendingManagerAction,
+		listReviewsPendingManagerAction:
+			hrPerfMocks.listReviewsPendingManagerAction,
 		createImprovementPlan: hrPerfMocks.createImprovementPlan,
+		getEmployeePerformanceHistory: hrPerfMocks.getEmployeePerformanceHistory,
 	};
 });
 
@@ -71,20 +115,60 @@ vi.mock("@/lib/erp/human-resources-command-options", () => ({
 }));
 
 import {
+	acknowledgeImprovementPlanAction,
+	acknowledgePerformanceReviewAction,
+	activatePerformanceGoalAction,
+	addCycleParticipantAction,
+	alignPerformanceGoalAction,
+	amendImprovementPlanAction,
+	approvePerformanceGoalAction,
+	calibratePerformanceReviewAction,
+	cancelImprovementPlanAction,
+	cancelPerformanceCycleAction,
+	cancelPerformanceGoalAction,
+	closeImprovementPlanUnsuccessfulAction,
+	closePerformanceCycleAction,
+	closePerformanceGoalAction,
+	completeImprovementPlanAction,
 	createPerformanceCycleAction,
 	createPerformanceGoalAction,
+	enrollEligibleCycleParticipantsAction,
+	finalizePerformanceReviewAction,
+	getEmployeePerformanceHistoryAction,
+	getImprovementPlanByIdAction,
 	getPerformanceCycleByIdAction,
+	getPerformanceCycleEligibilityAction,
+	getPerformanceGoalByIdAction,
+	listActiveImprovementPlansAction,
+	listCycleParticipantsAction,
 	listEmployeeGoalsAction,
+	listGoalProgressAction,
+	listImprovementPlanCheckpointsAction,
+	listPerformanceCycleReviewPeriodsAction,
 	listPerformanceCyclesAction,
 	listReviewsPendingManagerActionAction,
+	openImprovementPlanAction,
 	openPerformanceCycleAction,
+	publishPerformanceCycleAction,
+	recordGoalProgressAction,
+	recordImprovementCheckpointAction,
+	rejectPerformanceGoalAction,
+	removeCycleParticipantAction,
+	reopenPerformanceReviewAction,
+	returnPerformanceReviewForCorrectionAction,
+	setPerformanceCycleEligibilityAction,
+	setPerformanceCycleReviewPeriodsAction,
 	startPerformanceReviewAction,
+	submitManagerAssessmentAction,
+	submitPerformanceGoalAction,
+	submitSelfAssessmentAction,
+	updatePerformanceCycleAction,
+	updatePerformanceGoalAction,
 } from "../app/actions/hr-performance";
 
 const employeeId = "11111111-1111-4111-8111-111111111111";
 const employmentId = "22222222-2222-4222-8222-222222222222";
 const cycleId = "33333333-3333-4333-8333-333333333333";
-const reviewId = "44444444-4444-4444-8444-444444444444";
 const participantId = "55555555-5555-4555-8555-555555555555";
 const ratingScale = { codes: ["meets", "exceeds"] } as const;
 
@@ -159,6 +243,15 @@ describe("HR Performance Server Actions", () => {
 			},
 			{
 				invoke: () =>
+					getEmployeePerformanceHistoryAction({
+						employeeId,
+						includeConfidential: false,
+					}),
+				mock: hrPerfMocks.getEmployeePerformanceHistory,
+				permission: "human-resources.performance.own.read",
+			},
+			{
+				invoke: () =>
 					startPerformanceReviewAction({
 						cycleId,
 						participantId,
@@ -170,6 +263,206 @@ describe("HR Performance Server Actions", () => {
 				invoke: () => listReviewsPendingManagerActionAction({}),
 				mock: hrPerfMocks.listReviewsPendingManagerAction,
 				permission: "human-resources.performance.manager.manage",
+			},
+			{
+				invoke: () => updatePerformanceCycleAction({}),
+				mock: hrPerfMocks.updatePerformanceCycle,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => publishPerformanceCycleAction({}),
+				mock: hrPerfMocks.publishPerformanceCycle,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => closePerformanceCycleAction({}),
+				mock: hrPerfMocks.closePerformanceCycle,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => cancelPerformanceCycleAction({}),
+				mock: hrPerfMocks.cancelPerformanceCycle,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => setPerformanceCycleReviewPeriodsAction({}),
+				mock: hrPerfMocks.setPerformanceCycleReviewPeriods,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => listPerformanceCycleReviewPeriodsAction({}),
+				mock: hrPerfMocks.listPerformanceCycleReviewPeriods,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => setPerformanceCycleEligibilityAction({}),
+				mock: hrPerfMocks.setPerformanceCycleEligibility,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => getPerformanceCycleEligibilityAction({}),
+				mock: hrPerfMocks.getPerformanceCycleEligibility,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => enrollEligibleCycleParticipantsAction({}),
+				mock: hrPerfMocks.enrollEligibleCycleParticipants,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => addCycleParticipantAction({}),
+				mock: hrPerfMocks.addCycleParticipant,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => removeCycleParticipantAction({}),
+				mock: hrPerfMocks.removeCycleParticipant,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => listCycleParticipantsAction({}),
+				mock: hrPerfMocks.listCycleParticipants,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => updatePerformanceGoalAction({}),
+				mock: hrPerfMocks.updatePerformanceGoal,
+				permission: "human-resources.performance.goal.own.manage",
+			},
+			{
+				invoke: () => submitPerformanceGoalAction({}),
+				mock: hrPerfMocks.submitPerformanceGoal,
+				permission: "human-resources.performance.goal.own.manage",
+			},
+			{
+				invoke: () => approvePerformanceGoalAction({}),
+				mock: hrPerfMocks.approvePerformanceGoal,
+				permission: "human-resources.performance.manager.manage",
+			},
+			{
+				invoke: () => rejectPerformanceGoalAction({}),
+				mock: hrPerfMocks.rejectPerformanceGoal,
+				permission: "human-resources.performance.manager.manage",
+			},
+			{
+				invoke: () => recordGoalProgressAction({}),
+				mock: hrPerfMocks.recordGoalProgress,
+				permission: "human-resources.performance.goal.own.manage",
+			},
+			{
+				invoke: () => activatePerformanceGoalAction({}),
+				mock: hrPerfMocks.activatePerformanceGoal,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => alignPerformanceGoalAction({}),
+				mock: hrPerfMocks.alignPerformanceGoal,
+				permission: "human-resources.performance.manage",
+			},
+			{
+				invoke: () => closePerformanceGoalAction({}),
+				mock: hrPerfMocks.closePerformanceGoal,
+				permission: "human-resources.performance.goal.own.manage",
+			},
+			{
+				invoke: () => cancelPerformanceGoalAction({}),
+				mock: hrPerfMocks.cancelPerformanceGoal,
+				permission: "human-resources.performance.goal.own.manage",
+			},
+			{
+				invoke: () => getPerformanceGoalByIdAction({}),
+				mock: hrPerfMocks.getPerformanceGoalById,
+				permission: "human-resources.performance.own.read",
+			},
+			{
+				invoke: () => listGoalProgressAction({}),
+				mock: hrPerfMocks.listGoalProgress,
+				permission: "human-resources.performance.own.read",
+			},
+			{
+				invoke: () => submitSelfAssessmentAction({}),
+				mock: hrPerfMocks.submitSelfAssessment,
+				permission: "human-resources.performance.own.read",
+			},
+			{
+				invoke: () => submitManagerAssessmentAction({}),
+				mock: hrPerfMocks.submitManagerAssessment,
+				permission: "human-resources.performance.manager.manage",
+			},
+			{
+				invoke: () => returnPerformanceReviewForCorrectionAction({}),
+				mock: hrPerfMocks.returnPerformanceReviewForCorrection,
+				permission: "human-resources.performance.manager.manage",
+			},
+			{
+				invoke: () => acknowledgePerformanceReviewAction({}),
+				mock: hrPerfMocks.acknowledgePerformanceReview,
+				permission: "human-resources.performance.own.read",
+			},
+			{
+				invoke: () => finalizePerformanceReviewAction({}),
+				mock: hrPerfMocks.finalizePerformanceReview,
+				permission: "human-resources.performance.manager.manage",
+			},
+			{
+				invoke: () => reopenPerformanceReviewAction({}),
+				mock: hrPerfMocks.reopenPerformanceReview,
+				permission: "human-resources.performance.review.reopen",
+			},
+			{
+				invoke: () => calibratePerformanceReviewAction({}),
+				mock: hrPerfMocks.calibratePerformanceReview,
+				permission: "human-resources.performance.confidential.read",
+			},
+			{
+				invoke: () => openImprovementPlanAction({}),
+				mock: hrPerfMocks.openImprovementPlan,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => acknowledgeImprovementPlanAction({}),
+				mock: hrPerfMocks.acknowledgeImprovementPlan,
+				permission: "human-resources.performance.own.read",
+			},
+			{
+				invoke: () => recordImprovementCheckpointAction({}),
+				mock: hrPerfMocks.recordImprovementCheckpoint,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => amendImprovementPlanAction({}),
+				mock: hrPerfMocks.amendImprovementPlan,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => completeImprovementPlanAction({}),
+				mock: hrPerfMocks.completeImprovementPlan,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => closeImprovementPlanUnsuccessfulAction({}),
+				mock: hrPerfMocks.closeImprovementPlanUnsuccessful,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => cancelImprovementPlanAction({}),
+				mock: hrPerfMocks.cancelImprovementPlan,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => getImprovementPlanByIdAction({}),
+				mock: hrPerfMocks.getImprovementPlanById,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => listActiveImprovementPlansAction({}),
+				mock: hrPerfMocks.listActiveImprovementPlans,
+				permission: "human-resources.performance.improvement-plan.manage",
+			},
+			{
+				invoke: () => listImprovementPlanCheckpointsAction({}),
+				mock: hrPerfMocks.listImprovementPlanCheckpoints,
+				permission: "human-resources.performance.improvement-plan.manage",
 			},
 		];
 

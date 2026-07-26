@@ -5,6 +5,7 @@ import type {
 	HumanResourcesCourseId,
 	HumanResourcesEmployeeId,
 	HumanResourcesLearningAssignmentId,
+	HumanResourcesLearningAttendanceId,
 	HumanResourcesSessionId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
@@ -12,6 +13,7 @@ import type {
 	AssignmentStatus,
 	CertificationStatus,
 	CourseStatus,
+	LearningAttendanceStatus,
 	SessionStatus,
 } from "../shared/learning-status";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
@@ -22,6 +24,8 @@ import type {
 	EmployeeCertification,
 	LearningAssignment,
 	LearningAssignmentListPage,
+	LearningAttendance,
+	LearningAttendanceListPage,
 	LearningCompletion,
 	LearningCourse,
 	LearningSession,
@@ -59,6 +63,7 @@ export type SessionCreateRecord = {
 	scheduledStartsAt: Date;
 	scheduledEndsAt: Date;
 	capacity: number | null;
+	primaryInstructorUserId: string | null;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -112,6 +117,25 @@ export type IdempotentCompletionRecord = {
 
 export type IdempotentCertificationRecord = {
 	certification: EmployeeCertification;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+};
+
+export type LearningAttendanceCreateRecord = {
+	organizationId: string;
+	sessionId: HumanResourcesSessionId;
+	assignmentId: HumanResourcesLearningAssignmentId;
+	employeeId: HumanResourcesEmployeeId;
+	status: LearningAttendanceStatus;
+	recordedAt: Date;
+	recordedBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	createdBy: string;
+};
+
+export type IdempotentLearningAttendanceRecord = {
+	attendance: LearningAttendance;
 	createIdempotencyKey: string;
 	createRequestFingerprint: string;
 };
@@ -233,6 +257,18 @@ export type HumanResourcesLearningStore = {
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<LearningSession>>;
 
+	assignSessionInstructor(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			primaryInstructorUserId: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<LearningSession>>;
+
 	listSessions(input: {
 		organizationId: string;
 		page: number;
@@ -322,6 +358,36 @@ export type HumanResourcesLearningStore = {
 		employeeId?: HumanResourcesEmployeeId;
 		courseId?: HumanResourcesCourseId;
 	}): Promise<Result<CompletionListPage>>;
+	// Learning Attendance
+	getLearningAttendanceById(input: {
+		organizationId: string;
+		attendanceId: HumanResourcesLearningAttendanceId;
+	}): Promise<Result<LearningAttendance | null>>;
+
+	findLearningAttendanceByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentLearningAttendanceRecord | null>>;
+
+	findLearningAttendanceByAssignmentAndSession(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesLearningAssignmentId;
+		sessionId: HumanResourcesSessionId;
+	}): Promise<Result<LearningAttendance | null>>;
+
+	recordLearningAttendance(
+		record: LearningAttendanceCreateRecord,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<LearningAttendance>>;
+
+	listLearningAttendance(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		sessionId?: HumanResourcesSessionId;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<LearningAttendanceListPage>>;
 	// Employee Certification
 	getCertificationById(input: {
 		organizationId: string;
@@ -373,6 +439,26 @@ export type HumanResourcesLearningStore = {
 		meta: HumanResourcesMutationMeta,
 	): Promise<Result<EmployeeCertification>>;
 
+	renewCertification(
+		record: {
+			organizationId: string;
+			certificationId: HumanResourcesCertificationId;
+			employeeId: HumanResourcesEmployeeId;
+			courseId: HumanResourcesCourseId;
+			completionId: HumanResourcesCompletionId;
+			certificationCode: string;
+			issuedOn: string;
+			expiresOn: string | null;
+			createIdempotencyKey: string;
+			createRequestFingerprint: string;
+			expectedVersion: number;
+			createdBy: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	): Promise<Result<EmployeeCertification>>;
+
 	listCertifications(input: {
 		organizationId: string;
 		page: number;
@@ -380,5 +466,13 @@ export type HumanResourcesLearningStore = {
 		employeeId?: HumanResourcesEmployeeId;
 		courseId?: HumanResourcesCourseId;
 		status?: CertificationStatus;
+	}): Promise<Result<CertificationListPage>>;
+
+	listExpiringCertifications(input: {
+		organizationId: string;
+		asOf: string;
+		withinDays: number;
+		page: number;
+		pageSize: number;
 	}): Promise<Result<CertificationListPage>>;
 };

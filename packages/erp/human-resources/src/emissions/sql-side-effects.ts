@@ -1,8 +1,7 @@
-import type { HumanResourcesEventType } from "@afenda/events";
-
-import type { HumanResourcesCommandId } from "../module-ids";
-import type { OutboxFactInput, MutationPorts } from "../ports";
 import { ok, type Result } from "@afenda/errors/result";
+import type { HumanResourcesEventType } from "@afenda/events";
+import type { HumanResourcesCommandId } from "../module-ids";
+import type { MutationPorts, OutboxFactInput } from "../ports";
 import {
 	attachMutationExecutionContext,
 	type HumanResourcesMutationMeta,
@@ -14,7 +13,11 @@ import {
 	type PlannedHumanResourcesMutationOutcome,
 	planHumanResourcesMutationOutcome,
 } from "./mutation-outcome";
-import { getHumanResourcesMutationEmission, getRegistryDomainEventType, tryGetHumanResourcesMutationEmission } from "./resolve-emission";
+import {
+	getHumanResourcesMutationEmission,
+	getRegistryDomainEventType,
+	tryGetHumanResourcesMutationEmission,
+} from "./resolve-emission";
 
 /**
  * Drizzle CTE bridge: converts a planned mutation outcome into outbox event
@@ -101,9 +104,7 @@ export function planCommandMutationOutboxEventType(input: {
 	eventEntityType?: string;
 	conditionalEventSuppressed?: boolean;
 }): OutboxFactInput["type"] | undefined {
-	return plannedOutboxEventType(
-		planCommandMutationOutcome(input),
-	);
+	return plannedOutboxEventType(planCommandMutationOutcome(input));
 }
 
 export function buildRegistryOutboxInput(input: {
@@ -181,7 +182,8 @@ function planCommandMutationOutcome(input: {
 	const eventEntityId = input.eventEntityId ?? input.aggregateId;
 	const resolvedEventType =
 		input.eventType ??
-		(definition.emissionMode === "domain_event" && !input.conditionalEventSuppressed
+		(definition.emissionMode === "domain_event" &&
+		!input.conditionalEventSuppressed
 			? getRegistryDomainEventType(input.commandId)
 			: undefined);
 

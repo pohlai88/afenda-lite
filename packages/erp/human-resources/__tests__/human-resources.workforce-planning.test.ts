@@ -3,7 +3,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-
+import { createAssignment } from "../src/core/assignment";
+import { createEmployee } from "../src/core/employee";
+import { createEmployment } from "../src/core/employment";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -11,6 +13,7 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 } from "../src/error-codes";
+import { createPosition } from "../src/organization/position";
 import {
 	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_PREPARE,
 	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
@@ -20,10 +23,13 @@ import {
 	moveApplicationToInReview,
 } from "../src/recruitment/application";
 import { createCandidate } from "../src/recruitment/candidate";
-import { acceptOffer, declineOffer, expireOffer, withdrawOffer } from "../src/recruitment/offer";
-import { createAndIssueOffer } from "./helpers/offer-lifecycle-fixture";
 import {
-	approveRequisition,
+	acceptOffer,
+	declineOffer,
+	expireOffer,
+	withdrawOffer,
+} from "../src/recruitment/offer";
+import {
 	cancelRequisition,
 	closeRequisition,
 	createDraftRequisition,
@@ -33,6 +39,7 @@ import {
 import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
+	getWorkforcePlanVariance,
 	submitHeadcountPlan,
 	updateHeadcountPlan,
 } from "../src/workforce-planning/headcount-plan";
@@ -52,8 +59,12 @@ import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { createAndIssueOffer } from "./helpers/offer-lifecycle-fixture";
+import {
+	seedDefaultHiringManager,
+	seedRequisitionPipeline,
+} from "./helpers/recruitment-requisition-fixture";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
-import { seedDefaultHiringManager, seedRequisitionPipeline } from "./helpers/recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG = "org-wfp-test";
@@ -542,6 +553,101 @@ describe("@afenda/human-resources workforce planning (HR-WFP-01)", () => {
 		if (availability.ok) {
 			expect(availability.data.lines[0]?.availableHeadcount).toBe(2);
 		}
+	});
+
+	it("computes workforce variance from active employment assignments", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const approved = await approvePlanPipeline(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+			plannedFte: "2.0000",
+			plannedHeadcount: 2,
+		});
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-actual-employee-${tag}`,
+				idempotencyKey: `idem-actual-employee-${tag}`,
+				employeeNumber: `WFP-ACT-${tag}`.slice(0, 64),
+				legalName: "Actual Worker",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-actual-employment-${tag}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+
+		const position = await createPosition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-actual-position-${tag}`,
+				code: `POS-${tag}`.slice(0, 64),
+				title: "Actual Position",
+				departmentId: approved.data.line.departmentId,
+				jobId: approved.data.line.jobId,
+				status: "active",
+			},
+			ready,
+		);
+		expect(position.ok).toBe(true);
+		if (!position.ok) return;
+
+		const assignment = await createAssignment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-actual-assignment-${tag}`,
+				employmentId: employment.data.id,
+				positionId: position.data.id,
+				legalEntityKey: "legal-a",
+				businessUnitKey: "business-a",
+				locationKey: "hq",
+				costCentreKey: "cost-a",
+				projectKey: "project-a",
+				startsOn: "2026-01-01",
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const variance = await getWorkforcePlanVariance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-variance-actual-${tag}`,
+				planId: approved.data.plan.id,
+				asOf: "2026-07-01",
+			},
+			ready,
+		);
+		expect(variance.ok).toBe(true);
+		if (!variance.ok) return;
+		expect(variance.data.asOf).toBe("2026-07-01");
+		expect(variance.data.lines[0]?.actualHeadcount).toBe(1);
+		expect(variance.data.lines[0]?.actualFte).toBe("1.0000");
+		expect(variance.data.lines[0]?.varianceHeadcount).toBe(1);
+		expect(variance.data.lines[0]?.varianceFte).toBe("1.0000");
+		expect(variance.data.lines[0]?.availableHeadcount).toBe(2);
 	});
 
 	it("consumes reservation on offer acceptance", async () => {

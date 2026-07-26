@@ -20,7 +20,7 @@
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.config.ts --project openapi"
+		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project openapi"
 	},
 	"dependencies": {
 		"@asteasolutions/zod-to-openapi": "^8.5.0",

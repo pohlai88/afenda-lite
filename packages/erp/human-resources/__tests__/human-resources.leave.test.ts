@@ -2284,7 +2284,10 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 
 	it("requires leave.handoff.read (not leave-request.approve-team) for approved handoff query", async () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
-		const fixture = await seedApprovedLeaveHandoffFixture(ready, "handoff-perm");
+		const fixture = await seedApprovedLeaveHandoffFixture(
+			ready,
+			"handoff-perm",
+		);
 		expect(fixture.ok).toBe(true);
 		if (!fixture.ok) return;
 
@@ -2331,7 +2334,10 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 
 	it("returns approved leave handoff with plan shape", async () => {
 		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
-		const fixture = await seedApprovedLeaveHandoffFixture(ready, "handoff-shape");
+		const fixture = await seedApprovedLeaveHandoffFixture(
+			ready,
+			"handoff-shape",
+		);
 		expect(fixture.ok).toBe(true);
 		if (!fixture.ok) return;
 

@@ -56,7 +56,7 @@ Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503). Rate-
 | Domain `ok` / `reason` unions | Domain packages / `apps/web/modules/*` |
 | Next `jsonError` / Zod OpenAPI wrappers | `apps/web` |
 
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -66,7 +66,7 @@ Do not add to this package: Next.js handlers, ORM clients, UI/locale copy as con
 
 | Topic | Link |
 |-------|------|
-| ActionResult · OpenAPI · REST error wire | [docs-V2/api](../../docs-V2/api/README.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| API contract farm | [afenda-elite-api-contract](../../.cursor/skills/afenda-elite-api-contract/SKILL.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| ActionResult · OpenAPI · REST error wire | [docs-V2/api](../../../docs-V2/api/README.md) |
+| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| API contract farm | [afenda-elite-api-contract](../../../.cursor/skills/afenda-elite-api-contract/SKILL.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

@@ -110,7 +110,7 @@ export async function recordCompletion(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
 				}),
 			);
 		},

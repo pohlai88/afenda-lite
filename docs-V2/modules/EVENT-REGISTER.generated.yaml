@@ -272,6 +272,9 @@ events:
     id: human-resources.certification.expiring.v1
     moduleId: human-resources
   - direction: emits
+    id: human-resources.certification.renewed.v1
+    moduleId: human-resources
+  - direction: emits
     id: human-resources.learning-assignment.created.v1
     moduleId: human-resources
   - direction: emits
@@ -357,6 +360,9 @@ events:
     moduleId: human-resources
   - direction: emits
     id: human-resources.competency.assessed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.competency-assessment.expired.v1
     moduleId: human-resources
   - direction: emits
     id: human-resources.talent-profile.updated.v1

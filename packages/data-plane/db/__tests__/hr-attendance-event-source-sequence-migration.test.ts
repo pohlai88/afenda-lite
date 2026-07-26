@@ -17,14 +17,14 @@ describe("HR attendance event source sequence migration", () => {
 	it("is additive and backfills source_sequence per work day", () => {
 		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
-		expect(migrationSql).toContain('ADD COLUMN IF NOT EXISTS "source_sequence" integer');
+		expect(migrationSql).toContain(
+			'ADD COLUMN IF NOT EXISTS "source_sequence" integer',
+		);
 		expect(migrationSql).toContain("ROW_NUMBER() OVER");
 		expect(migrationSql).toContain(
 			'PARTITION BY "organization_id", "employee_id", "local_work_date"',
 		);
-		expect(migrationSql).toContain(
-			'ORDER BY "occurred_at", "id"',
-		);
+		expect(migrationSql).toContain('ORDER BY "occurred_at", "id"');
 		expect(migrationSql).toContain(
 			'ALTER COLUMN "source_sequence" SET NOT NULL',
 		);

@@ -2,9 +2,9 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
 import { requireAccountingPermission } from "./authorization";
 import type {
-	AccountRoleMapping,
 	AccountingCommandOptions,
 	AccountingPeriod,
+	AccountRoleMapping,
 	ChartOfAccounts,
 	Journal,
 	JournalLine,
@@ -16,15 +16,22 @@ import type {
 	TrialBalanceRow,
 } from "./model";
 
-export type { AccountingCommandOptions } from "./model";
 export type {
-	AccountRoleMapping,
-	AccountType,
+	AccountingAuthorizationPort,
+	AccountingPermission,
+} from "./authorization";
+export { requireAccountingPermission } from "./authorization";
+export { createDrizzleAccountingStore } from "./drizzle-store";
+export { createMemoryStore } from "./memory-store";
+export type {
+	AccountingCommandOptions,
 	AccountingEffects,
 	AccountingEventType,
 	AccountingPeriod,
 	AccountingPeriodStatus,
 	AccountingStore,
+	AccountRoleMapping,
+	AccountType,
 	ChartOfAccounts,
 	Journal,
 	JournalLine,
@@ -42,26 +49,18 @@ export type {
 	SourcePostingTrace,
 	TrialBalanceRow,
 } from "./model";
-export type {
-	AccountingAuthorizationPort,
-	AccountingPermission,
-} from "./authorization";
-export { requireAccountingPermission } from "./authorization";
-export { createMemoryStore } from "./memory-store";
-export { createDrizzleAccountingStore } from "./drizzle-store";
 
 function normalize(code: string): string {
 	return code.toUpperCase().replace(/[\s-]+/g, "");
 }
 
-function resolveOpts(
-	options: AccountingCommandOptions | undefined,
-): Result<{
+function resolveOpts(options: AccountingCommandOptions | undefined): Result<{
 	store: NonNullable<AccountingCommandOptions["store"]>;
 	authorization: NonNullable<AccountingCommandOptions["authorization"]>;
 	effects: NonNullable<AccountingCommandOptions["effects"]>;
 }> {
-	if (!options?.store) return fail("BAD_REQUEST", "AccountingStore is required");
+	if (!options?.store)
+		return fail("BAD_REQUEST", "AccountingStore is required");
 	if (!options?.authorization)
 		return fail("BAD_REQUEST", "Authorization port is required");
 	if (!options?.effects) return fail("BAD_REQUEST", "Effects port is required");
@@ -90,11 +89,14 @@ export async function createChartOfAccounts(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.account.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.account.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.createChartOfAccounts({
@@ -127,11 +129,14 @@ export async function createLedgerAccount(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.account.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.account.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.createLedgerAccount({
@@ -169,11 +174,14 @@ export async function updateLedgerAccount(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.account.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.account.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.updateLedgerAccount({
@@ -206,11 +214,14 @@ export async function deactivateLedgerAccount(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.account.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.account.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.deactivateLedgerAccount({
@@ -238,11 +249,14 @@ export async function listLedgerAccounts(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.account.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.account.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.listLedgerAccounts({
@@ -270,11 +284,14 @@ export async function mapAccountRole(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.account.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.account.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.mapAccountRole({
@@ -292,13 +309,15 @@ const UpsertPostingProfileInput = z.object({
 	code: z.string().min(1).max(50),
 	eventType: z.string().min(1).max(100),
 	versionNumber: z.number().int().positive(),
-	lines: z.array(
-		z.object({
-			lineNo: z.number().int().positive(),
-			side: z.enum(["debit", "credit"]),
-			accountRole: z.string().min(1).max(100),
-		}),
-	).min(1),
+	lines: z
+		.array(
+			z.object({
+				lineNo: z.number().int().positive(),
+				side: z.enum(["debit", "credit"]),
+				accountRole: z.string().min(1).max(100),
+			}),
+		)
+		.min(1),
 });
 
 export async function upsertPostingProfile(
@@ -311,11 +330,14 @@ export async function upsertPostingProfile(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.posting_rule.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.posting_rule.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.upsertPostingProfile({
@@ -361,11 +383,14 @@ export async function createDraftJournal(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.create",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.create",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.createDraft({
@@ -401,11 +426,14 @@ export async function addJournalLine(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.create",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.create",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	const normalizedCode = normalize(parsed.data.accountCode);
@@ -418,7 +446,10 @@ export async function addJournalLine(
 	let ledgerAccountId: string | null = null;
 	if (accountResult.data) {
 		if (accountResult.data.status !== "active") {
-			return fail("VALIDATION_ERROR", `Ledger account '${parsed.data.accountCode}' is inactive`);
+			return fail(
+				"VALIDATION_ERROR",
+				`Ledger account '${parsed.data.accountCode}' is inactive`,
+			);
 		}
 		ledgerAccountId = accountResult.data.id;
 	}
@@ -453,11 +484,14 @@ export async function postJournal(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.post",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.post",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.post({
@@ -489,11 +523,14 @@ export async function reverseJournal(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.reverse",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.reverse",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.reverse({
@@ -526,11 +563,14 @@ export async function openAccountingPeriod(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.period.open",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.period.open",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.openPeriod({
@@ -561,11 +601,14 @@ export async function softCloseAccountingPeriod(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.period.soft_close",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.period.soft_close",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.softClosePeriod({
@@ -595,11 +638,14 @@ export async function closeAccountingPeriod(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.period.close",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.period.close",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.closePeriod({
@@ -630,11 +676,14 @@ export async function reopenAccountingPeriod(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.period.reopen",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.period.reopen",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.reopenPeriod({
@@ -674,7 +723,10 @@ export async function postFinancialSourceEvent(
 	const { store, effects } = opts.data;
 	const d = parsed.data;
 
-	const profileResult = await store.getActivePostingProfile(d.organizationId, d.postingRuleCode);
+	const profileResult = await store.getActivePostingProfile(
+		d.organizationId,
+		d.postingRuleCode,
+	);
 	if (!profileResult.ok) return profileResult;
 	if (!profileResult.data) {
 		await store.createPostingException({
@@ -689,7 +741,10 @@ export async function postFinancialSourceEvent(
 			payload: d,
 			actorUserId: d.actorUserId,
 		});
-		return fail("NOT_FOUND", `Active posting profile '${d.postingRuleCode}' not found`);
+		return fail(
+			"NOT_FOUND",
+			`Active posting profile '${d.postingRuleCode}' not found`,
+		);
 	}
 
 	const profile = profileResult.data;
@@ -705,10 +760,16 @@ export async function postFinancialSourceEvent(
 	if (!existingLink.ok) return existingLink;
 
 	if (existingLink.data) {
-		const existingJournal = await store.getById(d.organizationId, existingLink.data.journalId);
+		const existingJournal = await store.getById(
+			d.organizationId,
+			existingLink.data.journalId,
+		);
 		if (!existingJournal.ok) return existingJournal;
 		if (existingJournal.data) return ok(existingJournal.data);
-		return fail("NOT_FOUND", "Linked journal not found for existing source posting link");
+		return fail(
+			"NOT_FOUND",
+			"Linked journal not found for existing source posting link",
+		);
 	}
 
 	type ResolvedLine = {
@@ -799,7 +860,10 @@ export async function postFinancialSourceEvent(
 		});
 	}
 
-	const journalCode = `SYS-${d.sourceModule}-${d.sourceEventId}`.substring(0, 50);
+	const journalCode = `SYS-${d.sourceModule}-${d.sourceEventId}`.substring(
+		0,
+		50,
+	);
 	const journalType: JournalType =
 		d.sourceModule === "receivables"
 			? "receivables"
@@ -895,14 +959,20 @@ export async function getJournalById(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
-	return opts.data.store.getById(parsed.data.organizationId, parsed.data.journalId);
+	return opts.data.store.getById(
+		parsed.data.organizationId,
+		parsed.data.journalId,
+	);
 }
 
 const ListJournalsInput = z.object({
@@ -924,11 +994,14 @@ export async function listJournals(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.list({
@@ -956,11 +1029,14 @@ export async function getTrialBalance(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.trial_balance.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.trial_balance.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.trialBalance({
@@ -986,11 +1062,14 @@ export async function getLedgerAccountActivity(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.ledger.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.ledger.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.getLedgerAccountActivity({
@@ -1019,11 +1098,14 @@ export async function getSourcePostingTrace(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.journal.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.journal.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.getSourcePostingTrace({
@@ -1051,11 +1133,14 @@ export async function listPostingExceptions(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.exception.read",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.exception.read",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.listPostingExceptions({
@@ -1083,11 +1168,14 @@ export async function resolvePostingException(
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
 
-	const authResult = await requireAccountingPermission(opts.data.authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		permission: "accounting.exception.manage",
-	});
+	const authResult = await requireAccountingPermission(
+		opts.data.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			permission: "accounting.exception.manage",
+		},
+	);
 	if (!authResult.ok) return authResult;
 
 	return opts.data.store.resolvePostingException({

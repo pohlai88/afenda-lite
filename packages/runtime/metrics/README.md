@@ -58,7 +58,7 @@ beforeEach(() => {
 
 **Living consumers:** `GET /api/metrics` (bearer `METRICS_SCRAPE_TOKEN`); `createPlatformRouteHandler({ routeTemplate })` records HTTP metrics. Keep `@afenda/http` `Server-Timing` as the per-response header — do not merge surfaces.
 
-DNA absorb/reject: [docs-V2/observability/metrics-dna.md](../../docs-V2/observability/metrics-dna.md).
+DNA absorb/reject: [docs-V2/observability/metrics-dna.md](../../../docs-V2/observability/metrics-dna.md).
 
 ## Maintain
 
@@ -90,7 +90,7 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | `Server-Timing` header | [`@afenda/http`](../http/README.md) |
 | Structured logs | [`@afenda/logger`](../logger/README.md) |
 
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces, `apps/*`, Next.js, OTEL/APM SDKs, or Prisma middleware. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces, `apps/*`, Next.js, OTEL/APM SDKs, or Prisma middleware. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -103,5 +103,5 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 ## Authority
 
-- Scratch: [docs-V2/observability](../../docs-V2/observability/README.md) · [metrics-dna.md](../../docs-V2/observability/metrics-dna.md)
-- DAG: [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md)
+- Scratch: [docs-V2/observability](../../../docs-V2/observability/README.md) · [metrics-dna.md](../../../docs-V2/observability/metrics-dna.md)
+- DAG: [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md)

@@ -24,8 +24,8 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 
 | Slice | Phase | Title | Depends on | Initial status |
 |---|---:|---|---|---|
-| CA-0.1 | 0 | Authority, catalog and package scaffold | None | OPEN |
-| CA-0.2 | 0 | Core contracts, permissions, errors and reference ports | CA-0.1 | OPEN |
+| CA-0.1 | 0 | Authority, catalog and package scaffold | None | DONE |
+| CA-0.2 | 0 | Core contracts, permissions, errors and reference ports | CA-0.1 | DONE |
 | CA-0.3 | 0 | Database foundation and atomic mutation kernel | CA-0.2 | OPEN |
 | CA-0.4 | 0 | First thin vertical — draft legal-company registration | CA-0.3 | OPEN |
 | CA-1.1 | 1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | OPEN |
@@ -86,12 +86,12 @@ Skipped tests, zero-test pattern matches, compile-only exports, TODO throws, pla
 
 ## Phase documents
 
-- [Phase 0 — Architecture and Foundation](./phases/PHASE-0-ARCHITECTURE-AND-FOUNDATION.md)
-- [Phase 1 — Legal Company and Establishments](./phases/PHASE-1-LEGAL-COMPANY-AND-ESTABLISHMENTS.md)
-- [Phase 2 — Governance and Statutory Offices](./phases/PHASE-2-GOVERNANCE-AND-STATUTORY-OFFICES.md)
-- [Phase 3 — Authority, Approvals and Company Seal](./phases/PHASE-3-AUTHORITY-APPROVALS-AND-SEAL.md)
-- [Phase 4 — Capital, Ownership and Beneficial Control](./phases/PHASE-4-CAPITAL-OWNERSHIP-AND-BENEFICIAL-CONTROL.md)
-- [Phase 5 — Assets, Licences, Insurance, Charges and Banking](./phases/PHASE-5-ASSETS-LICENCES-INSURANCE-CHARGES-AND-BANKING.md)
-- [Phase 6 — Group Structure, Agreements and Corporate Actions](./phases/PHASE-6-GROUP-AGREEMENTS-AND-CORPORATE-ACTIONS.md)
-- [Phase 7 — Documents, Statutory Registers, Compliance and Filings](./phases/PHASE-7-DOCUMENTS-REGISTERS-COMPLIANCE-AND-FILINGS.md)
-- [Phase 8 — Operational Services and Enterprise Activation](./phases/PHASE-8-OPERATIONS-AND-ENTERPRISE-ACTIVATION.md)
+- [Phase 0 — Architecture and Foundation](./phase/PHASE-0-ARCHITECTURE-AND-FOUNDATION.md)
+- [Phase 1 — Legal Company and Establishments](./phase/PHASE-1-LEGAL-COMPANY-AND-ESTABLISHMENTS.md)
+- [Phase 2 — Governance and Statutory Offices](./phase/PHASE-2-GOVERNANCE-AND-STATUTORY-OFFICES.md)
+- [Phase 3 — Authority, Approvals and Company Seal](./phase/PHASE-3-AUTHORITY-APPROVALS-AND-SEAL.md)
+- [Phase 4 — Capital, Ownership and Beneficial Control](./phase/PHASE-4-CAPITAL-OWNERSHIP-AND-BENEFICIAL-CONTROL.md)
+- [Phase 5 — Assets, Licences, Insurance, Charges and Banking](./phase/PHASE-5-ASSETS-LICENCES-INSURANCE-CHARGES-AND-BANKING.md)
+- [Phase 6 — Group Structure, Agreements and Corporate Actions](./phase/PHASE-6-GROUP-AGREEMENTS-AND-CORPORATE-ACTIONS.md)
+- [Phase 7 — Documents, Statutory Registers, Compliance and Filings](./phase/PHASE-7-DOCUMENTS-REGISTERS-COMPLIANCE-AND-FILINGS.md)
+- [Phase 8 — Operational Services and Enterprise Activation](./phase/PHASE-8-OPERATIONS-AND-ENTERPRISE-ACTIVATION.md)

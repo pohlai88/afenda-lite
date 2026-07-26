@@ -11,7 +11,11 @@ import {
 } from "../command-options";
 import type { PayrollCommandId, PayrollQueryId } from "../module-ids";
 import { parsePayrollInput } from "../parse-input";
-import type { MutationPorts, PayrollEmployeeQueryPort, PayrollRunCalculatorPort } from "../ports";
+import type {
+	MutationPorts,
+	PayrollEmployeeQueryPort,
+	PayrollRunCalculatorPort,
+} from "../ports";
 import type { PayrollStore } from "../store";
 
 type ActorScoped = {
@@ -46,11 +50,7 @@ export async function runPayrollSetupCommand<
 		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parsePayrollInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
+	const parsed = parsePayrollInput(config.schema, input, config.invalidMessage);
 	if (!parsed.ok) {
 		return parsed;
 	}
@@ -82,11 +82,7 @@ export async function runPayrollSetupQuery<
 		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
-	const parsed = parsePayrollInput(
-		config.schema,
-		input,
-		config.invalidMessage,
-	);
+	const parsed = parsePayrollInput(config.schema, input, config.invalidMessage);
 	if (!parsed.ok) {
 		return parsed;
 	}

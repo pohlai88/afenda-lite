@@ -29,8 +29,8 @@ import type {
 } from "../../types";
 import {
 	type AssignmentsMemoryState,
-	idempotencyMapKey,
 	type InputsMemoryState,
+	idempotencyMapKey,
 } from "./state";
 
 async function recordAudit(
@@ -55,11 +55,15 @@ async function recordAudit(
 	});
 }
 
-function cloneAssignment(entity: PayrollEmployeeAssignment): PayrollEmployeeAssignment {
+function cloneAssignment(
+	entity: PayrollEmployeeAssignment,
+): PayrollEmployeeAssignment {
 	return { ...entity };
 }
 
-function cloneRecurringEarning(entity: PayrollRecurringEarning): PayrollRecurringEarning {
+function cloneRecurringEarning(
+	entity: PayrollRecurringEarning,
+): PayrollRecurringEarning {
 	return { ...entity };
 }
 
@@ -69,7 +73,9 @@ function cloneRecurringDeduction(
 	return { ...entity };
 }
 
-function cloneVariableInput(entity: PayrollVariableInput): PayrollVariableInput {
+function cloneVariableInput(
+	entity: PayrollVariableInput,
+): PayrollVariableInput {
 	return { ...entity };
 }
 
@@ -162,7 +168,10 @@ export function createMemoryAssignmentsMethods(
 
 		async getEmployeeAssignment(input) {
 			const entity = state.assignments.get(input.assignmentId);
-			if (entity === undefined || entity.organizationId !== input.organizationId) {
+			if (
+				entity === undefined ||
+				entity.organizationId !== input.organizationId
+			) {
 				return ok(null);
 			}
 			return ok(cloneAssignment(entity));
@@ -267,7 +276,10 @@ export function createMemoryAssignmentsMethods(
 
 		async getRecurringEarning(input) {
 			const entity = state.recurringEarnings.get(input.recurringEarningId);
-			if (entity === undefined || entity.organizationId !== input.organizationId) {
+			if (
+				entity === undefined ||
+				entity.organizationId !== input.organizationId
+			) {
 				return ok(null);
 			}
 			return ok(cloneRecurringEarning(entity));
@@ -322,7 +334,9 @@ export function createMemoryAssignmentsMethods(
 				return ok(cloneRecurringDeduction(resolved.data));
 			}
 
-			const recurringDeductionId = parsePayrollRecurringDeductionId(randomUUID());
+			const recurringDeductionId = parsePayrollRecurringDeductionId(
+				randomUUID(),
+			);
 			if (!recurringDeductionId.ok) {
 				return recurringDeductionId;
 			}
@@ -372,7 +386,10 @@ export function createMemoryAssignmentsMethods(
 
 		async getRecurringDeduction(input) {
 			const entity = state.recurringDeductions.get(input.recurringDeductionId);
-			if (entity === undefined || entity.organizationId !== input.organizationId) {
+			if (
+				entity === undefined ||
+				entity.organizationId !== input.organizationId
+			) {
 				return ok(null);
 			}
 			return ok(cloneRecurringDeduction(entity));
@@ -492,7 +509,8 @@ export function createMemoryInputsMethods(
 						? null
 						: {
 								entity: bySource.data.variableInput,
-								sourceRequestFingerprint: bySource.data.sourceRequestFingerprint,
+								sourceRequestFingerprint:
+									bySource.data.sourceRequestFingerprint,
 							},
 				requestFingerprint: record.sourceRequestFingerprint,
 			});
@@ -592,7 +610,10 @@ export function createMemoryInputsMethods(
 
 		async getVariableInput(input) {
 			const entity = state.variableInputs.get(input.variableInputId);
-			if (entity === undefined || entity.organizationId !== input.organizationId) {
+			if (
+				entity === undefined ||
+				entity.organizationId !== input.organizationId
+			) {
 				return ok(null);
 			}
 			return ok(cloneVariableInput(entity));

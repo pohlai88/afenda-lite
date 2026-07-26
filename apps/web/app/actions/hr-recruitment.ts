@@ -1,52 +1,5 @@
 "use server";
 
-import {
-	createDraftRequisition,
-	amendRequisition,
-	assignHiringManager,
-	submitRequisition,
-	approveRequisition,
-	openRequisition,
-	placeRequisitionOnHold,
-	closeRequisition,
-	cancelRequisition,
-	getRequisition,
-	listRequisitions,
-	createCandidate,
-	updateCandidateProfile,
-	withdrawCandidateConsent,
-	changeCandidateRetention,
-	anonymizeCandidate,
-	getCandidate,
-	listCandidates,
-	detectCandidateDuplicates,
-	createApplication,
-	moveApplicationToInReview,
-	moveApplicationToInterviewing,
-	rejectApplication,
-	withdrawApplication,
-	reopenApplication,
-	getApplication,
-	listApplications,
-	listApplicationStatusHistory,
-	scheduleInterview,
-	cancelInterview,
-	assignInterviewInterviewer,
-	recordInterviewEvaluation,
-	getInterview,
-	listInterviews,
-	getInterviewEvaluation,
-	createOffer,
-	amendOfferDraft,
-	approveOffer,
-	issueOffer,
-	acceptOffer,
-	declineOffer,
-	expireOffer,
-	withdrawOffer,
-	getOffer,
-	listOffers,
-} from "@afenda/human-resources";
 import type {
 	ApplicationListPage,
 	ApplicationStatusHistory,
@@ -64,39 +17,86 @@ import type {
 	RequisitionListPage,
 } from "@afenda/human-resources";
 import {
-	createDraftRequisitionInputSchema,
+	acceptOffer,
+	amendOfferDraft,
+	amendRequisition,
+	anonymizeCandidate,
+	approveOffer,
+	approveRequisition,
+	assignHiringManager,
+	assignInterviewInterviewer,
+	cancelInterview,
+	cancelRequisition,
+	changeCandidateRetention,
+	closeRequisition,
+	createApplication,
+	createCandidate,
+	createDraftRequisition,
+	createOffer,
+	declineOffer,
+	detectCandidateDuplicates,
+	expireOffer,
+	getApplication,
+	getCandidate,
+	getInterview,
+	getInterviewEvaluation,
+	getOffer,
+	getRequisition,
+	issueOffer,
+	listApplicationStatusHistory,
+	listApplications,
+	listCandidates,
+	listInterviews,
+	listOffers,
+	listRequisitions,
+	moveApplicationToInReview,
+	moveApplicationToInterviewing,
+	openRequisition,
+	placeRequisitionOnHold,
+	recordInterviewEvaluation,
+	rejectApplication,
+	reopenApplication,
+	scheduleInterview,
+	submitRequisition,
+	updateCandidateProfile,
+	withdrawApplication,
+	withdrawCandidateConsent,
+	withdrawOffer,
+} from "@afenda/human-resources";
+import {
+	acceptOfferInputSchema,
+	amendOfferDraftInputSchema,
 	amendRequisitionInputSchema,
+	anonymizeCandidateInputSchema,
+	applicationStatusTransitionInputSchema,
 	assignHiringManagerInputSchema,
-	requisitionStatusTransitionInputSchema,
-	getRequisitionInputSchema,
-	listRequisitionsInputSchema,
+	assignInterviewInterviewerInputSchema,
+	cancelInterviewInputSchema,
+	changeCandidateRetentionInputSchema,
+	createApplicationInputSchema,
 	createCandidateInputSchema,
+	createDraftRequisitionInputSchema,
+	createOfferInputSchema,
+	detectCandidateDuplicatesInputSchema,
+	getApplicationInputSchema,
+	getCandidateInputSchema,
+	getInterviewEvaluationInputSchema,
+	getInterviewInputSchema,
+	getOfferInputSchema,
+	getRequisitionInputSchema,
+	listApplicationStatusHistoryInputSchema,
+	listApplicationsInputSchema,
+	listCandidatesInputSchema,
+	listInterviewsInputSchema,
+	listOffersInputSchema,
+	listRequisitionsInputSchema,
+	offerStatusTransitionInputSchema,
+	recordInterviewEvaluationInputSchema,
+	reopenApplicationInputSchema,
+	requisitionStatusTransitionInputSchema,
+	scheduleInterviewInputSchema,
 	updateCandidateProfileInputSchema,
 	withdrawCandidateConsentInputSchema,
-	changeCandidateRetentionInputSchema,
-	anonymizeCandidateInputSchema,
-	getCandidateInputSchema,
-	listCandidatesInputSchema,
-	detectCandidateDuplicatesInputSchema,
-	createApplicationInputSchema,
-	applicationStatusTransitionInputSchema,
-	reopenApplicationInputSchema,
-	getApplicationInputSchema,
-	listApplicationsInputSchema,
-	listApplicationStatusHistoryInputSchema,
-	scheduleInterviewInputSchema,
-	cancelInterviewInputSchema,
-	assignInterviewInterviewerInputSchema,
-	recordInterviewEvaluationInputSchema,
-	getInterviewInputSchema,
-	listInterviewsInputSchema,
-	getInterviewEvaluationInputSchema,
-	createOfferInputSchema,
-	amendOfferDraftInputSchema,
-	offerStatusTransitionInputSchema,
-	acceptOfferInputSchema,
-	getOfferInputSchema,
-	listOffersInputSchema
 } from "@afenda/human-resources/schemas";
 
 import {
@@ -112,10 +112,13 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
+const createDraftRequisitionActionSchema = hrActionSchema(
+	createDraftRequisitionInputSchema,
+);
 
-const createDraftRequisitionActionSchema = hrActionSchema(createDraftRequisitionInputSchema);
-
-export async function createDraftRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function createDraftRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "createDraftRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -140,10 +143,13 @@ export async function createDraftRequisitionAction(input: unknown): Promise<Acti
 	});
 }
 
+const amendRequisitionActionSchema = hrActionSchema(
+	amendRequisitionInputSchema,
+);
 
-const amendRequisitionActionSchema = hrActionSchema(amendRequisitionInputSchema);
-
-export async function amendRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function amendRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "amendRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -168,10 +174,13 @@ export async function amendRequisitionAction(input: unknown): Promise<ActionResu
 	});
 }
 
+const assignHiringManagerActionSchema = hrActionSchema(
+	assignHiringManagerInputSchema,
+);
 
-const assignHiringManagerActionSchema = hrActionSchema(assignHiringManagerInputSchema);
-
-export async function assignHiringManagerAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function assignHiringManagerAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "assignHiringManagerAction",
 		permission: "human-resources.requisition.create",
@@ -196,10 +205,13 @@ export async function assignHiringManagerAction(input: unknown): Promise<ActionR
 	});
 }
 
+const submitRequisitionActionSchema = hrActionSchema(
+	requisitionStatusTransitionInputSchema,
+);
 
-const submitRequisitionActionSchema = hrActionSchema(requisitionStatusTransitionInputSchema);
-
-export async function submitRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function submitRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "submitRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -224,10 +236,13 @@ export async function submitRequisitionAction(input: unknown): Promise<ActionRes
 	});
 }
 
+const approveRequisitionActionSchema = hrActionSchema(
+	requisitionStatusTransitionInputSchema,
+);
 
-const approveRequisitionActionSchema = hrActionSchema(requisitionStatusTransitionInputSchema);
-
-export async function approveRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function approveRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "approveRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -252,10 +267,13 @@ export async function approveRequisitionAction(input: unknown): Promise<ActionRe
 	});
 }
 
+const openRequisitionActionSchema = hrActionSchema(
+	requisitionStatusTransitionInputSchema,
+);
 
-const openRequisitionActionSchema = hrActionSchema(requisitionStatusTransitionInputSchema);
-
-export async function openRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function openRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "openRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -280,10 +298,13 @@ export async function openRequisitionAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const placeRequisitionOnHoldActionSchema = hrActionSchema(
+	requisitionStatusTransitionInputSchema,
+);
 
-const placeRequisitionOnHoldActionSchema = hrActionSchema(requisitionStatusTransitionInputSchema);
-
-export async function placeRequisitionOnHoldAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function placeRequisitionOnHoldAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "placeRequisitionOnHoldAction",
 		permission: "human-resources.requisition.create",
@@ -308,10 +329,13 @@ export async function placeRequisitionOnHoldAction(input: unknown): Promise<Acti
 	});
 }
 
+const closeRequisitionActionSchema = hrActionSchema(
+	requisitionStatusTransitionInputSchema,
+);
 
-const closeRequisitionActionSchema = hrActionSchema(requisitionStatusTransitionInputSchema);
-
-export async function closeRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function closeRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "closeRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -336,10 +360,13 @@ export async function closeRequisitionAction(input: unknown): Promise<ActionResu
 	});
 }
 
+const cancelRequisitionActionSchema = hrActionSchema(
+	requisitionStatusTransitionInputSchema,
+);
 
-const cancelRequisitionActionSchema = hrActionSchema(requisitionStatusTransitionInputSchema);
-
-export async function cancelRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function cancelRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "cancelRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -364,10 +391,11 @@ export async function cancelRequisitionAction(input: unknown): Promise<ActionRes
 	});
 }
 
-
 const getRequisitionActionSchema = hrActionSchema(getRequisitionInputSchema);
 
-export async function getRequisitionAction(input: unknown): Promise<ActionResult<{ requisition: JobRequisition }>> {
+export async function getRequisitionAction(
+	input: unknown,
+): Promise<ActionResult<{ requisition: JobRequisition }>> {
 	return runOperatorPermissionAction({
 		path: "getRequisitionAction",
 		permission: "human-resources.requisition.create",
@@ -392,10 +420,13 @@ export async function getRequisitionAction(input: unknown): Promise<ActionResult
 	});
 }
 
+const listRequisitionsActionSchema = hrActionSchema(
+	listRequisitionsInputSchema,
+);
 
-const listRequisitionsActionSchema = hrActionSchema(listRequisitionsInputSchema);
-
-export async function listRequisitionsAction(input: unknown): Promise<ActionResult<{ page: RequisitionListPage }>> {
+export async function listRequisitionsAction(
+	input: unknown,
+): Promise<ActionResult<{ page: RequisitionListPage }>> {
 	return runOperatorPermissionAction({
 		path: "listRequisitionsAction",
 		permission: "human-resources.requisition.create",
@@ -420,10 +451,11 @@ export async function listRequisitionsAction(input: unknown): Promise<ActionResu
 	});
 }
 
-
 const createCandidateActionSchema = hrActionSchema(createCandidateInputSchema);
 
-export async function createCandidateAction(input: unknown): Promise<ActionResult<{ candidate: Candidate }>> {
+export async function createCandidateAction(
+	input: unknown,
+): Promise<ActionResult<{ candidate: Candidate }>> {
 	return runOperatorPermissionAction({
 		path: "createCandidateAction",
 		permission: "human-resources.candidate.manage",
@@ -448,10 +480,13 @@ export async function createCandidateAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const updateCandidateProfileActionSchema = hrActionSchema(
+	updateCandidateProfileInputSchema,
+);
 
-const updateCandidateProfileActionSchema = hrActionSchema(updateCandidateProfileInputSchema);
-
-export async function updateCandidateProfileAction(input: unknown): Promise<ActionResult<{ candidate: Candidate }>> {
+export async function updateCandidateProfileAction(
+	input: unknown,
+): Promise<ActionResult<{ candidate: Candidate }>> {
 	return runOperatorPermissionAction({
 		path: "updateCandidateProfileAction",
 		permission: "human-resources.candidate.manage",
@@ -476,10 +511,13 @@ export async function updateCandidateProfileAction(input: unknown): Promise<Acti
 	});
 }
 
+const withdrawCandidateConsentActionSchema = hrActionSchema(
+	withdrawCandidateConsentInputSchema,
+);
 
-const withdrawCandidateConsentActionSchema = hrActionSchema(withdrawCandidateConsentInputSchema);
-
-export async function withdrawCandidateConsentAction(input: unknown): Promise<ActionResult<{ candidate: Candidate }>> {
+export async function withdrawCandidateConsentAction(
+	input: unknown,
+): Promise<ActionResult<{ candidate: Candidate }>> {
 	return runOperatorPermissionAction({
 		path: "withdrawCandidateConsentAction",
 		permission: "human-resources.candidate.manage",
@@ -504,10 +542,13 @@ export async function withdrawCandidateConsentAction(input: unknown): Promise<Ac
 	});
 }
 
+const changeCandidateRetentionActionSchema = hrActionSchema(
+	changeCandidateRetentionInputSchema,
+);
 
-const changeCandidateRetentionActionSchema = hrActionSchema(changeCandidateRetentionInputSchema);
-
-export async function changeCandidateRetentionAction(input: unknown): Promise<ActionResult<{ candidate: Candidate }>> {
+export async function changeCandidateRetentionAction(
+	input: unknown,
+): Promise<ActionResult<{ candidate: Candidate }>> {
 	return runOperatorPermissionAction({
 		path: "changeCandidateRetentionAction",
 		permission: "human-resources.candidate.manage",
@@ -532,10 +573,13 @@ export async function changeCandidateRetentionAction(input: unknown): Promise<Ac
 	});
 }
 
+const anonymizeCandidateActionSchema = hrActionSchema(
+	anonymizeCandidateInputSchema,
+);
 
-const anonymizeCandidateActionSchema = hrActionSchema(anonymizeCandidateInputSchema);
-
-export async function anonymizeCandidateAction(input: unknown): Promise<ActionResult<{ candidate: Candidate }>> {
+export async function anonymizeCandidateAction(
+	input: unknown,
+): Promise<ActionResult<{ candidate: Candidate }>> {
 	return runOperatorPermissionAction({
 		path: "anonymizeCandidateAction",
 		permission: "human-resources.candidate.manage",
@@ -560,10 +604,11 @@ export async function anonymizeCandidateAction(input: unknown): Promise<ActionRe
 	});
 }
 
-
 const getCandidateActionSchema = hrActionSchema(getCandidateInputSchema);
 
-export async function getCandidateAction(input: unknown): Promise<ActionResult<{ candidate: Candidate }>> {
+export async function getCandidateAction(
+	input: unknown,
+): Promise<ActionResult<{ candidate: Candidate }>> {
 	return runOperatorPermissionAction({
 		path: "getCandidateAction",
 		permission: "human-resources.candidate.manage",
@@ -588,10 +633,11 @@ export async function getCandidateAction(input: unknown): Promise<ActionResult<{
 	});
 }
 
-
 const listCandidatesActionSchema = hrActionSchema(listCandidatesInputSchema);
 
-export async function listCandidatesAction(input: unknown): Promise<ActionResult<{ page: CandidateListPage }>> {
+export async function listCandidatesAction(
+	input: unknown,
+): Promise<ActionResult<{ page: CandidateListPage }>> {
 	return runOperatorPermissionAction({
 		path: "listCandidatesAction",
 		permission: "human-resources.candidate.manage",
@@ -616,10 +662,13 @@ export async function listCandidatesAction(input: unknown): Promise<ActionResult
 	});
 }
 
+const detectCandidateDuplicatesActionSchema = hrActionSchema(
+	detectCandidateDuplicatesInputSchema,
+);
 
-const detectCandidateDuplicatesActionSchema = hrActionSchema(detectCandidateDuplicatesInputSchema);
-
-export async function detectCandidateDuplicatesAction(input: unknown): Promise<ActionResult<{ matches: readonly CandidateDuplicateMatch[] }>> {
+export async function detectCandidateDuplicatesAction(
+	input: unknown,
+): Promise<ActionResult<{ matches: readonly CandidateDuplicateMatch[] }>> {
 	return runOperatorPermissionAction({
 		path: "detectCandidateDuplicatesAction",
 		permission: "human-resources.candidate.manage",
@@ -644,10 +693,13 @@ export async function detectCandidateDuplicatesAction(input: unknown): Promise<A
 	});
 }
 
+const createApplicationActionSchema = hrActionSchema(
+	createApplicationInputSchema,
+);
 
-const createApplicationActionSchema = hrActionSchema(createApplicationInputSchema);
-
-export async function createApplicationAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function createApplicationAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "createApplicationAction",
 		permission: "human-resources.candidate.manage",
@@ -672,10 +724,13 @@ export async function createApplicationAction(input: unknown): Promise<ActionRes
 	});
 }
 
+const moveApplicationToInReviewActionSchema = hrActionSchema(
+	applicationStatusTransitionInputSchema,
+);
 
-const moveApplicationToInReviewActionSchema = hrActionSchema(applicationStatusTransitionInputSchema);
-
-export async function moveApplicationToInReviewAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function moveApplicationToInReviewAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "moveApplicationToInReviewAction",
 		permission: "human-resources.candidate.manage",
@@ -700,16 +755,22 @@ export async function moveApplicationToInReviewAction(input: unknown): Promise<A
 	});
 }
 
+const moveApplicationToInterviewingActionSchema = hrActionSchema(
+	applicationStatusTransitionInputSchema,
+);
 
-const moveApplicationToInterviewingActionSchema = hrActionSchema(applicationStatusTransitionInputSchema);
-
-export async function moveApplicationToInterviewingAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function moveApplicationToInterviewingAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "moveApplicationToInterviewingAction",
 		permission: "human-resources.candidate.manage",
 		safeMessage: "Could not move application to interviewing.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(moveApplicationToInterviewingActionSchema, input);
+			const parsed = parseSchema(
+				moveApplicationToInterviewingActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -728,10 +789,13 @@ export async function moveApplicationToInterviewingAction(input: unknown): Promi
 	});
 }
 
+const rejectApplicationActionSchema = hrActionSchema(
+	applicationStatusTransitionInputSchema,
+);
 
-const rejectApplicationActionSchema = hrActionSchema(applicationStatusTransitionInputSchema);
-
-export async function rejectApplicationAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function rejectApplicationAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "rejectApplicationAction",
 		permission: "human-resources.candidate.manage",
@@ -756,10 +820,13 @@ export async function rejectApplicationAction(input: unknown): Promise<ActionRes
 	});
 }
 
+const withdrawApplicationActionSchema = hrActionSchema(
+	applicationStatusTransitionInputSchema,
+);
 
-const withdrawApplicationActionSchema = hrActionSchema(applicationStatusTransitionInputSchema);
-
-export async function withdrawApplicationAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function withdrawApplicationAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "withdrawApplicationAction",
 		permission: "human-resources.candidate.manage",
@@ -784,10 +851,13 @@ export async function withdrawApplicationAction(input: unknown): Promise<ActionR
 	});
 }
 
+const reopenApplicationActionSchema = hrActionSchema(
+	reopenApplicationInputSchema,
+);
 
-const reopenApplicationActionSchema = hrActionSchema(reopenApplicationInputSchema);
-
-export async function reopenApplicationAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function reopenApplicationAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "reopenApplicationAction",
 		permission: "human-resources.candidate.manage",
@@ -812,10 +882,11 @@ export async function reopenApplicationAction(input: unknown): Promise<ActionRes
 	});
 }
 
-
 const getApplicationActionSchema = hrActionSchema(getApplicationInputSchema);
 
-export async function getApplicationAction(input: unknown): Promise<ActionResult<{ application: CandidateApplication }>> {
+export async function getApplicationAction(
+	input: unknown,
+): Promise<ActionResult<{ application: CandidateApplication }>> {
 	return runOperatorPermissionAction({
 		path: "getApplicationAction",
 		permission: "human-resources.candidate.manage",
@@ -840,10 +911,13 @@ export async function getApplicationAction(input: unknown): Promise<ActionResult
 	});
 }
 
+const listApplicationsActionSchema = hrActionSchema(
+	listApplicationsInputSchema,
+);
 
-const listApplicationsActionSchema = hrActionSchema(listApplicationsInputSchema);
-
-export async function listApplicationsAction(input: unknown): Promise<ActionResult<{ page: ApplicationListPage }>> {
+export async function listApplicationsAction(
+	input: unknown,
+): Promise<ActionResult<{ page: ApplicationListPage }>> {
 	return runOperatorPermissionAction({
 		path: "listApplicationsAction",
 		permission: "human-resources.candidate.manage",
@@ -868,16 +942,22 @@ export async function listApplicationsAction(input: unknown): Promise<ActionResu
 	});
 }
 
+const listApplicationStatusHistoryActionSchema = hrActionSchema(
+	listApplicationStatusHistoryInputSchema,
+);
 
-const listApplicationStatusHistoryActionSchema = hrActionSchema(listApplicationStatusHistoryInputSchema);
-
-export async function listApplicationStatusHistoryAction(input: unknown): Promise<ActionResult<{ history: ApplicationStatusHistory[] }>> {
+export async function listApplicationStatusHistoryAction(
+	input: unknown,
+): Promise<ActionResult<{ history: ApplicationStatusHistory[] }>> {
 	return runOperatorPermissionAction({
 		path: "listApplicationStatusHistoryAction",
 		permission: "human-resources.candidate.manage",
 		safeMessage: "Could not list application status history.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(listApplicationStatusHistoryActionSchema, input);
+			const parsed = parseSchema(
+				listApplicationStatusHistoryActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -896,10 +976,13 @@ export async function listApplicationStatusHistoryAction(input: unknown): Promis
 	});
 }
 
+const scheduleInterviewActionSchema = hrActionSchema(
+	scheduleInterviewInputSchema,
+);
 
-const scheduleInterviewActionSchema = hrActionSchema(scheduleInterviewInputSchema);
-
-export async function scheduleInterviewAction(input: unknown): Promise<ActionResult<{ interview: Interview }>> {
+export async function scheduleInterviewAction(
+	input: unknown,
+): Promise<ActionResult<{ interview: Interview }>> {
 	return runOperatorPermissionAction({
 		path: "scheduleInterviewAction",
 		permission: "human-resources.interview.record",
@@ -924,10 +1007,11 @@ export async function scheduleInterviewAction(input: unknown): Promise<ActionRes
 	});
 }
 
-
 const cancelInterviewActionSchema = hrActionSchema(cancelInterviewInputSchema);
 
-export async function cancelInterviewAction(input: unknown): Promise<ActionResult<{ interview: Interview }>> {
+export async function cancelInterviewAction(
+	input: unknown,
+): Promise<ActionResult<{ interview: Interview }>> {
 	return runOperatorPermissionAction({
 		path: "cancelInterviewAction",
 		permission: "human-resources.interview.record",
@@ -952,10 +1036,13 @@ export async function cancelInterviewAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const assignInterviewInterviewerActionSchema = hrActionSchema(
+	assignInterviewInterviewerInputSchema,
+);
 
-const assignInterviewInterviewerActionSchema = hrActionSchema(assignInterviewInterviewerInputSchema);
-
-export async function assignInterviewInterviewerAction(input: unknown): Promise<ActionResult<{ interview: Interview }>> {
+export async function assignInterviewInterviewerAction(
+	input: unknown,
+): Promise<ActionResult<{ interview: Interview }>> {
 	return runOperatorPermissionAction({
 		path: "assignInterviewInterviewerAction",
 		permission: "human-resources.interview.record",
@@ -980,10 +1067,13 @@ export async function assignInterviewInterviewerAction(input: unknown): Promise<
 	});
 }
 
+const recordInterviewEvaluationActionSchema = hrActionSchema(
+	recordInterviewEvaluationInputSchema,
+);
 
-const recordInterviewEvaluationActionSchema = hrActionSchema(recordInterviewEvaluationInputSchema);
-
-export async function recordInterviewEvaluationAction(input: unknown): Promise<ActionResult<{ evaluation: InterviewEvaluation }>> {
+export async function recordInterviewEvaluationAction(
+	input: unknown,
+): Promise<ActionResult<{ evaluation: InterviewEvaluation }>> {
 	return runOperatorPermissionAction({
 		path: "recordInterviewEvaluationAction",
 		permission: "human-resources.interview.record",
@@ -1008,10 +1098,11 @@ export async function recordInterviewEvaluationAction(input: unknown): Promise<A
 	});
 }
 
-
 const getInterviewActionSchema = hrActionSchema(getInterviewInputSchema);
 
-export async function getInterviewAction(input: unknown): Promise<ActionResult<{ interview: Interview }>> {
+export async function getInterviewAction(
+	input: unknown,
+): Promise<ActionResult<{ interview: Interview }>> {
 	return runOperatorPermissionAction({
 		path: "getInterviewAction",
 		permission: "human-resources.interview.read",
@@ -1036,10 +1127,11 @@ export async function getInterviewAction(input: unknown): Promise<ActionResult<{
 	});
 }
 
-
 const listInterviewsActionSchema = hrActionSchema(listInterviewsInputSchema);
 
-export async function listInterviewsAction(input: unknown): Promise<ActionResult<{ page: InterviewListPage }>> {
+export async function listInterviewsAction(
+	input: unknown,
+): Promise<ActionResult<{ page: InterviewListPage }>> {
 	return runOperatorPermissionAction({
 		path: "listInterviewsAction",
 		permission: "human-resources.interview.read",
@@ -1064,10 +1156,13 @@ export async function listInterviewsAction(input: unknown): Promise<ActionResult
 	});
 }
 
+const getInterviewEvaluationActionSchema = hrActionSchema(
+	getInterviewEvaluationInputSchema,
+);
 
-const getInterviewEvaluationActionSchema = hrActionSchema(getInterviewEvaluationInputSchema);
-
-export async function getInterviewEvaluationAction(input: unknown): Promise<ActionResult<{ evaluation: InterviewEvaluation }>> {
+export async function getInterviewEvaluationAction(
+	input: unknown,
+): Promise<ActionResult<{ evaluation: InterviewEvaluation }>> {
 	return runOperatorPermissionAction({
 		path: "getInterviewEvaluationAction",
 		permission: "human-resources.interview.read",
@@ -1092,10 +1187,11 @@ export async function getInterviewEvaluationAction(input: unknown): Promise<Acti
 	});
 }
 
-
 const createOfferActionSchema = hrActionSchema(createOfferInputSchema);
 
-export async function createOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function createOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "createOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1120,10 +1216,11 @@ export async function createOfferAction(input: unknown): Promise<ActionResult<{ 
 	});
 }
 
-
 const amendOfferDraftActionSchema = hrActionSchema(amendOfferDraftInputSchema);
 
-export async function amendOfferDraftAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function amendOfferDraftAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "amendOfferDraftAction",
 		permission: "human-resources.offer.approve",
@@ -1148,10 +1245,13 @@ export async function amendOfferDraftAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const approveOfferActionSchema = hrActionSchema(
+	offerStatusTransitionInputSchema,
+);
 
-const approveOfferActionSchema = hrActionSchema(offerStatusTransitionInputSchema);
-
-export async function approveOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function approveOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "approveOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1176,10 +1276,11 @@ export async function approveOfferAction(input: unknown): Promise<ActionResult<{
 	});
 }
 
-
 const issueOfferActionSchema = hrActionSchema(offerStatusTransitionInputSchema);
 
-export async function issueOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function issueOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "issueOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1204,10 +1305,11 @@ export async function issueOfferAction(input: unknown): Promise<ActionResult<{ o
 	});
 }
 
-
 const acceptOfferActionSchema = hrActionSchema(acceptOfferInputSchema);
 
-export async function acceptOfferAction(input: unknown): Promise<ActionResult<{ handoff: OfferAcceptanceHandoff }>> {
+export async function acceptOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ handoff: OfferAcceptanceHandoff }>> {
 	return runOperatorPermissionAction({
 		path: "acceptOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1232,10 +1334,13 @@ export async function acceptOfferAction(input: unknown): Promise<ActionResult<{ 
 	});
 }
 
+const declineOfferActionSchema = hrActionSchema(
+	offerStatusTransitionInputSchema,
+);
 
-const declineOfferActionSchema = hrActionSchema(offerStatusTransitionInputSchema);
-
-export async function declineOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function declineOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "declineOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1260,10 +1365,13 @@ export async function declineOfferAction(input: unknown): Promise<ActionResult<{
 	});
 }
 
+const expireOfferActionSchema = hrActionSchema(
+	offerStatusTransitionInputSchema,
+);
 
-const expireOfferActionSchema = hrActionSchema(offerStatusTransitionInputSchema);
-
-export async function expireOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function expireOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "expireOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1288,10 +1396,13 @@ export async function expireOfferAction(input: unknown): Promise<ActionResult<{ 
 	});
 }
 
+const withdrawOfferActionSchema = hrActionSchema(
+	offerStatusTransitionInputSchema,
+);
 
-const withdrawOfferActionSchema = hrActionSchema(offerStatusTransitionInputSchema);
-
-export async function withdrawOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function withdrawOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "withdrawOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1316,10 +1427,11 @@ export async function withdrawOfferAction(input: unknown): Promise<ActionResult<
 	});
 }
 
-
 const getOfferActionSchema = hrActionSchema(getOfferInputSchema);
 
-export async function getOfferAction(input: unknown): Promise<ActionResult<{ offer: EmploymentOffer }>> {
+export async function getOfferAction(
+	input: unknown,
+): Promise<ActionResult<{ offer: EmploymentOffer }>> {
 	return runOperatorPermissionAction({
 		path: "getOfferAction",
 		permission: "human-resources.offer.approve",
@@ -1344,10 +1456,11 @@ export async function getOfferAction(input: unknown): Promise<ActionResult<{ off
 	});
 }
 
-
 const listOffersActionSchema = hrActionSchema(listOffersInputSchema);
 
-export async function listOffersAction(input: unknown): Promise<ActionResult<{ page: OfferListPage }>> {
+export async function listOffersAction(
+	input: unknown,
+): Promise<ActionResult<{ page: OfferListPage }>> {
 	return runOperatorPermissionAction({
 		path: "listOffersAction",
 		permission: "human-resources.offer.approve",

@@ -1,8 +1,8 @@
 "use server";
 
 import {
-	reverseCustomerReceiptApplication,
 	type CustomerAllocation,
+	reverseCustomerReceiptApplication,
 } from "@afenda/receivables";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";

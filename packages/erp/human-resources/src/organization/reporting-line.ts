@@ -47,7 +47,7 @@ export async function assignPrimaryReportingLine(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY,
+					operationId: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY,
 				}),
 			),
 	});
@@ -73,7 +73,7 @@ export async function closeReportingLine(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE,
 				}),
 			),
 	});
@@ -102,7 +102,7 @@ export async function replacePrimaryReportingLine(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
+					operationId: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
 				}),
 			);
 		},

@@ -34,20 +34,22 @@ import type {
 	PayrollStatutoryResultCreateRecord,
 	PayrollStatutoryRule,
 } from "../types";
-import {
-	calculateEmployeePayroll,
-	hashSnapshot,
-	normalizeCalcOutput,
-	verifyAccountingIdentities,
-} from "./calculation";
 import type {
 	PayrollCalcDeductionRuleSnapshot,
 	PayrollCalcEarningRuleSnapshot,
 	PayrollCalcStatutoryRuleSnapshot,
 	PayrollEmployeeCalcSnapshot,
 } from "./calc/types";
+import {
+	calculateEmployeePayroll,
+	hashSnapshot,
+	normalizeCalcOutput,
+	verifyAccountingIdentities,
+} from "./calculation";
 
-function mapEarningRule(rule: PayrollEarningRule): PayrollCalcEarningRuleSnapshot {
+function mapEarningRule(
+	rule: PayrollEarningRule,
+): PayrollCalcEarningRuleSnapshot {
 	return {
 		id: rule.id,
 		code: rule.code,
@@ -94,7 +96,8 @@ export function createProductionPayrollRunCalculator(input: {
 	employees: PayrollEmployeeQueryPort;
 	roundingPolicy?: PayrollRoundingPolicy;
 }): PayrollRunCalculatorPort {
-	const roundingPolicy = input.roundingPolicy ?? DEFAULT_PAYROLL_ROUNDING_POLICY;
+	const roundingPolicy =
+		input.roundingPolicy ?? DEFAULT_PAYROLL_ROUNDING_POLICY;
 
 	return {
 		async calculate(calcInput, ports) {
@@ -130,33 +133,38 @@ export function createProductionPayrollRunCalculator(input: {
 
 			const effectiveDate = period.data.periodEnd;
 
-			const [assignments, earningRules, deductionRules, statutoryRules, variableInputs] =
-				await Promise.all([
-					input.store.listActiveAssignmentsForPayGroup({
-						organizationId: calcInput.organizationId,
-						payGroupId: calcInput.payGroupId,
-						effectiveDate,
-					}),
-					input.store.listActiveEarningRulesForPayGroup({
-						organizationId: calcInput.organizationId,
-						payGroupId: calcInput.payGroupId,
-						effectiveDate,
-					}),
-					input.store.listActiveDeductionRulesForPayGroup({
-						organizationId: calcInput.organizationId,
-						payGroupId: calcInput.payGroupId,
-						effectiveDate,
-					}),
-					input.store.listActiveStatutoryRulesForPayGroup({
-						organizationId: calcInput.organizationId,
-						payGroupId: calcInput.payGroupId,
-						effectiveDate,
-					}),
-					input.store.listVariableInputsForPeriod({
-						organizationId: calcInput.organizationId,
-						periodId: calcInput.periodId,
-					}),
-				]);
+			const [
+				assignments,
+				earningRules,
+				deductionRules,
+				statutoryRules,
+				variableInputs,
+			] = await Promise.all([
+				input.store.listActiveAssignmentsForPayGroup({
+					organizationId: calcInput.organizationId,
+					payGroupId: calcInput.payGroupId,
+					effectiveDate,
+				}),
+				input.store.listActiveEarningRulesForPayGroup({
+					organizationId: calcInput.organizationId,
+					payGroupId: calcInput.payGroupId,
+					effectiveDate,
+				}),
+				input.store.listActiveDeductionRulesForPayGroup({
+					organizationId: calcInput.organizationId,
+					payGroupId: calcInput.payGroupId,
+					effectiveDate,
+				}),
+				input.store.listActiveStatutoryRulesForPayGroup({
+					organizationId: calcInput.organizationId,
+					payGroupId: calcInput.payGroupId,
+					effectiveDate,
+				}),
+				input.store.listVariableInputsForPeriod({
+					organizationId: calcInput.organizationId,
+					periodId: calcInput.periodId,
+				}),
+			]);
 
 			for (const result of [
 				assignments,

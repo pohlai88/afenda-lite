@@ -184,7 +184,9 @@ export function createAssignmentsMemoryState(): AssignmentsMemoryState {
 	};
 }
 
-export function resetAssignmentsMemoryState(state: AssignmentsMemoryState): void {
+export function resetAssignmentsMemoryState(
+	state: AssignmentsMemoryState,
+): void {
 	state.assignments.clear();
 	state.assignmentIdempotency.clear();
 	state.recurringEarnings.clear();

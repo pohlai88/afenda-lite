@@ -14,10 +14,9 @@ import { HUMAN_RESOURCES_PERFORMANCE_EMISSIONS } from "../src/emissions/domains/
 import { HUMAN_RESOURCES_PRIVACY_EMISSIONS } from "../src/emissions/domains/privacy";
 import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "../src/emissions/domains/recruitment";
 import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/emissions/domains/talent";
+import { HUMAN_RESOURCES_TIME_EMISSIONS } from "../src/emissions/domains/time";
 import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/emissions/domains/workforce-foundation";
 import { HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS } from "../src/emissions/domains/workforce-planning";
-import { HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS } from "../src/emissions/legacy-classifications";
-import { toLegacyMutationEmissionEntry } from "../src/emissions/legacy-compat";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
 import { getRegistryDomainEventType } from "../src/emissions/resolve-emission";
 import { planLeaveMutationOutboxEventType } from "../src/emissions/sql-side-effects";
@@ -32,7 +31,6 @@ import {
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
-	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
 } from "../src/module-ids";
 import {
@@ -56,10 +54,8 @@ describe("emission registry infrastructure", () => {
 		expect(catalogIssues).toEqual([]);
 	});
 
-	it("preserves 335 / 63 / 18 / 12 / 27 / 32 / 1 / 22 / 15 / 19 / 31 / 13 / 36 / 32 / 11 / 3 classification counts", () => {
-		expect(
-			Object.keys(HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS),
-		).toHaveLength(63);
+	it("preserves canonical per-domain classification counts", () => {
+		expect(Object.keys(HUMAN_RESOURCES_TIME_EMISSIONS)).toHaveLength(59);
 		expect(Object.keys(HUMAN_RESOURCES_LEAVE_EMISSIONS)).toHaveLength(18);
 		expect(
 			Object.keys(HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS),
@@ -68,78 +64,80 @@ describe("emission registry infrastructure", () => {
 			Object.keys(HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS),
 		).toHaveLength(27);
 		expect(Object.keys(HUMAN_RESOURCES_RECRUITMENT_EMISSIONS)).toHaveLength(32);
-		expect(Object.keys(HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS)).toHaveLength(
-			1,
-		);
+		expect(
+			Object.keys(HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS),
+		).toHaveLength(1);
 		expect(Object.keys(HUMAN_RESOURCES_LIFECYCLE_EMISSIONS)).toHaveLength(22);
 		expect(
 			Object.keys(HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS),
 		).toHaveLength(15);
 		expect(Object.keys(HUMAN_RESOURCES_COMPLIANCE_EMISSIONS)).toHaveLength(19);
-		expect(Object.keys(HUMAN_RESOURCES_TALENT_EMISSIONS)).toHaveLength(31);
+		expect(Object.keys(HUMAN_RESOURCES_TALENT_EMISSIONS)).toHaveLength(34);
 		expect(
 			Object.keys(HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS),
 		).toHaveLength(13);
-		expect(Object.keys(HUMAN_RESOURCES_COMPENSATION_EMISSIONS)).toHaveLength(36);
-		expect(Object.keys(HUMAN_RESOURCES_PERFORMANCE_EMISSIONS)).toHaveLength(32);
-		expect(Object.keys(HUMAN_RESOURCES_LEARNING_EMISSIONS)).toHaveLength(11);
+		expect(Object.keys(HUMAN_RESOURCES_COMPENSATION_EMISSIONS)).toHaveLength(
+			36,
+		);
+		expect(Object.keys(HUMAN_RESOURCES_PERFORMANCE_EMISSIONS)).toHaveLength(39);
+		expect(Object.keys(HUMAN_RESOURCES_LEARNING_EMISSIONS)).toHaveLength(18);
 		expect(Object.keys(HUMAN_RESOURCES_PRIVACY_EMISSIONS)).toHaveLength(3);
 		expect(
 			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		).toHaveLength(335);
+		).toHaveLength(348);
 	});
 
-	it("keeps leave commands out of legacy classifications", () => {
+	it("keeps leave commands out of Time classifications", () => {
 		for (const commandId of HUMAN_RESOURCES_LEAVE_COMMAND_IDS) {
 			expect(
-				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
-					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				HUMAN_RESOURCES_TIME_EMISSIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_TIME_EMISSIONS
 				],
 			).toBeUndefined();
 		}
 	});
 
-	it("keeps workforce-foundation commands out of legacy classifications", () => {
+	it("keeps workforce-foundation commands out of Time classifications", () => {
 		for (const commandId of HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS) {
 			expect(
-				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
-					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				HUMAN_RESOURCES_TIME_EMISSIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_TIME_EMISSIONS
 				],
 			).toBeUndefined();
 		}
 	});
 
-	it("keeps core-organization commands out of legacy classifications", () => {
+	it("keeps core-organization commands out of Time classifications", () => {
 		for (const commandId of HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS) {
 			expect(
-				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
-					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				HUMAN_RESOURCES_TIME_EMISSIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_TIME_EMISSIONS
 				],
 			).toBeUndefined();
 		}
 	});
 
-	it("keeps recruitment commands out of legacy classifications", () => {
+	it("keeps recruitment commands out of Time classifications", () => {
 		for (const commandId of HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS) {
 			expect(
-				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
-					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				HUMAN_RESOURCES_TIME_EMISSIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_TIME_EMISSIONS
 				],
 			).toBeUndefined();
 		}
 	});
 
-	it("keeps lifecycle commands out of legacy classifications", () => {
+	it("keeps lifecycle commands out of Time classifications", () => {
 		for (const commandId of HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS) {
 			expect(
-				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
-					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				HUMAN_RESOURCES_TIME_EMISSIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_TIME_EMISSIONS
 				],
 			).toBeUndefined();
 		}
 	});
 
-	it("keeps Slice 3.6 classified commands out of legacy classifications", () => {
+	it("keeps Slice 3.6 classified commands out of Time classifications", () => {
 		const slice36CommandIds = [
 			...HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 			...HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
@@ -148,8 +146,8 @@ describe("emission registry infrastructure", () => {
 		];
 		for (const commandId of slice36CommandIds) {
 			expect(
-				HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS[
-					commandId as keyof typeof HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS
+				HUMAN_RESOURCES_TIME_EMISSIONS[
+					commandId as keyof typeof HUMAN_RESOURCES_TIME_EMISSIONS
 				],
 			).toBeUndefined();
 		}
@@ -164,12 +162,11 @@ describe("emission registry infrastructure", () => {
 		).toThrow(/Duplicate HR emission classification/);
 	});
 
-	it("derives legacy array parity with the canonical record", () => {
+	it("derives stable array parity with the canonical record", () => {
 		const fromRecord = Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
 		)
-			.map(toLegacyMutationEmissionEntry)
-			.map((entry) => `${entry.command}:${entry.emission}`)
+			.map((entry) => `${entry.commandId}:${entry.emissionMode}`)
 			.sort();
 		const fromArray = HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY.map(
 			(entry) => `${entry.command}:${entry.emission}`,
@@ -189,7 +186,7 @@ describe("emission registry infrastructure", () => {
 		expect(mutationInventoryFixture.totalCommandIds).toBe(
 			HUMAN_RESOURCES_COMMAND_IDS.length,
 		);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(335);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(348);
 		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
 		expect(mutationInventoryFixture.unclassified).toEqual([]);
 	});

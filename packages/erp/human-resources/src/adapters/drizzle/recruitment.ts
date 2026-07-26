@@ -41,18 +41,19 @@ import {
 	parseHumanResourcesPositionId,
 	parseHumanResourcesRequisitionId,
 } from "../../brands";
+import { planRecruitmentMutationOutboxEventType } from "../../emissions/sql-side-effects";
 import {
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import { planRecruitmentMutationOutboxEventType } from "../../emissions/sql-side-effects";
 import {
 	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
 	type HumanResourcesCommandId,
 } from "../../module-ids";
 import type { MutationPorts } from "../../ports";
+import { interviewScorecardSchema } from "../../schemas/recruitment";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -76,7 +77,6 @@ import {
 	assertCandidateNotAnonymized,
 	assertInterviewInterviewerAssignable,
 	assertInterviewSchedulable,
-	normalizeCandidateEmail,
 	assertInterviewStatusTransition,
 	assertOfferAcceptable,
 	assertOfferAmendable,
@@ -87,6 +87,7 @@ import {
 	assertRequisitionHiringManagerAssignable,
 	assertRequisitionOpenForApplication,
 	assertRequisitionStatusTransition,
+	normalizeCandidateEmail,
 } from "../../shared/recruitment-guards";
 import {
 	type ApplicationStatus,
@@ -103,7 +104,6 @@ import {
 	requisitionStatusSchema,
 } from "../../shared/recruitment-status";
 import { validateOfferCompensationProposalAttachment } from "../../shared/validate-offer-compensation-proposal-attachment";
-import { interviewScorecardSchema } from "../../schemas/recruitment";
 import type {
 	ApplicationCreateRecord,
 	ApplicationStatusHistoryAppendRecord,
@@ -820,7 +820,8 @@ function mapOfferFields(input: {
 	if (!id.ok) return id;
 	const applicationId = parseHumanResourcesApplicationId(input.applicationId);
 	if (!applicationId.ok) return applicationId;
-	let compensationProposalId = null as EmploymentOffer["compensationProposalId"];
+	let compensationProposalId =
+		null as EmploymentOffer["compensationProposalId"];
 	if (input.compensationProposalId !== null) {
 		const parsed = parseHumanResourcesCompensationProposalId(
 			input.compensationProposalId,
@@ -2054,7 +2055,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			auditAction: "UPDATE",
 		});
 		if (plannedOutbox === undefined) {
-			return invalidState("Candidate consent withdrawal requires a domain event");
+			return invalidState(
+				"Candidate consent withdrawal requires a domain event",
+			);
 		}
 
 		try {
@@ -2469,7 +2472,10 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					? sql`lower(trim(${hrCandidate.displayName})) = ${normalizedDisplayName}`
 					: undefined;
 			if (emailMatch !== undefined && nameMatch !== undefined) {
-				conditions.push(or(emailMatch, nameMatch)!);
+				const combinedMatch = or(emailMatch, nameMatch);
+				if (combinedMatch !== undefined) {
+					conditions.push(combinedMatch);
+				}
 			} else if (emailMatch !== undefined) {
 				conditions.push(emailMatch);
 			} else if (nameMatch !== undefined) {
@@ -2499,8 +2505,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				}
 				if (
 					normalizedDisplayName !== undefined &&
-					mapped.data.displayName.trim().toLowerCase() ===
-						normalizedDisplayName
+					mapped.data.displayName.trim().toLowerCase() === normalizedDisplayName
 				) {
 					reasons.push("display_name");
 				}
@@ -2804,7 +2809,9 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			auditAction: "UPDATE",
 		});
 		if (plannedOutbox === undefined) {
-			return invalidState("Application status transition requires a domain event");
+			return invalidState(
+				"Application status transition requires a domain event",
+			);
 		}
 		try {
 			const [rows] = await runNeonHttpTransaction<[ApplicationSqlRow[]]>(
@@ -3738,11 +3745,14 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return conflict("An active offer already exists for this application");
 		}
 
-		const proposalCheck = await validateOfferCompensationProposalAttachment(this, {
-			organizationId: record.organizationId,
-			applicationId: record.applicationId,
-			compensationProposalId: record.compensationProposalId,
-		});
+		const proposalCheck = await validateOfferCompensationProposalAttachment(
+			this,
+			{
+				organizationId: record.organizationId,
+				applicationId: record.applicationId,
+				compensationProposalId: record.compensationProposalId,
+			},
+		);
 		if (!proposalCheck.ok) return proposalCheck;
 
 		const entityId = randomUUID();
@@ -3865,11 +3875,14 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			const proposalMutable = assertOfferProposalMutable(offer.status);
 			if (!proposalMutable.ok) return proposalMutable;
 		}
-		const proposalCheck = await validateOfferCompensationProposalAttachment(this, {
-			organizationId: input.organizationId,
-			applicationId: offer.applicationId,
-			compensationProposalId: nextCompensationProposalId,
-		});
+		const proposalCheck = await validateOfferCompensationProposalAttachment(
+			this,
+			{
+				organizationId: input.organizationId,
+				applicationId: offer.applicationId,
+				compensationProposalId: nextCompensationProposalId,
+			},
+		);
 		if (!proposalCheck.ok) return proposalCheck;
 
 		const auditId = randomUUID();

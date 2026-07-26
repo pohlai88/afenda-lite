@@ -120,7 +120,9 @@ if (requestedTags.length > 0) {
 }
 
 if (targets.length === 0) {
-	console.log("@afenda/db db:sync-migration-ledger: no pending ledger backfill targets");
+	console.log(
+		"@afenda/db db:sync-migration-ledger: no pending ledger backfill targets",
+	);
 	process.exit(0);
 }
 
@@ -143,7 +145,9 @@ for (const row of targets) {
 		SELECT hash FROM drizzle.__drizzle_migrations WHERE hash = ${row.hash}
 	`;
 	if (existing.length > 0) {
-		console.log(`@afenda/db db:sync-migration-ledger: ${row.tag} already journaled`);
+		console.log(
+			`@afenda/db db:sync-migration-ledger: ${row.tag} already journaled`,
+		);
 		continue;
 	}
 

@@ -51,7 +51,7 @@
 - **Forward-recorded**: Farm marks slice "Recorded (forward)" / "Draft — not Living SSOT"
 - **Absent-by-design**: AGENTS.md / ARCH-028 lists tree as deliberately missing
 - **Docs-first vs Target**: Logical path differs from physical checkout path
-- **Gated scripts**: `collapse-script-unavailable` — inventory, not live control
+- **Removed scripts**: historical command aliases are not current controls and must not be recreated for audit coverage
 
 ## Check coverage ledger (mandatory output)
 
@@ -87,10 +87,10 @@ Coverage Status: Complete | Incomplete
 - Module paths: logical `modules/*` → physical `apps/web/modules/*`
 - Package claims: Target describes `@afenda/db` when checkout has docs-first structure
 
-### Gated script patterns
-- Script body: `node scripts/collapse-script-unavailable.mjs "script-name"`
-- Exit codes: Non-zero from unavailable scripts → **Unevaluated**, not Fail
-- Package.json: ~56 root scripts still route through the unavailable handler (six reliance/route-coverage/import-boundaries aliases removed 2026-07-17)
+### Removed script patterns
+- Historical Collapse-era aliases are absent from root `package.json`.
+- Their absence is not an unevaluated control; only executable current scripts count toward coverage.
+- A reintroduced command requires an executable forward implementation and owning authority.
 
 ## Precise pattern rules (evidence-gathering)
 

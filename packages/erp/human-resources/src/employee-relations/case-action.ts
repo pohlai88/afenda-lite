@@ -66,7 +66,7 @@ export async function recommendEmployeeCaseAction(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
 				}),
 			);
 		},
@@ -94,7 +94,7 @@ export async function approveEmployeeCaseAction(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
 				}),
 			),
 	});

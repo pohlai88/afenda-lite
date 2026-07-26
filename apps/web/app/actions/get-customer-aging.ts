@@ -1,6 +1,6 @@
 "use server";
 
-import { getCustomerAging, type CustomerAging } from "@afenda/receivables";
+import { type CustomerAging, getCustomerAging } from "@afenda/receivables";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -17,7 +17,10 @@ export type GetCustomerAgingActionData = { aging: CustomerAging };
 const schema = z.object({
 	customerId: z.string().uuid(),
 	currencyCode: z.string().trim().length(3),
-	asOfDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/),
+	asOfDate: z
+		.string()
+		.trim()
+		.regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
 export async function getCustomerAgingAction(input: {

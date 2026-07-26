@@ -96,7 +96,7 @@ export async function createWorker(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
 				}),
 			);
 		},
@@ -139,7 +139,7 @@ export async function changeWorkerType(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
+					operationId: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
 				}),
 			);
 		},
@@ -169,7 +169,7 @@ export async function changeWorkerStatus(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
+					operationId: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 				}),
 			);
 		},

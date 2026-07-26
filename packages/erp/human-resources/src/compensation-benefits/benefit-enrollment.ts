@@ -18,7 +18,7 @@ import {
 	runCompensationCommand,
 	runCompensationQuery,
 } from "../shared/compensation-command";
-import { fingerprintBenefitEnrollment, fingerprintBenefitWaiver } from "../shared/fingerprint";
+import { fingerprintBenefitEnrollment } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ApprovedCompensationHandoff, BenefitEnrollment } from "../types";
 
@@ -66,7 +66,7 @@ export async function enrolBenefit(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
 				}),
 			);
 		},
@@ -93,7 +93,7 @@ export async function endBenefitEnrollment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
 				}),
 			),
 	});
@@ -118,7 +118,7 @@ export async function cancelBenefitEnrollment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
 				}),
 			),
 	});
@@ -145,7 +145,7 @@ export async function waiveBenefit(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
 				}),
 			),
 	});

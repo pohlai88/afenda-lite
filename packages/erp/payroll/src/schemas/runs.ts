@@ -83,7 +83,13 @@ export const payrollRunUpdateInputSchema = z
 		organizationId: payrollOrganizationIdSchema,
 		runId: payrollRunIdSchema,
 		status: payrollRunStatusSchema.optional(),
-		calculationSnapshotHash: z.string().trim().min(1).max(256).nullable().optional(),
+		calculationSnapshotHash: z
+			.string()
+			.trim()
+			.min(1)
+			.max(256)
+			.nullable()
+			.optional(),
 		calculationVersion: z.string().trim().min(1).max(64).nullable().optional(),
 		roundingPolicyJson: payrollRoundingPolicySchema.nullable().optional(),
 		finalizedAt: isoDateTimeSchema.nullable().optional(),

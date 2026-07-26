@@ -10,6 +10,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_ASSESSMENT_LIST,
 	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
 } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
@@ -18,6 +19,7 @@ import {
 	confirmTalentProfileAssessmentInputSchema,
 	createTalentProfileInputSchema,
 	getTalentProfileByEmployeeInputSchema,
+	listTalentProfileAssessmentsInputSchema,
 	recordTalentProfileAssessmentInputSchema,
 	updateTalentProfileInputSchema,
 } from "../schemas/talent";
@@ -29,10 +31,17 @@ import {
 	resolveTalentProfileResourceFromTalentProfile,
 	runTalentCommand,
 	runTalentEmployeeScopedQuery,
+	runTalentQuery,
 } from "../shared/talent-command";
-import type { TalentProfile, TalentProfileAssessment } from "../types";
+import type {
+	TalentProfile,
+	TalentProfileAssessment,
+	TalentProfileAssessmentListPage,
+} from "../types";
 import {
+	projectTalentProfileAssessmentListFromDecision,
 	projectTalentProfileFromDecision,
+	TALENT_PROFILE_ASSESSMENT_SENSITIVE_FIELD_NAMES,
 	TALENT_PROFILE_SENSITIVE_FIELD_NAMES,
 } from "./talent-field-projection";
 
@@ -60,6 +69,7 @@ export async function createTalentProfile(
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintTalentProfileCreate({
 				employeeId: data.employeeId,
+				summary: data.summary ?? null,
 			});
 
 			const existingByKey = await store.findTalentProfileByIdempotencyKey({
@@ -94,7 +104,7 @@ export async function createTalentProfile(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
 				}),
 			);
 		},
@@ -123,7 +133,7 @@ export async function updateTalentProfile(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
 				}),
 			);
 		},
@@ -154,7 +164,7 @@ export async function recordTalentProfileAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
 				}),
 			);
 		},
@@ -182,7 +192,8 @@ export async function confirmTalentProfileAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
 				}),
 			);
 		},
@@ -210,7 +221,7 @@ export async function archiveTalentProfile(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
 				}),
 			);
 		},
@@ -245,6 +256,42 @@ export async function getTalentProfileByEmployee(
 			store.getTalentProfileByEmployee({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
+			}),
+	});
+}
+
+export async function listTalentProfileAssessments(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<TalentProfileAssessmentListPage>> {
+	const parsed = parseHumanResourcesInput(
+		listTalentProfileAssessmentsInputSchema,
+		input,
+		"Invalid talent profile assessment list input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+	const includeSensitive = parsed.data.includeSensitive;
+
+	return runTalentQuery(parsed.data, options, {
+		schema: listTalentProfileAssessmentsInputSchema,
+		invalidMessage: "Invalid talent profile assessment list input",
+		query: HUMAN_RESOURCES_QUERY_TALENT_PROFILE_ASSESSMENT_LIST,
+		resolveResource: (data, opts) =>
+			resolveTalentProfileResourceFromTalentProfile(data, opts),
+		resolveRequestedFields: () =>
+			includeSensitive
+				? [...TALENT_PROFILE_ASSESSMENT_SENSITIVE_FIELD_NAMES]
+				: undefined,
+		project: (value: TalentProfileAssessmentListPage, projection) =>
+			projectTalentProfileAssessmentListFromDecision(value, projection, {
+				includeSensitive,
+			}),
+		execute: async (data, { store }) =>
+			store.listTalentProfileAssessments({
+				organizationId: data.organizationId,
+				talentProfileId: data.talentProfileId,
 			}),
 	});
 }

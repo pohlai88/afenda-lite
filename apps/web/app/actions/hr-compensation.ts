@@ -1,5 +1,17 @@
 "use server";
 
+import type {
+	ApprovedCompensationHandoff,
+	CompensationGrade,
+	CompensationGradeListPage,
+	CompensationGradeProgressionRule,
+	CompensationGradeProgressionRuleListPage,
+	CompensationProposal,
+	CompensationProposalListPage,
+	EmployeeCompensation,
+	SalaryBand,
+	SalaryBandListPage,
+} from "@afenda/human-resources";
 import {
 	activateEmployeeCompensation,
 	amendCompensationProposal,
@@ -32,18 +44,6 @@ import {
 	scheduleEmployeeCompensationChange,
 	supersedeSalaryBand,
 	updateCompensationGrade,
-} from "@afenda/human-resources";
-import type {
-	ApprovedCompensationHandoff,
-	CompensationGrade,
-	CompensationGradeListPage,
-	CompensationGradeProgressionRule,
-	CompensationGradeProgressionRuleListPage,
-	CompensationProposal,
-	CompensationProposalListPage,
-	EmployeeCompensation,
-	SalaryBand,
-	SalaryBandListPage,
 } from "@afenda/human-resources";
 import {
 	activateEmployeeCompensationInputSchema,
@@ -86,37 +86,96 @@ import {
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
-const createCompensationGradeActionSchema = hrActionSchema(createCompensationGradeInputSchema);
-const updateCompensationGradeActionSchema = hrActionSchema(updateCompensationGradeInputSchema);
-const archiveCompensationGradeActionSchema = hrActionSchema(archiveCompensationGradeInputSchema);
-const getCompensationGradeActionSchema = hrActionSchema(getCompensationGradeInputSchema);
-const listCompensationGradesActionSchema = hrActionSchema(listCompensationGradesInputSchema);
-const createSalaryBandActionSchema = hrActionSchema(createSalaryBandInputSchema);
-const supersedeSalaryBandActionSchema = hrActionSchema(supersedeSalaryBandInputSchema);
-const archiveSalaryBandActionSchema = hrActionSchema(archiveSalaryBandInputSchema);
+const createCompensationGradeActionSchema = hrActionSchema(
+	createCompensationGradeInputSchema,
+);
+const updateCompensationGradeActionSchema = hrActionSchema(
+	updateCompensationGradeInputSchema,
+);
+const archiveCompensationGradeActionSchema = hrActionSchema(
+	archiveCompensationGradeInputSchema,
+);
+const getCompensationGradeActionSchema = hrActionSchema(
+	getCompensationGradeInputSchema,
+);
+const listCompensationGradesActionSchema = hrActionSchema(
+	listCompensationGradesInputSchema,
+);
+const createSalaryBandActionSchema = hrActionSchema(
+	createSalaryBandInputSchema,
+);
+const supersedeSalaryBandActionSchema = hrActionSchema(
+	supersedeSalaryBandInputSchema,
+);
+const archiveSalaryBandActionSchema = hrActionSchema(
+	archiveSalaryBandInputSchema,
+);
 const getSalaryBandActionSchema = hrActionSchema(getSalaryBandInputSchema);
-const listSalaryBandsByGradeActionSchema = hrActionSchema(listSalaryBandsByGradeInputSchema);
-const findSalaryBandByGradeAndCurrencyAsOfActionSchema = hrActionSchema(findSalaryBandByGradeAndCurrencyAsOfInputSchema);
-const createCompensationGradeProgressionRuleActionSchema = hrActionSchema(createCompensationGradeProgressionRuleInputSchema);
-const archiveCompensationGradeProgressionRuleActionSchema = hrActionSchema(archiveCompensationGradeProgressionRuleInputSchema);
-const getCompensationGradeProgressionRuleActionSchema = hrActionSchema(getCompensationGradeProgressionRuleInputSchema);
-const listCompensationGradeProgressionRulesFromGradeActionSchema = hrActionSchema(listCompensationGradeProgressionRulesFromGradeInputSchema);
-const listEligibleProgressionTargetsActionSchema = hrActionSchema(listEligibleProgressionTargetsInputSchema);
-const createEmployeeCompensationActionSchema = hrActionSchema(createEmployeeCompensationInputSchema);
-const amendEmployeeCompensationActionSchema = hrActionSchema(amendEmployeeCompensationInputSchema);
-const approveEmployeeCompensationActionSchema = hrActionSchema(approveEmployeeCompensationInputSchema);
-const scheduleEmployeeCompensationChangeActionSchema = hrActionSchema(scheduleEmployeeCompensationChangeInputSchema);
-const activateEmployeeCompensationActionSchema = hrActionSchema(activateEmployeeCompensationInputSchema);
-const correctEmployeeCompensationActionSchema = hrActionSchema(correctEmployeeCompensationInputSchema);
-const endEmployeeCompensationActionSchema = hrActionSchema(endEmployeeCompensationInputSchema);
-const getEmployeeCompensationActionSchema = hrActionSchema(getEmployeeCompensationInputSchema);
-const listEmployeeCompensationsActionSchema = hrActionSchema(listEmployeeCompensationsInputSchema);
-const createCompensationProposalActionSchema = hrActionSchema(createCompensationProposalInputSchema);
-const amendCompensationProposalActionSchema = hrActionSchema(amendCompensationProposalInputSchema);
-const approveCompensationProposalActionSchema = hrActionSchema(approveCompensationProposalInputSchema);
-const getCompensationProposalActionSchema = hrActionSchema(getCompensationProposalInputSchema);
-const listCompensationProposalsActionSchema = hrActionSchema(listCompensationProposalsInputSchema);
-const getApprovedCompensationHandoffActionSchema = hrActionSchema(getApprovedCompensationHandoffInputSchema);
+const listSalaryBandsByGradeActionSchema = hrActionSchema(
+	listSalaryBandsByGradeInputSchema,
+);
+const findSalaryBandByGradeAndCurrencyAsOfActionSchema = hrActionSchema(
+	findSalaryBandByGradeAndCurrencyAsOfInputSchema,
+);
+const createCompensationGradeProgressionRuleActionSchema = hrActionSchema(
+	createCompensationGradeProgressionRuleInputSchema,
+);
+const archiveCompensationGradeProgressionRuleActionSchema = hrActionSchema(
+	archiveCompensationGradeProgressionRuleInputSchema,
+);
+const getCompensationGradeProgressionRuleActionSchema = hrActionSchema(
+	getCompensationGradeProgressionRuleInputSchema,
+);
+const listCompensationGradeProgressionRulesFromGradeActionSchema =
+	hrActionSchema(listCompensationGradeProgressionRulesFromGradeInputSchema);
+const listEligibleProgressionTargetsActionSchema = hrActionSchema(
+	listEligibleProgressionTargetsInputSchema,
+);
+const createEmployeeCompensationActionSchema = hrActionSchema(
+	createEmployeeCompensationInputSchema,
+);
+const amendEmployeeCompensationActionSchema = hrActionSchema(
+	amendEmployeeCompensationInputSchema,
+);
+const approveEmployeeCompensationActionSchema = hrActionSchema(
+	approveEmployeeCompensationInputSchema,
+);
+const scheduleEmployeeCompensationChangeActionSchema = hrActionSchema(
+	scheduleEmployeeCompensationChangeInputSchema,
+);
+const activateEmployeeCompensationActionSchema = hrActionSchema(
+	activateEmployeeCompensationInputSchema,
+);
+const correctEmployeeCompensationActionSchema = hrActionSchema(
+	correctEmployeeCompensationInputSchema,
+);
+const endEmployeeCompensationActionSchema = hrActionSchema(
+	endEmployeeCompensationInputSchema,
+);
+const getEmployeeCompensationActionSchema = hrActionSchema(
+	getEmployeeCompensationInputSchema,
+);
+const listEmployeeCompensationsActionSchema = hrActionSchema(
+	listEmployeeCompensationsInputSchema,
+);
+const createCompensationProposalActionSchema = hrActionSchema(
+	createCompensationProposalInputSchema,
+);
+const amendCompensationProposalActionSchema = hrActionSchema(
+	amendCompensationProposalInputSchema,
+);
+const approveCompensationProposalActionSchema = hrActionSchema(
+	approveCompensationProposalInputSchema,
+);
+const getCompensationProposalActionSchema = hrActionSchema(
+	getCompensationProposalInputSchema,
+);
+const listCompensationProposalsActionSchema = hrActionSchema(
+	listCompensationProposalsInputSchema,
+);
+const getApprovedCompensationHandoffActionSchema = hrActionSchema(
+	getApprovedCompensationHandoffInputSchema,
+);
 
 const COMPENSATION_MANAGE = "human-resources.compensation.manage" as const;
 const COMPENSATION_READ = "human-resources.compensation.read" as const;
@@ -139,7 +198,10 @@ type EmployeeCompensationListPagePartial = {
 export async function createCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade }>> {
-	return runHrHumanResourcesAction<CompensationGrade, { grade: CompensationGrade }>({
+	return runHrHumanResourcesAction<
+		CompensationGrade,
+		{ grade: CompensationGrade }
+	>({
 		path: "createCompensationGradeAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not create compensation grade.",
@@ -154,7 +216,10 @@ export async function createCompensationGradeAction(
 export async function updateCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade }>> {
-	return runHrHumanResourcesAction<CompensationGrade, { grade: CompensationGrade }>({
+	return runHrHumanResourcesAction<
+		CompensationGrade,
+		{ grade: CompensationGrade }
+	>({
 		path: "updateCompensationGradeAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not update compensation grade.",
@@ -169,7 +234,10 @@ export async function updateCompensationGradeAction(
 export async function archiveCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade }>> {
-	return runHrHumanResourcesAction<CompensationGrade, { grade: CompensationGrade }>({
+	return runHrHumanResourcesAction<
+		CompensationGrade,
+		{ grade: CompensationGrade }
+	>({
 		path: "archiveCompensationGradeAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not archive compensation grade.",
@@ -184,7 +252,10 @@ export async function archiveCompensationGradeAction(
 export async function getCompensationGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ grade: CompensationGrade | null }>> {
-	return runHrHumanResourcesAction<CompensationGrade | null, { grade: CompensationGrade | null }>({
+	return runHrHumanResourcesAction<
+		CompensationGrade | null,
+		{ grade: CompensationGrade | null }
+	>({
 		path: "getCompensationGradeAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get compensation grade.",
@@ -199,7 +270,10 @@ export async function getCompensationGradeAction(
 export async function listCompensationGradesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationGradeListPage }>> {
-	return runHrHumanResourcesAction<CompensationGradeListPage, { page: CompensationGradeListPage }>({
+	return runHrHumanResourcesAction<
+		CompensationGradeListPage,
+		{ page: CompensationGradeListPage }
+	>({
 		path: "listCompensationGradesAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list compensation grades.",
@@ -259,7 +333,10 @@ export async function archiveSalaryBandAction(
 export async function getSalaryBandAction(
 	input: unknown,
 ): Promise<ActionResult<{ band: SalaryBand | null }>> {
-	return runHrHumanResourcesAction<SalaryBand | null, { band: SalaryBand | null }>({
+	return runHrHumanResourcesAction<
+		SalaryBand | null,
+		{ band: SalaryBand | null }
+	>({
 		path: "getSalaryBandAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get salary band.",
@@ -274,7 +351,10 @@ export async function getSalaryBandAction(
 export async function listSalaryBandsByGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: SalaryBandListPage }>> {
-	return runHrHumanResourcesAction<SalaryBandListPage, { page: SalaryBandListPage }>({
+	return runHrHumanResourcesAction<
+		SalaryBandListPage,
+		{ page: SalaryBandListPage }
+	>({
 		path: "listSalaryBandsByGradeAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list salary bands.",
@@ -304,7 +384,10 @@ export async function findSalaryBandByGradeAndCurrencyAsOfAction(
 export async function createCompensationGradeProgressionRuleAction(
 	input: unknown,
 ): Promise<ActionResult<{ rule: CompensationGradeProgressionRule }>> {
-	return runHrHumanResourcesAction<CompensationGradeProgressionRule, { rule: CompensationGradeProgressionRule }>({
+	return runHrHumanResourcesAction<
+		CompensationGradeProgressionRule,
+		{ rule: CompensationGradeProgressionRule }
+	>({
 		path: "createCompensationGradeProgressionRuleAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not create grade progression rule.",
@@ -319,7 +402,10 @@ export async function createCompensationGradeProgressionRuleAction(
 export async function archiveCompensationGradeProgressionRuleAction(
 	input: unknown,
 ): Promise<ActionResult<{ rule: CompensationGradeProgressionRule }>> {
-	return runHrHumanResourcesAction<CompensationGradeProgressionRule, { rule: CompensationGradeProgressionRule }>({
+	return runHrHumanResourcesAction<
+		CompensationGradeProgressionRule,
+		{ rule: CompensationGradeProgressionRule }
+	>({
 		path: "archiveCompensationGradeProgressionRuleAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not archive grade progression rule.",
@@ -334,7 +420,10 @@ export async function archiveCompensationGradeProgressionRuleAction(
 export async function getCompensationGradeProgressionRuleAction(
 	input: unknown,
 ): Promise<ActionResult<{ rule: CompensationGradeProgressionRule | null }>> {
-	return runHrHumanResourcesAction<CompensationGradeProgressionRule | null, { rule: CompensationGradeProgressionRule | null }>({
+	return runHrHumanResourcesAction<
+		CompensationGradeProgressionRule | null,
+		{ rule: CompensationGradeProgressionRule | null }
+	>({
 		path: "getCompensationGradeProgressionRuleAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get grade progression rule.",
@@ -349,7 +438,10 @@ export async function getCompensationGradeProgressionRuleAction(
 export async function listCompensationGradeProgressionRulesFromGradeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationGradeProgressionRuleListPage }>> {
-	return runHrHumanResourcesAction<CompensationGradeProgressionRuleListPage, { page: CompensationGradeProgressionRuleListPage }>({
+	return runHrHumanResourcesAction<
+		CompensationGradeProgressionRuleListPage,
+		{ page: CompensationGradeProgressionRuleListPage }
+	>({
 		path: "listCompensationGradeProgressionRulesFromGradeAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list grade progression rules.",
@@ -364,7 +456,10 @@ export async function listCompensationGradeProgressionRulesFromGradeAction(
 export async function listEligibleProgressionTargetsAction(
 	input: unknown,
 ): Promise<ActionResult<{ targets: CompensationGradeProgressionRule[] }>> {
-	return runHrHumanResourcesAction<CompensationGradeProgressionRule[], { targets: CompensationGradeProgressionRule[] }>({
+	return runHrHumanResourcesAction<
+		CompensationGradeProgressionRule[],
+		{ targets: CompensationGradeProgressionRule[] }
+	>({
 		path: "listEligibleProgressionTargetsAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list eligible progression targets.",
@@ -379,7 +474,10 @@ export async function listEligibleProgressionTargetsAction(
 export async function createEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "createEmployeeCompensationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not create employee compensation.",
@@ -394,7 +492,10 @@ export async function createEmployeeCompensationAction(
 export async function amendEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "amendEmployeeCompensationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not amend employee compensation.",
@@ -409,7 +510,10 @@ export async function amendEmployeeCompensationAction(
 export async function approveEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "approveEmployeeCompensationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not approve employee compensation.",
@@ -424,7 +528,10 @@ export async function approveEmployeeCompensationAction(
 export async function scheduleEmployeeCompensationChangeAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "scheduleEmployeeCompensationChangeAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not schedule employee compensation change.",
@@ -439,7 +546,10 @@ export async function scheduleEmployeeCompensationChangeAction(
 export async function activateEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "activateEmployeeCompensationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not activate employee compensation.",
@@ -454,7 +564,10 @@ export async function activateEmployeeCompensationAction(
 export async function correctEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "correctEmployeeCompensationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not correct employee compensation.",
@@ -469,7 +582,10 @@ export async function correctEmployeeCompensationAction(
 export async function endEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: EmployeeCompensation }>> {
-	return runHrHumanResourcesAction<EmployeeCompensation, { compensation: EmployeeCompensation }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensation,
+		{ compensation: EmployeeCompensation }
+	>({
 		path: "endEmployeeCompensationAction",
 		permission: COMPENSATION_MANAGE,
 		safeMessage: "Could not end employee compensation.",
@@ -484,7 +600,10 @@ export async function endEmployeeCompensationAction(
 export async function getEmployeeCompensationAction(
 	input: unknown,
 ): Promise<ActionResult<{ compensation: Partial<EmployeeCompensation> }>> {
-	return runHrHumanResourcesAction<Partial<EmployeeCompensation>, { compensation: Partial<EmployeeCompensation> }>({
+	return runHrHumanResourcesAction<
+		Partial<EmployeeCompensation>,
+		{ compensation: Partial<EmployeeCompensation> }
+	>({
 		path: "getEmployeeCompensationAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get employee compensation.",
@@ -499,7 +618,10 @@ export async function getEmployeeCompensationAction(
 export async function listEmployeeCompensationsByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCompensationListPagePartial }>> {
-	return runHrHumanResourcesAction<EmployeeCompensationListPagePartial, { page: EmployeeCompensationListPagePartial }>({
+	return runHrHumanResourcesAction<
+		EmployeeCompensationListPagePartial,
+		{ page: EmployeeCompensationListPagePartial }
+	>({
 		path: "listEmployeeCompensationsByEmployeeAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not list employee compensations.",
@@ -514,7 +636,10 @@ export async function listEmployeeCompensationsByEmployeeAction(
 export async function createCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal }>> {
-	return runHrHumanResourcesAction<CompensationProposal, { proposal: CompensationProposal }>({
+	return runHrHumanResourcesAction<
+		CompensationProposal,
+		{ proposal: CompensationProposal }
+	>({
 		path: "createCompensationProposalAction",
 		permission: COMPENSATION_PROPOSAL_CREATE,
 		safeMessage: "Could not create compensation proposal.",
@@ -529,7 +654,10 @@ export async function createCompensationProposalAction(
 export async function amendCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal }>> {
-	return runHrHumanResourcesAction<CompensationProposal, { proposal: CompensationProposal }>({
+	return runHrHumanResourcesAction<
+		CompensationProposal,
+		{ proposal: CompensationProposal }
+	>({
 		path: "amendCompensationProposalAction",
 		permission: COMPENSATION_PROPOSAL_AMEND,
 		safeMessage: "Could not amend compensation proposal.",
@@ -544,7 +672,10 @@ export async function amendCompensationProposalAction(
 export async function approveCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal }>> {
-	return runHrHumanResourcesAction<CompensationProposal, { proposal: CompensationProposal }>({
+	return runHrHumanResourcesAction<
+		CompensationProposal,
+		{ proposal: CompensationProposal }
+	>({
 		path: "approveCompensationProposalAction",
 		permission: COMPENSATION_PROPOSAL_APPROVE,
 		safeMessage: "Could not approve compensation proposal.",
@@ -559,7 +690,10 @@ export async function approveCompensationProposalAction(
 export async function getCompensationProposalAction(
 	input: unknown,
 ): Promise<ActionResult<{ proposal: CompensationProposal | null }>> {
-	return runHrHumanResourcesAction<CompensationProposal | null, { proposal: CompensationProposal | null }>({
+	return runHrHumanResourcesAction<
+		CompensationProposal | null,
+		{ proposal: CompensationProposal | null }
+	>({
 		path: "getCompensationProposalAction",
 		permission: COMPENSATION_PROPOSAL_READ,
 		safeMessage: "Could not get compensation proposal.",
@@ -574,7 +708,10 @@ export async function getCompensationProposalAction(
 export async function listCompensationProposalsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompensationProposalListPage }>> {
-	return runHrHumanResourcesAction<CompensationProposalListPage, { page: CompensationProposalListPage }>({
+	return runHrHumanResourcesAction<
+		CompensationProposalListPage,
+		{ page: CompensationProposalListPage }
+	>({
 		path: "listCompensationProposalsAction",
 		permission: COMPENSATION_PROPOSAL_READ,
 		safeMessage: "Could not list compensation proposals.",
@@ -589,7 +726,10 @@ export async function listCompensationProposalsAction(
 export async function getApprovedCompensationHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ handoff: ApprovedCompensationHandoff | null }>> {
-	return runHrHumanResourcesAction<ApprovedCompensationHandoff | null, { handoff: ApprovedCompensationHandoff | null }>({
+	return runHrHumanResourcesAction<
+		ApprovedCompensationHandoff | null,
+		{ handoff: ApprovedCompensationHandoff | null }
+	>({
 		path: "getApprovedCompensationHandoffAction",
 		permission: COMPENSATION_READ,
 		safeMessage: "Could not get approved compensation handoff.",

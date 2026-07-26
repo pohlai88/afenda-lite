@@ -5,6 +5,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_SESSION_ASSIGN_INSTRUCTOR,
 	HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
 	HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
 	HUMAN_RESOURCES_COMMAND_SESSION_CREATE,
@@ -13,6 +14,7 @@ import {
 	HUMAN_RESOURCES_QUERY_SESSION_LIST,
 } from "../module-ids";
 import {
+	assignSessionInstructorInputSchema,
 	createSessionInputSchema,
 	getSessionInputSchema,
 	listSessionsInputSchema,
@@ -42,6 +44,7 @@ export async function createSession(
 			const scheduledStartsAt = new Date(data.scheduledStartsAt);
 			const scheduledEndsAt = new Date(data.scheduledEndsAt);
 			const capacity = data.capacity ?? null;
+			const primaryInstructorUserId = data.primaryInstructorUserId ?? null;
 			const requestFingerprint = fingerprintSessionCreate({
 				courseId: data.courseId,
 				code: data.code,
@@ -49,6 +52,7 @@ export async function createSession(
 				scheduledStartsAt: data.scheduledStartsAt,
 				scheduledEndsAt: data.scheduledEndsAt,
 				capacity,
+				primaryInstructorUserId,
 			});
 
 			const existingByKey = await store.findSessionByIdempotencyKey({
@@ -80,6 +84,7 @@ export async function createSession(
 					scheduledStartsAt,
 					scheduledEndsAt,
 					capacity,
+					primaryInstructorUserId,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -87,7 +92,7 @@ export async function createSession(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SESSION_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_SESSION_CREATE,
 				}),
 			);
 		},
@@ -116,7 +121,7 @@ export async function startSession(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SESSION_START,
+					operationId: HUMAN_RESOURCES_COMMAND_SESSION_START,
 				}),
 			);
 		},
@@ -145,7 +150,34 @@ export async function completeSession(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
+					operationId: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
+				}),
+			);
+		},
+	});
+}
+
+export async function assignSessionInstructor(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<LearningSession>> {
+	return runLearningCommand(input, options, {
+		schema: assignSessionInstructorInputSchema,
+		invalidMessage: "Invalid session instructor assignment input",
+		command: HUMAN_RESOURCES_COMMAND_SESSION_ASSIGN_INSTRUCTOR,
+		execute: async (data, { store, ports }) => {
+			return await store.assignSessionInstructor(
+				{
+					organizationId: data.organizationId,
+					sessionId: data.sessionId,
+					primaryInstructorUserId: data.primaryInstructorUserId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_SESSION_ASSIGN_INSTRUCTOR,
 				}),
 			);
 		},
@@ -171,7 +203,7 @@ export async function cancelSession(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
+					operationId: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
 				}),
 			);
 		},

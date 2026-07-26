@@ -61,12 +61,11 @@ export async function createCompensationReviewCycle(
 				budgetCurrencyCode: data.budgetCurrencyCode,
 			});
 
-			const existingByKey = await store.findCompensationReviewCycleByIdempotencyKey(
-				{
+			const existingByKey =
+				await store.findCompensationReviewCycleByIdempotencyKey({
 					organizationId: data.organizationId,
 					idempotencyKey: data.idempotencyKey,
-				},
-			);
+				});
 			if (!existingByKey.ok) {
 				return existingByKey;
 			}
@@ -99,7 +98,7 @@ export async function createCompensationReviewCycle(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CREATE,
 				}),
 			);
 		},
@@ -125,7 +124,7 @@ export async function openCompensationReviewCycle(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_OPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_OPEN,
 				}),
 			),
 	});
@@ -150,7 +149,7 @@ export async function closeCompensationReviewCycle(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CLOSE,
 				}),
 			),
 	});
@@ -175,7 +174,7 @@ export async function cancelCompensationReviewCycle(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CANCEL,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CANCEL,
 				}),
 			),
 	});

@@ -45,6 +45,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+/debug-*.log
 .cursor/hooks/**/*.log
 .cursor/hooks/.mvp-hook-debug.log
 .cursor/hooks/.*-hook-debug.log
@@ -82,4 +83,3 @@ apps/web/shadcn-studio/**
 !apps/web/shadcn-studio/styles.css
 !apps/web/shadcn-studio/lib/
 !apps/web/shadcn-studio/lib/utils.ts
-

@@ -109,7 +109,7 @@ export async function createCareerPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
 				}),
 			);
 		},
@@ -138,7 +138,7 @@ export async function updateCareerPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
 				}),
 			);
 		},
@@ -166,7 +166,7 @@ export async function acknowledgeCareerPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
+					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
 				}),
 			);
 		},
@@ -196,7 +196,7 @@ export async function addCareerPlanAction(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
+					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
 				}),
 			);
 		},
@@ -239,7 +239,7 @@ export async function completeCareerPlanAction(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
+					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
 				}),
 			);
 		},
@@ -267,7 +267,7 @@ export async function closeCareerPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
 				}),
 			);
 		},

@@ -124,10 +124,8 @@ export async function SalesShell({ surface }: SalesShellProps) {
 									<div className="text-muted-foreground">
 										id <Code>{order.id}</Code> · party {order.partyCode} (
 										{order.partyName}) · {order.currencyCode}
-										{order.documentTotal
-											? ` ${order.documentTotal}`
-											: ""}{" "}
-										· {order.lines.length} line(s)
+										{order.documentTotal ? ` ${order.documentTotal}` : ""} ·{" "}
+										{order.lines.length} line(s)
 										{order.paymentTermCode
 											? ` · ${order.paymentTermCode} / net ${order.netDays}`
 											: ""}

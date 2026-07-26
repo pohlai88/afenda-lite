@@ -1707,10 +1707,7 @@ export function createMemoryLeaveMethods(
 			}
 
 			return withLeaveEmployeeBookingLock(
-				leaveEmployeeBookingLockKey(
-					input.organizationId,
-					request.employeeId,
-				),
+				leaveEmployeeBookingLockKey(input.organizationId, request.employeeId),
 				async () => {
 					const overlap = assertNoLeaveOverlapForRequest(state, {
 						organizationId: input.organizationId,
@@ -1755,10 +1752,7 @@ export function createMemoryLeaveMethods(
 			}
 
 			return withLeaveEmployeeBookingLock(
-				leaveEmployeeBookingLockKey(
-					input.organizationId,
-					request.employeeId,
-				),
+				leaveEmployeeBookingLockKey(input.organizationId, request.employeeId),
 				async () => {
 					const overlap = assertNoLeaveOverlapForRequest(state, {
 						organizationId: input.organizationId,

@@ -101,7 +101,7 @@ export async function createHeadcountPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
 				}),
 			);
 		},
@@ -130,7 +130,7 @@ export async function updateHeadcountPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
 				}),
 			),
 	});
@@ -162,7 +162,7 @@ async function transitionHeadcountPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
 				}),
 			),
 	});
@@ -278,7 +278,7 @@ export async function supersedeHeadcountPlan(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE,
 				}),
 			);
 		},
@@ -374,6 +374,7 @@ export async function getWorkforcePlanVariance(
 			store.getWorkforcePlanVariance({
 				organizationId: data.organizationId,
 				planId: data.planId,
+				asOf: data.asOf,
 			}),
 	});
 }

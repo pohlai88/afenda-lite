@@ -46,7 +46,7 @@ export async function createCompensationGrade(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
 				}),
 			),
 	});
@@ -72,7 +72,7 @@ export async function updateCompensationGrade(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
 				}),
 			),
 	});
@@ -97,7 +97,7 @@ export async function archiveCompensationGrade(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
 				}),
 			),
 	});

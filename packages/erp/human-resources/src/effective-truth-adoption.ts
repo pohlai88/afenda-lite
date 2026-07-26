@@ -170,7 +170,7 @@ const TIME_SCHEDULING_EVIDENCE = {
 	unit: "effective-range.test.ts",
 	parity: "human-resources.time.scheduling.parity.test.ts",
 } satisfies EffectiveTruthEvidence;
-const FOUNDATION_EVIDENCE = {
+const _FOUNDATION_EVIDENCE = {
 	unit: "human-resources.worker-foundation.test.ts",
 	parity: "human-resources.foundation.parity.test.ts",
 } satisfies EffectiveTruthEvidence;

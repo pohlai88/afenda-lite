@@ -231,7 +231,7 @@ export async function createDraftLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
 				}),
 			);
 		},
@@ -312,7 +312,7 @@ export async function amendLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
 				}),
 			);
 		},
@@ -391,7 +391,7 @@ export async function submitLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
 				}),
 			);
 		},
@@ -526,7 +526,7 @@ export async function approveLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
 				}),
 			);
 		},
@@ -591,7 +591,7 @@ export async function rejectLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
 				}),
 			);
 		},
@@ -656,7 +656,7 @@ export async function returnLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
 				}),
 			);
 		},
@@ -682,7 +682,7 @@ export async function withdrawLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW,
 				}),
 			),
 	});
@@ -715,7 +715,7 @@ export async function cancelApprovedLeaveRequest(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
 				}),
 			),
 	});

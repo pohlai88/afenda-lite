@@ -78,7 +78,9 @@ export const getDepartmentAsOfInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
-export type GetDepartmentAsOfInput = z.infer<typeof getDepartmentAsOfInputSchema>;
+export type GetDepartmentAsOfInput = z.infer<
+	typeof getDepartmentAsOfInputSchema
+>;
 
 export const listDepartmentsInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -277,7 +279,9 @@ export const getAssignmentAsOfInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
-export type GetAssignmentAsOfInput = z.infer<typeof getAssignmentAsOfInputSchema>;
+export type GetAssignmentAsOfInput = z.infer<
+	typeof getAssignmentAsOfInputSchema
+>;
 
 // Reporting line schemas
 export const assignPrimaryReportingLineInputSchema =

@@ -9,6 +9,8 @@
 | Execution index | [final.md](./final.md) remains the sole wave/mission status index |
 | Status | Audit complete; Phase 5 shared-platform boundaries implemented and scoped evidence green; package-wide verification remains separate |
 
+> **Historical snapshot notice (2026-07-26):** Counts and command/test results in this audit are evidence from 2026-07-24. Current disk inventory is **348 commands**, **198 queries**, **111 permissions**, and **129 `hr_*` mutation/hard-tenant tables** within **222** repository hard-tenant roots. Current authority: the HR package README, module manifest, and `hard-tenant-roots.ts`.
+
 This file evaluates the enterprise-readiness proposal against the current
 codebase. It is not a second mission tracker. Apply accepted phase/status
 changes to [final.md](./final.md) after the current working-tree slice is

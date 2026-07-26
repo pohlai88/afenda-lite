@@ -91,9 +91,12 @@ function isReleasableReservationStatus(
 	return status === "active" || status === "partially_consumed";
 }
 
-function getReservationRemainingQuantity(reservation: StockReservation): number {
+function getReservationRemainingQuantity(
+	reservation: StockReservation,
+): number {
 	return (
-		parseQuantity(reservation.quantity) - parseQuantity(reservation.consumedQuantity)
+		parseQuantity(reservation.quantity) -
+		parseQuantity(reservation.consumedQuantity)
 	);
 }
 
@@ -266,8 +269,10 @@ export class MemoryInventoryStore implements InventoryStore {
 			organizationId: record.organizationId,
 			movementId: record.movementId,
 			lineNo:
-				movement.lines.reduce((max, current) => Math.max(max, current.lineNo), 0) +
-				1,
+				movement.lines.reduce(
+					(max, current) => Math.max(max, current.lineNo),
+					0,
+				) + 1,
 			itemId: record.itemId,
 			itemCode: record.itemCode,
 			itemName: record.itemName,
@@ -411,7 +416,11 @@ export class MemoryInventoryStore implements InventoryStore {
 				);
 			}
 
-			const adjustedEffects = this.applyReservationConsumption(effects, movement, reservation);
+			const adjustedEffects = this.applyReservationConsumption(
+				effects,
+				movement,
+				reservation,
+			);
 			if (!adjustedEffects.ok) {
 				return adjustedEffects;
 			}
@@ -507,7 +516,10 @@ export class MemoryInventoryStore implements InventoryStore {
 			entityId: movement.id,
 			action: "UPDATE",
 			changes: [{ field: "status", oldValue: "draft", newValue: "posted" }],
-			oldValue: { status: previousMovement.status, version: previousMovement.version },
+			oldValue: {
+				status: previousMovement.status,
+				version: previousMovement.version,
+			},
 			newValue: { status: movement.status, version: movement.version },
 		});
 		if (!movementAudit.ok) {
@@ -729,21 +741,25 @@ export class MemoryInventoryStore implements InventoryStore {
 			return fail("BAD_REQUEST", "Reservation quantity must be positive");
 		}
 
-		const balanceApply = this.applyEffects(record.organizationId, record.createdBy, [
-			{
-				warehouseId: record.warehouseId,
-				warehouseCode: record.warehouseCode,
-				itemId: record.itemId,
-				itemCode: record.itemCode,
-				baseUomId: record.baseUomId,
-				baseUomCode: record.baseUomCode,
-				onHandDelta: 0,
-				reservedDelta: quantity,
-				availableDelta: -quantity,
-				quantityDelta: 0,
-				movementLineId: null,
-			},
-		]);
+		const balanceApply = this.applyEffects(
+			record.organizationId,
+			record.createdBy,
+			[
+				{
+					warehouseId: record.warehouseId,
+					warehouseCode: record.warehouseCode,
+					itemId: record.itemId,
+					itemCode: record.itemCode,
+					baseUomId: record.baseUomId,
+					baseUomCode: record.baseUomCode,
+					onHandDelta: 0,
+					reservedDelta: quantity,
+					availableDelta: -quantity,
+					quantityDelta: 0,
+					movementLineId: null,
+				},
+			],
+		);
 		if (!balanceApply.ok) {
 			return balanceApply;
 		}
@@ -1011,7 +1027,9 @@ export class MemoryInventoryStore implements InventoryStore {
 		filter: ReservationListFilter,
 	): Promise<Result<StockReservation[]>> {
 		const rows = [...this.reservations.values()]
-			.filter((reservation) => reservation.organizationId === filter.organizationId)
+			.filter(
+				(reservation) => reservation.organizationId === filter.organizationId,
+			)
 			.filter(
 				(reservation) =>
 					filter.status === undefined || reservation.status === filter.status,
@@ -1040,7 +1058,9 @@ export class MemoryInventoryStore implements InventoryStore {
 	async getAvailability(
 		filter: AvailabilityFilter,
 	): Promise<Result<StockAvailability[]>> {
-		const asOfLedgerSequence = this.getLedgerSequenceValue(filter.organizationId);
+		const asOfLedgerSequence = this.getLedgerSequenceValue(
+			filter.organizationId,
+		);
 		const rows = [...this.balances.values()]
 			.filter((balance) => balance.organizationId === filter.organizationId)
 			.filter(
@@ -1111,9 +1131,7 @@ export class MemoryInventoryStore implements InventoryStore {
 		return ok(this.getLedgerSequenceValue(organizationId));
 	}
 
-	async listLedgerEntries(
-		organizationId: string,
-	): Promise<
+	async listLedgerEntries(organizationId: string): Promise<
 		Result<
 			Array<{
 				warehouseId: string;
@@ -1151,9 +1169,7 @@ export class MemoryInventoryStore implements InventoryStore {
 		);
 	}
 
-	async listActiveReservations(
-		organizationId: string,
-	): Promise<
+	async listActiveReservations(organizationId: string): Promise<
 		Result<
 			Array<{
 				warehouseId: string;
@@ -1292,7 +1308,10 @@ export class MemoryInventoryStore implements InventoryStore {
 			);
 			const existing = this.balances.get(key);
 			if (!rollback.has(key)) {
-				rollback.set(key, existing === undefined ? null : cloneBalance(existing));
+				rollback.set(
+					key,
+					existing === undefined ? null : cloneBalance(existing),
+				);
 			}
 
 			const onHand =

@@ -14,9 +14,7 @@ describe("HR candidate consent migration", () => {
 	it("is additive and adds nullable consent columns", () => {
 		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
-		expect(migrationSql).toContain(
-			'ADD COLUMN "consent_policy_version" text',
-		);
+		expect(migrationSql).toContain('ADD COLUMN "consent_policy_version" text');
 		expect(migrationSql).toContain(
 			'ADD COLUMN "consent_captured_at" timestamp with time zone',
 		);

@@ -1,14 +1,13 @@
 /**
  * Slice 3.8 — fail-closed HR mutation-emission registry CI gate.
- * Strict 335/335 — zero HR-AUD-06 exemptions.
+ * Strict 348/348 — zero HR-AUD-06 exemptions.
  */
 
 import { HumanResourcesEventSchemas } from "@afenda/events";
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_EVENT_CATALOG } from "../src/event-catalog";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
 import { validateHumanResourcesMutationEmissionRegistry } from "../src/emissions/validate-emission";
+import { HUMAN_RESOURCES_EVENT_CATALOG } from "../src/event-catalog";
 import {
 	HUMAN_RESOURCES_COMMAND_IDS,
 	type HumanResourcesCommandId,
@@ -45,9 +44,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		expect(unknown).toEqual([]);
 
 		const issues = validateHumanResourcesMutationEmissionRegistry();
-		expect(
-			issues.filter((issue) => issue.code === "unknown_command"),
-		).toEqual([]);
+		expect(issues.filter((issue) => issue.code === "unknown_command")).toEqual(
+			[],
+		);
 	});
 
 	it("Test 3 — references only cataloged event types for classified commands", () => {
@@ -127,9 +126,9 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 
 	it("Test 7 — requires audit for every classified mutation", () => {
 		const issues = validateHumanResourcesMutationEmissionRegistry();
-		expect(
-			issues.filter((issue) => issue.code === "missing_audit"),
-		).toEqual([]);
+		expect(issues.filter((issue) => issue.code === "missing_audit")).toEqual(
+			[],
+		);
 
 		for (const definition of Object.values(
 			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
@@ -149,14 +148,14 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		}
 	});
 
-	it("locks classified count at 335 and inventory alignment with zero unclassified", () => {
-		expect(Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD)).toHaveLength(
-			335,
-		);
-		expect(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY).toHaveLength(335);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(335);
+	it("locks classified count at 348 and inventory alignment with zero unclassified", () => {
+		expect(
+			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
+		).toHaveLength(348);
+		expect(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY).toHaveLength(348);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(348);
 		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
 		expect(mutationInventoryFixture.unclassified).toEqual([]);
-		expect(classifiedIds.size).toBe(335);
+		expect(classifiedIds.size).toBe(348);
 	});
 });

@@ -85,7 +85,7 @@ export async function createCourse(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COURSE_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COURSE_CREATE,
 				}),
 			);
 		},
@@ -118,7 +118,7 @@ export async function updateCourse(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COURSE_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COURSE_UPDATE,
 				}),
 			);
 		},
@@ -144,7 +144,7 @@ export async function activateCourse(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
 				}),
 			);
 		},
@@ -170,7 +170,7 @@ export async function archiveCourse(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COURSE_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_COURSE_ARCHIVE,
 				}),
 			);
 		},

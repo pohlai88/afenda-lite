@@ -72,31 +72,31 @@ describe("@afenda/metrics export surface contract", () => {
 	it("package.json exports only /core, /node, /testing (no root)", async () => {
 		const { readFileSync } = await import("node:fs");
 		const { join } = await import("node:path");
-		
+
 		const pkgPath = join(__dirname, "..", "package.json");
 		const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-		
+
 		// Verify exports field structure
 		expect(pkg.exports).toBeDefined();
 		expect(pkg.exports["."]).toBeUndefined(); // No root export
 		expect(pkg.exports["./core"]).toBeDefined();
 		expect(pkg.exports["./node"]).toBeDefined();
 		expect(pkg.exports["./testing"]).toBeDefined();
-		
+
 		// Verify entry points
 		expect(pkg.exports["./core"].types).toBe("./src/core/index.ts");
 		expect(pkg.exports["./node"].types).toBe("./src/node/index.ts");
 		expect(pkg.exports["./testing"].types).toBe("./src/testing/index.ts");
 	});
-	
+
 	it("src/core does not import prom-client", async () => {
 		const { readFileSync } = await import("node:fs");
 		const { join } = await import("node:path");
 		const { readdirSync } = await import("node:fs");
-		
+
 		const coreDir = join(__dirname, "..", "src", "core");
-		const files = readdirSync(coreDir).filter(f => f.endsWith(".ts"));
-		
+		const files = readdirSync(coreDir).filter((f) => f.endsWith(".ts"));
+
 		for (const file of files) {
 			const content = readFileSync(join(coreDir, file), "utf8");
 			expect(content).not.toContain("prom-client");

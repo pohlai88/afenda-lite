@@ -9,6 +9,7 @@ import {
 	hrEmployment,
 	hrEmploymentContract,
 	hrEmploymentStatusHistory,
+	hrPosition,
 	hrWorkAssignment,
 	isNull,
 	lte,
@@ -24,8 +25,8 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_REHIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
-	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CONTRACT_SUPERSEDED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
@@ -36,9 +37,11 @@ import {
 	type HumanResourcesEmploymentId,
 	type HumanResourcesPositionId,
 	parseHumanResourcesAssignmentId,
+	parseHumanResourcesDepartmentId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentContractId,
 	parseHumanResourcesEmploymentId,
+	parseHumanResourcesJobId,
 	parseHumanResourcesPositionId,
 } from "../../brands";
 import {
@@ -51,19 +54,22 @@ import {
 } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import {
-	eventPayloadJson,
-	fieldChangeJson,
-	valueSnapshotJson,
-} from "../../shared/audit-facts";
-import { missAfterOptimisticUpdate, rehireRequiresEndedEmployment } from "../../shared/domain-guards";
-import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
-import { compareEmploymentContractsByLineage } from "../../shared/employment-contract-guards";
-import { mapAssignmentLineageFields } from "../../shared/assignment-lineage-map";
-import {
 	assertAssignmentWithinEmployment,
 	assertNoAssignmentOverlap,
 	multiplePrimaryAssignmentsAtAsOf,
 } from "../../shared/assignment-guards";
+import { mapAssignmentLineageFields } from "../../shared/assignment-lineage-map";
+import {
+	eventPayloadJson,
+	fieldChangeJson,
+	valueSnapshotJson,
+} from "../../shared/audit-facts";
+import {
+	missAfterOptimisticUpdate,
+	rehireRequiresEndedEmployment,
+} from "../../shared/domain-guards";
+import { resolveUniqueEffectiveRangeRecordBy } from "../../shared/effective-range";
+import { compareEmploymentContractsByLineage } from "../../shared/employment-contract-guards";
 import type { EmploymentStatusChangeKind } from "../../shared/employment-history";
 import type { EmploymentStatus } from "../../shared/employment-status";
 import {
@@ -85,6 +91,7 @@ import type {
 	EmploymentStatusHistoryAppendRecord,
 	HumanResourcesStore,
 	IdempotentEmployeeRecord,
+	WorkforcePlanActualAssignment,
 } from "../../store";
 import type {
 	Employee,
@@ -250,8 +257,7 @@ function mapEmploymentContract(
 	if (!id.ok) return id;
 	if (!employmentId.ok) return employmentId;
 	if (!employeeId.ok) return employeeId;
-	let supersedesContractId =
-		null as EmploymentContract["supersedesContractId"];
+	let supersedesContractId = null as EmploymentContract["supersedesContractId"];
 	if (row.supersedesContractId !== null) {
 		const parsed = parseHumanResourcesEmploymentContractId(
 			row.supersedesContractId,
@@ -518,6 +524,7 @@ export type DrizzleCoreMethods = Pick<
 	| "findOpenAssignmentByEmployment"
 	| "findAssignmentByEmploymentAsOf"
 	| "listAssignmentsByEmployment"
+	| "listWorkforcePlanActualAssignments"
 	| "createAssignment"
 	| "endAssignment"
 >;
@@ -1041,6 +1048,14 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const historyId = randomUUID();
+		const payloadJson = eventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "hr_employment",
+			entityId: brandedId.data,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+			effectiveOn: record.startsOn,
+		});
 		try {
 			const [rows] = await runNeonHttpTransaction<
 				[
@@ -1073,7 +1088,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 							)
 							SELECT
 								${brandedId.data}, parent.organization_id, parent.id, 'active',
-								${record.startsOn}, ${record.endsOn}, 1, ${record.createdBy}, ${record.createdBy}
+								${record.startsOn}, ${record.endsOn}::date, 1, ${record.createdBy}, ${record.createdBy}
 							FROM parent
 							WHERE NOT EXISTS (
 								SELECT 1
@@ -1128,14 +1143,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 								END,
 								'human-resources',
 								${meta.correlationId}, mutated.created_by,
-								jsonb_build_object(
-									'organizationId', mutated.organization_id,
-									'entityType', 'hr_employment',
-									'entityId', mutated.id,
-									'actorId', mutated.created_by,
-									'correlationId', ${meta.correlationId},
-									'effectiveOn', mutated.starts_on
-								),
+								${payloadJson}::jsonb,
 								'pending', 0
 							FROM mutated
 							RETURNING id
@@ -1844,7 +1852,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		});
 		try {
 			const [rows] = await runNeonHttpTransaction<
-				[typeof hrEmploymentContract.$inferSelect[]]
+				[(typeof hrEmploymentContract.$inferSelect)[]]
 			>((sql) => [
 				sql`
 					WITH updated AS (
@@ -2277,6 +2285,111 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		}
 	},
 
+	async listWorkforcePlanActualAssignments(input: {
+		organizationId: string;
+		asOf: string;
+	}): Promise<Result<WorkforcePlanActualAssignment[]>> {
+		try {
+			const [assignmentRows, employmentRows, positionRows] = await Promise.all([
+				db
+					.select()
+					.from(hrWorkAssignment)
+					.where(
+						and(
+							eq(hrWorkAssignment.organizationId, input.organizationId),
+							lte(hrWorkAssignment.startsOn, input.asOf),
+							or(
+								isNull(hrWorkAssignment.endsOn),
+								gte(hrWorkAssignment.endsOn, input.asOf),
+							),
+						),
+					),
+				db
+					.select()
+					.from(hrEmployment)
+					.where(
+						and(
+							eq(hrEmployment.organizationId, input.organizationId),
+							eq(hrEmployment.status, "active"),
+							lte(hrEmployment.startsOn, input.asOf),
+							or(
+								isNull(hrEmployment.endsOn),
+								gte(hrEmployment.endsOn, input.asOf),
+							),
+						),
+					),
+				db
+					.select()
+					.from(hrPosition)
+					.where(eq(hrPosition.organizationId, input.organizationId)),
+			]);
+
+			const employmentsById = new Map(
+				employmentRows.map((employment) => [employment.id, employment]),
+			);
+			const positionsById = new Map(
+				positionRows.map((position) => [position.id, position]),
+			);
+			const actuals: WorkforcePlanActualAssignment[] = [];
+
+			for (const row of assignmentRows) {
+				const employment = employmentsById.get(row.employmentId);
+				const position = positionsById.get(row.positionId);
+				if (employment === undefined || position === undefined) {
+					continue;
+				}
+
+				const assignment = mapAssignment(row);
+				if (!assignment.ok) return assignment;
+				const parsedEmploymentStatus = employmentStatusSchema.safeParse(
+					employment.status,
+				);
+				if (!parsedEmploymentStatus.success) {
+					return fail("INTERNAL_ERROR", "Invalid employment status");
+				}
+				const employmentId = parseHumanResourcesEmploymentId(employment.id);
+				if (!employmentId.ok) return employmentId;
+				const employeeId = parseHumanResourcesEmployeeId(employment.employeeId);
+				if (!employeeId.ok) return employeeId;
+				const positionId = parseHumanResourcesPositionId(row.positionId);
+				if (!positionId.ok) return positionId;
+				const departmentId =
+					position.departmentId === null
+						? null
+						: parseHumanResourcesDepartmentId(position.departmentId);
+				if (departmentId !== null && !departmentId.ok) return departmentId;
+				const jobId =
+					position.jobId === null
+						? null
+						: parseHumanResourcesJobId(position.jobId);
+				if (jobId !== null && !jobId.ok) return jobId;
+
+				actuals.push({
+					employmentId: employmentId.data,
+					employeeId: employeeId.data,
+					positionId: positionId.data,
+					departmentId: departmentId?.data ?? null,
+					jobId: jobId?.data ?? null,
+					locationCode:
+						assignment.data.organizationDimensions?.location.key ?? null,
+					employmentStatus: parsedEmploymentStatus.data,
+					employmentStartsOn: employment.startsOn,
+					employmentEndsOn: employment.endsOn,
+					assignmentStartsOn: row.startsOn,
+					assignmentEndsOn: row.endsOn,
+				});
+			}
+
+			actuals.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+			return ok(actuals);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list workforce plan actual assignments",
+			);
+		}
+	},
+
 	async createAssignment(
 		record: AssignmentCreateRecord,
 		_ports: MutationPorts,
@@ -2342,7 +2455,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		try {
 			const [rows] = await runNeonHttpTransaction<[AssignmentSqlRow[]]>(
 				(sql) => [
-				sql`
+					sql`
 						WITH employment AS (
 							SELECT id, organization_id, employee_id
 							FROM hr_employment
@@ -2460,7 +2573,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				const employment = await this.getEmploymentById({
@@ -2556,7 +2670,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		try {
 			const [rows] = await runNeonHttpTransaction<[AssignmentSqlRow[]]>(
 				(sql) => [
-				sql`
+					sql`
 						WITH mutated AS (
 							UPDATE hr_work_assignment
 							SET ends_on = ${input.endsOn},
@@ -2592,7 +2706,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				const existing = await this.getAssignmentById({

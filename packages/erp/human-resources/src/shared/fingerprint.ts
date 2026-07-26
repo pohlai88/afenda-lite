@@ -274,6 +274,7 @@ export function fingerprintSessionCreate(input: {
 	scheduledStartsAt: string;
 	scheduledEndsAt: string;
 	capacity: number | null;
+	primaryInstructorUserId: string | null;
 }): string {
 	return sha256Fingerprint({
 		courseId: input.courseId,
@@ -282,6 +283,7 @@ export function fingerprintSessionCreate(input: {
 		scheduledStartsAt: input.scheduledStartsAt,
 		scheduledEndsAt: input.scheduledEndsAt,
 		capacity: input.capacity,
+		primaryInstructorUserId: input.primaryInstructorUserId,
 	});
 }
 
@@ -336,6 +338,38 @@ export function fingerprintCertificationIssue(input: {
 	return sha256Fingerprint({
 		employeeId: input.employeeId,
 		courseId: input.courseId,
+		completionId: input.completionId,
+		certificationCode: input.certificationCode.trim(),
+		issuedOn: input.issuedOn,
+		expiresOn: input.expiresOn,
+	});
+}
+
+export function fingerprintLearningAttendanceRecord(input: {
+	sessionId: string;
+	assignmentId: string;
+	employeeId: string;
+	status: string;
+	recordedAt: string;
+}): string {
+	return sha256Fingerprint({
+		sessionId: input.sessionId,
+		assignmentId: input.assignmentId,
+		employeeId: input.employeeId,
+		status: input.status,
+		recordedAt: input.recordedAt,
+	});
+}
+
+export function fingerprintCertificationRenew(input: {
+	certificationId: string;
+	completionId: string;
+	certificationCode: string;
+	issuedOn: string;
+	expiresOn: string | null;
+}): string {
+	return sha256Fingerprint({
+		certificationId: input.certificationId,
 		completionId: input.completionId,
 		certificationCode: input.certificationCode.trim(),
 		issuedOn: input.issuedOn,
@@ -429,8 +463,15 @@ export function fingerprintImprovementPlanCreate(input: {
 	employeeId: string;
 	employmentId: string;
 	dueDate: string;
+	milestones: Array<{ dueDate: string }>;
 }): string {
-	return sha256Fingerprint(input);
+	return sha256Fingerprint({
+		reviewId: input.reviewId,
+		employeeId: input.employeeId,
+		employmentId: input.employmentId,
+		dueDate: input.dueDate,
+		milestones: input.milestones.map((milestone) => milestone.dueDate),
+	});
 }
 
 export function fingerprintHeadcountPlanCreate(input: {
@@ -513,14 +554,19 @@ export function fingerprintCompetencyAssessmentCreate(input: {
 	scaleCode: string;
 	level: number;
 	effectiveOn: string;
+	expiresOn: string | null;
 }): string {
 	return sha256Fingerprint(input);
 }
 
 export function fingerprintTalentProfileCreate(input: {
 	employeeId: string;
+	summary: string | null;
 }): string {
-	return sha256Fingerprint(input);
+	return sha256Fingerprint({
+		employeeId: input.employeeId,
+		summary: input.summary,
+	});
 }
 
 export function fingerprintCompetencyAssessmentSupersede(input: {
@@ -528,6 +574,7 @@ export function fingerprintCompetencyAssessmentSupersede(input: {
 	assessorUserId: string;
 	level: number;
 	effectiveOn: string;
+	expiresOn: string | null;
 }): string {
 	return sha256Fingerprint(input);
 }
@@ -546,6 +593,24 @@ export function fingerprintTalentPoolMemberCreate(input: {
 	poolId: string;
 	employeeId: string;
 	nominatorUserId: string;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintTalentProfileMobilityCreate(input: {
+	talentProfileId: string;
+	dimension: string;
+	preferenceCode: string;
+	effectiveFrom: string;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintCriticalRoleReadinessCreate(input: {
+	talentProfileId: string;
+	positionId: string;
+	readiness: string;
+	readinessEffectiveOn: string;
 }): string {
 	return sha256Fingerprint(input);
 }

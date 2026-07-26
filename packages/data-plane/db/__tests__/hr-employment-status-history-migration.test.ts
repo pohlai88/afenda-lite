@@ -24,9 +24,11 @@ describe("HR employment status history migration", () => {
 			"hr_employment_status_history_org_employee_effective_idx",
 		);
 		expect(migrationSql).toContain(
-			'hr_employment_status_history_change_kind_check',
+			"hr_employment_status_history_change_kind_check",
 		);
-		expect(migrationSql).toContain('"change_kind" IN (\'create\', \'lifecycle\', \'correction\')');
+		expect(migrationSql).toContain(
+			"\"change_kind\" IN ('create', 'lifecycle', 'correction')",
+		);
 		expect(migrationSql).toContain("hr_employment_effective_range_ck");
 		expect(migrationSql).toContain(
 			'"ends_on" IS NULL OR "starts_on" <= "ends_on"',

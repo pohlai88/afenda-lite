@@ -59,12 +59,12 @@ export async function runHrHumanResourcesAction<
 	});
 }
 
-export function invokeHrPackage<TData>(
-	packageFn: (
-		input: unknown,
-		options?: ReturnType<typeof createHumanResourcesCommandOptions>,
-	) => Promise<Result<TData>>,
-) {
+type HrPackageFunction<TData> = (
+	input: unknown,
+	options?: ReturnType<typeof createHumanResourcesCommandOptions>,
+) => Promise<Result<TData>>;
+
+export function invokeHrPackage<TData>(packageFn: HrPackageFunction<TData>) {
 	return (stampedInput: Record<string, unknown>) =>
 		packageFn(stampedInput, createHumanResourcesCommandOptions());
 }

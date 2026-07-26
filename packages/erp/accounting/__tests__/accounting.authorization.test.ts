@@ -1,7 +1,11 @@
 import { ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 
-import { createMemoryStore, getTrialBalance, openAccountingPeriod } from "../src/index";
+import {
+	createMemoryStore,
+	getTrialBalance,
+	openAccountingPeriod,
+} from "../src/index";
 
 const organizationId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const actorUserId = "a47ac10b-58cc-4372-a567-0e02b2c3d479";
@@ -40,7 +44,10 @@ describe("accounting authorization", () => {
 		);
 		expect(command.ok).toBe(false);
 		expect(query.ok).toBe(false);
-		expect(seen).toEqual(["accounting.period.open", "accounting.trial_balance.read"]);
+		expect(seen).toEqual([
+			"accounting.period.open",
+			"accounting.trial_balance.read",
+		]);
 	});
 
 	it("fails closed without an authorization port", async () => {

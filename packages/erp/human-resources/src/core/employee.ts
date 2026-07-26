@@ -75,7 +75,7 @@ export async function createEmployee(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
 				}),
 			);
 		},
@@ -102,7 +102,7 @@ export async function updateEmployee(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
 				}),
 			);
 		},

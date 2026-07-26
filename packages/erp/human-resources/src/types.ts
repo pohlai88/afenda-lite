@@ -7,8 +7,8 @@ import type {
 	HumanResourcesAttendanceEventId,
 	HumanResourcesAttendanceExceptionId,
 	HumanResourcesAttendanceSessionId,
-	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitEnrollmentDependentId,
+	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
 	HumanResourcesCareerPlanActionId,
@@ -18,8 +18,8 @@ import type {
 	HumanResourcesCompensationGradeId,
 	HumanResourcesCompensationGradeProgressionRuleId,
 	HumanResourcesCompensationProposalId,
-	HumanResourcesCompensationReviewId,
 	HumanResourcesCompensationReviewCycleId,
+	HumanResourcesCompensationReviewId,
 	HumanResourcesCompetencyAssessmentId,
 	HumanResourcesCompetencyId,
 	HumanResourcesCompletionId,
@@ -47,19 +47,20 @@ import type {
 	HumanResourcesJobCompetencyId,
 	HumanResourcesJobId,
 	HumanResourcesLearningAssignmentId,
+	HumanResourcesLearningAttendanceId,
 	HumanResourcesLeaveAdjustmentId,
 	HumanResourcesLeaveApprovalDecisionId,
 	HumanResourcesLeaveEntitlementId,
 	HumanResourcesLeavePolicyId,
 	HumanResourcesLeaveRequestId,
 	HumanResourcesLeaveRequestSegmentId,
-	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingAccessRevocationId,
+	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingPayrollHandoffId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
-	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingAccessHandoffId,
+	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingEquipmentHandoffId,
 	HumanResourcesOnboardingOrientationId,
 	HumanResourcesOnboardingTaskId,
@@ -68,8 +69,8 @@ import type {
 	HumanResourcesPerformanceCycleParticipantId,
 	HumanResourcesPolicyAcknowledgementId,
 	HumanResourcesPositionId,
-	HumanResourcesProbationReviewId,
 	HumanResourcesProbationAssessmentId,
+	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
 	HumanResourcesReviewId,
@@ -82,10 +83,12 @@ import type {
 	HumanResourcesShiftId,
 	HumanResourcesSuccessionCandidateId,
 	HumanResourcesSuccessionPlanId,
+	HumanResourcesTalentCriticalRoleReadinessId,
 	HumanResourcesTalentPoolId,
 	HumanResourcesTalentPoolMemberId,
 	HumanResourcesTalentProfileAssessmentId,
 	HumanResourcesTalentProfileId,
+	HumanResourcesTalentProfileMobilityId,
 	HumanResourcesTerminationId,
 	HumanResourcesTimeApprovalAuthorityAssignmentId,
 	HumanResourcesTimePolicyAssignmentId,
@@ -129,6 +132,7 @@ import type {
 	AssignmentStatus,
 	CertificationStatus,
 	CourseStatus,
+	LearningAttendanceStatus,
 	SessionStatus,
 } from "./shared/learning-status";
 import type {
@@ -192,10 +196,14 @@ import type {
 	SuccessionCandidateStatus,
 	SuccessionPlanStatus,
 	SuccessionReadinessCode,
+	TalentCriticalRoleReadinessStatus,
+	TalentMobilityDimension,
+	TalentMobilityPreference,
 	TalentPoolMemberStatus,
 	TalentPoolStatus,
 	TalentProfileAssessmentMethodCode,
 	TalentProfileAssessmentStatus,
+	TalentProfileMobilityStatus,
 	TalentProfileStatus,
 } from "./shared/talent-status";
 import type {
@@ -230,8 +238,8 @@ export type Employment = {
 	updatedAt: Date;
 };
 
-export type { EmploymentStatusHistory } from "./shared/employment-history";
 export type { ApplicationStatusHistory } from "./shared/application-history";
+export type { EmploymentStatusHistory } from "./shared/employment-history";
 
 export type EmploymentContractLineageStatus = "active" | "superseded";
 
@@ -1082,6 +1090,7 @@ export type LearningSession = {
 	actualStartsAt: Date | null;
 	actualEndsAt: Date | null;
 	capacity: number | null;
+	primaryInstructorUserId: string | null;
 	status: SessionStatus;
 	version: number;
 	createdBy: string;
@@ -1125,6 +1134,22 @@ export type LearningCompletion = {
 	updatedAt: Date;
 };
 
+export type LearningAttendance = {
+	id: HumanResourcesLearningAttendanceId;
+	organizationId: string;
+	sessionId: HumanResourcesSessionId;
+	assignmentId: HumanResourcesLearningAssignmentId;
+	employeeId: HumanResourcesEmployeeId;
+	status: LearningAttendanceStatus;
+	recordedAt: Date;
+	recordedBy: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type EmployeeCertification = {
 	id: HumanResourcesCertificationId;
 	organizationId: string;
@@ -1135,6 +1160,7 @@ export type EmployeeCertification = {
 	issuedOn: string;
 	expiresOn: string | null;
 	status: CertificationStatus;
+	renewedFromCertificationId: HumanResourcesCertificationId | null;
 	revokedAt: Date | null;
 	revokedBy: string | null;
 	version: number;
@@ -1174,6 +1200,13 @@ export type CompletionListPage = {
 
 export type CertificationListPage = {
 	certifications: EmployeeCertification[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type LearningAttendanceListPage = {
+	attendanceRecords: LearningAttendance[];
 	totalCount: number;
 	page: number;
 	pageSize: number;
@@ -1548,6 +1581,10 @@ export type PerformanceImprovementPlan = {
 	dueDate: string;
 	accountableManagerEmployeeId: HumanResourcesEmployeeId;
 	status: PerformanceImprovementPlanStatus;
+	outcomeReason: string | null;
+	outcomeEvidenceReference: string | null;
+	lastExtensionReason: string | null;
+	lastExtensionEvidenceReference: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -1563,10 +1600,16 @@ export type PerformanceImprovementCheckpoint = {
 	dueDate: string;
 	outcome: PerformanceCheckpointOutcome;
 	notes: string | null;
+	evidenceReference: string | null;
 	recordedBy: string | null;
 	recordedAt: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type PerformanceImprovementCheckpointListPage = {
+	checkpoints: PerformanceImprovementCheckpoint[];
+	totalCount: number;
 };
 
 export type PerformanceCycleListPage = {
@@ -1639,45 +1682,6 @@ export type EmployeePerformanceHistory = {
 	employeeId: HumanResourcesEmployeeId;
 	entries: EmployeePerformanceHistoryEntry[];
 };
-
-export function projectPerformanceAssessment(
-	assessment: PerformanceAssessment,
-	includeConfidential: boolean,
-): PerformanceAssessmentProjection {
-	return {
-		id: assessment.id,
-		participantId: assessment.participantId,
-		kind: assessment.kind,
-		rating: includeConfidential ? assessment.rating : null,
-		commentsSensitive: includeConfidential ? assessment.commentsSensitive : null,
-		submittedAt: assessment.submittedAt,
-		version: assessment.version,
-	};
-}
-
-export function projectPerformanceReviewDetail(
-	input: {
-		review: PerformanceReview;
-		participants: PerformanceReviewParticipant[];
-		assessments: PerformanceAssessment[];
-	},
-	includeConfidential: boolean,
-): PerformanceReviewDetail {
-	return {
-		review: includeConfidential
-			? input.review
-			: {
-					...input.review,
-					overallRating: null,
-					calibrationNote: null,
-					acknowledgementNote: input.review.acknowledgementNote,
-				},
-		participants: input.participants,
-		assessments: input.assessments.map((assessment) =>
-			projectPerformanceAssessment(assessment, includeConfidential),
-		),
-	};
-}
 
 export type HeadcountPlan = {
 	id: HumanResourcesHeadcountPlanId;
@@ -1786,8 +1790,11 @@ export type RecruitmentHeadcountHandoff = {
 
 export type WorkforcePlanVariance = {
 	planId: HumanResourcesHeadcountPlanId;
+	asOf: string;
 	lines: Array<
 		HeadcountLineAvailability & {
+			actualFte: string;
+			actualHeadcount: number;
 			varianceFte: string;
 			varianceHeadcount: number;
 		}
@@ -1923,6 +1930,15 @@ export type PolicyAcknowledgementListPage = {
 	pageSize: number;
 };
 
+export type ComplianceExpiryOperations = {
+	asOf: string;
+	withinDays: number;
+	expiringDocuments: EmployeeDocumentListPage;
+	workEligibilityRisks: WorkEligibilityRiskListPage;
+	overduePolicyAcknowledgements: PolicyAcknowledgementListPage;
+	expiringCertifications: CertificationListPage;
+};
+
 export type EmployeeComplianceSummary = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
@@ -2001,6 +2017,7 @@ export type CompetencyAssessment = {
 	scaleCode: CompetencyScaleCode;
 	level: number;
 	effectiveOn: string;
+	expiresOn: string | null;
 	status: CompetencyAssessmentStatus;
 	supersedesAssessmentId: HumanResourcesCompetencyAssessmentId | null;
 	supersededByAssessmentId: HumanResourcesCompetencyAssessmentId | null;
@@ -2048,6 +2065,41 @@ export type TalentProfileAssessment = {
 	updatedAt: Date;
 };
 
+export type TalentProfileMobility = {
+	id: HumanResourcesTalentProfileMobilityId;
+	organizationId: string;
+	talentProfileId: HumanResourcesTalentProfileId;
+	dimension: TalentMobilityDimension;
+	preferenceCode: TalentMobilityPreference;
+	scopeDetail: string | null;
+	evidenceSummary: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	status: TalentProfileMobilityStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type TalentCriticalRoleReadiness = {
+	id: HumanResourcesTalentCriticalRoleReadinessId;
+	organizationId: string;
+	talentProfileId: HumanResourcesTalentProfileId;
+	positionId: HumanResourcesPositionId;
+	readiness: SuccessionReadinessCode;
+	readinessEffectiveOn: string;
+	evidenceSummary: string;
+	assessorUserId: string;
+	status: TalentCriticalRoleReadinessStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type TalentPool = {
 	id: HumanResourcesTalentPoolId;
 	organizationId: string;
@@ -2085,6 +2137,18 @@ export type TalentPoolMemberListPage = {
 	totalCount: number;
 	page: number;
 	pageSize: number;
+};
+
+export type TalentProfileMobilityListPage = {
+	mobilities: TalentProfileMobility[];
+};
+
+export type TalentCriticalRoleReadinessListPage = {
+	readinessRecords: TalentCriticalRoleReadiness[];
+};
+
+export type TalentProfileAssessmentListPage = {
+	assessments: TalentProfileAssessment[];
 };
 
 export type CareerPlan = {
@@ -2207,6 +2271,16 @@ export type IdempotentTalentPoolRecord = {
 
 export type IdempotentTalentPoolMemberRecord = {
 	member: TalentPoolMember;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentTalentProfileMobilityRecord = {
+	mobility: TalentProfileMobility;
+	createRequestFingerprint: string;
+};
+
+export type IdempotentTalentCriticalRoleReadinessRecord = {
+	readiness: TalentCriticalRoleReadiness;
 	createRequestFingerprint: string;
 };
 

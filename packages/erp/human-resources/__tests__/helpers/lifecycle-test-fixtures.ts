@@ -1,11 +1,11 @@
 import { expect } from "vitest";
 
 import type { HumanResourcesEmploymentId } from "../../src/brands";
+import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	recordWorkEligibility,
 	verifyWorkEligibility,
 } from "../../src/compliance/work-eligibility";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	completeOnboarding,
 	completeOnboardingTask,
@@ -29,7 +29,7 @@ import {
 	finalizeTermination,
 	proposeTermination,
 } from "../../src/lifecycle/termination";
-import type { Termination } from "../../src/types";
+import type { OnboardingCase, Termination } from "../../src/types";
 
 type LifecycleTestReady = HumanResourcesCommandOptions & {
 	store: NonNullable<HumanResourcesCommandOptions["store"]>;
@@ -209,7 +209,7 @@ export async function completeOnboardingPath(
 		onboardingCaseId?: string;
 	},
 ) {
-	let onboardingCase;
+	let onboardingCase: OnboardingCase;
 	if (input.onboardingCaseId !== undefined) {
 		const existing = await getOnboardingCase(
 			{

@@ -47,7 +47,38 @@
 		},
 		"lint": {},
 		"typecheck": {},
-		"test": {},
+		"test": {
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				"$TURBO_ROOT$/testing/vitest.shared.ts",
+				"$TURBO_ROOT$/testing/vitest.unit.config.ts",
+				"$TURBO_ROOT$/testing/setup-*.ts",
+				"$TURBO_ROOT$/testing/empty-server-only.ts"
+			],
+			"outputs": []
+		},
+		"test:interaction": {
+			"dependsOn": ["^build"],
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				"$TURBO_ROOT$/testing/vitest.shared.ts",
+				"$TURBO_ROOT$/testing/vitest.interaction.config.ts",
+				"$TURBO_ROOT$/testing/setup-interaction.ts"
+			],
+			"outputs": []
+		},
+		"test:parity": {
+			"dependsOn": ["^build"],
+			"cache": false,
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				"$TURBO_ROOT$/testing/vitest.shared.ts",
+				"$TURBO_ROOT$/testing/vitest.hr-parity.config.ts",
+				"$TURBO_ROOT$/testing/setup-hr-parity-database.ts",
+				"$TURBO_ROOT$/packages/foundation/testing/src/require-database-for-ci.ts"
+			],
+			"outputs": []
+		},
 		"start": {
 			"cache": false,
 			"persistent": true

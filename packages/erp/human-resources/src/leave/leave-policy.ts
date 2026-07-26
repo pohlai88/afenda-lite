@@ -90,7 +90,7 @@ export async function createLeavePolicy(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
 				}),
 			);
 		},
@@ -132,7 +132,7 @@ export async function updateLeavePolicy(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_UPDATE,
 				}),
 			),
 	});
@@ -157,7 +157,7 @@ export async function publishLeavePolicy(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_PUBLISH,
 				}),
 			),
 	});
@@ -196,7 +196,7 @@ export async function supersedeLeavePolicy(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_SUPERSEDE,
 				}),
 			),
 	});
@@ -221,7 +221,7 @@ export async function archiveLeavePolicy(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE,
+					operationId: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_ARCHIVE,
 				}),
 			),
 	});

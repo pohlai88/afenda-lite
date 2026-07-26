@@ -57,10 +57,9 @@ export type PayrollRunsStore = {
 	): Promise<Result<{ deletedCount: number }>>;
 };
 
+export type { PayrollRunId } from "../brands";
 export type {
+	PayrollExceptionCreateRecord,
 	PayrollRunCreateRecord,
 	PayrollRunUpdateInput,
-	PayrollExceptionCreateRecord,
 } from "../types";
-
-export type { PayrollRunId } from "../brands";

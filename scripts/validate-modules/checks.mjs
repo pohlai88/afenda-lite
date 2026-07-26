@@ -81,6 +81,12 @@ export const LIVING_ERP_MANIFEST_PACKAGES = [
 		dir: "packages/erp/payroll",
 		manifestExport: "payrollModuleManifest",
 	},
+	{
+		id: "corporate-administration",
+		packageName: "@afenda/corporate-administration",
+		dir: "packages/erp/corporate-administration",
+		manifestExport: "corporateAdministrationModuleManifest",
+	},
 ];
 
 export const FORBIDDEN_PHASE_PACKAGE_DIRS = [
@@ -142,40 +148,6 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	mdChangeRequest: "md_change_request",
 	mdImportBatch: "md_import_batch",
 	mdOrganizationDimension: "md_organization_dimension",
-	caLegalCompany: "ca_legal_company",
-	caCompanyName: "ca_company_name",
-	caCompanyIdentifier: "ca_company_identifier",
-	caCompanyStatusHistory: "ca_company_status_history",
-	caOfficerAppointment: "ca_officer_appointment",
-	caGovernanceBody: "ca_governance_body",
-	caGovernanceMembership: "ca_governance_membership",
-	caAuthorityMandate: "ca_authority_mandate",
-	caAuthorityMandateHolder: "ca_authority_mandate_holder",
-	caCompanyPremise: "ca_company_premise",
-	caGovernanceMeeting: "ca_governance_meeting",
-	caResolution: "ca_resolution",
-	caShareClass: "ca_share_class",
-	caShareTransaction: "ca_share_transaction",
-	caShareTransactionLeg: "ca_share_transaction_leg",
-	caShareCertificate: "ca_share_certificate",
-	caBeneficialOwnerDisclosure: "ca_beneficial_owner_disclosure",
-	caPropertyHolding: "ca_property_holding",
-	caCorporateAsset: "ca_corporate_asset",
-	caIntellectualPropertyRight: "ca_intellectual_property_right",
-	caInsurancePolicy: "ca_insurance_policy",
-	caCharge: "ca_charge",
-	caIntellectualPropertyRenewal: "ca_intellectual_property_renewal",
-	caInsurancePolicyRenewal: "ca_insurance_policy_renewal",
-	caChargeVariation: "ca_charge_variation",
-	caPropertyAssetMutationReceipt: "ca_property_asset_mutation_receipt",
-	caLicencePermit: "ca_licence_permit",
-	caBankAccountRegistration: "ca_bank_account_registration",
-	caBankMandate: "ca_bank_mandate",
-	caGroupControlRelationship: "ca_group_control_relationship",
-	caMaterialAgreement: "ca_material_agreement",
-	caCorporateDocument: "ca_corporate_document",
-	caFilingObligation: "ca_filing_obligation",
-	caFilingSubmission: "ca_filing_submission",
 	salesOrder: "sales_order",
 	salesOrderLine: "sales_order_line",
 	purchaseOrder: "purchase_order",
@@ -222,6 +194,8 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	financialPostingException: "financial_posting_exception",
 	hrPerson: "hr_person",
 	hrPersonIdentityVersion: "hr_person_identity_version",
+	hrPersonContact: "hr_person_contact",
+	hrPersonIdentifier: "hr_person_identifier",
 	hrEmployee: "hr_employee",
 	hrWorker: "hr_worker",
 	hrWorkerClassificationVersion: "hr_worker_classification_version",
@@ -240,18 +214,27 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrJobRequisition: "hr_job_requisition",
 	hrCandidate: "hr_candidate",
 	hrCandidateApplication: "hr_candidate_application",
+	hrCandidateApplicationStatusHistory:
+		"hr_candidate_application_status_history",
 	hrInterview: "hr_interview",
 	hrInterviewEvaluation: "hr_interview_evaluation",
 	hrEmploymentOffer: "hr_employment_offer",
+	hrHireAttempt: "hr_hire_attempt",
 	hrOnboardingCase: "hr_onboarding_case",
 	hrOnboardingTask: "hr_onboarding_task",
+	hrOnboardingOrientation: "hr_onboarding_orientation",
+	hrOnboardingEquipmentHandoff: "hr_onboarding_equipment_handoff",
+	hrOnboardingAccessHandoff: "hr_onboarding_access_handoff",
 	hrProbationReview: "hr_probation_review",
+	hrProbationAssessment: "hr_probation_assessment",
 	hrEmploymentConfirmation: "hr_employment_confirmation",
 	hrTermination: "hr_termination",
 	hrOffboardingCase: "hr_offboarding_case",
 	hrOffboardingTask: "hr_offboarding_task",
 	hrExitInterview: "hr_exit_interview",
 	hrClearance: "hr_clearance",
+	hrOffboardingAccessRevocation: "hr_offboarding_access_revocation",
+	hrOffboardingPayrollHandoff: "hr_offboarding_payroll_handoff",
 	hrLearningCourse: "hr_learning_course",
 	hrLearningProgram: "hr_learning_program",
 	hrLearningSession: "hr_learning_session",
@@ -262,6 +245,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrEmployeeCertification: "hr_employee_certification",
 	hrDevelopmentPlan: "hr_development_plan",
 	hrCompensationGrade: "hr_compensation_grade",
+	hrCompensationGradeProgressionRule: "hr_compensation_grade_progression_rule",
 	hrCompensationProposal: "hr_compensation_proposal",
 	hrSalaryBand: "hr_salary_band",
 	hrEmployeeCompensation: "hr_employee_compensation",
@@ -270,6 +254,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrBenefitPlan: "hr_benefit_plan",
 	hrBenefitEligibility: "hr_benefit_eligibility",
 	hrBenefitEnrollment: "hr_benefit_enrollment",
+	hrBenefitEnrollmentDependent: "hr_benefit_enrollment_dependent",
 	hrCompensationReviewCycle: "hr_compensation_review_cycle",
 	hrCompensationReview: "hr_compensation_review",
 	hrLeavePolicy: "hr_leave_policy",
@@ -280,6 +265,8 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrLeaveRequestSegment: "hr_leave_request_segment",
 	hrLeaveApprovalDecision: "hr_leave_approval_decision",
 	hrPerformanceCycle: "hr_performance_cycle",
+	hrPerformanceCycleReviewPeriod: "hr_performance_cycle_review_period",
+	hrPerformanceCycleEligibility: "hr_performance_cycle_eligibility",
 	hrPerformanceCycleParticipant: "hr_performance_cycle_participant",
 	hrPerformanceGoal: "hr_performance_goal",
 	hrPerformanceGoalProgress: "hr_performance_goal_progress",
@@ -296,6 +283,8 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	hrCompetencyAssessment: "hr_competency_assessment",
 	hrTalentProfile: "hr_talent_profile",
 	hrTalentProfileAssessment: "hr_talent_profile_assessment",
+	hrTalentProfileMobility: "hr_talent_profile_mobility",
+	hrTalentCriticalRoleReadiness: "hr_talent_critical_role_readiness",
 	hrTalentPool: "hr_talent_pool",
 	hrTalentPoolMember: "hr_talent_pool_member",
 	hrCareerPlan: "hr_career_plan",
@@ -664,10 +653,18 @@ export function validateWorkspaceEdges(root, edgeRegisterPath) {
  *
  * @param {string} root
  */
-export function validateErpAuthorizationPorts(root) {
+export function validateErpAuthorizationPorts(root, manifests = []) {
 	/** @type {string[]} */
 	const errors = [];
 	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
+		const manifest = manifests.find((candidate) => candidate.id === meta.id);
+		if (
+			manifest &&
+			manifest.owns.commands.length === 0 &&
+			manifest.owns.queries.length === 0
+		) {
+			continue;
+		}
 		const packageAuth = join(meta.dir, "src", "authorization.ts");
 		if (!existsSync(join(root, packageAuth))) {
 			errors.push(`missing ERP authorization.ts: ${packageAuth}`);
@@ -683,6 +680,65 @@ export function validateErpAuthorizationPorts(root) {
 			errors.push(`missing ERP authorization-port: ${webPort}`);
 		}
 	}
+	return errors;
+}
+
+/**
+ * Scaffolded modules may reserve a table prefix before any DDL exists. Once
+ * mutation tables are introduced, every owned table must honor that prefix.
+ *
+ * @param {AfendaModuleManifest[]} manifests
+ * @param {string} ownershipPath
+ */
+export function validateSchemaPrefixReservations(manifests, ownershipPath) {
+	/** @type {string[]} */
+	const errors = [];
+	const doc = parseYaml(readFileSync(ownershipPath, "utf8"));
+	const reservations = Array.isArray(doc?.prefixReservations)
+		? doc.prefixReservations
+		: [];
+	const byPrefix = new Map();
+
+	for (const row of reservations) {
+		if (
+			typeof row?.prefix !== "string" ||
+			typeof row?.writeOwner !== "string" ||
+			typeof row?.moduleId !== "string"
+		) {
+			errors.push("invalid schema prefix reservation row");
+			continue;
+		}
+		if (byPrefix.has(row.prefix)) {
+			errors.push(`duplicate schema prefix reservation: ${row.prefix}`);
+			continue;
+		}
+		byPrefix.set(row.prefix, row);
+	}
+
+	for (const [prefix, reservation] of byPrefix) {
+		const manifest = manifests.find(
+			(candidate) => candidate.id === reservation.moduleId,
+		);
+		if (!manifest) {
+			errors.push(
+				`schema prefix reservation references unknown module: ${prefix} (${reservation.moduleId})`,
+			);
+			continue;
+		}
+		if (reservation.writeOwner !== manifest.packageName) {
+			errors.push(
+				`schema prefix reservation mismatch: ${prefix} (module ${manifest.id}, owner ${manifest.packageName})`,
+			);
+		}
+		for (const table of manifest.persistence.mutationTables) {
+			if (!table.startsWith(prefix)) {
+				errors.push(
+					`mutation table outside reserved prefix ${prefix}: ${table} (module ${manifest.id})`,
+				);
+			}
+		}
+	}
+
 	return errors;
 }
 
@@ -984,6 +1040,10 @@ export const CATALOG_EXPECTED_PACKAGES = [
 	{ name: "@afenda/accounting", path: "erp/accounting" },
 	{ name: "@afenda/human-resources", path: "erp/human-resources" },
 	{ name: "@afenda/payroll", path: "erp/payroll" },
+	{
+		name: "@afenda/corporate-administration",
+		path: "erp/corporate-administration",
+	},
 	{ name: "@afenda/ai-the-machine", path: "intelligence/ai-the-machine" },
 ];
 

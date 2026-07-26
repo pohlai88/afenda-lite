@@ -3,8 +3,8 @@ import {
 	humanResourcesClearanceIdSchema,
 	humanResourcesEmploymentConfirmationIdSchema,
 	humanResourcesEmploymentIdSchema,
-	humanResourcesOffboardingCaseIdSchema,
 	humanResourcesOffboardingAccessRevocationIdSchema,
+	humanResourcesOffboardingCaseIdSchema,
 	humanResourcesOffboardingPayrollHandoffIdSchema,
 	humanResourcesOffboardingTaskIdSchema,
 	humanResourcesOfferIdSchema,
@@ -14,7 +14,6 @@ import {
 	humanResourcesOnboardingOrientationIdSchema,
 	humanResourcesOnboardingTaskIdSchema,
 	humanResourcesPositionIdSchema,
-	humanResourcesProbationAssessmentIdSchema,
 	humanResourcesProbationReviewIdSchema,
 	humanResourcesTerminationIdSchema,
 } from "../brands";
@@ -306,29 +305,27 @@ export type TransferAssignmentInput = z.infer<
 >;
 
 // Termination schemas
-export const proposeTerminationInputSchema =
-	humanResourcesMutationContextSchema
-		.extend({
-			idempotencyKey: humanResourcesIdempotencyKeySchema,
-			employmentId: humanResourcesEmploymentIdSchema,
-			reasonCode: z.string().trim().min(1).max(64),
-			reasonDetail: z.string().trim().min(1).max(2000),
-			effectiveOn: isoDateSchema,
-			rehireEligible: z.boolean(),
-		})
-		.strict();
+export const proposeTerminationInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		idempotencyKey: humanResourcesIdempotencyKeySchema,
+		employmentId: humanResourcesEmploymentIdSchema,
+		reasonCode: z.string().trim().min(1).max(64),
+		reasonDetail: z.string().trim().min(1).max(2000),
+		effectiveOn: isoDateSchema,
+		rehireEligible: z.boolean(),
+	})
+	.strict();
 
 export type ProposeTerminationInput = z.infer<
 	typeof proposeTerminationInputSchema
 >;
 
-export const approveTerminationInputSchema =
-	humanResourcesMutationContextSchema
-		.extend({
-			terminationId: humanResourcesTerminationIdSchema,
-			expectedVersion: humanResourcesExpectedVersionSchema,
-		})
-		.strict();
+export const approveTerminationInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		terminationId: humanResourcesTerminationIdSchema,
+		expectedVersion: humanResourcesExpectedVersionSchema,
+	})
+	.strict();
 
 export type ApproveTerminationInput = z.infer<
 	typeof approveTerminationInputSchema

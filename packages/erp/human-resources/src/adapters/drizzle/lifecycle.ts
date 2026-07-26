@@ -62,8 +62,11 @@ import {
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import {
-	assertTransferAssignmentRanges,
-} from "../../shared/assignment-guards";
+	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
+	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
+	ONBOARDING_TASK_CODE_ORIENTATION,
+} from "../../lifecycle/onboarding-checklist";
+import { assertTransferAssignmentRanges } from "../../shared/assignment-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	assertActivePosition,
@@ -77,15 +80,11 @@ import { previousIsoDate } from "../../shared/effective-dates";
 import { assertValidDateRange } from "../../shared/employment-status";
 import { fingerprintTransfer } from "../../shared/fingerprint";
 import {
+	assertConfirmationEffectiveOn,
 	assertEmploymentActiveForOnboarding,
 	assertEmploymentForOffboarding,
-	assertConfirmationEffectiveOn,
 	assertLatestProbationPassed,
-	assertOffboardingAccessRevocationStatusTransition,
 	assertOffboardingCaseInProgress,
-	assertOffboardingPayrollHandoffStatusTransition,
-	assertTerminationApprovable,
-	assertTerminationFinalizable,
 	assertOnboardingAccessHandoffStatusTransition,
 	assertOnboardingCaseInProgress,
 	assertOnboardingEquipmentHandoffStatusTransition,
@@ -96,7 +95,9 @@ import {
 	assertProbationExtension,
 	assertProbationOpen,
 	assertProbationOutcomeRecordedOn,
+	assertTerminationApprovable,
 	assertTerminationEffectiveDate,
+	assertTerminationFinalizable,
 } from "../../shared/lifecycle-guards";
 import type { ProbationOutcome } from "../../shared/lifecycle-status";
 import {
@@ -119,11 +120,6 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
-import {
-	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
-	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
-	ONBOARDING_TASK_CODE_ORIENTATION,
-} from "../../lifecycle/onboarding-checklist";
 import type { HumanResourcesStore } from "../../store";
 import type {
 	Clearance,
@@ -589,7 +585,10 @@ function mapOffboardingAccessRevocation(
 	if (!employmentId.ok) return employmentId;
 	const status = offboardingAccessRevocationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid offboarding access revocation status");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid offboarding access revocation status",
+		);
 	}
 	return ok({
 		id: id.data,
@@ -682,7 +681,10 @@ function mapOnboardingEquipmentHandoff(
 	if (!employmentId.ok) return employmentId;
 	const status = onboardingEquipmentHandoffStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid onboarding equipment handoff status");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid onboarding equipment handoff status",
+		);
 	}
 	return ok({
 		id: id.data,
@@ -1121,9 +1123,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			parseHumanResourcesOnboardingEquipmentHandoffId(equipmentHandoffId);
 		if (!brandedEquipmentHandoffId.ok) return brandedEquipmentHandoffId;
 		const accessHandoffId = randomUUID();
-		const brandedAccessHandoffId = parseHumanResourcesOnboardingAccessHandoffId(
-			accessHandoffId,
-		);
+		const brandedAccessHandoffId =
+			parseHumanResourcesOnboardingAccessHandoffId(accessHandoffId);
 		if (!brandedAccessHandoffId.ok) return brandedAccessHandoffId;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -1484,11 +1485,12 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					onboardingCaseId: input.onboardingCaseId,
 				});
 				if (!orientation.ok) return orientation;
-				const equipmentHandoff =
-					await this.getOnboardingEquipmentHandoffByCase({
+				const equipmentHandoff = await this.getOnboardingEquipmentHandoffByCase(
+					{
 						organizationId: input.organizationId,
 						onboardingCaseId: input.onboardingCaseId,
-					});
+					},
+				);
 				if (!equipmentHandoff.ok) return equipmentHandoff;
 				const accessHandoff = await this.getOnboardingAccessHandoffByCase({
 					organizationId: input.organizationId,
@@ -1648,7 +1650,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (onboardingCase.data === null) {
 			return notFound("Onboarding case not found");
 		}
-		const caseActive = assertOnboardingCaseInProgress(onboardingCase.data.status);
+		const caseActive = assertOnboardingCaseInProgress(
+			onboardingCase.data.status,
+		);
 		if (!caseActive.ok) return caseActive;
 		const versionCheck = assertExpectedVersion(
 			orientation.version,
@@ -1728,7 +1732,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					entityLabel: "Onboarding orientation",
 				});
 			}
-			const caseId = parseHumanResourcesOnboardingCaseId(row.onboarding_case_id);
+			const caseId = parseHumanResourcesOnboardingCaseId(
+				row.onboarding_case_id,
+			);
 			if (!caseId.ok) return caseId;
 			const loaded = await this.getOnboardingCase({
 				organizationId: input.organizationId,
@@ -1753,10 +1759,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			.from(hrOnboardingEquipmentHandoff)
 			.where(
 				and(
-					eq(
-						hrOnboardingEquipmentHandoff.organizationId,
-						input.organizationId,
-					),
+					eq(hrOnboardingEquipmentHandoff.organizationId, input.organizationId),
 					eq(hrOnboardingEquipmentHandoff.id, input.equipmentHandoffId),
 				),
 			)
@@ -1777,7 +1780,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (onboardingCase.data === null) {
 			return notFound("Onboarding case not found");
 		}
-		const caseActive = assertOnboardingCaseInProgress(onboardingCase.data.status);
+		const caseActive = assertOnboardingCaseInProgress(
+			onboardingCase.data.status,
+		);
 		if (!caseActive.ok) return caseActive;
 		const versionCheck = assertExpectedVersion(
 			equipmentHandoff.version,
@@ -1861,7 +1866,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					entityLabel: "Onboarding equipment handoff",
 				});
 			}
-			const caseId = parseHumanResourcesOnboardingCaseId(row.onboarding_case_id);
+			const caseId = parseHumanResourcesOnboardingCaseId(
+				row.onboarding_case_id,
+			);
 			if (!caseId.ok) return caseId;
 			const loaded = await this.getOnboardingCase({
 				organizationId: input.organizationId,
@@ -1907,7 +1914,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 		if (onboardingCase.data === null) {
 			return notFound("Onboarding case not found");
 		}
-		const caseActive = assertOnboardingCaseInProgress(onboardingCase.data.status);
+		const caseActive = assertOnboardingCaseInProgress(
+			onboardingCase.data.status,
+		);
 		if (!caseActive.ok) return caseActive;
 		const versionCheck = assertExpectedVersion(
 			accessHandoff.version,
@@ -1987,7 +1996,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					entityLabel: "Onboarding access handoff",
 				});
 			}
-			const caseId = parseHumanResourcesOnboardingCaseId(row.onboarding_case_id);
+			const caseId = parseHumanResourcesOnboardingCaseId(
+				row.onboarding_case_id,
+			);
 			if (!caseId.ok) return caseId;
 			const loaded = await this.getOnboardingCase({
 				organizationId: input.organizationId,
@@ -2084,7 +2095,10 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			}
 			return ok(mapped);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to list probation assessments");
+			return mapPersistenceFailure(
+				error,
+				"Failed to list probation assessments",
+			);
 		}
 	},
 
@@ -2355,9 +2369,10 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			),
 		);
 		try {
-			const [rows] = await runNeonHttpTransaction<[ProbationAssessmentSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[ProbationAssessmentSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH review AS (
 							UPDATE hr_probation_review
 							SET version = ${nextVersion},
@@ -2409,8 +2424,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -4200,7 +4214,10 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.from(hrOffboardingAccessRevocation)
 				.where(
 					and(
-						eq(hrOffboardingAccessRevocation.organizationId, input.organizationId),
+						eq(
+							hrOffboardingAccessRevocation.organizationId,
+							input.organizationId,
+						),
 						eq(
 							hrOffboardingAccessRevocation.offboardingCaseId,
 							input.offboardingCaseId,
@@ -4234,7 +4251,10 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.from(hrOffboardingPayrollHandoff)
 				.where(
 					and(
-						eq(hrOffboardingPayrollHandoff.organizationId, input.organizationId),
+						eq(
+							hrOffboardingPayrollHandoff.organizationId,
+							input.organizationId,
+						),
 						eq(
 							hrOffboardingPayrollHandoff.offboardingCaseId,
 							input.offboardingCaseId,
@@ -4301,7 +4321,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					entityLabel: "Offboarding access revocation",
 				});
 			}
-			const caseId = parseHumanResourcesOffboardingCaseId(row.offboarding_case_id);
+			const caseId = parseHumanResourcesOffboardingCaseId(
+				row.offboarding_case_id,
+			);
 			if (!caseId.ok) return caseId;
 			const loaded = await this.getOffboardingCase({
 				organizationId: input.organizationId,
@@ -4368,7 +4390,9 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					entityLabel: "Offboarding payroll handoff",
 				});
 			}
-			const caseId = parseHumanResourcesOffboardingCaseId(row.offboarding_case_id);
+			const caseId = parseHumanResourcesOffboardingCaseId(
+				row.offboarding_case_id,
+			);
 			if (!caseId.ok) return caseId;
 			const loaded = await this.getOffboardingCase({
 				organizationId: input.organizationId,

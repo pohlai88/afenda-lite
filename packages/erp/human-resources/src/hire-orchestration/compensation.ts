@@ -5,12 +5,11 @@ import type { HumanResourcesCommandOptions } from "../command-options";
 import { endAssignment, getAssignment } from "../core/assignment";
 import { getEmployment } from "../core/employment";
 import { terminateEmployment } from "../core/employment-management";
-import type {
-	HireAttempt,
-	HireCompensationLogEntry,
-} from "./types";
-import { changeWorkerStatus } from "../workforce-foundation/worker";
-import { getWorkerById } from "../workforce-foundation/worker";
+import {
+	changeWorkerStatus,
+	getWorkerById,
+} from "../workforce-foundation/worker";
+import type { HireAttempt, HireCompensationLogEntry } from "./types";
 
 type CompensationContext = {
 	organizationId: string;

@@ -5,8 +5,8 @@ import type {
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentId,
-	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingAccessRevocationId,
+	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingPayrollHandoffId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
@@ -17,7 +17,6 @@ import type {
 	HumanResourcesOnboardingTaskId,
 	HumanResourcesPositionId,
 	HumanResourcesProbationReviewId,
-	HumanResourcesProbationAssessmentId,
 	HumanResourcesTerminationId,
 	HumanResourcesWorkCalendarId,
 } from "../brands";

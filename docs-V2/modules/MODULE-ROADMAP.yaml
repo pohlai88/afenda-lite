@@ -2,9 +2,18 @@
 # Version: module-roadmap/2026-07-26
 # Authority: docs-V2/monorepo
 # Promoted (removed from roadmap): master-data · sales · purchasing · inventory · receiving · fulfillment · receivables · payables · payments · accounting · human-resources · payroll
-# corporate-administration: removed 2026-07-26 — greenfield rebuild pending (scratch authority retained under docs-V2/_scratch/erp/corporate-administration/)
+# corporate-administration: CA-0.1 scaffolded; domain contracts and persistence remain gated by later slices.
 
 version: "module-roadmap/2026-07-26"
 updated: "2026-07-26"
 
-modules: []
+modules:
+  - id: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    band: R1-F
+    category: erp
+    lifecycle: scaffolded
+    activationMode: organization_toggle
+    approvedSlice: CA-0.1
+    tablePrefix: ca_
+    nextSlice: CA-0.2

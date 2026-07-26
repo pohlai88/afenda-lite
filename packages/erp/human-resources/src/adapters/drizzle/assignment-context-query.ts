@@ -11,12 +11,15 @@ import {
 	or,
 } from "@afenda/db";
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { HUMAN_RESOURCES_ERROR_NOT_FOUND, humanResourcesErrorDetails } from "../../error-codes";
+import {
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	humanResourcesErrorDetails,
+} from "../../error-codes";
+import { multiplePrimaryAssignmentsAtAsOf } from "../../shared/assignment-guards";
 import type {
 	AssignmentContextQueryPort,
 	EmployeeAssignmentContext,
 } from "../../time/handoff/ports";
-import { multiplePrimaryAssignmentsAtAsOf } from "../../shared/assignment-guards";
 
 /**
  * Drizzle-backed assignment context for calendar / time resolution.

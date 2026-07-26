@@ -5,6 +5,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MemorySearchStore } from "../../../packages/data-plane/search/__tests__/helpers/memory-search-store";
+import {
+	searchOrganizationMembers,
+	syncOrganizationMemberSearchIndex,
+} from "../modules/identity/domain/organization-member-search";
 
 const authMocks = vi.hoisted(() => ({
 	listOrgMembers: vi.fn(),
@@ -37,9 +41,6 @@ describe("organization-member-search Identity port", () => {
 				role: "member",
 			},
 		]);
-
-		const { syncOrganizationMemberSearchIndex, searchOrganizationMembers } =
-			await import("../modules/identity/domain/organization-member-search");
 
 		const first = await syncOrganizationMemberSearchIndex("org-1", store);
 		expect(first.ok).toBe(true);
@@ -87,10 +88,6 @@ describe("organization-member-search Identity port", () => {
 				role: "admin",
 			},
 		]);
-
-		const { syncOrganizationMemberSearchIndex } = await import(
-			"../modules/identity/domain/organization-member-search"
-		);
 
 		await syncOrganizationMemberSearchIndex("org-1", store);
 		authMocks.listOrgMembers.mockResolvedValueOnce([]);

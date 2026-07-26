@@ -1,9 +1,9 @@
-import type {
-	HumanResourcesIdentityResolverPort,
-	HumanResourcesEmployeeIdentity,
-} from "@afenda/human-resources/identity-resolver";
-import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 import type { Result } from "@afenda/errors/result";
+import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
+import type {
+	HumanResourcesEmployeeIdentity,
+	HumanResourcesIdentityResolverPort,
+} from "@afenda/human-resources/identity-resolver";
 import { resolveHumanResourcesStore } from "@afenda/human-resources/resolve-store";
 
 export function createHumanResourcesIdentityResolverPort(): HumanResourcesIdentityResolverPort {

@@ -68,7 +68,7 @@ export async function createOffer(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFER_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFER_CREATE,
 				}),
 			),
 	});
@@ -96,7 +96,7 @@ export async function amendOfferDraft(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
 				}),
 			),
 	});
@@ -129,7 +129,7 @@ async function transitionOffer(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: config.command,
+					operationId: config.command,
 				}),
 			),
 	});
@@ -204,7 +204,7 @@ export async function acceptOffer(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
+					operationId: HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
 				}),
 			);
 		},

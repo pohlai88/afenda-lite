@@ -9,9 +9,9 @@ import {
 	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
 	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT,
 	HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT,
 	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
-	HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 import {
 	type HumanResourcesClearanceId,
@@ -30,8 +30,8 @@ import {
 	type HumanResourcesOnboardingOrientationId,
 	type HumanResourcesOnboardingTaskId,
 	type HumanResourcesPositionId,
-	type HumanResourcesProbationReviewId,
 	type HumanResourcesProbationAssessmentId,
+	type HumanResourcesProbationReviewId,
 	type HumanResourcesTerminationId,
 	type HumanResourcesWorkCalendarId,
 	parseHumanResourcesAssignmentId,
@@ -48,20 +48,21 @@ import {
 	parseHumanResourcesOnboardingEquipmentHandoffId,
 	parseHumanResourcesOnboardingOrientationId,
 	parseHumanResourcesOnboardingTaskId,
-	parseHumanResourcesProbationReviewId,
 	parseHumanResourcesProbationAssessmentId,
+	parseHumanResourcesProbationReviewId,
 	parseHumanResourcesTerminationId,
 } from "../../brands";
+import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import {
 	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
 	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
 	ONBOARDING_TASK_CODE_ORIENTATION,
 } from "../../lifecycle/onboarding-checklist";
-import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type {
 	HumanResourcesOrganizationDimensions,
 	MutationPorts,
 } from "../../ports";
+import { assertTransferAssignmentRanges } from "../../shared/assignment-guards";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	assertActivePosition,
@@ -71,36 +72,33 @@ import {
 	notFound,
 } from "../../shared/domain-guards";
 import { previousIsoDate } from "../../shared/effective-dates";
-import {
-	assertTransferAssignmentRanges,
-} from "../../shared/assignment-guards";
 import { assertValidDateRange } from "../../shared/employment-status";
 import { fingerprintTransfer } from "../../shared/fingerprint";
 import {
 	assertClearanceStatusTransition,
+	assertConfirmationEffectiveOn,
 	assertEmploymentActiveForOnboarding,
 	assertEmploymentForOffboarding,
 	assertLatestProbationPassed,
-	assertProbationAssessmentReviewedOn,
-	assertProbationOutcomeRecordedOn,
-	assertConfirmationEffectiveOn,
 	assertLifecycleTaskStatusTransition,
 	assertOffboardingAccessRevocationStatusTransition,
 	assertOffboardingCaseInProgress,
 	assertOffboardingPayrollHandoffStatusTransition,
 	assertOffboardingReadyToComplete,
-	assertTerminationApprovable,
-	assertTerminationFinalizable,
-	assertTerminationStatusTransition,
 	assertOnboardingAccessHandoffStatusTransition,
 	assertOnboardingCaseInProgress,
 	assertOnboardingEquipmentHandoffStatusTransition,
 	assertOnboardingOrientationStatusTransition,
 	assertOnboardingReadyToComplete,
+	assertProbationAssessmentReviewedOn,
 	assertProbationDateRange,
 	assertProbationExtension,
 	assertProbationOpen,
+	assertProbationOutcomeRecordedOn,
+	assertTerminationApprovable,
 	assertTerminationEffectiveDate,
+	assertTerminationFinalizable,
+	assertTerminationStatusTransition,
 } from "../../shared/lifecycle-guards";
 import type {
 	LifecycleTaskStatus,
@@ -117,11 +115,11 @@ import type {
 	IdempotentProbationReviewRecord,
 	IdempotentTerminationRecord,
 	OffboardingCaseCreateRecord,
-	TerminationApproveRecord,
-	TerminationFinalizeRecord,
 	OnboardingCaseCreateRecord,
 	ProbationReviewCreateRecord,
+	TerminationApproveRecord,
 	TerminationCreateRecord,
+	TerminationFinalizeRecord,
 } from "../../store";
 import type {
 	Clearance,
@@ -231,7 +229,9 @@ function cloneProbationReview(value: ProbationReview): ProbationReview {
 	};
 }
 
-function cloneProbationAssessment(value: ProbationAssessment): ProbationAssessment {
+function cloneProbationAssessment(
+	value: ProbationAssessment,
+): ProbationAssessment {
 	return {
 		...value,
 		createdAt: new Date(value.createdAt),
@@ -637,9 +637,8 @@ export function createMemoryLifecycleMethods(
 			if (!equipmentHandoffIdResult.ok) {
 				return equipmentHandoffIdResult;
 			}
-			const accessHandoffIdResult = parseHumanResourcesOnboardingAccessHandoffId(
-				randomUUID(),
-			);
+			const accessHandoffIdResult =
+				parseHumanResourcesOnboardingAccessHandoffId(randomUUID());
 			if (!accessHandoffIdResult.ok) {
 				return accessHandoffIdResult;
 			}

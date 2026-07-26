@@ -1,5 +1,5 @@
-import type { HumanResourcesFieldProjection } from "./authorization-types";
 import type { EmployeeCompensation } from "../types";
+import type { HumanResourcesFieldProjection } from "./authorization-types";
 
 export function projectEmployeeCompensationByFieldAccess(
 	data: EmployeeCompensation,

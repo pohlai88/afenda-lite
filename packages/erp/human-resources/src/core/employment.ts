@@ -22,7 +22,10 @@ import {
 	listEmploymentStatusHistoryInputSchema,
 } from "../schemas/core";
 import { runCoreCommand, runCoreQuery } from "../shared/core-command";
-import { rehireRequiresEndedEmployment, resolveAmendEndsOn } from "../shared/domain-guards";
+import {
+	rehireRequiresEndedEmployment,
+	resolveAmendEndsOn,
+} from "../shared/domain-guards";
 import {
 	resolveEmploymentStatusAsOf,
 	resolveLifecycleEffectiveOn,
@@ -32,10 +35,7 @@ import {
 	assertNoEmploymentOverlap,
 } from "../shared/employment-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type {
-	Employment,
-	EmploymentStatusHistory,
-} from "../types";
+import type { Employment, EmploymentStatusHistory } from "../types";
 
 export async function createEmployment(
 	input: unknown,
@@ -84,7 +84,7 @@ export async function createEmployment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 				}),
 			);
 		},
@@ -178,7 +178,7 @@ export async function amendEmployment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
 				}),
 			);
 		},
@@ -210,10 +210,7 @@ export async function correctEmployment(
 			}
 
 			const nextStatus = data.status ?? existing.data.status;
-			if (
-				existing.data.status === "terminated" &&
-				nextStatus === "active"
-			) {
+			if (existing.data.status === "terminated" && nextStatus === "active") {
 				return fail(
 					"BAD_REQUEST",
 					"Cannot reopen a terminated employment; create a new employment for rehire",
@@ -259,7 +256,7 @@ export async function correctEmployment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT,
 				}),
 			);
 		},

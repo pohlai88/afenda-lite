@@ -46,21 +46,22 @@ export const payrollVariableInputRecordSchema = z.object({
 	updatedAt: z.coerce.date(),
 });
 
-export const createPayrollVariableInputInputSchema = payrollMutationContextSchema
-	.extend({
-		employeeId: payrollEmployeeIdSchema,
-		payGroupId: payrollPayGroupIdSchema,
-		periodId: payrollPeriodIdSchema,
-		earningRuleId: payrollEarningRuleIdSchema,
-		amount: payrollDecimalStringSchema,
-		currencyCode: z.string().trim().length(3),
-		sourceType: z.string().trim().min(1).max(64),
-		sourceId: z.string().trim().min(1).max(128),
-		effectiveFrom: isoDateSchema,
-		effectiveTo: isoDateSchema.nullable().optional(),
-		idempotencyKey: payrollIdempotencyKeySchema,
-	})
-	.strict();
+export const createPayrollVariableInputInputSchema =
+	payrollMutationContextSchema
+		.extend({
+			employeeId: payrollEmployeeIdSchema,
+			payGroupId: payrollPayGroupIdSchema,
+			periodId: payrollPeriodIdSchema,
+			earningRuleId: payrollEarningRuleIdSchema,
+			amount: payrollDecimalStringSchema,
+			currencyCode: z.string().trim().length(3),
+			sourceType: z.string().trim().min(1).max(64),
+			sourceId: z.string().trim().min(1).max(128),
+			effectiveFrom: isoDateSchema,
+			effectiveTo: isoDateSchema.nullable().optional(),
+			idempotencyKey: payrollIdempotencyKeySchema,
+		})
+		.strict();
 
 export const getPayrollVariableInputInputSchema = payrollMutationContextSchema
 	.extend({

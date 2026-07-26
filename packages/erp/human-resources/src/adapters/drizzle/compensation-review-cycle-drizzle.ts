@@ -12,8 +12,8 @@ import {
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
-	parseHumanResourcesCompensationReviewCycleId,
 	type HumanResourcesCompensationReviewCycleId,
+	parseHumanResourcesCompensationReviewCycleId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { MutationPorts } from "../../ports";
@@ -123,12 +123,11 @@ async function transitionReviewCycleStatus(
 	meta: HumanResourcesMutationMeta,
 	nextStatus: CompensationReviewCycle["status"],
 ): Promise<Result<CompensationReviewCycle>> {
-	const existing = await drizzleCompensationReviewCycleMethods.getCompensationReviewCycle(
-		{
+	const existing =
+		await drizzleCompensationReviewCycleMethods.getCompensationReviewCycle({
 			organizationId: input.organizationId,
 			cycleId: input.cycleId,
-		},
-	);
+		});
 	if (!existing.ok) return existing;
 	if (existing.data === null) {
 		return notFound(
@@ -142,7 +141,10 @@ async function transitionReviewCycleStatus(
 		input.expectedVersion,
 	);
 	if (!versionCheck.ok) return versionCheck;
-	const transition = assertReviewCycleStatusTransition(cycle.status, nextStatus);
+	const transition = assertReviewCycleStatusTransition(
+		cycle.status,
+		nextStatus,
+	);
 	if (!transition.ok) return transition;
 
 	const nextVersion = input.expectedVersion + 1;

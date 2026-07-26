@@ -1,14 +1,5 @@
-/**
- * Preserved non-leave emission classifications (PR 3.0 migration).
- * Leave commands live in domains/leave.ts only.
- * Workforce-foundation and core-organization commands live in domains/*.ts (PR 3.2).
- * Compliance commands live in domains/compliance.ts (PR 3.5).
- *
- * Count: 63 entries — drain into typed domain files in PR 3.6+.
- */
+/** Canonical Time command emission classifications. */
 import {
-	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
-	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 	HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
 	HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT,
 	HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT,
@@ -34,10 +25,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
-	HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
-	HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
-	HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
-	HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
@@ -86,43 +73,17 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_END,
 	HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SUPERSEDE,
 	HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_UPDATE,
-	type HumanResourcesCommandId,
-} from "../module-ids";
+	type HumanResourcesTimeCommandId,
+} from "../../module-ids";
 
 import {
 	defineAuditOnlyEmission,
 	defineDomainEventEmission,
-} from "./define-emission";
-import { inferEmissionMetadata } from "./infer-emission-metadata";
-import type { HumanResourcesMutationEmissionDefinition } from "./types";
+} from "../define-emission";
+import { inferEmissionMetadata } from "../infer-emission-metadata";
+import type { HumanResourcesMutationEmissionDefinition } from "../types";
 
-export const HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS = {
-	[HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE]: defineAuditOnlyEmission(
-		HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
-		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE),
-		},
-	),
-	[HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE]: defineDomainEventEmission(
-		HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
-		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE),
-			eventTypes: [HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT] as const,
-		},
-	),
-	[HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE]: defineAuditOnlyEmission(
-		HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
-		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE),
-		},
-	),
-	[HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD]: defineDomainEventEmission(
-		HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
-		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD),
-			eventTypes: [HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT] as const,
-		},
-	),
+export const HUMAN_RESOURCES_TIME_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE,
 		{
@@ -548,6 +509,7 @@ export const HUMAN_RESOURCES_LEGACY_EMISSION_CLASSIFICATIONS = {
 			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY),
 		},
 	),
-} satisfies Partial<
-	Record<HumanResourcesCommandId, HumanResourcesMutationEmissionDefinition>
+} satisfies Record<
+	HumanResourcesTimeCommandId,
+	HumanResourcesMutationEmissionDefinition
 >;

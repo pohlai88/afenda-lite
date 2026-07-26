@@ -55,7 +55,7 @@ export async function proposeTermination(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
 				}),
 			);
 		},
@@ -81,7 +81,7 @@ export async function approveTermination(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
 				}),
 			),
 	});
@@ -106,7 +106,7 @@ export async function finalizeTermination(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+					operationId: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 				}),
 			),
 	});

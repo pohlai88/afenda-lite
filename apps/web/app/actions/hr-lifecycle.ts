@@ -1,20 +1,5 @@
 "use server";
 
-import {
-	openProbation,
-	extendProbation,
-	recordProbationAssessment,
-	recordProbationOutcome,
-	getProbationReview,
-	listProbationReviewsByEmployment,
-	listProbationAssessments,
-	confirmEmployment,
-	getEmploymentConfirmation,
-	proposeTermination,
-	approveTermination,
-	finalizeTermination,
-	getTermination,
-} from "@afenda/human-resources";
 import type {
 	EmploymentConfirmation,
 	ProbationAssessment,
@@ -22,19 +7,34 @@ import type {
 	Termination,
 } from "@afenda/human-resources";
 import {
-	openProbationInputSchema,
+	approveTermination,
+	confirmEmployment,
+	extendProbation,
+	finalizeTermination,
+	getEmploymentConfirmation,
+	getProbationReview,
+	getTermination,
+	listProbationAssessments,
+	listProbationReviewsByEmployment,
+	openProbation,
+	proposeTermination,
+	recordProbationAssessment,
+	recordProbationOutcome,
+} from "@afenda/human-resources";
+import {
+	approveTerminationInputSchema,
+	confirmEmploymentInputSchema,
 	extendProbationInputSchema,
+	finalizeTerminationInputSchema,
+	getEmploymentConfirmationInputSchema,
+	getProbationReviewInputSchema,
+	getTerminationInputSchema,
+	listProbationAssessmentsInputSchema,
+	listProbationReviewsByEmploymentInputSchema,
+	openProbationInputSchema,
+	proposeTerminationInputSchema,
 	recordProbationAssessmentInputSchema,
 	recordProbationOutcomeInputSchema,
-	getProbationReviewInputSchema,
-	listProbationReviewsByEmploymentInputSchema,
-	listProbationAssessmentsInputSchema,
-	confirmEmploymentInputSchema,
-	getEmploymentConfirmationInputSchema,
-	proposeTerminationInputSchema,
-	approveTerminationInputSchema,
-	finalizeTerminationInputSchema,
-	getTerminationInputSchema
 } from "@afenda/human-resources/schemas";
 
 import {
@@ -50,10 +50,11 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-
 const openProbationActionSchema = hrActionSchema(openProbationInputSchema);
 
-export async function openProbationAction(input: unknown): Promise<ActionResult<{ probationReview: ProbationReview }>> {
+export async function openProbationAction(
+	input: unknown,
+): Promise<ActionResult<{ probationReview: ProbationReview }>> {
 	return runOperatorPermissionAction({
 		path: "openProbationAction",
 		permission: "human-resources.employment.manage",
@@ -78,10 +79,11 @@ export async function openProbationAction(input: unknown): Promise<ActionResult<
 	});
 }
 
-
 const extendProbationActionSchema = hrActionSchema(extendProbationInputSchema);
 
-export async function extendProbationAction(input: unknown): Promise<ActionResult<{ probationReview: ProbationReview }>> {
+export async function extendProbationAction(
+	input: unknown,
+): Promise<ActionResult<{ probationReview: ProbationReview }>> {
 	return runOperatorPermissionAction({
 		path: "extendProbationAction",
 		permission: "human-resources.employment.manage",
@@ -106,10 +108,13 @@ export async function extendProbationAction(input: unknown): Promise<ActionResul
 	});
 }
 
+const recordProbationAssessmentActionSchema = hrActionSchema(
+	recordProbationAssessmentInputSchema,
+);
 
-const recordProbationAssessmentActionSchema = hrActionSchema(recordProbationAssessmentInputSchema);
-
-export async function recordProbationAssessmentAction(input: unknown): Promise<ActionResult<{ assessment: ProbationAssessment }>> {
+export async function recordProbationAssessmentAction(
+	input: unknown,
+): Promise<ActionResult<{ assessment: ProbationAssessment }>> {
 	return runOperatorPermissionAction({
 		path: "recordProbationAssessmentAction",
 		permission: "human-resources.employment.manage",
@@ -134,10 +139,13 @@ export async function recordProbationAssessmentAction(input: unknown): Promise<A
 	});
 }
 
+const recordProbationOutcomeActionSchema = hrActionSchema(
+	recordProbationOutcomeInputSchema,
+);
 
-const recordProbationOutcomeActionSchema = hrActionSchema(recordProbationOutcomeInputSchema);
-
-export async function recordProbationOutcomeAction(input: unknown): Promise<ActionResult<{ probationReview: ProbationReview }>> {
+export async function recordProbationOutcomeAction(
+	input: unknown,
+): Promise<ActionResult<{ probationReview: ProbationReview }>> {
 	return runOperatorPermissionAction({
 		path: "recordProbationOutcomeAction",
 		permission: "human-resources.employment.manage",
@@ -162,10 +170,13 @@ export async function recordProbationOutcomeAction(input: unknown): Promise<Acti
 	});
 }
 
+const getProbationReviewActionSchema = hrActionSchema(
+	getProbationReviewInputSchema,
+);
 
-const getProbationReviewActionSchema = hrActionSchema(getProbationReviewInputSchema);
-
-export async function getProbationReviewAction(input: unknown): Promise<ActionResult<{ probationReview: ProbationReview | null }>> {
+export async function getProbationReviewAction(
+	input: unknown,
+): Promise<ActionResult<{ probationReview: ProbationReview | null }>> {
 	return runOperatorPermissionAction({
 		path: "getProbationReviewAction",
 		permission: "human-resources.employee.read",
@@ -190,16 +201,22 @@ export async function getProbationReviewAction(input: unknown): Promise<ActionRe
 	});
 }
 
+const listProbationReviewsByEmploymentActionSchema = hrActionSchema(
+	listProbationReviewsByEmploymentInputSchema,
+);
 
-const listProbationReviewsByEmploymentActionSchema = hrActionSchema(listProbationReviewsByEmploymentInputSchema);
-
-export async function listProbationReviewsByEmploymentAction(input: unknown): Promise<ActionResult<{ reviews: ProbationReview[] }>> {
+export async function listProbationReviewsByEmploymentAction(
+	input: unknown,
+): Promise<ActionResult<{ reviews: ProbationReview[] }>> {
 	return runOperatorPermissionAction({
 		path: "listProbationReviewsByEmploymentAction",
 		permission: "human-resources.employee.read",
 		safeMessage: "Could not list probation reviews.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(listProbationReviewsByEmploymentActionSchema, input);
+			const parsed = parseSchema(
+				listProbationReviewsByEmploymentActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -218,10 +235,13 @@ export async function listProbationReviewsByEmploymentAction(input: unknown): Pr
 	});
 }
 
+const listProbationAssessmentsActionSchema = hrActionSchema(
+	listProbationAssessmentsInputSchema,
+);
 
-const listProbationAssessmentsActionSchema = hrActionSchema(listProbationAssessmentsInputSchema);
-
-export async function listProbationAssessmentsAction(input: unknown): Promise<ActionResult<{ assessments: ProbationAssessment[] }>> {
+export async function listProbationAssessmentsAction(
+	input: unknown,
+): Promise<ActionResult<{ assessments: ProbationAssessment[] }>> {
 	return runOperatorPermissionAction({
 		path: "listProbationAssessmentsAction",
 		permission: "human-resources.employee.read",
@@ -246,10 +266,13 @@ export async function listProbationAssessmentsAction(input: unknown): Promise<Ac
 	});
 }
 
+const confirmEmploymentActionSchema = hrActionSchema(
+	confirmEmploymentInputSchema,
+);
 
-const confirmEmploymentActionSchema = hrActionSchema(confirmEmploymentInputSchema);
-
-export async function confirmEmploymentAction(input: unknown): Promise<ActionResult<{ confirmation: EmploymentConfirmation }>> {
+export async function confirmEmploymentAction(
+	input: unknown,
+): Promise<ActionResult<{ confirmation: EmploymentConfirmation }>> {
 	return runOperatorPermissionAction({
 		path: "confirmEmploymentAction",
 		permission: "human-resources.employment.manage",
@@ -274,10 +297,13 @@ export async function confirmEmploymentAction(input: unknown): Promise<ActionRes
 	});
 }
 
+const getEmploymentConfirmationActionSchema = hrActionSchema(
+	getEmploymentConfirmationInputSchema,
+);
 
-const getEmploymentConfirmationActionSchema = hrActionSchema(getEmploymentConfirmationInputSchema);
-
-export async function getEmploymentConfirmationAction(input: unknown): Promise<ActionResult<{ confirmation: EmploymentConfirmation | null }>> {
+export async function getEmploymentConfirmationAction(
+	input: unknown,
+): Promise<ActionResult<{ confirmation: EmploymentConfirmation | null }>> {
 	return runOperatorPermissionAction({
 		path: "getEmploymentConfirmationAction",
 		permission: "human-resources.employee.read",
@@ -302,10 +328,13 @@ export async function getEmploymentConfirmationAction(input: unknown): Promise<A
 	});
 }
 
+const proposeTerminationActionSchema = hrActionSchema(
+	proposeTerminationInputSchema,
+);
 
-const proposeTerminationActionSchema = hrActionSchema(proposeTerminationInputSchema);
-
-export async function proposeTerminationAction(input: unknown): Promise<ActionResult<{ termination: Termination }>> {
+export async function proposeTerminationAction(
+	input: unknown,
+): Promise<ActionResult<{ termination: Termination }>> {
 	return runOperatorPermissionAction({
 		path: "proposeTerminationAction",
 		permission: "human-resources.employment.manage",
@@ -330,10 +359,13 @@ export async function proposeTerminationAction(input: unknown): Promise<ActionRe
 	});
 }
 
+const approveTerminationActionSchema = hrActionSchema(
+	approveTerminationInputSchema,
+);
 
-const approveTerminationActionSchema = hrActionSchema(approveTerminationInputSchema);
-
-export async function approveTerminationAction(input: unknown): Promise<ActionResult<{ termination: Termination }>> {
+export async function approveTerminationAction(
+	input: unknown,
+): Promise<ActionResult<{ termination: Termination }>> {
 	return runOperatorPermissionAction({
 		path: "approveTerminationAction",
 		permission: "human-resources.employment.manage",
@@ -358,10 +390,13 @@ export async function approveTerminationAction(input: unknown): Promise<ActionRe
 	});
 }
 
+const finalizeTerminationActionSchema = hrActionSchema(
+	finalizeTerminationInputSchema,
+);
 
-const finalizeTerminationActionSchema = hrActionSchema(finalizeTerminationInputSchema);
-
-export async function finalizeTerminationAction(input: unknown): Promise<ActionResult<{ termination: Termination }>> {
+export async function finalizeTerminationAction(
+	input: unknown,
+): Promise<ActionResult<{ termination: Termination }>> {
 	return runOperatorPermissionAction({
 		path: "finalizeTerminationAction",
 		permission: "human-resources.employment.manage",
@@ -386,10 +421,11 @@ export async function finalizeTerminationAction(input: unknown): Promise<ActionR
 	});
 }
 
-
 const getTerminationActionSchema = hrActionSchema(getTerminationInputSchema);
 
-export async function getTerminationAction(input: unknown): Promise<ActionResult<{ termination: Termination | null }>> {
+export async function getTerminationAction(
+	input: unknown,
+): Promise<ActionResult<{ termination: Termination | null }>> {
 	return runOperatorPermissionAction({
 		path: "getTerminationAction",
 		permission: "human-resources.employee.read",

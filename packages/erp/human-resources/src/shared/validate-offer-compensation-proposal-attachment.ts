@@ -1,13 +1,16 @@
 import { ok, type Result } from "@afenda/errors/result";
 
-import type { HumanResourcesApplicationId, HumanResourcesCompensationProposalId } from "../brands";
+import type {
+	HumanResourcesApplicationId,
+	HumanResourcesCompensationProposalId,
+} from "../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../error-codes";
 import type { HumanResourcesStore } from "../store";
+import { assertCompensationProposalApproved } from "./compensation-proposal-guards";
 import {
 	isCompensationProposalApproved,
 	isCompensationProposalDraft,
 } from "./compensation-status";
-import { assertCompensationProposalApproved } from "./compensation-proposal-guards";
 import { invalidState, notFound } from "./domain-guards";
 import type { OfferStatus } from "./recruitment-status";
 
@@ -16,7 +19,10 @@ export async function validateOfferCompensationProposalAttachment(
 	input: {
 		organizationId: string;
 		applicationId: HumanResourcesApplicationId;
-		compensationProposalId: HumanResourcesCompensationProposalId | null | undefined;
+		compensationProposalId:
+			| HumanResourcesCompensationProposalId
+			| null
+			| undefined;
 		offerStatus?: OfferStatus;
 	},
 ): Promise<Result<void>> {

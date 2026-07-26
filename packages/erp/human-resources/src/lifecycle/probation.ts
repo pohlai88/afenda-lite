@@ -6,8 +6,8 @@ import {
 	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
 	HUMAN_RESOURCES_QUERY_PROBATION_ASSESSMENTS_LIST,
-	HUMAN_RESOURCES_QUERY_PROBATION_REVIEWS_LIST_BY_EMPLOYMENT,
 	HUMAN_RESOURCES_QUERY_PROBATION_REVIEW_GET,
+	HUMAN_RESOURCES_QUERY_PROBATION_REVIEWS_LIST_BY_EMPLOYMENT,
 } from "../module-ids";
 import {
 	extendProbationInputSchema,
@@ -57,7 +57,7 @@ export async function openProbation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
 				}),
 			);
 		},
@@ -86,7 +86,7 @@ export async function extendProbation(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+					operationId: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
 				}),
 			),
 	});
@@ -114,7 +114,7 @@ export async function recordProbationAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_ASSESSMENT,
+					operationId: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_ASSESSMENT,
 				}),
 			),
 	});
@@ -143,7 +143,7 @@ export async function recordProbationOutcome(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+					operationId: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
 				}),
 			),
 	});

@@ -9,7 +9,16 @@ import {
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
+import {
+	cancelBenefitEnrollment,
+	endBenefitEnrollment,
+	enrolBenefit,
+} from "../src/compensation-benefits/benefit-enrollment";
+import { applyApprovedCompensationResult } from "../src/compensation-benefits/compensation-review";
+import {
+	createEmployeeCompensation,
+	endEmployeeCompensation,
+} from "../src/compensation-benefits/employee-compensation";
 import {
 	createDocumentRequirement,
 	publishDocumentRequirement,
@@ -37,37 +46,10 @@ import {
 	suspendWorkEligibility,
 	verifyWorkEligibility,
 } from "../src/compliance/work-eligibility";
+import { createAssignment } from "../src/core/assignment";
 import { createEmployee } from "../src/core/employee";
-import {
-	enrolBenefit,
-	cancelBenefitEnrollment,
-	endBenefitEnrollment,
-} from "../src/compensation-benefits/benefit-enrollment";
-import {
-	applyApprovedCompensationResult,
-} from "../src/compensation-benefits/compensation-review";
-import {
-	createEmployeeCompensation,
-	endEmployeeCompensation,
-} from "../src/compensation-benefits/employee-compensation";
-import {
-	approvePerformanceGoal,
-} from "../src/performance/goal";
-import {
-	completeImprovementPlan,
-	createImprovementPlan,
-	openImprovementPlan,
-} from "../src/performance/improvement-plan";
-import {
-	addCycleParticipant,
-	openPerformanceCycle,
-} from "../src/performance/performance-cycle";
-import { publishPerformanceCycleReady } from "./helpers/performance-cycle-harness";
-import {
-	acknowledgePerformanceReview,
-	finalizePerformanceReview,
-	reopenPerformanceReview,
-} from "../src/performance/review";
+import { createEmployment } from "../src/core/employment";
+import { createEmploymentContract } from "../src/core/employment-contract";
 import {
 	approveEmployeeCaseAction,
 	recommendEmployeeCaseAction,
@@ -95,11 +77,56 @@ import {
 	rejectLeaveRequest,
 	submitLeaveRequest,
 } from "../src/leave/leave-request";
+import { confirmEmployment } from "../src/lifecycle/confirmation";
 import {
-	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
-	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
-	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
-	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
+	completeOffboarding,
+	completeOffboardingTask,
+	getClearanceByOffboardingCase,
+	getOffboardingAccessRevocationByCase,
+	getOffboardingPayrollHandoffByCase,
+	listOffboardingTasks,
+	recordClearance,
+	recordExitInterview,
+	recordOffboardingAccessRevocation,
+	recordOffboardingPayrollHandoff,
+	startOffboarding,
+} from "../src/lifecycle/offboarding";
+import {
+	completeOnboarding,
+	completeOnboardingTask,
+	getOnboardingAccessHandoffByCase,
+	getOnboardingEquipmentHandoffByCase,
+	getOnboardingOrientationByCase,
+	listOnboardingTasks,
+	recordOnboardingAccessHandoff,
+	recordOnboardingEquipmentHandoff,
+	recordOnboardingOrientation,
+	startOnboarding,
+} from "../src/lifecycle/onboarding";
+import {
+	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
+	ONBOARDING_TASK_CODE_ORIENTATION,
+	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
+} from "../src/lifecycle/onboarding-checklist";
+import {
+	extendProbation,
+	openProbation,
+	recordProbationOutcome,
+} from "../src/lifecycle/probation";
+import {
+	approveTermination,
+	finalizeTermination,
+	proposeTermination,
+} from "../src/lifecycle/termination";
+import { transferAssignment } from "../src/lifecycle/transfer";
+import {
+	HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
+	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_IN_REVIEW,
+	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_INTERVIEWING,
+	HUMAN_RESOURCES_COMMAND_APPLICATION_REJECT,
+	HUMAN_RESOURCES_COMMAND_APPLICATION_WITHDRAW,
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
@@ -110,79 +137,68 @@ import {
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
-	HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
 	HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
-	HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
-	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_IN_REVIEW,
-	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_INTERVIEWING,
-	HUMAN_RESOURCES_COMMAND_APPLICATION_REJECT,
-	HUMAN_RESOURCES_COMMAND_APPLICATION_WITHDRAW,
-	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
-	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
-	HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
-	HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
-	HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
-	HUMAN_RESOURCES_COMMAND_OFFER_DECLINE,
-	HUMAN_RESOURCES_COMMAND_OFFER_EXPIRE,
-	HUMAN_RESOURCES_COMMAND_OFFER_ISSUE,
-	HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW,
-	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
-	HUMAN_RESOURCES_COMMAND_REQUISITION_CLOSE,
-	HUMAN_RESOURCES_COMMAND_REQUISITION_OPEN,
+	HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
+	HUMAN_RESOURCES_COMMAND_CERTIFICATION_RENEW,
 	HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
 	HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
+	HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
 	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
 	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE,
 	HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
-	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
-	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
-	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
-	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
-	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
-	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
-	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
-	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
-	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
-	HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
-	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
-	HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
-	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
-	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
-	HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
-	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
-	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
-	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
-	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
-	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_APPROVE,
 	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
 	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
 	HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
-	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
-	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
+	HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
+	HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
 	HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
+	HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+	HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
+	HUMAN_RESOURCES_COMMAND_OFFER_DECLINE,
+	HUMAN_RESOURCES_COMMAND_OFFER_EXPIRE,
+	HUMAN_RESOURCES_COMMAND_OFFER_ISSUE,
+	HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+	HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CANCEL,
 	HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE,
@@ -195,13 +211,19 @@ import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
 	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
 	HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
-	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
-	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
-	HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
+	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+	HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+	HUMAN_RESOURCES_COMMAND_REQUISITION_APPROVE,
+	HUMAN_RESOURCES_COMMAND_REQUISITION_CLOSE,
+	HUMAN_RESOURCES_COMMAND_REQUISITION_OPEN,
 	HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN,
 	HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL,
@@ -216,6 +238,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_CREATE,
 	HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_ADD,
@@ -243,14 +266,13 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
 	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
-	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
+	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
 	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
-	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
-	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
+	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
@@ -260,9 +282,6 @@ import {
 	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
 } from "../src/module-ids";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
-import { createAssignment } from "../src/core/assignment";
-import { createEmployment } from "../src/core/employment";
-import { createEmploymentContract } from "../src/core/employment-contract";
 import {
 	activateDepartment,
 	archiveDepartment,
@@ -270,12 +289,72 @@ import {
 } from "../src/organization/department";
 import { createPosition } from "../src/organization/position";
 import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+import { approvePerformanceGoal } from "../src/performance/goal";
+import {
+	completeImprovementPlan,
+	createImprovementPlan,
+	openImprovementPlan,
+	recordImprovementCheckpoint,
+} from "../src/performance/improvement-plan";
+import {
+	addCycleParticipant,
+	openPerformanceCycle,
+} from "../src/performance/performance-cycle";
+import {
+	acknowledgePerformanceReview,
+	finalizePerformanceReview,
+	reopenPerformanceReview,
+} from "../src/performance/review";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 } from "../src/permissions";
 import { createProductionWorkCalendar } from "../src/production-work-calendar";
+import {
+	createApplication,
+	moveApplicationToInReview,
+	moveApplicationToInterviewing,
+	rejectApplication,
+	withdrawApplication,
+} from "../src/recruitment/application";
+import {
+	anonymizeCandidate,
+	changeCandidateRetention,
+	createCandidate,
+	withdrawCandidateConsent,
+} from "../src/recruitment/candidate";
+import {
+	recordInterviewEvaluation,
+	scheduleInterview,
+} from "../src/recruitment/interview";
+import {
+	acceptOffer,
+	amendOfferDraft,
+	approveOffer,
+	createOffer,
+	declineOffer,
+	expireOffer,
+	issueOffer,
+	withdrawOffer,
+} from "../src/recruitment/offer";
+import {
+	approveRequisition,
+	closeRequisition,
+	createDraftRequisition,
+	openRequisition,
+	submitRequisition,
+} from "../src/recruitment/requisition";
+import {
+	approveTalentPoolMember,
+	createTalentPool,
+	nominateTalentPoolMember,
+	removeTalentPoolMember,
+} from "../src/talent/talent-pool";
+import {
+	createTalentProfile,
+	updateTalentProfile,
+} from "../src/talent/talent-profile";
 import {
 	createMemoryHumanResourcesStore,
 	createMemoryWorkCalendar,
@@ -355,50 +434,6 @@ import {
 	createWorker,
 } from "../src/workforce-foundation/worker";
 import {
-	anonymizeCandidate,
-	changeCandidateRetention,
-	createCandidate,
-	withdrawCandidateConsent,
-} from "../src/recruitment/candidate";
-import {
-	createApplication,
-	moveApplicationToInReview,
-	moveApplicationToInterviewing,
-	rejectApplication,
-	withdrawApplication,
-} from "../src/recruitment/application";
-import {
-	recordInterviewEvaluation,
-	scheduleInterview,
-} from "../src/recruitment/interview";
-import {
-	acceptOffer,
-	amendOfferDraft,
-	approveOffer,
-	createOffer,
-	declineOffer,
-	expireOffer,
-	issueOffer,
-	withdrawOffer,
-} from "../src/recruitment/offer";
-import {
-	approveRequisition,
-	closeRequisition,
-	createDraftRequisition,
-	openRequisition,
-	submitRequisition,
-} from "../src/recruitment/requisition";
-import {
-	approveTalentPoolMember,
-	createTalentPool,
-	nominateTalentPoolMember,
-	removeTalentPoolMember,
-} from "../src/talent/talent-pool";
-import {
-	createTalentProfile,
-	updateTalentProfile,
-} from "../src/talent/talent-profile";
-import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
 	submitHeadcountPlan,
@@ -409,60 +444,28 @@ import {
 	releaseHeadcountReservation,
 	reserveHeadcount,
 } from "../src/workforce-planning/headcount-reservation";
-import { confirmEmployment } from "../src/lifecycle/confirmation";
+import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import {
-	completeOffboarding,
-	completeOffboardingTask,
-	getClearanceByOffboardingCase,
-	getOffboardingAccessRevocationByCase,
-	getOffboardingPayrollHandoffByCase,
-	listOffboardingTasks,
-	recordClearance,
-	recordExitInterview,
-	recordOffboardingAccessRevocation,
-	recordOffboardingPayrollHandoff,
-	startOffboarding,
-} from "../src/lifecycle/offboarding";
+	createTestHumanResourcesCommandOptions,
+	TEST_ORGANIZATION_DIMENSION_KEYS,
+} from "./helpers/command-options";
 import {
-	completeOnboarding,
-	completeOnboardingTask,
-	getOnboardingAccessHandoffByCase,
-	getOnboardingEquipmentHandoffByCase,
-	getOnboardingOrientationByCase,
-	listOnboardingTasks,
-	recordOnboardingAccessHandoff,
-	recordOnboardingEquipmentHandoff,
-	recordOnboardingOrientation,
-	startOnboarding,
-} from "../src/lifecycle/onboarding";
-import {
-	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
-	ONBOARDING_TASK_CODE_ORIENTATION,
-	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-} from "../src/lifecycle/onboarding-checklist";
-import {
-	recordWorkEligibility,
-	verifyWorkEligibility,
-} from "../src/compliance/work-eligibility";
-import {
-	extendProbation,
-	openProbation,
-	recordProbationOutcome,
-} from "../src/lifecycle/probation";
-import {
-	approveTermination,
-	finalizeTermination,
-	proposeTermination,
-} from "../src/lifecycle/termination";
-import { transferAssignment } from "../src/lifecycle/transfer";
-import { createTestHumanResourcesCommandOptions, TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
-import { SAMPLE_INTERVIEW_SCORECARD } from "./helpers/recruitment-interview-fixture";
+	seedCompensationCorrelationFixture,
+	seedFinalizedCompensationReview,
+} from "./helpers/compensation-correlation-seed";
 import {
 	createStoreBackedIdentityResolver,
 	mapActorToEmployee,
 } from "./helpers/identity-resolver";
+import { seedLeaveCorrelationFixture } from "./helpers/leave-correlation-seed";
 import { seedLifecycleEmploymentWithAssignment } from "./helpers/lifecycle-correlation-seed";
-import { seedCompensationCorrelationFixture, seedFinalizedCompensationReview } from "./helpers/compensation-correlation-seed";
+import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import {
+	attachApprovedProposalAndIssueExistingOffer,
+	seedApprovedCompensationProposal,
+	withOfferLifecycleDeps,
+} from "./helpers/offer-lifecycle-fixture";
 import {
 	seedDraftPerformanceCycle,
 	seedManagerSubmittedPerformanceReview,
@@ -470,22 +473,15 @@ import {
 	seedPerformanceCorrelationWorker,
 	seedSubmittedPerformanceGoal,
 } from "./helpers/performance-correlation-seed";
-import { seedLeaveCorrelationFixture } from "./helpers/leave-correlation-seed";
-import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
+import { publishPerformanceCycleReady } from "./helpers/performance-cycle-harness";
 import {
 	approveAndOpenRequisitionForCorrelation,
 	seedCandidateForCorrelation,
 	seedOpenRequisitionForCorrelation,
 } from "./helpers/recruitment-correlation-seed";
+import { SAMPLE_INTERVIEW_SCORECARD } from "./helpers/recruitment-interview-fixture";
 import { seedDefaultHiringManager } from "./helpers/recruitment-requisition-fixture";
-import {
-	attachApprovedProposalAndIssueExistingOffer,
-	seedApprovedCompensationProposal,
-	withOfferLifecycleDeps,
-} from "./helpers/offer-lifecycle-fixture";
 import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
-import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
-import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { createStoreWorkCalendarLookup } from "./helpers/store-work-calendar-lookup";
 import {
 	seedTimeCorrelationEmployeeEmployment,
@@ -598,6 +594,7 @@ describe("correlation integrity", () => {
 			HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
 			HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
 			HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
+			HUMAN_RESOURCES_COMMAND_CERTIFICATION_RENEW,
 			HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
 			HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
 			...HUMAN_RESOURCES_TIME_COMMAND_IDS,
@@ -1197,14 +1194,17 @@ describe("correlation integrity", () => {
 		});
 		expect(withdrawSeed.ok).toBe(true);
 		if (!withdrawSeed.ok) return;
-		const withdrawOpened = await approveAndOpenRequisitionForCorrelation(ready, {
-			organizationId: ORG,
-			actorUserId: ACTOR,
-			requisitionId: withdrawSeed.submitted.data.id,
-			expectedVersion: withdrawSeed.submitted.data.version,
-			approveCorrelationId: `corr-wd-approve-${suffix}`,
-			openCorrelationId: `corr-wd-open-${suffix}`,
-		});
+		const withdrawOpened = await approveAndOpenRequisitionForCorrelation(
+			ready,
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				requisitionId: withdrawSeed.submitted.data.id,
+				expectedVersion: withdrawSeed.submitted.data.version,
+				approveCorrelationId: `corr-wd-approve-${suffix}`,
+				openCorrelationId: `corr-wd-open-${suffix}`,
+			},
+		);
 		expect(withdrawOpened.ok).toBe(true);
 		if (!withdrawOpened.ok) return;
 		const withdrawCandidate = await seedCandidateForCorrelation(ready, {
@@ -1505,16 +1505,14 @@ describe("correlation integrity", () => {
 		);
 		expect(withdrawOfferDraft.ok).toBe(true);
 		if (!withdrawOfferDraft.ok) return;
-		const withdrawOfferIssued = await attachApprovedProposalAndIssueExistingOffer(
-			ready,
-			{
+		const withdrawOfferIssued =
+			await attachApprovedProposalAndIssueExistingOffer(ready, {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				offer: withdrawOfferDraft.data,
 				tag: `withdraw-${suffix}`,
 				correlationPrefix: `corr-ow-${suffix}`,
-			},
-		);
+			});
 		expect(withdrawOfferIssued.ok).toBe(true);
 		if (!withdrawOfferIssued.ok) return;
 		clearPorts(ready);
@@ -1810,7 +1808,7 @@ describe("correlation integrity", () => {
 				documentType: "passport",
 				issuedOn: "2026-01-01",
 				expiresOn: "2030-01-01",
-				documentRef: "vault://passport/corr",
+				documentRef: `vault://organizations/${ORG}/passport/corr?version=1`,
 				documentIdentifier: "XY 9999 1111",
 				idempotencyKey: "idem-doc-corr",
 			},
@@ -1831,7 +1829,9 @@ describe("correlation integrity", () => {
 		).toBe(true);
 		for (const call of memoryPorts(ready).audit.calls) {
 			const snap = JSON.stringify(call.newValue ?? {});
-			expect(snap).not.toContain("vault://passport/corr");
+			expect(snap).not.toContain(
+				`vault://organizations/${ORG}/passport/corr?version=1`,
+			);
 		}
 
 		memoryPorts(ready).audit.calls.length = 0;
@@ -1905,7 +1905,7 @@ describe("correlation integrity", () => {
 				documentType: "drivers-license",
 				issuedOn: "2026-01-01",
 				expiresOn: "2030-01-01",
-				documentRef: "vault://license/corr",
+				documentRef: `vault://organizations/${ORG}/other/corr-license?version=1`,
 				idempotencyKey: "idem-doc-reject",
 			},
 			ready,
@@ -1945,7 +1945,7 @@ describe("correlation integrity", () => {
 				documentType: "visa",
 				issuedOn: "2026-01-01",
 				expiresOn: "2026-06-01",
-				documentRef: "vault://visa/corr",
+				documentRef: `vault://organizations/${ORG}/other/corr-visa?version=1`,
 				idempotencyKey: "idem-doc-corr-2",
 			},
 			ready,
@@ -2455,7 +2455,7 @@ describe("correlation integrity", () => {
 			documentType: "passport",
 			issuedOn: "2026-01-01",
 			expiresOn: "2030-01-01",
-			documentRef: "vault://passport/idem",
+			documentRef: `vault://organizations/${ORG}/passport/idem?version=1`,
 			idempotencyKey: "idem-doc-replay",
 		};
 
@@ -4678,7 +4678,9 @@ describe("correlation integrity", () => {
 			operation: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 		});
 		const transferOutbox = memoryPorts(ready).outbox.calls.at(-1);
-		expect(transferOutbox?.type).toBe(HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT);
+		expect(transferOutbox?.type).toBe(
+			HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+		);
 		expect(transferOutbox?.payload.effectiveOn).toBe(transferEffectiveOn);
 
 		clearPorts(ready);
@@ -4732,7 +4734,9 @@ describe("correlation integrity", () => {
 			operation: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 		});
 		const terminationOutbox = memoryPorts(ready).outbox.calls.at(-1);
-		expect(terminationOutbox?.type).toBe(HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT);
+		expect(terminationOutbox?.type).toBe(
+			HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+		);
 		expect(terminationOutbox?.payload.effectiveOn).toBe(terminationEffectiveOn);
 
 		clearPorts(ready);
@@ -4745,7 +4749,9 @@ describe("correlation integrity", () => {
 				idempotencyKey: `idem-off-${suffix}`,
 				employmentId: seeded.employment.id,
 				terminationId: termination.data.id,
-				tasks: [{ code: "return_badge", title: "Return badge", mandatory: true }],
+				tasks: [
+					{ code: "return_badge", title: "Return badge", mandatory: true },
+				],
 			},
 			ready,
 		);
@@ -5523,14 +5529,18 @@ describe("correlation integrity", () => {
 				employmentId: seeded.employment.id,
 				baseAmount: "72000",
 				currencyCode: "USD",
+				payFrequency: "monthly",
 				effectiveFrom: "2025-01-01",
 				reason: "Correlation create",
 			},
 			seeded.seedReady,
 		);
-		expect(created.ok).toBe(true);
+		expect(
+			created.ok,
+			!created.ok ? `${created.code}: ${created.message}` : "ok",
+		).toBe(true);
 		if (!created.ok) return;
-		assertCorrelationPropagated(ready, createCorr, {
+		assertCorrelationPropagated(seeded.seedReady, createCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
 		});
@@ -5580,7 +5590,8 @@ describe("correlation integrity", () => {
 		if (!applied.ok) return;
 		assertCorrelationPropagated(ready, applyCorr, {
 			expectOutbox: true,
-			operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
+			operation:
+				HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
 		});
 
 		clearPorts(ready);
@@ -5693,6 +5704,8 @@ describe("correlation integrity", () => {
 		expect(published.ok).toBe(true);
 		if (!published.ok) return;
 
+		clearPorts(ready);
+
 		const cycleParticipant = await addCycleParticipant(
 			{
 				organizationId: ORG,
@@ -5706,6 +5719,8 @@ describe("correlation integrity", () => {
 		);
 		expect(cycleParticipant.ok).toBe(true);
 		if (!cycleParticipant.ok) return;
+
+		clearPorts(ready);
 
 		const openedCycle = await openPerformanceCycle(
 			{
@@ -5926,6 +5941,21 @@ describe("correlation integrity", () => {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
 		});
+
+		const reviewedPip = await recordImprovementCheckpoint(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "trace-perf-pip-checkpoint",
+				planId: openedPip.data.id,
+				sequenceNumber: 1,
+				outcome: "met",
+				notes: "Correlation checkpoint",
+			},
+			worker.perfReady,
+		);
+		expect(reviewedPip.ok).toBe(true);
+		if (!reviewedPip.ok) return;
 
 		clearPorts(ready);
 		const completePipCorr = "trace-perf-pip-complete";

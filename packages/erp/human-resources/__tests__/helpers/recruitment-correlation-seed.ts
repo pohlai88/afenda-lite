@@ -1,3 +1,4 @@
+import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createPosition } from "../../src/organization/position";
 import { createCandidate } from "../../src/recruitment/candidate";
 import {
@@ -6,11 +7,8 @@ import {
 	openRequisition,
 	submitRequisition,
 } from "../../src/recruitment/requisition";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { candidateConsentFixture } from "./candidate-consent-fixture";
-import {
-	seedDefaultHiringManager,
-} from "./recruitment-requisition-fixture";
+import { seedDefaultHiringManager } from "./recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./seed-department-and-job";
 
 type SeedReady = HumanResourcesCommandOptions & {
@@ -36,7 +34,9 @@ export async function seedOpenRequisitionForCorrelation(
 		correlationId: `${input.correlationPrefix}-org`,
 	});
 	if (orgSeed === null) {
-		throw new Error("Failed to seed department/job for recruitment correlation");
+		throw new Error(
+			"Failed to seed department/job for recruitment correlation",
+		);
 	}
 
 	const position = await createPosition(
@@ -61,7 +61,9 @@ export async function seedOpenRequisitionForCorrelation(
 		tag: input.code,
 	});
 	if (!manager.ok) {
-		throw new Error("Failed to seed hiring manager for recruitment correlation");
+		throw new Error(
+			"Failed to seed hiring manager for recruitment correlation",
+		);
 	}
 
 	const draft = await createDraftRequisition(

@@ -19,9 +19,12 @@ import {
 	runCompensationCommand,
 	runCompensationQuery,
 } from "../shared/compensation-command";
-import { buildMutationMeta } from "../shared/mutation-meta";
 import { notFound } from "../shared/domain-guards";
-import type { CompensationProposal, CompensationProposalListPage } from "../types";
+import { buildMutationMeta } from "../shared/mutation-meta";
+import type {
+	CompensationProposal,
+	CompensationProposalListPage,
+} from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_PROPOSAL =
 	"compensation_proposal" as const;
@@ -60,7 +63,7 @@ export async function createCompensationProposal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_CREATE,
 				}),
 			);
 		},
@@ -100,7 +103,7 @@ export async function amendCompensationProposal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND,
 				}),
 			);
 		},
@@ -126,7 +129,7 @@ export async function approveCompensationProposal(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_APPROVE,
+					operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_APPROVE,
 				}),
 			),
 	});

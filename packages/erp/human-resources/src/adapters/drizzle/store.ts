@@ -4,6 +4,7 @@ import { drizzleComplianceMethods } from "./compliance";
 import { composeStoreSlices } from "./compose";
 import { drizzleCoreMethods } from "./core";
 import { drizzleEmployeeRelationsMethods } from "./employee-relations";
+import { drizzleHireOrchestrationMethods } from "./hire-orchestration";
 import { drizzleIdentityMethods } from "./identity";
 import { drizzleLearningMethods } from "./learning";
 import { drizzleLeaveMethods } from "./leave";
@@ -13,7 +14,6 @@ import { drizzlePerformanceMethods } from "./performance";
 import { drizzleRecruitmentMethods } from "./recruitment";
 import { drizzleTalentMethods } from "./talent";
 import { drizzleTimeMethods } from "./time";
-import { drizzleHireOrchestrationMethods } from "./hire-orchestration";
 import { drizzleWorkforceFoundationMethods } from "./workforce-foundation";
 import { drizzleWorkforcePlanningMethods } from "./workforce-planning";
 
@@ -40,6 +40,3 @@ export function createDrizzleHumanResourcesStore(): HumanResourcesStore {
 
 	return store satisfies HumanResourcesStore;
 }
-
-/** @deprecated Use `createDrizzleHumanResourcesStore()` — thin alias for legacy imports. */
-export const DrizzleHumanResourcesStore = createDrizzleHumanResourcesStore;

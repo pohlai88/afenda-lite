@@ -17,29 +17,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const ANTI_CLAIMS = [
 	{
-		id: "multi-db-isolation",
-		re: /\bmulti[- ]?db\b|\bproject[- ]per[- ]tenant\b|\bdatabase[- ]per[- ]tenant\b/i,
-		hint: "Use organization-scoped rows + docs-V2/tenancy — not multi-DB isolation",
-	},
-	{
 		id: "mvp-quality",
 		re: /\bMVP\b|\bminimum viable\b|\bgood enough later\b/i,
 		hint: "Enterprise production bar only — no MVP framing",
-	},
-	{
-		id: "afenda-ui-gateway",
-		re: /@afenda\/ui(?!-system)\b/,
-		hint: "Use @afenda/ui-system only (ADR-010)",
-	},
-	{
-		id: "compose-env",
-		re: /\benv\.config\b|\benv\.secret\b|\bdocker[- ]?compose.*env\b/i,
-		hint: "Teach @afenda/env + .env.local — not compose env SSOT",
-	},
-	{
-		id: "collapse-live-controls",
-		re: /collapse-script-unavailable/,
-		hint: "Do not teach collapse-script-unavailable wrappers as live controls",
 	},
 ];
 

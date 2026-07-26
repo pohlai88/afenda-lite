@@ -28,16 +28,20 @@ export function isEmploymentEligibleForPerformanceCycle(input: {
 	return true;
 }
 
+export function performanceCycleEligibilityAsOfDate(input: {
+	cyclePeriodStart: string;
+	eligibilityAsOfDate?: string;
+}): string {
+	return input.eligibilityAsOfDate ?? input.cyclePeriodStart;
+}
+
 export function assertEmploymentEligibleForPerformanceCycle(input: {
 	eligibility: PerformanceCycleEligibility;
 	employmentStatus: EmploymentStatus;
 	employmentStartsOn: string;
 	asOfDate: string;
 }): Result<void> {
-	const tenureDays = tenureDaysOn(
-		input.employmentStartsOn,
-		input.asOfDate,
-	);
+	const tenureDays = tenureDaysOn(input.employmentStartsOn, input.asOfDate);
 	if (
 		!isEmploymentEligibleForPerformanceCycle({
 			eligibility: input.eligibility,

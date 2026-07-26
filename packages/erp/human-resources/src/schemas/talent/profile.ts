@@ -88,3 +88,15 @@ export const getTalentProfileByEmployeeInputSchema =
 export type GetTalentProfileByEmployeeInput = z.infer<
 	typeof getTalentProfileByEmployeeInputSchema
 >;
+
+export const listTalentProfileAssessmentsInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			talentProfileId: humanResourcesTalentProfileIdSchema,
+			includeSensitive: z.boolean(),
+		})
+		.strict();
+
+export type ListTalentProfileAssessmentsInput = z.infer<
+	typeof listTalentProfileAssessmentsInputSchema
+>;

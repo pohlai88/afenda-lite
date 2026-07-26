@@ -238,13 +238,25 @@ queries:
   - id: human-resources.completion.list
     moduleId: human-resources
     permission: human-resources.learning.manage
+  - id: human-resources.learning-attendance.get
+    moduleId: human-resources
+    permission: human-resources.learning.manage
+  - id: human-resources.learning-attendance.list
+    moduleId: human-resources
+    permission: human-resources.learning.manage
   - id: human-resources.certification.get
     moduleId: human-resources
     permission: human-resources.certification.manage
   - id: human-resources.certification.list
     moduleId: human-resources
     permission: human-resources.certification.manage
+  - id: human-resources.certification.list-expiring
+    moduleId: human-resources
+    permission: human-resources.certification.manage
   - id: human-resources.approved-compensation-handoff.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
+  - id: human-resources.approved-payroll-handoff.get
     moduleId: human-resources
     permission: human-resources.compensation.read
   - id: human-resources.compensation-proposal.get
@@ -385,10 +397,19 @@ queries:
   - id: human-resources.performance-cycle.list-participants
     moduleId: human-resources
     permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.list-review-periods
+    moduleId: human-resources
+    permission: human-resources.performance.manage
+  - id: human-resources.performance-cycle.get-eligibility
+    moduleId: human-resources
+    permission: human-resources.performance.manage
   - id: human-resources.performance-goal.get
     moduleId: human-resources
     permission: human-resources.performance.own.read
   - id: human-resources.performance-goal.list-by-employee
+    moduleId: human-resources
+    permission: human-resources.performance.own.read
+  - id: human-resources.performance-goal.list-progress
     moduleId: human-resources
     permission: human-resources.performance.own.read
   - id: human-resources.performance-review.get
@@ -406,9 +427,12 @@ queries:
   - id: human-resources.improvement-plan.list-active
     moduleId: human-resources
     permission: human-resources.performance.improvement-plan.manage
+  - id: human-resources.improvement-plan.list-checkpoints
+    moduleId: human-resources
+    permission: human-resources.performance.improvement-plan.manage
   - id: human-resources.employee-performance-history.get
     moduleId: human-resources
-    permission: human-resources.performance.confidential.read
+    permission: human-resources.performance.own.read
   - id: human-resources.competency.get
     moduleId: human-resources
     permission: human-resources.competency.read
@@ -422,6 +446,15 @@ queries:
     moduleId: human-resources
     permission: human-resources.competency.read
   - id: human-resources.talent-profile.get-by-employee
+    moduleId: human-resources
+    permission: human-resources.talent.profile.sensitive.read
+  - id: human-resources.talent-profile-assessment.list
+    moduleId: human-resources
+    permission: human-resources.talent.profile.sensitive.read
+  - id: human-resources.talent-profile-mobility.list
+    moduleId: human-resources
+    permission: human-resources.talent.profile.sensitive.read
+  - id: human-resources.critical-role-readiness.list
     moduleId: human-resources
     permission: human-resources.talent.profile.sensitive.read
   - id: human-resources.talent-pool-member.list
@@ -470,6 +503,9 @@ queries:
     moduleId: human-resources
     permission: human-resources.compliance.administer
   - id: human-resources.employee-compliance-summary.get
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
+  - id: human-resources.compliance.expiry-operations.detect
     moduleId: human-resources
     permission: human-resources.compliance.administer
   - id: human-resources.work-calendar.get

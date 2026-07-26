@@ -1,10 +1,10 @@
+import { ok, type Result } from "@afenda/errors/result";
 import type {
+	HumanResourcesAuthorizationDecisionInput,
 	HumanResourcesAuthorizationPort,
 	HumanResourcesResourceAwareAuthorizationPort,
-	HumanResourcesAuthorizationDecisionInput,
 } from "@afenda/human-resources/authorization";
 import { hasPermission } from "@/modules/identity/domain/has-permission";
-import { ok, type Result } from "@afenda/errors/result";
 
 export function createHumanResourcesAuthorizationPort(): HumanResourcesAuthorizationPort {
 	return {
@@ -20,7 +20,9 @@ export function createHumanResourcesAuthorizationPort(): HumanResourcesAuthoriza
 
 export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResourcesResourceAwareAuthorizationPort {
 	return {
-		async canWithContext(input: HumanResourcesAuthorizationDecisionInput): Promise<
+		async canWithContext(
+			input: HumanResourcesAuthorizationDecisionInput,
+		): Promise<
 			Result<{
 				allowed: boolean;
 				projectedFields?: string[];

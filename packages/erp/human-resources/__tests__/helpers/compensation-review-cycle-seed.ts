@@ -1,10 +1,9 @@
 import { expect } from "vitest";
-
+import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	createCompensationReviewCycle,
 	openCompensationReviewCycle,
 } from "../../src/compensation-benefits/compensation-review-cycle";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import type { CompensationReviewCycle } from "../../src/types";
 
 export async function seedOpenCompensationReviewCycle(input: {

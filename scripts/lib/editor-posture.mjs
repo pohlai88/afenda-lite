@@ -132,7 +132,10 @@ export const PRETTIER_DISABLE_LANGUAGES = [
 ];
 
 /** Keys that must not appear in settings.json. */
-export const FORBIDDEN_SETTING_KEYS = ["biome.lspBin", "biome.requireConfigFile"];
+export const FORBIDDEN_SETTING_KEYS = [
+	"biome.lspBin",
+	"biome.requireConfigFile",
+];
 
 export const NODE_WRAPPER_LSP_BIN = "./node_modules/@biomejs/biome/bin/biome";
 

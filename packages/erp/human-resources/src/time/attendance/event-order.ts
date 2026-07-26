@@ -8,8 +8,7 @@ export function compareAttendanceEventsForSession(
 	left: Pick<AttendanceEvent, "occurredAt" | "sourceSequence" | "id">,
 	right: Pick<AttendanceEvent, "occurredAt" | "sourceSequence" | "id">,
 ): number {
-	const byOccurredAt =
-		left.occurredAt.getTime() - right.occurredAt.getTime();
+	const byOccurredAt = left.occurredAt.getTime() - right.occurredAt.getTime();
 	if (byOccurredAt !== 0) {
 		return byOccurredAt;
 	}

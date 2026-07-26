@@ -21,9 +21,7 @@ export function createMemoryPayrollEmployeeQueryPort(
 
 	return {
 		async getPayrollEmployee(input) {
-			const fixture = byKey.get(
-				`${input.organizationId}:${input.employeeId}`,
-			);
+			const fixture = byKey.get(`${input.organizationId}:${input.employeeId}`);
 			if (fixture === undefined) {
 				return null;
 			}

@@ -5,10 +5,10 @@ import {
 	amendEmploymentContract,
 	correctEmployment,
 	createEmploymentContract,
-	endEmploymentContract,
 	type Employment,
 	type EmploymentContract,
 	type EmploymentStatusHistory,
+	endEmploymentContract,
 	getCurrentEmploymentContract,
 	getEmployment,
 	getEmploymentAsOf,
@@ -415,14 +415,20 @@ export async function renewEmploymentContractAction(input: {
 	sourceReference: string;
 	expectedVersion: number;
 }): Promise<
-	ActionResult<{ superseded: EmploymentContract; successor: EmploymentContract }>
+	ActionResult<{
+		superseded: EmploymentContract;
+		successor: EmploymentContract;
+	}>
 > {
 	return runOperatorPermissionAction({
 		path: "renewEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not renew employment contract.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(supersedeEmploymentContractActionSchema, input);
+			const parsed = parseSchema(
+				supersedeEmploymentContractActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -457,14 +463,20 @@ export async function supersedeEmploymentContractAction(input: {
 	sourceReference: string;
 	expectedVersion: number;
 }): Promise<
-	ActionResult<{ superseded: EmploymentContract; successor: EmploymentContract }>
+	ActionResult<{
+		superseded: EmploymentContract;
+		successor: EmploymentContract;
+	}>
 > {
 	return runOperatorPermissionAction({
 		path: "supersedeEmploymentContractAction",
 		permission: "human-resources.employment.manage",
 		safeMessage: "Could not supersede employment contract.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(supersedeEmploymentContractActionSchema, input);
+			const parsed = parseSchema(
+				supersedeEmploymentContractActionSchema,
+				input,
+			);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",

@@ -1,10 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_CONFLICT,
-	payrollErrorDetails,
-} from "../error-codes";
+import { PAYROLL_ERROR_CONFLICT, payrollErrorDetails } from "../error-codes";
 import {
 	PAYROLL_COMMAND_SETUP_CALENDAR_ARCHIVE,
 	PAYROLL_COMMAND_SETUP_CALENDAR_CREATE,

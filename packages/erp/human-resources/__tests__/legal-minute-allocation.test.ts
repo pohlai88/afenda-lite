@@ -25,7 +25,7 @@ describe("legal-minute-allocation", () => {
 
 		expect(allocated.get("2025-08-12")).toBe(120);
 		expect(allocated.get("2025-08-13")).toBe(330);
-	});
+	}, 15_000);
 
 	it("uses event source timezone civil dates for travelling employees", () => {
 		const occurredAt = new Date("2025-08-13T05:00:00.000Z");

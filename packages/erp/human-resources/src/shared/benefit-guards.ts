@@ -38,10 +38,7 @@ export function assertEffectiveRange(input: {
 	effectiveFrom: string;
 	effectiveTo: string | null;
 }): Result<void> {
-	if (
-		input.effectiveTo !== null &&
-		input.effectiveTo < input.effectiveFrom
-	) {
+	if (input.effectiveTo !== null && input.effectiveTo < input.effectiveFrom) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Effective end date must be on or after effective start date.",

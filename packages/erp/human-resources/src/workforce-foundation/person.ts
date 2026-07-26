@@ -72,7 +72,7 @@ export async function createPerson(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
 				}),
 			);
 		},
@@ -102,7 +102,7 @@ export async function updatePersonName(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
 				}),
 			);
 		},

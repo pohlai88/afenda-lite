@@ -20,10 +20,7 @@ import {
 	runPayrollSetupCommand,
 	runPayrollSetupQuery,
 } from "../shared/setup-command";
-import type {
-	PayrollEarningRule,
-	PayrollRuleSupersedeResult,
-} from "../types";
+import type { PayrollEarningRule, PayrollRuleSupersedeResult } from "../types";
 
 export async function createPayrollEarningRule(
 	input: unknown,

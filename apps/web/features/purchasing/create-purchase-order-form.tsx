@@ -120,10 +120,7 @@ export function CreatePurchaseOrderForm({
 					placeholder="USD"
 				/>
 			</FormField>
-			<FormField
-				label="Exchange rate (optional)"
-				fieldId="purchase-order-fx"
-			>
+			<FormField label="Exchange rate (optional)" fieldId="purchase-order-fx">
 				<Input
 					id="purchase-order-fx"
 					name="exchangeRate"

@@ -1,30 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import { createPayrollEmployeeAssignment } from "../src/assignments/employee-payroll-assignment";
-import { createPayrollRecurringEarning } from "../src/assignments/recurring-earning";
 import { createPayrollRecurringDeduction } from "../src/assignments/recurring-deduction";
-import {
-	createPayrollCalendar,
-} from "../src/setup/calendar";
-import {
-	createPayrollDeductionRule,
-} from "../src/setup/deduction-rule";
-import {
-	createPayrollEarningRule,
-} from "../src/setup/earning-rule";
-import {
-	createPayrollPayGroup,
-} from "../src/setup/pay-group";
-import { createPayrollPeriod } from "../src/runs/payroll-period";
-import { createPayrollVariableInput } from "../src/inputs/variable-input";
+import { createPayrollRecurringEarning } from "../src/assignments/recurring-earning";
 import type { PayrollAuthorizationPort } from "../src/authorization";
+import { createPayrollVariableInput } from "../src/inputs/variable-input";
 import {
 	PAYROLL_PERMISSION_INPUT_MANAGE,
 	PAYROLL_PERMISSION_SETUP_MANAGE,
 } from "../src/permissions";
+import { createPayrollPeriod } from "../src/runs/payroll-period";
+import { createPayrollCalendar } from "../src/setup/calendar";
+import { createPayrollDeductionRule } from "../src/setup/deduction-rule";
+import { createPayrollEarningRule } from "../src/setup/earning-rule";
+import { createPayrollPayGroup } from "../src/setup/pay-group";
 import { createMemoryPayrollStore } from "../src/testing";
-import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { createMemoryPayrollEmployeeQueryPort } from "./helpers/memory-employee-port";
+import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 function createGrantingAuthorization(
 	permissions: string[],

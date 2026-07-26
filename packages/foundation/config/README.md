@@ -2,7 +2,7 @@
 
 Rank-1 Platform **dev-time** shared tooling: Biome presets (via Ultracite) and TypeScript bases that workspace packages and apps extend. There is **no runtime API** and **no** `@afenda/*` import surface for product code — only JSON export paths for `extends` / Biome.
 
-Use this package when adding or revising a workspace `tsconfig.json`, or when the root Biome chain needs a single shared preset home. Do **not** invent a parallel ESLint / Prettier stack for product JS/TS — Biome + `@afenda/config` is the checkout lint/format posture ([AGENTS.md](../../AGENTS.md)). Maintainers run lint via the filter script below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+Use this package when adding or revising a workspace `tsconfig.json`, or when the root Biome chain needs a single shared preset home. Do **not** invent a parallel ESLint / Prettier stack for product JS/TS — Biome + `@afenda/config` is the checkout lint/format posture ([AGENTS.md](../../../AGENTS.md)). Maintainers run lint via the filter script below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
 
 ## Consume
 
@@ -38,9 +38,9 @@ Root Biome delegates once:
 }
 ```
 
-Chain: root [`biome.jsonc`](../../biome.jsonc) → `@afenda/config/biome.json` → `ultracite/biome/{core,react,next,vitest}`. Package trees do **not** ship nested `biome.json` unless a real package-only carve-out appears.
+Chain: root [`biome.jsonc`](../../../biome.jsonc) → `@afenda/config/biome.json` → `ultracite/biome/{core,react,next,vitest}`. Package trees do **not** ship nested `biome.json` unless a real package-only carve-out appears.
 
-**Living consumers:** root + `apps/{web,docs}` + packages (`auth`, `db`, `env`, `emails`, `ui-system`, `errors`, `logger`, `rate-limit`, `admin`, …) list `@afenda/config` as `workspace:*` and extend the matching tsconfig. Vitest / Playwright factory lives under [`testing/`](../../testing/) — not this package.
+**Living consumers:** root + `apps/{web,docs}` + packages (`auth`, `db`, `env`, `emails`, `ui-system`, `errors`, `logger`, `rate-limit`, `admin`, …) list `@afenda/config` as `workspace:*` and extend the matching tsconfig. Vitest / Playwright factory lives under [`testing/`](../../../testing/) — not this package.
 
 ## Maintain
 
@@ -66,11 +66,11 @@ On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/ts
 | Surface | Owner |
 |---------|-------|
 | Shared Biome + tsconfig bases | `@afenda/config` |
-| Root `includes` / product `overrides` | Repo-root [`biome.jsonc`](../../biome.jsonc) |
+| Root `includes` / product `overrides` | Repo-root [`biome.jsonc`](../../../biome.jsonc) |
 | Per-package `compilerOptions` deltas (`rootDir`, `types`, paths) | Owning package / app `tsconfig.json` |
-| Vitest / Playwright factory | [`testing/`](../../testing/) |
+| Vitest / Playwright factory | [`testing/`](../../../testing/) |
 
-**Layer:** Rank-1 Platform — **not a runtime importer**. Must not grow product APIs or import Surfaces / `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform — **not a runtime importer**. Must not grow product APIs or import Surfaces / `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -80,6 +80,6 @@ Do not add to this package: runtime modules, ESLint/Prettier dual stacks, Vitest
 
 | Topic | Link |
 |-------|------|
-| Ultracite + Biome posture | [docs-V2/lint](../../docs-V2/lint/README.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture (Biome · no ESLint/Prettier invent) | [AGENTS.md](../../AGENTS.md) |
+| Ultracite + Biome posture | [docs-V2/lint](../../../docs-V2/lint/README.md) |
+| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture (Biome · no ESLint/Prettier invent) | [AGENTS.md](../../../AGENTS.md) |

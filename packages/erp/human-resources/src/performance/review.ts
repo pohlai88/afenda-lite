@@ -11,7 +11,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
 	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION,
 } from "../module-ids";
 import {
@@ -71,7 +70,7 @@ export async function startPerformanceReview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
 				}),
 			),
 	});
@@ -99,7 +98,7 @@ export async function submitSelfAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
 				}),
 			),
@@ -129,7 +128,7 @@ export async function submitManagerAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
 				}),
 			),
@@ -156,7 +155,7 @@ export async function addDelegatedReviewer(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
 				}),
 			),
@@ -187,7 +186,7 @@ export async function submitDelegatedAssessment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
 				}),
 			),
@@ -215,7 +214,7 @@ export async function calibratePerformanceReview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
 				}),
 			),
 	});
@@ -240,7 +239,7 @@ export async function returnPerformanceReviewForCorrection(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
 				}),
 			),
@@ -267,7 +266,7 @@ export async function acknowledgePerformanceReview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
 				}),
 			),
 	});
@@ -299,7 +298,7 @@ export async function finalizePerformanceReview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
 				}),
 			);
 		},
@@ -326,7 +325,7 @@ export async function reopenPerformanceReview(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
 				}),
 			),
 	});
@@ -406,10 +405,9 @@ export async function getEmployeePerformanceHistory(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeePerformanceHistory>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceEmployeeScopedQuery(input, options, {
 		schema: getEmployeePerformanceHistoryInputSchema,
 		invalidMessage: "Invalid employee performance history get input",
-		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
 		execute: async (data, { store }) => {
 			const confidential = await requirePerformanceConfidentialRead(options, {
 				organizationId: data.organizationId,

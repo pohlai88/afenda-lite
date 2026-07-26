@@ -2,22 +2,30 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
 	HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
+	HUMAN_RESOURCES_COMMAND_CERTIFICATION_RENEW,
 	HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
 	HUMAN_RESOURCES_QUERY_CERTIFICATION_GET,
 	HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST,
+	HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST_EXPIRING,
 } from "../module-ids";
 import {
 	certificationStatusTransitionInputSchema,
 	getCertificationInputSchema,
 	issueCertificationInputSchema,
 	listCertificationsInputSchema,
+	listExpiringCertificationsInputSchema,
+	renewCertificationInputSchema,
 } from "../schemas/learning";
-import { fingerprintCertificationIssue } from "../shared/fingerprint";
+import {
+	fingerprintCertificationIssue,
+	fingerprintCertificationRenew,
+} from "../shared/fingerprint";
 import {
 	runLearningCommand,
 	runLearningQuery,
@@ -100,7 +108,7 @@ export async function issueCertification(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
+					operationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
 					idempotencyKey: data.idempotencyKey,
 				}),
 			);
@@ -127,7 +135,7 @@ export async function expireCertification(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
+					operationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
 				}),
 			);
 		},
@@ -154,7 +162,103 @@ export async function revokeCertification(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
+					operationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
+				}),
+			);
+		},
+	});
+}
+
+export async function renewCertification(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCertification>> {
+	return runLearningCommand(input, options, {
+		schema: renewCertificationInputSchema,
+		invalidMessage: "Invalid certification renew input",
+		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_RENEW,
+		execute: async (data, { store, ports }) => {
+			const priorResult = await store.getCertificationById({
+				organizationId: data.organizationId,
+				certificationId: data.certificationId,
+			});
+			if (!priorResult.ok) return priorResult;
+			if (priorResult.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Certification not found",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+					),
+				);
+			}
+			const prior = priorResult.data;
+
+			const completionResult = await store.getCompletionById({
+				organizationId: data.organizationId,
+				completionId: data.completionId,
+			});
+			if (!completionResult.ok) return completionResult;
+			if (completionResult.data === null) {
+				return fail(
+					"NOT_FOUND",
+					"Completion not found",
+					humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+					),
+				);
+			}
+			const completion = completionResult.data;
+
+			const requestFingerprint = fingerprintCertificationRenew({
+				certificationId: data.certificationId,
+				completionId: completion.id,
+				certificationCode: data.certificationCode,
+				issuedOn: data.issuedOn,
+				expiresOn: data.expiresOn ?? null,
+			});
+
+			const existingByKey = await store.findCertificationByIdempotencyKey({
+				organizationId: data.organizationId,
+				idempotencyKey: data.idempotencyKey,
+			});
+			if (!existingByKey.ok) {
+				return existingByKey;
+			}
+			if (existingByKey.data !== null) {
+				if (
+					existingByKey.data.createRequestFingerprint !== requestFingerprint
+				) {
+					return fail(
+						"CONFLICT",
+						"Idempotency key reused with different payload",
+						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+					);
+				}
+				return ok(existingByKey.data.certification);
+			}
+
+			return await store.renewCertification(
+				{
+					organizationId: data.organizationId,
+					certificationId: data.certificationId,
+					employeeId: prior.employeeId,
+					courseId: prior.courseId,
+					completionId: completion.id,
+					certificationCode: data.certificationCode,
+					issuedOn: data.issuedOn,
+					expiresOn: data.expiresOn ?? null,
+					createIdempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: requestFingerprint,
+					expectedVersion: data.expectedVersion,
+					createdBy: data.actorUserId,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_CERTIFICATION_RENEW,
+					idempotencyKey: data.idempotencyKey,
 				}),
 			);
 		},
@@ -194,6 +298,26 @@ export async function listCertifications(
 				status: data.status,
 				employeeId: data.employeeId,
 				courseId: data.courseId,
+			});
+		},
+	});
+}
+
+export async function listExpiringCertifications(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<CertificationListPage>> {
+	return runLearningQuery(input, options, {
+		schema: listExpiringCertificationsInputSchema,
+		invalidMessage: "Invalid expiring certifications list input",
+		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST_EXPIRING,
+		execute: async (data, { store }) => {
+			return await store.listExpiringCertifications({
+				organizationId: data.organizationId,
+				asOf: data.asOf,
+				withinDays: data.withinDays ?? 30,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 25,
 			});
 		},
 	});

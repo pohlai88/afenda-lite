@@ -1,6 +1,4 @@
-import {
-	CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES,
-} from "./classified-event-types";
+import { CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES } from "./classified-event-types";
 import { tryGetEventCatalogEntry } from "./get-event-catalog-entry";
 
 export type HumanResourcesEventCatalogIssue = {

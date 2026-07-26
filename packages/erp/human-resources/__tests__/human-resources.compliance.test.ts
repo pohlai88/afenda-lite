@@ -25,6 +25,7 @@ import {
 	revokeEmployeeDocumentVerification,
 	verifyEmployeeDocument,
 } from "../src/compliance/employee-document";
+import { detectComplianceExpiryOperations } from "../src/compliance/expiry-operations";
 import {
 	acknowledgePolicy,
 	issuePolicyAcknowledgementRequirement,
@@ -44,6 +45,10 @@ import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 } from "../src/error-codes";
+import { issueCertification } from "../src/learning/certification";
+import { recordCompletion } from "../src/learning/completion";
+import { createCourse } from "../src/learning/course";
+import { assignLearning } from "../src/learning/learning-assignment";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
@@ -154,7 +159,7 @@ describe("human-resources compliance (memory)", () => {
 				documentType: "passport",
 				issuedOn: "2026-01-01",
 				expiresOn: "2031-01-01",
-				documentRef: "vault://passport/valid-doc",
+				documentRef: `vault://organizations/${ORG_A}/passport/valid-doc?version=1`,
 				documentIdentifier: "AB 1234 5678",
 				idempotencyKey: "idem-doc-valid",
 			},
@@ -189,7 +194,7 @@ describe("human-resources compliance (memory)", () => {
 				documentType: "passport",
 				issuedOn: "2026-06-01",
 				expiresOn: "2026-01-01",
-				documentRef: "vault://passport/bad-expiry",
+				documentRef: `vault://organizations/${ORG_A}/passport/bad-expiry?version=1`,
 				idempotencyKey: "idem-doc-bad-expiry",
 			},
 			ready,
@@ -218,7 +223,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/no-verify",
+				documentRef: `vault://organizations/${ORG_A}/passport/no-verify?version=1`,
 				idempotencyKey: "idem-doc-no-verify",
 			},
 			ready,
@@ -265,7 +270,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/reject",
+				documentRef: `vault://organizations/${ORG_A}/passport/reject?version=1`,
 				idempotencyKey: "idem-doc-reject",
 			},
 			ready,
@@ -308,7 +313,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/reverify",
+				documentRef: `vault://organizations/${ORG_A}/passport/reverify?version=1`,
 				idempotencyKey: "idem-doc-reverify",
 			},
 			ready,
@@ -389,7 +394,7 @@ describe("human-resources compliance (memory)", () => {
 				documentType: "passport",
 				issuedOn: "2024-01-01",
 				expiresOn: "2025-01-01",
-				documentRef: "vault://passport/expire",
+				documentRef: `vault://organizations/${ORG_A}/passport/expire?version=1`,
 				idempotencyKey: "idem-doc-expire",
 			},
 			ready,
@@ -445,7 +450,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/mask",
+				documentRef: `vault://organizations/${ORG_A}/passport/mask?version=1`,
 				documentIdentifier: "XY 9999 1111",
 				idempotencyKey: "idem-doc-mask",
 			},
@@ -485,7 +490,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/cross",
+				documentRef: `vault://organizations/${ORG_B}/passport/cross?version=1`,
 				idempotencyKey: "idem-doc-cross",
 			},
 			ready,
@@ -655,6 +660,143 @@ describe("human-resources compliance (memory)", () => {
 		expect(outstanding.data.acknowledgements.length).toBeGreaterThan(0);
 	});
 
+	it("aggregates compliance expiry operations across governance signals", async () => {
+		const ready = harness();
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG_A,
+			suffix: "expiry-ops",
+		});
+
+		const document = await registerEmployeeDocument(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-doc",
+				employeeId: employee.id,
+				documentType: "passport",
+				issuedOn: "2026-01-01",
+				expiresOn: "2026-07-20",
+				documentRef: `vault://organizations/${ORG_A}/passport/expiry-ops?version=1`,
+				idempotencyKey: "idem-expiry-doc",
+			},
+			ready,
+		);
+		expect(document.ok).toBe(true);
+
+		const eligibility = await recordWorkEligibility(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-eligibility",
+				employeeId: employee.id,
+				countryCode: "US",
+				issuedOn: "2026-01-01",
+				expiresOn: "2026-07-15",
+				idempotencyKey: "idem-expiry-eligibility",
+			},
+			ready,
+		);
+		expect(eligibility.ok).toBe(true);
+
+		const acknowledgement = await issuePolicyAcknowledgementRequirement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-policy",
+				employeeId: employee.id,
+				policyCode: "EXPIRY_POLICY",
+				policyVersion: "2026.1",
+				idempotencyKey: "idem-expiry-policy",
+			},
+			ready,
+		);
+		expect(acknowledgement.ok).toBe(true);
+
+		const course = await createCourse(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-course",
+				idempotencyKey: "idem-expiry-course",
+				code: "EXPIRY-CERT",
+				title: "Expiry Certification",
+			},
+			ready,
+		);
+		expect(course.ok).toBe(true);
+		if (!course.ok) return;
+
+		const assignment = await assignLearning(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-assignment",
+				idempotencyKey: "idem-expiry-assignment",
+				employeeId: employee.id,
+				courseId: course.data.id,
+				dueOn: "2026-07-01",
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const completion = await recordCompletion(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-completion",
+				idempotencyKey: "idem-expiry-completion",
+				assignmentId: assignment.data.id,
+				employeeId: employee.id,
+				courseId: course.data.id,
+				completedAt: "2026-07-01T12:00:00.000Z",
+				outcome: "passed",
+			},
+			ready,
+		);
+		expect(completion.ok).toBe(true);
+		if (!completion.ok) return;
+
+		const certification = await issueCertification(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-certification",
+				idempotencyKey: "idem-expiry-certification",
+				employeeId: employee.id,
+				courseId: course.data.id,
+				completionId: completion.data.id,
+				certificationCode: "EXPIRY-CERT",
+				issuedOn: "2026-07-01",
+				expiresOn: "2026-07-25",
+			},
+			ready,
+		);
+		expect(certification.ok).toBe(true);
+
+		const operations = await detectComplianceExpiryOperations(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expiry-operations",
+				asOf: "2026-07-01",
+				withinDays: 30,
+			},
+			ready,
+		);
+		expect(operations.ok).toBe(true);
+		if (!operations.ok) return;
+		expect(operations.data.expiringDocuments.documents).toHaveLength(1);
+		expect(operations.data.workEligibilityRisks.eligibilities).toHaveLength(1);
+		expect(
+			operations.data.overduePolicyAcknowledgements.acknowledgements,
+		).toHaveLength(1);
+		expect(operations.data.expiringCertifications.certifications).toHaveLength(
+			1,
+		);
+	});
+
 	it("does not mutate employment status from compliance commands", async () => {
 		const ready = harness([
 			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
@@ -689,7 +831,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/employment",
+				documentRef: `vault://organizations/${ORG_A}/passport/employment?version=1`,
 				idempotencyKey: "idem-doc-employment",
 			},
 			ready,
@@ -745,7 +887,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				documentType: "passport",
 				issuedOn: "2026-01-01",
-				documentRef: "vault://passport/rollback",
+				documentRef: `vault://organizations/${ORG_A}/passport/rollback?version=1`,
 				idempotencyKey: "idem-doc-rollback",
 			},
 			failingReady,

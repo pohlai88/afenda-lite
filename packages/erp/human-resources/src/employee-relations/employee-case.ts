@@ -114,7 +114,7 @@ export async function openEmployeeCase(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
 				}),
 			);
 		},
@@ -141,7 +141,7 @@ export async function updateEmployeeCaseClassification(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
 				}),
 			),
@@ -168,7 +168,7 @@ export async function assignEmployeeCaseOwner(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
 				}),
 			),
 	});
@@ -195,7 +195,7 @@ export async function addEmployeeCaseParticipant(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
 				}),
 			),
 	});
@@ -224,7 +224,7 @@ export async function issueInterimEmployeeMeasure(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation:
+					operationId:
 						HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
 				}),
 			),
@@ -252,7 +252,7 @@ export async function recordEmployeeCaseFinding(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
 				}),
 			),
 	});
@@ -278,7 +278,7 @@ export async function closeEmployeeCase(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
 				}),
 			),
 	});
@@ -304,7 +304,7 @@ export async function reopenEmployeeCase(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
 				}),
 			),
 	});

@@ -6,7 +6,10 @@ import { describe, expect, it } from "vitest";
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
 
 const migrationPath = fileURLToPath(
-	new URL("../drizzle/0029_hr_employment_contract_lineage.sql", import.meta.url),
+	new URL(
+		"../drizzle/0029_hr_employment_contract_lineage.sql",
+		import.meta.url,
+	),
 );
 const migrationSql = readFileSync(migrationPath, "utf8");
 
@@ -28,6 +31,6 @@ describe("HR employment contract lineage migration", () => {
 		expect(migrationSql).toContain(
 			"hr_employment_contract_org_employment_starts_idx",
 		);
-		expect(migrationSql).toContain('"lineage_status" = \'active\'');
+		expect(migrationSql).toContain("\"lineage_status\" = 'active'");
 	});
 });

@@ -95,6 +95,8 @@ export const HUMAN_RESOURCES_MUTATION_TABLES = [
 	"hr_competency_assessment",
 	"hr_talent_profile",
 	"hr_talent_profile_assessment",
+	"hr_talent_profile_mobility",
+	"hr_talent_critical_role_readiness",
 	"hr_talent_pool",
 	"hr_talent_pool_member",
 	"hr_career_plan",

@@ -341,7 +341,9 @@ export function createDrizzleSetupExtendedMethods(
 			return versionCheck;
 		}
 		if (current.data.status === nextStatus) {
-			return mapInvalidState("Payroll calendar is already in the requested status");
+			return mapInvalidState(
+				"Payroll calendar is already in the requested status",
+			);
 		}
 
 		try {
@@ -385,7 +387,10 @@ export function createDrizzleSetupExtendedMethods(
 
 			return mapped;
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to update payroll calendar status");
+			return mapPersistenceFailure(
+				error,
+				"Failed to update payroll calendar status",
+			);
 		}
 	}
 
@@ -449,7 +454,8 @@ export function createDrizzleSetupExtendedMethods(
 					.update(payrollPayGroup)
 					.set({
 						name: payGroupInput.name ?? current.data.name,
-						currencyCode: payGroupInput.currencyCode ?? current.data.currencyCode,
+						currencyCode:
+							payGroupInput.currencyCode ?? current.data.currencyCode,
 						version: current.data.version + 1,
 						updatedBy: payGroupInput.actorUserId,
 						updatedAt: new Date(),
@@ -486,7 +492,10 @@ export function createDrizzleSetupExtendedMethods(
 
 				return mapped;
 			} catch (error) {
-				return mapPersistenceFailure(error, "Failed to update payroll pay group");
+				return mapPersistenceFailure(
+					error,
+					"Failed to update payroll pay group",
+				);
 			}
 		},
 
@@ -554,7 +563,10 @@ export function createDrizzleSetupExtendedMethods(
 
 				return mapped;
 			} catch (error) {
-				return mapPersistenceFailure(error, "Failed to archive payroll pay group");
+				return mapPersistenceFailure(
+					error,
+					"Failed to archive payroll pay group",
+				);
 			}
 		},
 
@@ -712,7 +724,10 @@ export function createDrizzleSetupExtendedMethods(
 				}
 				return mapEarningRuleRow(row);
 			} catch (error) {
-				return mapPersistenceFailure(error, "Failed to load payroll earning rule");
+				return mapPersistenceFailure(
+					error,
+					"Failed to load payroll earning rule",
+				);
 			}
 		},
 
@@ -799,7 +814,10 @@ export function createDrizzleSetupExtendedMethods(
 
 				return mapped;
 			} catch (error) {
-				return mapPersistenceFailure(error, "Failed to update payroll earning rule");
+				return mapPersistenceFailure(
+					error,
+					"Failed to update payroll earning rule",
+				);
 			}
 		},
 
@@ -876,7 +894,10 @@ export function createDrizzleSetupExtendedMethods(
 
 				return mapped;
 			} catch (error) {
-				return mapPersistenceFailure(error, "Failed to archive payroll earning rule");
+				return mapPersistenceFailure(
+					error,
+					"Failed to archive payroll earning rule",
+				);
 			}
 		},
 

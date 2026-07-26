@@ -26,10 +26,7 @@ import {
 	type HumanResourcesWorkforceFoundationCommandId,
 } from "../../module-ids";
 
-import {
-	defineAuditOnlyEmission,
-	defineDomainEventEmission,
-} from "../define-emission";
+import { defineDomainEventEmission } from "../define-emission";
 import type { HumanResourcesMutationEmissionDefinition } from "../types";
 
 export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS = {
@@ -50,11 +47,14 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS = {
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE]:
-		defineDomainEventEmission(HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE, {
-			domain: "workforce-foundation",
-			aggregateType: "person",
-			eventTypes: [HUMAN_RESOURCES_PERSON_CHANGED_EVENT] as const,
-		}),
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE,
+			{
+				domain: "workforce-foundation",
+				aggregateType: "person",
+				eventTypes: [HUMAN_RESOURCES_PERSON_CHANGED_EVENT] as const,
+			},
+		),
 	[HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET]:
 		defineDomainEventEmission(
 			HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET,

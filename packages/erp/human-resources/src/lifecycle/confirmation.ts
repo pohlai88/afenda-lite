@@ -46,7 +46,7 @@ export async function confirmEmployment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operation: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
 				}),
 			);
 		},

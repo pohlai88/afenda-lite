@@ -4,13 +4,13 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import { resolveEmployeeOrgContextForEmployment } from "./employee-org-context-resolution";
 import { HUMAN_RESOURCES_QUERY_EMPLOYEE_ORG_CONTEXT_RESOLVE } from "../module-ids";
 import {
 	type EmployeeOrgContextAsOf,
 	resolveEmployeeOrgContextAsOfInputSchema,
 } from "../schemas/org-context";
 import { runCoreQuery } from "../shared/core-command";
+import { resolveEmployeeOrgContextForEmployment } from "./employee-org-context-resolution";
 
 export async function resolveEmployeeOrgContextAsOf(
 	input: unknown,

@@ -27,12 +27,24 @@ import { sessionHasPermission } from "@/modules/identity/domain/session-permissi
 type ReceivablesShellProps = { surface: "admin" | "client" };
 
 const formSections = [
-	["Create draft invoice", CreateDraftSalesInvoiceForm, "receivables.invoice.create"],
+	[
+		"Create draft invoice",
+		CreateDraftSalesInvoiceForm,
+		"receivables.invoice.create",
+	],
 	["Add invoice line", AddSalesInvoiceLineForm, "receivables.invoice.update"],
 	["Post invoice", PostSalesInvoiceForm, "receivables.invoice.post"],
 	["Issue credit note", IssueCreditNoteForm, "receivables.credit_note.issue"],
-	["Apply customer receipt", ApplyCustomerReceiptForm, "receivables.receipt.apply"],
-	["Cancel draft invoice", CancelSalesInvoiceForm, "receivables.invoice.cancel"],
+	[
+		"Apply customer receipt",
+		ApplyCustomerReceiptForm,
+		"receivables.receipt.apply",
+	],
+	[
+		"Cancel draft invoice",
+		CancelSalesInvoiceForm,
+		"receivables.invoice.cancel",
+	],
 ] as const;
 
 /** Receivables console — RSC reads via `@afenda/receivables`; mutations via Actions. */
@@ -94,8 +106,8 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 							{invoices.map((invoice) => (
 								<li key={invoice.id} className="rounded-md border px-3 py-2">
 									<div className="font-medium">
-										{invoice.code} · {invoice.invoiceSource} · {invoice.status} ·
-										v{invoice.version}
+										{invoice.code} · {invoice.invoiceSource} · {invoice.status}{" "}
+										· v{invoice.version}
 									</div>
 									<div className="text-muted-foreground">
 										id <Code>{invoice.id}</Code> · {invoice.customerCode} ·{" "}

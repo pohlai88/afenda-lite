@@ -202,6 +202,13 @@ export const getEmployeeComplianceSummaryInputSchema =
 		asOf: z.string().date().optional(),
 	});
 
+export const detectComplianceExpiryOperationsInputSchema =
+	humanResourcesMutationContextSchema.extend({
+		asOf: z.string().date(),
+		withinDays: z.number().int().positive().max(365).optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+	});
+
 export const documentRequirementStatusFilterSchema =
 	documentRequirementStatusSchema;
 export const workEligibilityStatusFilterSchema = workEligibilityStatusSchema;

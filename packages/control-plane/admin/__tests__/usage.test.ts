@@ -9,16 +9,24 @@ vi.mock("@afenda/auth", () => ({
 	listOrgMembers: (...args: unknown[]) => listOrgMembers(...args),
 }));
 
-vi.mock("@afenda/db", async () => {
-	const actual =
-		await vi.importActual<typeof import("@afenda/db")>("@afenda/db");
-	return {
-		...actual,
-		db: {
-			select: (...args: unknown[]) => select(...args),
-		},
-	};
-});
+vi.mock("@afenda/db", () => ({
+	and: vi.fn(() => ({ kind: "and" })),
+	count: vi.fn(() => ({ kind: "count" })),
+	db: {
+		select: (...args: unknown[]) => select(...args),
+	},
+	eq: vi.fn(() => ({ kind: "eq" })),
+	gte: vi.fn(() => ({ kind: "gte" })),
+	lt: vi.fn(() => ({ kind: "lt" })),
+	platformRbacAudit: {
+		organizationId: "organization_id",
+		createdAt: "created_at",
+	},
+	platformRoleAssignment: {
+		organizationId: "organization_id",
+		active: "active",
+	},
+}));
 
 function mockCountSequence(values: number[]) {
 	let call = 0;

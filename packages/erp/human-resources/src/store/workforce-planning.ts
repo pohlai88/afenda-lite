@@ -294,5 +294,6 @@ export type HumanResourcesWorkforcePlanningStore = {
 	getWorkforcePlanVariance(input: {
 		organizationId: string;
 		planId: HumanResourcesHeadcountPlanId;
+		asOf?: string;
 	}): Promise<Result<WorkforcePlanVariance>>;
 };
