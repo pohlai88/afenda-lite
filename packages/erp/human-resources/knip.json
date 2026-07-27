@@ -1,15 +1,18 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"project": ["src/**/*.{ts,tsx}", "__tests__/**/*.{ts,tsx}"],
-	"entry": [
-		"src/index.ts",
-		"src/adapters/drizzle/index.ts",
-		"src/testing/index.ts",
-		"src/module.manifest.ts"
-	],
+	"entry": ["scripts/generate-mutation-inventory.mjs"],
 	"vitest": {
 		"config": ["../../../testing/vitest.config.ts"]
 	},
-	"ignoreDependencies": ["vitest", "jsdom"],
+	"ignoreExportsUsedInFile": true,
+	"ignoreIssues": {
+		"__tests__/helpers/**": ["exports", "types"],
+		"src/**": ["exports", "types"],
+		"src/brands.ts": ["duplicates"],
+		"src/schemas/recruitment.ts": ["duplicates"],
+		"src/schemas/time.ts": ["duplicates"]
+	},
+	"ignoreDependencies": ["vitest"],
 	"ignoreBinaries": ["biome", "vitest"]
 }
