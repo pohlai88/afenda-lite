@@ -7,6 +7,7 @@ import {
 	eq,
 	gte,
 	hrDocumentRequirement,
+	hrEmployee,
 	hrEmployeeDocument,
 	hrPolicyAcknowledgement,
 	hrWorkEligibility,
@@ -39,6 +40,7 @@ import {
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import { fieldChangeJson, valueSnapshotJson } from "../../shared/audit-facts";
 import {
+	addIsoCalendarDays,
 	assertDocumentRequirementStatusTransition,
 	assertEmployeeDocumentVerificationTransition,
 	assertPolicyAcknowledgementStatusTransition,
@@ -46,10 +48,13 @@ import {
 	assertValidDocumentDateRange,
 	assertWorkEligibilityStatusTransition,
 	COMPLIANCE_NEARING_EXPIRY_DAYS,
+	isDocumentRequirementApplicable,
 	isNearingExpiry,
+	isWithinInclusiveDateWindow,
 } from "../../shared/compliance-guards";
 import { toEmployeeDocumentListItem } from "../../shared/compliance-privacy";
 import {
+	documentRequirementApplicabilitySchema,
 	documentRequirementStatusSchema,
 	employeeDocumentVerificationStatusSchema,
 	isDocumentRequirementEditable,
@@ -144,6 +149,7 @@ export type DrizzleComplianceMethods = Pick<
 	| "supersedePolicyAcknowledgementRequirement"
 	| "getPolicyAcknowledgementStatus"
 	| "listOutstandingPolicyAcknowledgements"
+	| "listOverduePolicyAcknowledgements"
 	| "getEmployeeComplianceSummary"
 >;
 
@@ -155,6 +161,7 @@ type DocumentRequirementSqlRow = {
 	document_type: string;
 	issuing_jurisdiction: string | null;
 	applies_to_note: string | null;
+	applicability_json: unknown;
 	status: string;
 	version: number;
 	created_by: string;
@@ -218,6 +225,7 @@ type PolicyAcknowledgementSqlRow = {
 	policy_version: string;
 	requirement_status: string;
 	issued_at: Date;
+	due_on: string;
 	acknowledged_at: Date | null;
 	acknowledged_by: string | null;
 	supersedes_acknowledgement_id: string | null;
@@ -249,6 +257,12 @@ function mapDocumentRequirement(
 	if (!status.success) {
 		return fail("INTERNAL_ERROR", "Invalid document requirement status");
 	}
+	const applicability = documentRequirementApplicabilitySchema.safeParse(
+		row.applicabilityJson,
+	);
+	if (!applicability.success) {
+		return fail("INTERNAL_ERROR", "Invalid document requirement applicability");
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -257,6 +271,7 @@ function mapDocumentRequirement(
 		documentType: row.documentType,
 		issuingJurisdiction: row.issuingJurisdiction,
 		appliesToNote: row.appliesToNote,
+		applicability: applicability.data,
 		status: status.data,
 		version: row.version,
 		createdBy: row.createdBy,
@@ -277,6 +292,7 @@ function mapDocumentRequirementSql(
 		documentType: row.document_type,
 		issuingJurisdiction: row.issuing_jurisdiction,
 		appliesToNote: row.applies_to_note,
+		applicabilityJson: row.applicability_json,
 		status: row.status,
 		version: row.version,
 		createdBy: row.created_by,
@@ -449,6 +465,7 @@ function mapPolicyAcknowledgement(
 		policyVersion: row.policyVersion,
 		requirementStatus: requirementStatus.data,
 		issuedAt: row.issuedAt,
+		dueOn: row.dueOn,
 		acknowledgedAt: row.acknowledgedAt,
 		acknowledgedBy: row.acknowledgedBy,
 		supersedesAcknowledgementId,
@@ -471,6 +488,7 @@ function mapPolicyAcknowledgementSql(
 		policyVersion: row.policy_version,
 		requirementStatus: row.requirement_status,
 		issuedAt: row.issued_at,
+		dueOn: row.due_on,
 		acknowledgedAt: row.acknowledged_at,
 		acknowledgedBy: row.acknowledged_by,
 		supersedesAcknowledgementId: row.supersedes_acknowledgement_id,
@@ -553,6 +571,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			status: "draft",
 		});
 		const auditId = randomUUID();
+		const applicabilityJson = JSON.stringify(record.applicability);
 
 		try {
 			const [rows] = await runNeonHttpTransaction<
@@ -562,14 +581,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						WITH mutated AS (
 							INSERT INTO hr_document_requirement (
 								id, organization_id, code, name, document_type,
-								issuing_jurisdiction, applies_to_note, status, version,
+								issuing_jurisdiction, applies_to_note, applicability_json,
+								status, version,
 								created_by, updated_by
 							)
 							VALUES (
 								${brandedId.data}, ${record.organizationId}, ${record.code},
 								${record.name}, ${record.documentType},
 								${record.issuingJurisdiction}, ${record.appliesToNote},
-								'draft', 1, ${record.createdBy}, ${record.createdBy}
+								${applicabilityJson}::jsonb, 'draft', 1,
+								${record.createdBy}, ${record.createdBy}
 							)
 							RETURNING *
 						),
@@ -628,6 +649,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			input.name ?? existing.data.name,
 		);
 		const auditId = randomUUID();
+		const applicabilityJson =
+			input.applicability === undefined
+				? null
+				: JSON.stringify(input.applicability);
 
 		try {
 			const [rows] = await runNeonHttpTransaction<
@@ -640,6 +665,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								document_type = COALESCE(${input.documentType}, document_type),
 								issuing_jurisdiction = COALESCE(${input.issuingJurisdiction}, issuing_jurisdiction),
 								applies_to_note = COALESCE(${input.appliesToNote}, applies_to_note),
+								applicability_json = COALESCE(${applicabilityJson}::jsonb, applicability_json),
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -1642,35 +1668,49 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						eq(hrDocumentRequirement.status, "published"),
 					),
 				);
-			const missing: DocumentRequirement[] = [];
-			if (input.employeeId === undefined) {
-				for (const row of published) {
-					const mapped = mapDocumentRequirement(row);
-					if (!mapped.ok) return mapped;
-					missing.push(mapped.data);
-				}
-			} else {
-				const verifiedDocs = await db
-					.select({ requirementId: hrEmployeeDocument.requirementId })
-					.from(hrEmployeeDocument)
-					.where(
-						and(
-							eq(hrEmployeeDocument.organizationId, input.organizationId),
-							eq(hrEmployeeDocument.employeeId, input.employeeId),
-							eq(hrEmployeeDocument.verificationStatus, "verified"),
-						),
-					);
-				const satisfied = new Set(
-					verifiedDocs
-						.map((d) => d.requirementId)
-						.filter((id): id is string => id !== null),
+			const employeeRows = await db
+				.select({ id: hrEmployee.id })
+				.from(hrEmployee)
+				.where(eq(hrEmployee.organizationId, input.organizationId));
+			const employeeIds = employeeRows
+				.map((employee) => employee.id)
+				.filter(
+					(employeeId) =>
+						input.employeeId === undefined || employeeId === input.employeeId,
 				);
-				for (const row of published) {
-					if (satisfied.has(row.id)) continue;
-					const mapped = mapDocumentRequirement(row);
-					if (!mapped.ok) return mapped;
-					missing.push(mapped.data);
-				}
+			const verifiedDocs = await db
+				.select({
+					employeeId: hrEmployeeDocument.employeeId,
+					requirementId: hrEmployeeDocument.requirementId,
+				})
+				.from(hrEmployeeDocument)
+				.where(
+					and(
+						eq(hrEmployeeDocument.organizationId, input.organizationId),
+						eq(hrEmployeeDocument.verificationStatus, "verified"),
+					),
+				);
+			const satisfied = new Set(
+				verifiedDocs
+					.filter(
+						(row): row is { employeeId: string; requirementId: string } =>
+							row.requirementId !== null,
+					)
+					.map((row) => `${row.employeeId}:${row.requirementId}`),
+			);
+			const missing: DocumentRequirement[] = [];
+			for (const row of published) {
+				const mapped = mapDocumentRequirement(row);
+				if (!mapped.ok) return mapped;
+				const requirement = mapped.data;
+				const isMissing = employeeIds.some(
+					(employeeId) =>
+						isDocumentRequirementApplicable({
+							applicability: requirement.applicability,
+							employeeId,
+						}) && !satisfied.has(`${employeeId}:${requirement.id}`),
+				);
+				if (isMissing) missing.push(requirement);
 			}
 			missing.sort((a, b) => a.code.localeCompare(b.code));
 			const totalCount = missing.length;
@@ -1692,9 +1732,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 	async listExpiringEmployeeDocuments(input) {
 		const withinDays = input.withinDays ?? COMPLIANCE_NEARING_EXPIRY_DAYS;
 		try {
-			const endDate = new Date(`${input.asOf}T00:00:00.000Z`);
-			endDate.setUTCDate(endDate.getUTCDate() + withinDays);
-			const endOn = endDate.toISOString().slice(0, 10);
+			const endOn = addIsoCalendarDays(input.asOf, withinDays);
 			const conditions = [
 				eq(hrEmployeeDocument.organizationId, input.organizationId),
 				ne(hrEmployeeDocument.verificationStatus, "expired"),
@@ -2327,7 +2365,15 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					eligibility.status === "pending" ||
 					eligibility.status === "suspended" ||
 					eligibility.status === "expired";
-				if (statusRisk || expiredByDate) {
+				const nearingExpiry = isWithinInclusiveDateWindow({
+					date: eligibility.expiresOn,
+					asOf: input.asOf,
+					withinDays: input.withinDays,
+				});
+				if (
+					eligibility.status !== "closed" &&
+					(statusRisk || expiredByDate || nearingExpiry)
+				) {
 					eligibilities.push(eligibility);
 				}
 			}
@@ -2487,13 +2533,13 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						mutated AS (
 							INSERT INTO hr_policy_acknowledgement (
 								id, organization_id, employee_id, policy_code, policy_version,
-								requirement_status, issued_at, create_idempotency_key,
+								requirement_status, issued_at, due_on, create_idempotency_key,
 								create_request_fingerprint, version, created_by, updated_by
 							)
 							SELECT
 								${brandedId.data}, ${record.organizationId}, employee.id,
 								${record.policyCode}, ${record.policyVersion}, 'outstanding',
-								now(), ${record.createIdempotencyKey},
+								now(), ${record.dueOn}, ${record.createIdempotencyKey},
 								${record.createRequestFingerprint}, 1,
 								${record.createdBy}, ${record.createdBy}
 							FROM employee
@@ -2784,12 +2830,12 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						mutated AS (
 							INSERT INTO hr_policy_acknowledgement (
 								id, organization_id, employee_id, policy_code, policy_version,
-								requirement_status, issued_at, supersedes_acknowledgement_id,
+								requirement_status, issued_at, due_on, supersedes_acknowledgement_id,
 								version, created_by, updated_by
 							)
 							SELECT
 								${brandedNewId.data}, e.organization_id, e.employee_id, e.policy_code,
-								${input.newPolicyVersion}, 'outstanding', now(),
+								${input.newPolicyVersion}, 'outstanding', now(), ${input.newDueOn},
 								${input.acknowledgementId}, 1, ${input.actorUserId}, ${input.actorUserId}
 							FROM existing e
 							RETURNING *
@@ -2896,6 +2942,54 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		}
 	},
 
+	async listOverduePolicyAcknowledgements(input) {
+		try {
+			const conditions = [
+				eq(hrPolicyAcknowledgement.organizationId, input.organizationId),
+				eq(hrPolicyAcknowledgement.requirementStatus, "outstanding"),
+			];
+			if (input.employeeId !== undefined) {
+				conditions.push(
+					eq(hrPolicyAcknowledgement.employeeId, input.employeeId),
+				);
+			}
+			const rows = await db
+				.select()
+				.from(hrPolicyAcknowledgement)
+				.where(and(...conditions));
+			const acknowledgements: PolicyAcknowledgement[] = [];
+			for (const row of rows) {
+				const mapped = mapPolicyAcknowledgement(row);
+				if (!mapped.ok) return mapped;
+				if (mapped.data.dueOn < input.asOf) {
+					acknowledgements.push(mapped.data);
+				}
+			}
+			acknowledgements.sort((a, b) => {
+				const dueCompare = a.dueOn.localeCompare(b.dueOn);
+				return dueCompare !== 0
+					? dueCompare
+					: b.issuedAt.getTime() - a.issuedAt.getTime();
+			});
+			const totalCount = acknowledgements.length;
+			const offset = (input.page - 1) * input.pageSize;
+			return ok({
+				acknowledgements: acknowledgements.slice(
+					offset,
+					offset + input.pageSize,
+				),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			} satisfies PolicyAcknowledgementListPage);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list overdue policy acknowledgements",
+			);
+		}
+	},
+
 	async getEmployeeComplianceSummary(input) {
 		const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
 		const employee = await this.getEmployeeById({
@@ -2956,6 +3050,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const riskList = await this.listEmployeesWithWorkEligibilityRisk({
 				organizationId: input.organizationId,
 				asOf,
+				withinDays: COMPLIANCE_NEARING_EXPIRY_DAYS,
 				page: 1,
 				pageSize: 10_000,
 			});

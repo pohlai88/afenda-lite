@@ -3,54 +3,54 @@
 	"closedOn": "2026-07-25",
 	"slice": "docs-V2/_scratch/00.hrm.md Slice 4.10",
 	"migrations": [
-		"0018_hr_coreorg_db_invariants.sql",
-		"0035_hr_coreorg_db_invariants_completion.sql"
+		"0000_damp_blue_shield.sql",
+		"0002_hr_tenant_foreign_keys.sql"
 	],
 	"databaseChecks": [
 		{
-			"migration": "0018_hr_coreorg_db_invariants.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_work_assignment",
 			"constraint": "hr_work_assignment_effective_range_ck",
 			"rule": "starts_on <= ends_on when ends_on is set"
 		},
 		{
-			"migration": "0018_hr_coreorg_db_invariants.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_employment_contract",
 			"constraint": "hr_employment_contract_effective_range_ck",
 			"rule": "starts_on <= ends_on when ends_on is set"
 		},
 		{
-			"migration": "0018_hr_coreorg_db_invariants.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_reporting_line",
 			"constraint": "hr_reporting_line_effective_range_ck",
 			"rule": "starts_on <= ends_on when ends_on is set"
 		},
 		{
-			"migration": "0035_hr_coreorg_db_invariants_completion.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_probation_review",
 			"constraint": "hr_probation_review_effective_range_ck",
 			"rule": "starts_on <= ends_on"
 		},
 		{
-			"migration": "0035_hr_coreorg_db_invariants_completion.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_salary_band",
 			"constraint": "hr_salary_band_effective_range_ck",
 			"rule": "effective_from <= effective_to when effective_to is set"
 		},
 		{
-			"migration": "0035_hr_coreorg_db_invariants_completion.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_employee_compensation",
 			"constraint": "hr_employee_compensation_effective_range_ck",
 			"rule": "effective_from <= effective_to when effective_to is set"
 		},
 		{
-			"migration": "0035_hr_coreorg_db_invariants_completion.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_benefit_enrollment",
 			"constraint": "hr_benefit_enrollment_effective_range_ck",
 			"rule": "effective_from <= effective_to when effective_to is set"
 		},
 		{
-			"migration": "0035_hr_coreorg_db_invariants_completion.sql",
+			"migration": "0000_damp_blue_shield.sql",
 			"table": "hr_shift",
 			"constraint": "hr_shift_effective_range_ck",
 			"rule": "effective_from <= effective_to when effective_to is set"
@@ -520,7 +520,7 @@
 			"notes": "At-most-one successor enforced by command wiring — no UNIQUE on successor columns without dedicated data preflight."
 		},
 		"orgScopedForeignKeys": {
-			"migration": "0012_hr_tenant_foreign_keys.sql",
+			"migration": "0002_hr_tenant_foreign_keys.sql",
 			"rule": "All hr_* single-column foreign keys composite with organization_id for tenant isolation.",
 			"enforcementSurface": [
 				"packages/data-plane/db/__tests__/hr-tenant-foreign-keys-migration.test.ts"

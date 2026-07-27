@@ -1,0 +1,31 @@
+---
+description: Corporate Administration source placement guard — no root bloat, adapters behind subpaths, test helpers out of package root
+alwaysApply: true
+---
+
+# Corporate Administration source placement
+
+`@afenda/corporate-administration` follows the greenfield decomposed layout in `docs-V2/_scratch/erp/corporate-administration/greenfield/02-PACKAGE-ARCHITECTURE-AND-CONTRACTS.md`.
+
+CA-0.4 is infrastructure-only. It may own `ca_mutation_receipt`, idempotency/transaction runtime composition, and Drizzle infrastructure adapters. It must not introduce legal-company commands, queries, Actions, UI, permissions, events, or `ca_legal_company`.
+
+## Required placement
+
+- Domain behavior lands under the owning subdomain only in a later governed business slice; CA-0.4 has no domain subdomain implementation.
+- Drizzle persistence lands under `packages/erp/corporate-administration/src/adapters/drizzle/**` and is consumed through the declared adapter subpath.
+- Drizzle table schema definitions never land in this package. Schema belongs in the repository-authoritative `@afenda/db` location, currently `packages/data-plane/db/src/schema/**`.
+- Test-only memory helpers land under `packages/erp/corporate-administration/__tests__/helpers/**`, not `src/` root and not the public root barrel.
+- Root `src/*.ts` is reserved for approved package contracts: manifest, module IDs, permissions, authorization, command options/identity, runtime ports, idempotency contracts, events, parsing, errors, mutation tables, root exports, and future approved root contract files.
+
+## Forbidden
+
+- Recreating root business files such as `src/legal-company.ts`.
+- Recreating CA-0.4 business-surface files such as `src/company/**`, `src/adapters/drizzle/company.ts`, `apps/web/app/actions/*legal-company*`, `apps/web/features/corporate-administration/**`, app authorization/command-option factories, or app routes for Corporate Administration.
+- Recreating root adapter files such as `src/drizzle-legal-company-store.ts` or `src/drizzle-idempotency.ts`.
+- Defining `pgTable`, `mysqlTable`, `sqliteTable`, or importing `drizzle-orm/pg-core` under `packages/erp/corporate-administration/src/**`.
+- Recreating root memory/test helper files such as `src/memory-legal-company-store.ts`.
+- Adding new generic root dumps such as `src/common.ts`, `src/utils.ts`, `src/repository.ts`, or root `src/*-store.ts`.
+
+## Hook enforcement
+
+`preToolUse` -> `.cursor/hooks/corporate-administration-source-placement.mjs` denies writes that introduce unapproved root files under `packages/erp/corporate-administration/src`.

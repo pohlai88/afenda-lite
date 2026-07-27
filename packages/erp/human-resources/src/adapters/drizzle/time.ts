@@ -3934,7 +3934,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const importBatchId = randomUUID();
 			const accepted: AttendanceImportAcceptedRow[] = [];
 			const skipped: AttendanceImportSkippedRow[] = [];
-			const rejected: AttendanceImportRejectedRow[] = [];
+			const rejected: AttendanceImportRejectedRow[] = [
+				...(input.sourceRejectedRows ?? []),
+			];
+			const now = new Date();
 			const errorRows: Array<{
 				id: string;
 				organizationId: string;
@@ -3945,14 +3948,24 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				errorMessage: string;
 				payloadChecksum: string | null;
 				createdAt: Date;
-			}> = [];
-			const now = new Date();
+			}> = (input.sourceRejectedRows ?? []).map((rejection) => ({
+				id: randomUUID(),
+				organizationId: input.organizationId,
+				importBatchId,
+				rowIndex: rejection.rowIndex,
+				sourceReference: rejection.sourceReference,
+				errorCode: rejection.errorCode,
+				errorMessage: rejection.errorMessage,
+				payloadChecksum: null,
+				createdAt: now,
+			}));
 
 			for (let rowIndex = 0; rowIndex < input.events.length; rowIndex += 1) {
 				const row = requirePersistenceRow(input.events[rowIndex]);
+				const outcomeRowIndex = input.sourceRowIndexes?.[rowIndex] ?? rowIndex;
 				if (!isValidIanaTimeZone(row.sourceTimezone)) {
 					const rejection: AttendanceImportRejectedRow = {
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: "INVALID_TIMEZONE",
 						errorMessage: "Invalid IANA timezone",
@@ -3962,7 +3975,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						id: randomUUID(),
 						organizationId: input.organizationId,
 						importBatchId,
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: rejection.errorCode,
 						errorMessage: rejection.errorMessage,
@@ -3984,7 +3997,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					.limit(1);
 				if (employeeRows.length === 0) {
 					const rejection: AttendanceImportRejectedRow = {
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: "UNKNOWN_EMPLOYEE",
 						errorMessage: "Employee not found in organization",
@@ -3994,7 +4007,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						id: randomUUID(),
 						organizationId: input.organizationId,
 						importBatchId,
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: rejection.errorCode,
 						errorMessage: rejection.errorMessage,
@@ -4025,7 +4038,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				const employmentRow = employmentRows[0];
 				if (employmentRow === undefined) {
 					const rejection: AttendanceImportRejectedRow = {
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: "INVALID_EMPLOYMENT",
 						errorMessage: "Active employment not found for attendance event",
@@ -4035,7 +4048,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						id: randomUUID(),
 						organizationId: input.organizationId,
 						importBatchId,
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: rejection.errorCode,
 						errorMessage: rejection.errorMessage,
@@ -4067,7 +4080,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				});
 				if (!existingByRef.ok) {
 					rejected.push({
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: "STORE_ERROR",
 						errorMessage: existingByRef.message,
@@ -4077,14 +4090,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				if (existingByRef.data !== null) {
 					if (existingByRef.data.createRequestFingerprint === fingerprint) {
 						skipped.push({
-							rowIndex,
+							rowIndex: outcomeRowIndex,
 							sourceReference: row.sourceReference,
 							eventId: existingByRef.data.event.id,
 							reason: "already_imported",
 						});
 					} else {
 						const rejection: AttendanceImportRejectedRow = {
-							rowIndex,
+							rowIndex: outcomeRowIndex,
 							sourceReference: row.sourceReference,
 							errorCode: "SOURCE_REFERENCE_CONFLICT",
 							errorMessage:
@@ -4095,7 +4108,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							id: randomUUID(),
 							organizationId: input.organizationId,
 							importBatchId,
-							rowIndex,
+							rowIndex: outcomeRowIndex,
 							sourceReference: row.sourceReference,
 							errorCode: rejection.errorCode,
 							errorMessage: rejection.errorMessage,
@@ -4132,7 +4145,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 				if (!recorded.ok) {
 					const rejection: AttendanceImportRejectedRow = {
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: recorded.code,
 						errorMessage: recorded.message,
@@ -4142,7 +4155,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						id: randomUUID(),
 						organizationId: input.organizationId,
 						importBatchId,
-						rowIndex,
+						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: rejection.errorCode,
 						errorMessage: rejection.errorMessage,
@@ -4152,7 +4165,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					continue;
 				}
 				accepted.push({
-					rowIndex,
+					rowIndex: outcomeRowIndex,
 					sourceReference: row.sourceReference,
 					eventId: recorded.data.id,
 				});
@@ -6153,7 +6166,11 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				.select()
 				.from(hrTimesheetApprovalDecision)
 				.where(and(...conditions))
-				.orderBy(asc(hrTimesheetApprovalDecision.stepIndex));
+				.orderBy(
+					asc(hrTimesheetApprovalDecision.decidedAt),
+					asc(hrTimesheetApprovalDecision.stepIndex),
+					asc(hrTimesheetApprovalDecision.id),
+				);
 			const mapped: TimesheetApprovalDecision[] = [];
 			for (const row of rows) {
 				const item = mapTimesheetApprovalDecision(row);

@@ -29,11 +29,8 @@ import type {
 	PayrollDeductionRule,
 	PayrollEarningRule,
 	PayrollEmployeeAssignment,
-	PayrollEmployeeAssignmentCreateRecord,
 	PayrollRecurringDeduction,
-	PayrollRecurringDeductionCreateRecord,
 	PayrollRecurringEarning,
-	PayrollRecurringEarningCreateRecord,
 } from "../../types";
 
 async function recordAudit(

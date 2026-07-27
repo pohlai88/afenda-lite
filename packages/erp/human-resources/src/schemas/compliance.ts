@@ -8,6 +8,7 @@ import {
 	humanResourcesWorkEligibilityIdSchema,
 } from "../brands";
 import {
+	documentRequirementApplicabilitySchema,
 	documentRequirementStatusSchema,
 	employeeDocumentVerificationStatusSchema,
 	policyAcknowledgementStatusSchema,
@@ -30,6 +31,9 @@ export const createDocumentRequirementInputSchema =
 		documentType: z.string().trim().min(1).max(128),
 		issuingJurisdiction: z.string().trim().min(1).max(64).optional(),
 		appliesToNote: z.string().trim().min(1).max(512).optional(),
+		applicability: documentRequirementApplicabilitySchema
+			.optional()
+			.default({ kind: "all_employees" }),
 	});
 
 export const updateDocumentRequirementInputSchema =
@@ -39,6 +43,7 @@ export const updateDocumentRequirementInputSchema =
 		documentType: z.string().trim().min(1).max(128).optional(),
 		issuingJurisdiction: z.string().trim().min(1).max(64).nullable().optional(),
 		appliesToNote: z.string().trim().min(1).max(512).nullable().optional(),
+		applicability: documentRequirementApplicabilitySchema.optional(),
 	});
 
 export const documentRequirementTransitionInputSchema =
@@ -111,7 +116,7 @@ export const listMissingRequiredDocumentsInputSchema =
 export const listExpiringEmployeeDocumentsInputSchema =
 	humanResourcesMutationContextSchema.extend({
 		asOf: z.string().date(),
-		withinDays: z.number().int().positive().max(365).optional(),
+		withinDays: z.number().int().min(0).max(365).optional(),
 		employeeId: humanResourcesEmployeeIdSchema.optional(),
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
@@ -139,6 +144,11 @@ export const workEligibilityTransitionInputSchema =
 		eligibilityId: humanResourcesWorkEligibilityIdSchema,
 	});
 
+export const expireWorkEligibilityInputSchema =
+	workEligibilityTransitionInputSchema.extend({
+		asOf: z.string().date(),
+	});
+
 export const renewWorkEligibilityInputSchema = versionedMutationSchema.extend({
 	eligibilityId: humanResourcesWorkEligibilityIdSchema,
 	issuedOn: z.string().date(),
@@ -154,6 +164,7 @@ export const getEmployeeWorkEligibilityInputSchema =
 export const listEmployeesWithWorkEligibilityRiskInputSchema =
 	humanResourcesMutationContextSchema.extend({
 		asOf: z.string().date(),
+		withinDays: z.number().int().min(0).max(365).optional(),
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 	});
@@ -164,6 +175,7 @@ export const issuePolicyAcknowledgementRequirementInputSchema =
 			employeeId: humanResourcesEmployeeIdSchema,
 			policyCode: z.string().trim().min(1).max(128),
 			policyVersion: z.string().trim().min(1).max(64),
+			dueOn: z.string().date().optional().default("9999-12-31"),
 		})
 		.merge(idempotencySchema);
 
@@ -180,6 +192,7 @@ export const supersedePolicyAcknowledgementRequirementInputSchema =
 	versionedMutationSchema.extend({
 		acknowledgementId: humanResourcesPolicyAcknowledgementIdSchema,
 		newPolicyVersion: z.string().trim().min(1).max(64),
+		newDueOn: z.string().date().optional().default("9999-12-31"),
 	});
 
 export const getPolicyAcknowledgementStatusInputSchema =
@@ -196,6 +209,14 @@ export const listOutstandingPolicyAcknowledgementsInputSchema =
 		pageSize: z.number().int().positive().max(100).optional(),
 	});
 
+export const listOverduePolicyAcknowledgementsInputSchema =
+	humanResourcesMutationContextSchema.extend({
+		asOf: z.string().date(),
+		employeeId: humanResourcesEmployeeIdSchema.optional(),
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+	});
+
 export const getEmployeeComplianceSummaryInputSchema =
 	humanResourcesMutationContextSchema.extend({
 		employeeId: humanResourcesEmployeeIdSchema,
@@ -205,7 +226,7 @@ export const getEmployeeComplianceSummaryInputSchema =
 export const detectComplianceExpiryOperationsInputSchema =
 	humanResourcesMutationContextSchema.extend({
 		asOf: z.string().date(),
-		withinDays: z.number().int().positive().max(365).optional(),
+		withinDays: z.number().int().min(0).max(365).optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 	});
 

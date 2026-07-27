@@ -173,7 +173,6 @@ describe("payroll setup commands", () => {
 	it("rejects overlapping active earning rules via command surface", async () => {
 		const { payGroup, store, ports, authorization } =
 			await seedCalendarPayGroup("org-overlap", "user-overlap", "overlap");
-		const options = { store, ports, authorization };
 
 		const first = await createPayrollEarningRule(
 			{

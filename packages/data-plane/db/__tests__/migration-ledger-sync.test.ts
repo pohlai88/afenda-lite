@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { findPendingMigrationJournalRows } from "../scripts/lib/migration-journal-rows.mjs";
 
+async function findJournalEntry(tag: string) {
+	const { readFileSync } = await import("node:fs");
+	const { fileURLToPath } = await import("node:url");
+	const { dirname, join } = await import("node:path");
+	const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+	const journal = JSON.parse(
+		readFileSync(join(root, "drizzle", "meta", "_journal.json"), "utf8"),
+	) as { entries: { idx: number; tag: string; when: number }[] };
+	return journal.entries.find((entry) => entry.tag === tag);
+}
+
 describe("findPendingMigrationJournalRows", () => {
 	const journalRows = [
 		{ idx: 0, tag: "0000_a", when: 100, hash: "hash-a" },
@@ -50,17 +61,23 @@ describe("findPendingMigrationJournalRows", () => {
 	});
 });
 
-describe("0017_hr_candidate_consent migration journal row", () => {
-	it("uses the expected journal timestamp slot", async () => {
-		const { loadMigrationJournalRows } = await import(
-			"../scripts/lib/migration-journal-rows.mjs"
-		);
-		const { fileURLToPath } = await import("node:url");
-		const { dirname, join } = await import("node:path");
-		const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-		const row = loadMigrationJournalRows(join(root, "drizzle")).find(
-			(entry) => entry.tag === "0017_hr_candidate_consent",
-		);
-		expect(row?.when).toBe(1784997600000);
+describe("generated baseline migration journal row", () => {
+	it("uses the generated baseline slot", async () => {
+		const row = await findJournalEntry("0000_damp_blue_shield");
+		expect(row).toMatchObject({ idx: 0, when: 1785123236021 });
+	});
+});
+
+describe("custom relational-invariant migration journal row", () => {
+	it("follows the generated baseline", async () => {
+		const row = await findJournalEntry("0001_ca_relational_invariants");
+		expect(row).toMatchObject({ idx: 1, when: 1785123522429 });
+	});
+});
+
+describe("HR tenant foreign-key migration journal row", () => {
+	it("follows the relational-invariant migration", async () => {
+		const row = await findJournalEntry("0002_hr_tenant_foreign_keys");
+		expect(row).toMatchObject({ idx: 2, when: 1785124084741 });
 	});
 });

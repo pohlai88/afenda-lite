@@ -22,11 +22,7 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import type { PayrollOutputsStore } from "../../store/outputs";
-import type {
-	PayrollResultLine,
-	PayrollRunEmployee,
-	ReplaceRunCalculationOutputsInput,
-} from "../../types";
+import type { PayrollResultLine, PayrollRunEmployee } from "../../types";
 
 async function recordAudit(
 	ports: MutationPorts,

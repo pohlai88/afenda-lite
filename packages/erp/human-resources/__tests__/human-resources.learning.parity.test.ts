@@ -50,7 +50,10 @@ import {
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	humanResourcesCodeFromResult,
+	resultFailureMessage,
+} from "./helpers/result-details";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -131,7 +134,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(created.ok).toBe(true);
+		expect(created.ok, resultFailureMessage(created)).toBe(true);
 		if (!created.ok) return;
 		expect(created.data.status).toBe("active");
 
@@ -144,7 +147,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(retrieved.ok).toBe(true);
+		expect(retrieved.ok, resultFailureMessage(retrieved)).toBe(true);
 		if (!retrieved.ok) return;
 		expect(retrieved.data.code).toBe(`PARITY-COURSE-${suffix}`);
 
@@ -161,7 +164,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(updated.ok).toBe(true);
+		expect(updated.ok, resultFailureMessage(updated)).toBe(true);
 		if (!updated.ok) return;
 		expect(updated.data.title).toBe("Updated Title");
 
@@ -175,7 +178,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(archived.ok).toBe(true);
+		expect(archived.ok, resultFailureMessage(archived)).toBe(true);
 		if (!archived.ok) return;
 		expect(archived.data.status).toBe("archived");
 	});
@@ -203,7 +206,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(created.ok).toBe(true);
+		expect(created.ok, resultFailureMessage(created)).toBe(true);
 		if (!created.ok) return;
 		expect(created.data.status).toBe("scheduled");
 
@@ -216,7 +219,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(retrieved.ok).toBe(true);
+		expect(retrieved.ok, resultFailureMessage(retrieved)).toBe(true);
 		if (!retrieved.ok) return;
 		expect(retrieved.data.code).toBe(`SES-PAR-${suffix}`);
 
@@ -231,7 +234,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(started.ok).toBe(true);
+		expect(started.ok, resultFailureMessage(started)).toBe(true);
 		if (!started.ok) return;
 		expect(started.data.status).toBe("in_progress");
 
@@ -246,7 +249,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(completed.ok).toBe(true);
+		expect(completed.ok, resultFailureMessage(completed)).toBe(true);
 		if (!completed.ok) return;
 		expect(completed.data.status).toBe("completed");
 	});
@@ -275,7 +278,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assigned.ok).toBe(true);
+		expect(assigned.ok, resultFailureMessage(assigned)).toBe(true);
 		if (!assigned.ok) return;
 		expect(assigned.data.status).toBe("pending");
 
@@ -288,7 +291,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(retrieved.ok).toBe(true);
+		expect(retrieved.ok, resultFailureMessage(retrieved)).toBe(true);
 		if (!retrieved.ok) return;
 		expect(retrieved.data.employeeId).toBe(employee.id);
 
@@ -319,7 +322,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(enroled.ok).toBe(true);
+		expect(enroled.ok, resultFailureMessage(enroled)).toBe(true);
 		if (!enroled.ok) return;
 		expect(enroled.data.status).toBe("in_progress");
 
@@ -333,7 +336,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(waived.ok).toBe(true);
+		expect(waived.ok, resultFailureMessage(waived)).toBe(true);
 		if (!waived.ok) return;
 		expect(waived.data.status).toBe("withdrawn");
 	});
@@ -365,7 +368,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(session.ok).toBe(true);
+		expect(session.ok, resultFailureMessage(session)).toBe(true);
 		if (!session.ok) return;
 
 		const assignment = await assignLearning(
@@ -379,7 +382,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		const completion = await recordCompletion(
@@ -398,7 +401,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(completion.ok).toBe(true);
+		expect(completion.ok, resultFailureMessage(completion)).toBe(true);
 		if (!completion.ok) return;
 		expect(completion.data.sessionId).toBe(session.data.id);
 
@@ -411,7 +414,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(retrieved.ok).toBe(true);
+		expect(retrieved.ok, resultFailureMessage(retrieved)).toBe(true);
 		if (!retrieved.ok) return;
 		expect(retrieved.data).not.toBeNull();
 		if (retrieved.data === null) return;
@@ -441,7 +444,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		const completion = await recordCompletion(
@@ -460,7 +463,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(completion.ok).toBe(true);
+		expect(completion.ok, resultFailureMessage(completion)).toBe(true);
 		if (!completion.ok) return;
 
 		const certification = await issueCertification(
@@ -474,11 +477,11 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 				completionId: completion.data.id,
 				certificationCode: `CERT-PAR-${suffix}`,
 				issuedOn: "2025-08-02",
-				expiresOn: "2026-08-02",
+				expiresOn: "2099-08-02",
 			},
 			ready,
 		);
-		expect(certification.ok).toBe(true);
+		expect(certification.ok, resultFailureMessage(certification)).toBe(true);
 		if (!certification.ok) return;
 		expect(certification.data.status).toBe("active");
 
@@ -491,7 +494,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(retrieved.ok).toBe(true);
+		expect(retrieved.ok, resultFailureMessage(retrieved)).toBe(true);
 		if (!retrieved.ok) return;
 		expect(retrieved.data.certificationCode).toBe(`CERT-PAR-${suffix}`);
 
@@ -505,7 +508,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(revoked.ok).toBe(true);
+		expect(revoked.ok, resultFailureMessage(revoked)).toBe(true);
 		if (!revoked.ok) return;
 		expect(revoked.data.status).toBe("revoked");
 	});
@@ -533,7 +536,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		const completion = await recordCompletion(
@@ -552,7 +555,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(completion.ok).toBe(true);
+		expect(completion.ok, resultFailureMessage(completion)).toBe(true);
 		if (!completion.ok) return;
 
 		const certification = await issueCertification(
@@ -566,11 +569,11 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 				completionId: completion.data.id,
 				certificationCode: `CERT-EXP-${suffix}`,
 				issuedOn: "2025-08-02",
-				expiresOn: "2026-08-02",
+				expiresOn: "2099-08-02",
 			},
 			ready,
 		);
-		expect(certification.ok).toBe(true);
+		expect(certification.ok, resultFailureMessage(certification)).toBe(true);
 		if (!certification.ok) return;
 		expect(certification.data.status).toBe("active");
 
@@ -584,7 +587,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(expired.ok).toBe(true);
+		expect(expired.ok, resultFailureMessage(expired)).toBe(true);
 		if (!expired.ok) return;
 		expect(expired.data.status).toBe("expired");
 	});
@@ -615,7 +618,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(page.ok).toBe(true);
+		expect(page.ok, resultFailureMessage(page)).toBe(true);
 		if (!page.ok) return;
 		expect(page.data.courses.length).toBeGreaterThanOrEqual(3);
 	});
@@ -655,7 +658,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(page.ok).toBe(true);
+		expect(page.ok, resultFailureMessage(page)).toBe(true);
 		if (!page.ok) return;
 		expect(page.data.sessions.length).toBe(2);
 	});
@@ -710,7 +713,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(page.ok).toBe(true);
+		expect(page.ok, resultFailureMessage(page)).toBe(true);
 		if (!page.ok) return;
 		expect(page.data.assignments.length).toBe(2);
 	});
@@ -738,7 +741,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		await recordCompletion(
@@ -767,7 +770,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(page.ok).toBe(true);
+		expect(page.ok, resultFailureMessage(page)).toBe(true);
 		if (!page.ok) return;
 		expect(page.data.completions.length).toBe(1);
 	});
@@ -795,7 +798,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		const completion = await recordCompletion(
@@ -814,7 +817,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(completion.ok).toBe(true);
+		expect(completion.ok, resultFailureMessage(completion)).toBe(true);
 		if (!completion.ok) return;
 
 		await issueCertification(
@@ -842,7 +845,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(page.ok).toBe(true);
+		expect(page.ok, resultFailureMessage(page)).toBe(true);
 		if (!page.ok) return;
 		expect(page.data.certifications.length).toBe(1);
 	});
@@ -875,7 +878,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(session.ok).toBe(true);
+		expect(session.ok, resultFailureMessage(session)).toBe(true);
 		if (!session.ok) return;
 
 		const instructed = await assignSessionInstructor(
@@ -889,7 +892,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(instructed.ok).toBe(true);
+		expect(instructed.ok, resultFailureMessage(instructed)).toBe(true);
 		if (!instructed.ok) return;
 
 		const started = await startSession(
@@ -902,7 +905,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(started.ok).toBe(true);
+		expect(started.ok, resultFailureMessage(started)).toBe(true);
 		if (!started.ok) return;
 
 		const assignment = await assignLearning(
@@ -917,7 +920,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		const enrolled = await enrolAssignment(
@@ -930,7 +933,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(enrolled.ok).toBe(true);
+		expect(enrolled.ok, resultFailureMessage(enrolled)).toBe(true);
 		if (!enrolled.ok) return;
 
 		const attendance = await recordLearningAttendance(
@@ -946,7 +949,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(attendance.ok).toBe(true);
+		expect(attendance.ok, resultFailureMessage(attendance)).toBe(true);
 		if (!attendance.ok) return;
 
 		const listed = await listLearningAttendance(
@@ -958,7 +961,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(listed.ok).toBe(true);
+		expect(listed.ok, resultFailureMessage(listed)).toBe(true);
 		if (!listed.ok) return;
 		expect(listed.data.attendanceRecords.length).toBe(1);
 	});
@@ -986,7 +989,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(assignment.ok).toBe(true);
+		expect(assignment.ok, resultFailureMessage(assignment)).toBe(true);
 		if (!assignment.ok) return;
 
 		const completion = await recordCompletion(
@@ -1005,7 +1008,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(completion.ok).toBe(true);
+		expect(completion.ok, resultFailureMessage(completion)).toBe(true);
 		if (!completion.ok) return;
 
 		const issued = await issueCertification(
@@ -1023,7 +1026,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(issued.ok).toBe(true);
+		expect(issued.ok, resultFailureMessage(issued)).toBe(true);
 		if (!issued.ok) return;
 
 		const expired = await expireCertification(
@@ -1036,7 +1039,7 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(expired.ok).toBe(true);
+		expect(expired.ok, resultFailureMessage(expired)).toBe(true);
 		if (!expired.ok) return;
 
 		const renewalAssignment = await assignLearning(
@@ -1050,7 +1053,9 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(renewalAssignment.ok).toBe(true);
+		expect(renewalAssignment.ok, resultFailureMessage(renewalAssignment)).toBe(
+			true,
+		);
 		if (!renewalAssignment.ok) return;
 
 		const renewalCompletion = await recordCompletion(
@@ -1069,7 +1074,9 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(renewalCompletion.ok).toBe(true);
+		expect(renewalCompletion.ok, resultFailureMessage(renewalCompletion)).toBe(
+			true,
+		);
 		if (!renewalCompletion.ok) return;
 
 		const renewed = await renewCertification(
@@ -1082,12 +1089,12 @@ function defineLearningParitySuite(adapter: WorkforceStoreAdapter): void {
 				completionId: renewalCompletion.data.id,
 				certificationCode: `RENEW2-${suffix}`,
 				issuedOn: "2025-06-02",
-				expiresOn: "2026-06-02",
+				expiresOn: "2099-06-02",
 				expectedVersion: expired.data.version,
 			},
 			ready,
 		);
-		expect(renewed.ok).toBe(true);
+		expect(renewed.ok, resultFailureMessage(renewed)).toBe(true);
 		if (!renewed.ok) return;
 		expect(renewed.data.renewedFromCertificationId).toBe(expired.data.id);
 	});

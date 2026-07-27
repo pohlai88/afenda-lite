@@ -63,6 +63,7 @@ import {
 	runEmploymentTerminationFlow,
 } from "./helpers/lifecycle-test-fixtures";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
+import { resultFailureMessage } from "./helpers/result-details";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -413,7 +414,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 			expect(task).toBeDefined();
 			if (!task) return;
 
-			await completeOffboardingTask(
+			const taskCompleted = await completeOffboardingTask(
 				{
 					organizationId,
 					actorUserId,
@@ -424,16 +425,24 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				},
 				ready,
 			);
-			await recordExitInterview(
+			expect(taskCompleted.ok, resultFailureMessage(taskCompleted)).toBe(true);
+			if (!taskCompleted.ok) return;
+			const interviewRecorded = await recordExitInterview(
 				{
 					organizationId,
 					actorUserId,
 					correlationId: `corr-exit-${suffix}`,
 					offboardingCaseId: offboarding.data.id,
 					conductedOn: "2025-06-02",
+					notes: "Exit interview completed",
 				},
 				ready,
 			);
+			expect(
+				interviewRecorded.ok,
+				resultFailureMessage(interviewRecorded),
+			).toBe(true);
+			if (!interviewRecorded.ok) return;
 
 			const clearance = await getClearanceByOffboardingCase(
 				{
@@ -447,7 +456,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 			expect(clearance.ok).toBe(true);
 			if (!clearance.ok || clearance.data === null) return;
 
-			await recordClearance(
+			const clearanceRecorded = await recordClearance(
 				{
 					organizationId,
 					actorUserId,
@@ -458,6 +467,11 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				},
 				ready,
 			);
+			expect(
+				clearanceRecorded.ok,
+				resultFailureMessage(clearanceRecorded),
+			).toBe(true);
+			if (!clearanceRecorded.ok) return;
 
 			const accessRecorded = await recordOffboardingAccessRevocation(
 				{
@@ -472,6 +486,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(accessRecorded.ok).toBe(true);
+			if (!accessRecorded.ok) return;
 
 			const payrollRecorded = await recordOffboardingPayrollHandoff(
 				{
@@ -486,6 +501,7 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 				ready,
 			);
 			expect(payrollRecorded.ok).toBe(true);
+			if (!payrollRecorded.ok) return;
 
 			const completed = await completeOffboarding(
 				{
@@ -493,11 +509,11 @@ describe.runIf(runDrizzleParity)("human-resources lifecycle parity", () => {
 					actorUserId,
 					correlationId: `corr-off-complete-${suffix}`,
 					offboardingCaseId: offboarding.data.id,
-					expectedVersion: offboarding.data.version,
+					expectedVersion: payrollRecorded.data.version,
 				},
 				ready,
 			);
-			expect(completed.ok).toBe(true);
+			expect(completed.ok, resultFailureMessage(completed)).toBe(true);
 			if (!completed.ok) return;
 			expect(completed.data.status).toBe("completed");
 

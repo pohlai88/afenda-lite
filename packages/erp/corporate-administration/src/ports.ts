@@ -1,284 +1,476 @@
 import type { Result } from "@afenda/errors/result";
-import type {
-	MasterStatus,
-	PartyId,
-	PartyKind,
-	PartyRoleCode,
-	TaxRegistrationId,
-	TaxRegistrationType,
-} from "@afenda/master-data";
-
-import type {
-	ApprovalDecisionId,
-	ApprovalRequestId,
-	CommandFingerprint,
-	DocumentObjectRef,
-	LegalCompanyId,
-	OrganizationId,
-	UserId,
+import { z } from "zod";
+import type { CorporateAdministrationApprovalDecisionPort } from "./authorization";
+import type { CorporateAdministrationPendingEvent } from "./domain-events";
+import type { CorporateAdministrationIdempotencyPort } from "./idempotency";
+import {
+	causationIdSchema,
+	correlationIdSchema,
+	type DocumentObjectRef,
+	type OrganizationId,
+	organizationIdSchema,
+	userIdSchema,
 } from "./kernel/brands";
-import type { CanonicalDate } from "./kernel/dates";
-import type { EffectiveRange } from "./kernel/effective-range";
+import { type CanonicalDate, canonicalInstantSchema } from "./kernel/dates";
 
-export type PartyRoleReference = {
-	roleCode: PartyRoleCode;
-	status: MasterStatus;
-	effectiveRange: EffectiveRange;
-	version: number;
-};
-
-export type PartyReference = {
-	organizationId: OrganizationId;
-	partyId: PartyId;
-	canonicalPartyId: PartyId;
-	mergeHops: number;
-	partyKind: PartyKind;
-	code: string;
-	legalName: string | null;
-	tradingName: string | null;
-	status: MasterStatus;
-	version: number;
-	roles: readonly PartyRoleReference[];
-};
-
-export type PartyReferencePort = {
-	resolveParty(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		partyId: PartyId;
-		asOf: CanonicalDate;
-	}): Promise<Result<PartyReference | null>>;
-};
-
-export type TaxRegistrationReference = {
-	taxRegistrationId: TaxRegistrationId;
-	partyId: PartyId;
-	jurisdictionCountryId: string;
-	registrationType: TaxRegistrationType;
-	registrationNumber: string;
-	normalizedRegistrationNumber: string;
-	name: string | null;
-	status: MasterStatus;
-	version: number;
-	validity: EffectiveRange;
-};
-
-export type TaxRegistrationReadPort = {
-	listEffectiveForParty(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		partyId: PartyId;
-		asOf: CanonicalDate;
-	}): Promise<Result<readonly TaxRegistrationReference[]>>;
-};
-
-export type CountryReference = {
-	code: string;
-	alpha3: string;
-	name: string;
-	active: boolean;
-};
-
-export type CurrencyReference = {
-	code: string;
-	name: string;
-	minorUnits: number;
-	active: boolean;
-};
-
-export type LanguageReference = {
-	code: string;
-	name: string;
-	active: boolean;
-};
-
-export type TimeZoneReference = {
-	ianaName: string;
-	name: string;
-	active: boolean;
-};
-
-type ReferenceLookupContext = {
-	organizationId: OrganizationId;
-	actorUserId: UserId;
-};
-
-export type ReferenceDataPort = {
-	getCountryByCode(
-		input: ReferenceLookupContext & { code: string },
-	): Promise<Result<CountryReference | null>>;
-	getCurrencyByCode(
-		input: ReferenceLookupContext & { code: string },
-	): Promise<Result<CurrencyReference | null>>;
-	getLanguageByCode(
-		input: ReferenceLookupContext & { code: string },
-	): Promise<Result<LanguageReference | null>>;
-	getTimeZoneByIana(
-		input: ReferenceLookupContext & { ianaName: string },
-	): Promise<Result<TimeZoneReference | null>>;
-};
-
-export const PROTECTED_IDENTITY_FIELDS = [
-	"government_identifier",
-	"birth_date",
-	"residential_address",
-] as const;
-export type ProtectedIdentityField = (typeof PROTECTED_IDENTITY_FIELDS)[number];
-
-export type FilingSafeIdentityValue = {
-	field: ProtectedIdentityField;
-	value: string;
-	representation: "filing_safe" | "masked";
-};
-
-export type ProtectedIdentityPort = {
-	resolveFilingSafeIdentity(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		partyId: PartyId;
-		fields: readonly ProtectedIdentityField[];
-		purpose: string;
-	}): Promise<Result<readonly FilingSafeIdentityValue[]>>;
-};
-
-export type ApprovalDecisionReference = {
-	requestId: ApprovalRequestId;
-	decisionId: ApprovalDecisionId;
-	status: "approved" | "rejected" | "withdrawn" | "expired";
-	organizationId: OrganizationId;
-	legalCompanyId: LegalCompanyId;
-	requesterUserId: UserId;
-	decidedByUserId: UserId;
-	commandType: string;
-	targetType: string;
-	targetReference: string;
-	fingerprint: CommandFingerprint;
-	decidedAt: Date;
-	validUntil: Date | null;
-};
-
-export type ApprovalDecisionPort = {
-	verifyDecision(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		legalCompanyId: LegalCompanyId;
-		decisionId: ApprovalDecisionId;
-		commandType: string;
-		targetType: string;
-		targetReference: string;
-		fingerprint: CommandFingerprint;
-		requestInstant: Date;
-	}): Promise<Result<ApprovalDecisionReference | null>>;
-};
-
-export type DocumentObjectReference = {
-	objectRef: DocumentObjectRef;
-	checksumAlgorithm: "sha256";
-	checksum: string;
-	mediaType: string;
-	sizeBytes: number;
-	availability: "available" | "quarantined" | "unavailable";
-	malwareStatus: "pending" | "clean" | "infected" | "scan_failed";
-};
-
-export type DocumentObjectPort = {
-	resolveObject(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		objectRef: DocumentObjectRef;
-	}): Promise<Result<DocumentObjectReference | null>>;
-};
-
-export type ClockPort = {
+export type ClockPort = Readonly<{
 	now(): Date;
 	today(timeZoneIana: string): CanonicalDate;
-};
+}>;
 
-export type SearchProjectionDocument = {
+export type ReferenceResolution = Readonly<{
+	code: string;
+	active: boolean;
+	displayName?: string;
+}>;
+
+export type LegalFormReferenceResolution = ReferenceResolution &
+	Readonly<{
+		jurisdictionCode: string;
+		legalFormCode: string;
+		entityTypeCode?: string;
+		effectiveDate: CanonicalDate;
+	}>;
+
+export type CurrencyReferenceResolution = ReferenceResolution &
+	Readonly<{
+		currencyCode: string;
+		effectiveDate?: CanonicalDate;
+	}>;
+
+export type IdentifierAuthorityResolution = ReferenceResolution &
+	Readonly<{
+		jurisdictionCode: string;
+		authorityCode: string;
+		effectiveDate: CanonicalDate;
+		uniquenessScope?:
+			| "global_authority"
+			| "tenant_authority"
+			| "company_authority";
+		caseSensitive?: boolean;
+		removePresentationSeparators?: boolean;
+	}>;
+
+export type ActivityClassificationResolution = ReferenceResolution &
+	Readonly<{
+		classificationSystem: string;
+		activityCode: string;
+		effectiveDate: CanonicalDate;
+		activityType?: "registered_object" | "regulated" | "operational";
+		requiresRegulator?: boolean;
+	}>;
+
+export type CompatibilityResolution = Readonly<{
+	compatible: boolean;
+	active: boolean;
+	reasonCode?: string;
+}>;
+
+export type ReferenceDataPort = Readonly<{
+	resolveLanguage(input: {
+		organizationId: OrganizationId;
+		languageCode: string;
+	}): Promise<Result<ReferenceResolution | null>>;
+	resolveLegalForm(input: {
+		organizationId: OrganizationId;
+		jurisdictionCode: string;
+		legalFormCode: string;
+		effectiveDate: CanonicalDate;
+	}): Promise<Result<LegalFormReferenceResolution | null>>;
+	validateLegalFormCompatibility(input: {
+		organizationId: OrganizationId;
+		jurisdictionCode: string;
+		entityTypeCode: string;
+		legalFormCode: string;
+		effectiveDate: CanonicalDate;
+	}): Promise<Result<CompatibilityResolution>>;
+	resolveCountry(input: {
+		organizationId: OrganizationId;
+		countryCode: string;
+		effectiveDate?: CanonicalDate;
+	}): Promise<Result<ReferenceResolution | null>>;
+	resolveCurrency(input: {
+		organizationId: OrganizationId;
+		currencyCode: string;
+		effectiveDate?: CanonicalDate;
+	}): Promise<Result<CurrencyReferenceResolution | null>>;
+	resolveIdentifierAuthority(input: {
+		organizationId: OrganizationId;
+		jurisdictionCode: string;
+		authorityCode: string;
+		effectiveDate: CanonicalDate;
+	}): Promise<Result<IdentifierAuthorityResolution | null>>;
+	resolveActivityClassification(input: {
+		organizationId: OrganizationId;
+		classificationSystem: string;
+		activityCode: string;
+		effectiveDate: CanonicalDate;
+	}): Promise<Result<ActivityClassificationResolution | null>>;
+	resolveRegulator(input: {
+		organizationId: OrganizationId;
+		jurisdictionCode: string;
+		regulatorCode: string;
+		effectiveDate: CanonicalDate;
+	}): Promise<Result<ReferenceResolution | null>>;
+	resolveRegisteredActivity(input: {
+		organizationId: OrganizationId;
+		activityCode: string;
+		jurisdictionCode: string;
+		effectiveDate: CanonicalDate;
+	}): Promise<Result<ReferenceResolution | null>>;
+}>;
+
+export type DocumentObjectPort = Readonly<{
+	resolveDocumentObject(input: {
+		organizationId: OrganizationId;
+		documentObjectRef: DocumentObjectRef;
+	}): Promise<
+		Result<{ documentObjectRef: DocumentObjectRef; active: boolean } | null>
+	>;
+}>;
+
+export type TaxRegistrationReadModel = Readonly<{
 	id: string;
 	organizationId: OrganizationId;
-	entityType: string;
-	entityId: string;
-	title: string;
-	summary: string;
-	version: number;
-};
-
-export type SearchProjectionPort = {
-	upsert(document: SearchProjectionDocument): Promise<Result<void>>;
-	delete(input: {
-		organizationId: OrganizationId;
-		entityType: string;
-		entityId: string;
-	}): Promise<Result<void>>;
-};
-
-export type ReminderDispatchPort = {
-	dispatch(input: {
-		organizationId: OrganizationId;
-		legalCompanyId: LegalCompanyId;
-		reminderType: string;
-		dueDate: CanonicalDate;
-		dedupeKey: string;
-		summary: string;
-	}): Promise<Result<{ dispatchId: string }>>;
-};
-
-export type AccountingReferencePort = {
-	validateJournalReference(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		journalId: string;
-	}): Promise<Result<boolean>>;
-	validateAssetLedgerReference(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		assetLedgerId: string;
-	}): Promise<Result<boolean>>;
-};
-
-export type PaymentsReferencePort = {
-	validatePaymentAccountReference(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		paymentAccountId: string;
-	}): Promise<Result<boolean>>;
-	validatePaymentReference(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		paymentId: string;
-	}): Promise<Result<boolean>>;
-};
-
-export type SignatureEnvelopeReference = {
-	envelopeId: string;
-	status: "draft" | "sent" | "completed" | "declined" | "voided";
-	completedAt: Date | null;
-};
-
-export type SignatureEnvelopePort = {
-	getEnvelope(input: {
-		organizationId: OrganizationId;
-		actorUserId: UserId;
-		envelopeId: string;
-	}): Promise<Result<SignatureEnvelopeReference | null>>;
-};
-
-export type ComplianceRulePackReference = {
-	rulePackId: string;
+	partyId: string;
 	jurisdictionCode: string;
-	version: string;
-	effectiveFrom: CanonicalDate;
+	registrationType: string;
+	displayRegistrationNumber: string;
+	normalizedRegistrationNumber: string;
+	status: "draft" | "active" | "blocked" | "retired" | string;
+	effectiveFrom: CanonicalDate | null;
 	effectiveTo: CanonicalDate | null;
-	checksum: string;
-	signatureVerified: boolean;
-};
+}>;
 
-export type ComplianceRuleSourcePort = {
-	getRulePack(input: {
+/**
+ * Read-only Master Data tax-registration boundary.
+ *
+ * Corporate Administration may use this for display, reconciliation, duplicate
+ * warnings, and boundary guidance. This port intentionally exposes no create,
+ * update, transition, delete, or generic table-write capability for
+ * `md_tax_registration`.
+ */
+export type TaxRegistrationReadPort = Readonly<{
+	getTaxRegistrationById(input: {
 		organizationId: OrganizationId;
-		actorUserId: UserId;
+		taxRegistrationId: string;
+	}): Promise<Result<TaxRegistrationReadModel | null>>;
+	findTaxRegistrationsForParty(input: {
+		organizationId: OrganizationId;
+		partyId: string;
+		jurisdictionCode?: string;
+		asOf?: CanonicalDate;
+	}): Promise<Result<readonly TaxRegistrationReadModel[]>>;
+	findPotentialDuplicateTaxRegistration(input: {
+		organizationId: OrganizationId;
 		jurisdictionCode: string;
-		asOf: CanonicalDate;
-	}): Promise<Result<ComplianceRulePackReference | null>>;
-};
+		registrationType: string;
+		normalizedRegistrationNumber: string;
+		asOf?: CanonicalDate;
+	}): Promise<Result<TaxRegistrationReadModel | null>>;
+}>;
+
+export type PartyReference = Readonly<{
+	partyId: string;
+	kind: "organization" | "person";
+	active: boolean;
+}>;
+
+export type PartyReferencePort = Readonly<{
+	getOrganizationParty(input: {
+		organizationId: OrganizationId;
+		partyId: string;
+	}): Promise<Result<PartyReference | null>>;
+}>;
+
+export type StatutoryNameReconciliationFact = Readonly<{
+	organizationId: OrganizationId;
+	legalCompanyId: string;
+	masterDataPartyId: string;
+	statutoryName: string;
+	operationalPartyName: string;
+	comparisonStatus: "match" | "differs" | "unknown";
+	effectiveDate: CanonicalDate;
+}>;
+
+export type MasterDataReconciliationPort = Readonly<{
+	recordStatutoryNameComparison(
+		fact: StatutoryNameReconciliationFact,
+		options?: Readonly<{
+			transaction?: CorporateAdministrationTransactionContext;
+		}>,
+	): Promise<Result<void>>;
+}>;
+
+export type ApprovalDecisionPort = CorporateAdministrationApprovalDecisionPort;
+
+/**
+ * Atomic execution boundary for Corporate Administration commands.
+ *
+ * The adapter executes `work` exactly once. A returned `Result` is preserved
+ * unchanged so governed failures can trigger rollback without becoming thrown
+ * domain errors. Exceptions thrown by `work` or the infrastructure propagate
+ * as rejected promises; adapters must not translate them into domain conflicts.
+ *
+ * Nested transactions are prohibited. An invocation made inside an active
+ * `run` must be rejected rather than joined or converted to a savepoint.
+ *
+ * This package boundary intentionally exposes no Drizzle transaction, database
+ * client, or process-global transaction state.
+ */
+export type CorporateAdministrationTransactionStatement = (
+	database: unknown,
+) => unknown;
+
+export type CorporateAdministrationTransactionContext = Readonly<{
+	enqueue(statement: CorporateAdministrationTransactionStatement): void;
+	readonly statementCount: number;
+}>;
+
+export type CorporateAdministrationTransactionOutcome<TResult> = Readonly<{
+	result: Result<TResult>;
+	effect: "commit" | "rollback";
+}>;
+
+export type CorporateAdministrationTransactionPort = Readonly<{
+	nesting: "prohibited";
+	run<TResult>(
+		work: (
+			context: CorporateAdministrationTransactionContext,
+		) => Promise<CorporateAdministrationTransactionOutcome<TResult>>,
+	): Promise<Result<TResult>>;
+}>;
+
+export function commitCorporateAdministrationTransaction<TResult>(
+	result: Result<TResult>,
+): CorporateAdministrationTransactionOutcome<TResult> {
+	return { result, effect: "commit" };
+}
+
+export function rollbackCorporateAdministrationTransaction<TResult>(
+	result: Result<TResult>,
+): CorporateAdministrationTransactionOutcome<TResult> {
+	return { result, effect: "rollback" };
+}
+
+/**
+ * Internal durable outbox append boundary.
+ *
+ * CA-0.4 persists pending event envelopes only. This is not an event publisher,
+ * queue client, retry worker, or consumer contract.
+ */
+export type CorporateAdministrationOutboxPort = Readonly<{
+	append(
+		events: readonly CorporateAdministrationPendingEvent[],
+		options?: Readonly<{
+			transaction?: CorporateAdministrationTransactionContext;
+		}>,
+	): Promise<Result<void>>;
+}>;
+
+export const CORPORATE_ADMINISTRATION_AUDIT_OPERATION_TYPES = [
+	"CREATE",
+	"UPDATE",
+	"DELETE",
+	"READ",
+	"IMPORT",
+	"EXPORT",
+	"APPROVE",
+	"REJECT",
+] as const;
+
+export type CorporateAdministrationAuditOperationType =
+	(typeof CORPORATE_ADMINISTRATION_AUDIT_OPERATION_TYPES)[number];
+
+export const CORPORATE_ADMINISTRATION_AUDIT_OUTCOMES = [
+	"SUCCESS",
+	"FAILURE",
+] as const;
+
+export type CorporateAdministrationAuditOutcome =
+	(typeof CORPORATE_ADMINISTRATION_AUDIT_OUTCOMES)[number];
+
+export type CorporateAdministrationSafeAuditMetadataValue =
+	| string
+	| number
+	| boolean
+	| null;
+
+const FORBIDDEN_AUDIT_METADATA_KEY_PARTS = [
+	"password",
+	"secret",
+	"token",
+	"governmentid",
+	"dateofbirth",
+	"residentialaddress",
+	"bankaccount",
+	"documenturl",
+	"signedurl",
+	"signature",
+	"connectionstring",
+	"queryparameter",
+	"oldvalue",
+	"newvalue",
+	"before",
+	"after",
+	"payload",
+] as const;
+
+const safeAuditMetadataKeySchema = z
+	.string()
+	.min(1)
+	.max(64)
+	.regex(/^[a-z][a-z0-9_]*$/, "Audit metadata keys must use snake_case")
+	.refine((key) => {
+		const compact = key.replaceAll("_", "");
+		return !FORBIDDEN_AUDIT_METADATA_KEY_PARTS.some((part) =>
+			compact.includes(part),
+		);
+	}, "Audit metadata key is not permitted");
+
+const safeAuditMetadataValueSchema = z.union([
+	z.string().max(256),
+	z.number().finite(),
+	z.boolean(),
+	z.null(),
+]);
+
+export const corporateAdministrationSafeAuditMetadataSchema = z
+	.record(safeAuditMetadataKeySchema, safeAuditMetadataValueSchema)
+	.superRefine((metadata, context) => {
+		if (Object.keys(metadata).length > 20) {
+			context.addIssue({
+				code: "custom",
+				message: "Audit metadata may contain at most 20 fields",
+			});
+		}
+	})
+	.readonly();
+
+export const corporateAdministrationAuditFactInputSchema = z
+	.object({
+		organizationId: organizationIdSchema,
+		actorUserId: userIdSchema,
+		correlationId: correlationIdSchema,
+		causationId: causationIdSchema.optional(),
+		operationType: z.enum(CORPORATE_ADMINISTRATION_AUDIT_OPERATION_TYPES),
+		targetType: z.string().min(1).max(128),
+		targetId: z.string().min(1).max(128),
+		occurredAt: canonicalInstantSchema,
+		outcome: z.enum(CORPORATE_ADMINISTRATION_AUDIT_OUTCOMES),
+		safeMetadata: corporateAdministrationSafeAuditMetadataSchema.optional(),
+	})
+	.strict()
+	.readonly();
+
+export type CorporateAdministrationAuditFactInput = z.infer<
+	typeof corporateAdministrationAuditFactInputSchema
+>;
+
+/**
+ * Generic audit fact persistence boundary.
+ *
+ * Ownership is shared platform audit (`@afenda/audit`), not a CA table. Facts
+ * carry no raw sensitive data, before/after business snapshots, arbitrary
+ * payloads, external transport details, UI viewer state, or regulatory
+ * completeness claim.
+ */
+export type CorporateAdministrationAuditFactPort = Readonly<{
+	record(
+		input: CorporateAdministrationAuditFactInput,
+		options?: Readonly<{
+			transaction?: CorporateAdministrationTransactionContext;
+		}>,
+	): Promise<Result<{ id: string }>>;
+}>;
+
+/**
+ * CA-0.3 runtime infrastructure composition.
+ *
+ * Required ports only: clock, transaction, idempotency, audit fact, and durable
+ * outbox append. ID generation is
+ * owned by adapters and application composition, not this aggregate. No
+ * master-data, tax, approval, document, accounting, payments, search,
+ * reminder, signature, compliance-rule, or database implementation types are
+ * admitted. Presence of this contract does not activate commands, queries,
+ * event publication, workers, or external consumers.
+ */
+export type CorporateAdministrationRuntimePorts = Readonly<{
+	clock: ClockPort;
+	transaction: CorporateAdministrationTransactionPort;
+	idempotency: CorporateAdministrationIdempotencyPort;
+	audit: CorporateAdministrationAuditFactPort;
+	outbox: CorporateAdministrationOutboxPort;
+}>;
+
+function isObject(value: unknown): value is Record<PropertyKey, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function hasFunction(
+	value: Record<PropertyKey, unknown>,
+	key: PropertyKey,
+): boolean {
+	return typeof value[key] === "function";
+}
+
+const clockSchema = z.custom<ClockPort>(
+	(value) =>
+		isObject(value) && hasFunction(value, "now") && hasFunction(value, "today"),
+	{ message: "Corporate Administration clock port is required" },
+);
+
+const transactionSchema = z.custom<CorporateAdministrationTransactionPort>(
+	(value) =>
+		isObject(value) &&
+		value.nesting === "prohibited" &&
+		hasFunction(value, "run"),
+	{ message: "Corporate Administration transaction port is required" },
+);
+
+const idempotencySchema = z.custom<CorporateAdministrationIdempotencyPort>(
+	(value) =>
+		isObject(value) &&
+		hasFunction(value, "begin") &&
+		hasFunction(value, "complete") &&
+		hasFunction(value, "release"),
+	{ message: "Corporate Administration idempotency port is required" },
+);
+
+const outboxSchema = z.custom<CorporateAdministrationOutboxPort>(
+	(value) => isObject(value) && hasFunction(value, "append"),
+	{ message: "Corporate Administration outbox port is required" },
+);
+
+const auditSchema = z.custom<CorporateAdministrationAuditFactPort>(
+	(value) => isObject(value) && hasFunction(value, "record"),
+	{ message: "Corporate Administration audit fact port is required" },
+);
+
+const runtimePortsSchema = z
+	.object({
+		clock: clockSchema,
+		transaction: transactionSchema,
+		idempotency: idempotencySchema,
+		audit: auditSchema,
+		outbox: outboxSchema,
+	})
+	.strict()
+	.readonly();
+
+/**
+ * Fail-fast CA-0.3 composition validator.
+ *
+ * Requires every mandatory runtime port, rejects incomplete or unknown wiring,
+ * returns a readonly object that preserves supplied adapter identities, and
+ * never invokes port methods. It does not construct Drizzle adapters, read
+ * environment variables, import application composition roots, install
+ * in-memory production fallbacks, or invent allow-all authorization.
+ *
+ * Missing infrastructure must fail here, before any command begins.
+ */
+export function createCorporateAdministrationRuntime(
+	ports: unknown,
+): CorporateAdministrationRuntimePorts {
+	return runtimePortsSchema.parse(ports);
+}

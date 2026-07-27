@@ -35,14 +35,16 @@ export async function detectComplianceExpiryOperations(
 				await store.listEmployeesWithWorkEligibilityRisk({
 					organizationId: data.organizationId,
 					asOf: data.asOf,
+					withinDays,
 					page: DEFAULT_PAGE,
 					pageSize,
 				});
 			if (!workEligibilityRisks.ok) return workEligibilityRisks;
 
 			const overduePolicyAcknowledgements =
-				await store.listOutstandingPolicyAcknowledgements({
+				await store.listOverduePolicyAcknowledgements({
 					organizationId: data.organizationId,
+					asOf: data.asOf,
 					page: DEFAULT_PAGE,
 					pageSize,
 				});

@@ -1,17 +1,9 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import { readCurrentMigrationSql } from "./helpers/current-migration-sql";
 
-const migrationPath = fileURLToPath(
-	new URL(
-		"../drizzle/0029_hr_employment_contract_lineage.sql",
-		import.meta.url,
-	),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+const migrationSql = readCurrentMigrationSql();
 
 describe("HR employment contract lineage migration", () => {
 	it("is additive and adds lineage, reason, and partial reference uniqueness", () => {

@@ -2945,6 +2945,8 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 						ended AS (
 							UPDATE hr_work_assignment
 							SET ends_on = ${previousIsoDate(input.effectiveOn)},
+								successor_assignment_id = ${brandedAssignmentId.data},
+								transfer_movement_id = ${brandedMovementId.data},
 								version = ${nextAssignmentVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
@@ -2974,7 +2976,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								location.id, location.key, location.name,
 								cost_centre.id, cost_centre.key, cost_centre.name,
 								project.id, project.key, project.name,
-								ended.id, NULL, NULL,
+								ended.id, NULL, ${brandedMovementId.data},
 								${input.managerEmployeeIdSnapshot}, ${input.workCalendarIdSnapshot},
 								${input.effectiveOn}, NULL, 1,
 								${input.actorUserId}, ${input.actorUserId}
@@ -2997,21 +2999,6 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 								${input.actorUserId}, ${input.actorUserId}
 							FROM employment, position, ended, created_assignment
 							RETURNING *
-						),
-						linked_predecessor AS (
-							UPDATE hr_work_assignment
-							SET successor_assignment_id = created_assignment.id,
-								transfer_movement_id = mutated.id
-							FROM created_assignment, mutated, ended
-							WHERE hr_work_assignment.id = ended.id
-							RETURNING hr_work_assignment.id
-						),
-						linked_successor AS (
-							UPDATE hr_work_assignment
-							SET transfer_movement_id = mutated.id
-							FROM mutated, created_assignment
-							WHERE hr_work_assignment.id = created_assignment.id
-							RETURNING hr_work_assignment.id
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -3044,7 +3031,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 							FROM mutated
 							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited, outboxed, linked_predecessor, linked_successor
+						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
 				],
 			);

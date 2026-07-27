@@ -121,7 +121,7 @@ export default mergeConfig(
 					"payroll",
 					path.join(repoRoot, "packages/erp/payroll"),
 				),
-				nodeProject(
+				nodeProjectWithServerOnly(
 					"corporate-administration",
 					path.join(repoRoot, "packages/erp/corporate-administration"),
 				),

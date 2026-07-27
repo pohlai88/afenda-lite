@@ -41,8 +41,9 @@ Per-package `Initializing …/tsconfig.json` is **normal once per package per se
 | Rule | Detail |
 |------|--------|
 | `explorer.excludeGitIgnore` | **false** — use explicit excludes |
-| `files.exclude` | Build artifacts + `.cursor` / `.agents` (not `docs-V2`) |
-| `files.watcherExclude` | SSOT list incl. `docs-V2/**` watcher-only, drizzle, shadcn-studio, `.pnpm` |
+| `files.exclude` | Build artifacts + `.agents` (not `docs-V2` / `.cursor` — those stay visible) |
+| `files.watcherExclude` | SSOT list incl. `docs-V2/**` · `.cursor/**` watcher-only, drizzle, shadcn-studio, `.pnpm` |
+| `search.exclude` | Includes `.cursor` (and heavy trees) so Explorer can show them without search noise |
 
 ## Tailwind extension
 

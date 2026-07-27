@@ -10,6 +10,7 @@ This source set replaces the removed Corporate Administration implementation pla
 | `01-DOMAIN-MODEL-AND-DATA-AUTHORITY.md` | Aggregate map and proposed authoritative/operational table inventory |
 | `02-PACKAGE-ARCHITECTURE-AND-CONTRACTS.md` | Target source structure, dependencies, ports, permissions, events, errors and tests |
 | `03-ROADMAP-INDEX.md` | Nine phases and 47 sequential greenfield coding slices |
+| `FUTURE-PERMISSION-CATALOG.md` | Proposed permission names retained as a future design artifact, not a runtime catalog |
 | `phase/*.md` | Self-contained phase plans and paste-ready Codex prompts |
 | `90-VERIFICATION-ACCEPTANCE-AND-HANDOFF.md` | Fourteen-boundary matrix, verification lanes and required handoff |
 | `SOURCE-PLACEMENT.md` | Recommended locations inside the Afenda source tree |
@@ -39,3 +40,4 @@ authority and drift independently from this modular source.
 - Master Data remains the authority for parties, tax registrations and platform references.
 - Other ERP packages interact only through public ports, events or registered read contracts.
 - Every phase begins `OPEN`.
+- CA-0.1 runtime permissions remain empty until commands and queries activate specific permissions with tests.

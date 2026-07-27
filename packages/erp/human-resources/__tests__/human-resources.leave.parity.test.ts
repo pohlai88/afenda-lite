@@ -40,7 +40,10 @@ import {
 } from "./helpers/hr-parity-harness";
 import { mapActorToEmployee } from "./helpers/identity-resolver";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	humanResourcesCodeFromResult,
+	resultFailureMessage,
+} from "./helpers/result-details";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -115,7 +118,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(policy.ok).toBe(true);
+		expect(policy.ok, resultFailureMessage(policy)).toBe(true);
 		if (!policy.ok) return;
 
 		const published = await publishLeavePolicy(
@@ -297,7 +300,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(policy.ok).toBe(true);
+		expect(policy.ok, resultFailureMessage(policy)).toBe(true);
 		if (!policy.ok) return;
 
 		const published = await publishLeavePolicy(
@@ -396,6 +399,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 
 	it("rejects overlapping approve when a peer draft exists parity", async () => {
 		const ready = createHrParityHarness(adapter);
+		const managerUserId = `${MANAGER}-approve-overlap`;
 
 		const employee = await createEmployee(
 			{
@@ -439,7 +443,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 				organizationId: ORG,
 				actorUserId: ACTOR,
 				correlationId: `corr-policy-approve-overlap-${suffix}`,
-				code: `ANNUAL-APPROVE-OVERLAP-${suffix}`,
+				code: `APPR-OVERLAP-${suffix}`,
 				name: "Annual Leave Approve Overlap",
 				leaveType: "annual",
 				unit: "days",
@@ -451,7 +455,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(policy.ok).toBe(true);
+		expect(policy.ok, resultFailureMessage(policy)).toBe(true);
 		if (!policy.ok) return;
 
 		const published = await publishLeavePolicy(
@@ -548,7 +552,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 
 		const managerMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
-			userId: MANAGER,
+			userId: managerUserId,
 			employeeId: manager.data.id,
 			actorUserId: ACTOR,
 			effectiveFrom: "2025-01-01",
@@ -573,7 +577,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		const approved = await approveLeaveRequest(
 			{
 				organizationId: ORG,
-				actorUserId: MANAGER,
+				actorUserId: managerUserId,
 				correlationId: `corr-approve-overlap-blocked-${suffix}`,
 				requestId: submitted.data.id,
 				expectedVersion: submitted.data.version,
@@ -840,8 +844,8 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-ledger-cf-${suffix}`,
 				entitlementId: entitlement.data.id,
-				newPeriodStart: "2026-01-01",
-				newPeriodEnd: "2026-12-31",
+				newPeriodStart: "2099-01-01",
+				newPeriodEnd: "2099-12-31",
 				carriedQuantity: "2",
 				idempotencyKey: `idem-ledger-cf-${suffix}`,
 				expectedVersion: entitlement.data.version,
@@ -894,6 +898,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 
 	it("return, amend, resubmit, reject workflow parity", async () => {
 		const ready = createHrParityHarness(adapter);
+		const managerUserId = `${MANAGER}-return-reject`;
 
 		const employee = await createEmployee(
 			{
@@ -998,7 +1003,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 
 		const managerMapped = await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
-			userId: MANAGER,
+			userId: managerUserId,
 			employeeId: manager.data.id,
 			actorUserId: ACTOR,
 			effectiveFrom: "2025-01-01",
@@ -1053,14 +1058,14 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		const returned = await returnLeaveRequest(
 			{
 				organizationId: ORG,
-				actorUserId: MANAGER,
+				actorUserId: managerUserId,
 				correlationId: `corr-return-s73-${suffix}`,
 				requestId: submitted.data.id,
 				expectedVersion: submitted.data.version,
 			},
 			ready,
 		);
-		expect(returned.ok).toBe(true);
+		expect(returned.ok, resultFailureMessage(returned)).toBe(true);
 		if (!returned.ok) return;
 		expect(returned.data.status).toBe("returned");
 
@@ -1096,7 +1101,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		const rejected = await rejectLeaveRequest(
 			{
 				organizationId: ORG,
-				actorUserId: MANAGER,
+				actorUserId: managerUserId,
 				correlationId: `corr-reject-s73-${suffix}`,
 				requestId: resubmitted.data.id,
 				expectedVersion: resubmitted.data.version,
@@ -1110,6 +1115,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 
 	it("withdraw and cancel-approved balance parity", async () => {
 		const ready = createHrParityHarness(adapter);
+		const managerUserId = `${MANAGER}-withdraw-cancel`;
 
 		const employee = await createEmployee(
 			{
@@ -1256,7 +1262,7 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 
 		await mapActorToEmployee(ready.store, {
 			organizationId: ORG,
-			userId: MANAGER,
+			userId: managerUserId,
 			employeeId: manager.data.id,
 			actorUserId: ACTOR,
 			effectiveFrom: "2025-01-01",
@@ -1307,14 +1313,14 @@ function defineLeaveParitySuite(adapter: WorkforceStoreAdapter): void {
 		const approved = await approveLeaveRequest(
 			{
 				organizationId: ORG,
-				actorUserId: MANAGER,
+				actorUserId: managerUserId,
 				correlationId: `corr-cancel-approve-s73-${suffix}`,
 				requestId: cancelSubmitted.data.id,
 				expectedVersion: cancelSubmitted.data.version,
 			},
 			ready,
 		);
-		expect(approved.ok).toBe(true);
+		expect(approved.ok, resultFailureMessage(approved)).toBe(true);
 		if (!approved.ok) return;
 
 		const balanceAfterApprove = await getLeaveBalance(

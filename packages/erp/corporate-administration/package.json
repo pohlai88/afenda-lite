@@ -11,6 +11,18 @@
 		"./module-manifest": {
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"
+		},
+		"./adapters/drizzle": {
+			"types": "./src/adapters/drizzle/index.ts",
+			"default": "./src/adapters/drizzle/index.ts"
+		},
+		"./adapters/memory": {
+			"types": "./src/adapters/memory/index.ts",
+			"default": "./src/adapters/memory/index.ts"
+		},
+		"./testing": {
+			"types": "./src/testing/index.ts",
+			"default": "./src/testing/index.ts"
 		}
 	},
 	"scripts": {
@@ -23,13 +35,12 @@
 		"@afenda/audit": "workspace:*",
 		"@afenda/db": "workspace:*",
 		"@afenda/errors": "workspace:*",
-		"@afenda/events": "workspace:*",
-		"@afenda/master-data": "workspace:*",
 		"server-only": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@afenda/testing": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:"
 	}

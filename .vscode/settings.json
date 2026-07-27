@@ -122,7 +122,6 @@
 		"**/.source": true,
 		"**/.tmp": true,
 		"**/.vercel": true,
-		"**/.cursor": true,
 		"**/.agents": true,
 		"**/*.tsbuildinfo": true
 	},

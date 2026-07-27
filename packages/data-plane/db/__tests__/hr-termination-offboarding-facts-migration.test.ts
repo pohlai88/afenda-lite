@@ -1,27 +1,21 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import { readMigrationSqlForTables } from "./helpers/current-migration-sql";
 
-const migrationPath = fileURLToPath(
-	new URL(
-		"../drizzle/0047_hr_termination_offboarding_facts.sql",
-		import.meta.url,
-	),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+const migrationSql = readMigrationSqlForTables([
+	"hr_termination",
+	"hr_offboarding_access_revocation",
+	"hr_offboarding_payroll_handoff",
+]);
 
 describe("HR termination offboarding facts migration", () => {
 	it("is additive and extends termination plus offboarding fact tables", () => {
 		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
+		expect(migrationSql).toContain('"approved_at" timestamp with time zone');
 		expect(migrationSql).toContain(
-			'ALTER TABLE "hr_termination" ADD COLUMN "approved_at"',
-		);
-		expect(migrationSql).toContain(
-			'ALTER TABLE "hr_termination" ADD COLUMN "rehire_eligible"',
+			'"rehire_eligible" boolean DEFAULT true NOT NULL',
 		);
 		expect(migrationSql).toContain(
 			'CREATE TABLE "hr_offboarding_access_revocation"',

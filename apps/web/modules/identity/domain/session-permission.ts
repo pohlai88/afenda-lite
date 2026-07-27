@@ -31,6 +31,10 @@ export const PERMISSION_DENIED_MESSAGE: Record<
 		"You do not have permission to approve master-data change requests.",
 	"master_data.import_approve":
 		"You do not have permission to approve and apply master-data import.",
+	"corporate_administration.company.read":
+		"You do not have permission to read legal company drafts.",
+	"corporate_administration.company.manage":
+		"You do not have permission to register legal company drafts.",
 	"sales.order.create": "You do not have permission to create sales orders.",
 	"sales.order.update": "You do not have permission to update sales orders.",
 	"sales.order.post": "You do not have permission to post sales orders.",

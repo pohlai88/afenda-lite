@@ -108,6 +108,18 @@ export * from "./talent/career-plan";
 export * from "./talent/competency";
 export * from "./talent/critical-role-readiness";
 export * from "./talent/succession-plan";
+export type {
+	ProjectedCompetencyAssessment,
+	ProjectedEmployeeCompetencyProfile,
+	ProjectedSuccessionCandidate,
+	ProjectedSuccessionCandidateListPage,
+	ProjectedTalentCriticalRoleReadiness,
+	ProjectedTalentCriticalRoleReadinessListPage,
+	ProjectedTalentProfileAssessment,
+	ProjectedTalentProfileAssessmentListPage,
+	ProjectedTalentProfileMobility,
+	ProjectedTalentProfileMobilityListPage,
+} from "./talent/talent-field-projection";
 export * from "./talent/talent-pool";
 export * from "./talent/talent-profile";
 export * from "./talent/talent-profile-mobility";

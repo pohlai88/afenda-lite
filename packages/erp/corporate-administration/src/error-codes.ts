@@ -25,8 +25,13 @@ export const CORPORATE_ADMINISTRATION_ERROR_CODES = [
 	"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
 ] as const;
 
-export type CorporateAdministrationErrorCode =
-	(typeof CORPORATE_ADMINISTRATION_ERROR_CODES)[number];
+export const corporateAdministrationErrorCodeSchema = z.enum(
+	CORPORATE_ADMINISTRATION_ERROR_CODES,
+);
+
+export type CorporateAdministrationErrorCode = z.infer<
+	typeof corporateAdministrationErrorCodeSchema
+>;
 
 export const CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON = {
 	CORPORATE_ADMINISTRATION_VALIDATION_FAILED: "VALIDATION_ERROR",
@@ -53,47 +58,64 @@ export const CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON = {
 		"SERVICE_UNAVAILABLE",
 } as const satisfies Record<CorporateAdministrationErrorCode, ErrorCode>;
 
-export type CorporateAdministrationFailureMetadata = {
-	field?: string;
-	entityType?: string;
-	permission?: string;
-	expectedVersion?: number;
-	actualVersion?: number;
-	correlationId?: string;
-};
-
-const safeDetailNameSchema = z
+const safeMetadataValueSchema = z
 	.string()
 	.min(1)
 	.max(128)
-	.regex(/^[a-z][a-z0-9_.-]*$/);
+	.regex(
+		/^[A-Za-z0-9._:@/-]+$/,
+		"Failure metadata contains unsupported characters",
+	);
 
-const failureMetadataSchema = z
+const safeFieldPathSchema = z
+	.string()
+	.min(1)
+	.max(128)
+	.regex(
+		/^[A-Za-z_][A-Za-z0-9_]*(?:(?:\.[A-Za-z_][A-Za-z0-9_]*)|(?:\[\d+\]))*$/,
+		"Failure field path contains unsupported characters",
+	);
+
+const failureMetadataShape = {
+	field: safeFieldPathSchema.optional(),
+	entityType: safeMetadataValueSchema.optional(),
+	owner: safeMetadataValueSchema.optional(),
+	permission: safeMetadataValueSchema.optional(),
+	surface: safeMetadataValueSchema.optional(),
+	expectedVersion: z.number().int().nonnegative().optional(),
+	actualVersion: z.number().int().nonnegative().optional(),
+	correlationId: safeMetadataValueSchema.optional(),
+};
+
+export const corporateAdministrationFailureMetadataSchema = z
+	.object(failureMetadataShape)
+	.strict()
+	.readonly();
+
+export type CorporateAdministrationFailureMetadata = z.infer<
+	typeof corporateAdministrationFailureMetadataSchema
+>;
+
+export const corporateAdministrationFailureDetailsSchema = z
 	.object({
-		field: safeDetailNameSchema.optional(),
-		entityType: safeDetailNameSchema.optional(),
-		permission: safeDetailNameSchema.optional(),
-		expectedVersion: z.number().int().nonnegative().optional(),
-		actualVersion: z.number().int().nonnegative().optional(),
-		correlationId: z
-			.string()
-			.min(1)
-			.max(128)
-			.regex(/^[A-Za-z0-9._:-]+$/)
-			.optional(),
+		reason: corporateAdministrationErrorCodeSchema,
+		...failureMetadataShape,
 	})
-	.strict();
+	.strict()
+	.readonly();
 
-export type CorporateAdministrationFailureDetails =
-	CorporateAdministrationFailureMetadata & {
-		reason: CorporateAdministrationErrorCode;
-	};
+export type CorporateAdministrationFailureDetails = z.infer<
+	typeof corporateAdministrationFailureDetailsSchema
+>;
 
 export function corporateAdministrationErrorDetails(
 	reason: CorporateAdministrationErrorCode,
 	metadata: CorporateAdministrationFailureMetadata = {},
 ): CorporateAdministrationFailureDetails {
-	return { reason, ...failureMetadataSchema.parse(metadata) };
+	return corporateAdministrationFailureDetailsSchema.parse({
+		reason,
+		...metadata,
+	});
 }
 
 export function corporateAdministrationResultCode(

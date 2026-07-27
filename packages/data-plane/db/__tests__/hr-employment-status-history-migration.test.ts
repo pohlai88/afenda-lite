@@ -1,21 +1,19 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import { readMigrationSqlForTables } from "./helpers/current-migration-sql";
 
-const migrationPath = fileURLToPath(
-	new URL("../drizzle/0028_hr_employment_status_history.sql", import.meta.url),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+const migrationSql = readMigrationSqlForTables([
+	"hr_employment_status_history",
+	"hr_employment",
+]);
 
 describe("HR employment status history migration", () => {
 	it("is additive and creates append-only status history with range check", () => {
 		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
 		expect(migrationSql).toContain(
-			'CREATE TABLE IF NOT EXISTS "hr_employment_status_history"',
+			'CREATE TABLE "hr_employment_status_history"',
 		);
 		expect(migrationSql).toContain(
 			"hr_employment_status_history_org_employment_effective_idx",
@@ -31,7 +29,7 @@ describe("HR employment status history migration", () => {
 		);
 		expect(migrationSql).toContain("hr_employment_effective_range_ck");
 		expect(migrationSql).toContain(
-			'"ends_on" IS NULL OR "starts_on" <= "ends_on"',
+			'"hr_employment"."ends_on" IS NULL OR "hr_employment"."starts_on" <= "hr_employment"."ends_on"',
 		);
 	});
 });

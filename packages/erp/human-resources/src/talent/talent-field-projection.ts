@@ -19,6 +19,84 @@ import type {
 	TalentProfileMobilityListPage,
 } from "../types";
 
+export type ProjectedTalentProfileAssessment = Omit<
+	TalentProfileAssessment,
+	"classification" | "evidenceSummary"
+> & {
+	classification: string | null;
+	evidenceSummary: string | null;
+};
+
+export type ProjectedTalentProfileAssessmentListPage = Omit<
+	TalentProfileAssessmentListPage,
+	"assessments"
+> & {
+	assessments: ProjectedTalentProfileAssessment[];
+};
+
+export type ProjectedTalentProfileMobility = Omit<
+	TalentProfileMobility,
+	"preferenceCode" | "scopeDetail" | "evidenceSummary"
+> & {
+	preferenceCode: TalentProfileMobility["preferenceCode"] | null;
+	scopeDetail: string | null;
+	evidenceSummary: string | null;
+};
+
+export type ProjectedTalentProfileMobilityListPage = Omit<
+	TalentProfileMobilityListPage,
+	"mobilities"
+> & {
+	mobilities: ProjectedTalentProfileMobility[];
+};
+
+export type ProjectedTalentCriticalRoleReadiness = Omit<
+	TalentCriticalRoleReadiness,
+	"readiness" | "readinessEffectiveOn" | "evidenceSummary"
+> & {
+	readiness: TalentCriticalRoleReadiness["readiness"] | null;
+	readinessEffectiveOn: string | null;
+	evidenceSummary: string | null;
+};
+
+export type ProjectedTalentCriticalRoleReadinessListPage = Omit<
+	TalentCriticalRoleReadinessListPage,
+	"readinessRecords"
+> & {
+	readinessRecords: ProjectedTalentCriticalRoleReadiness[];
+};
+
+export type ProjectedCompetencyAssessment = Omit<
+	CompetencyAssessment,
+	"level" | "evidenceSource"
+> & {
+	level: number | null;
+	evidenceSource: string | null;
+};
+
+export type ProjectedEmployeeCompetencyProfile = Omit<
+	EmployeeCompetencyProfile,
+	"assessments"
+> & {
+	assessments: ProjectedCompetencyAssessment[];
+};
+
+export type ProjectedSuccessionCandidate = Omit<
+	SuccessionCandidate,
+	"readiness" | "readinessEffectiveOn" | "evidenceSummary"
+> & {
+	readiness: SuccessionCandidate["readiness"] | null;
+	readinessEffectiveOn: string | null;
+	evidenceSummary: string | null;
+};
+
+export type ProjectedSuccessionCandidateListPage = Omit<
+	SuccessionCandidateListPage,
+	"candidates"
+> & {
+	candidates: ProjectedSuccessionCandidate[];
+};
+
 export const TALENT_PROFILE_SENSITIVE_FIELD_NAMES = [
 	"currentClassification",
 ] as const;
@@ -46,22 +124,11 @@ export const SUCCESSION_CANDIDATE_SENSITIVE_FIELD_NAMES = [
 	"evidenceSummary",
 ] as const;
 
-function redactDeniedFields<T extends Record<string, unknown>>(
-	data: T,
+function isFieldDenied(
 	projection: HumanResourcesFieldProjection | undefined,
-	sensitiveFields: readonly string[],
-): T {
-	if (projection === undefined) {
-		return data;
-	}
-	const denied = new Set(projection.deniedFields);
-	const result = { ...data };
-	for (const field of sensitiveFields) {
-		if (denied.has(field) && field in result) {
-			(result as Record<string, unknown>)[field] = null;
-		}
-	}
-	return result;
+	field: string,
+): boolean {
+	return projection?.deniedFields.includes(field) ?? false;
 }
 
 export function projectTalentProfileFromDecision(
@@ -72,40 +139,39 @@ export function projectTalentProfileFromDecision(
 	if (profile === null) {
 		return null;
 	}
-	if (!options.includeSensitive) {
-		return { ...profile, currentClassification: null };
-	}
-	return redactDeniedFields(
-		profile,
-		projection,
-		TALENT_PROFILE_SENSITIVE_FIELD_NAMES,
-	);
+	return {
+		...profile,
+		currentClassification:
+			!options.includeSensitive ||
+			isFieldDenied(projection, "currentClassification")
+				? null
+				: profile.currentClassification,
+	};
 }
 
 export function projectTalentProfileAssessmentFromDecision(
 	assessment: TalentProfileAssessment,
 	projection: HumanResourcesFieldProjection | undefined,
 	options: { includeSensitive: boolean },
-): TalentProfileAssessment {
-	if (!options.includeSensitive) {
-		return {
-			...assessment,
-			classification: "",
-			evidenceSummary: "",
-		};
-	}
-	return redactDeniedFields(
-		assessment as unknown as Record<string, unknown>,
-		projection,
-		TALENT_PROFILE_ASSESSMENT_SENSITIVE_FIELD_NAMES,
-	) as TalentProfileAssessment;
+): ProjectedTalentProfileAssessment {
+	return {
+		...assessment,
+		classification:
+			!options.includeSensitive || isFieldDenied(projection, "classification")
+				? null
+				: assessment.classification,
+		evidenceSummary:
+			!options.includeSensitive || isFieldDenied(projection, "evidenceSummary")
+				? null
+				: assessment.evidenceSummary,
+	};
 }
 
 export function projectTalentProfileAssessmentListFromDecision(
 	page: TalentProfileAssessmentListPage,
 	projection: HumanResourcesFieldProjection | undefined,
 	options: { includeSensitive: boolean },
-): TalentProfileAssessmentListPage {
+): ProjectedTalentProfileAssessmentListPage {
 	return {
 		assessments: page.assessments.map((assessment) =>
 			projectTalentProfileAssessmentFromDecision(
@@ -121,27 +187,29 @@ export function projectTalentProfileMobilityFromDecision(
 	mobility: TalentProfileMobility,
 	projection: HumanResourcesFieldProjection | undefined,
 	options: { includeSensitive: boolean },
-): TalentProfileMobility {
-	if (!options.includeSensitive) {
-		return {
-			...mobility,
-			preferenceCode: "not_open",
-			scopeDetail: null,
-			evidenceSummary: "",
-		};
-	}
-	return redactDeniedFields(
-		mobility as unknown as Record<string, unknown>,
-		projection,
-		TALENT_PROFILE_MOBILITY_SENSITIVE_FIELD_NAMES,
-	) as TalentProfileMobility;
+): ProjectedTalentProfileMobility {
+	return {
+		...mobility,
+		preferenceCode:
+			!options.includeSensitive || isFieldDenied(projection, "preferenceCode")
+				? null
+				: mobility.preferenceCode,
+		scopeDetail:
+			!options.includeSensitive || isFieldDenied(projection, "scopeDetail")
+				? null
+				: mobility.scopeDetail,
+		evidenceSummary:
+			!options.includeSensitive || isFieldDenied(projection, "evidenceSummary")
+				? null
+				: mobility.evidenceSummary,
+	};
 }
 
 export function projectTalentProfileMobilityListFromDecision(
 	page: TalentProfileMobilityListPage,
 	projection: HumanResourcesFieldProjection | undefined,
 	options: { includeSensitive: boolean },
-): TalentProfileMobilityListPage {
+): ProjectedTalentProfileMobilityListPage {
 	return {
 		mobilities: page.mobilities.map((mobility) =>
 			projectTalentProfileMobilityFromDecision(mobility, projection, options),
@@ -153,27 +221,30 @@ export function projectCriticalRoleReadinessFromDecision(
 	readiness: TalentCriticalRoleReadiness,
 	projection: HumanResourcesFieldProjection | undefined,
 	options: { includeSensitive: boolean },
-): TalentCriticalRoleReadiness {
-	if (!options.includeSensitive) {
-		return {
-			...readiness,
-			readiness: "not_ready",
-			readinessEffectiveOn: "",
-			evidenceSummary: "",
-		};
-	}
-	return redactDeniedFields(
-		readiness as unknown as Record<string, unknown>,
-		projection,
-		CRITICAL_ROLE_READINESS_SENSITIVE_FIELD_NAMES,
-	) as TalentCriticalRoleReadiness;
+): ProjectedTalentCriticalRoleReadiness {
+	return {
+		...readiness,
+		readiness:
+			!options.includeSensitive || isFieldDenied(projection, "readiness")
+				? null
+				: readiness.readiness,
+		readinessEffectiveOn:
+			!options.includeSensitive ||
+			isFieldDenied(projection, "readinessEffectiveOn")
+				? null
+				: readiness.readinessEffectiveOn,
+		evidenceSummary:
+			!options.includeSensitive || isFieldDenied(projection, "evidenceSummary")
+				? null
+				: readiness.evidenceSummary,
+	};
 }
 
 export function projectCriticalRoleReadinessListFromDecision(
 	page: TalentCriticalRoleReadinessListPage,
 	projection: HumanResourcesFieldProjection | undefined,
 	options: { includeSensitive: boolean },
-): TalentCriticalRoleReadinessListPage {
+): ProjectedTalentCriticalRoleReadinessListPage {
 	return {
 		readinessRecords: page.readinessRecords.map((readiness) =>
 			projectCriticalRoleReadinessFromDecision(readiness, projection, options),
@@ -184,18 +255,20 @@ export function projectCriticalRoleReadinessListFromDecision(
 export function projectCompetencyAssessmentFromDecision(
 	assessment: CompetencyAssessment,
 	projection: HumanResourcesFieldProjection | undefined,
-): CompetencyAssessment {
-	return redactDeniedFields(
-		assessment as unknown as Record<string, unknown>,
-		projection,
-		TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
-	) as CompetencyAssessment;
+): ProjectedCompetencyAssessment {
+	return {
+		...assessment,
+		level: isFieldDenied(projection, "level") ? null : assessment.level,
+		evidenceSource: isFieldDenied(projection, "evidenceSource")
+			? null
+			: assessment.evidenceSource,
+	};
 }
 
 export function projectEmployeeCompetencyProfileFromDecision(
 	profile: EmployeeCompetencyProfile,
 	projection: HumanResourcesFieldProjection | undefined,
-): EmployeeCompetencyProfile {
+): ProjectedEmployeeCompetencyProfile {
 	return {
 		...profile,
 		assessments: profile.assessments.map((assessment) =>
@@ -207,21 +280,25 @@ export function projectEmployeeCompetencyProfileFromDecision(
 export function projectSuccessionCandidateFromDecision(
 	candidate: SuccessionCandidate,
 	projection: HumanResourcesFieldProjection | undefined,
-): SuccessionCandidate {
-	return redactDeniedFields(
-		candidate as unknown as Record<string, unknown>,
-		projection,
-		[
-			...SUCCESSION_CANDIDATE_SENSITIVE_FIELD_NAMES,
-			...TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
-		],
-	) as SuccessionCandidate;
+): ProjectedSuccessionCandidate {
+	return {
+		...candidate,
+		readiness: isFieldDenied(projection, "readiness")
+			? null
+			: candidate.readiness,
+		readinessEffectiveOn: isFieldDenied(projection, "readinessEffectiveOn")
+			? null
+			: candidate.readinessEffectiveOn,
+		evidenceSummary: isFieldDenied(projection, "evidenceSummary")
+			? null
+			: candidate.evidenceSummary,
+	};
 }
 
 export function projectSuccessionCandidateListFromDecision(
 	page: SuccessionCandidateListPage,
 	projection: HumanResourcesFieldProjection | undefined,
-): SuccessionCandidateListPage {
+): ProjectedSuccessionCandidateListPage {
 	return {
 		...page,
 		candidates: page.candidates.map((candidate) =>
@@ -232,13 +309,9 @@ export function projectSuccessionCandidateListFromDecision(
 
 export function projectCareerPlanFromDecision(
 	plan: CareerPlan,
-	projection: HumanResourcesFieldProjection | undefined,
+	_projection: HumanResourcesFieldProjection | undefined,
 ): CareerPlan {
-	return redactDeniedFields(
-		plan as unknown as Record<string, unknown>,
-		projection,
-		TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
-	) as CareerPlan;
+	return { ...plan };
 }
 
 export function projectCareerPlanWithActionsFromDecision(
@@ -266,13 +339,9 @@ export function projectCareerPlanListFromDecision(
 
 export function projectTalentPoolMemberFromDecision(
 	member: TalentPoolMember,
-	projection: HumanResourcesFieldProjection | undefined,
+	_projection: HumanResourcesFieldProjection | undefined,
 ): TalentPoolMember {
-	return redactDeniedFields(
-		member as unknown as Record<string, unknown>,
-		projection,
-		TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
-	) as TalentPoolMember;
+	return { ...member };
 }
 
 export function projectTalentPoolMemberListFromDecision(

@@ -7,6 +7,16 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 
+const TABLE_AGGREGATE_BY_TABLE = new Map([
+	["ca_legal_company", "legal_company"],
+	["ca_company_jurisdiction_profile", "legal_company"],
+	["ca_company_name", "legal_company"],
+	["ca_company_legal_form_history", "legal_company"],
+	["ca_company_identifier", "legal_company"],
+	["ca_company_financial_year", "legal_company"],
+	["ca_company_activity", "legal_company"],
+]);
+
 /**
  * @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest
  */
@@ -51,12 +61,16 @@ export function buildGeneratedRegisters(manifests, modulesDir, options) {
 		version: generatedAt,
 		source: "on-disk-module-manifests",
 		tables: sorted.flatMap((m) =>
-			m.persistence.mutationTables.map((table) => ({
-				table,
-				moduleId: m.id,
-				packageName: m.packageName,
-				schemaOwner: m.persistence.schemaOwner,
-			})),
+			m.persistence.mutationTables.map((table) => {
+				const aggregate = TABLE_AGGREGATE_BY_TABLE.get(table);
+				return {
+					table,
+					moduleId: m.id,
+					packageName: m.packageName,
+					schemaOwner: m.persistence.schemaOwner,
+					...(aggregate ? { aggregate } : {}),
+				};
+			}),
 		),
 	};
 
@@ -161,7 +175,7 @@ export function diffGeneratedRegisters(modulesDir, rendered, readText) {
 
 /** @param {string} text */
 function normalizeYamlText(text) {
-	return text.replace(/\r\n/g, "\n").trimEnd() + "\n";
+	return `${text.replace(/\r\n/g, "\n").trimEnd()}\n`;
 }
 
 export { dirname };

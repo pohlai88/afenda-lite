@@ -1070,16 +1070,12 @@ export function createMemoryWorkforcePlanningMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
-			return transitionHeadcountReservationStatus(
-				state,
-				this as WorkforcePlanningMemoryHost & MemoryWorkforcePlanningMethods,
-				{
-					...input,
-					nextStatus: "released",
-					ports,
-					meta,
-				},
-			);
+			return transitionHeadcountReservationStatus(state, this, {
+				...input,
+				nextStatus: "released",
+				ports,
+				meta,
+			});
 		},
 
 		async consumeHeadcountReservation(
@@ -1092,16 +1088,12 @@ export function createMemoryWorkforcePlanningMethods(
 			ports: MutationPorts,
 			meta: HumanResourcesMutationMeta,
 		): Promise<Result<HeadcountReservation>> {
-			return transitionHeadcountReservationStatus(
-				state,
-				this as WorkforcePlanningMemoryHost & MemoryWorkforcePlanningMethods,
-				{
-					...input,
-					nextStatus: "consumed",
-					ports,
-					meta,
-				},
-			);
+			return transitionHeadcountReservationStatus(state, this, {
+				...input,
+				nextStatus: "consumed",
+				ports,
+				meta,
+			});
 		},
 
 		async releaseActiveHeadcountReservationsForRequisition(
@@ -1122,7 +1114,7 @@ export function createMemoryWorkforcePlanningMethods(
 			for (const reservation of active) {
 				const released = await transitionHeadcountReservationStatus(
 					state,
-					this as WorkforcePlanningMemoryHost & MemoryWorkforcePlanningMethods,
+					this,
 					{
 						organizationId: input.organizationId,
 						reservationId: reservation.id,
@@ -1156,19 +1148,15 @@ export function createMemoryWorkforcePlanningMethods(
 			if (!active) {
 				return ok(undefined);
 			}
-			const consumed = await transitionHeadcountReservationStatus(
-				state,
-				this as WorkforcePlanningMemoryHost & MemoryWorkforcePlanningMethods,
-				{
-					organizationId: input.organizationId,
-					reservationId: active.id,
-					expectedVersion: active.version,
-					actorUserId: input.actorUserId,
-					nextStatus: "consumed",
-					ports,
-					meta,
-				},
-			);
+			const consumed = await transitionHeadcountReservationStatus(state, this, {
+				organizationId: input.organizationId,
+				reservationId: active.id,
+				expectedVersion: active.version,
+				actorUserId: input.actorUserId,
+				nextStatus: "consumed",
+				ports,
+				meta,
+			});
 			if (!consumed.ok) return consumed;
 			return ok(undefined);
 		},

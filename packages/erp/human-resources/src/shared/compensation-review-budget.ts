@@ -5,6 +5,14 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import type { CompensationReview, CompensationReviewCycle } from "../types";
+import {
+	addExactDecimals,
+	compareExactDecimals,
+	EXACT_DECIMAL_ZERO,
+	type ExactDecimal,
+	parseExactDecimal,
+	subtractExactDecimals,
+} from "./exact-decimal";
 
 /**
  * Cycle-pool increase model: each review consumes budget equal to the
@@ -14,9 +22,12 @@ import type { CompensationReview, CompensationReviewCycle } from "../types";
 export function computeCompensationIncreaseAmount(input: {
 	currentBaseAmount: string | null;
 	proposedBaseAmount: string;
-}): Result<number> {
-	const proposed = Number.parseFloat(input.proposedBaseAmount);
-	if (Number.isNaN(proposed) || proposed < 0) {
+}): Result<ExactDecimal> {
+	const proposed = parseExactDecimal(input.proposedBaseAmount);
+	if (
+		proposed === null ||
+		compareExactDecimals(proposed, EXACT_DECIMAL_ZERO) < 0
+	) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Invalid proposed compensation amount.",
@@ -25,21 +36,29 @@ export function computeCompensationIncreaseAmount(input: {
 	}
 	const current =
 		input.currentBaseAmount === null
-			? 0
-			: Number.parseFloat(input.currentBaseAmount);
-	if (Number.isNaN(current) || current < 0) {
+			? EXACT_DECIMAL_ZERO
+			: parseExactDecimal(input.currentBaseAmount);
+	if (
+		current === null ||
+		compareExactDecimals(current, EXACT_DECIMAL_ZERO) < 0
+	) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Invalid current compensation amount.",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
 		);
 	}
-	return ok(Math.max(0, proposed - current));
+	const increase = subtractExactDecimals(proposed, current);
+	return ok(
+		compareExactDecimals(increase, EXACT_DECIMAL_ZERO) > 0
+			? increase
+			: EXACT_DECIMAL_ZERO,
+	);
 }
 
-function parseBudgetAmount(amount: string): Result<number> {
-	const parsed = Number.parseFloat(amount);
-	if (Number.isNaN(parsed) || parsed < 0) {
+function parseBudgetAmount(amount: string): Result<ExactDecimal> {
+	const parsed = parseExactDecimal(amount);
+	if (parsed === null || compareExactDecimals(parsed, EXACT_DECIMAL_ZERO) < 0) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Invalid review cycle budget amount.",
@@ -92,7 +111,7 @@ export function assertCompensationReviewWithinBudget(input: {
 	});
 	if (!proposedIncrease.ok) return proposedIncrease;
 
-	let committedIncrease = 0;
+	let committedIncrease = EXACT_DECIMAL_ZERO;
 	for (const other of input.otherCycleReviews) {
 		if (other.id === review.id) continue;
 		if (other.status !== "recorded" && other.status !== "finalized") continue;
@@ -111,10 +130,14 @@ export function assertCompensationReviewWithinBudget(input: {
 			proposedBaseAmount: other.proposedBaseAmount,
 		});
 		if (!otherIncrease.ok) return otherIncrease;
-		committedIncrease += otherIncrease.data;
+		committedIncrease = addExactDecimals(committedIncrease, otherIncrease.data);
 	}
 
-	if (committedIncrease + proposedIncrease.data > budgetTotal.data) {
+	const totalIncrease = addExactDecimals(
+		committedIncrease,
+		proposedIncrease.data,
+	);
+	if (compareExactDecimals(totalIncrease, budgetTotal.data) > 0) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Compensation recommendation exceeds review cycle budget.",

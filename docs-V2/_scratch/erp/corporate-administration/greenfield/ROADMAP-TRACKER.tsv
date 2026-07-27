@@ -1,9 +1,9 @@
 phase	slice_id	title	depends_on	status	goal
 0	CA-0.1	Authority, catalog and package scaffold	None	DONE	Register the greenfield bounded context before domain coding and create a minimal buildable package with no fabricated behavior.
-0	CA-0.2	Core contracts, permissions, errors and reference ports	CA-0.1	DONE	Define the stable greenfield contracts used by every later vertical.
-0	CA-0.3	Database foundation and atomic mutation kernel	CA-0.2	OPEN	Build the same-transaction infrastructure required before material statutory writes.
-0	CA-0.4	First thin vertical — draft legal-company registration	CA-0.3	OPEN	Prove the complete package-to-database-to-Action-to-UI path with a real, deliberately narrow domain operation.
-1	CA-1.1	Legal-company registry and jurisdiction profile	Phase 0 DONE	OPEN	Expand the thin draft root into a jurisdiction-aware legal-company aggregate.
+0	CA-0.2	Core contracts and future catalog design	CA-0.1	DONE	Define stable greenfield contracts and retain future authorization design without activating unused permissions or ports.
+0	CA-0.3	Runtime composition and mutation contracts	CA-0.2	DONE	Define the fail-fast composed runtime and package-neutral transaction, idempotency, audit and pending-event contracts used by durable adapters.
+0	CA-0.4	Durable infrastructure adapters and package boundaries	CA-0.3	DONE	Persist infrastructure facts durably while proving that Corporate Administration still exposes no business capability.
+1	CA-1.1	Legal-company registry and jurisdiction profile	Phase 0 DONE	DONE	Establish the jurisdiction-aware legal-company aggregate as the first Corporate Administration business capability.
 1	CA-1.2	Effective legal names and legal forms	CA-1.1	OPEN	Record multilingual statutory names and legal-form history without rewriting the party master.
 1	CA-1.3	Corporate identifiers, financial years and registered activities	CA-1.2	OPEN	Complete the remaining legal-company identity facts while protecting Master Data tax authority.
 1	CA-1.4	Registered offices, legal establishments and premises	CA-1.3	OPEN	Distinguish statutory establishments from physical premises and preserve legal-address history.

@@ -1,43 +1,74 @@
 # `@afenda/corporate-administration`
 
-Corporate Administration is the organization-scoped statutory and governance bounded context. CA-0.2 supplies its stable public contracts while the module lifecycle remains **scaffolded**. It exposes no business command, query, emitted event, persistence adapter, Action, route, or UI workflow.
+Corporate Administration is an organization-scoped greenfield bounded context.
+Phase 0 is closed. The package remains governed by the greenfield roadmap under
+`docs-V2/_scratch/erp/corporate-administration/greenfield`.
 
-## Authority and ownership
+## Slice position
 
-- Package identity: `@afenda/corporate-administration`
-- Module id/category/band: `corporate-administration` / `erp` / `R1-F`
-- Activation: `organization_toggle`
-- Reserved table prefix: `ca_`
-- Schema host: `@afenda/db`; future `ca_*` business writes remain sole-owned by this package
-- Master Data remains sole owner of parties, party roles, tax registrations, addresses, contacts, and `ref_*` reference data
+- CA-0.1 established package identity, authority, exports and the reserved
+  `ca_*` namespace.
+- CA-0.2 established canonical kernel contracts and fail-closed execution
+  context contracts.
+- CA-0.3 established application runtime infrastructure.
+- CA-0.4 established durable idempotency, transaction, shared audit/outbox and
+  the first narrow draft-company persistence path. Required Neon parity ran on
+  demo branch `br-fragrant-morning-aoywrnzr`.
+- CA-1.1 established legal-company registry and jurisdiction-profile behavior.
+- CA-1.2 established effective legal names and legal forms.
+- CA-1.3 established authority-aware identifiers, financial-year history and
+  activity classifications.
+- CA-1.4 implements registered offices, legal establishments and premises.
+  Its CA-owned lanes are green, but phase closure remains pending the
+  repository-wide web lint gate recorded in `CA-1.4-EVIDENCE.md`.
 
-The package owns Corporate Administration identities and contracts. It does not move money, post journals, own workforce relationships, store document binaries, or implement a generic approval/workflow engine.
+## Lifecycle
 
-## CA-0.2 public surface
+The module manifest must remain:
 
-The root barrel exposes consumer-safe contracts for:
+```ts
+lifecycle: "scaffolded";
+activationMode: "organization_toggle";
+```
 
-- CA-owned, trusted-context, and opaque external-reference brands;
-- canonical dates, decimal strings, codes, effective ranges, cursor pagination, canonical JSON, and SHA-256 fingerprints;
-- trusted command/query contexts and fail-closed authorization;
-- 52 `corporate_administration.*` permission codes and 21 semantic failure reasons;
-- versioned `corporate_administration.<aggregate>.<past-tense-action>.v<version>` event identities;
-- required and optional reference/integration ports.
+Durable persistence and draft registration do not activate the full Corporate
+Administration module or imply incorporation/production legal capability.
 
-The only package export subpaths are `.` and `./module-manifest`. Command and query registries, their authorization maps, and `events.emits` remain empty.
+## Execution model
 
-## Boundaries
+Corporate Administration uses the composed-service model. Runtime ports are
+constructed at the app composition root and validated by the package. Per-call
+options carry request facts only: organization, actor, correlation,
+authorization, idempotency key and optional causation.
 
-Master Data identities are reused from its public root and foreign facts are resolved through tenant-explicit ports. Accounting and Payments are injected read/reference contracts with no peer-package dependency or write capability. Search projection never authorizes, and document-object contracts expose metadata, checksum, availability, and malware state only.
+The package owns `ca_*` mutation tables only through its stores and adapters.
+Shared audit and pending-event infrastructure remains platform-owned.
 
-CA-0.2 adds no tables, migrations, stores, adapters, business operations, emitted events, Actions, routes, or UI. Those surfaces belong to later approved slices.
+## Public exports
 
-## Verify
+- `@afenda/corporate-administration` — package contracts, domain commands,
+  queries and runtime contracts
+- `@afenda/corporate-administration/module-manifest` — governed manifest
+- `@afenda/corporate-administration/adapters/drizzle` — production adapter
+  factories for app composition
+- `@afenda/corporate-administration/adapters/memory` — non-production parity
+  stores
 
-```bash
-pnpm --filter @afenda/corporate-administration check
-pnpm --filter @afenda/db test -- corporate-administration-retirement.test.ts
-pnpm test:validate-modules
-pnpm validate:modules:write
-pnpm governance:packages
+Consumers must not deep-import `src/*`.
+
+## Validation
+
+```powershell
+pnpm --filter @afenda/corporate-administration lint
+pnpm --filter @afenda/corporate-administration typecheck
+pnpm --filter @afenda/corporate-administration test
+```
+
+Required Neon parity uses the documented CA demo branch from `.env.local`:
+
+```powershell
+$env:DATABASE_URL=$env:NEON_CA_0_4_DEMO_DATABASE_URL
+$env:AFENDA_DATABASE_TEST_TARGET="demo"
+$env:REQUIRE_DATABASE_TESTS="1"
+pnpm --filter @afenda/corporate-administration test
 ```

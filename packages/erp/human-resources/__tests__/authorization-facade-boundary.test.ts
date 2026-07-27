@@ -87,6 +87,22 @@ function findImportViolations(input: {
 	return violations.toSorted();
 }
 
+function findForbiddenSourceMarkers(input: {
+	files: readonly string[];
+	markers: readonly string[];
+}): string[] {
+	const violations: string[] = [];
+	for (const relative of input.files) {
+		const source = readFileSync(path.join(srcRoot, relative), "utf8");
+		for (const marker of input.markers) {
+			if (source.includes(marker)) {
+				violations.push(`${relative} -> ${marker}`);
+			}
+		}
+	}
+	return violations.toSorted();
+}
+
 describe("@afenda/human-resources authorization facade boundary (Slice 2.10)", () => {
 	it("does not allow domains to bypass the authorization facade", () => {
 		const violations = findImportViolations({
@@ -106,6 +122,22 @@ describe("@afenda/human-resources authorization facade boundary (Slice 2.10)", (
 				"./subject-aware-authorization",
 			],
 			allowedFiles: [],
+		});
+
+		expect(violations).toEqual([]);
+	});
+
+	it("does not allow WFP or compensation runners to restore parity shells", () => {
+		const violations = findForbiddenSourceMarkers({
+			files: [
+				"shared/workforce-planning-command.ts",
+				"shared/compensation-command.ts",
+			],
+			markers: [
+				"parityResourceKind",
+				"createParityResourceShell",
+				"privilegedActor",
+			],
 		});
 
 		expect(violations).toEqual([]);

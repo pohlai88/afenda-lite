@@ -26,6 +26,7 @@ import type {
 } from "../types";
 import {
 	CRITICAL_ROLE_READINESS_SENSITIVE_FIELD_NAMES,
+	type ProjectedTalentCriticalRoleReadinessListPage,
 	projectCriticalRoleReadinessListFromDecision,
 } from "./talent-field-projection";
 
@@ -99,7 +100,7 @@ export async function recordCriticalRoleReadiness(
 export async function listCriticalRoleReadiness(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<TalentCriticalRoleReadinessListPage>> {
+): Promise<Result<ProjectedTalentCriticalRoleReadinessListPage>> {
 	const parsed = parseHumanResourcesInput(
 		listCriticalRoleReadinessInputSchema,
 		input,

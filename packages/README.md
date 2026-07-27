@@ -8,8 +8,8 @@ For engineers extending Platform or Surfaces; each package README is the consume
 
 **Catalog version:** `packages-catalog/2026-07-26`
 **Layout state:** Phase 1–3 complete; one-level category nesting active (`packages/<category>/<name>`).  
-**ERP promotion state:** Phase 4 complete; Corporate Administration greenfield CA-0.1 is scaffolded with no domain capability.
-**Current roadmap:** See [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) (Corporate Administration CA-0.2 is next after the completed CA-0.1 scaffold).
+**ERP promotion state:** Phase 4 complete; Corporate Administration CA-0.3 remains scaffolded with runtime contracts and no domain capability.
+**Current roadmap:** See [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) (next governed delivery area: Phase 1 legal-company registry).
 **Production evidence:** Catalog status is valid only for the repository commit whose package-governance gate passes. See [docs-V2/monorepo](../docs-V2/monorepo/README.md) § Phase status.  
 **Last disk verification:** `pnpm governance:packages` OK · `2026-07-26` working tree (stamp commit SHA after merge).
 
@@ -114,7 +114,7 @@ Memory adapters for rate-limit and cache are test and local-development only unl
 | [`@afenda/accounting`](./erp/accounting/README.md) | Node | Active | Journal / journal line / ledger posting / accounting period / CoA / posting profile sole mutator (ARCH-006) |
 | [`@afenda/human-resources`](./erp/human-resources/README.md) | Node | Scaffolded | Workforce relationship sole mutator (`hr_*`) |
 | [`@afenda/payroll`](./erp/payroll/README.md) | Node | Scaffolded | Payroll calculation sole mutator (`payroll_*`) |
-| [`@afenda/corporate-administration`](./erp/corporate-administration/README.md) | Node | Scaffolded | Statutory company and governance owner; `ca_*` prefix reserved, no CA-0.1 domain capability |
+| [`@afenda/corporate-administration`](./erp/corporate-administration/README.md) | Node | Scaffolded | CA-0.4 durable infrastructure implemented; Neon verification blocked |
 
 Peer R1-F packages do not import each other by default. ERP peer collaboration occurs only through:
 

@@ -1,20 +1,17 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import { readMigrationSqlForTables } from "./helpers/current-migration-sql";
 
-const migrationPath = fileURLToPath(
-	new URL(
-		"../drizzle/0032_hr_organization_structure_lineage.sql",
-		import.meta.url,
-	),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+const migrationSql = readMigrationSqlForTables([
+	"hr_department_structure_version",
+	"hr_job_definition_version",
+	"hr_position_definition_version",
+	"hr_reporting_line",
+]);
 
 describe("HR organization structure lineage migration", () => {
-	it("is additive and creates lineage tables with backfill", () => {
+	it("is additive and creates lineage tables in the empty-database baseline", () => {
 		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
 		expect(migrationSql).toContain(
@@ -25,13 +22,7 @@ describe("HR organization structure lineage migration", () => {
 			'CREATE TABLE "hr_position_definition_version"',
 		);
 		expect(migrationSql).toContain('"supersedes_structure_version_id" uuid');
-		expect(migrationSql).toContain(
-			'INSERT INTO "hr_department_structure_version"',
-		);
-		expect(migrationSql).toContain('INSERT INTO "hr_job_definition_version"');
-		expect(migrationSql).toContain(
-			'INSERT INTO "hr_position_definition_version"',
-		);
+		expect(migrationSql).toContain('"supersedes_definition_version_id" uuid');
 	});
 
 	it("adds reporting-line supersession links and constrains one open segment", () => {

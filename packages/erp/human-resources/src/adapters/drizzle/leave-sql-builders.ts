@@ -20,10 +20,31 @@ import {
 	valueSnapshotJson,
 } from "./leave-transactions";
 
-function activeLeaveOverlapStatusSqlList(): string {
-	return ACTIVE_LEAVE_OVERLAP_STATUSES.map((status) => `'${status}'`).join(
-		", ",
-	);
+function activeLeaveOverlapStatusSqlList(includeDraft: boolean): string {
+	return ACTIVE_LEAVE_OVERLAP_STATUSES.filter(
+		(status) => includeDraft || status !== "draft",
+	)
+		.map((status) => `'${status}'`)
+		.join(", ");
+}
+
+/**
+ * Acquire the employee-scoped booking lock as its own transaction statement.
+ * Under READ COMMITTED, the following mutation statement then receives a fresh
+ * snapshot after any competing booking transaction commits.
+ */
+export function buildLeaveEmployeeBookingLockSql(params: {
+	organizationId: string;
+	requestId: string;
+}): string {
+	return `
+		SELECT pg_advisory_xact_lock(
+			hashtext(organization_id || ':' || employee_id)
+		)
+		FROM hr_leave_request
+		WHERE id = '${params.requestId}'
+			AND organization_id = '${params.organizationId}'
+	`;
 }
 
 /**
@@ -33,8 +54,9 @@ function activeLeaveOverlapStatusSqlList(): string {
 export function buildLeaveOverlapGuardCtes(params: {
 	organizationId: string;
 	requestId: string;
+	includeDraft: boolean;
 }): string {
-	const statuses = activeLeaveOverlapStatusSqlList();
+	const statuses = activeLeaveOverlapStatusSqlList(params.includeDraft);
 	return `
 		employee_booking_lock AS (
 			SELECT pg_advisory_xact_lock(
@@ -66,6 +88,7 @@ export function buildLeaveOverlapGuardCtes(params: {
 						OR candidate.day_portion = peer_seg.day_portion
 					)
 			) AS found
+			FROM employee_booking_lock
 		),
 	`;
 }
@@ -128,6 +151,7 @@ export function buildSubmitLeaveRequestSql(params: {
 		${buildLeaveOverlapGuardCtes({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
+			includeDraft: false,
 		})}
 		updated_request AS (
 			UPDATE hr_leave_request
@@ -154,7 +178,8 @@ export function buildSubmitLeaveRequestSql(params: {
 			updated_request.*
 		FROM overlap
 		LEFT JOIN updated_request ON NOT (SELECT found FROM overlap)
-		${params.eventType ? ", audited, outboxed" : ", audited"}
+		LEFT JOIN audited ON true
+		${params.eventType ? "LEFT JOIN outboxed ON true" : ""}
 	`;
 }
 
@@ -257,6 +282,7 @@ export function buildApproveLeaveRequestSql(params: {
 		${buildLeaveOverlapGuardCtes({
 			organizationId: params.organizationId,
 			requestId: params.requestId,
+			includeDraft: true,
 		})}
 		entitlement_lock AS (
 			SELECT ent.* FROM hr_leave_entitlement ent
@@ -351,7 +377,8 @@ export function buildApproveLeaveRequestSql(params: {
 		LEFT JOIN updated_request ON NOT (SELECT found FROM overlap)
 		LEFT JOIN consumption_adjustment ON NOT (SELECT found FROM overlap)
 		LEFT JOIN approval_decision ON NOT (SELECT found FROM overlap)
-		, audited, outboxed
+		LEFT JOIN audited ON true
+		LEFT JOIN outboxed ON true
 	`;
 }
 
@@ -952,7 +979,7 @@ export function buildCarryForwardEntitlementSql(params: {
 			payload: `'${eventPayloadJson({
 				organizationId: params.organizationId,
 				entityType: "hr_leave_entitlement",
-				entityId: params.newEntitlementId,
+				entityId: params.sourceEntitlementId,
 				actorId: params.actorUserId,
 				correlationId: params.correlationId,
 			})}'`,
@@ -1003,10 +1030,10 @@ export function buildExpireEntitlementSql(params: {
 					actorId: params.actorUserId,
 					correlationId: params.correlationId,
 				})}'`,
-				fromCte: "updated_entitlement",
+				fromCte: "expiry_adjustment",
 				selectFields: {
 					organizationId: "organization_id",
-					actorUserId: `'${params.actorUserId}'`,
+					actorUserId: "created_by",
 				},
 			})
 		: "";

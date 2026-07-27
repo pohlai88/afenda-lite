@@ -830,10 +830,11 @@ export async function postFinancialSourceEvent(
 		});
 		if (!ledgerAccounts.ok) return ledgerAccounts;
 
+		const accountRoleMapping = roleMapping.data;
 		const targetAccount = ledgerAccounts.data.find(
-			(a) => a.id === roleMapping.data!.ledgerAccountId,
+			(a) => a.id === accountRoleMapping.ledgerAccountId,
 		);
-		if (!targetAccount || targetAccount.status !== "active") {
+		if (targetAccount?.status !== "active") {
 			await store.createPostingException({
 				organizationId: d.organizationId,
 				sourceModule: d.sourceModule,

@@ -38,7 +38,11 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import type { HumanResourcesRetentionClassification } from "../../privacy";
+import {
+	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
+	type HumanResourcesRetentionClassification,
+} from "../../privacy";
+import { workerStatusSchema } from "../../schemas/workforce-foundation";
 import {
 	eventPayloadJson,
 	fieldChangeJson,
@@ -147,116 +151,97 @@ type WorkerSqlRow = {
 	updated_at: Date;
 };
 
-type PersonIdentityVersionSqlRow = {
-	id: string;
-	organization_id: string;
-	person_id: string;
-	legal_name: string;
-	effective_from: string;
-	effective_to: string | null;
-	supersedes_identity_version_id: string | null;
-	lineage_status: string;
-	reason_code: string;
-	evidence_ref: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
+type PersonIdentityVersionSqlRow = typeof hrPersonIdentityVersion.$inferSelect;
 
-type WorkerClassificationVersionSqlRow = {
-	id: string;
-	organization_id: string;
-	worker_id: string;
-	worker_type: string;
-	employee_id: string | null;
-	worker_status: string;
-	effective_from: string;
-	effective_to: string | null;
-	supersedes_classification_version_id: string | null;
-	lineage_status: string;
-	reason_code: string;
-	evidence_ref: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
+type WorkerClassificationVersionSqlRow =
+	typeof hrWorkerClassificationVersion.$inferSelect;
+
+const HUMAN_RESOURCES_RETENTION_CLASSIFICATION_SET = new Set<string>(
+	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
+);
+
+function isHumanResourcesRetentionClassification(
+	value: string,
+): value is HumanResourcesRetentionClassification {
+	return HUMAN_RESOURCES_RETENTION_CLASSIFICATION_SET.has(value);
+}
 
 function mapPersonIdentityVersionRow(
 	row: PersonIdentityVersionSqlRow,
 ): Result<PersonIdentityVersion> {
-	const personId = parseHumanResourcesPersonId(row.person_id);
+	const personId = parseHumanResourcesPersonId(row.personId);
 	if (!personId.ok) {
 		return personId;
 	}
 	return ok({
 		id: row.id,
-		organizationId: row.organization_id,
+		organizationId: row.organizationId,
 		personId: personId.data,
-		legalName: row.legal_name,
-		effectiveFrom: row.effective_from,
-		effectiveTo: row.effective_to,
-		supersedesIdentityVersionId: row.supersedes_identity_version_id,
-		lineageStatus:
-			row.lineage_status === "superseded" ? "superseded" : "active",
-		reasonCode: row.reason_code,
-		evidenceRef: row.evidence_ref,
+		legalName: row.legalName,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		supersedesIdentityVersionId: row.supersedesIdentityVersionId,
+		lineageStatus: row.lineageStatus === "superseded" ? "superseded" : "active",
+		reasonCode: row.reasonCode,
+		evidenceRef: row.evidenceRef,
 		version: row.version,
-		createdBy: row.created_by,
-		updatedBy: row.updated_by,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
 	});
 }
 
 function mapWorkerClassificationVersionRow(
 	row: WorkerClassificationVersionSqlRow,
 ): Result<WorkerClassificationVersion> {
-	const workerId = parseHumanResourcesWorkerId(row.worker_id);
+	const workerId = parseHumanResourcesWorkerId(row.workerId);
 	if (!workerId.ok) {
 		return workerId;
 	}
 	const employeeId =
-		row.employee_id === null
+		row.employeeId === null
 			? null
-			: parseHumanResourcesEmployeeId(row.employee_id);
+			: parseHumanResourcesEmployeeId(row.employeeId);
 	if (employeeId !== null && !employeeId.ok) {
 		return employeeId;
 	}
 	if (
-		row.worker_type !== "employee" &&
-		row.worker_type !== "contractor" &&
-		row.worker_type !== "contingent_worker" &&
-		row.worker_type !== "intern"
+		row.workerType !== "employee" &&
+		row.workerType !== "contractor" &&
+		row.workerType !== "contingent_worker" &&
+		row.workerType !== "intern"
 	) {
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid worker type in classification storage",
 		);
 	}
+	const workerStatus = workerStatusSchema.safeParse(row.workerStatus);
+	if (!workerStatus.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid worker status in classification storage",
+		);
+	}
 	return ok({
 		id: row.id,
-		organizationId: row.organization_id,
+		organizationId: row.organizationId,
 		workerId: workerId.data,
-		workerType: row.worker_type,
+		workerType: row.workerType,
 		employeeId: employeeId === null ? null : employeeId.data,
-		workerStatus:
-			row.worker_status as WorkerClassificationVersion["workerStatus"],
-		effectiveFrom: row.effective_from,
-		effectiveTo: row.effective_to,
-		supersedesClassificationVersionId: row.supersedes_classification_version_id,
-		lineageStatus:
-			row.lineage_status === "superseded" ? "superseded" : "active",
-		reasonCode: row.reason_code,
-		evidenceRef: row.evidence_ref,
+		workerStatus: workerStatus.data,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		supersedesClassificationVersionId: row.supersedesClassificationVersionId,
+		lineageStatus: row.lineageStatus === "superseded" ? "superseded" : "active",
+		reasonCode: row.reasonCode,
+		evidenceRef: row.evidenceRef,
 		version: row.version,
-		createdBy: row.created_by,
-		updatedBy: row.updated_by,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
 	});
 }
 
@@ -265,18 +250,40 @@ function mapPersonRow(row: PersonSqlRow): Result<Person> {
 	if (!id.ok) {
 		return id;
 	}
+	if (!isHumanResourcesRetentionClassification(row.privacy_classification)) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid person privacy classification in storage",
+		);
+	}
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		legalName: row.legal_name,
 		preferredName: row.preferred_name,
-		privacyClassification:
-			row.privacy_classification as HumanResourcesRetentionClassification,
+		privacyClassification: row.privacy_classification,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
+	});
+}
+
+function mapPersonSelectRow(row: typeof hrPerson.$inferSelect): Result<Person> {
+	return mapPersonRow({
+		id: row.id,
+		organization_id: row.organizationId,
+		legal_name: row.legalName,
+		preferred_name: row.preferredName,
+		privacy_classification: row.privacyClassification,
+		create_idempotency_key: row.createIdempotencyKey,
+		create_request_fingerprint: row.createRequestFingerprint,
+		version: row.version,
+		created_by: row.createdBy,
+		updated_by: row.updatedBy,
+		created_at: row.createdAt,
+		updated_at: row.updatedAt,
 	});
 }
 
@@ -309,6 +316,28 @@ function mapPersonContactRow(row: PersonContactSqlRow): Result<PersonContact> {
 	});
 }
 
+function mapPersonContactSelectRow(
+	row: typeof hrPersonContact.$inferSelect,
+): Result<PersonContact> {
+	return mapPersonContactRow({
+		id: row.id,
+		organization_id: row.organizationId,
+		person_id: row.personId,
+		contact_type: row.contactType,
+		value_text: row.valueText,
+		normalized_value: row.normalizedValue,
+		is_primary: row.isPrimary,
+		status: row.status,
+		create_idempotency_key: row.createIdempotencyKey,
+		create_request_fingerprint: row.createRequestFingerprint,
+		version: row.version,
+		created_by: row.createdBy,
+		updated_by: row.updatedBy,
+		created_at: row.createdAt,
+		updated_at: row.updatedAt,
+	});
+}
+
 function mapPersonIdentifierRow(
 	row: PersonIdentifierSqlRow,
 ): Result<PersonIdentifier> {
@@ -335,6 +364,30 @@ function mapPersonIdentifierRow(
 	});
 }
 
+function mapPersonIdentifierSelectRow(
+	row: typeof hrPersonIdentifier.$inferSelect,
+): Result<PersonIdentifier> {
+	return mapPersonIdentifierRow({
+		id: row.id,
+		organization_id: row.organizationId,
+		person_id: row.personId,
+		identifier_type: row.identifierType,
+		identifier_fingerprint: row.identifierFingerprint,
+		identifier_last4: row.identifierLast4,
+		document_ref: row.documentRef,
+		effective_from: row.effectiveFrom,
+		effective_to: row.effectiveTo,
+		status: row.status,
+		create_idempotency_key: row.createIdempotencyKey,
+		create_request_fingerprint: row.createRequestFingerprint,
+		version: row.version,
+		created_by: row.createdBy,
+		updated_by: row.updatedBy,
+		created_at: row.createdAt,
+		updated_at: row.updatedAt,
+	});
+}
+
 function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 	const id = parseHumanResourcesWorkerId(row.id);
 	const personId = parseHumanResourcesPersonId(row.person_id);
@@ -344,12 +397,16 @@ function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 	if (!personId.ok) {
 		return personId;
 	}
+	const status = workerStatusSchema.safeParse(row.status);
+	if (!status.success) {
+		return fail("INTERNAL_ERROR", "Invalid worker status in storage");
+	}
 
 	const base = {
 		id: id.data,
 		organizationId: row.organization_id,
 		personId: personId.data,
-		status: row.status as Worker["status"],
+		status: status.data,
 		effectiveFrom: row.effective_from,
 		effectiveTo: row.effective_to,
 		version: row.version,
@@ -387,6 +444,26 @@ function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 		workerType: row.worker_type,
 		employeeId: null,
 	} satisfies NonEmployeeWorker);
+}
+
+function mapWorkerSelectRow(row: typeof hrWorker.$inferSelect): Result<Worker> {
+	return mapWorkerRow({
+		id: row.id,
+		organization_id: row.organizationId,
+		person_id: row.personId,
+		worker_type: row.workerType,
+		employee_id: row.employeeId,
+		status: row.status,
+		effective_from: row.effectiveFrom,
+		effective_to: row.effectiveTo,
+		create_idempotency_key: row.createIdempotencyKey,
+		create_request_fingerprint: row.createRequestFingerprint,
+		version: row.version,
+		created_by: row.createdBy,
+		updated_by: row.updatedBy,
+		created_at: row.createdAt,
+		updated_at: row.updatedAt,
+	});
 }
 
 async function updatePersonScalarFieldDrizzle(input: {
@@ -598,7 +675,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				return mapPersonRow(row as unknown as PersonSqlRow);
+				return mapPersonSelectRow(row);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -631,9 +708,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const versions: PersonIdentityVersion[] = [];
 				for (const row of rows) {
-					const mapped = mapPersonIdentityVersionRow(
-						row as unknown as PersonIdentityVersionSqlRow,
-					);
+					const mapped = mapPersonIdentityVersionRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -686,9 +761,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const versions: PersonIdentityVersion[] = [];
 				for (const row of rows) {
-					const mapped = mapPersonIdentityVersionRow(
-						row as unknown as PersonIdentityVersionSqlRow,
-					);
+					const mapped = mapPersonIdentityVersionRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -721,7 +794,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				const mapped = mapPersonRow(row as unknown as PersonSqlRow);
+				const mapped = mapPersonSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -948,7 +1021,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 								reason_code, evidence_ref, version, created_by, updated_by
 							)
 							SELECT
-								${successorId}, organization_id, id, ${input.legalName}, ${input.effectiveOn},
+								${successorId}, mutated.organization_id, mutated.id, ${input.legalName}, ${input.effectiveOn},
 								NULL, ${openSegment.id}, 'active', ${input.reasonCode}, ${input.evidenceRef},
 								1, ${input.actorUserId}, ${input.actorUserId}
 							FROM mutated, closed
@@ -1044,9 +1117,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				const mapped = mapPersonContactRow(
-					row as unknown as PersonContactSqlRow,
-				);
+				const mapped = mapPersonContactSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -1320,9 +1391,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const contacts: PersonContact[] = [];
 				for (const row of rows) {
-					const mapped = mapPersonContactRow(
-						row as unknown as PersonContactSqlRow,
-					);
+					const mapped = mapPersonContactSelectRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -1353,9 +1422,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				const mapped = mapPersonIdentifierRow(
-					row as unknown as PersonIdentifierSqlRow,
-				);
+				const mapped = mapPersonIdentifierSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -1557,9 +1624,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const identifiers: PersonIdentifier[] = [];
 				for (const row of rows) {
-					const mapped = mapPersonIdentifierRow(
-						row as unknown as PersonIdentifierSqlRow,
-					);
+					const mapped = mapPersonIdentifierSelectRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -1720,7 +1785,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				return mapWorkerRow(row as unknown as WorkerSqlRow);
+				return mapWorkerSelectRow(row);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1758,9 +1823,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const versions: WorkerClassificationVersion[] = [];
 				for (const row of rows) {
-					const mapped = mapWorkerClassificationVersionRow(
-						row as unknown as WorkerClassificationVersionSqlRow,
-					);
+					const mapped = mapWorkerClassificationVersionRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -1819,9 +1882,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					);
 				const versions: WorkerClassificationVersion[] = [];
 				for (const row of rows) {
-					const mapped = mapWorkerClassificationVersionRow(
-						row as unknown as WorkerClassificationVersionSqlRow,
-					);
+					const mapped = mapWorkerClassificationVersionRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
@@ -1852,7 +1913,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				return mapWorkerRow(row as unknown as WorkerSqlRow);
+				return mapWorkerSelectRow(row);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1880,7 +1941,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				const mapped = mapWorkerRow(row as unknown as WorkerSqlRow);
+				const mapped = mapWorkerSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -1914,7 +1975,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (row === undefined) {
 					return ok(null);
 				}
-				const mapped = mapWorkerRow(row as unknown as WorkerSqlRow);
+				const mapped = mapWorkerSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
@@ -2202,7 +2263,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 								lineage_status, reason_code, evidence_ref, version, created_by, updated_by
 							)
 							SELECT
-								${successorId}, organization_id, id, ${input.workerType}, ${employeeId},
+								${successorId}, mutated.organization_id, mutated.id, ${input.workerType}, ${employeeId},
 								closed.worker_status, ${input.effectiveOn}, NULL, ${openSegment.id},
 								'active', ${input.reasonCode}, ${input.evidenceRef}, 1,
 								${input.actorUserId}, ${input.actorUserId}
@@ -2242,9 +2303,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (!mapped.ok) {
 					return mapped;
 				}
-				return mapped.data.workerType === "employee"
-					? ok(mapped.data as EmployeeWorker)
-					: ok(mapped.data as NonEmployeeWorker);
+				return ok(mapped.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -2363,7 +2422,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 								lineage_status, reason_code, evidence_ref, version, created_by, updated_by
 							)
 							SELECT
-								${successorId}, organization_id, id, closed.worker_type, closed.employee_id,
+								${successorId}, mutated.organization_id, mutated.id, closed.worker_type, closed.employee_id,
 								${input.status}, ${input.effectiveOn}, NULL, ${openSegment.id},
 								'active', ${input.reasonCode}, ${input.evidenceRef}, 1,
 								${input.actorUserId}, ${input.actorUserId}

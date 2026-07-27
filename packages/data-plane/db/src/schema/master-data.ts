@@ -18,6 +18,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -178,7 +179,7 @@ export const mdOrganizationDimension = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		uniqueIndex("md_org_dimension_org_id_uidx").on(t.organizationId, t.id),
+		unique("md_org_dimension_org_id_uidx").on(t.organizationId, t.id),
 		index("md_org_dimension_org_kind_key_idx").on(
 			t.organizationId,
 			t.kind,

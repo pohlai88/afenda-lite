@@ -9,24 +9,24 @@ import type {
 	Competency,
 	CompetencyAssessment,
 	CompetencyListPage,
-	EmployeeCompetencyProfile,
 	JobCompetency,
 	JobCompetencyListPage,
 	PositionSuccessionCoverage,
+	ProjectedEmployeeCompetencyProfile,
+	ProjectedSuccessionCandidateListPage,
+	ProjectedTalentCriticalRoleReadinessListPage,
+	ProjectedTalentProfileAssessmentListPage,
+	ProjectedTalentProfileMobilityListPage,
 	SuccessionCandidate,
-	SuccessionCandidateListPage,
 	SuccessionPlan,
 	SuccessionPlanListPage,
 	TalentCriticalRoleReadiness,
-	TalentCriticalRoleReadinessListPage,
 	TalentPool,
 	TalentPoolMember,
 	TalentPoolMemberListPage,
 	TalentProfile,
 	TalentProfileAssessment,
-	TalentProfileAssessmentListPage,
 	TalentProfileMobility,
-	TalentProfileMobilityListPage,
 } from "@afenda/human-resources";
 import {
 	acknowledgeCareerPlan,
@@ -296,7 +296,7 @@ export async function confirmTalentProfileAssessmentAction(
 
 export async function listTalentProfileAssessmentsAction(
 	input: unknown,
-): Promise<ActionResult<{ page: TalentProfileAssessmentListPage }>> {
+): Promise<ActionResult<{ page: ProjectedTalentProfileAssessmentListPage }>> {
 	return runTalentAction({
 		input,
 		schema: hrActionSchema(listTalentProfileAssessmentsInputSchema),
@@ -328,7 +328,7 @@ export async function recordTalentProfileMobilityAction(
 
 export async function listTalentProfileMobilityAction(
 	input: unknown,
-): Promise<ActionResult<{ page: TalentProfileMobilityListPage }>> {
+): Promise<ActionResult<{ page: ProjectedTalentProfileMobilityListPage }>> {
 	return runTalentAction({
 		input,
 		schema: hrActionSchema(listTalentProfileMobilityInputSchema),
@@ -520,7 +520,7 @@ export async function listJobCompetenciesAction(
 
 export async function getEmployeeCompetencyProfileAction(
 	input: unknown,
-): Promise<ActionResult<{ profile: EmployeeCompetencyProfile }>> {
+): Promise<ActionResult<{ profile: ProjectedEmployeeCompetencyProfile }>> {
 	return runTalentAction({
 		input,
 		schema: hrActionSchema(getEmployeeCompetencyProfileInputSchema),
@@ -683,7 +683,9 @@ export async function recordCriticalRoleReadinessAction(
 
 export async function listCriticalRoleReadinessAction(
 	input: unknown,
-): Promise<ActionResult<{ page: TalentCriticalRoleReadinessListPage }>> {
+): Promise<
+	ActionResult<{ page: ProjectedTalentCriticalRoleReadinessListPage }>
+> {
 	return runTalentAction({
 		input,
 		schema: hrActionSchema(listCriticalRoleReadinessInputSchema),
@@ -955,7 +957,7 @@ export async function listSuccessionPlansAction(
 
 export async function listSuccessionCandidatesAction(
 	input: unknown,
-): Promise<ActionResult<{ page: SuccessionCandidateListPage }>> {
+): Promise<ActionResult<{ page: ProjectedSuccessionCandidateListPage }>> {
 	return runTalentAction({
 		input,
 		schema: hrActionSchema(listSuccessionCandidatesInputSchema),

@@ -14,9 +14,16 @@ import {
 import {
 	archiveDepartment,
 	createDepartment,
+	getDepartmentAsOf,
 	getOrganizationTree,
 	updateDepartment,
 } from "../src/organization/department";
+import { createJob, getJobAsOf, updateJob } from "../src/organization/job";
+import {
+	createPosition,
+	getPositionAsOf,
+	updatePosition,
+} from "../src/organization/position";
 import {
 	assignPrimaryReportingLine,
 	replacePrimaryReportingLine,
@@ -85,7 +92,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				departmentId: root.data.id,
 				parentDepartmentId: child.data.id,
 				expectedVersion: 1,
-				effectiveOn: "2026-01-01",
+				effectiveOn: "2099-01-01",
 				reasonCode: "restructure",
 			},
 			ready,
@@ -235,7 +242,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-self-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 			},
 			ready,
 		);
@@ -253,7 +260,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-p1-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: m1.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 			},
 			ready,
 		);
@@ -266,7 +273,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-rcycle-${suffix}`,
 				employeeId: m1.data.id,
 				managerEmployeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 			},
 			ready,
 		);
@@ -284,7 +291,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-p2-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: m2.data.id,
-				startsOn: "2026-02-01",
+				startsOn: "2099-02-01",
 			},
 			ready,
 		);
@@ -302,8 +309,8 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-rep-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: m2.data.id,
-				startsOn: "2026-03-01",
-				closePriorOn: "2026-02-28",
+				startsOn: "2099-03-01",
+				closePriorOn: "2099-02-28",
 			},
 			ready,
 		);
@@ -315,7 +322,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-res-${suffix}`,
 				employeeId: employee.data.id,
-				asOf: "2026-03-15",
+				asOf: "2099-03-15",
 			},
 			ready,
 		);
@@ -370,8 +377,8 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-ov1-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: m1.data.id,
-				startsOn: "2026-01-01",
-				endsOn: "2026-06-30",
+				startsOn: "2099-01-01",
+				endsOn: "2099-06-30",
 			},
 			ready,
 		);
@@ -384,8 +391,8 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-ov2-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: m2.data.id,
-				startsOn: "2026-06-01",
-				endsOn: "2026-12-31",
+				startsOn: "2099-06-01",
+				endsOn: "2099-12-31",
 			},
 			ready,
 		);
@@ -431,7 +438,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-cross-${suffix}`,
 				employeeId: empA.data.id,
 				managerEmployeeId: empB.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 			},
 			ready,
 		);
@@ -466,7 +473,7 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				departmentId: department.data.id,
 				name: "Updated",
 				expectedVersion: 99,
-				effectiveOn: "2026-01-01",
+				effectiveOn: "2099-01-01",
 				reasonCode: "rename",
 			},
 			ready,
@@ -477,6 +484,203 @@ function defineOrganizationParitySuite(adapter: WorkforceStoreAdapter): void {
 				HUMAN_RESOURCES_ERROR_STALE_VERSION,
 			);
 		}
+	});
+
+	it("maps department, job, and position definition histories across as-of boundaries", async () => {
+		const ready = createHrParityHarness(adapter);
+		const initialEffectiveOn = new Date().toISOString().slice(0, 10);
+		const department = await createDepartment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-department-${suffix}`,
+				code: `HIST-DEPT-${suffix}`,
+				name: "Original Department",
+			},
+			ready,
+		);
+		expect(department.ok).toBe(true);
+		if (!department.ok) return;
+
+		const departmentUpdated = await updateDepartment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-department-update-${suffix}`,
+				departmentId: department.data.id,
+				name: "Renamed Department",
+				expectedVersion: department.data.version,
+				effectiveOn: "2099-08-01",
+				reasonCode: "rename",
+			},
+			ready,
+		);
+		expect(departmentUpdated.ok).toBe(true);
+
+		const job = await createJob(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-job-${suffix}`,
+				code: `HIST-JOB-${suffix}`,
+				title: "Original Job",
+			},
+			ready,
+		);
+		expect(job.ok).toBe(true);
+		if (!job.ok) return;
+
+		const jobUpdated = await updateJob(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-job-update-${suffix}`,
+				jobId: job.data.id,
+				title: "Updated Job",
+				expectedVersion: job.data.version,
+				effectiveOn: "2099-09-01",
+				reasonCode: "title_change",
+			},
+			ready,
+		);
+		expect(jobUpdated.ok).toBe(true);
+
+		const position = await createPosition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-position-${suffix}`,
+				code: `HIST-POS-${suffix}`,
+				title: "Original Position",
+				departmentId: department.data.id,
+				jobId: job.data.id,
+			},
+			ready,
+		);
+		expect(position.ok).toBe(true);
+		if (!position.ok) return;
+
+		const positionUpdated = await updatePosition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-position-update-${suffix}`,
+				positionId: position.data.id,
+				title: "Updated Position",
+				expectedVersion: position.data.version,
+				effectiveOn: "2099-10-01",
+				reasonCode: "title_change",
+			},
+			ready,
+		);
+		expect(positionUpdated.ok).toBe(true);
+
+		const [
+			departmentBefore,
+			departmentAfter,
+			jobBefore,
+			jobAfter,
+			positionBefore,
+			positionAfter,
+		] = await Promise.all([
+			getDepartmentAsOf(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-history-department-before-${suffix}`,
+					departmentId: department.data.id,
+					asOf: initialEffectiveOn,
+				},
+				ready,
+			),
+			getDepartmentAsOf(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-history-department-after-${suffix}`,
+					departmentId: department.data.id,
+					asOf: "2099-08-15",
+				},
+				ready,
+			),
+			getJobAsOf(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-history-job-before-${suffix}`,
+					jobId: job.data.id,
+					asOf: "2099-08-15",
+				},
+				ready,
+			),
+			getJobAsOf(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-history-job-after-${suffix}`,
+					jobId: job.data.id,
+					asOf: "2099-09-15",
+				},
+				ready,
+			),
+			getPositionAsOf(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-history-position-before-${suffix}`,
+					positionId: position.data.id,
+					asOf: "2099-09-15",
+				},
+				ready,
+			),
+			getPositionAsOf(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-history-position-after-${suffix}`,
+					positionId: position.data.id,
+					asOf: "2099-10-15",
+				},
+				ready,
+			),
+		]);
+
+		expect(departmentBefore).toMatchObject({
+			ok: true,
+			data: { name: "Original Department" },
+		});
+		expect(departmentAfter).toMatchObject({
+			ok: true,
+			data: { name: "Renamed Department" },
+		});
+		expect(jobBefore).toMatchObject({
+			ok: true,
+			data: { title: "Original Job" },
+		});
+		expect(jobAfter).toMatchObject({
+			ok: true,
+			data: { title: "Updated Job" },
+		});
+		expect(positionBefore).toMatchObject({
+			ok: true,
+			data: { title: "Original Position" },
+		});
+		expect(positionAfter).toMatchObject({
+			ok: true,
+			data: { title: "Updated Position" },
+		});
+
+		const crossTenant = await getDepartmentAsOf(
+			{
+				organizationId: ORG_B,
+				actorUserId: ACTOR,
+				correlationId: `corr-history-cross-tenant-${suffix}`,
+				departmentId: department.data.id,
+				asOf: "2099-08-15",
+			},
+			ready,
+		);
+		expect(crossTenant.ok).toBe(false);
 	});
 
 	// Memory uses MutationPorts.audit; Drizzle audits inside the SQL CTE (same TX).

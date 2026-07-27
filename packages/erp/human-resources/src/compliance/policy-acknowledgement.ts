@@ -15,6 +15,7 @@ import {
 	getPolicyAcknowledgementStatusInputSchema,
 	issuePolicyAcknowledgementRequirementInputSchema,
 	listOutstandingPolicyAcknowledgementsInputSchema,
+	listOverduePolicyAcknowledgementsInputSchema,
 	revokePolicyAcknowledgementInputSchema,
 	supersedePolicyAcknowledgementRequirementInputSchema,
 } from "../schemas/compliance";
@@ -50,6 +51,7 @@ export async function issuePolicyAcknowledgementRequirement(
 				employeeId: data.employeeId,
 				policyCode: data.policyCode,
 				policyVersion: data.policyVersion,
+				dueOn: data.dueOn,
 			});
 
 			const existingByKey =
@@ -79,6 +81,7 @@ export async function issuePolicyAcknowledgementRequirement(
 					employeeId: data.employeeId,
 					policyCode: data.policyCode,
 					policyVersion: data.policyVersion,
+					dueOn: data.dueOn,
 					createIdempotencyKey: data.idempotencyKey,
 					createRequestFingerprint: requestFingerprint,
 					createdBy: data.actorUserId,
@@ -158,6 +161,7 @@ export async function supersedePolicyAcknowledgementRequirement(
 					organizationId: data.organizationId,
 					acknowledgementId: data.acknowledgementId,
 					newPolicyVersion: data.newPolicyVersion,
+					newDueOn: data.newDueOn,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -198,6 +202,25 @@ export async function listOutstandingPolicyAcknowledgements(
 		execute: async (data, { store }) => {
 			return store.listOutstandingPolicyAcknowledgements({
 				organizationId: data.organizationId,
+				page: data.page ?? DEFAULT_PAGE,
+				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
+				employeeId: data.employeeId,
+			});
+		},
+	});
+}
+
+export async function listOverduePolicyAcknowledgements(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PolicyAcknowledgementListPage>> {
+	return runComplianceEmployeeScopedQuery(input, options, {
+		schema: listOverduePolicyAcknowledgementsInputSchema,
+		invalidMessage: "Invalid overdue policy acknowledgements list input",
+		execute: async (data, { store }) => {
+			return store.listOverduePolicyAcknowledgements({
+				organizationId: data.organizationId,
+				asOf: data.asOf,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 				employeeId: data.employeeId,

@@ -5,6 +5,7 @@ import {
 	openCompensationReviewCycle,
 } from "../../src/compensation-benefits/compensation-review-cycle";
 import type { CompensationReviewCycle } from "../../src/types";
+import { resultFailureMessage } from "./result-details";
 
 export async function seedOpenCompensationReviewCycle(input: {
 	organizationId: string;
@@ -30,9 +31,9 @@ export async function seedOpenCompensationReviewCycle(input: {
 		},
 		input.ready,
 	);
-	expect(created.ok).toBe(true);
+	expect(created.ok, resultFailureMessage(created)).toBe(true);
 	if (!created.ok) {
-		throw created.error;
+		throw new Error(resultFailureMessage(created));
 	}
 
 	const opened = await openCompensationReviewCycle(
@@ -45,9 +46,9 @@ export async function seedOpenCompensationReviewCycle(input: {
 		},
 		input.ready,
 	);
-	expect(opened.ok).toBe(true);
+	expect(opened.ok, resultFailureMessage(opened)).toBe(true);
 	if (!opened.ok) {
-		throw opened.error;
+		throw new Error(resultFailureMessage(opened));
 	}
 
 	return opened.data;

@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-const migrationPath = fileURLToPath(
-	new URL("../drizzle/0012_hr_tenant_foreign_keys.sql", import.meta.url),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+import { readCurrentMigrationSql } from "./helpers/current-migration-sql";
+
+const migrationSql = readCurrentMigrationSql();
 
 describe("HR tenant foreign-key migration", () => {
 	it("covers all tenant-owned HR foreign references through the catalog", () => {

@@ -39,6 +39,7 @@ import type {
 	TalentProfileAssessmentListPage,
 } from "../types";
 import {
+	type ProjectedTalentProfileAssessmentListPage,
 	projectTalentProfileAssessmentListFromDecision,
 	projectTalentProfileFromDecision,
 	TALENT_PROFILE_ASSESSMENT_SENSITIVE_FIELD_NAMES,
@@ -263,7 +264,7 @@ export async function getTalentProfileByEmployee(
 export async function listTalentProfileAssessments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<TalentProfileAssessmentListPage>> {
+): Promise<Result<ProjectedTalentProfileAssessmentListPage>> {
 	const parsed = parseHumanResourcesInput(
 		listTalentProfileAssessmentsInputSchema,
 		input,

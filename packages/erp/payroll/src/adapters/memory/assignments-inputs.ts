@@ -19,13 +19,9 @@ import type { PayrollAssignmentsStore } from "../../store/assignments";
 import type { PayrollInputsStore } from "../../store/inputs";
 import type {
 	PayrollEmployeeAssignment,
-	PayrollEmployeeAssignmentCreateRecord,
 	PayrollRecurringDeduction,
-	PayrollRecurringDeductionCreateRecord,
 	PayrollRecurringEarning,
-	PayrollRecurringEarningCreateRecord,
 	PayrollVariableInput,
-	PayrollVariableInputCreateRecord,
 } from "../../types";
 import {
 	type AssignmentsMemoryState,

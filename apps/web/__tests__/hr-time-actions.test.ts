@@ -19,6 +19,10 @@ const permissionMocks = vi.hoisted(() => ({
 	forbidUnlessPermission: vi.fn(),
 }));
 
+const attendanceSourceMocks = vi.hoisted(() => ({
+	previewEvents: vi.fn(),
+}));
+
 const hrTimeMocks = vi.hoisted(() => ({
 	activateTimePolicy: vi.fn(),
 	approveAttendanceBreakWaiver: vi.fn(),
@@ -108,6 +112,10 @@ vi.mock("@/lib/erp/human-resources-command-options", () => ({
 		identityResolver: {},
 		workCalendar: {},
 		approvedLeave: {},
+		attendanceSource: {
+			fetchEvents: vi.fn(),
+			previewEvents: attendanceSourceMocks.previewEvents,
+		},
 		documentReference: {},
 	}),
 }));
@@ -996,6 +1004,70 @@ describe("hr-time Server Actions", () => {
 			"human-resources.time.attendance.manage",
 		);
 		expect(hrTimeMocks.importAttendanceEvents).not.toHaveBeenCalled();
+	});
+
+	it("previews configured connector events with session-stamped tenancy and no writes", async () => {
+		attendanceSourceMocks.previewEvents.mockResolvedValue({
+			ok: true,
+			data: {
+				mode: "preview",
+				organizationId: "org-hr-time-active",
+				reconciliationKey: "connector-reconciliation-key",
+				rows: [
+					{
+						status: "rejected",
+						rowIndex: 0,
+						sourceReference: "connector-invalid-1",
+						errorCode: "INVALID_TIMEZONE",
+						errorMessage: "Invalid IANA timezone",
+					},
+				],
+				totals: { accepted: 0, rejected: 1 },
+				nextCursor: "org-bound-next-cursor",
+			},
+		});
+
+		const result = await validateAttendanceImportAction({
+			mode: "connector",
+			cursor: "org-bound-current-cursor",
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.data.result).toMatchObject({
+			mode: "preview",
+			organizationId: "org-hr-time-active",
+			totals: { accepted: 0, rejected: 1 },
+		});
+		expect(attendanceSourceMocks.previewEvents).toHaveBeenCalledWith({
+			organizationId: "org-hr-time-active",
+			cursor: "org-bound-current-cursor",
+		});
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"human-resources.time.attendance.manage",
+		);
+		expect(hrTimeMocks.importAttendanceEvents).not.toHaveBeenCalled();
+	});
+
+	it("maps configured connector preview failures to ActionResult", async () => {
+		attendanceSourceMocks.previewEvents.mockResolvedValue({
+			ok: false,
+			code: "SERVICE_UNAVAILABLE",
+			message: "Attendance connector request failed.",
+		});
+
+		const result = await validateAttendanceImportAction({ mode: "connector" });
+
+		expect(result).toMatchObject({
+			ok: false,
+			code: "SERVICE_UNAVAILABLE",
+			message: "Attendance connector request failed.",
+		});
+		expect(attendanceSourceMocks.previewEvents).toHaveBeenCalledWith({
+			organizationId: "org-hr-time-active",
+			cursor: undefined,
+		});
 	});
 
 	it("maps package failure from approveTimesheetAction", async () => {

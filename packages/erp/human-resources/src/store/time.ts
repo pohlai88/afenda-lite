@@ -32,6 +32,7 @@ import type {
 	AttendanceException,
 	AttendanceExceptionType,
 	AttendanceImportBatchInput,
+	AttendanceImportRejectedRow,
 	AttendanceImportResult,
 	AttendanceSession,
 	AttendanceSessionResolveInput,
@@ -82,6 +83,11 @@ import type {
 export type TimesheetGenerationDeps = {
 	approvedLeave: ApprovedLeaveQueryPort;
 	workCalendar: WorkCalendarPort;
+};
+
+export type AttendanceImportStoreInput = AttendanceImportBatchInput & {
+	sourceRejectedRows?: readonly AttendanceImportRejectedRow[];
+	sourceRowIndexes?: readonly number[];
 };
 
 export type TimePolicyCreateRecord = {
@@ -702,7 +708,7 @@ export type HumanResourcesTimeStore = {
 	}): Promise<Result<IdempotentAttendanceImportBatchRecord | null>>;
 
 	importAttendanceEvents(
-		input: AttendanceImportBatchInput,
+		input: AttendanceImportStoreInput,
 		ports: MutationPorts,
 	): Promise<Result<AttendanceImportResult>>;
 

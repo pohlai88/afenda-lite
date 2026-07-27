@@ -674,6 +674,7 @@ export function fingerprintPolicyAcknowledgementIssue(input: {
 	employeeId: string;
 	policyCode: string;
 	policyVersion: string;
+	dueOn: string;
 }): string {
 	return sha256Fingerprint(input);
 }

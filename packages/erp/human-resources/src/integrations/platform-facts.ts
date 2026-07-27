@@ -191,7 +191,8 @@ function recipientFromEvent(
 export function projectHumanResourcesPlatformFacts(
 	event: DomainEvent,
 ): Result<HumanResourcesPlatformFacts> {
-	if (!isHumanResourcesEventType(event.type)) {
+	const eventType = event.type;
+	if (!isHumanResourcesEventType(eventType)) {
 		return fail("VALIDATION_ERROR", "Event is not a Human Resources event");
 	}
 	const parsed = humanResourcesEntityPayloadSchema.safeParse(event.payload);
@@ -214,13 +215,9 @@ export function projectHumanResourcesPlatformFacts(
 		);
 	}
 
-	const eventType = event.type as HumanResourcesEventType;
-	const workflowDefinition =
-		WORKFLOW_TRANSITIONS[eventType as keyof typeof WORKFLOW_TRANSITIONS];
-	const identityLifecycle =
-		IDENTITY_LIFECYCLES[eventType as keyof typeof IDENTITY_LIFECYCLES];
-	const notificationTemplate =
-		NOTIFICATION_TEMPLATES[eventType as keyof typeof NOTIFICATION_TEMPLATES];
+	const workflowDefinition = WORKFLOW_TRANSITIONS[eventType];
+	const identityLifecycle = IDENTITY_LIFECYCLES[eventType];
+	const notificationTemplate = NOTIFICATION_TEMPLATES[eventType];
 	let notification: HumanResourcesNotificationIntent | null = null;
 
 	if (notificationTemplate !== undefined) {
@@ -277,7 +274,7 @@ export function projectHumanResourcesPlatformFacts(
 			kind: "reporting_fact",
 			factVersion: 1,
 			eventId: event.id,
-			eventType: event.type,
+			eventType,
 			organizationId: event.organizationId,
 			correlationId: event.correlationId,
 			entityType: parsed.data.entityType,

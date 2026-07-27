@@ -22,7 +22,10 @@ import type {
 } from "./helpers/hr-parity-harness";
 import { createTestHarness } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	humanResourcesCodeFromResult,
+	resultFailureMessage,
+} from "./helpers/result-details";
 
 const neonOrgs = createNeonOrgTracker();
 
@@ -145,7 +148,11 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				employment,
 				entitlement,
 				policy,
-				{ requestedQuantity: moreThanHalf },
+				{
+					requestedQuantity: moreThanHalf,
+					startDate: "2024-02-01",
+					endDate: "2024-02-03",
+				},
 			);
 
 			const request2 = await harness.createLeaveRequest(
@@ -153,11 +160,15 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				employment,
 				entitlement,
 				policy,
-				{ requestedQuantity: halfBalance },
+				{
+					requestedQuantity: halfBalance,
+					startDate: "2024-02-05",
+					endDate: "2024-02-07",
+				},
 			);
 
 			// Submit both requests
-			await Promise.all([
+			const submittedRequests = await Promise.all([
 				drizzleLeave.submitLeaveRequest(
 					{
 						organizationId: harness.organizationId,
@@ -179,6 +190,10 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 					harness.meta,
 				),
 			]);
+			expect(
+				submittedRequests.every((result) => result.ok),
+				JSON.stringify(submittedRequests),
+			).toBe(true);
 
 			// Try to approve both concurrently
 			const approval1Promise = drizzleLeave.approveLeaveRequest(
@@ -213,7 +228,7 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				(result) => result.status === "fulfilled" && result.value.ok,
 			).length;
 
-			expect(successCount).toBe(1);
+			expect(successCount, JSON.stringify([result1, result2])).toBe(1);
 
 			// Verify the failed approval didn't consume any balance
 			const balance = await drizzleLeave.getLeaveBalance({
@@ -703,7 +718,7 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 			const successes = outcomes.filter((result) => result.ok);
 			const failures = outcomes.filter((result) => !result.ok);
 
-			expect(successes).toHaveLength(1);
+			expect(successes, JSON.stringify(outcomes)).toHaveLength(1);
 			expect(failures).toHaveLength(1);
 			const failure = failures[0];
 			expect(failure).toBeDefined();
@@ -712,7 +727,7 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 			);
 		});
 
-		it("rejects overlapping re-submit while peer approve is in flight", async () => {
+		it("rejects approval and re-submit while an overlapping peer draft exists", async () => {
 			const request1 = await harness.createLeaveRequest(
 				employee,
 				employment,
@@ -746,7 +761,7 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				harness.ports,
 				harness.meta,
 			);
-			expect(submitted1.ok).toBe(true);
+			expect(submitted1.ok, resultFailureMessage(submitted1)).toBe(true);
 			if (!submitted1.ok) return;
 
 			const submitted2 = await drizzleLeave.submitLeaveRequest(
@@ -786,8 +801,11 @@ describe.skipIf(!runDrizzleParity)("Leave Concurrency Tests", () => {
 				),
 			]);
 
-			expect(approve1.ok).toBe(true);
+			expect(approve1.ok).toBe(false);
 			expect(approve2Attempt.ok).toBe(false);
+			expect(humanResourcesCodeFromResult(approve1)).toBe(
+				HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
+			);
 			expect(humanResourcesCodeFromResult(approve2Attempt)).toBe(
 				HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
 			);

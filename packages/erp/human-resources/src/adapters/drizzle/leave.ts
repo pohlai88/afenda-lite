@@ -30,8 +30,6 @@ import { planLeaveMutationOutboxEventType } from "../../emissions/sql-side-effec
 import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../../leave/leave-policy-lineage";
 import {
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
-	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
-	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
@@ -119,6 +117,7 @@ import {
 	buildCreateLeavePolicySql,
 	buildCreateLeaveRequestSql,
 	buildExpireEntitlementSql,
+	buildLeaveEmployeeBookingLockSql,
 	buildPolicyStatusTransitionSql,
 	buildStatusTransitionSql,
 	buildSubmitLeaveRequestSql,
@@ -1297,7 +1296,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!sourceCarryOutAdjustmentId.ok) return sourceCarryOutAdjustmentId;
 
 		const carryEventType = planLeaveMutationOutboxEventType({
-			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 			meta,
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -1309,13 +1308,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				changes: [],
 			},
 			eventType: getRegistryDomainEventType(
-				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
+				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 			),
-			eventEntityId: newEntitlementId.data,
+			eventEntityId: input.entitlementId,
 			eventEntityType: "hr_leave_entitlement",
 		});
 		if (carryEventType === undefined) {
-			return invalidState("Carry-forward requires a domain event");
+			return invalidState("Carry-forward adjustment requires a domain event");
 		}
 
 		try {
@@ -1394,7 +1393,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!expiryAdjustmentId.ok) return expiryAdjustmentId;
 
 		const expiryEventType = planLeaveMutationOutboxEventType({
-			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+			commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 			meta,
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -1406,7 +1405,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				changes: [],
 			},
 			eventType: getRegistryDomainEventType(
-				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+				HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 			),
 			eventEntityId: input.entitlementId,
 			eventEntityType: "hr_leave_entitlement",
@@ -1797,7 +1796,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				(row) =>
 					activeLeaveOverlapStatuses().includes(
 						row.status as LeaveRequestStatus,
-					) && row.id !== input.excludeRequestId,
+					) &&
+					(input.includeDraft !== false || row.status !== "draft") &&
+					row.id !== input.excludeRequestId,
 			);
 			if (requests.length === 0) return ok([]);
 			const requestIds = requests.map((row) => row.id);
@@ -2044,6 +2045,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		});
 
 		try {
+			const bookingLockSql = buildLeaveEmployeeBookingLockSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+			});
 			const sql = buildSubmitLeaveRequestSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
@@ -2053,10 +2058,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: submitEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestOverlapSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
-				{ isolationLevel: "Serializable" },
-			);
+			const [, rows] = await runLeaveTransaction<
+				[Record<string, unknown>[], LeaveRequestOverlapSqlRow[]]
+			>((sqlClient) => [sqlClient.query(bookingLockSql), sqlClient.query(sql)]);
 
 			return mapLeaveRequestOverlapRow(
 				rows[0],
@@ -2115,6 +2119,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 
 		try {
+			const bookingLockSql = buildLeaveEmployeeBookingLockSql({
+				requestId: input.requestId,
+				organizationId: input.organizationId,
+			});
 			const sql = buildApproveLeaveRequestSql({
 				requestId: input.requestId,
 				organizationId: input.organizationId,
@@ -2128,10 +2136,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				eventType: approveEventType,
 			});
 
-			const [rows] = await runLeaveTransaction<[LeaveRequestOverlapSqlRow[]]>(
-				(sqlClient) => [sqlClient.query(sql)],
-				{ isolationLevel: "Serializable" },
-			);
+			const [, rows] = await runLeaveTransaction<
+				[Record<string, unknown>[], LeaveRequestOverlapSqlRow[]]
+			>((sqlClient) => [sqlClient.query(bookingLockSql), sqlClient.query(sql)]);
 
 			return mapLeaveRequestOverlapRow(
 				rows[0],

@@ -46,6 +46,61 @@ tables:
     packageName: "@afenda/accounting"
     schemaOwner: "@afenda/db"
     table: financial_posting_exception
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_mutation_receipt
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_legal_company
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_company_jurisdiction_profile
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_company_name
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_company_legal_form_history
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_company_identifier
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_company_financial_year
+  - aggregate: legal_company
+    moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_company_activity
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_legal_establishment
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_establishment_status_history
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_registered_address
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_premise
   - moduleId: fulfillment
     packageName: "@afenda/fulfillment"
     schemaOwner: "@afenda/db"

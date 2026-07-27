@@ -25,6 +25,7 @@ import type {
 	TalentProfileMobilityListPage,
 } from "../types";
 import {
+	type ProjectedTalentProfileMobilityListPage,
 	projectTalentProfileMobilityListFromDecision,
 	TALENT_PROFILE_MOBILITY_SENSITIVE_FIELD_NAMES,
 } from "./talent-field-projection";
@@ -100,7 +101,7 @@ export async function recordTalentProfileMobility(
 export async function listTalentProfileMobility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<TalentProfileMobilityListPage>> {
+): Promise<Result<ProjectedTalentProfileMobilityListPage>> {
 	const parsed = parseHumanResourcesInput(
 		listTalentProfileMobilityInputSchema,
 		input,

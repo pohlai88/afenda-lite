@@ -68,6 +68,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Next.js App Router / RSC / proxy / cache | `afenda-elite-nextjs-best-practice` |
 | Modules / ports / residue | `afenda-elite-backend-modules` |
 | `@afenda/payroll` package (schemas / store / adapters) | `afenda-elite-payroll` |
+| `@afenda/corporate-administration` package (greenfield CA slices) | `afenda-elite-corporate-administration` |
 | Payroll plan / discovery / schema design (read-only) | `payroll-architect` subagent |
 | Payroll phase verify / pre-merge review (read-only) | `payroll-verifier` subagent |
 | API contract / ActionResult / OpenAPI / REST | `afenda-elite-api-contract` |

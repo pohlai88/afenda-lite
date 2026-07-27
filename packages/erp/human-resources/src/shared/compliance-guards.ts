@@ -6,6 +6,7 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import type {
+	DocumentRequirementApplicability,
 	DocumentRequirementStatus,
 	EmployeeDocumentVerificationStatus,
 	PolicyAcknowledgementStatus,
@@ -95,7 +96,7 @@ export function assertWorkEligibilityStatusTransition(
 	to: WorkEligibilityStatus,
 ): Result<void> {
 	const allowed: Record<WorkEligibilityStatus, WorkEligibilityStatus[]> = {
-		pending: ["active", "closed"],
+		pending: ["active", "expired", "closed"],
 		active: ["suspended", "expired", "closed"],
 		suspended: ["active", "expired", "closed"],
 		expired: ["closed"],
@@ -140,16 +141,60 @@ export function assertPolicyAcknowledgementStatusTransition(
 
 export const COMPLIANCE_NEARING_EXPIRY_DAYS = 30;
 
+export function addIsoCalendarDays(value: string, days: number): string {
+	const date = new Date(`${value}T00:00:00.000Z`);
+	date.setUTCDate(date.getUTCDate() + days);
+	return date.toISOString().slice(0, 10);
+}
+
+export function isWithinInclusiveDateWindow(input: {
+	date: string | null;
+	asOf: string;
+	withinDays: number;
+}): boolean {
+	return (
+		input.date !== null &&
+		input.date >= input.asOf &&
+		input.date <= addIsoCalendarDays(input.asOf, input.withinDays)
+	);
+}
+
+export function isDocumentRequirementApplicable(input: {
+	applicability: DocumentRequirementApplicability;
+	employeeId: string;
+}): boolean {
+	return (
+		input.applicability.kind === "all_employees" ||
+		input.applicability.employeeIds.some(
+			(employeeId) => employeeId === input.employeeId,
+		)
+	);
+}
+
+export function assertWorkEligibilityExpiredAsOf(input: {
+	expiresOn: string | null;
+	asOf: string;
+}): Result<void> {
+	if (input.expiresOn === null || input.expiresOn >= input.asOf) {
+		return fail(
+			"CONFLICT",
+			"Work eligibility has not expired as of the supplied date.",
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			),
+		);
+	}
+	return { ok: true, data: undefined };
+}
+
 export function isNearingExpiry(input: {
 	expiresOn: string | null;
 	asOf: string;
+	withinDays?: number;
 }): boolean {
-	if (input.expiresOn === null) {
-		return false;
-	}
-	const asOfDate = new Date(`${input.asOf}T00:00:00.000Z`);
-	const expiresDate = new Date(`${input.expiresOn}T00:00:00.000Z`);
-	const diffMs = expiresDate.getTime() - asOfDate.getTime();
-	const diffDays = diffMs / (1000 * 60 * 60 * 24);
-	return diffDays >= 0 && diffDays <= COMPLIANCE_NEARING_EXPIRY_DAYS;
+	return isWithinInclusiveDateWindow({
+		date: input.expiresOn,
+		asOf: input.asOf,
+		withinDays: input.withinDays ?? COMPLIANCE_NEARING_EXPIRY_DAYS,
+	});
 }

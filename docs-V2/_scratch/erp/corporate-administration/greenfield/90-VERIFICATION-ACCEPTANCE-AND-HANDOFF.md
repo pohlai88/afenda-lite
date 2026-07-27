@@ -102,9 +102,9 @@ pnpm --filter @afenda/events test
 
 Event tests must reconcile emitted event names and versions against the registered catalog.
 
-### 3.5 Master Data references
+### 3.5 Future Master Data references
 
-Run whenever Party, tax-registration or reference-data integration changes:
+CA-0.1 has no Master Data dependency or reference port. Run these only when a later slice introduces Party, tax-registration or reference-data integration:
 
 ```powershell
 pnpm --filter @afenda/master-data lint

@@ -38,11 +38,7 @@ import type {
 	PayrollDeductionRule,
 	PayrollEarningRule,
 	PayrollPayGroup,
-	PayrollPayGroupArchiveInput,
-	PayrollPayGroupUpdateInput,
 	PayrollPeriod,
-	PayrollPeriodCloseInput,
-	PayrollPeriodUpdateInput,
 	PayrollRuleSupersedeResult,
 	PayrollStatutoryRule,
 } from "../../types";

@@ -119,6 +119,41 @@ export function resolveActorContextFromInput(
 	};
 }
 
+function removeDeniedFields(
+	value: unknown,
+	deniedFields: ReadonlySet<string>,
+): void {
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			removeDeniedFields(item, deniedFields);
+		}
+		return;
+	}
+	if (value === null || typeof value !== "object" || value instanceof Date) {
+		return;
+	}
+	for (const field of Object.keys(value)) {
+		if (deniedFields.has(field)) {
+			Reflect.deleteProperty(value, field);
+			continue;
+		}
+		removeDeniedFields(Reflect.get(value, field), deniedFields);
+	}
+}
+
+/** Clone an authorized read model and remove denied fields at every record level. */
+export function projectAuthorizedFields<T>(
+	value: T,
+	projection: HumanResourcesFieldProjection | undefined,
+): T {
+	if (projection === undefined || projection.deniedFields.length === 0) {
+		return value;
+	}
+	const projected = structuredClone(value);
+	removeDeniedFields(projected, new Set(projection.deniedFields));
+	return projected;
+}
+
 /**
  * Shared authorize → execute → optional project path for all HR domain runners.
  * Contextual authorization is mandatory; resource/projection remain opt-in.

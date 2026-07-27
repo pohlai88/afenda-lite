@@ -3,7 +3,6 @@ import { fileURLToPath } from "node:url";
 
 import {
 	db,
-	payrollCalendar,
 	payrollException,
 	payrollPayGroup,
 	payrollPeriod,

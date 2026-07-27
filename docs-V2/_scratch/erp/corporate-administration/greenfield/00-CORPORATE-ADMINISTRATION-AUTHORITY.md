@@ -310,11 +310,11 @@ The root barrel exports only:
 
 - branded IDs;
 - input/output schemas;
-- command and query functions;
+- command and query functions only when a slice implements them;
 - public result types and semantic error codes;
-- permission identifiers;
+- permission identifiers only when activated with a command/query coverage test;
 - event type names where consumer-safe;
-- command/query options and required public ports.
+- command/query options and required public ports only when backed by a consuming slice.
 
 Production adapters are exposed only through declared subpaths such as:
 

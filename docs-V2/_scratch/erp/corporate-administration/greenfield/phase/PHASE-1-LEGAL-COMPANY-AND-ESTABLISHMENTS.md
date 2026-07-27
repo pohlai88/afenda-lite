@@ -21,7 +21,7 @@
 
 | Slice | Title | Depends on | Status |
 |---|---|---|---|
-| CA-1.1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | OPEN |
+| CA-1.1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | DONE |
 | CA-1.2 | Effective legal names and legal forms | CA-1.1 | OPEN |
 | CA-1.3 | Corporate identifiers, financial years and registered activities | CA-1.2 | OPEN |
 | CA-1.4 | Registered offices, legal establishments and premises | CA-1.3 | OPEN |
@@ -29,9 +29,9 @@
 
 ## CA-1.1 — Legal-company registry and jurisdiction profile
 
-**Status:** `OPEN`  
-**Depends on:** Phase 0 DONE  
-**Goal:** Expand the thin draft root into a jurisdiction-aware legal-company aggregate.
+**Status:** `DONE`
+**Depends on:** Phase 0 DONE
+**Goal:** Establish the jurisdiction-aware legal-company aggregate as the first Corporate Administration business capability.
 
 ### Authoritative surface
 
@@ -65,7 +65,7 @@ Treat the Corporate Administration package as new. Do not preserve or rely on a
 removed implementation. First inspect current AGENTS/package instructions, working-tree
 changes, module governance, DB conventions, and the approved source documents.
 
-Goal: Expand the thin draft root into a jurisdiction-aware legal-company aggregate.
+Goal: Establish the jurisdiction-aware legal-company aggregate as the first Corporate Administration business capability.
 
 Authoritative tables/surfaces: `ca_legal_company`, `ca_company_jurisdiction_profile`.
 Commands: `updateLegalCompanyProfile`, `setCompanyJurisdictionProfile`, `supersedeCompanyJurisdictionProfile`.

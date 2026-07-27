@@ -19,6 +19,11 @@ import {
 
 type ActorScopedSchema = z.ZodType<HumanResourcesAuthorizedActorInput>;
 
+type ResourceResolution =
+	| HumanResourcesResourceContext
+	| undefined
+	| Result<HumanResourcesResourceContext | undefined>;
+
 type ParsedAuthorizedConfig<
 	TSchema extends ActorScopedSchema,
 	TDeps,
@@ -31,7 +36,8 @@ type ParsedAuthorizedConfig<
 	resolveResource?: (
 		input: z.infer<TSchema>,
 		options: HumanResourcesCommandOptions,
-	) => Promise<HumanResourcesResourceContext | undefined>;
+		deps: TDeps,
+	) => ResourceResolution | Promise<ResourceResolution>;
 	project?: (
 		value: TOut,
 		projection: HumanResourcesFieldProjection | undefined,
@@ -92,13 +98,31 @@ async function runParsedAuthorizedOperation<
 		return depsResult;
 	}
 
+	let resolvedResource: HumanResourcesResourceContext | undefined;
+	if (config.resolveResource !== undefined) {
+		const resourceResolution = await config.resolveResource(
+			parsed.data,
+			operationOptions,
+			depsResult.data,
+		);
+		if (resourceResolution !== undefined && "ok" in resourceResolution) {
+			if (!resourceResolution.ok) {
+				return resourceResolution;
+			}
+			resolvedResource = resourceResolution.data;
+		} else {
+			resolvedResource = resourceResolution;
+		}
+	}
+
 	return runDomainAuthorizedOperation({
 		operationId: params.operationId,
 		operationKind: params.operationKind,
 		data: parsed.data,
 		options: operationOptions,
 		parityResourceKind: config.parityResourceKind,
-		resolveResource: config.resolveResource,
+		resolveResource:
+			resolvedResource === undefined ? undefined : async () => resolvedResource,
 		resolveRequestedFields: config.resolveRequestedFields,
 		project: config.project,
 		execute: () => config.execute(parsed.data, depsResult.data),

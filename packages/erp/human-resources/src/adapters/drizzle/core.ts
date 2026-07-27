@@ -297,6 +297,56 @@ function mapEmploymentContract(
 	});
 }
 
+type EmploymentContractSqlRow = {
+	id: string;
+	organization_id: string;
+	employment_id: string;
+	employee_id: string;
+	reference_code: string;
+	starts_on: string;
+	ends_on: string | null;
+	lineage_status: string;
+	supersedes_contract_id: string | null;
+	superseded_by_contract_id: string | null;
+	reason_code: string;
+	source_reference: string | null;
+	version: number;
+	created_by: string;
+	updated_by: string;
+	created_at: Date | string;
+	updated_at: Date | string;
+};
+
+function mapEmploymentContractSqlRow(
+	row: EmploymentContractSqlRow,
+): Result<EmploymentContract> {
+	return mapEmploymentContract({
+		id: row.id,
+		organizationId: row.organization_id,
+		employmentId: row.employment_id,
+		employeeId: row.employee_id,
+		referenceCode: row.reference_code,
+		startsOn: row.starts_on,
+		endsOn: row.ends_on,
+		lineageStatus: row.lineage_status,
+		supersedesContractId: row.supersedes_contract_id,
+		supersededByContractId: row.superseded_by_contract_id,
+		reasonCode: row.reason_code,
+		sourceReference: row.source_reference,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt:
+			row.created_at instanceof Date
+				? row.created_at
+				: new Date(row.created_at),
+		updatedAt:
+			row.updated_at instanceof Date
+				? row.updated_at
+				: new Date(row.updated_at),
+	});
+}
+
 function mapAssignment(
 	row: typeof hrWorkAssignment.$inferSelect,
 ): Result<WorkAssignment> {
@@ -1851,10 +1901,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<
-				[(typeof hrEmploymentContract.$inferSelect)[]]
-			>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[EmploymentContractSqlRow[]]>(
+				(sql) => [
+					sql`
 					WITH updated AS (
 						UPDATE hr_employment_contract
 						SET
@@ -1894,9 +1943,10 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 						FROM updated
 						RETURNING id
 					)
-					SELECT * FROM updated, audited, outboxed
+					SELECT updated.* FROM updated, audited, outboxed
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1904,7 +1954,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					entityLabel: "Employment contract",
 				});
 			}
-			return mapEmploymentContract(row);
+			return mapEmploymentContractSqlRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1957,8 +2007,8 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			const [rows] = await runNeonHttpTransaction<
 				[
 					{
-						predecessor: typeof hrEmploymentContract.$inferSelect;
-						successor: typeof hrEmploymentContract.$inferSelect;
+						predecessor: EmploymentContractSqlRow;
+						successor: EmploymentContractSqlRow;
 					}[],
 				]
 			>((sql) => [
@@ -2049,9 +2099,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 					entityLabel: "Employment contract",
 				});
 			}
-			const superseded = mapEmploymentContract(row.predecessor);
+			const superseded = mapEmploymentContractSqlRow(row.predecessor);
 			if (!superseded.ok) return superseded;
-			const successor = mapEmploymentContract(row.successor);
+			const successor = mapEmploymentContractSqlRow(row.successor);
 			if (!successor.ok) return successor;
 			return ok({
 				superseded: superseded.data,

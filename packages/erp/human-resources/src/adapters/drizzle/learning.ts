@@ -1645,8 +1645,14 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
 			}
-			if (session.data.status !== "scheduled") {
-				return invalidState("Session must be scheduled to create assignments");
+			if (
+				session.data.status !== "scheduled" &&
+				session.data.status !== "in_progress"
+			) {
+				return invalidState("Session must be active to create assignments");
+			}
+			if (session.data.courseId !== record.courseId) {
+				return conflict("Session does not belong to the specified course");
 			}
 		}
 
@@ -1688,7 +1694,8 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						FROM hr_learning_session s
 						WHERE s.id = ${record.sessionId}
 							AND s.organization_id = ${record.organizationId}
-							AND s.status = 'scheduled'
+							AND s.course_id = ${record.courseId}
+							AND s.status IN ('scheduled', 'in_progress')
 					),
 					mutated AS (
 						INSERT INTO hr_learning_assignment (

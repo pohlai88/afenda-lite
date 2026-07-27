@@ -45,6 +45,7 @@ import type {
 	SuccessionPlanListPage,
 } from "../types";
 import {
+	type ProjectedSuccessionCandidateListPage,
 	projectSuccessionCandidateListFromDecision,
 	SUCCESSION_CANDIDATE_SENSITIVE_FIELD_NAMES,
 	talentSensitiveQueryRequestedFields,
@@ -351,7 +352,7 @@ export async function listSuccessionPlans(
 export async function listSuccessionCandidates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<SuccessionCandidateListPage>> {
+): Promise<Result<ProjectedSuccessionCandidateListPage>> {
 	return runTalentQuery(input, options, {
 		schema: listSuccessionCandidatesInputSchema,
 		invalidMessage: "Invalid succession candidate list input",

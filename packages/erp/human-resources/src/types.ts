@@ -116,6 +116,7 @@ import type {
 	SalaryBandStatus,
 } from "./shared/compensation-status";
 import type {
+	DocumentRequirementApplicability,
 	DocumentRequirementStatus,
 	EmployeeDocumentVerificationStatus,
 	PolicyAcknowledgementStatus,
@@ -1809,6 +1810,7 @@ export type DocumentRequirement = {
 	documentType: string;
 	issuingJurisdiction: string | null;
 	appliesToNote: string | null;
+	applicability: DocumentRequirementApplicability;
 	status: DocumentRequirementStatus;
 	version: number;
 	createdBy: string;
@@ -1892,6 +1894,7 @@ export type PolicyAcknowledgement = {
 	policyVersion: string;
 	requirementStatus: PolicyAcknowledgementStatus;
 	issuedAt: Date;
+	dueOn: string;
 	acknowledgedAt: Date | null;
 	acknowledgedBy: string | null;
 	supersedesAcknowledgementId: HumanResourcesPolicyAcknowledgementId | null;

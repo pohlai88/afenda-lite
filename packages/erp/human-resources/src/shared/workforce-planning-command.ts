@@ -11,11 +11,16 @@ import type {
 } from "../module-ids";
 import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesResourceContext } from "./authorization-types";
 import {
 	runParsedAuthorizedCommand,
 	runParsedAuthorizedQuery,
 } from "./domain-runner";
-import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
+import { WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS } from "./field-projection";
+import {
+	type HumanResourcesAuthorizedActorInput,
+	projectAuthorizedFields,
+} from "./run-authorized-operation";
 
 type ActorScoped = HumanResourcesAuthorizedActorInput;
 
@@ -27,6 +32,36 @@ type CommandDeps = {
 type QueryDeps = {
 	store: HumanResourcesStore;
 };
+
+const WORKFORCE_PLANNING_RESOURCE_ID_FIELDS = [
+	"planId",
+	"planLineId",
+	"reservationId",
+	"requisitionId",
+] as const;
+
+const WORKFORCE_PLANNING_READ_FIELDS = [
+	"id",
+	...WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS,
+] as const;
+
+function readStringField(input: object, field: string): string | undefined {
+	const descriptor = Object.getOwnPropertyDescriptor(input, field);
+	return typeof descriptor?.value === "string" ? descriptor.value : undefined;
+}
+
+function resolveWorkforcePlanningResource(
+	input: ActorScoped,
+): HumanResourcesResourceContext {
+	const resourceId = WORKFORCE_PLANNING_RESOURCE_ID_FIELDS.map((field) =>
+		readStringField(input, field),
+	).find((value) => value !== undefined);
+	return {
+		organizationId: input.organizationId,
+		kind: "headcount_plan",
+		...(resourceId === undefined ? {} : { resourceId }),
+	};
+}
 
 export async function runWorkforcePlanningCommand<
 	TSchema extends z.ZodType<ActorScoped>,
@@ -48,7 +83,7 @@ export async function runWorkforcePlanningCommand<
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
-		parityResourceKind: "headcount_plan",
+		resolveResource: async (data) => resolveWorkforcePlanningResource(data),
 		resolveDeps: (opts) => {
 			const { store, ports } = resolveCommandDeps(opts);
 			return ok({ store, ports });
@@ -74,7 +109,9 @@ export async function runWorkforcePlanningQuery<
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
-		parityResourceKind: "headcount_plan",
+		resolveResource: async (data) => resolveWorkforcePlanningResource(data),
+		resolveRequestedFields: () => WORKFORCE_PLANNING_READ_FIELDS,
+		project: projectAuthorizedFields,
 		resolveDeps: (opts) => {
 			const { store } = resolveCommandDeps(opts);
 			return ok({ store });

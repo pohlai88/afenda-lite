@@ -334,7 +334,7 @@ export async function drizzleApproveEmployeeCompensation(
 							UPDATE hr_employee_compensation
 							SET status = 'ended',
 								effective_to = ${predecessorEffectiveTo},
-								version = version + 1,
+								version = hr_employee_compensation.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM active_comp
@@ -616,7 +616,7 @@ export async function drizzleActivateEmployeeCompensation(
 						UPDATE hr_employee_compensation
 						SET status = 'ended',
 							effective_to = ${predecessorEffectiveTo},
-							version = version + 1,
+							version = hr_employee_compensation.version + 1,
 							updated_by = ${input.actorUserId},
 							updated_at = now()
 						FROM active_comp
@@ -806,7 +806,7 @@ export async function drizzleCorrectEmployeeCompensation(
 							UPDATE hr_employee_compensation
 							SET status = 'superseded',
 								effective_to = ${predecessorEffectiveTo},
-								version = version + 1,
+								version = hr_employee_compensation.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							WHERE id = ${input.compensationId}

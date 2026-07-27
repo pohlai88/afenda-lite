@@ -54,7 +54,20 @@ describe("Human Resources platform facts", () => {
 		});
 		expect(result.data.reporting).toMatchObject({
 			factVersion: 1,
+			eventType: "human-resources.onboarding.started.v1",
 			requiredPermission: "human-resources.employee.read",
+		});
+	});
+
+	it("rejects non-Human Resources event types", () => {
+		const result = projectHumanResourcesPlatformFacts(
+			event("accounting.journal-posted.v1"),
+		);
+
+		expect(result).toMatchObject({
+			ok: false,
+			code: "VALIDATION_ERROR",
+			message: "Event is not a Human Resources event",
 		});
 	});
 

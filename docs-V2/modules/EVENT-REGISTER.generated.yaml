@@ -8,6 +8,51 @@ events:
     id: accounting.journal.reversed.v1
     moduleId: accounting
   - direction: emits
+    id: corporate_administration.legal_company.draft_registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.profile_updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.jurisdiction_profile_set.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.name_added.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.name_superseded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.legal_form_changed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.identifier_registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.financial_year_set.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.activity_registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_establishment.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_establishment.updated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_establishment.status_changed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.registered_address.set.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.premise.registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.premise.ended.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: fulfillment.delivery.created.v1
     moduleId: fulfillment
   - direction: emits

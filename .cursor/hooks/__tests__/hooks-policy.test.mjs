@@ -376,6 +376,169 @@ describe("agent-authority-preflight", () => {
 	});
 });
 
+describe("corporate-administration-source-placement", () => {
+	it("allows approved root contracts and decomposed homes", () => {
+		for (const filePath of [
+			"packages/erp/corporate-administration/src/ports.ts",
+			"packages/erp/corporate-administration/src/production-ports.ts",
+			"packages/erp/corporate-administration/src/adapters/drizzle/idempotency.ts",
+		]) {
+			const out = runHook("corporate-administration-source-placement.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: filePath,
+					contents: "export {};\n",
+				},
+			});
+			assert.equal(out.permission, "allow", filePath);
+		}
+	});
+
+	it("denies root business, adapter, and memory helper files", () => {
+		for (const filePath of [
+			"packages/erp/corporate-administration/src/legal-company.ts",
+			"packages/erp/corporate-administration/src/drizzle-legal-company-store.ts",
+			"packages/erp/corporate-administration/src/memory-legal-company-store.ts",
+			"packages/erp/corporate-administration/src/repository.ts",
+			"packages/erp/corporate-administration/src/company/index.ts",
+			"packages/erp/corporate-administration/src/adapters/drizzle/company.ts",
+			"packages/erp/corporate-administration/__tests__/helpers/legal-company-store.ts",
+			"apps/web/app/actions/register-legal-company-draft.ts",
+			"apps/web/app/(operator)/admin/corporate-administration/page.tsx",
+			"apps/web/features/corporate-administration/corporate-administration-shell.tsx",
+			"apps/web/lib/erp/corporate-administration-command-options.ts",
+			"apps/web/lib/erp/corporate-administration-authorization-port.ts",
+		]) {
+			const out = runHook("corporate-administration-source-placement.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: filePath,
+					contents: "export {};\n",
+				},
+			});
+			assert.equal(out.permission, "deny", filePath);
+		}
+	});
+
+	it("denies Drizzle table definitions inside the CA package", () => {
+		const out = runHook("corporate-administration-source-placement.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "packages/erp/corporate-administration/src/adapters/drizzle/idempotency.ts",
+				contents:
+					'import { pgTable } from "drizzle-orm/pg-core";\nexport const local = pgTable("ca_local", {});\n',
+			},
+		});
+		assert.equal(out.permission, "deny");
+	});
+});
+
+describe("corporate-administration-dependency-policy", () => {
+	const approvedPackageJson = JSON.stringify(
+		{
+			dependencies: {
+				"@afenda/audit": "workspace:*",
+				"@afenda/db": "workspace:*",
+				"@afenda/errors": "workspace:*",
+				"server-only": "catalog:",
+				zod: "catalog:",
+			},
+			devDependencies: {
+				"@afenda/config": "workspace:*",
+				"@afenda/testing": "workspace:*",
+				"@types/node": "catalog:",
+				typescript: "catalog:",
+			},
+		},
+		null,
+		2,
+	);
+
+	it("allows approved audited dependencies", () => {
+		const out = runHook("corporate-administration-dependency-policy.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "packages/erp/corporate-administration/package.json",
+				contents: approvedPackageJson,
+			},
+		});
+		assert.equal(out.permission, "allow");
+	});
+
+	it("denies peer ERP, direct Drizzle, UI, and framework dependencies", () => {
+		for (const dependency of [
+			"@afenda/master-data",
+			"@afenda/accounting",
+			"@afenda/payments",
+			"@afenda/human-resources",
+			"@afenda/documents",
+			"@afenda/search",
+			"drizzle-orm",
+			"next",
+			"react",
+			"express",
+			"fastify",
+			"hono",
+			"lucide-react",
+		]) {
+			const out = runHook("corporate-administration-dependency-policy.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "packages/erp/corporate-administration/package.json",
+					contents: JSON.stringify({
+						dependencies: {
+							"@afenda/audit": "workspace:*",
+							"@afenda/db": "workspace:*",
+							[dependency]: "catalog:",
+						},
+					}),
+				},
+			});
+			assert.equal(out.permission, "deny", dependency);
+		}
+	});
+});
+
+describe("corporate-administration-lifecycle-position", () => {
+	it("allows scaffolded lifecycle with organization toggle", () => {
+		const out = runHook("corporate-administration-lifecycle-position.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "packages/erp/corporate-administration/src/module.manifest.ts",
+				contents:
+					'export const manifest = { lifecycle: "scaffolded", activationMode: "organization_toggle" };\n',
+			},
+		});
+		assert.equal(out.permission, "allow");
+	});
+
+	it("denies active, preview, beta, production, and missing organization toggle", () => {
+		for (const lifecycle of ["active", "preview", "beta", "production"]) {
+			const out = runHook("corporate-administration-lifecycle-position.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "packages/erp/corporate-administration/src/module.manifest.ts",
+					contents: `export const manifest = { lifecycle: "${lifecycle}", activationMode: "organization_toggle" };\n`,
+				},
+			});
+			assert.equal(out.permission, "deny", lifecycle);
+		}
+
+		const missingMode = runHook(
+			"corporate-administration-lifecycle-position.mjs",
+			{
+				tool_name: "Write",
+				tool_input: {
+					path: "packages/erp/corporate-administration/src/module.manifest.ts",
+					contents:
+						'export const manifest = { lifecycle: "scaffolded", activationMode: "manual" };\n',
+				},
+			},
+		);
+		assert.equal(missingMode.permission, "deny");
+	});
+});
+
 describe("smoke matrix — false-ban guards", () => {
 	it("git allows Target-overlapping and safe ops", () => {
 		for (const command of [
@@ -524,6 +687,9 @@ describe("smoke matrix — false-ban guards", () => {
 			"no-decision-directory.mjs",
 			"no-tsconfig-baseurl.mjs",
 			"no-living-arch-ghost-ssot.mjs",
+			"corporate-administration-source-placement.mjs",
+			"corporate-administration-dependency-policy.mjs",
+			"corporate-administration-lifecycle-position.mjs",
 			"git-no-auto-recover.mjs",
 			"no-drizzle-baseline-migrate.mjs",
 		]) {

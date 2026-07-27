@@ -2,7 +2,7 @@
 # Version: module-roadmap/2026-07-26
 # Authority: docs-V2/monorepo
 # Promoted (removed from roadmap): master-data · sales · purchasing · inventory · receiving · fulfillment · receivables · payables · payments · accounting · human-resources · payroll
-# corporate-administration: CA-0.1 scaffolded; domain contracts and persistence remain gated by later slices.
+# corporate-administration: CA-0.4 durable infrastructure; Phase 1 business behavior remains gated.
 
 version: "module-roadmap/2026-07-26"
 updated: "2026-07-26"
@@ -14,6 +14,6 @@ modules:
     category: erp
     lifecycle: scaffolded
     activationMode: organization_toggle
-    approvedSlice: CA-0.1
+    approvedSlice: CA-0.4
     tablePrefix: ca_
-    nextSlice: CA-0.2
+    nextSlice: "CA-1.1 — legal-company registry and jurisdiction profile"

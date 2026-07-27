@@ -402,144 +402,92 @@ function mapReportingLineSqlRow(
 	});
 }
 
-type DepartmentStructureVersionSqlRow = {
-	id: string;
-	organization_id: string;
-	department_id: string;
-	name: string;
-	parent_department_id: string | null;
-	effective_from: string;
-	effective_to: string | null;
-	supersedes_structure_version_id: string | null;
-	lineage_status: string;
-	reason_code: string;
-	evidence_ref: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
+type DepartmentStructureVersionSqlRow =
+	typeof hrDepartmentStructureVersion.$inferSelect;
 
 function mapDepartmentStructureVersionRow(
 	row: DepartmentStructureVersionSqlRow,
 ): Result<DepartmentStructureVersion> {
-	const departmentId = parseHumanResourcesDepartmentId(row.department_id);
+	const departmentId = parseHumanResourcesDepartmentId(row.departmentId);
 	if (!departmentId.ok) return departmentId;
-	const parentDepartmentId = mapNullableDepartmentId(row.parent_department_id);
+	const parentDepartmentId = mapNullableDepartmentId(row.parentDepartmentId);
 	if (!parentDepartmentId.ok) return parentDepartmentId;
 	return ok({
 		id: row.id,
-		organizationId: row.organization_id,
+		organizationId: row.organizationId,
 		departmentId: departmentId.data,
 		name: row.name,
 		parentDepartmentId: parentDepartmentId.data,
-		effectiveFrom: row.effective_from,
-		effectiveTo: row.effective_to,
-		supersedesStructureVersionId: row.supersedes_structure_version_id,
-		lineageStatus:
-			row.lineage_status === "superseded" ? "superseded" : "active",
-		reasonCode: row.reason_code,
-		evidenceRef: row.evidence_ref,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		supersedesStructureVersionId: row.supersedesStructureVersionId,
+		lineageStatus: row.lineageStatus === "superseded" ? "superseded" : "active",
+		reasonCode: row.reasonCode,
+		evidenceRef: row.evidenceRef,
 		version: row.version,
-		createdBy: row.created_by,
-		updatedBy: row.updated_by,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
 	});
 }
 
-type JobDefinitionVersionSqlRow = {
-	id: string;
-	organization_id: string;
-	job_id: string;
-	title: string;
-	effective_from: string;
-	effective_to: string | null;
-	supersedes_definition_version_id: string | null;
-	lineage_status: string;
-	reason_code: string;
-	evidence_ref: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
+type JobDefinitionVersionSqlRow = typeof hrJobDefinitionVersion.$inferSelect;
 
 function mapJobDefinitionVersionRow(
 	row: JobDefinitionVersionSqlRow,
 ): Result<JobDefinitionVersion> {
-	const jobId = parseHumanResourcesJobId(row.job_id);
+	const jobId = parseHumanResourcesJobId(row.jobId);
 	if (!jobId.ok) return jobId;
 	return ok({
 		id: row.id,
-		organizationId: row.organization_id,
+		organizationId: row.organizationId,
 		jobId: jobId.data,
 		title: row.title,
-		effectiveFrom: row.effective_from,
-		effectiveTo: row.effective_to,
-		supersedesDefinitionVersionId: row.supersedes_definition_version_id,
-		lineageStatus:
-			row.lineage_status === "superseded" ? "superseded" : "active",
-		reasonCode: row.reason_code,
-		evidenceRef: row.evidence_ref,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		supersedesDefinitionVersionId: row.supersedesDefinitionVersionId,
+		lineageStatus: row.lineageStatus === "superseded" ? "superseded" : "active",
+		reasonCode: row.reasonCode,
+		evidenceRef: row.evidenceRef,
 		version: row.version,
-		createdBy: row.created_by,
-		updatedBy: row.updated_by,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
 	});
 }
 
-type PositionDefinitionVersionSqlRow = {
-	id: string;
-	organization_id: string;
-	position_id: string;
-	title: string;
-	department_id: string | null;
-	job_id: string | null;
-	effective_from: string;
-	effective_to: string | null;
-	supersedes_definition_version_id: string | null;
-	lineage_status: string;
-	reason_code: string;
-	evidence_ref: string | null;
-	version: number;
-	created_by: string;
-	updated_by: string;
-	created_at: Date;
-	updated_at: Date;
-};
+type PositionDefinitionVersionSqlRow =
+	typeof hrPositionDefinitionVersion.$inferSelect;
 
 function mapPositionDefinitionVersionRow(
 	row: PositionDefinitionVersionSqlRow,
 ): Result<PositionDefinitionVersion> {
-	const positionId = parseHumanResourcesPositionId(row.position_id);
+	const positionId = parseHumanResourcesPositionId(row.positionId);
 	if (!positionId.ok) return positionId;
-	const departmentId = mapNullableDepartmentId(row.department_id);
+	const departmentId = mapNullableDepartmentId(row.departmentId);
 	if (!departmentId.ok) return departmentId;
-	const jobId = mapNullableJobId(row.job_id);
+	const jobId = mapNullableJobId(row.jobId);
 	if (!jobId.ok) return jobId;
 	return ok({
 		id: row.id,
-		organizationId: row.organization_id,
+		organizationId: row.organizationId,
 		positionId: positionId.data,
 		title: row.title,
 		departmentId: departmentId.data,
 		jobId: jobId.data,
-		effectiveFrom: row.effective_from,
-		effectiveTo: row.effective_to,
-		supersedesDefinitionVersionId: row.supersedes_definition_version_id,
-		lineageStatus:
-			row.lineage_status === "superseded" ? "superseded" : "active",
-		reasonCode: row.reason_code,
-		evidenceRef: row.evidence_ref,
+		effectiveFrom: row.effectiveFrom,
+		effectiveTo: row.effectiveTo,
+		supersedesDefinitionVersionId: row.supersedesDefinitionVersionId,
+		lineageStatus: row.lineageStatus === "superseded" ? "superseded" : "active",
+		reasonCode: row.reasonCode,
+		evidenceRef: row.evidenceRef,
 		version: row.version,
-		createdBy: row.created_by,
-		updatedBy: row.updated_by,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
 	});
 }
 
@@ -559,9 +507,7 @@ async function listDepartmentStructureVersions(input: {
 			);
 		const versions: DepartmentStructureVersion[] = [];
 		for (const row of rows) {
-			const mapped = mapDepartmentStructureVersionRow(
-				row as unknown as DepartmentStructureVersionSqlRow,
-			);
+			const mapped = mapDepartmentStructureVersionRow(row);
 			if (!mapped.ok) return mapped;
 			versions.push(mapped.data);
 		}
@@ -590,9 +536,7 @@ async function listJobDefinitionVersions(input: {
 			);
 		const versions: JobDefinitionVersion[] = [];
 		for (const row of rows) {
-			const mapped = mapJobDefinitionVersionRow(
-				row as unknown as JobDefinitionVersionSqlRow,
-			);
+			const mapped = mapJobDefinitionVersionRow(row);
 			if (!mapped.ok) return mapped;
 			versions.push(mapped.data);
 		}
@@ -621,9 +565,7 @@ async function listPositionDefinitionVersions(input: {
 			);
 		const versions: PositionDefinitionVersion[] = [];
 		for (const row of rows) {
-			const mapped = mapPositionDefinitionVersionRow(
-				row as unknown as PositionDefinitionVersionSqlRow,
-			);
+			const mapped = mapPositionDefinitionVersionRow(row);
 			if (!mapped.ok) return mapped;
 			versions.push(mapped.data);
 		}
@@ -1131,7 +1073,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 									lineage_status, reason_code, evidence_ref, version, created_by, updated_by
 								)
 								SELECT
-									${successorId}, organization_id, id, ${nextName}, ${parentValue},
+									${successorId}, mutated.organization_id, mutated.id, ${nextName}, ${parentValue},
 									${input.effectiveOn}, NULL, ${openSegment.id}, 'active',
 									${input.reasonCode}, ${input.evidenceRef ?? null}, 1,
 									${input.actorUserId}, ${input.actorUserId}
@@ -1624,7 +1566,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								reason_code, evidence_ref, version, created_by, updated_by
 							)
 							SELECT
-								${successorId}, organization_id, id, ${input.title}, ${input.effectiveOn},
+								${successorId}, mutated.organization_id, mutated.id, ${input.title}, ${input.effectiveOn},
 								NULL, ${openSegment.id}, 'active', ${input.reasonCode},
 								${input.evidenceRef ?? null}, 1, ${input.actorUserId}, ${input.actorUserId}
 							FROM mutated, closed
@@ -2152,7 +2094,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								lineage_status, reason_code, evidence_ref, version, created_by, updated_by
 							)
 							SELECT
-								${successorId}, organization_id, id, ${nextTitle}, ${nextDepartmentId}, ${nextJobId},
+								${successorId}, mutated.organization_id, mutated.id, ${nextTitle}, ${nextDepartmentId}, ${nextJobId},
 								${input.effectiveOn}, NULL, ${openSegment.id}, 'active',
 								${input.reasonCode}, ${input.evidenceRef ?? null}, 1,
 								${input.actorUserId}, ${input.actorUserId}

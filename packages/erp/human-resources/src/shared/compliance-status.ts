@@ -1,5 +1,32 @@
 import { z } from "zod";
 
+import { humanResourcesEmployeeIdSchema } from "../brands";
+
+export const documentRequirementApplicabilitySchema = z.discriminatedUnion(
+	"kind",
+	[
+		z.object({ kind: z.literal("all_employees") }).strict(),
+		z
+			.object({
+				kind: z.literal("employee_ids"),
+				employeeIds: z.array(humanResourcesEmployeeIdSchema).min(1).max(1_000),
+			})
+			.strict()
+			.superRefine((value, context) => {
+				if (new Set(value.employeeIds).size !== value.employeeIds.length) {
+					context.addIssue({
+						code: "custom",
+						message: "Applicability employee IDs must be unique",
+						path: ["employeeIds"],
+					});
+				}
+			}),
+	],
+);
+export type DocumentRequirementApplicability = z.infer<
+	typeof documentRequirementApplicabilitySchema
+>;
+
 export const DOCUMENT_REQUIREMENT_STATUSES = [
 	"draft",
 	"published",

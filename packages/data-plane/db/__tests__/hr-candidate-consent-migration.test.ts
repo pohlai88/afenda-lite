@@ -1,27 +1,22 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import { readMigrationSqlForTables } from "./helpers/current-migration-sql";
 
-const migrationPath = fileURLToPath(
-	new URL("../drizzle/0017_hr_candidate_consent.sql", import.meta.url),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+const migrationSql = readMigrationSqlForTables(["hr_candidate"]);
 
 describe("HR candidate consent migration", () => {
 	it("is additive and adds nullable consent columns", () => {
 		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
-		expect(migrationSql).toContain('ADD COLUMN "consent_policy_version" text');
+		expect(migrationSql).toContain('"consent_policy_version" text');
 		expect(migrationSql).toContain(
-			'ADD COLUMN "consent_captured_at" timestamp with time zone',
+			'"consent_captured_at" timestamp with time zone',
 		);
-		expect(migrationSql).toContain('ADD COLUMN "consent_source" text');
-		expect(migrationSql).toContain('ADD COLUMN "retention_until" date');
+		expect(migrationSql).toContain('"consent_source" text');
+		expect(migrationSql).toContain('"retention_until" date');
 		expect(migrationSql).toContain(
-			'ADD COLUMN "consent_withdrawn_at" timestamp with time zone',
+			'"consent_withdrawn_at" timestamp with time zone',
 		);
 	});
 

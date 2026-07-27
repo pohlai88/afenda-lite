@@ -25,7 +25,10 @@ import {
 	runComplianceEmployeeScopedQuery,
 	runComplianceQuery,
 } from "../shared/compliance-command";
-import { assertValidDocumentDateRange } from "../shared/compliance-guards";
+import {
+	assertValidDocumentDateRange,
+	COMPLIANCE_NEARING_EXPIRY_DAYS,
+} from "../shared/compliance-guards";
 import { fingerprintWorkEligibilityRecord } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { WorkEligibility, WorkEligibilityRiskListPage } from "../types";
@@ -287,6 +290,7 @@ export async function listEmployeesWithWorkEligibilityRisk(
 			store.listEmployeesWithWorkEligibilityRisk({
 				organizationId: data.organizationId,
 				asOf: data.asOf,
+				withinDays: data.withinDays ?? COMPLIANCE_NEARING_EXPIRY_DAYS,
 				page: data.page ?? DEFAULT_PAGE,
 				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
 			}),

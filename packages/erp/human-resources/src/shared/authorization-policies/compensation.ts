@@ -1,7 +1,13 @@
 import type { HumanResourcesCommandOptions } from "../../command-options";
 import {
+	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_AMEND,
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_APPROVE,
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_CREATE,
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_READ,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+	type HumanResourcesPermission,
 } from "../../permissions";
 import {
 	actorHoldsAnyPermission,
@@ -26,6 +32,55 @@ function isPayrollHandoffOperation(operationId: string): boolean {
 	);
 }
 
+function isBenefitOperation(operationId: string): boolean {
+	return (
+		operationId.startsWith("human-resources.benefit-plan.") ||
+		operationId.startsWith("human-resources.benefit-enrollment.") ||
+		operationId.startsWith("human-resources.benefit-enrollment-dependent.")
+	);
+}
+
+function isCompensationProposalOperation(operationId: string): boolean {
+	return operationId.startsWith("human-resources.compensation-proposal.");
+}
+
+function administrativePermissionsForOperation(
+	operationId: string,
+): readonly HumanResourcesPermission[] {
+	if (isBenefitOperation(operationId)) {
+		return [HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE];
+	}
+	if (isCompensationProposalOperation(operationId)) {
+		return [
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_CREATE,
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_AMEND,
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_APPROVE,
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_READ,
+		];
+	}
+	return [HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE];
+}
+
+function isOrganizationScopedCompensationRead(
+	request: HumanResourcesAuthorizationRequest,
+): boolean {
+	if (
+		request.operationKind !== "query" ||
+		request.resource?.subjectEmployeeId !== undefined ||
+		isPayrollHandoffOperation(request.operationId)
+	) {
+		return false;
+	}
+	return (
+		request.operationId.startsWith("human-resources.compensation-grade.") ||
+		request.operationId.startsWith(
+			"human-resources.compensation-grade-progression-",
+		) ||
+		request.operationId.startsWith("human-resources.salary-band.") ||
+		request.operationId.startsWith("human-resources.compensation-review-cycle.")
+	);
+}
+
 async function resolveCompensationTier(
 	request: HumanResourcesAuthorizationRequest,
 	options: HumanResourcesCommandOptions,
@@ -37,11 +92,21 @@ async function resolveCompensationTier(
 	const isHandoff = isPayrollHandoffOperation(request.operationId);
 	const isCompensationAdmin =
 		isPrivilegedActor(resource) ||
-		(await actorHoldsAnyPermission(request, options, [
-			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
-		]));
+		(await actorHoldsAnyPermission(
+			request,
+			options,
+			administrativePermissionsForOperation(request.operationId),
+		));
 	if (isCompensationAdmin) {
 		return isHandoff ? "payroll" : "confidential";
+	}
+	if (
+		isOrganizationScopedCompensationRead(request) &&
+		(await actorHoldsAnyPermission(request, options, [
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+		]))
+	) {
+		return "confidential";
 	}
 	// Managers never receive payroll handoff tiers.
 	if (isHandoff) {

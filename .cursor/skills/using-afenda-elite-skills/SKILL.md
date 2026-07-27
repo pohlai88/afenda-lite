@@ -74,6 +74,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
     ├── `@afenda/payroll` domain farm? ─────────────────────→ afenda-elite-payroll
+    ├── `@afenda/corporate-administration` greenfield farm? → afenda-elite-corporate-administration
     └── Domain farm (Neon tenancy)? ────────────────────────→ neon-tenancy-efficiency
 ```
 
@@ -164,6 +165,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted **and** if Living 
 - Next.js App Router: [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) — Accelint + Cache Components Mode A default / Mode B ADR-gated
 - Modules: [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)
 - Payroll package: [afenda-elite-payroll](../afenda-elite-payroll/SKILL.md) — `@afenda/payroll` domain farms · schemas · store · adapters · boundaries/domain/testing/security companions · phased [workflow](../afenda-elite-payroll/workflow.md); Plan → [payroll-architect](../../agents/payroll-architect.md); phase gate → [payroll-verifier](../../agents/payroll-verifier.md)
+- Corporate Administration: [afenda-elite-corporate-administration](../afenda-elite-corporate-administration/SKILL.md) — `@afenda/corporate-administration` greenfield · CA-GREENFIELD-ENTERPRISE-01 · slice CA-X.Y · [reference](../afenda-elite-corporate-administration/reference.md) · [verification](../afenda-elite-corporate-administration/verification.md); Scratch `docs-V2/_scratch/erp/corporate-administration/greenfield`
 - API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — `docs-V2/api` Scratch + disk + companions; `pnpm check:openapi`
 - Module readiness: [afenda-elite-module-readiness](../afenda-elite-module-readiness/SKILL.md) — MOD-002 evidence + Module Enterprise Readiness claims (`*-MOD-009` / `*-MOD-010`)
 - Vendor lifecycle: [using-agent-skills](../agent-skills/skills/using-agent-skills/SKILL.md)

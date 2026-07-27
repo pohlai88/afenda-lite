@@ -364,6 +364,7 @@ export type HumanResourcesLeaveStore = {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		excludeRequestId?: HumanResourcesLeaveRequestId;
+		includeDraft?: boolean;
 	}): Promise<Result<LeaveRequestSegment[]>>;
 
 	createDraftLeaveRequest(

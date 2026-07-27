@@ -17,15 +17,8 @@ modules:
         style: events
     required: []
   - id: corporate-administration
-    optionalIntegratesWith:
-      - moduleId: accounting
-        style: ports
-      - moduleId: payments
-        style: ports
-      - moduleId: human-resources
-        style: events
-    required:
-      - master-data
+    optionalIntegratesWith: []
+    required: []
   - id: fulfillment
     optionalIntegratesWith:
       - moduleId: sales

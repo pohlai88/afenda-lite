@@ -10,6 +10,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -51,7 +52,7 @@ export const payrollCalendar = pgTable(
 	(t) => [
 		index("payroll_calendar_org_id_idx").on(t.organizationId, t.id),
 		index("payroll_calendar_org_status_idx").on(t.organizationId, t.status),
-		uniqueIndex("payroll_calendar_org_id_uidx").on(t.organizationId, t.id),
+		unique("payroll_calendar_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_calendar_org_create_idempotency_uidx").on(
 			t.organizationId,
 			t.createIdempotencyKey,
@@ -92,7 +93,7 @@ export const payrollPayGroup = pgTable(
 			t.organizationId,
 			t.calendarId,
 		),
-		uniqueIndex("payroll_pay_group_org_id_uidx").on(t.organizationId, t.id),
+		unique("payroll_pay_group_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_pay_group_org_code_uidx").on(t.organizationId, t.code),
 		uniqueIndex("payroll_pay_group_org_create_idempotency_uidx").on(
 			t.organizationId,
@@ -130,7 +131,7 @@ export const payrollPeriod = pgTable(
 			t.organizationId,
 			t.payGroupId,
 		),
-		uniqueIndex("payroll_period_org_id_uidx").on(t.organizationId, t.id),
+		unique("payroll_period_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_period_org_pay_group_range_uidx").on(
 			t.organizationId,
 			t.payGroupId,
@@ -183,7 +184,7 @@ export const payrollEarningRule = pgTable(
 			t.organizationId,
 			t.payGroupId,
 		),
-		uniqueIndex("payroll_earning_rule_org_id_uidx").on(t.organizationId, t.id),
+		unique("payroll_earning_rule_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_earning_rule_org_code_from_uidx").on(
 			t.organizationId,
 			t.payGroupId,
@@ -241,10 +242,7 @@ export const payrollDeductionRule = pgTable(
 			t.organizationId,
 			t.payGroupId,
 		),
-		uniqueIndex("payroll_deduction_rule_org_id_uidx").on(
-			t.organizationId,
-			t.id,
-		),
+		unique("payroll_deduction_rule_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_deduction_rule_org_code_from_uidx").on(
 			t.organizationId,
 			t.payGroupId,
@@ -357,7 +355,7 @@ export const payrollRun = pgTable(
 		index("payroll_run_org_status_idx").on(t.organizationId, t.status),
 		index("payroll_run_org_pay_group_idx").on(t.organizationId, t.payGroupId),
 		index("payroll_run_org_period_idx").on(t.organizationId, t.periodId),
-		uniqueIndex("payroll_run_org_id_uidx").on(t.organizationId, t.id),
+		unique("payroll_run_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_run_org_identity_uidx").on(
 			t.organizationId,
 			t.payGroupId,
@@ -479,7 +477,7 @@ export const payrollEmployeeAssignment = pgTable(
 			t.organizationId,
 			t.employeeId,
 		),
-		uniqueIndex("payroll_employee_assignment_org_id_uidx").on(
+		unique("payroll_employee_assignment_org_id_uidx").on(
 			t.organizationId,
 			t.id,
 		),
@@ -732,7 +730,7 @@ export const payrollRunEmployee = pgTable(
 	(t) => [
 		index("payroll_run_employee_org_id_idx").on(t.organizationId, t.id),
 		index("payroll_run_employee_org_run_idx").on(t.organizationId, t.runId),
-		uniqueIndex("payroll_run_employee_org_id_uidx").on(t.organizationId, t.id),
+		unique("payroll_run_employee_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("payroll_run_employee_org_run_employee_uidx").on(
 			t.organizationId,
 			t.runId,

@@ -53,6 +53,7 @@ import type {
 	JobCompetencyListPage,
 } from "../types";
 import {
+	type ProjectedEmployeeCompetencyProfile,
 	projectEmployeeCompetencyProfileFromDecision,
 	talentSensitiveQueryRequestedFields,
 } from "./talent-field-projection";
@@ -425,7 +426,7 @@ export async function listJobCompetencies(
 export async function getEmployeeCompetencyProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<Result<EmployeeCompetencyProfile>> {
+): Promise<Result<ProjectedEmployeeCompetencyProfile>> {
 	return runTalentEmployeeScopedQuery(input, options, {
 		schema: getEmployeeCompetencyProfileInputSchema,
 		invalidMessage: "Invalid employee competency profile get input",

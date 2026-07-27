@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-const migrationPath = fileURLToPath(
-	new URL("../drizzle/0008_hr_workforce_foundation.sql", import.meta.url),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+import { readCurrentMigrationSql } from "./helpers/current-migration-sql";
+
+const migrationSql = readCurrentMigrationSql();
 
 describe("HR workforce foundation migration", () => {
 	it("creates person and worker tables with tenancy and idempotency indexes", () => {

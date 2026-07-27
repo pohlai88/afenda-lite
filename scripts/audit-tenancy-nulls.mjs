@@ -21,6 +21,18 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"platform_search_document",
 	"platform_notification",
 	"platform_domain_event",
+	"ca_mutation_receipt",
+	"ca_legal_company",
+	"ca_company_jurisdiction_profile",
+	"ca_company_name",
+	"ca_company_legal_form_history",
+	"ca_company_identifier",
+	"ca_company_financial_year",
+	"ca_company_activity",
+	"ca_legal_establishment",
+	"ca_establishment_status_history",
+	"ca_registered_address",
+	"ca_premise",
 	"md_party",
 	"md_organization_dimension",
 	"md_item_group",
@@ -272,6 +284,30 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM platform_notification WHERE organization_id IS NULL`,
 	platform_domain_event: () =>
 		sql`SELECT count(*)::int AS null_count FROM platform_domain_event WHERE organization_id IS NULL`,
+	ca_mutation_receipt: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_mutation_receipt WHERE organization_id IS NULL`,
+	ca_legal_company: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_legal_company WHERE organization_id IS NULL`,
+	ca_company_jurisdiction_profile: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_jurisdiction_profile WHERE organization_id IS NULL`,
+	ca_company_name: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_name WHERE organization_id IS NULL`,
+	ca_company_legal_form_history: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_legal_form_history WHERE organization_id IS NULL`,
+	ca_company_identifier: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_identifier WHERE organization_id IS NULL`,
+	ca_company_financial_year: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_financial_year WHERE organization_id IS NULL`,
+	ca_company_activity: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_company_activity WHERE organization_id IS NULL`,
+	ca_legal_establishment: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_legal_establishment WHERE organization_id IS NULL`,
+	ca_establishment_status_history: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_establishment_status_history WHERE organization_id IS NULL`,
+	ca_registered_address: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_registered_address WHERE organization_id IS NULL`,
+	ca_premise: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_premise WHERE organization_id IS NULL`,
 	md_party: () =>
 		sql`SELECT count(*)::int AS null_count FROM md_party WHERE organization_id IS NULL`,
 	md_organization_dimension: () =>

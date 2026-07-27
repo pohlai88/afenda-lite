@@ -1,6 +1,6 @@
 # Corporate Administration — Package Architecture and Contracts
 
-## 1. Target source layout
+## 1. Current Phase 0 source layout
 
 ```text
 packages/erp/corporate-administration/
@@ -14,108 +14,82 @@ packages/erp/corporate-administration/
 │   ├── permissions.ts
 │   ├── authorization.ts
 │   ├── command-options.ts
+│   ├── command-identity.ts
+│   ├── domain-events.ts
+│   ├── event-types.ts
+│   ├── idempotency.ts
+│   ├── parse-input.ts
 │   ├── ports.ts
 │   ├── production-ports.ts
-│   ├── resolve-store.ts
 │   ├── error-codes.ts
 │   ├── mutation-tables.ts
-│   ├── types.ts
 │   ├── kernel/
 │   │   ├── brands.ts
+│   │   ├── canonical-json.ts
 │   │   ├── dates.ts
 │   │   ├── decimals.ts
 │   │   ├── effective-range.ts
-│   │   ├── bitemporal.ts
-│   │   ├── fingerprint.ts
 │   │   ├── normalization.ts
-│   │   ├── pagination.ts
-│   │   ├── transaction.ts
-│   │   └── validation.ts
-│   ├── company/
-│   │   ├── commands/
-│   │   ├── queries/
-│   │   ├── schemas.ts
-│   │   ├── types.ts
-│   │   ├── rules.ts
-│   │   ├── store.ts
-│   │   └── index.ts
-│   ├── establishments/
-│   ├── governance/
-│   ├── officers/
-│   ├── authority/
-│   ├── capital/
-│   ├── ownership/
-│   ├── beneficial-ownership/
-│   ├── distributions/
-│   ├── assets/
-│   ├── compliance-instruments/
-│   ├── banking/
-│   ├── group/
-│   ├── agreements/
-│   ├── corporate-actions/
-│   ├── documents/
-│   ├── registers/
-│   ├── compliance-rules/
-│   ├── filings/
-│   ├── operations/
+│   │   └── pagination.ts
+│   ├── internal/
+│   │   └── safe-field-path.ts
 │   ├── adapters/
 │   │   └── drizzle/
+│   │       ├── audit.ts
+│   │       ├── dependencies.ts
+│   │       ├── errors.ts
+│   │       ├── idempotency.ts
 │   │       ├── index.ts
-│   │       ├── transaction-context.ts
-│   │       ├── company.ts
-│   │       ├── governance.ts
-│   │       ├── authority.ts
-│   │       ├── capital.ts
-│   │       ├── assets.ts
-│   │       ├── compliance.ts
-│   │       ├── group.ts
-│   │       ├── documents.ts
-│   │       ├── filings.ts
-│   │       └── operations.ts
-│   └── testing/
-│       ├── index.ts
-│       ├── memory-store.ts
-│       ├── fixtures.ts
-│       ├── parity-harness.ts
-│       ├── failure-injection.ts
-│       └── test-options.ts
+│   │       ├── outbox.ts
+│   │       └── transaction.ts
 └── __tests__/
-    ├── contract/
-    ├── domain/
-    ├── parity/
-    ├── database/
-    ├── concurrency/
-    ├── failure-injection/
-    ├── security/
-    └── integration/
+    ├── *.test.ts
+    └── helpers/
+        ├── fixed-clock.ts
+        ├── inline-transaction.ts
+        ├── memory-audit.ts
+        ├── memory-idempotency.ts
+        ├── memory-outbox.ts
+        ├── neon-cleanup.ts
+        └── neon-parity.ts
 ```
+
+Later governed business slices add only the owning subdomain folders they
+actually implement: `company/`, `establishments/`, `governance/`,
+`officers/`, `authority/`, `capital/`, `ownership/`,
+`beneficial-ownership/`, `distributions/`, `assets/`,
+`compliance-instruments/`, `banking/`, `group/`, `agreements/`,
+`corporate-actions/`, `documents/`, `registers/`, `compliance-rules/`,
+`filings/`, and `operations/`. These directories are not placeholders and
+must remain absent until their owning slice ships executable behavior.
 
 ### 1.1 Decomposition rules
 
 - Each subdomain owns its schemas, types, rules and store contract.
+- CA-0.4 is infrastructure-only: do not create `src/company/**`, legal-company tables, legal-establishment tables, business commands, business queries, permissions, business events, Actions, API routes or UI in this slice.
 - The root store composes narrow domain stores; it does not become a giant interface.
 - `kernel/` contains only invariant primitives shared by three or more subdomains.
 - Never create generic `common`, `utils`, `repository` or ORM dumping grounds.
+- Never place subdomain behavior, Drizzle adapters or memory test helpers as root `src/*.ts` files. Examples that must not reappear: `src/legal-company.ts`, `src/drizzle-legal-company-store.ts`, `src/drizzle-idempotency.ts`, `src/memory-legal-company-store.ts`.
 - Drizzle remains behind the adapters subpath.
-- Testing exports remain behind an explicit testing subpath when package governance permits.
-- The root barrel does not export application Actions, UI components or raw persistence details.
+- Drizzle table definitions are owned only by the repository-authoritative `@afenda/db` schema structure. In this checkout that location is `packages/data-plane/db/src/schema/**`; do not define tables under `packages/erp/corporate-administration`.
+- Testing helpers stay under package tests or behind an explicit testing subpath only when package governance permits.
+- The root barrel does not export application Actions, UI components, test helpers or raw persistence details.
 
 ## 2. Package dependencies
 
-### 2.1 Expected platform dependencies
+### 2.1 CA-0.1 runtime dependencies
 
 ```text
 @afenda/db
 @afenda/errors
-@afenda/audit
-@afenda/events
-@afenda/search              # only if approved for projections
-@afenda/master-data
 zod
 server-only
 ```
 
-The implementation must confirm actual allowed edges through Afenda’s module manifest and workspace-edge register. Physical proximity under `packages/erp/` grants no peer access.
+CA-0.4 additionally uses `@afenda/audit` for the shared platform audit adapter. Audit remains platform-owned; Corporate Administration must not create a duplicate CA audit table.
+
+Later slices add `@afenda/events`, `@afenda/search`, `@afenda/master-data`, or other peer edges only when the consuming command/query, manifest dependency, adapter, and tests are introduced together. Physical proximity under `packages/erp/` grants no peer access.
 
 ### 2.2 Forbidden dependencies
 
@@ -130,6 +104,44 @@ The package must not import:
 - generic workflow implementations;
 - binary-storage credentials.
 
+### 2.3 Lifecycle position
+
+The module manifest must remain:
+
+```ts
+lifecycle: "scaffolded",
+activationMode: "organization_toggle",
+```
+
+CA-0.4 durable infrastructure and Drizzle infrastructure adapters do not make Corporate Administration active business capability. CA-0.4 must not add command/query declarations, permissions, business events, legal-company tables, Actions, API routes or UI.
+
+Forbidden lifecycle values before governed final activation:
+
+```text
+active
+preview
+beta
+production
+```
+
+### 2.4 Export surface
+
+Public root export:
+
+```text
+@afenda/corporate-administration
+```
+
+The root export publishes contracts, brands, schemas, runtime contracts and infrastructure-safe helpers only. CA-0.4 publishes no command/query functions or domain aggregate types.
+
+Approved adapter export:
+
+```text
+@afenda/corporate-administration/adapters/drizzle
+```
+
+Application composition roots consume Drizzle adapters from this subpath. Do not export Drizzle adapters, memory stores or test helpers from the public package root.
+
 ## 3. Command options
 
 Every command receives trusted request context separately from user input.
@@ -139,42 +151,34 @@ export interface CorporateAdministrationCommandOptions {
   readonly organizationId: OrganizationId;
   readonly actorUserId: UserId;
   readonly correlationId: CorrelationId;
-  readonly causationId?: string;
-  readonly idempotencyKey: string;
-  readonly requestInstant: Date;
+  readonly causationId?: CausationId;
+  readonly idempotencyKey: IdempotencyKey;
   readonly authorization: CorporateAdministrationAuthorizationContext;
-  readonly approvalDecisionId?: string;
 }
 ```
 
 Rules:
 
 - `organizationId` and `actorUserId` are not accepted inside command payload schemas.
-- High-risk commands declare whether an approval is required.
-- The canonical command fingerprint excludes transport-only correlation data but includes every business-relevant field and the legal target.
-- Query options include organization, authorization, pagination and an injected clock where due-state calculation is required.
+- High-risk commands declare whether an approval is required only when an approval-governed slice introduces that behavior.
+- The canonical command fingerprint excludes transport-only correlation data. Business fields and legal targets are introduced only with a governed behavioral slice.
+- Query options include organization, authorization and pagination. CA-0.4 has no business query IDs.
 
-## 4. Required ports
+## 4. Integration ports
 
-| Port | Purpose | Constraint |
-|---|---|---|
-| `PartyReferencePort` | Resolve person/organization parties, roles, merge state and effective validity | Public Master Data contract only |
-| `TaxRegistrationReadPort` | Read effective tax registrations for display/reconciliation | No tax dual-write |
-| `ReferenceDataPort` | Countries, currencies, languages, timezones and other approved references | Read-only |
-| `ProtectedIdentityPort` | Resolve authorized filing-safe identity attributes | Optional, strict field-level authorization |
-| `ApprovalDecisionPort` | Verify approved maker-checker decision and segregation | Generic approval owner remains external |
-| `DocumentObjectPort` | Validate object reference, checksum, malware/availability status | No binary in CA |
-| `SearchProjectionPort` | Upsert/delete/rebuild redacted search documents | Search never authorizes |
-| `ReminderDispatchPort` | Handoff deterministic reminder payloads | Scheduling/delivery remains external |
-| `AccountingReferencePort` | Validate journal/asset references and consume legal-asset events | No accounting writes |
-| `PaymentsReferencePort` | Validate payment-account/payment references for distributions or banking | No money movement |
-| `SignatureEnvelopePort` | Optional e-signature envelope status/reference | No core dependency on vendor |
-| `ComplianceRuleSourcePort` | Import/verify signed jurisdiction rule packs | Core can operate with tenant-authored packs |
-| `ClockPort` | Deterministic current instant/date | Required for due/overdue and expiry behavior |
+CA-0.1 publishes no integration ports. Add each port only with the command/query slice that consumes it and proves the boundary. Clock, reference, approval, document, accounting, payments, search, reminder, signature, and compliance contracts are future slice work.
+
+CA-0.4 repository decision: audit facts and outbox delivery use shared platform infrastructure where needed; Corporate Administration must not create duplicate `ca_audit_fact` or `ca_outbox_event` tables. CA generic future event envelopes append to `platform_domain_event` using `deduplication_key = eventId`, `type = eventType`, `organization_id`, actor/correlation/causation, canonical JSON `payload`, and aggregate facts in `metadata`. Publication status, attempt count, last error, processed timestamp, and created timestamp remain platform-owned. No compatible shared idempotency facility exists, so CA-0.4 may own the organization-scoped `ca_mutation_receipt` infrastructure table and its Drizzle adapter only.
+
+The durable idempotency receipt must record organization, command identity, idempotency key, fingerprint, status, reservation token, reserved/completed timestamps, canonical JSON replay payload, record version, and created/updated timestamps. Its closed status set is `in_progress`, `completed`, and `released`; do not add `failed` or `expired` until an approved lifecycle requires them. Uniqueness is over `(organization_id, command_id, idempotency_key)`, never `idempotency_key` alone. Completion must match scope, fingerprint, active reservation token, and `in_progress` status. Replay payloads are stored only as canonical JSON strings validated by CA idempotency contracts.
+
+CA-0.4 adds no actual Corporate Administration event types. Payloads must be validated through the event envelope constructor, canonical JSON compatible, free of unsupported JavaScript values or arbitrary prototypes, and bounded before append.
+
+CA-0.4 transaction semantics are explicit. Work returns a governed `Result` plus `commit` or `rollback`; adapters must not infer rollback from `result.ok`. Use `rollback` for ordinary command failure that must leave no writes, and use `commit` for deliberate infrastructure state such as idempotency release. Nested transactions are prohibited and must throw instead of opening an independent transaction or savepoint. The public package boundary exposes only package-neutral transaction context and must not leak Drizzle transaction types.
 
 ## 5. Store topology
 
-Use narrow contracts such as:
+Future governed business slices may use narrow contracts such as:
 
 ```text
 LegalCompanyStore
@@ -203,7 +207,7 @@ A resolved composition object may expose these stores to commands. Do not requir
 
 ### 5.1 Production atomicity
 
-Production commands call a transaction-scoped Drizzle composition. The transaction context must provide:
+Production commands call a transaction-scoped Drizzle composition. In this checkout, CA uses the repository Neon HTTP transaction facility via `@afenda/db` `runNeonHttpTransaction`; interactive `db.transaction` is not available on the product Drizzle client. The transaction context must provide package-neutral enlistment for:
 
 - domain store methods;
 - mutation receipt operations;
@@ -213,6 +217,8 @@ Production commands call a transaction-scoped Drizzle composition. The transacti
 - deterministic lock helpers.
 
 Memory implementations emulate the same all-or-nothing behavior for parity tests but are never production fallback.
+
+CA-0.4 has no production business command using this topology. Its tests cover infrastructure ports, idempotency behavior, and composition boundaries only.
 
 ## 6. Result and semantic error model
 
@@ -248,89 +254,7 @@ Do not encode HTTP status in the package.
 
 ## 7. Permission model
 
-Use stable, explicit permission IDs. A recommended catalog:
-
-### 7.1 General and company
-
-```text
-corporate_administration.access
-corporate_administration.company.read
-corporate_administration.company.manage
-corporate_administration.company.activate
-corporate_administration.company.dissolve
-corporate_administration.establishment.manage
-```
-
-### 7.2 Governance and authority
-
-```text
-corporate_administration.governance.read
-corporate_administration.governance.manage
-corporate_administration.officer.manage
-corporate_administration.meeting.manage
-corporate_administration.resolution.manage
-corporate_administration.authority.read
-corporate_administration.authority.manage
-corporate_administration.authority.publish
-corporate_administration.seal.manage
-```
-
-### 7.3 Capital and ownership
-
-```text
-corporate_administration.capital.read
-corporate_administration.capital.configure
-corporate_administration.capital.post
-corporate_administration.capital.reverse
-corporate_administration.ownership.read
-corporate_administration.ownership.manage
-corporate_administration.ubo.read
-corporate_administration.ubo.manage
-corporate_administration.ubo.attest
-corporate_administration.distribution.declare
-```
-
-### 7.4 Assets, compliance and banking
-
-```text
-corporate_administration.assets.read
-corporate_administration.assets.manage
-corporate_administration.licence.manage
-corporate_administration.charge.manage
-corporate_administration.banking.read
-corporate_administration.banking.manage
-corporate_administration.bank_mandate.manage
-```
-
-### 7.5 Group, agreements, actions, documents and filings
-
-```text
-corporate_administration.group.read
-corporate_administration.group.manage
-corporate_administration.related_party.manage
-corporate_administration.agreement.manage
-corporate_administration.corporate_action.manage
-corporate_administration.corporate_action.approve_effect
-corporate_administration.document.read
-corporate_administration.document.manage
-corporate_administration.register.certify
-corporate_administration.compliance_rule.manage
-corporate_administration.filing.read
-corporate_administration.filing.manage
-corporate_administration.filing.waive
-```
-
-### 7.6 Operations and administration
-
-```text
-corporate_administration.import.prepare
-corporate_administration.import.approve
-corporate_administration.import.apply
-corporate_administration.export
-corporate_administration.reconcile
-corporate_administration.sensitive_export
-corporate_administration.module_admin
-```
+CA-0.1 through CA-0.4 ship no runtime permissions. The normalized future catalog lives in `FUTURE-PERMISSION-CATALOG.md` and must stay design-only until a command or query activates an exact permission.
 
 Every command/query must appear in a machine-checkable permission coverage test.
 
@@ -342,7 +266,7 @@ Event names use:
 corporate_administration.<aggregate>.<past-tense-action>.v<version>
 ```
 
-Examples:
+Future examples:
 
 ```text
 corporate_administration.legal_company.created.v1
@@ -396,7 +320,7 @@ getCorporateEntityHealth
 
 ## 10. Application composition and web boundary
 
-Recommended route family:
+Future route family:
 
 ```text
 /o/[organizationSlug]/corporate
@@ -429,6 +353,8 @@ Server Actions:
 - revalidate only affected routes/tags;
 - never import Drizzle tables;
 - never trust organization/actor from form data.
+
+CA-0.4 must not add Corporate Administration Server Actions, API routes, route entries, or UI.
 
 ## 11. User-experience states
 

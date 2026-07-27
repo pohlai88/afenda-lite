@@ -1,11 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { fail, ok } from "@afenda/errors/result";
 
 import {
-	type PayrollResultLineId,
-	type PayrollRunEmployeeId,
-	type PayrollStatutoryResultId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
 	parsePayrollStatutoryResultId,
@@ -16,7 +13,6 @@ import {
 	payrollErrorDetails,
 } from "../error-codes";
 import type {
-	MutationPorts,
 	PayrollEmployeeQueryPort,
 	PayrollRunCalculatorPort,
 } from "../ports";

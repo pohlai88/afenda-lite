@@ -257,7 +257,9 @@ export const platformNotification = pgTable(
 
 /**
  * Org-scoped domain-event outbox (pending → processed / failed).
- * Sole writer: `@afenda/events` — do not dual-write from apps/web.
+ * Publication lifecycle owner: `@afenda/events`. Governed domain adapters may
+ * append pending rows through transaction-scoped outbox ports; apps/web does
+ * not write this table directly.
  */
 export const platformDomainEvent = pgTable(
 	"platform_domain_event",

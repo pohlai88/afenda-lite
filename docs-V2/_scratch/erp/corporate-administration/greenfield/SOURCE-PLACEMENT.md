@@ -1,6 +1,6 @@
 # Source Placement
 
-The generated bundle mirrors the recommended repository paths.
+This modular source set records the governed repository paths.
 
 ## Documentation authority
 
@@ -14,27 +14,22 @@ This is initially Scratch authority. Promote or link it through the repository�
 
 ## Package README
 
-Copy:
+`packages/erp/corporate-administration/README.md` is the current package
+position. Keep its lifecycle and active-slice statement synchronized with
+`03-ROADMAP-INDEX.md` and the matching evidence file.
 
-```text
-packages/erp/corporate-administration/README.md
-```
+## Current mission
 
-when scaffolding the new package. Keep its lifecycle statement accurate as slices are delivered.
+`CA-0.4 — Durable infrastructure adapters and package boundaries` is
+`BLOCKED` on approved disposable-Neon migration and concurrency evidence.
+Do not begin CA-1.1 or create business commands, Actions, routes or UI before
+Phase 0 is `DONE`.
 
-## Suggested first mission
+## Governed module files
 
-Start with:
-
-```text
-CA-0.1 — Authority, catalog and package scaffold
-```
-
-Do not begin schema or business commands before the package manifest, module roadmap, dependency edges and ownership reservation are approved.
-
-## Generated governance files
-
-Do not hand-edit generated catalogs or manifests. Use the repository’s owning generators and then run governance validation.
+Do not hand-edit generated catalogs. Use the repository's owning generator and
+then run governance validation. The package manifest, module roadmap,
+workspace-edge register and schema-ownership manifest remain governed inputs.
 
 Concatenated all-in-one documents, text mirrors and bundle hash manifests are retired.
 The modular files above are the only execution source.

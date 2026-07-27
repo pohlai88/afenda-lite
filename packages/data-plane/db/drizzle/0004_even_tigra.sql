@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "ca_establishment_status_version_uidx" ON "ca_establishment_status_history" USING btree ("organization_id","legal_establishment_id","version");

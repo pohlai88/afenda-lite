@@ -372,6 +372,7 @@ export async function submitLeaveRequest(
 				organizationId: data.organizationId,
 				employeeId: request.data.employeeId,
 				excludeRequestId: request.data.id,
+				includeDraft: false,
 			});
 			if (!existingSegments.ok) return existingSegments;
 

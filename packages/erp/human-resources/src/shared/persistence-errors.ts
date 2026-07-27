@@ -14,23 +14,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function writeErrorMessage(error: unknown): string {
-	if (isRecord(error) && typeof error.message === "string") {
-		return error.message;
-	}
-	return error instanceof Error ? error.message : String(error);
-}
-
 export function isPostgresUniqueViolation(error: unknown): boolean {
-	return isRecord(error) && error.code === "23505";
+	return postgresErrorCode(error) === "23505";
 }
 
 export function isPostgresCheckViolation(error: unknown): boolean {
-	return isRecord(error) && error.code === "23514";
+	return postgresErrorCode(error) === "23514";
 }
 
 export function isPostgresForeignKeyViolation(error: unknown): boolean {
-	return isRecord(error) && error.code === "23503";
+	return postgresErrorCode(error) === "23503";
 }
 
 function postgresErrorCode(error: unknown): string | null {
@@ -93,7 +86,7 @@ export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
 		return false;
 	}
 	return /_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		writeErrorMessage(error),
+		postgresErrorMessage(error),
 	);
 }
 
@@ -102,13 +95,14 @@ export function isEmployeeNumberUniqueViolation(error: unknown): boolean {
 		return false;
 	}
 	return /hr_employee_org_normalized_number_uidx|normalized_employee_number/i.test(
-		writeErrorMessage(error),
+		postgresErrorMessage(error),
 	);
 }
 
 function uniqueConstraintMatch(error: unknown, pattern: RegExp): boolean {
 	return (
-		isPostgresUniqueViolation(error) && pattern.test(writeErrorMessage(error))
+		isPostgresUniqueViolation(error) &&
+		pattern.test(postgresErrorMessage(error))
 	);
 }
 
@@ -159,7 +153,7 @@ export function mapPersistenceFailure(
 	if (
 		uniqueConstraintMatch(
 			error,
-			/hr_position_org_code_uidx|hr_employment_contract_org_employment_ref_uidx/i,
+			/hr_position_org_code_uidx|hr_employment_contract_org_employment_ref(?:_active)?_uidx/i,
 		)
 	) {
 		return fail(
@@ -170,7 +164,7 @@ export function mapPersistenceFailure(
 	}
 	if (
 		isPostgresCheckViolation(error) &&
-		/date_range_check/i.test(writeErrorMessage(error))
+		/date_range_check/i.test(postgresErrorMessage(error))
 	) {
 		return fail(
 			"BAD_REQUEST",

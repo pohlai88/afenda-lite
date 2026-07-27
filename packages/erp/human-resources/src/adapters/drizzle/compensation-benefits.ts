@@ -2621,7 +2621,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							UPDATE hr_employee_compensation
 							SET status = 'ended',
 								effective_to = ${reviewData.effectiveFrom},
-								version = version + 1,
+								version = hr_employee_compensation.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM active_comp
@@ -2653,24 +2653,29 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 							FROM ended_comp
 							RETURNING id
 						),
+						ended_ready AS (
+							SELECT count(*) AS ended_count
+							FROM ended_comp
+						),
 						mutated AS (
 							INSERT INTO hr_employee_compensation (
 								id, organization_id, employee_id, employment_id, grade_id,
-								salary_band_id, base_amount, currency_code, effective_from,
-								effective_to, reason, status, source_review_id,
+								salary_band_id, base_amount, currency_code, pay_frequency,
+								effective_from, effective_to, reason, approved_at, approved_by,
+								status, source_review_id,
 								create_idempotency_key, create_request_fingerprint, version,
 								created_by, updated_by
 							)
-							VALUES (
+							SELECT
 								${brandedId.data}, ${input.organizationId}, ${reviewData.employeeId},
 								${reviewData.employmentId}, ${reviewData.proposedGradeId},
 								${reviewData.proposedSalaryBandId}, ${reviewData.proposedBaseAmount},
-								${reviewData.proposedCurrencyCode}, ${reviewData.effectiveFrom},
-								NULL, ${input.reason}, 'active', ${input.reviewId},
+								${reviewData.proposedCurrencyCode}, 'monthly', ${reviewData.effectiveFrom},
+								NULL, ${input.reason}, now(), ${input.actorUserId}, 'active', ${input.reviewId},
 								${input.createIdempotencyKey},
 								${reviewData.effectiveFrom}::text || ':' || ${reviewData.proposedBaseAmount}::text || ':' || ${reviewData.proposedCurrencyCode}::text,
 								1, ${input.actorUserId}, ${input.actorUserId}
-							)
+							FROM ended_ready
 							RETURNING *
 						),
 						audit_new AS (

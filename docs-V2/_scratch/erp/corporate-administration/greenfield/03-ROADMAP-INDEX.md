@@ -8,10 +8,10 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 
 ## Phase summary
 
-| Phase | Name | Slices | Initial status | Outcome |
+| Phase | Name | Slices | Status | Outcome |
 |---:|---|---:|---|---|
-| 0 | Architecture and Foundation | 4 | OPEN | Create the package, close authority and dependency decisions, establish the transactional kernel, and prove one thin production-composed legal-company vertical. |
-| 1 | Legal Company and Establishments | 5 | OPEN | Deliver complete statutory identity, legal-form, identifier, status, financial-year, establishment and registered-address history. |
+| 0 | Architecture and Foundation | 4 | DONE | Create the package, close authority and dependency decisions, establish the transactional kernel, and prove durable infrastructure without activating business capability. |
+| 1 | Legal Company and Establishments | 5 | IN_PROGRESS | Deliver complete statutory identity, legal-form, identifier, status, financial-year, establishment and registered-address history. |
 | 2 | Governance and Statutory Offices | 5 | OPEN | Deliver governance bodies, statutory roles, officer evidence, meetings, quorum, voting, resolutions and implementation tracking. |
 | 3 | Authority, Approvals and Company Seal | 4 | OPEN | Provide effective delegation-of-authority decisions, mandates, powers of attorney, seal control and real maker-checker enforcement. |
 | 4 | Capital, Ownership and Beneficial Control | 6 | OPEN | Create a balanced immutable capital ledger, certificate register, ownership restrictions, UBO chain and legal distribution declarations. |
@@ -22,13 +22,13 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 
 ## Slice register
 
-| Slice | Phase | Title | Depends on | Initial status |
+| Slice | Phase | Title | Depends on | Status |
 |---|---:|---|---|---|
 | CA-0.1 | 0 | Authority, catalog and package scaffold | None | DONE |
-| CA-0.2 | 0 | Core contracts, permissions, errors and reference ports | CA-0.1 | DONE |
-| CA-0.3 | 0 | Database foundation and atomic mutation kernel | CA-0.2 | OPEN |
-| CA-0.4 | 0 | First thin vertical — draft legal-company registration | CA-0.3 | OPEN |
-| CA-1.1 | 1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | OPEN |
+| CA-0.2 | 0 | Core contracts and future catalog design | CA-0.1 | DONE |
+| CA-0.3 | 0 | Runtime composition and mutation contracts | CA-0.2 | DONE |
+| CA-0.4 | 0 | Durable infrastructure adapters and package boundaries | CA-0.3 | DONE |
+| CA-1.1 | 1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | DONE |
 | CA-1.2 | 1 | Effective legal names and legal forms | CA-1.1 | OPEN |
 | CA-1.3 | 1 | Corporate identifiers, financial years and registered activities | CA-1.2 | OPEN |
 | CA-1.4 | 1 | Registered offices, legal establishments and premises | CA-1.3 | OPEN |

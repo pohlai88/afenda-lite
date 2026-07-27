@@ -44,6 +44,54 @@ tables:
     kind: platform
 
   # --- ERP sole mutators (R1-F) — must match module.manifest.ts mutationTables ---
+  - table: ca_legal_company
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_company_jurisdiction_profile
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_company_name
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_company_legal_form_history
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_company_identifier
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_company_financial_year
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_company_activity
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_legal_establishment
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_establishment
+  - table: ca_establishment_status_history
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_establishment
+  - table: ca_registered_address
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_establishment
+  - table: ca_premise
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: premise
+  - table: ca_mutation_receipt
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+
   - table: md_party
     writeOwner: "@afenda/master-data"
     kind: erp

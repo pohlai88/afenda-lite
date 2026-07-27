@@ -1,0 +1,22 @@
+import type {
+	CorporateAdministrationOutboxPort,
+	CorporateAdministrationPendingEvent,
+} from "@afenda/corporate-administration";
+import { createCorporateAdministrationDomainEventEnvelope } from "@afenda/corporate-administration";
+import { ok, type Result } from "@afenda/errors/result";
+
+export function createMemoryCorporateAdministrationOutboxPort(input?: {
+	onAppend?: (events: readonly CorporateAdministrationPendingEvent[]) => void;
+}): CorporateAdministrationOutboxPort {
+	return Object.freeze({
+		async append(
+			events: readonly CorporateAdministrationPendingEvent[],
+		): Promise<Result<void>> {
+			const validatedEvents = events.map((event) =>
+				createCorporateAdministrationDomainEventEnvelope(event),
+			);
+			input?.onAppend?.(validatedEvents);
+			return ok(undefined);
+		},
+	});
+}

@@ -13,18 +13,8 @@ import {
 	platformRolePermission,
 } from "./schema/platform";
 
-const CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
+const RETIRED_CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
 	["corporate_administration.access", "Access Corporate Administration", false],
-	[
-		"corporate_administration.company.read",
-		"Read legal company records",
-		false,
-	],
-	[
-		"corporate_administration.company.manage",
-		"Manage legal company records",
-		true,
-	],
 	[
 		"corporate_administration.company.activate",
 		"Activate legal companies",
@@ -33,11 +23,6 @@ const CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
 	[
 		"corporate_administration.company.dissolve",
 		"Dissolve legal companies",
-		true,
-	],
-	[
-		"corporate_administration.establishment.manage",
-		"Manage legal establishments",
 		true,
 	],
 	[
@@ -256,8 +241,6 @@ const CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
 	],
 ] as const;
 
-const CORPORATE_ADMINISTRATION_MODULE = "corporate_administration";
-
 /** Seed permission codes (v1) — ARCH-023 §3.2 (shell after domain wipe). */
 export const PLATFORM_PERMISSION_V1 = [
 	{
@@ -306,6 +289,24 @@ export const PLATFORM_PERMISSION_V1 = [
 		code: "master_data.import_approve",
 		module: "master_data",
 		description: "Approve and apply master-data bulk import",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.company.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration legal company drafts",
+		sensitive: false,
+	},
+	{
+		code: "corporate_administration.company.manage",
+		module: "corporate_administration",
+		description: "Register Corporate Administration legal company drafts",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.establishment.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration legal establishments",
 		sensitive: true,
 	},
 	{
@@ -758,14 +759,6 @@ export const PLATFORM_PERMISSION_V1 = [
 		description: "Resolve and retry financial posting exceptions",
 		sensitive: true,
 	},
-	...CORPORATE_ADMINISTRATION_PERMISSION_V1.map(
-		([code, description, sensitive]) => ({
-			code,
-			module: CORPORATE_ADMINISTRATION_MODULE,
-			description,
-			sensitive,
-		}),
-	),
 	{
 		code: "human-resources.employee.create",
 		module: "human_resources",
@@ -1523,14 +1516,12 @@ const RETIRED_PLATFORM_PERMISSION_CODES = [
 	"accounting.read",
 	"accounting.manage",
 	"human-resources.timesheet.approve",
-	"corporate-administration.company.create",
+	...RETIRED_CORPORATE_ADMINISTRATION_PERMISSION_V1.map(([code]) => code),
 	"corporate-administration.company.update",
 	"corporate-administration.company.activate",
 	"corporate-administration.company.suspend",
 	"corporate-administration.company.dissolve",
 	"corporate-administration.company.archive",
-	"corporate-administration.company.read",
-	"corporate-administration.company.list",
 	"corporate-administration.company-name.manage",
 	"corporate-administration.company-identifier.manage",
 	"corporate-administration.governance.manage",

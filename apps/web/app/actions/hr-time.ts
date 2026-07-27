@@ -8,6 +8,7 @@ import {
 	type AttendanceImportDryRunResult,
 	type AttendanceImportResult,
 	type AttendanceSession,
+	type AttendanceSourcePreviewResult,
 	activateTimePolicy,
 	approveAttendanceBreakWaiver,
 	approveOvertimeRequest,
@@ -165,6 +166,20 @@ const attendanceImportActionSchema = mutationContextSchema.extend({
 });
 
 type AttendanceImportActionInput = z.input<typeof attendanceImportActionSchema>;
+
+const attendanceImportPreviewActionSchema = z.union([
+	mutationContextSchema.extend({
+		mode: z.literal("connector"),
+		cursor: z.string().trim().min(1).max(500).optional(),
+	}),
+	attendanceImportActionSchema.extend({
+		mode: z.literal("inline").optional(),
+	}),
+]);
+
+type AttendanceImportPreviewActionInput = z.input<
+	typeof attendanceImportPreviewActionSchema
+>;
 
 export async function createWorkCalendarAction(input: {
 	correlationId?: string;
@@ -1962,14 +1977,20 @@ export async function supersedeTimesheetAction(input: {
 }
 
 export async function validateAttendanceImportAction(
-	input: AttendanceImportActionInput,
-): Promise<ActionResult<{ result: AttendanceImportDryRunResult }>> {
-	return runOperatorPermissionAction({
+	input: AttendanceImportPreviewActionInput,
+): Promise<
+	ActionResult<{
+		result: AttendanceImportDryRunResult | AttendanceSourcePreviewResult;
+	}>
+> {
+	return runOperatorPermissionAction<{
+		result: AttendanceImportDryRunResult | AttendanceSourcePreviewResult;
+	}>({
 		path: "validateAttendanceImportAction",
 		permission: "human-resources.time.attendance.manage",
 		safeMessage: "Could not validate attendance events.",
 		execute: async (session, correlationId) => {
-			const parsed = parseSchema(attendanceImportActionSchema, input);
+			const parsed = parseSchema(attendanceImportPreviewActionSchema, input);
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
@@ -1977,8 +1998,26 @@ export async function validateAttendanceImportAction(
 					parsed.details,
 				);
 			}
+			if (parsed.data.mode === "connector") {
+				const attendanceSource =
+					createHumanResourcesCommandOptions().attendanceSource;
+				if (attendanceSource === undefined) {
+					return actionFail(
+						"CONFLICT",
+						"Attendance connector is not configured.",
+					);
+				}
+				const result = await attendanceSource.previewEvents({
+					organizationId: session.orgId,
+					cursor: parsed.data.cursor,
+				});
+				const mapped = mapPackageResult(result);
+				if (!mapped.ok) return mapped;
+				return { ok: true, data: { result: mapped.data } };
+			}
+			const { mode: _mode, ...inlineInput } = parsed.data;
 			const result = dryRunAttendanceImport(
-				withSessionContext(session, correlationId, parsed.data),
+				withSessionContext(session, correlationId, inlineInput),
 			);
 			const mapped = mapPackageResult(result);
 			if (!mapped.ok) return mapped;

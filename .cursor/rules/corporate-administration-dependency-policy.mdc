@@ -1,0 +1,46 @@
+---
+description: Corporate Administration dependency guard — direct dependencies must be shipped source imports only
+alwaysApply: true
+---
+
+# Corporate Administration Dependency Policy
+
+`@afenda/corporate-administration` must depend only on packages directly required by shipped source.
+
+## Allowed runtime dependencies
+
+- `@afenda/db`
+- `@afenda/errors`
+- `@afenda/audit` only for the shared platform audit adapter
+- `server-only`
+- `zod`
+
+Do not add `drizzle-orm` directly while CA adapters import Drizzle query helpers and tables through `@afenda/db`.
+
+## Allowed dev dependencies
+
+- `@afenda/config`
+- `@afenda/testing`
+- `@types/node`
+- `typescript`
+
+These are package tooling dependencies: TypeScript config, shared test-only database gating, Node test/runtime types, and compiler execution.
+
+## Forbidden
+
+Do not add peer ERP or platform integration dependencies:
+
+- `@afenda/master-data`
+- `@afenda/accounting`
+- `@afenda/payments`
+- `@afenda/human-resources`
+- `@afenda/documents`
+- `@afenda/search`
+
+Do not add Next.js, React, HTTP frameworks, queue clients, event-bus SDKs, object-storage SDKs, signature providers, or notification SDKs to the package.
+
+Every runtime dependency must have a direct, auditable import in `packages/erp/corporate-administration/src/**`.
+
+## Hook enforcement
+
+`preToolUse` -> `.cursor/hooks/corporate-administration-dependency-policy.mjs` denies package.json edits that introduce forbidden or unaudited dependencies.

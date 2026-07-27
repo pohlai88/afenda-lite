@@ -49,6 +49,75 @@ commands:
   - id: accounting.exception.resolve
     moduleId: accounting
     permission: accounting.exception.manage
+  - id: registerLegalCompanyDraft
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: updateLegalCompanyProfile
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: addCompanyName
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: supersedeCompanyName
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: retireCompanyName
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: setCompanyJurisdictionProfile
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: supersedeCompanyJurisdictionProfile
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: setCompanyLegalForm
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: supersedeCompanyLegalForm
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: registerCompanyIdentifier
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: supersedeCompanyIdentifier
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: retireCompanyIdentifier
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: setCompanyFinancialYear
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: registerCompanyActivity
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: endCompanyActivity
+    moduleId: corporate-administration
+    permission: corporate_administration.company.manage
+  - id: registerLegalEstablishment
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: updateLegalEstablishment
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: activateLegalEstablishment
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: suspendLegalEstablishment
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: closeLegalEstablishment
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: setRegisteredAddress
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: registerPremise
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
+  - id: endPremise
+    moduleId: corporate-administration
+    permission: corporate_administration.establishment.manage
   - id: fulfillment.delivery.create
     moduleId: fulfillment
     permission: fulfillment.delivery.create

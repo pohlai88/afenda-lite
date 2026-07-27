@@ -44,6 +44,7 @@ import {
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
+import { resultFailureMessage } from "./helpers/result-details";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -80,7 +81,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(employee.ok).toBe(true);
+		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
 		if (!employee.ok) return;
 
 		const employment = await createEmployment(
@@ -93,7 +94,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(employment.ok).toBe(true);
+		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
 		if (!employment.ok) return;
 
 		const grade = await createCompensationGrade(
@@ -106,7 +107,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(grade.ok).toBe(true);
+		expect(grade.ok, resultFailureMessage(grade)).toBe(true);
 		if (!grade.ok) return;
 
 		const band = await createSalaryBand(
@@ -123,7 +124,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(band.ok).toBe(true);
+		expect(band.ok, resultFailureMessage(band)).toBe(true);
 		if (!band.ok) return;
 
 		const gradeB = await createCompensationGrade(
@@ -136,7 +137,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(gradeB.ok).toBe(true);
+		expect(gradeB.ok, resultFailureMessage(gradeB)).toBe(true);
 		if (!gradeB.ok) return;
 
 		const progression = await createCompensationGradeProgressionRule(
@@ -150,7 +151,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(progression.ok).toBe(true);
+		expect(progression.ok, resultFailureMessage(progression)).toBe(true);
 		if (!progression.ok) return;
 
 		const superseded = await supersedeSalaryBand(
@@ -167,7 +168,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(superseded.ok).toBe(true);
+		expect(superseded.ok, resultFailureMessage(superseded)).toBe(true);
 		if (!superseded.ok) return;
 		expect(superseded.data.supersedesSalaryBandId).toBe(band.data.id);
 
@@ -182,7 +183,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(asOf.ok).toBe(true);
+		expect(asOf.ok, resultFailureMessage(asOf)).toBe(true);
 		if (!asOf.ok) return;
 		expect(asOf.data.id).toBe(band.data.id);
 
@@ -204,7 +205,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(compensation.ok).toBe(true);
+		expect(compensation.ok, resultFailureMessage(compensation)).toBe(true);
 		if (!compensation.ok) return;
 
 		const approved = await approveEmployeeCompensation(
@@ -217,7 +218,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(approved.ok).toBe(true);
+		expect(approved.ok, resultFailureMessage(approved)).toBe(true);
 		if (!approved.ok) return;
 		expect(approved.data.status).toBe("active");
 
@@ -231,7 +232,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(plan.ok).toBe(true);
+		expect(plan.ok, resultFailureMessage(plan)).toBe(true);
 		if (!plan.ok) return;
 		expect(plan.data.code).toBe(`BP-${suffix}`);
 	});
@@ -253,7 +254,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(employee.ok).toBe(true);
+		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
 		if (!employee.ok) return;
 
 		const employment = await createEmployment(
@@ -266,7 +267,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(employment.ok).toBe(true);
+		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
 		if (!employment.ok) return;
 
 		const plan = await createBenefitPlan(
@@ -279,7 +280,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(plan.ok).toBe(true);
+		expect(plan.ok, resultFailureMessage(plan)).toBe(true);
 		if (!plan.ok) return;
 
 		const eligibility = await setBenefitPlanEligibility(
@@ -293,7 +294,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(eligibility.ok).toBe(true);
+		expect(eligibility.ok, resultFailureMessage(eligibility)).toBe(true);
 		if (!eligibility.ok) return;
 
 		const loaded = await getBenefitPlanEligibility(
@@ -305,7 +306,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(loaded.ok).toBe(true);
+		expect(loaded.ok, resultFailureMessage(loaded)).toBe(true);
 		if (!loaded.ok) return;
 		expect(loaded.data?.planId).toBe(plan.data.id);
 
@@ -327,7 +328,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(enrollment.ok).toBe(true);
+		expect(enrollment.ok, resultFailureMessage(enrollment)).toBe(true);
 		if (!enrollment.ok) return;
 
 		const dependent = await addBenefitEnrollmentDependent(
@@ -342,7 +343,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(dependent.ok).toBe(true);
+		expect(dependent.ok, resultFailureMessage(dependent)).toBe(true);
 		if (!dependent.ok) return;
 
 		const endedDependent = await endBenefitEnrollmentDependent(
@@ -356,7 +357,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(endedDependent.ok).toBe(true);
+		expect(endedDependent.ok, resultFailureMessage(endedDependent)).toBe(true);
 		if (!endedDependent.ok) return;
 
 		const waived = await waiveBenefit(
@@ -371,7 +372,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(waived.ok).toBe(true);
+		expect(waived.ok, resultFailureMessage(waived)).toBe(true);
 		if (!waived.ok) return;
 		expect(waived.data.status).toBe("waived");
 	});
@@ -393,7 +394,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(employee.ok).toBe(true);
+		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
 		if (!employee.ok) return;
 
 		const employment = await createEmployment(
@@ -406,7 +407,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(employment.ok).toBe(true);
+		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
 		if (!employment.ok) return;
 
 		const cycle = await seedOpenCompensationReviewCycle({
@@ -428,7 +429,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(draft.ok).toBe(true);
+		expect(draft.ok, resultFailureMessage(draft)).toBe(true);
 		if (!draft.ok) return;
 		expect(draft.data.status).toBe("draft");
 		expect(draft.data.cycleId).toBe(cycle.id);
@@ -446,7 +447,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(recommended.ok).toBe(true);
+		expect(recommended.ok, resultFailureMessage(recommended)).toBe(true);
 		if (!recommended.ok) return;
 		expect(recommended.data.status).toBe("recorded");
 
@@ -460,7 +461,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(finalized.ok).toBe(true);
+		expect(finalized.ok, resultFailureMessage(finalized)).toBe(true);
 		if (!finalized.ok) return;
 		expect(finalized.data.status).toBe("finalized");
 
@@ -475,7 +476,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(applied.ok).toBe(true);
+		expect(applied.ok, resultFailureMessage(applied)).toBe(true);
 		if (!applied.ok) return;
 		expect(applied.data.baseAmount).toBe("88000");
 
@@ -488,7 +489,7 @@ function defineCompensationBenefitsParitySuite(
 			},
 			ready,
 		);
-		expect(review.ok).toBe(true);
+		expect(review.ok, resultFailureMessage(review)).toBe(true);
 		if (!review.ok) return;
 		expect(review.data?.appliedCompensationId).toBe(applied.data.id);
 	});

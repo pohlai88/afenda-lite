@@ -159,6 +159,7 @@ function activeLeaveOverlapRequestIds(
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		excludeRequestId?: HumanResourcesLeaveRequestId;
+		includeDraft?: boolean;
 	},
 ): Set<HumanResourcesLeaveRequestId> {
 	const activeRequests = Array.from(state.leaveRequests.values()).filter(
@@ -168,6 +169,7 @@ function activeLeaveOverlapRequestIds(
 			(ACTIVE_LEAVE_OVERLAP_STATUSES as readonly LeaveRequestStatus[]).includes(
 				request.status,
 			) &&
+			(input.includeDraft !== false || request.status !== "draft") &&
 			request.id !== input.excludeRequestId,
 	);
 	return new Set(activeRequests.map((request) => request.id));
@@ -179,6 +181,7 @@ function assertNoLeaveOverlapForRequest(
 		organizationId: string;
 		requestId: HumanResourcesLeaveRequestId;
 		employeeId: HumanResourcesEmployeeId;
+		includeDraft?: boolean;
 	},
 ): Result<void> {
 	const candidateSegments = Array.from(state.leaveRequestSegments.values())
@@ -195,6 +198,7 @@ function assertNoLeaveOverlapForRequest(
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		excludeRequestId: input.requestId,
+		includeDraft: input.includeDraft,
 	});
 	const existingSegments = Array.from(state.leaveRequestSegments.values())
 		.filter(
@@ -1498,6 +1502,7 @@ export function createMemoryLeaveMethods(
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
 			excludeRequestId?: HumanResourcesLeaveRequestId;
+			includeDraft?: boolean;
 		}): Promise<Result<LeaveRequestSegment[]>> {
 			const requestIds = activeLeaveOverlapRequestIds(state, input);
 			const segments = Array.from(state.leaveRequestSegments.values()).filter(
@@ -1713,6 +1718,7 @@ export function createMemoryLeaveMethods(
 						organizationId: input.organizationId,
 						requestId: input.requestId,
 						employeeId: request.employeeId,
+						includeDraft: false,
 					});
 					if (!overlap.ok) return overlap;
 

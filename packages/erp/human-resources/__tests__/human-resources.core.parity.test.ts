@@ -73,7 +73,10 @@ import {
 } from "./helpers/hr-parity-harness";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	humanResourcesCodeFromResult,
+	resultFailureMessage,
+} from "./helpers/result-details";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -560,9 +563,10 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(second.ok).toBe(false);
 		if (!second.ok) {
-			expect(humanResourcesCodeFromResult(second)).toBe(
-				HUMAN_RESOURCES_ERROR_DUPLICATE,
-			);
+			expect(
+				humanResourcesCodeFromResult(second),
+				resultFailureMessage(second),
+			).toBe(HUMAN_RESOURCES_ERROR_DUPLICATE);
 		}
 	});
 
@@ -702,7 +706,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-future-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 			},
 			ready,
@@ -750,7 +754,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-s43-term-${suffix}`,
 				employmentId: future.data.id,
 				status: "terminated",
-				endsOn: "2026-06-30",
+				endsOn: "2099-06-30",
 				expectedVersion: 1,
 			},
 			ready,
@@ -768,7 +772,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-rehire-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2026-07-01",
+				startsOn: "2099-07-01",
 				endsOn: null,
 			},
 			ready,
@@ -790,16 +794,16 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-correct-${suffix}`,
 				employmentId: rehire.data.id,
-				startsOn: "2026-07-15",
+				startsOn: "2099-07-15",
 				reason: "Contract evidence",
-				effectiveOn: "2026-07-15",
+				effectiveOn: "2099-07-15",
 				expectedVersion: 1,
 			},
 			ready,
 		);
-		expect(corrected.ok).toBe(true);
+		expect(corrected.ok, resultFailureMessage(corrected)).toBe(true);
 		if (!corrected.ok) return;
-		expect(corrected.data.startsOn).toBe("2026-07-15");
+		expect(corrected.data.startsOn).toBe("2099-07-15");
 
 		const overlappingCorrect = await correctEmployment(
 			{
@@ -807,7 +811,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-overlap-correct-${suffix}`,
 				employmentId: rehire.data.id,
-				startsOn: "2026-06-15",
+				startsOn: "2099-06-15",
 				reason: "Would overlap prior tenure",
 				expectedVersion: 2,
 			},
@@ -826,7 +830,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-notice-${suffix}`,
 				employmentId: rehire.data.id,
-				effectiveOn: "2026-08-01",
+				effectiveOn: "2099-08-01",
 				expectedVersion: 2,
 			},
 			ready,
@@ -840,7 +844,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s54-reactivate-${suffix}`,
 				employmentId: rehire.data.id,
-				effectiveOn: "2026-09-01",
+				effectiveOn: "2099-09-01",
 				expectedVersion: 3,
 			},
 			ready,
@@ -855,7 +859,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s43-history-${suffix}`,
 				employmentId: rehire.data.id,
-				asOf: "2026-08-15",
+				asOf: "2099-08-15",
 			},
 			ready,
 		);
@@ -889,7 +893,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s44-employment-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 			},
 			ready,
@@ -904,7 +908,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-s44-future-${suffix}`,
 				employmentId: employment.data.id,
 				referenceCode: `CONTRACT-FUTURE-${suffix}`,
-				startsOn: "2026-06-01",
+				startsOn: "2099-06-01",
 				endsOn: null,
 				reasonCode: "initial",
 			},
@@ -919,7 +923,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s44-before-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2026-05-31",
+				asOf: "2099-05-31",
 			},
 			ready,
 		);
@@ -935,7 +939,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-s44-overlap-${suffix}`,
 				employmentId: employment.data.id,
 				referenceCode: `CONTRACT-OVERLAP-${suffix}`,
-				startsOn: "2026-06-15",
+				startsOn: "2099-06-15",
 				endsOn: null,
 				reasonCode: "initial",
 			},
@@ -954,16 +958,16 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s44-correct-${suffix}`,
 				employmentContractId: future.data.id,
-				startsOn: "2026-06-15",
+				startsOn: "2099-06-15",
 				reasonCode: "date.correction",
 				sourceReference: "HR-EVID-S44",
 				expectedVersion: 1,
 			},
 			ready,
 		);
-		expect(corrected.ok).toBe(true);
+		expect(corrected.ok, resultFailureMessage(corrected)).toBe(true);
 		if (!corrected.ok) return;
-		expect(corrected.data.startsOn).toBe("2026-06-15");
+		expect(corrected.data.startsOn).toBe("2099-06-15");
 		expect(corrected.data.version).toBe(2);
 
 		const superseded = await supersedeEmploymentContract(
@@ -972,8 +976,8 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s44-supersede-${suffix}`,
 				employmentContractId: corrected.data.id,
-				startsOn: "2027-01-01",
-				endsOn: "2027-12-31",
+				startsOn: "2100-01-01",
+				endsOn: "2100-12-31",
 				reasonCode: "renewal",
 				sourceReference: "CONTRACT-2027",
 				expectedVersion: 2,
@@ -983,7 +987,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(superseded.ok).toBe(true);
 		if (!superseded.ok) return;
 		expect(superseded.data.superseded.lineageStatus).toBe("superseded");
-		expect(superseded.data.superseded.endsOn).toBe("2026-12-31");
+		expect(superseded.data.superseded.endsOn).toBe("2099-12-31");
 		expect(superseded.data.successor.lineageStatus).toBe("active");
 
 		const atStart = await getEmploymentContractAsOf(
@@ -992,7 +996,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s44-asof-start-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2026-06-15",
+				asOf: "2099-06-15",
 			},
 			ready,
 		);
@@ -1007,7 +1011,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s44-asof-end-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2026-12-31",
+				asOf: "2099-12-31",
 			},
 			ready,
 		);
@@ -1039,7 +1043,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s55-employment-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 			},
 			ready,
@@ -1054,7 +1058,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-s55-create-${suffix}`,
 				employmentId: employment.data.id,
 				referenceCode: `CONTRACT-S55-${suffix}`,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 				reasonCode: "initial",
 			},
@@ -1076,7 +1080,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(amended.ok).toBe(true);
+		expect(amended.ok, resultFailureMessage(amended)).toBe(true);
 		if (!amended.ok) return;
 		expect(amended.data.referenceCode).toBe(`CONTRACT-S55-AMEND-${suffix}`);
 
@@ -1086,10 +1090,10 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s55-renew-${suffix}`,
 				employmentContractId: amended.data.id,
-				startsOn: "2027-01-01",
-				endsOn: "2027-12-31",
+				startsOn: "2100-01-01",
+				endsOn: "2100-12-31",
 				reasonCode: "renewal",
-				sourceReference: "CONTRACT-2027-S55",
+				sourceReference: "CONTRACT-2100-S55",
 				expectedVersion: 2,
 			},
 			ready,
@@ -1105,7 +1109,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s55-end-${suffix}`,
 				employmentContractId: renewed.data.successor.id,
-				endsOn: "2027-06-30",
+				endsOn: "2100-06-30",
 				reasonCode: "contract.end",
 				sourceReference: "HR-END-S55",
 				expectedVersion: 1,
@@ -1114,7 +1118,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(ended.ok).toBe(true);
 		if (!ended.ok) return;
-		expect(ended.data.endsOn).toBe("2027-06-30");
+		expect(ended.data.endsOn).toBe("2100-06-30");
 		expect(ended.data.lineageStatus).toBe("active");
 
 		const current = await getCurrentEmploymentContract(
@@ -1123,7 +1127,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s55-current-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2027-03-01",
+				asOf: "2100-03-01",
 			},
 			ready,
 		);
@@ -1171,7 +1175,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s45-employment-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 			},
 			ready,
@@ -1224,8 +1228,8 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				positionId: positionA.data.id,
 				...TEST_ORGANIZATION_DIMENSION_KEYS,
-				startsOn: "2026-01-01",
-				endsOn: "2026-05-31",
+				startsOn: "2099-01-01",
+				endsOn: "2099-05-31",
 			},
 			ready,
 		);
@@ -1240,7 +1244,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				positionId: positionA.data.id,
 				...TEST_ORGANIZATION_DIMENSION_KEYS,
-				startsOn: "2026-06-01",
+				startsOn: "2099-06-01",
 				endsOn: null,
 			},
 			ready,
@@ -1254,7 +1258,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s45-before-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2026-05-15",
+				asOf: "2099-05-15",
 			},
 			ready,
 		);
@@ -1271,7 +1275,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				positionId: positionA.data.id,
 				...TEST_ORGANIZATION_DIMENSION_KEYS,
-				startsOn: "2026-06-15",
+				startsOn: "2099-06-15",
 				endsOn: null,
 			},
 			ready,
@@ -1292,12 +1296,12 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				toPositionId: positionB.data.id,
 				...TEST_ORGANIZATION_DIMENSION_KEYS,
-				effectiveOn: "2026-08-01",
+				effectiveOn: "2099-08-01",
 				reason: "Parity transfer",
 			},
 			ready,
 		);
-		expect(transfer.ok).toBe(true);
+		expect(transfer.ok, resultFailureMessage(transfer)).toBe(true);
 		if (!transfer.ok) return;
 
 		const predecessor = await ready.store.getAssignmentById({
@@ -1329,7 +1333,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s45-transfer-day-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2026-08-01",
+				asOf: "2099-08-01",
 			},
 			ready,
 		);
@@ -1383,7 +1387,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s56-employment-${suffix}`,
 				employeeId: employee.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 			},
 			ready,
@@ -1440,7 +1444,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-s56-reporting-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: manager.data.id,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 			},
 			ready,
 		);
@@ -1457,7 +1461,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				calendarVersion: "v1",
 				workWeek: STANDARD_WEEK,
 				standardHoursPerDay: "8.00",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -1472,7 +1476,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employeeId: employee.data.id,
 				employmentId: employment.data.id,
 				calendarId: calendar.data.id,
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -1485,7 +1489,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employmentId: employment.data.id,
 				positionId: position.data.id,
 				...TEST_ORGANIZATION_DIMENSION_KEYS,
-				startsOn: "2026-01-01",
+				startsOn: "2099-01-01",
 				endsOn: null,
 			},
 			ready,
@@ -1501,7 +1505,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s56-primary-${suffix}`,
 				employmentId: employment.data.id,
-				asOf: "2026-03-15",
+				asOf: "2099-03-15",
 			},
 			ready,
 		);
@@ -1531,7 +1535,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-s56-reporting-2-${suffix}`,
 				employeeId: employee.data.id,
 				managerEmployeeId: managerTwo.data.id,
-				startsOn: "2026-07-01",
+				startsOn: "2099-07-01",
 			},
 			ready,
 		);
@@ -1548,7 +1552,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				calendarVersion: "v1",
 				workWeek: STANDARD_WEEK,
 				standardHoursPerDay: "8.00",
-				effectiveFrom: "2026-07-01",
+				effectiveFrom: "2099-07-01",
 			},
 			ready,
 		);
@@ -1563,7 +1567,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				employeeId: employee.data.id,
 				employmentId: employment.data.id,
 				calendarId: calendarTwo.data.id,
-				effectiveFrom: "2026-07-01",
+				effectiveFrom: "2099-07-01",
 			},
 			ready,
 		);
@@ -1574,7 +1578,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-s56-org-freeze-${suffix}`,
 				employeeId: employee.data.id,
-				asOf: "2026-03-15",
+				asOf: "2099-03-15",
 			},
 			ready,
 		);

@@ -20,7 +20,6 @@ import type {
 	IdempotentPayrollVariableInputRecord,
 	PayrollPeriod,
 	PayrollVariableInput,
-	PayrollVariableInputCreateRecord,
 } from "../../types";
 
 async function recordAudit(

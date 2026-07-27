@@ -1,0 +1,32 @@
+---
+description: Corporate Administration lifecycle must remain scaffolded until final governed activation
+alwaysApply: true
+---
+
+# Corporate Administration lifecycle position
+
+`@afenda/corporate-administration` must remain:
+
+```ts
+lifecycle: "scaffolded",
+activationMode: "organization_toggle",
+```
+
+CA-0.4 durable infrastructure, Drizzle adapters, command/query declarations, permissions, events, or UI wiring do not make the module active business capability.
+
+## Forbidden lifecycle values
+
+Do not set Corporate Administration lifecycle to:
+
+- `active`
+- `preview`
+- `beta`
+- `production`
+
+## Required behavior
+
+Keep final activation semantics for the governed activation slice only. Until then, contract tests, generated module registers, and prose must describe Corporate Administration as scaffolded.
+
+## Hook enforcement
+
+`preToolUse` -> `.cursor/hooks/corporate-administration-lifecycle-position.mjs` denies edits to `packages/erp/corporate-administration/src/module.manifest.ts` that change lifecycle away from `scaffolded` or activation mode away from `organization_toggle`.

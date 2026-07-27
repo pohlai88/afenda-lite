@@ -17,7 +17,10 @@ modules:
     lifecycle: active
     packageName: "@afenda/accounting"
   - activationMode: organization_toggle
-    aggregates: []
+    aggregates:
+      - legal_company
+      - legal_establishment
+      - premise
     band: R1-F
     category: erp
     id: corporate-administration

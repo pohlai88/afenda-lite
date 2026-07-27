@@ -164,6 +164,12 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/validate-master-data-import.ts": ["master_data.manage"],
 			"app/actions/apply-master-data-import.ts": ["master_data.import_approve"],
 			"app/actions/search-master-data.ts": ["master_data.read"],
+			"app/actions/register-legal-company-draft.ts": [
+				"corporate_administration.company.manage",
+			],
+			"app/actions/set-company-jurisdiction-profile.ts": [
+				"corporate_administration.company.manage",
+			],
 			"app/actions/list-sales-orders.ts": ["sales.order.list"],
 			"app/actions/get-sales-order.ts": ["sales.order.read"],
 			"app/actions/create-sales-order.ts": ["sales.order.create"],
@@ -368,6 +374,10 @@ describe("N11 product authorization wiring", () => {
 			"features/accounting/accounting-shell.tsx": [
 				"accounting.journal.read",
 				"accounting.journal.create",
+			],
+			"features/corporate-administration/corporate-administration-shell.tsx": [
+				"corporate_administration.company.read",
+				"corporate_administration.company.manage",
 			],
 		} as const;
 

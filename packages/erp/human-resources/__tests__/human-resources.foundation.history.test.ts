@@ -16,12 +16,12 @@ import {
 	createWorker,
 	getWorkerAsOf,
 } from "../src/workforce-foundation/worker";
-import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,
 } from "./helpers/hr-parity-harness";
 import { createNeonOrgTracker } from "./helpers/neon-cleanup";
+import { resultFailureMessage } from "./helpers/result-details";
 
 function nextIsoDate(value: string): string {
 	const date = new Date(`${value}T00:00:00.000Z`);
@@ -29,7 +29,9 @@ function nextIsoDate(value: string): string {
 	return date.toISOString().slice(0, 10);
 }
 
-function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
+export function defineFoundationHistorySuite(
+	adapter: WorkforceStoreAdapter,
+): void {
 	const suffix = `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const neonOrgs = createNeonOrgTracker();
 	const ORG = neonOrgs.trackOrg(`org-hr-foundation-history-${suffix}`);
@@ -82,7 +84,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 			},
 			ready,
 		);
-		expect(renamed.ok).toBe(true);
+		expect(renamed.ok, resultFailureMessage(renamed)).toBe(true);
 		if (!renamed.ok) return;
 
 		const beforeCorrection = await getPersonAsOf(
@@ -209,7 +211,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-worker-create-${suffix}`,
 				personId: person.data.id,
 				workerType: "contractor",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -224,7 +226,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				workerId: worker.data.id,
 				workerType: "intern",
 				employeeId: null,
-				effectiveOn: "2026-02-01",
+				effectiveOn: "2099-02-01",
 				reasonCode: "reclassification",
 				expectedVersion: worker.data.version,
 			},
@@ -241,7 +243,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-worker-status-${suffix}`,
 				workerId: retyped.data.id,
 				status: "inactive",
-				effectiveOn: "2026-03-01",
+				effectiveOn: "2099-03-01",
 				reasonCode: "status_change",
 				expectedVersion: retyped.data.version,
 			},
@@ -279,7 +281,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-worker-asof-contractor-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-01-15",
+				asOf: "2099-01-15",
 			},
 			ready,
 		);
@@ -294,7 +296,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-worker-asof-intern-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-02-15",
+				asOf: "2099-02-15",
 			},
 			ready,
 		);
@@ -309,7 +311,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-worker-asof-inactive-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-03-01",
+				asOf: "2099-03-01",
 			},
 			ready,
 		);
@@ -340,7 +342,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 			idempotencyKey: `idem-worker-idem-create-${suffix}`,
 			personId: person.data.id,
 			workerType: "contractor" as const,
-			effectiveFrom: "2026-01-01",
+			effectiveFrom: "2099-01-01",
 		};
 		const first = await createWorker(createInput, ready);
 		expect(first.ok).toBe(true);
@@ -387,7 +389,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-worker-dup-first-${suffix}`,
 				personId: person.data.id,
 				workerType: "contractor",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -402,7 +404,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-worker-dup-second-${suffix}`,
 				personId: person.data.id,
 				workerType: "intern",
-				effectiveFrom: "2026-02-01",
+				effectiveFrom: "2099-02-01",
 			},
 			ready,
 		);
@@ -421,7 +423,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-worker-missing-person-${suffix}`,
 				personId: "10000000-0000-4000-8000-000000000099",
 				workerType: "contractor",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -453,7 +455,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-contingent-create-${suffix}`,
 				personId: person.data.id,
 				workerType: "contingent_worker",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -470,7 +472,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				workerId: worker.data.id,
 				workerType: "contractor",
 				employeeId: null,
-				effectiveOn: "2026-02-01",
+				effectiveOn: "2099-02-01",
 				reasonCode: "reclassification",
 				expectedVersion: worker.data.version,
 			},
@@ -486,7 +488,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-contingent-asof-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-01-15",
+				asOf: "2099-01-15",
 			},
 			ready,
 		);
@@ -500,7 +502,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-contingent-asof-contractor-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-02-15",
+				asOf: "2099-02-15",
 			},
 			ready,
 		);
@@ -547,7 +549,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				personId: person.data.id,
 				workerType: "employee",
 				employeeId: employee.data.id,
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -579,7 +581,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				personId: otherPerson.data.id,
 				workerType: "employee",
 				employeeId: employee.data.id,
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -595,7 +597,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				workerId: worker.data.id,
 				workerType: "contractor",
 				employeeId: null,
-				effectiveOn: "2026-03-01",
+				effectiveOn: "2099-03-01",
 				reasonCode: "reclassification",
 				expectedVersion: worker.data.version,
 			},
@@ -630,7 +632,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-worker-conflict-create-${suffix}`,
 				personId: person.data.id,
 				workerType: "contractor",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -645,7 +647,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				workerId: worker.data.id,
 				workerType: "intern",
 				employeeId: null,
-				effectiveOn: "2026-02-01",
+				effectiveOn: "2099-02-01",
 				reasonCode: "reclassification",
 				expectedVersion: worker.data.version + 99,
 			},
@@ -663,7 +665,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				workerId: worker.data.id,
 				workerType: "contractor",
 				employeeId: null,
-				effectiveOn: "2026-02-01",
+				effectiveOn: "2099-02-01",
 				reasonCode: "reclassification",
 				expectedVersion: worker.data.version,
 			},
@@ -680,7 +682,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-worker-former-${suffix}`,
 				workerId: worker.data.id,
 				status: "former",
-				effectiveOn: "2026-03-01",
+				effectiveOn: "2099-03-01",
 				reasonCode: "status_change",
 				expectedVersion: worker.data.version,
 			},
@@ -697,7 +699,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-worker-conflict-status-${suffix}`,
 				workerId: statusChanged.data.id,
 				status: "inactive",
-				effectiveOn: "2026-04-01",
+				effectiveOn: "2099-04-01",
 				reasonCode: "status_change",
 				expectedVersion: worker.data.version,
 			},
@@ -714,7 +716,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				correlationId: `corr-worker-noop-status-${suffix}`,
 				workerId: statusChanged.data.id,
 				status: "former",
-				effectiveOn: "2026-04-01",
+				effectiveOn: "2099-04-01",
 				reasonCode: "status_change",
 				expectedVersion: statusChanged.data.version,
 			},
@@ -748,7 +750,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				idempotencyKey: `idem-worker-boundary-create-${suffix}`,
 				personId: person.data.id,
 				workerType: "contractor",
-				effectiveFrom: "2026-01-01",
+				effectiveFrom: "2099-01-01",
 			},
 			ready,
 		);
@@ -763,7 +765,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				workerId: worker.data.id,
 				workerType: "intern",
 				employeeId: null,
-				effectiveOn: "2026-02-01",
+				effectiveOn: "2099-02-01",
 				reasonCode: "reclassification",
 				expectedVersion: worker.data.version,
 			},
@@ -778,7 +780,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-worker-boundary-before-${suffix}`,
 				workerId: worker.data.id,
-				asOf: previousIsoDate("2026-02-01"),
+				asOf: previousIsoDate("2099-02-01"),
 			},
 			ready,
 		);
@@ -792,7 +794,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-worker-boundary-on-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-02-01",
+				asOf: "2099-02-01",
 			},
 			ready,
 		);
@@ -806,7 +808,7 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 				actorUserId: ACTOR,
 				correlationId: `corr-worker-boundary-after-${suffix}`,
 				workerId: worker.data.id,
-				asOf: "2026-02-02",
+				asOf: "2099-02-02",
 			},
 			ready,
 		);
@@ -819,10 +821,3 @@ function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
 describe("@afenda/human-resources foundation history (memory)", () => {
 	defineFoundationHistorySuite("memory");
 });
-
-describe.runIf(runDrizzleParity)(
-	"@afenda/human-resources foundation history (drizzle parity)",
-	() => {
-		defineFoundationHistorySuite("drizzle");
-	},
-);

@@ -7,7 +7,10 @@ import type {
 	HumanResourcesWorkEligibilityId,
 } from "../brands";
 import type { MutationPorts } from "../ports";
-import type { EmployeeDocumentVerificationStatus } from "../shared/compliance-status";
+import type {
+	DocumentRequirementApplicability,
+	EmployeeDocumentVerificationStatus,
+} from "../shared/compliance-status";
 import type { HumanResourcesMutationMeta } from "../shared/mutation-meta";
 import type {
 	DocumentRequirement,
@@ -50,6 +53,7 @@ export type HumanResourcesComplianceStore = {
 			documentType: string;
 			issuingJurisdiction: string | null;
 			appliesToNote: string | null;
+			applicability: DocumentRequirementApplicability;
 			createdBy: string;
 		},
 		ports: MutationPorts,
@@ -64,6 +68,7 @@ export type HumanResourcesComplianceStore = {
 			documentType?: string;
 			issuingJurisdiction?: string | null;
 			appliesToNote?: string | null;
+			applicability?: DocumentRequirementApplicability;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -297,6 +302,7 @@ export type HumanResourcesComplianceStore = {
 	listEmployeesWithWorkEligibilityRisk(input: {
 		organizationId: string;
 		asOf: string;
+		withinDays: number;
 		page: number;
 		pageSize: number;
 	}): Promise<Result<WorkEligibilityRiskListPage>>;
@@ -317,6 +323,7 @@ export type HumanResourcesComplianceStore = {
 			employeeId: HumanResourcesEmployeeId;
 			policyCode: string;
 			policyVersion: string;
+			dueOn: string;
 			createIdempotencyKey: string;
 			createRequestFingerprint: string;
 			createdBy: string;
@@ -352,6 +359,7 @@ export type HumanResourcesComplianceStore = {
 			organizationId: string;
 			acknowledgementId: HumanResourcesPolicyAcknowledgementId;
 			newPolicyVersion: string;
+			newDueOn: string;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -368,6 +376,14 @@ export type HumanResourcesComplianceStore = {
 
 	listOutstandingPolicyAcknowledgements(input: {
 		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+	}): Promise<Result<PolicyAcknowledgementListPage>>;
+
+	listOverduePolicyAcknowledgements(input: {
+		organizationId: string;
+		asOf: string;
 		page: number;
 		pageSize: number;
 		employeeId?: HumanResourcesEmployeeId;

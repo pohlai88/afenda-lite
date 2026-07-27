@@ -2,11 +2,11 @@
  * Memory vs Drizzle parity for performance management (HR-PERF-01).
  */
 
+import { and, db, eq, platformDomainEvent } from "@afenda/db";
 import {
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
 } from "@afenda/events/schemas";
-import { and, db, eq, platformDomainEvent } from "@afenda/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";

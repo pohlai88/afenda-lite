@@ -706,6 +706,7 @@ describe("human-resources compliance (memory)", () => {
 				employeeId: employee.id,
 				policyCode: "EXPIRY_POLICY",
 				policyVersion: "2026.1",
+				dueOn: "2026-06-30",
 				idempotencyKey: "idem-expiry-policy",
 			},
 			ready,

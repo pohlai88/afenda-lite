@@ -12,6 +12,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -55,7 +56,7 @@ export const hrEmployee = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
-		uniqueIndex("hr_employee_org_id_uidx").on(t.organizationId, t.id),
+		unique("hr_employee_org_id_uidx").on(t.organizationId, t.id),
 	],
 );
 
@@ -88,7 +89,7 @@ export const hrPerson = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
-		uniqueIndex("hr_person_org_id_uidx").on(t.organizationId, t.id),
+		unique("hr_person_org_id_uidx").on(t.organizationId, t.id),
 		check(
 			"hr_person_privacy_classification_check",
 			sql`${t.privacyClassification} IN ('workforce_core', 'pay_and_benefits', 'medical_and_leave', 'recruitment_and_background', 'employee_relations_and_legal', 'performance_and_talent')`,
@@ -240,7 +241,7 @@ export const hrWorker = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
-		uniqueIndex("hr_worker_org_id_uidx").on(t.organizationId, t.id),
+		unique("hr_worker_org_id_uidx").on(t.organizationId, t.id),
 		uniqueIndex("hr_worker_org_person_uidx").on(t.organizationId, t.personId),
 		uniqueIndex("hr_worker_org_employee_uidx")
 			.on(t.organizationId, t.employeeId)
@@ -477,7 +478,7 @@ export const hrDepartment = pgTable(
 		),
 		index("hr_department_org_status_idx").on(t.organizationId, t.status),
 		uniqueIndex("hr_department_org_code_uidx").on(t.organizationId, t.code),
-		uniqueIndex("hr_department_org_id_uidx").on(t.organizationId, t.id),
+		unique("hr_department_org_id_uidx").on(t.organizationId, t.id),
 	],
 );
 
@@ -559,7 +560,7 @@ export const hrJob = pgTable(
 		index("hr_job_org_id_idx").on(t.organizationId, t.id),
 		index("hr_job_org_status_idx").on(t.organizationId, t.status),
 		uniqueIndex("hr_job_org_code_uidx").on(t.organizationId, t.code),
-		uniqueIndex("hr_job_org_id_uidx").on(t.organizationId, t.id),
+		unique("hr_job_org_id_uidx").on(t.organizationId, t.id),
 	],
 );
 
@@ -727,7 +728,7 @@ export const hrPosition = pgTable(
 		),
 		index("hr_position_org_job_idx").on(t.organizationId, t.jobId),
 		uniqueIndex("hr_position_org_code_uidx").on(t.organizationId, t.code),
-		uniqueIndex("hr_position_org_id_uidx").on(t.organizationId, t.id),
+		unique("hr_position_org_id_uidx").on(t.organizationId, t.id),
 	],
 );
 
@@ -4746,6 +4747,9 @@ export const hrDocumentRequirement = pgTable(
 		documentType: text("document_type").notNull(),
 		issuingJurisdiction: text("issuing_jurisdiction"),
 		appliesToNote: text("applies_to_note"),
+		applicabilityJson: jsonb("applicability_json")
+			.notNull()
+			.default(sql`'{"kind":"all_employees"}'::jsonb`),
 		/** draft | published | retired */
 		status: text("status").notNull(),
 		version: integer("version").notNull().default(1),
@@ -4771,6 +4775,10 @@ export const hrDocumentRequirement = pgTable(
 		check(
 			"hr_document_requirement_status_check",
 			sql`${t.status} IN ('draft', 'published', 'retired')`,
+		),
+		check(
+			"hr_document_requirement_applicability_shape_check",
+			sql`jsonb_typeof(${t.applicabilityJson}) = 'object' AND (${t.applicabilityJson}->>'kind' = 'all_employees' OR (${t.applicabilityJson}->>'kind' = 'employee_ids' AND jsonb_typeof(${t.applicabilityJson}->'employeeIds') = 'array' AND jsonb_array_length(${t.applicabilityJson}->'employeeIds') > 0))`,
 		),
 	],
 );
@@ -4910,6 +4918,7 @@ export const hrPolicyAcknowledgement = pgTable(
 		/** outstanding | acknowledged | revoked | superseded */
 		requirementStatus: text("requirement_status").notNull(),
 		issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
+		dueOn: date("due_on").notNull(),
 		acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
 		acknowledgedBy: text("acknowledged_by"),
 		supersedesAcknowledgementId: uuid(
@@ -4941,6 +4950,11 @@ export const hrPolicyAcknowledgement = pgTable(
 		index("hr_policy_acknowledgement_org_status_idx").on(
 			t.organizationId,
 			t.requirementStatus,
+		),
+		index("hr_policy_acknowledgement_org_status_due_idx").on(
+			t.organizationId,
+			t.requirementStatus,
+			t.dueOn,
 		),
 		uniqueIndex("hr_policy_acknowledgement_org_create_idempotency_uidx")
 			.on(t.organizationId, t.createIdempotencyKey)

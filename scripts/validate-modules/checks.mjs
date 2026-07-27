@@ -124,6 +124,18 @@ export const REF_SCHEMA_SYMBOLS = new Set([
 ]);
 
 export const SCHEMA_SYMBOL_TO_TABLE = {
+	caLegalCompany: "ca_legal_company",
+	caCompanyJurisdictionProfile: "ca_company_jurisdiction_profile",
+	caCompanyName: "ca_company_name",
+	caCompanyLegalFormHistory: "ca_company_legal_form_history",
+	caCompanyIdentifier: "ca_company_identifier",
+	caCompanyFinancialYear: "ca_company_financial_year",
+	caCompanyActivity: "ca_company_activity",
+	caLegalEstablishment: "ca_legal_establishment",
+	caEstablishmentStatusHistory: "ca_establishment_status_history",
+	caRegisteredAddress: "ca_registered_address",
+	caPremise: "ca_premise",
+	caMutationReceipt: "ca_mutation_receipt",
 	mdParty: "md_party",
 	mdItemGroup: "md_item_group",
 	mdItem: "md_item",

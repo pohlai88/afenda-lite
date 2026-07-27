@@ -3,7 +3,10 @@
  * Consumed by check-editor-biome.mjs and no-editor-biome-drift.mjs.
  */
 
-/** Explorer-hidden trees (docs-V2 stays visible — watcher-only). */
+/**
+ * Explorer-hidden trees.
+ * `.cursor` and `docs-V2` stay visible in Explorer — exclude via search/watcher only.
+ */
 export const FILES_EXCLUDE_PATTERNS = [
 	"**/node_modules",
 	"**/.next",
@@ -21,7 +24,6 @@ export const FILES_EXCLUDE_PATTERNS = [
 	"**/.source",
 	"**/.tmp",
 	"**/.vercel",
-	"**/.cursor",
 	"**/.agents",
 	"**/*.tsbuildinfo",
 ];

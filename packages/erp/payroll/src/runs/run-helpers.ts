@@ -2,7 +2,6 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { PayrollRunId } from "../brands";
 import {
-	PAYROLL_ERROR_INVALID_STATE,
 	PAYROLL_ERROR_NOT_FOUND,
 	PAYROLL_ERROR_VALIDATION,
 	payrollErrorDetails,

@@ -1,17 +1,16 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-const migrationPath = fileURLToPath(
-	new URL("../drizzle/0007_hr_work_calendar_scope.sql", import.meta.url),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+import { readMigrationSqlForTables } from "./helpers/current-migration-sql";
+
+const migrationSql = readMigrationSqlForTables([
+	"hr_work_calendar_scope_assignment",
+	"hr_work_calendar",
+]);
 
 describe("HR work calendar scope migration", () => {
 	it("creates scoped assignment table with precedence scope types", () => {
 		expect(migrationSql).toContain(
-			'CREATE TABLE IF NOT EXISTS "hr_work_calendar_scope_assignment"',
+			'CREATE TABLE "hr_work_calendar_scope_assignment"',
 		);
 		expect(migrationSql).toContain(
 			"'employment', 'employee', 'location', 'department', 'legal_entity', 'organization'",

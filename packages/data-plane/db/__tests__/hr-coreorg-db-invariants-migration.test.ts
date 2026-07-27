@@ -1,14 +1,14 @@
 /**
- * HR-COREORG-DB-INVARIANTS — migrations 0018 + 0035 effective-range checks.
+ * HR-COREORG-DB-INVARIANTS — generated-baseline effective-range checks.
  */
 
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { assertAdditiveMigrationSql } from "../scripts/lib/assert-additive-migration.mjs";
+import { readCurrentMigrationSql } from "./helpers/current-migration-sql";
 import {
 	listHrPgTableNames,
 	loadCoreorgExclusionRegister,
@@ -16,17 +16,7 @@ import {
 	validateCoreorgRegisterInventory,
 } from "./helpers/validate-coreorg-register-inventory.mjs";
 
-const migration0018Path = fileURLToPath(
-	new URL("../drizzle/0018_hr_coreorg_db_invariants.sql", import.meta.url),
-);
-const migration0035Path = fileURLToPath(
-	new URL(
-		"../drizzle/0035_hr_coreorg_db_invariants_completion.sql",
-		import.meta.url,
-	),
-);
-const migration0018Sql = readFileSync(migration0018Path, "utf8");
-const migration0035Sql = readFileSync(migration0035Path, "utf8");
+const migrationSql = readCurrentMigrationSql();
 
 const { registerPath, schemaPath } = resolveCoreorgRegisterPaths(
 	import.meta.url,
@@ -49,54 +39,32 @@ function requireDatabaseTests(): boolean {
 	);
 }
 
-describe("HR coreorg DB invariants migration (0018)", () => {
-	it("is additive and names the effective-range constraints", () => {
-		const result = assertAdditiveMigrationSql(migration0018Sql);
+describe("HR coreorg DB invariants generated migration", () => {
+	it("is additive and names all effective-range constraints", () => {
+		const result = assertAdditiveMigrationSql(migrationSql);
 		expect(result.ok).toBe(true);
-		expect(migration0018Sql).toContain("hr_coreorg_db_invariants_preflight");
-		expect(migration0018Sql).toContain(
-			'"hr_work_assignment_effective_range_ck"',
-		);
-		expect(migration0018Sql).toContain(
+		expect(migrationSql).toContain('"hr_work_assignment_effective_range_ck"');
+		expect(migrationSql).toContain(
 			'"hr_employment_contract_effective_range_ck"',
 		);
-		expect(migration0018Sql).toContain(
-			'"hr_reporting_line_effective_range_ck"',
-		);
-		expect(migration0018Sql).toContain(
-			"CHECK (ends_on IS NULL OR starts_on <= ends_on)",
-		);
-	});
-});
-
-describe("HR coreorg DB invariants migration (0035)", () => {
-	it("is additive and names the completion effective-range constraints", () => {
-		const result = assertAdditiveMigrationSql(migration0035Sql);
-		expect(result.ok).toBe(true);
-		expect(migration0035Sql).toContain("hr_coreorg_db_invariants_preflight");
-		expect(migration0035Sql).toContain(
-			'"hr_probation_review_effective_range_ck"',
-		);
-		expect(migration0035Sql).toContain('"hr_salary_band_effective_range_ck"');
-		expect(migration0035Sql).toContain(
+		expect(migrationSql).toContain('"hr_reporting_line_effective_range_ck"');
+		expect(migrationSql).toContain('"hr_probation_review_effective_range_ck"');
+		expect(migrationSql).toContain('"hr_salary_band_effective_range_ck"');
+		expect(migrationSql).toContain(
 			'"hr_employee_compensation_effective_range_ck"',
 		);
-		expect(migration0035Sql).toContain(
+		expect(migrationSql).toContain(
 			'"hr_benefit_enrollment_effective_range_ck"',
 		);
-		expect(migration0035Sql).toContain('"hr_shift_effective_range_ck"');
-		expect(migration0035Sql).toContain(
-			"CHECK (effective_to IS NULL OR effective_from <= effective_to)",
-		);
-		expect(migration0035Sql).toContain("CHECK (starts_on <= ends_on)");
+		expect(migrationSql).toContain('"hr_shift_effective_range_ck"');
 	});
 });
 
 describe("HR coreorg DB invariants exclusion register", () => {
-	it("lists both invariant migrations and eight database checks", () => {
+	it("lists the generated baseline, tenant FK migration, and eight checks", () => {
 		expect(exclusionRegister.migrations).toEqual([
-			"0018_hr_coreorg_db_invariants.sql",
-			"0035_hr_coreorg_db_invariants_completion.sql",
+			"0000_damp_blue_shield.sql",
+			"0002_hr_tenant_foreign_keys.sql",
 		]);
 		expect(exclusionRegister.databaseChecks).toHaveLength(8);
 		const tables = exclusionRegister.databaseChecks.map((row) => row.table);
@@ -164,10 +132,10 @@ describe("HR coreorg DB invariants exclusion register", () => {
 		);
 	});
 
-	it("documents org-scoped foreign keys via migration 0012", () => {
+	it("documents org-scoped foreign keys via the generated custom migration", () => {
 		expect(
 			exclusionRegister.categoryInventory.orgScopedForeignKeys.migration,
-		).toBe("0012_hr_tenant_foreign_keys.sql");
+		).toBe("0002_hr_tenant_foreign_keys.sql");
 	});
 
 	it("records rollback for all eight effective-range constraints", () => {
@@ -184,7 +152,7 @@ describe("HR coreorg DB invariants exclusion register", () => {
 });
 
 describe.skipIf(!hasDatabase)(
-	"HR coreorg DB invariants migration (0018 live)",
+	"HR coreorg DB invariants generated baseline (live)",
 	() => {
 		const runId = `${Date.now()}`;
 		const orgId = `org-coreorg-inv-${runId}`;
@@ -214,7 +182,7 @@ describe.skipIf(!hasDatabase)(
 			migrationReady = rows.length > 0;
 			if (requireDatabaseTests() && !migrationReady) {
 				throw new Error(
-					"HR-COREORG-DB-INVARIANTS live tests require migration 0018_hr_coreorg_db_invariants.sql applied",
+					"HR-COREORG-DB-INVARIANTS live tests require the generated baseline migration",
 				);
 			}
 		});
@@ -462,7 +430,7 @@ describe.skipIf(!hasDatabase)(
 			migrationReady = rows.length > 0;
 			if (requireDatabaseTests() && !migrationReady) {
 				throw new Error(
-					"HR-COREORG-DB-INVARIANTS live tests require migration 0035_hr_coreorg_db_invariants_completion.sql applied",
+					"HR-COREORG-DB-INVARIANTS live tests require the generated baseline migration",
 				);
 			}
 		});

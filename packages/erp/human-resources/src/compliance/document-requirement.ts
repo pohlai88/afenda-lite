@@ -2,6 +2,7 @@ import { fail, type Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import {
@@ -16,13 +17,44 @@ import {
 	updateDocumentRequirementInputSchema,
 } from "../schemas/compliance";
 import { runComplianceCommand } from "../shared/compliance-command";
+import type { DocumentRequirementApplicability } from "../shared/compliance-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import type { HumanResourcesStore } from "../store";
 import type { DocumentRequirement } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_DOCUMENT_REQUIREMENT =
 	"document_requirement" as const;
 export type HumanResourcesDocumentRequirementAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_DOCUMENT_REQUIREMENT;
+
+async function validateApplicabilityReferences(
+	store: Pick<HumanResourcesStore, "getEmployeeById">,
+	input: {
+		organizationId: string;
+		applicability: DocumentRequirementApplicability;
+	},
+): Promise<Result<void>> {
+	if (input.applicability.kind === "all_employees") {
+		return { ok: true, data: undefined };
+	}
+	for (const employeeId of input.applicability.employeeIds) {
+		const employee = await store.getEmployeeById({
+			organizationId: input.organizationId,
+			employeeId,
+		});
+		if (!employee.ok) return employee;
+		if (employee.data === null) {
+			return fail(
+				"NOT_FOUND",
+				"Applicability employee not found",
+				humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				),
+			);
+		}
+	}
+	return { ok: true, data: undefined };
+}
 
 export async function createDocumentRequirement(
 	input: unknown,
@@ -33,6 +65,12 @@ export async function createDocumentRequirement(
 		invalidMessage: "Invalid document requirement create input",
 		command: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
 		execute: async (data, { store, ports }) => {
+			const applicability = await validateApplicabilityReferences(store, {
+				organizationId: data.organizationId,
+				applicability: data.applicability,
+			});
+			if (!applicability.ok) return applicability;
+
 			const existing = await store.findDocumentRequirementByCode({
 				organizationId: data.organizationId,
 				code: data.code,
@@ -56,6 +94,7 @@ export async function createDocumentRequirement(
 					documentType: data.documentType,
 					issuingJurisdiction: data.issuingJurisdiction ?? null,
 					appliesToNote: data.appliesToNote ?? null,
+					applicability: data.applicability,
 					createdBy: data.actorUserId,
 				},
 				ports,
@@ -76,8 +115,15 @@ export async function updateDocumentRequirement(
 		schema: updateDocumentRequirementInputSchema,
 		invalidMessage: "Invalid document requirement update input",
 		command: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
-		execute: (data, { store, ports }) =>
-			store.updateDocumentRequirement(
+		execute: async (data, { store, ports }) => {
+			if (data.applicability !== undefined) {
+				const applicability = await validateApplicabilityReferences(store, {
+					organizationId: data.organizationId,
+					applicability: data.applicability,
+				});
+				if (!applicability.ok) return applicability;
+			}
+			return store.updateDocumentRequirement(
 				{
 					organizationId: data.organizationId,
 					requirementId: data.requirementId,
@@ -85,6 +131,7 @@ export async function updateDocumentRequirement(
 					documentType: data.documentType,
 					issuingJurisdiction: data.issuingJurisdiction,
 					appliesToNote: data.appliesToNote,
+					applicability: data.applicability,
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},
@@ -93,7 +140,8 @@ export async function updateDocumentRequirement(
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
 				}),
-			),
+			);
+		},
 	});
 }
 

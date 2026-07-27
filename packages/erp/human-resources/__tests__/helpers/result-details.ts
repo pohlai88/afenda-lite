@@ -13,3 +13,20 @@ export function humanResourcesCodeFromResult(result: {
 		? humanResourcesCode
 		: undefined;
 }
+
+export function resultFailureMessage(result: {
+	ok: boolean;
+	code?: unknown;
+	message?: unknown;
+	details?: unknown;
+}): string {
+	if (result.ok) {
+		return "Expected operation to succeed.";
+	}
+
+	return `Expected operation to succeed, received ${JSON.stringify({
+		code: result.code,
+		message: result.message,
+		details: result.details,
+	})}`;
+}

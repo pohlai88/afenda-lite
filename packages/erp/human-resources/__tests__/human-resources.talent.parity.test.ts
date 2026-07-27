@@ -404,7 +404,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 				scaleCode: "five_point",
 				level: 3,
 				effectiveOn: "2025-01-15",
-				expiresOn: "2026-01-15",
+				expiresOn: "2099-01-15",
 			},
 			ready,
 		);
@@ -412,7 +412,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (!assessed.ok) return;
 		expect(assessed.data.level).toBe(3);
 		expect(assessed.data.evidenceSource).toBe("Manager observation Q1");
-		expect(assessed.data.expiresOn).toBe("2026-01-15");
+		expect(assessed.data.expiresOn).toBe("2099-01-15");
 
 		const profile = await getEmployeeCompetencyProfile(
 			{
@@ -439,7 +439,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 				evidenceSource: "Calibration panel review",
 				level: 4,
 				effectiveOn: "2025-06-01",
-				expiresOn: "2026-06-01",
+				expiresOn: "2099-06-01",
 				expectedVersion: assessed.data.version,
 			},
 			ready,
@@ -741,7 +741,7 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(listedRedacted.ok).toBe(true);
 		if (!listedRedacted.ok) return;
-		expect(listedRedacted.data.mobilities[0]?.evidenceSummary).toBe("");
+		expect(listedRedacted.data.mobilities[0]?.evidenceSummary).toBeNull();
 	});
 
 	it("critical role readiness record supersedes prior current per position", async () => {

@@ -1,10 +1,12 @@
 import { parseHrDisplayPreferences } from "@/features/human-resources/display-preferences";
-import { AdminHrShell } from "@/features/human-resources/human-resources-shell";
-import { parseHrPage } from "@/features/human-resources/pagination";
+import { parseAdminEmployeeDirectoryParams } from "@/features/human-resources/admin/directory-params";
+import { EmployeeDirectoryWorkspace } from "@/features/human-resources/admin/employee-directory";
 
 type PageProps = {
 	searchParams: Promise<{
 		page?: string | string[];
+		query?: string | string[];
+		field?: string | string[];
 		locale?: string | string[];
 		timeZone?: string | string[];
 	}>;
@@ -15,8 +17,8 @@ export default async function AdminHumanResourcesPage({
 }: PageProps) {
 	const params = await searchParams;
 	return (
-		<AdminHrShell
-			page={parseHrPage(params.page)}
+		<EmployeeDirectoryWorkspace
+			params={parseAdminEmployeeDirectoryParams(params)}
 			preferences={parseHrDisplayPreferences(params)}
 		/>
 	);

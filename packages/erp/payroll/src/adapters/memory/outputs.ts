@@ -4,11 +4,7 @@ import type { PayrollRunId } from "../../brands";
 import type { MutationPorts } from "../../ports";
 import { mapInvalidState, mapNotFound } from "../../shared/persistence-errors";
 import type { PayrollOutputsStore } from "../../store/outputs";
-import type {
-	PayrollResultLine,
-	PayrollRunEmployee,
-	ReplaceRunCalculationOutputsInput,
-} from "../../types";
+import type { PayrollResultLine, PayrollRunEmployee } from "../../types";
 import type { OutputsMemoryState, RunsMemoryState } from "./state";
 
 async function recordAudit(

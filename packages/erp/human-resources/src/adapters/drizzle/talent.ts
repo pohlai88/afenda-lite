@@ -2931,6 +2931,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							AND m.status = 'current'
 						RETURNING m.id
 					),
+					supersession AS (
+						SELECT count(*) AS superseded_count FROM supersede_prev
+					),
 					mutated AS (
 						INSERT INTO hr_talent_profile_mobility (
 							id, organization_id, talent_profile_id, dimension, preference_code,
@@ -2944,7 +2947,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							${record.effectiveFrom}, ${record.effectiveTo}, 'current',
 							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 							1, ${record.createdBy}, ${record.createdBy}
-						FROM profile p
+						FROM profile p, supersession
 						RETURNING *
 					),
 					audited AS (
@@ -3141,6 +3144,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							AND r.status = 'current'
 						RETURNING r.id
 					),
+					supersession AS (
+						SELECT count(*) AS superseded_count FROM supersede_prev
+					),
 					mutated AS (
 						INSERT INTO hr_talent_critical_role_readiness (
 							id, organization_id, talent_profile_id, position_id, readiness,
@@ -3154,7 +3160,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							${record.evidenceSummary}, ${record.assessorUserId}, 'current',
 							${record.createIdempotencyKey}, ${record.createRequestFingerprint},
 							1, ${record.createdBy}, ${record.createdBy}
-						FROM profile p, position pos
+						FROM profile p, position pos, supersession
 						RETURNING *
 					),
 					audited AS (

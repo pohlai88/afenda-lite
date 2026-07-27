@@ -84,6 +84,24 @@
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": false,
         "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/corporate-administration-source-placement.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/corporate-administration-dependency-policy.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/corporate-administration-lifecycle-position.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
       }
     ]
   }

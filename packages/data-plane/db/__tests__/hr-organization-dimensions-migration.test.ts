@@ -1,12 +1,11 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-const migrationPath = fileURLToPath(
-	new URL("../drizzle/0009_hr_organization_dimensions.sql", import.meta.url),
-);
-const migrationSql = readFileSync(migrationPath, "utf8");
+import { readMigrationSqlForTables } from "./helpers/current-migration-sql";
+
+const migrationSql = readMigrationSqlForTables([
+	"md_organization_dimension",
+	"hr_work_assignment",
+]);
 
 describe("HR organization dimensions migration", () => {
 	it("creates the governed effective-dated master with tenant-safe lineage", () => {
@@ -29,15 +28,9 @@ describe("HR organization dimensions migration", () => {
 			"cost_centre",
 			"project",
 		]) {
-			expect(migrationSql).toContain(
-				`ADD COLUMN "${dimension}_dimension_id" uuid`,
-			);
-			expect(migrationSql).toContain(
-				`ADD COLUMN "${dimension}_key_snapshot" text`,
-			);
-			expect(migrationSql).toContain(
-				`ADD COLUMN "${dimension}_name_snapshot" text`,
-			);
+			expect(migrationSql).toContain(`"${dimension}_dimension_id" uuid`);
+			expect(migrationSql).toContain(`"${dimension}_key_snapshot" text`);
+			expect(migrationSql).toContain(`"${dimension}_name_snapshot" text`);
 			expect(migrationSql).toContain(
 				`FOREIGN KEY ("organization_id","${dimension}_dimension_id")`,
 			);

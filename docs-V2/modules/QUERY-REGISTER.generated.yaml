@@ -22,6 +22,51 @@ queries:
   - id: accounting.exceptions.list
     moduleId: accounting
     permission: accounting.exception.read
+  - id: getLegalCompany
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listLegalCompanies
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listCompanyNames
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: findCompanyNameAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: findCompanyJurisdictionProfileAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: findCompanyLegalFormAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listCompanyIdentifiers
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: findCompanyIdentifierAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: findCompanyFinancialYearAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listCompanyActivitiesAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: getLegalCompanyTimeline
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: getLegalEstablishment
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listLegalEstablishmentsAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: findRegisteredAddressAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listPremisesAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
   - id: fulfillment.delivery.get
     moduleId: fulfillment
     permission: fulfillment.delivery.read

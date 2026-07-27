@@ -92,17 +92,12 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 		);
 		expect(employee?.amount).toBe("125.50");
 		expect(employer?.amount).toBe("300.00");
+		if (!employee || !employer) return;
 		expect(
-			formatScaledToHandoffAmount(
-				employee!.amountScaled,
-				employee!.decimalScale,
-			),
+			formatScaledToHandoffAmount(employee.amountScaled, employee.decimalScale),
 		).toBe("125.50");
 		expect(
-			formatScaledToHandoffAmount(
-				employer!.amountScaled,
-				employer!.decimalScale,
-			),
+			formatScaledToHandoffAmount(employer.amountScaled, employer.decimalScale),
 		).toBe("300.00");
 	});
 

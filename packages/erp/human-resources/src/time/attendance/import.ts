@@ -12,12 +12,30 @@ import {
 	importAttendanceEventsInputSchema,
 } from "../../schemas/time";
 import { runTimeCommand } from "../../shared/time-command";
+import type { AttendanceImportStoreInput } from "../../store/time";
 import type {
-	AttendanceImportBatchInput,
 	AttendanceImportEventRowInput,
 	AttendanceImportResult,
 } from "../../types";
+import type { AttendanceSourceRejectedRow } from "../handoff/ports";
 import { namespacedImportSourceReference } from "./import-keys";
+
+function resolveSourceRowIndexes(input: {
+	acceptedCount: number;
+	rejectedRows: readonly AttendanceSourceRejectedRow[];
+}): number[] {
+	const rejectedIndexes = new Set(
+		input.rejectedRows.map((row) => row.rowIndex),
+	);
+	const totalRows = input.acceptedCount + input.rejectedRows.length;
+	const acceptedIndexes: number[] = [];
+	for (let rowIndex = 0; rowIndex < totalRows; rowIndex += 1) {
+		if (!rejectedIndexes.has(rowIndex)) {
+			acceptedIndexes.push(rowIndex);
+		}
+	}
+	return acceptedIndexes;
+}
 
 function mapSourceRows(
 	sourceKey: string,
@@ -68,6 +86,10 @@ export async function importAttendanceEvents(
 		execute: async (data, { store, ports }) => {
 			let nextCursor: string | undefined;
 			let rawEvents = data.events;
+			let sourceRejectedRows:
+				| readonly AttendanceSourceRejectedRow[]
+				| undefined;
+			let sourceRowIndexes: readonly number[] | undefined;
 
 			if (rawEvents === undefined) {
 				const source = requireAttendanceSource(options);
@@ -77,6 +99,7 @@ export async function importAttendanceEvents(
 					cursor: data.cursor,
 				});
 				if (!fetched.ok) return fetched;
+				sourceRejectedRows = fetched.data.rejectedRows;
 				const parsedRows = [];
 				for (const event of fetched.data.events) {
 					const parsed = attendanceImportEventRowSchema.safeParse(event);
@@ -89,7 +112,10 @@ export async function importAttendanceEvents(
 					}
 					parsedRows.push(parsed.data);
 				}
-				if (parsedRows.length === 0) {
+				if (
+					parsedRows.length === 0 &&
+					(sourceRejectedRows === undefined || sourceRejectedRows.length === 0)
+				) {
 					return fail(
 						"VALIDATION_ERROR",
 						"Attendance source returned no events",
@@ -98,11 +124,17 @@ export async function importAttendanceEvents(
 				}
 				rawEvents = parsedRows;
 				nextCursor = fetched.data.nextCursor;
+				if (sourceRejectedRows !== undefined) {
+					sourceRowIndexes = resolveSourceRowIndexes({
+						acceptedCount: parsedRows.length,
+						rejectedRows: sourceRejectedRows,
+					});
+				}
 			}
 
 			const mapped = mapSourceRows(data.sourceKey, rawEvents);
 
-			const storeInput: AttendanceImportBatchInput = {
+			const storeInput: AttendanceImportStoreInput = {
 				organizationId: data.organizationId,
 				batchId: data.batchId,
 				sourceKey: data.sourceKey,
@@ -113,10 +145,14 @@ export async function importAttendanceEvents(
 					sourceKey: data.sourceKey,
 					eventCount: mapped.length,
 					sourceReferences: mapped.map((row) => row.sourceReference),
+					sourceRejectedRows: sourceRejectedRows ?? [],
+					sourceRowIndexes: sourceRowIndexes ?? [],
 				}),
 				createdBy: data.actorUserId,
 				correlationId: data.correlationId,
 				nextCursor,
+				sourceRejectedRows,
+				sourceRowIndexes,
 			};
 
 			return store.importAttendanceEvents(storeInput, ports);

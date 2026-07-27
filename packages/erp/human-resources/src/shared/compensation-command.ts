@@ -1,6 +1,14 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 import {
+	type HumanResourcesEmployeeId,
+	humanResourcesBenefitEnrollmentDependentIdSchema,
+	humanResourcesBenefitEnrollmentIdSchema,
+	humanResourcesCompensationReviewIdSchema,
+	humanResourcesEmployeeCompensationIdSchema,
+	humanResourcesEmployeeIdSchema,
+} from "../brands";
+import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
 } from "../command-options";
@@ -36,6 +44,209 @@ type CommandDeps = {
 type QueryDeps = {
 	store: HumanResourcesStore;
 };
+
+const COMPENSATION_RESOURCE_ID_FIELDS = [
+	"compensationId",
+	"reviewId",
+	"cycleId",
+	"proposalId",
+	"enrollmentId",
+	"dependentId",
+	"gradeId",
+	"progressionRuleId",
+	"salaryBandId",
+	"planId",
+	"employeeId",
+	"applicationId",
+] as const;
+
+type CompensationSubjectResolution = {
+	organizationId: string;
+	subjectEmployeeId?: HumanResourcesEmployeeId;
+};
+
+function readStringField(input: object, field: string): string | undefined {
+	const descriptor = Object.getOwnPropertyDescriptor(input, field);
+	return typeof descriptor?.value === "string" ? descriptor.value : undefined;
+}
+
+function parseIdField<TSchema extends z.ZodType>(
+	input: object,
+	field: string,
+	schema: TSchema,
+): z.output<TSchema> | undefined {
+	const value = readStringField(input, field);
+	if (value === undefined) return undefined;
+	const parsed = schema.safeParse(value);
+	return parsed.success ? parsed.data : undefined;
+}
+
+async function resolveCompensationSubject(
+	input: ActorScoped,
+	store: HumanResourcesStore,
+): Promise<Result<CompensationSubjectResolution>> {
+	const compensationId = parseIdField(
+		input,
+		"compensationId",
+		humanResourcesEmployeeCompensationIdSchema,
+	);
+	if (compensationId !== undefined) {
+		const compensation = await store.getEmployeeCompensation({
+			organizationId: input.organizationId,
+			compensationId,
+		});
+		if (!compensation.ok) return compensation;
+		if (compensation.data !== null) {
+			return ok({
+				organizationId: compensation.data.organizationId,
+				subjectEmployeeId: compensation.data.employeeId,
+			});
+		}
+	}
+
+	const reviewId = parseIdField(
+		input,
+		"reviewId",
+		humanResourcesCompensationReviewIdSchema,
+	);
+	if (reviewId !== undefined) {
+		const review = await store.getCompensationReview({
+			organizationId: input.organizationId,
+			reviewId,
+		});
+		if (!review.ok) return review;
+		if (review.data !== null) {
+			return ok({
+				organizationId: review.data.organizationId,
+				subjectEmployeeId: review.data.employeeId,
+			});
+		}
+	}
+
+	const enrollmentId = parseIdField(
+		input,
+		"enrollmentId",
+		humanResourcesBenefitEnrollmentIdSchema,
+	);
+	if (enrollmentId !== undefined) {
+		const enrollment = await store.getBenefitEnrollment({
+			organizationId: input.organizationId,
+			enrollmentId,
+		});
+		if (!enrollment.ok) return enrollment;
+		if (enrollment.data !== null) {
+			return ok({
+				organizationId: enrollment.data.organizationId,
+				subjectEmployeeId: enrollment.data.employeeId,
+			});
+		}
+	}
+
+	const dependentId = parseIdField(
+		input,
+		"dependentId",
+		humanResourcesBenefitEnrollmentDependentIdSchema,
+	);
+	if (dependentId !== undefined) {
+		const dependent = await store.getBenefitEnrollmentDependent({
+			organizationId: input.organizationId,
+			dependentId,
+		});
+		if (!dependent.ok) return dependent;
+		if (dependent.data !== null) {
+			const enrollment = await store.getBenefitEnrollment({
+				organizationId: input.organizationId,
+				enrollmentId: dependent.data.enrollmentId,
+			});
+			if (!enrollment.ok) return enrollment;
+			if (enrollment.data !== null) {
+				return ok({
+					organizationId: enrollment.data.organizationId,
+					subjectEmployeeId: enrollment.data.employeeId,
+				});
+			}
+		}
+	}
+
+	const subjectEmployeeId = parseIdField(
+		input,
+		"employeeId",
+		humanResourcesEmployeeIdSchema,
+	);
+	return ok({
+		organizationId: input.organizationId,
+		...(subjectEmployeeId === undefined ? {} : { subjectEmployeeId }),
+	});
+}
+
+async function resolveManagerEmployeeId(input: {
+	data: ActorScoped;
+	options: HumanResourcesCommandOptions;
+	store: HumanResourcesStore;
+	subjectEmployeeId: HumanResourcesEmployeeId;
+}): Promise<Result<HumanResourcesEmployeeId | undefined>> {
+	const asOf = new Date().toISOString().slice(0, 10);
+	const identityResolver = input.options.identityResolver;
+	if (identityResolver !== undefined) {
+		const reports = await identityResolver.resolveManagerEmployeesForActor({
+			organizationId: input.data.organizationId,
+			actorUserId: input.data.actorUserId,
+			asOf,
+		});
+		if (!reports.ok) return reports;
+		if (reports.data.includes(input.subjectEmployeeId)) {
+			const identity = await identityResolver.resolveEmployeeForActor({
+				organizationId: input.data.organizationId,
+				actorUserId: input.data.actorUserId,
+				asOf,
+			});
+			if (!identity.ok) return identity;
+			if (identity.data !== null) {
+				return ok(identity.data.employeeId);
+			}
+		}
+	}
+
+	const primaryManager = await input.store.getPrimaryManagerForEmployee({
+		organizationId: input.data.organizationId,
+		employeeId: input.subjectEmployeeId,
+		asOf,
+	});
+	if (!primaryManager.ok) return primaryManager;
+	return ok(primaryManager.data ?? undefined);
+}
+
+async function resolveCompensationResource(
+	data: ActorScoped,
+	options: HumanResourcesCommandOptions,
+	store: HumanResourcesStore,
+): Promise<Result<HumanResourcesResourceContext>> {
+	const subject = await resolveCompensationSubject(data, store);
+	if (!subject.ok) return subject;
+	const resourceId = COMPENSATION_RESOURCE_ID_FIELDS.map((field) =>
+		readStringField(data, field),
+	).find((value) => value !== undefined);
+	let managerEmployeeId: HumanResourcesEmployeeId | undefined;
+	if (subject.data.subjectEmployeeId !== undefined) {
+		const manager = await resolveManagerEmployeeId({
+			data,
+			options,
+			store,
+			subjectEmployeeId: subject.data.subjectEmployeeId,
+		});
+		if (!manager.ok) return manager;
+		managerEmployeeId = manager.data;
+	}
+	return ok({
+		organizationId: subject.data.organizationId,
+		kind: "compensation",
+		...(resourceId === undefined ? {} : { resourceId }),
+		...(subject.data.subjectEmployeeId === undefined
+			? {}
+			: { subjectEmployeeId: subject.data.subjectEmployeeId }),
+		...(managerEmployeeId === undefined ? {} : { managerEmployeeId }),
+	});
+}
 
 /** Apply highly_restricted compensation projection when resource-aware port is wired. */
 export async function projectCompensationRecord<
@@ -130,7 +341,8 @@ export async function runCompensationCommand<
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
-		parityResourceKind: "compensation",
+		resolveResource: (data, opts, { store }) =>
+			resolveCompensationResource(data, opts, store),
 		resolveDeps: (opts) => {
 			const { store, ports, currency } = resolveCommandDeps(opts);
 			return ok({ store, ports, currency });
@@ -166,7 +378,8 @@ export async function runCompensationQuery<
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
-		parityResourceKind: "compensation",
+		resolveResource: (data, opts, { store }) =>
+			resolveCompensationResource(data, opts, store),
 		resolveRequestedFields: config.resolveRequestedFields,
 		project: config.project,
 		resolveDeps: (opts) => {

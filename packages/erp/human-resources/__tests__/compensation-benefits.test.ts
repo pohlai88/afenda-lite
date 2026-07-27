@@ -10,6 +10,10 @@ import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesPermission } from "../src/authorization";
 import {
+	humanResourcesCompensationReviewIdSchema,
+	humanResourcesEmploymentIdSchema,
+} from "../src/brands";
+import {
 	addBenefitEnrollmentDependent,
 	endBenefitEnrollmentDependent,
 } from "../src/compensation-benefits/benefit-dependent";
@@ -72,14 +76,30 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 } from "../src/permissions";
+import { assertCompensationReviewWithinBudget } from "../src/shared/compensation-review-budget";
+import {
+	addExactDecimals,
+	compareExactDecimals,
+	parseExactDecimal,
+} from "../src/shared/exact-decimal";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
+import { createMappingIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 const ORG_A = "org-cb-a";
 const ACTOR = "user-cb-1";
+
+function requireExactDecimal(value: string) {
+	const parsed = parseExactDecimal(value);
+	expect(parsed).not.toBeNull();
+	if (parsed === null) {
+		throw new Error(`Expected valid exact decimal: ${value}`);
+	}
+	return parsed;
+}
 
 function harness(
 	permissions: readonly HumanResourcesPermission[] = HUMAN_RESOURCES_PERMISSION_CODES,
@@ -170,6 +190,92 @@ describe("compensation & benefits (HR-07)", () => {
 		expect(band.ok).toBe(false);
 		if (band.ok) return;
 		expect(humanResourcesCodeFromResult(band)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		);
+	});
+
+	it("rejects unsafe-range salary band fractions in the wrong order", async () => {
+		const ready = harness();
+		const grade = await seedGrade(ready);
+		expect(grade.ok).toBe(true);
+		if (!grade.ok) return;
+
+		const band = await createSalaryBand(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-band-exact-order",
+				gradeId: grade.data.id,
+				currencyCode: "USD",
+				minAmount: "9007199254740992.0001",
+				midAmount: "9007199254740992.0000",
+				maxAmount: "9007199254740992.0002",
+				effectiveFrom: "2025-01-01",
+			},
+			ready,
+		);
+
+		expect(band.ok).toBe(false);
+		if (band.ok) return;
+		expect(humanResourcesCodeFromResult(band)).toBe(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		);
+	});
+
+	it("adds and compares signed exact decimals across mixed scales", () => {
+		const left = requireExactDecimal("9007199254740992.0001");
+		const right = requireExactDecimal("-9007199254740992");
+		const expected = requireExactDecimal("0.00010");
+		const negativeA = requireExactDecimal("-1.2");
+		const negativeB = requireExactDecimal("-1.20");
+
+		expect(compareExactDecimals(addExactDecimals(left, right), expected)).toBe(
+			0,
+		);
+		expect(compareExactDecimals(negativeA, negativeB)).toBe(0);
+	});
+
+	it("accepts an exact budget boundary and rejects one unit below it", () => {
+		const reviewId = humanResourcesCompensationReviewIdSchema.parse(
+			"00000000-0000-4000-8000-000000000071",
+		);
+		const employmentId = humanResourcesEmploymentIdSchema.parse(
+			"00000000-0000-4000-8000-000000000072",
+		);
+		const review = {
+			id: reviewId,
+			employmentId,
+			proposedBaseAmount: "9007199254740992.0001",
+			proposedCurrencyCode: "USD",
+			status: "recorded" as const,
+		};
+		const activeBaseByEmploymentId = new Map<string, string | null>([
+			[employmentId, "9007199254740992.0000"],
+		]);
+
+		const atBoundary = assertCompensationReviewWithinBudget({
+			cycle: {
+				budgetTotalAmount: "0.0001",
+				budgetCurrencyCode: "USD",
+			},
+			review,
+			otherCycleReviews: [],
+			activeBaseByEmploymentId,
+		});
+		const belowBoundary = assertCompensationReviewWithinBudget({
+			cycle: {
+				budgetTotalAmount: "0.0000",
+				budgetCurrencyCode: "USD",
+			},
+			review,
+			otherCycleReviews: [],
+			activeBaseByEmploymentId,
+		});
+
+		expect(atBoundary.ok).toBe(true);
+		expect(belowBoundary.ok).toBe(false);
+		if (belowBoundary.ok) return;
+		expect(humanResourcesCodeFromResult(belowBoundary)).toBe(
 			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 		);
 	});
@@ -654,6 +760,9 @@ describe("compensation & benefits (HR-07)", () => {
 			authorization: createGrantingHumanResourcesAuthorization([
 				HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 			]),
+			identityResolver: createMappingIdentityResolver({
+				[ACTOR]: seeded.employee.id,
+			}),
 		};
 		const allowed = await getApprovedCompensationHandoff(
 			{
@@ -674,6 +783,12 @@ describe("compensation & benefits (HR-07)", () => {
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;
+		const subjectReady = {
+			...ready,
+			identityResolver: createMappingIdentityResolver({
+				[ACTOR]: seeded.employee.id,
+			}),
+		};
 
 		const handoff = await getApprovedCompensationHandoff(
 			{
@@ -682,7 +797,7 @@ describe("compensation & benefits (HR-07)", () => {
 				correlationId: "corr-handoff-null",
 				employeeId: seeded.employee.id,
 			},
-			ready,
+			subjectReady,
 		);
 
 		expect(handoff.ok).toBe(true);

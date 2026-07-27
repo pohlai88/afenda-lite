@@ -9,7 +9,6 @@ import {
 import {
 	isoDateSchema,
 	payrollActorUserIdSchema,
-	payrollCorrelationIdSchema,
 	payrollDecimalStringSchema,
 	payrollEmployeeIdSchema,
 	payrollIdempotencyKeySchema,

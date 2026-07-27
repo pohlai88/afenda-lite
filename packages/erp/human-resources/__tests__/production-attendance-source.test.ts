@@ -431,6 +431,11 @@ describe("production attendance source import integration", () => {
 					events: [
 						validEvent({
 							employeeId: employee.data.id,
+							sourceReference: "connector-invalid-0",
+							sourceTimezone: "Not/A_Timezone",
+						}),
+						validEvent({
+							employeeId: employee.data.id,
 							sourceReference: "connector-row-1",
 							occurredAt: "2025-07-13T01:00:00.000Z",
 							localWorkDate: "2025-07-13",
@@ -455,13 +460,92 @@ describe("production attendance source import integration", () => {
 		);
 		expect(imported.ok).toBe(true);
 		if (!imported.ok) return;
-		expect(imported.data.status).toBe("completed");
-		expect(imported.data.totals.accepted).toBe(1);
+		expect(imported.data.status).toBe("partial");
+		expect(imported.data.totals).toEqual({
+			accepted: 1,
+			skipped: 0,
+			rejected: 1,
+		});
+		expect(imported.data.accepted[0]?.rowIndex).toBe(1);
+		expect(imported.data.rejected).toEqual([
+			{
+				rowIndex: 0,
+				sourceReference: "connector-invalid-0",
+				errorCode: "INVALID_TIMEZONE",
+				errorMessage: "Source timezone is not a valid IANA timezone",
+			},
+		]);
 		expect(imported.data.nextCursor).toBe(
 			bindAttendanceConnectorCursor({
 				organizationId: ORG_A,
 				nextToken: "connector-next",
 			}),
 		);
+
+		const replayed = await importAttendanceEvents(
+			{
+				organizationId: ORG_A,
+				actorUserId: "actor-connector",
+				correlationId: "corr-connector-import-replay",
+				idempotencyKey: "idem-connector-import",
+				batchId: "batch-connector-1",
+				sourceKey: "device-connector",
+			},
+			{ ...ready, attendanceSource },
+		);
+		expect(replayed).toEqual(imported);
+	});
+
+	it("returns a failed import outcome when every connector row is rejected", async () => {
+		const store = createMemoryHumanResourcesStore();
+		const ports = createMemoryMutationPorts();
+		const ready = createTestHumanResourcesCommandOptions({
+			store,
+			ports,
+			authorization: createGrantingHumanResourcesAuthorization([
+				...HUMAN_RESOURCES_PERMISSION_CODES,
+			]),
+			assignmentContext: createStoreAssignmentContextQuery({ store }),
+		});
+		const attendanceSource = createProductionAttendanceSource({
+			pull: createPull(async () => ({
+				ok: true,
+				data: {
+					events: [
+						validEvent({
+							sourceReference: "connector-invalid-only",
+							sourceTimezone: "Not/A_Timezone",
+						}),
+					],
+				},
+			})),
+		});
+
+		const imported = await importAttendanceEvents(
+			{
+				organizationId: ORG_A,
+				actorUserId: "actor-connector",
+				correlationId: "corr-connector-rejected",
+				idempotencyKey: "idem-connector-rejected",
+				batchId: "batch-connector-rejected",
+				sourceKey: "device-connector",
+			},
+			{ ...ready, attendanceSource },
+		);
+
+		expect(imported.ok).toBe(true);
+		if (!imported.ok) return;
+		expect(imported.data.status).toBe("failed");
+		expect(imported.data.accepted).toEqual([]);
+		expect(imported.data.totals).toEqual({
+			accepted: 0,
+			skipped: 0,
+			rejected: 1,
+		});
+		expect(imported.data.rejected[0]).toMatchObject({
+			rowIndex: 0,
+			sourceReference: "connector-invalid-only",
+			errorCode: "INVALID_TIMEZONE",
+		});
 	});
 });

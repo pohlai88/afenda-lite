@@ -462,34 +462,21 @@ edges:
   - from: "@afenda/corporate-administration"
     to: "@afenda/db"
     status: approved
-    authority: CA-0.1
-    reason: "ca_* schema host and module-manifest contract"
-    effectiveDate: "2026-07-26"
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/errors"
-    status: approved
-    authority: CA-0.1
-    reason: "Transport-neutral Result errors from CA-0.2 onward"
+    authority: CA-0.4
+    reason: "Schema host, durable idempotency receipt, and transaction-scoped outbox append"
     effectiveDate: "2026-07-26"
   - from: "@afenda/corporate-administration"
     to: "@afenda/audit"
     status: approved
-    authority: CA-0.1
-    reason: "Same-transaction statutory mutation audit from CA-0.3 onward"
+    authority: CA-0.4
+    reason: "Shared platform audit fact persistence; no CA-owned audit table"
     effectiveDate: "2026-07-26"
   - from: "@afenda/corporate-administration"
-    to: "@afenda/events"
+    to: "@afenda/errors"
     status: approved
-    authority: CA-0.1
-    reason: "Same-transaction outbox events from CA-0.3 onward"
+    authority: CA-0.2
+    reason: "Transport-neutral Result and semantic error contracts"
     effectiveDate: "2026-07-26"
-  - from: "@afenda/corporate-administration"
-    to: "@afenda/master-data"
-    status: approved
-    authority: CA-0.1
-    reason: "Read-only party, tax-registration and reference contracts"
-    effectiveDate: "2026-07-26"
-
   - from: "@afenda/ai-the-machine"
     to: "@afenda/errors"
     status: approved

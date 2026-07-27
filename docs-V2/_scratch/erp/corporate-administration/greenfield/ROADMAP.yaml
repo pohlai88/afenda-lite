@@ -7,8 +7,8 @@ slice_count: 47
 phases:
   - id: "0"
     title: "Architecture and Foundation"
-    outcome: "Create the package, close authority and dependency decisions, establish the transactional kernel, and prove one thin production-composed legal-company vertical."
-    status: OPEN
+    outcome: "Create the package, close authority and dependency decisions, and establish durable transaction, idempotency, audit and outbox infrastructure without activating business capability."
+    status: DONE
     slices:
       - id: "CA-0.1"
         title: "Authority, catalog and package scaffold"
@@ -16,30 +16,30 @@ phases:
         status: DONE
         goal: "Register the greenfield bounded context before domain coding and create a minimal buildable package with no fabricated behavior."
       - id: "CA-0.2"
-        title: "Core contracts, permissions, errors and reference ports"
+        title: "Core contracts and future catalog design"
         depends_on: "CA-0.1"
         status: DONE
-        goal: "Define the stable greenfield contracts used by every later vertical."
+        goal: "Define stable greenfield contracts and retain future authorization design without activating unused permissions or ports."
       - id: "CA-0.3"
-        title: "Database foundation and atomic mutation kernel"
+        title: "Runtime composition and mutation contracts"
         depends_on: "CA-0.2"
-        status: OPEN
-        goal: "Build the same-transaction infrastructure required before material statutory writes."
+        status: DONE
+        goal: "Define the fail-fast composed runtime and package-neutral transaction, idempotency, audit and pending-event contracts used by durable adapters."
       - id: "CA-0.4"
-        title: "First thin vertical — draft legal-company registration"
+        title: "Durable infrastructure adapters and package boundaries"
         depends_on: "CA-0.3"
-        status: OPEN
-        goal: "Prove the complete package-to-database-to-Action-to-UI path with a real, deliberately narrow domain operation."
+        status: DONE
+        goal: "Persist infrastructure facts durably while proving that Corporate Administration still exposes no business capability."
   - id: "1"
     title: "Legal Company and Establishments"
     outcome: "Deliver complete statutory identity, legal-form, identifier, status, financial-year, establishment and registered-address history."
-    status: OPEN
+    status: IN_PROGRESS
     slices:
       - id: "CA-1.1"
         title: "Legal-company registry and jurisdiction profile"
         depends_on: "Phase 0 DONE"
-        status: OPEN
-        goal: "Expand the thin draft root into a jurisdiction-aware legal-company aggregate."
+        status: DONE
+        goal: "Establish the jurisdiction-aware legal-company aggregate as the first Corporate Administration business capability."
       - id: "CA-1.2"
         title: "Effective legal names and legal forms"
         depends_on: "CA-1.1"

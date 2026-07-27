@@ -41,10 +41,13 @@ import {
 	assertRejectionReasonProvided,
 	assertValidDocumentDateRange,
 	assertWorkEligibilityStatusTransition,
+	isDocumentRequirementApplicable,
 	isNearingExpiry,
+	isWithinInclusiveDateWindow,
 } from "../../shared/compliance-guards";
 import { toEmployeeDocumentListItem } from "../../shared/compliance-privacy";
 import {
+	type DocumentRequirementApplicability,
 	isDocumentRequirementEditable,
 	isEmployeeDocumentVerified,
 	isPolicyAcknowledgementOutstanding,
@@ -132,6 +135,7 @@ export type MemoryComplianceMethods = Pick<
 	| "supersedePolicyAcknowledgementRequirement"
 	| "getPolicyAcknowledgementStatus"
 	| "listOutstandingPolicyAcknowledgements"
+	| "listOverduePolicyAcknowledgements"
 	| "getEmployeeComplianceSummary"
 >;
 
@@ -696,6 +700,7 @@ export function createMemoryComplianceMethods(
 				documentType: string;
 				issuingJurisdiction: string | null;
 				appliesToNote: string | null;
+				applicability: DocumentRequirementApplicability;
 				createdBy: string;
 			},
 			ports: MutationPorts,
@@ -724,6 +729,7 @@ export function createMemoryComplianceMethods(
 				documentType: record.documentType,
 				issuingJurisdiction: record.issuingJurisdiction,
 				appliesToNote: record.appliesToNote,
+				applicability: record.applicability,
 				status: "draft",
 				version: 1,
 				createdBy: record.createdBy,
@@ -757,6 +763,7 @@ export function createMemoryComplianceMethods(
 				documentType?: string;
 				issuingJurisdiction?: string | null;
 				appliesToNote?: string | null;
+				applicability?: DocumentRequirementApplicability;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -800,6 +807,7 @@ export function createMemoryComplianceMethods(
 					input.appliesToNote !== undefined
 						? input.appliesToNote
 						: requirement.appliesToNote,
+				applicability: input.applicability ?? requirement.applicability,
 				version: requirement.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1332,34 +1340,29 @@ export function createMemoryComplianceMethods(
 					row.status === "published",
 			);
 
-			let missing = published;
-			if (input.employeeId !== undefined) {
-				const employeeId = input.employeeId;
-				missing = published.filter(
-					(requirement) =>
+			const organizationEmployeeIds = Array.from(core.employees.values())
+				.filter((employee) => employee.organizationId === input.organizationId)
+				.map((employee) => employee.id);
+			const employeeIds =
+				input.employeeId === undefined
+					? organizationEmployeeIds
+					: organizationEmployeeIds.filter(
+							(employeeId) => employeeId === input.employeeId,
+						);
+			const missing = published.filter((requirement) =>
+				employeeIds.some(
+					(employeeId) =>
+						isDocumentRequirementApplicable({
+							applicability: requirement.applicability,
+							employeeId,
+						}) &&
 						!employeeHasVerifiedDocumentForRequirement(state, {
 							organizationId: input.organizationId,
 							employeeId,
 							requirementId: requirement.id,
 						}),
-				);
-			} else {
-				const employeeIds = Array.from(core.employees.values())
-					.filter(
-						(employee) => employee.organizationId === input.organizationId,
-					)
-					.map((employee) => employee.id);
-				missing = published.filter((requirement) =>
-					employeeIds.some(
-						(employeeId) =>
-							!employeeHasVerifiedDocumentForRequirement(state, {
-								organizationId: input.organizationId,
-								employeeId,
-								requirementId: requirement.id,
-							}),
-					),
-				);
-			}
+				),
+			);
 
 			missing.sort((a, b) => a.code.localeCompare(b.code));
 
@@ -1385,17 +1388,15 @@ export function createMemoryComplianceMethods(
 			pageSize: number;
 			employeeId?: HumanResourcesEmployeeId;
 		}): Promise<Result<EmployeeDocumentListPage>> {
-			const windowEndDate = new Date(`${input.asOf}T00:00:00.000Z`);
-			windowEndDate.setUTCDate(windowEndDate.getUTCDate() + input.withinDays);
-			const windowEnd = windowEndDate.toISOString().slice(0, 10);
-
 			let filtered = Array.from(state.employeeDocuments.values()).filter(
 				(row) =>
 					row.organizationId === input.organizationId &&
 					row.verificationStatus !== "expired" &&
-					row.expiresOn !== null &&
-					row.expiresOn >= input.asOf &&
-					row.expiresOn <= windowEnd,
+					isWithinInclusiveDateWindow({
+						date: row.expiresOn,
+						asOf: input.asOf,
+						withinDays: input.withinDays,
+					}),
 			);
 
 			if (input.employeeId !== undefined) {
@@ -1760,6 +1761,7 @@ export function createMemoryComplianceMethods(
 		async listEmployeesWithWorkEligibilityRisk(input: {
 			organizationId: string;
 			asOf: string;
+			withinDays: number;
 			page: number;
 			pageSize: number;
 		}): Promise<Result<WorkEligibilityRiskListPage>> {
@@ -1767,10 +1769,16 @@ export function createMemoryComplianceMethods(
 				.filter(
 					(row) =>
 						row.organizationId === input.organizationId &&
+						row.status !== "closed" &&
 						(row.status === "pending" ||
 							row.status === "suspended" ||
 							row.status === "expired" ||
-							(row.expiresOn !== null && row.expiresOn < input.asOf)),
+							(row.expiresOn !== null && row.expiresOn < input.asOf) ||
+							isWithinInclusiveDateWindow({
+								date: row.expiresOn,
+								asOf: input.asOf,
+								withinDays: input.withinDays,
+							})),
 				)
 				.sort((a, b) => {
 					const expiresCompare = (a.expiresOn ?? "").localeCompare(
@@ -1835,6 +1843,7 @@ export function createMemoryComplianceMethods(
 				employeeId: HumanResourcesEmployeeId;
 				policyCode: string;
 				policyVersion: string;
+				dueOn: string;
 				createIdempotencyKey: string;
 				createRequestFingerprint: string;
 				createdBy: string;
@@ -1874,6 +1883,18 @@ export function createMemoryComplianceMethods(
 					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				);
 			}
+			const outstandingExists = Array.from(
+				state.policyAcknowledgements.values(),
+			).some(
+				(row) =>
+					row.organizationId === record.organizationId &&
+					row.employeeId === record.employeeId &&
+					row.policyCode === record.policyCode &&
+					isPolicyAcknowledgementOutstanding(row.requirementStatus),
+			);
+			if (outstandingExists) {
+				return conflict("An outstanding policy acknowledgement already exists");
+			}
 
 			const idResult = parseHumanResourcesPolicyAcknowledgementId(randomUUID());
 			if (!idResult.ok) {
@@ -1889,6 +1910,7 @@ export function createMemoryComplianceMethods(
 				policyVersion: record.policyVersion,
 				requirementStatus: "outstanding",
 				issuedAt: now,
+				dueOn: record.dueOn,
 				acknowledgedAt: null,
 				acknowledgedBy: null,
 				supersedesAcknowledgementId: null,
@@ -1993,6 +2015,7 @@ export function createMemoryComplianceMethods(
 				organizationId: string;
 				acknowledgementId: HumanResourcesPolicyAcknowledgementId;
 				newPolicyVersion: string;
+				newDueOn: string;
 				expectedVersion: number;
 				actorUserId: string;
 			},
@@ -2049,6 +2072,7 @@ export function createMemoryComplianceMethods(
 				policyVersion: input.newPolicyVersion,
 				requirementStatus: "outstanding",
 				issuedAt: now,
+				dueOn: input.newDueOn,
 				acknowledgedAt: null,
 				acknowledgedBy: null,
 				supersedesAcknowledgementId: existing.id,
@@ -2158,6 +2182,42 @@ export function createMemoryComplianceMethods(
 			});
 		},
 
+		async listOverduePolicyAcknowledgements(input: {
+			organizationId: string;
+			asOf: string;
+			page: number;
+			pageSize: number;
+			employeeId?: HumanResourcesEmployeeId;
+		}): Promise<Result<PolicyAcknowledgementListPage>> {
+			let filtered = Array.from(state.policyAcknowledgements.values()).filter(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					isPolicyAcknowledgementOutstanding(row.requirementStatus) &&
+					row.dueOn < input.asOf,
+			);
+			if (input.employeeId !== undefined) {
+				filtered = filtered.filter(
+					(row) => row.employeeId === input.employeeId,
+				);
+			}
+			filtered.sort((a, b) => {
+				const dueCompare = a.dueOn.localeCompare(b.dueOn);
+				return dueCompare !== 0
+					? dueCompare
+					: b.issuedAt.getTime() - a.issuedAt.getTime();
+			});
+			const totalCount = filtered.length;
+			const start = (input.page - 1) * input.pageSize;
+			return ok({
+				acknowledgements: filtered
+					.slice(start, start + input.pageSize)
+					.map((row) => ({ ...row })),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
 		// --- Compliance Summary ---
 
 		async getEmployeeComplianceSummary(input: {
@@ -2184,16 +2244,16 @@ export function createMemoryComplianceMethods(
 			}
 
 			const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
-			const windowEndDate = new Date(`${asOf}T00:00:00.000Z`);
-			windowEndDate.setUTCDate(windowEndDate.getUTCDate() + 30);
-			const windowEnd = windowEndDate.toISOString().slice(0, 10);
-
 			const missingRequiredDocumentCount = Array.from(
 				state.documentRequirements.values(),
 			).filter(
 				(requirement) =>
 					requirement.organizationId === input.organizationId &&
 					requirement.status === "published" &&
+					isDocumentRequirementApplicable({
+						applicability: requirement.applicability,
+						employeeId: input.employeeId,
+					}) &&
 					!employeeHasVerifiedDocumentForRequirement(state, {
 						organizationId: input.organizationId,
 						employeeId: input.employeeId,
@@ -2208,9 +2268,11 @@ export function createMemoryComplianceMethods(
 					document.organizationId === input.organizationId &&
 					document.employeeId === input.employeeId &&
 					document.verificationStatus !== "expired" &&
-					document.expiresOn !== null &&
-					document.expiresOn >= asOf &&
-					document.expiresOn <= windowEnd,
+					isWithinInclusiveDateWindow({
+						date: document.expiresOn,
+						asOf,
+						withinDays: 30,
+					}),
 			).length;
 
 			const employeeEligibilities = Array.from(
@@ -2227,7 +2289,12 @@ export function createMemoryComplianceMethods(
 						row.status === "pending" ||
 						row.status === "suspended" ||
 						row.status === "expired" ||
-						(row.expiresOn !== null && row.expiresOn < asOf),
+						(row.expiresOn !== null && row.expiresOn < asOf) ||
+						isWithinInclusiveDateWindow({
+							date: row.expiresOn,
+							asOf,
+							withinDays: 30,
+						}),
 				);
 
 			const outstandingPolicyAcknowledgementCount = Array.from(

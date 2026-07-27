@@ -522,7 +522,10 @@ function redactReviewList(
 	}));
 }
 
-function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
+function buildPerformanceMemoryMethods(
+	state: PerformanceMemoryState,
+): PerformanceMemoryMethods &
+	ThisType<MemoryPerformanceHost & PerformanceMemoryMethods> {
 	return {
 		async getPerformanceCycleById(input: {
 			organizationId: string;
@@ -1218,14 +1221,12 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				);
 			}
 
-			const host = this as unknown as MemoryPerformanceHost &
-				PerformanceMemoryMethods;
 			const enrolled: PerformanceCycleParticipant[] = [];
 			let page = 1;
 			const pageSize = 100;
 
 			while (true) {
-				const employees = await host.listEmployees({
+				const employees = await this.listEmployees({
 					organizationId: input.organizationId,
 					page,
 					pageSize,
@@ -1238,7 +1239,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				}
 
 				for (const employee of employees.data.employees) {
-					const employments = await host.listEmploymentsByEmployee({
+					const employments = await this.listEmploymentsByEmployee({
 						organizationId: input.organizationId,
 						employeeId: employee.id,
 					});
@@ -1247,7 +1248,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 					}
 
 					for (const employmentRef of employments.data) {
-						const employment = await host.getEmploymentById({
+						const employment = await this.getEmploymentById({
 							organizationId: input.organizationId,
 							employmentId: employmentRef.id,
 						});
@@ -1270,7 +1271,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 							continue;
 						}
 
-						const added = await host.addCycleParticipant(
+						const added = await this.addCycleParticipant(
 							{
 								organizationId: input.organizationId,
 								cycleId: input.cycleId,
@@ -1329,9 +1330,8 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				);
 			}
 
-			const host = this as unknown as MemoryPerformanceHost;
 			const refs = await assertEmployeeEmployment(
-				host,
+				this,
 				input.organizationId,
 				input.employeeId,
 				input.employmentId,
@@ -1346,7 +1346,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 				input.cycleId,
 			);
 			if (eligibility !== null) {
-				const employment = await host.getEmploymentById({
+				const employment = await this.getEmploymentById({
 					organizationId: input.organizationId,
 					employmentId: input.employmentId,
 				});
@@ -1611,7 +1611,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			}
 
 			const refs = await assertEmployeeEmployment(
-				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
+				this,
 				record.organizationId,
 				record.employeeId,
 				record.employmentId,
@@ -2297,7 +2297,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			}
 
 			const refs = await assertEmployeeEmployment(
-				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
+				this,
 				input.organizationId,
 				input.employeeId,
 				input.employmentId,
@@ -3262,7 +3262,7 @@ function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 			}
 
 			const refs = await assertEmployeeEmployment(
-				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
+				this,
 				record.organizationId,
 				record.employeeId,
 				record.employmentId,
