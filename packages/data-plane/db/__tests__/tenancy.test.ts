@@ -48,8 +48,8 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	});
 
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(234);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(234);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(235);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(235);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);
@@ -61,6 +61,9 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"financial_posting_exception",
 		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_organization_dimension");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
+			"md_item_variant_attribute_value_option",
+		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_legal_company");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
 			"ca_company_jurisdiction_profile",

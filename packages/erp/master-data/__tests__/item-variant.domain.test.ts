@@ -1,8 +1,11 @@
 import { randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
-import { getItemById, retireItem } from "../src/item";
-import { createItemGroup } from "../src/item-group";
+import {
+	getItemById,
+	retireItem,
+} from "../src/capabilities/core-organization-masters/item";
+import { createItemGroup } from "../src/capabilities/core-organization-masters/item-group";
 import {
 	activateItemTemplate,
 	addItemTemplateAttribute,
@@ -10,10 +13,23 @@ import {
 	createItemTemplate,
 	createItemVariant,
 	getItemVariantById,
+	retireItemTemplate,
 	retireItemVariant,
 	updateItemTemplate,
-} from "../src/item-variant";
+} from "../src/capabilities/core-organization-masters/item-template-variant";
+import {
+	getVariantConfiguration,
+	listItemTemplateAttributeOptions,
+	listItemTemplateAttributes,
+	listVariantAttributeValues,
+} from "../src/capabilities/extensions";
+import {
+	MASTER_DATA_PERMISSION_ITEM_TEMPLATE_ATTRIBUTE_MANAGE,
+	MASTER_DATA_PERMISSION_MANAGE,
+	MASTER_DATA_PERMISSION_READ,
+} from "../src/permissions";
 import { createMasterDataTestHarness } from "./helpers/harness";
+import { createGrantingMasterAuthorization } from "./helpers/memory-authorization";
 import type { createMemoryMasterDataStore } from "./helpers/memory-master-data-store";
 import type { createMemoryMutationPorts } from "./helpers/memory-ports";
 
@@ -53,6 +69,7 @@ async function seedActiveTemplate(options: {
 			name: "Color",
 			valueKind: "option",
 			isRequired: true,
+			isVariantDefining: true,
 			sortOrder: 1,
 		},
 		options,
@@ -160,6 +177,382 @@ describe("@afenda/master-data item variants (R1)", () => {
 		}
 	});
 
+	it("defaults omitted attribute flags to non-required and non-variant-defining", async () => {
+		const { options, store, ports } = createMasterDataTestHarness();
+		const authorization = createGrantingMasterAuthorization([
+			MASTER_DATA_PERMISSION_MANAGE,
+			MASTER_DATA_PERMISSION_READ,
+			MASTER_DATA_PERMISSION_ITEM_TEMPLATE_ATTRIBUTE_MANAGE,
+		]);
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "DEFAULTS", name: "Defaulted flags" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) return;
+
+		const attribute = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "DESCRIPTION",
+				name: "Description",
+				dataType: "text",
+			},
+			{ store, ports, authorization },
+		);
+		expect(attribute.ok).toBe(true);
+		if (!attribute.ok) return;
+		expect(attribute.data).toMatchObject({
+			isRequired: false,
+			isVariantDefining: false,
+			isSearchable: false,
+		});
+	});
+
+	it("requires elevated permission only for explicit variant-defining attributes", async () => {
+		const { options, store, ports } = createMasterDataTestHarness();
+		const authorization = createGrantingMasterAuthorization([
+			MASTER_DATA_PERMISSION_MANAGE,
+			MASTER_DATA_PERMISSION_READ,
+			MASTER_DATA_PERMISSION_ITEM_TEMPLATE_ATTRIBUTE_MANAGE,
+		]);
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "AUTH-ATTR", name: "Attribute auth" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) return;
+
+		const denied = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "COLOR",
+				name: "Color",
+				dataType: "single_option",
+				isVariantDefining: true,
+			},
+			{ store, ports, authorization },
+		);
+		expect(denied.ok).toBe(false);
+	});
+
+	it("allows the same attribute code in different templates and lists deterministically", async () => {
+		const { options } = createMasterDataTestHarness();
+		const firstTemplate = await createItemTemplate(
+			{ ...ctx(), code: "TMP-A", name: "Template A" },
+			options,
+		);
+		const secondTemplate = await createItemTemplate(
+			{ ...ctx(), code: "TMP-B", name: "Template B" },
+			options,
+		);
+		expect(firstTemplate.ok).toBe(true);
+		expect(secondTemplate.ok).toBe(true);
+		if (!firstTemplate.ok || !secondTemplate.ok) return;
+
+		const first = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: firstTemplate.data.id,
+				code: "COLOR",
+				name: "Color",
+				dataType: "text",
+				displayOrder: 10,
+			},
+			options,
+		);
+		const second = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: secondTemplate.data.id,
+				code: "color",
+				name: "Color",
+				dataType: "text",
+			},
+			options,
+		);
+		const size = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: firstTemplate.data.id,
+				code: "SIZE",
+				name: "Size",
+				dataType: "text",
+				displayOrder: 10,
+			},
+			options,
+		);
+		expect(first.ok).toBe(true);
+		expect(second.ok).toBe(true);
+		expect(size.ok).toBe(true);
+
+		const listed = await listItemTemplateAttributes(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				templateId: firstTemplate.data.id,
+			},
+			options,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.map((attribute) => attribute.normalizedCode)).toEqual([
+			"COLOR",
+			"SIZE",
+		]);
+	});
+
+	it("rejects options for non-option attributes and missing option parents", async () => {
+		const { options } = createMasterDataTestHarness();
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "OPT-PARENT", name: "Option parent checks" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) return;
+
+		const textAttribute = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "DESCRIPTION",
+				name: "Description",
+				dataType: "text",
+			},
+			options,
+		);
+		expect(textAttribute.ok).toBe(true);
+		if (!textAttribute.ok) return;
+
+		const addToText = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: textAttribute.data.id,
+				code: "RED",
+				label: "Red",
+			},
+			options,
+		);
+		expect(addToText.ok).toBe(false);
+		if (!addToText.ok) {
+			expect(addToText.details).toMatchObject({
+				reason: "MASTER_INVALID_STATE",
+				field: "attributeId",
+			});
+		}
+
+		const listTextOptions = await listItemTemplateAttributeOptions(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				attributeId: textAttribute.data.id,
+			},
+			options,
+		);
+		expect(listTextOptions.ok).toBe(false);
+
+		const missing = await listItemTemplateAttributeOptions(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				attributeId: randomUUID(),
+			},
+			options,
+		);
+		expect(missing.ok).toBe(false);
+		if (!missing.ok) {
+			expect(missing.details).toMatchObject({
+				reason: "MASTER_NOT_FOUND",
+				field: "attributeId",
+			});
+		}
+	});
+
+	it("rejects adding options after template activation", async () => {
+		const { options } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+
+		const added = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: seeded.color.id,
+				code: "GREEN",
+				label: "Green",
+			},
+			options,
+		);
+		expect(added.ok).toBe(false);
+		if (!added.ok) {
+			expect(added.details).toMatchObject({
+				reason: "MASTER_INVALID_STATE",
+				field: "attributeId",
+				actualStatus: "active",
+				requiredStatus: "draft",
+			});
+		}
+	});
+
+	it("scopes option-code uniqueness by attribute and lists deterministically", async () => {
+		const { options } = createMasterDataTestHarness();
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "OPT-CODES", name: "Option code scope" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) return;
+
+		const color = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "COLOR",
+				name: "Color",
+				dataType: "single_option",
+				isVariantDefining: true,
+			},
+			options,
+		);
+		const finish = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "FINISH",
+				name: "Finish",
+				dataType: "single_option",
+			},
+			options,
+		);
+		expect(color.ok).toBe(true);
+		expect(finish.ok).toBe(true);
+		if (!color.ok || !finish.ok) return;
+
+		const blue = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: color.data.id,
+				code: "BLUE",
+				label: "Blue",
+				displayOrder: 10,
+			},
+			options,
+		);
+		const amber = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: color.data.id,
+				code: "AMBER",
+				label: "Amber",
+				displayOrder: 10,
+			},
+			options,
+		);
+		const duplicate = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: color.data.id,
+				code: "blue",
+				label: "Blue again",
+			},
+			options,
+		);
+		const sameCodeOtherAttribute = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: finish.data.id,
+				code: "BLUE",
+				label: "Blue finish",
+			},
+			options,
+		);
+		expect(blue.ok).toBe(true);
+		expect(amber.ok).toBe(true);
+		expect(duplicate.ok).toBe(false);
+		expect(sameCodeOtherAttribute.ok).toBe(true);
+
+		const listed = await listItemTemplateAttributeOptions(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				attributeId: color.data.id,
+			},
+			options,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.map((option) => option.normalizedCode)).toEqual([
+			"AMBER",
+			"BLUE",
+		]);
+	});
+
+	it("store rejects activation when an option attribute has no options", async () => {
+		const { options, store, ports } = createMasterDataTestHarness();
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "NO-OPTIONS", name: "Incomplete template" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) {
+			return;
+		}
+		const attribute = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "COLOR",
+				name: "Color",
+				valueKind: "option",
+				isVariantDefining: true,
+			},
+			options,
+		);
+		expect(attribute.ok).toBe(true);
+		const activated = await store.transitionItemTemplate(
+			{
+				organizationId: "org-a",
+				id: template.data.id,
+				expectedVersion: template.data.version,
+				actorUserId: "user-1",
+				toStatus: "active",
+			},
+			ports,
+			{ correlationId: randomUUID(), eventSuffix: "activated" },
+		);
+		expect(activated.ok).toBe(false);
+		if (!activated.ok) {
+			expect(activated.details).toMatchObject({
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
+	});
+
+	it("rejects adding attributes to an active template with template state details", async () => {
+		const { options } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+
+		const added = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "MATERIAL",
+				name: "Material",
+				dataType: "text",
+			},
+			options,
+		);
+		expect(added.ok).toBe(false);
+		if (!added.ok) {
+			expect(added.details).toMatchObject({
+				reason: "MASTER_INVALID_STATE",
+				field: "templateId",
+				actualStatus: "active",
+				requiredStatus: "draft",
+			});
+		}
+	});
+
 	it("enforces live variant item code uniqueness", async () => {
 		const { options } = createMasterDataTestHarness();
 		const seeded = await seedActiveTemplate(options);
@@ -242,6 +635,68 @@ describe("@afenda/master-data item variants (R1)", () => {
 		}
 	});
 
+	it("rejects duplicate values for the same template attribute", async () => {
+		const { options } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+		const duplicate = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-DUP-ATTR",
+				name: "Duplicate attribute",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+					{ attributeId: seeded.color.id, optionId: seeded.blue.id },
+				],
+			},
+			options,
+		);
+		expect(duplicate.ok).toBe(false);
+		if (!duplicate.ok) {
+			expect(duplicate.details).toMatchObject({
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
+	});
+
+	it("blocks template retirement while a live variant exists", async () => {
+		const { options } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+		const variant = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-LIVE",
+				name: "Live tee",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+				],
+			},
+			options,
+		);
+		expect(variant.ok).toBe(true);
+		const retired = await retireItemTemplate(
+			{
+				...ctx(),
+				id: seeded.template.id,
+				expectedVersion: seeded.template.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(false);
+		if (!retired.ok) {
+			expect(retired.details).toMatchObject({
+				reason: "MASTER_DEPENDENCY_BLOCKED",
+			});
+		}
+	});
+
 	it("retires variant via retireItemVariant and keeps it resolvable", async () => {
 		const { options } = createMasterDataTestHarness();
 		const seeded = await seedActiveTemplate(options);
@@ -278,6 +733,49 @@ describe("@afenda/master-data item variants (R1)", () => {
 		}
 		expect(retired.data.retiredAt).not.toBeNull();
 		expect(retired.data.item.status).toBe("retired");
+	});
+
+	it("rejects stale variant membership version before retiring its item", async () => {
+		const { options, store, ports } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+		const variant = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-STALE",
+				name: "Stale tee",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+				],
+			},
+			options,
+		);
+		expect(variant.ok).toBe(true);
+		if (!variant.ok) {
+			return;
+		}
+		const stale = await store.retireItemVariant(
+			{
+				organizationId: "org-a",
+				variantId: variant.data.id,
+				expectedVariantVersion: variant.data.version + 1,
+				itemId: variant.data.itemId,
+				expectedItemVersion: variant.data.item.version,
+				actorUserId: "user-1",
+			},
+			ports,
+			{ correlationId: randomUUID() },
+		);
+		expect(stale.ok).toBe(false);
+		const current = await store.getItemVariantById("org-a", variant.data.id);
+		expect(current.ok).toBe(true);
+		if (current.ok && current.data !== null) {
+			expect(current.data.retiredAt).toBeNull();
+			expect(current.data.item.status).not.toBe("retired");
+		}
 	});
 
 	it("keeps retired variants resolvable by id", async () => {
@@ -352,6 +850,94 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(reused.ok).toBe(true);
+	});
+
+	it("returns typed attribute values and full configuration through separate queries", async () => {
+		const { options } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+		const variant = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-CONFIG",
+				name: "Tee config",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+				],
+			},
+			options,
+		);
+		expect(variant.ok).toBe(true);
+		if (!variant.ok) return;
+
+		const values = await listVariantAttributeValues(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: variant.data.id,
+			},
+			options,
+		);
+		expect(values.ok).toBe(true);
+		if (!values.ok) return;
+		expect(values.data).toEqual(variant.data.values);
+
+		const configuration = await getVariantConfiguration(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: variant.data.id,
+			},
+			options,
+		);
+		expect(configuration.ok).toBe(true);
+		if (!configuration.ok) return;
+		expect(configuration.data).toMatchObject({
+			id: variant.data.id,
+			itemId: variant.data.itemId,
+			templateId: variant.data.templateId,
+		});
+		expect(configuration.data.values).toEqual(variant.data.values);
+	});
+
+	it("returns not-found for missing variant attribute values and configuration", async () => {
+		const { options } = createMasterDataTestHarness();
+		const missingId = randomUUID();
+
+		const values = await listVariantAttributeValues(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: missingId,
+			},
+			options,
+		);
+		expect(values.ok).toBe(false);
+		if (!values.ok) {
+			expect(values.details).toMatchObject({
+				reason: "MASTER_NOT_FOUND",
+				field: "id",
+			});
+		}
+
+		const configuration = await getVariantConfiguration(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: missingId,
+			},
+			options,
+		);
+		expect(configuration.ok).toBe(false);
+		if (!configuration.ok) {
+			expect(configuration.details).toMatchObject({
+				reason: "MASTER_NOT_FOUND",
+				field: "id",
+			});
+		}
 	});
 
 	it("isolates tenancy on template load", async () => {

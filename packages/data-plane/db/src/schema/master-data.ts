@@ -255,6 +255,7 @@ export const mdParty = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("md_party_org_id_uidx").on(t.organizationId, t.id),
 		index("md_party_org_id_idx").on(t.organizationId, t.id),
 		index("md_party_org_status_idx").on(t.organizationId, t.status),
 		index("md_party_org_updated_at_idx").on(
@@ -340,6 +341,7 @@ export const mdItem = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("md_item_org_id_uidx").on(t.organizationId, t.id),
 		index("md_item_org_id_idx").on(t.organizationId, t.id),
 		index("md_item_org_status_idx").on(t.organizationId, t.status),
 		index("md_item_org_group_idx").on(t.organizationId, t.itemGroupId),
@@ -378,6 +380,7 @@ export const mdWarehouse = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("md_warehouse_org_id_uidx").on(t.organizationId, t.id),
 		index("md_warehouse_org_id_idx").on(t.organizationId, t.id),
 		index("md_warehouse_org_status_idx").on(t.organizationId, t.status),
 		index("md_warehouse_org_parent_idx").on(t.organizationId, t.parentId),
@@ -499,9 +502,7 @@ export const mdPartyRole = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		partyId: uuid("party_id")
-			.notNull()
-			.references(() => mdParty.id),
+		partyId: uuid("party_id").notNull(),
 		/** Closed catalog: customer | supplier | carrier | … */
 		roleCode: text("role_code").notNull(),
 		status: text("status").notNull().default("draft"),
@@ -514,6 +515,8 @@ export const mdPartyRole = pgTable(
 		activatedBy: text("activated_by"),
 		retiredAt: timestamp("retired_at", { withTimezone: true }),
 		retiredBy: text("retired_by"),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -522,11 +525,25 @@ export const mdPartyRole = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.partyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_party_role_org_party_fk",
+		}),
 		index("md_party_role_org_party_idx").on(t.organizationId, t.partyId),
 		index("md_party_role_org_status_idx").on(t.organizationId, t.status),
-		uniqueIndex("md_party_role_org_party_code_live_uidx")
+		check(
+			"md_party_role_status_check",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'retired', 'archived')`,
+		),
+		check("md_party_role_version_ck", sql`${t.version} > 0`),
+		check(
+			"md_party_role_valid_range_ck",
+			sql`${t.validFrom} IS NULL OR ${t.validTo} IS NULL OR ${t.validFrom} <= ${t.validTo}`,
+		),
+		uniqueIndex("md_party_role_org_party_code_active_uidx")
 			.on(t.organizationId, t.partyId, t.roleCode)
-			.where(sql`${t.retiredAt} IS NULL`),
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
 	],
 );
 
@@ -535,27 +552,31 @@ export const mdPartyAddress = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		partyId: uuid("party_id")
-			.notNull()
-			.references(() => mdParty.id),
+		partyId: uuid("party_id").notNull(),
 		addressType: text("address_type").notNull(),
+		purpose: text("purpose").notNull(),
 		line1: text("line1").notNull(),
 		line2: text("line2"),
+		line3: text("line3"),
 		city: text("city").notNull(),
-		region: text("region"),
+		administrativeArea: text("administrative_area"),
 		postalCode: text("postal_code"),
 		countryId: uuid("country_id")
 			.notNull()
 			.references(() => refCountry.id),
-		isDefault: boolean("is_default").notNull().default(false),
-		verificationStatus: text("verification_status")
+		attention: text("attention"),
+		isPrimary: boolean("is_primary").notNull().default(false),
+		validationStatus: text("validation_status")
 			.notNull()
-			.default("unverified"),
+			.default("unvalidated"),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
-		validFrom: timestamp("valid_from", { withTimezone: true }),
-		validTo: timestamp("valid_to", { withTimezone: true }),
+		effectiveFrom: timestamp("effective_from", { withTimezone: true }),
+		effectiveTo: timestamp("effective_to", { withTimezone: true }),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -564,8 +585,39 @@ export const mdPartyAddress = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.partyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_party_address_org_party_fk",
+		}),
 		index("md_party_address_org_party_idx").on(t.organizationId, t.partyId),
 		index("md_party_address_org_country_idx").on(t.organizationId, t.countryId),
+		check(
+			"md_party_address_type_check",
+			sql`${t.addressType} IN ('physical', 'postal', 'registered', 'billing', 'shipping', 'operational')`,
+		),
+		check(
+			"md_party_address_purpose_check",
+			sql`${t.purpose} IN ('registered', 'billing', 'shipping', 'correspondence', 'operational', 'returns', 'tax', 'other')`,
+		),
+		check(
+			"md_party_address_validation_status_check",
+			sql`${t.validationStatus} IN ('unvalidated', 'validated', 'invalid')`,
+		),
+		check(
+			"md_party_address_status_check",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check(
+			"md_party_address_effective_range_check",
+			sql`${t.effectiveFrom} IS NULL OR ${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
+		check("md_party_address_version_ck", sql`${t.version} > 0`),
+		uniqueIndex("md_party_address_primary_purpose_active_uidx")
+			.on(t.organizationId, t.partyId, t.purpose)
+			.where(
+				sql`${t.isPrimary} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
 	],
 );
 
@@ -574,21 +626,25 @@ export const mdPartyContact = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		partyId: uuid("party_id")
-			.notNull()
-			.references(() => mdParty.id),
+		partyId: uuid("party_id").notNull(),
 		contactType: text("contact_type").notNull(),
 		value: text("value").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		label: text("label"),
 		purpose: text("purpose"),
 		isPrimary: boolean("is_primary").notNull().default(false),
 		verificationStatus: text("verification_status")
 			.notNull()
 			.default("unverified"),
+		verifiedAt: timestamp("verified_at", { withTimezone: true }),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
-		validFrom: timestamp("valid_from", { withTimezone: true }),
-		validTo: timestamp("valid_to", { withTimezone: true }),
+		effectiveFrom: timestamp("effective_from", { withTimezone: true }),
+		effectiveTo: timestamp("effective_to", { withTimezone: true }),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -597,7 +653,48 @@ export const mdPartyContact = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.partyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_party_contact_org_party_fk",
+		}),
 		index("md_party_contact_org_party_idx").on(t.organizationId, t.partyId),
+		index("md_party_contact_org_normalized_value_idx").on(
+			t.organizationId,
+			t.contactType,
+			t.normalizedValue,
+		),
+		check(
+			"md_party_contact_type_check",
+			sql`${t.contactType} IN ('email', 'telephone', 'mobile', 'fax', 'website', 'messaging', 'other')`,
+		),
+		check(
+			"md_party_contact_verification_status_check",
+			sql`${t.verificationStatus} IN ('unverified', 'pending', 'verified', 'failed')`,
+		),
+		check(
+			"md_party_contact_verification_timestamp_check",
+			sql`(${t.verificationStatus} = 'verified' AND ${t.verifiedAt} IS NOT NULL) OR (${t.verificationStatus} <> 'verified' AND ${t.verifiedAt} IS NULL)`,
+		),
+		check(
+			"md_party_contact_status_check",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check(
+			"md_party_contact_effective_range_check",
+			sql`${t.effectiveFrom} IS NULL OR ${t.effectiveTo} IS NULL OR ${t.effectiveFrom} <= ${t.effectiveTo}`,
+		),
+		check("md_party_contact_version_ck", sql`${t.version} > 0`),
+		uniqueIndex("md_party_contact_primary_type_purpose_uidx")
+			.on(
+				t.organizationId,
+				t.partyId,
+				t.contactType,
+				sql`coalesce(${t.purpose}, '')`,
+			)
+			.where(
+				sql`${t.isPrimary} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
 	],
 );
 
@@ -606,15 +703,19 @@ export const mdPartyExternalId = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		partyId: uuid("party_id")
-			.notNull()
-			.references(() => mdParty.id),
-		system: text("system").notNull(),
-		namespace: text("namespace").notNull().default(""),
-		externalId: text("external_id").notNull(),
+		partyId: uuid("party_id").notNull(),
+		sourceSystem: text("source_system").notNull(),
+		externalIdType: text("external_id_type").notNull(),
+		externalValue: text("external_value").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		caseSensitivity: text("case_sensitivity").notNull(),
+		isPrimary: boolean("is_primary").notNull().default(false),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -623,13 +724,29 @@ export const mdPartyExternalId = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.partyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_party_external_id_org_party_fk",
+		}),
 		index("md_party_external_id_org_party_idx").on(t.organizationId, t.partyId),
-		uniqueIndex("md_party_external_id_org_sys_ns_ext_uidx").on(
-			t.organizationId,
-			t.system,
-			t.namespace,
-			t.externalId,
+		check(
+			"md_party_external_id_case_sensitivity_ck",
+			sql`${t.caseSensitivity} IN ('sensitive', 'insensitive')`,
 		),
+		check(
+			"md_party_external_id_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_party_external_id_version_ck", sql`${t.version} > 0`),
+		uniqueIndex("md_party_external_id_active_identity_uidx")
+			.on(t.organizationId, t.sourceSystem, t.externalIdType, t.normalizedValue)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
+		uniqueIndex("md_party_external_id_active_primary_uidx")
+			.on(t.organizationId, t.partyId, t.sourceSystem, t.externalIdType)
+			.where(
+				sql`${t.isPrimary} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
 	],
 );
 
@@ -638,19 +755,18 @@ export const mdPartyRelationship = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		fromPartyId: uuid("from_party_id")
-			.notNull()
-			.references(() => mdParty.id),
-		toPartyId: uuid("to_party_id")
-			.notNull()
-			.references(() => mdParty.id),
+		sourcePartyId: uuid("source_party_id").notNull(),
+		targetPartyId: uuid("target_party_id").notNull(),
 		relationshipType: text("relationship_type").notNull(),
+		direction: text("direction").notNull(),
 		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
-		validFrom: timestamp("valid_from", { withTimezone: true }),
-		validTo: timestamp("valid_to", { withTimezone: true }),
+		effectiveFrom: timestamp("effective_from", { withTimezone: true }),
+		effectiveTo: timestamp("effective_to", { withTimezone: true }),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -659,17 +775,57 @@ export const mdPartyRelationship = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.sourcePartyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_party_relationship_org_from_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.targetPartyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_party_relationship_org_to_fk",
+		}),
 		index("md_party_relationship_org_from_idx").on(
 			t.organizationId,
-			t.fromPartyId,
+			t.sourcePartyId,
 		),
-		index("md_party_relationship_org_to_idx").on(t.organizationId, t.toPartyId),
-		uniqueIndex("md_party_relationship_org_pair_type_uidx").on(
+		index("md_party_relationship_org_to_idx").on(
 			t.organizationId,
-			t.fromPartyId,
-			t.toPartyId,
-			t.relationshipType,
+			t.targetPartyId,
 		),
+		check(
+			"md_party_relationship_non_reflexive_ck",
+			sql`${t.sourcePartyId} <> ${t.targetPartyId}`,
+		),
+		check(
+			"md_party_relationship_direction_ck",
+			sql`${t.direction} IN ('directional', 'reciprocal', 'hierarchical', 'symmetric')`,
+		),
+		check(
+			"md_party_relationship_type_ck",
+			sql`${t.relationshipType} IN ('parent_of', 'owned_by', 'contact_for', 'bill_to_for', 'ship_to_for', 'supplies', 'distributes_for', 'franchisee_of', 'related_party', 'landlord_of')`,
+		),
+		check(
+			"md_party_relationship_semantics_ck",
+			sql`(${t.relationshipType} = 'parent_of' AND ${t.direction} = 'hierarchical') OR (${t.relationshipType} = 'landlord_of' AND ${t.direction} = 'reciprocal') OR (${t.relationshipType} = 'related_party' AND ${t.direction} = 'symmetric') OR (${t.relationshipType} IN ('owned_by', 'contact_for', 'bill_to_for', 'ship_to_for', 'supplies', 'distributes_for', 'franchisee_of') AND ${t.direction} = 'directional')`,
+		),
+		check(
+			"md_party_relationship_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'terminated', 'archived')`,
+		),
+		check(
+			"md_party_relationship_effective_range_ck",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		check("md_party_relationship_version_ck", sql`${t.version} > 0`),
+		uniqueIndex("md_party_relationship_active_pair_type_uidx")
+			.on(
+				t.organizationId,
+				t.sourcePartyId,
+				t.targetPartyId,
+				t.relationshipType,
+			)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
 	],
 );
 
@@ -678,31 +834,51 @@ export const mdItemUom = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		itemId: uuid("item_id")
-			.notNull()
-			.references(() => mdItem.id),
-		uomId: uuid("uom_id")
+		itemId: uuid("item_id").notNull(),
+		alternateUomId: uuid("alternate_uom_id")
 			.notNull()
 			.references(() => refUom.id),
-		/** Exact conversion to item base UoM — never float. */
-		toBaseNumerator: numeric("to_base_numerator", {
+		/** 1 alternate UoM = conversion_factor × item base UoM. */
+		conversionFactor: numeric("conversion_factor", {
 			precision: 24,
 			scale: 12,
 		}).notNull(),
-		toBaseDenominator: numeric("to_base_denominator", {
+		roundingScale: integer("rounding_scale").notNull().default(0),
+		isPurchaseUom: boolean("is_purchase_uom").notNull().default(false),
+		isSalesUom: boolean("is_sales_uom").notNull().default(false),
+		isInventoryUom: boolean("is_inventory_uom").notNull().default(false),
+		isDefaultPurchaseUom: boolean("is_default_purchase_uom")
+			.notNull()
+			.default(false),
+		isDefaultSalesUom: boolean("is_default_sales_uom").notNull().default(false),
+		compatibilityMode: text("compatibility_mode").notNull(),
+		packagingApprovalReference: text("packaging_approval_reference"),
+		/** Nullable migration evidence; new code must use conversionFactor. */
+		legacyToBaseNumerator: numeric("to_base_numerator", {
 			precision: 24,
 			scale: 12,
-		}).notNull(),
-		/** purchase | sales | packaging | other */
-		usage: text("usage").notNull(),
-		barcode: text("barcode"),
-		roundingRule: text("rounding_rule"),
-		minQuantity: numeric("min_quantity", { precision: 24, scale: 12 }),
+		}),
+		/** Nullable migration evidence; new code must use conversionFactor. */
+		legacyToBaseDenominator: numeric("to_base_denominator", {
+			precision: 24,
+			scale: 12,
+		}),
+		/** Nullable migration evidence; new code must use explicit usage flags. */
+		legacyUsage: text("usage"),
+		/** Nullable migration evidence; barcode ownership is md_item_barcode. */
+		legacyBarcode: text("barcode"),
+		/** Nullable migration evidence; rounding is governed by roundingScale. */
+		legacyRoundingRule: text("rounding_rule"),
+		/** Nullable migration evidence retained for additive schema evolution. */
+		legacyMinQuantity: numeric("min_quantity", { precision: 24, scale: 12 }),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		validFrom: timestamp("valid_from", { withTimezone: true }),
 		validTo: timestamp("valid_to", { withTimezone: true }),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -711,14 +887,56 @@ export const mdItemUom = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.itemId],
+			foreignColumns: [mdItem.organizationId, mdItem.id],
+			name: "md_item_uom_org_item_fk",
+		}),
 		index("md_item_uom_org_item_idx").on(t.organizationId, t.itemId),
-		index("md_item_uom_uom_idx").on(t.uomId),
-		uniqueIndex("md_item_uom_org_item_uom_usage_uidx").on(
-			t.organizationId,
-			t.itemId,
-			t.uomId,
-			t.usage,
+		index("md_item_uom_uom_idx").on(t.alternateUomId),
+		check("md_item_uom_factor_ck", sql`${t.conversionFactor} > 0`),
+		check(
+			"md_item_uom_rounding_scale_ck",
+			sql`${t.roundingScale} BETWEEN 0 AND 12`,
 		),
+		check(
+			"md_item_uom_default_purchase_ck",
+			sql`${t.isDefaultPurchaseUom} = false OR ${t.isPurchaseUom} = true`,
+		),
+		check(
+			"md_item_uom_default_sales_ck",
+			sql`${t.isDefaultSalesUom} = false OR ${t.isSalesUom} = true`,
+		),
+		check(
+			"md_item_uom_compatibility_mode_ck",
+			sql`${t.compatibilityMode} IN ('physical_dimension', 'packaging_count')`,
+		),
+		check(
+			"md_item_uom_packaging_approval_ck",
+			sql`(${t.compatibilityMode} = 'packaging_count' AND ${t.packagingApprovalReference} IS NOT NULL) OR (${t.compatibilityMode} = 'physical_dimension' AND ${t.packagingApprovalReference} IS NULL)`,
+		),
+		check(
+			"md_item_uom_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_item_uom_version_ck", sql`${t.version} > 0`),
+		check(
+			"md_item_uom_valid_range_ck",
+			sql`${t.validFrom} IS NULL OR ${t.validTo} IS NULL OR ${t.validFrom} <= ${t.validTo}`,
+		),
+		uniqueIndex("md_item_uom_active_item_alternate_uidx")
+			.on(t.organizationId, t.itemId, t.alternateUomId)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
+		uniqueIndex("md_item_uom_default_purchase_uidx")
+			.on(t.organizationId, t.itemId)
+			.where(
+				sql`${t.isDefaultPurchaseUom} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
+		uniqueIndex("md_item_uom_default_sales_uidx")
+			.on(t.organizationId, t.itemId)
+			.where(
+				sql`${t.isDefaultSalesUom} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
 	],
 );
 
@@ -727,15 +945,19 @@ export const mdItemBarcode = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		itemId: uuid("item_id")
-			.notNull()
-			.references(() => mdItem.id),
-		barcode: text("barcode").notNull(),
-		barcodeType: text("barcode_type").notNull().default("generic"),
+		itemId: uuid("item_id").notNull(),
+		barcodeValue: text("barcode_value").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		symbology: text("symbology").notNull(),
+		uomId: uuid("uom_id").references(() => refUom.id),
+		packQuantity: numeric("pack_quantity", { precision: 24, scale: 12 }),
 		isPrimary: boolean("is_primary").notNull().default(false),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -744,11 +966,40 @@ export const mdItemBarcode = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.itemId],
+			foreignColumns: [mdItem.organizationId, mdItem.id],
+			name: "md_item_barcode_org_item_fk",
+		}),
 		index("md_item_barcode_org_item_idx").on(t.organizationId, t.itemId),
-		uniqueIndex("md_item_barcode_org_barcode_uidx").on(
-			t.organizationId,
-			t.barcode,
+		index("md_item_barcode_uom_idx").on(t.uomId),
+		uniqueIndex("md_item_barcode_active_identity_uidx")
+			.on(t.organizationId, t.symbology, t.normalizedValue)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
+		uniqueIndex("md_item_barcode_primary_item_uom_uidx")
+			.on(
+				t.organizationId,
+				t.itemId,
+				// Keep database uniqueness aligned with primary-record policy:
+				// null uomId is one explicit item-level barcode scope.
+				sql`coalesce(${t.uomId}::text, '')`,
+			)
+			.where(
+				sql`${t.isPrimary} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
+		check(
+			"md_item_barcode_symbology_ck",
+			sql`${t.symbology} IN ('EAN_8', 'EAN_13', 'UPC_A', 'UPC_E', 'GTIN_14', 'CODE_128', 'QR', 'INTERNAL', 'OTHER')`,
 		),
+		check(
+			"md_item_barcode_pack_ck",
+			sql`(${t.uomId} IS NULL AND ${t.packQuantity} IS NULL) OR (${t.uomId} IS NOT NULL AND ${t.packQuantity} > 0)`,
+		),
+		check(
+			"md_item_barcode_status_ck",
+			sql`${t.status} IN ('pending', 'active', 'expired', 'revoked', 'archived')`,
+		),
+		check("md_item_barcode_version_ck", sql`${t.version} > 0`),
 	],
 );
 
@@ -757,15 +1008,19 @@ export const mdItemExternalId = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		itemId: uuid("item_id")
-			.notNull()
-			.references(() => mdItem.id),
-		system: text("system").notNull(),
-		namespace: text("namespace").notNull().default(""),
-		externalId: text("external_id").notNull(),
+		itemId: uuid("item_id").notNull(),
+		sourceSystem: text("source_system").notNull(),
+		externalIdType: text("external_id_type").notNull(),
+		externalValue: text("external_value").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		caseSensitivity: text("case_sensitivity").notNull(),
+		isPrimary: boolean("is_primary").notNull().default(false),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -774,13 +1029,29 @@ export const mdItemExternalId = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.itemId],
+			foreignColumns: [mdItem.organizationId, mdItem.id],
+			name: "md_item_external_id_org_item_fk",
+		}),
 		index("md_item_external_id_org_item_idx").on(t.organizationId, t.itemId),
-		uniqueIndex("md_item_external_id_org_sys_ns_ext_uidx").on(
-			t.organizationId,
-			t.system,
-			t.namespace,
-			t.externalId,
+		check(
+			"md_item_external_id_case_sensitivity_ck",
+			sql`${t.caseSensitivity} IN ('sensitive', 'insensitive')`,
 		),
+		check(
+			"md_item_external_id_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_item_external_id_version_ck", sql`${t.version} > 0`),
+		uniqueIndex("md_item_external_id_active_identity_uidx")
+			.on(t.organizationId, t.sourceSystem, t.externalIdType, t.normalizedValue)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
+		uniqueIndex("md_item_external_id_active_primary_uidx")
+			.on(t.organizationId, t.itemId, t.sourceSystem, t.externalIdType)
+			.where(
+				sql`${t.isPrimary} = true AND ${t.status} = 'active' AND ${t.archivedAt} IS NULL`,
+			),
 	],
 );
 
@@ -789,15 +1060,21 @@ export const mdItemAlias = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		itemId: uuid("item_id")
-			.notNull()
-			.references(() => mdItem.id),
-		aliasCode: text("alias_code").notNull(),
-		normalizedAlias: text("normalized_alias").notNull(),
+		itemId: uuid("item_id").notNull(),
+		aliasType: text("alias_type").notNull(),
+		aliasValue: text("alias_value").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		languageId: uuid("language_id").references(() => refLanguage.id),
+		source: text("source").notNull(),
+		isSearchable: boolean("is_searchable").notNull().default(true),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
-		retiredAt: timestamp("retired_at", { withTimezone: true }),
+		/** Nullable migration evidence; lifecycle authority is status/archive. */
+		legacyRetiredAt: timestamp("retired_at", { withTimezone: true }),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -806,10 +1083,38 @@ export const mdItemAlias = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.itemId],
+			foreignColumns: [mdItem.organizationId, mdItem.id],
+			name: "md_item_alias_org_item_fk",
+		}),
 		index("md_item_alias_org_item_idx").on(t.organizationId, t.itemId),
-		uniqueIndex("md_item_alias_org_normalized_live_uidx")
-			.on(t.organizationId, t.normalizedAlias)
-			.where(sql`${t.retiredAt} IS NULL`),
+		index("md_item_alias_org_search_idx").on(
+			t.organizationId,
+			t.normalizedValue,
+			t.aliasType,
+			t.languageId,
+		),
+		index("md_item_alias_language_idx").on(t.languageId),
+		check(
+			"md_item_alias_type_ck",
+			sql`${t.aliasType} IN ('short_name', 'commercial_name', 'supplier_name', 'customer_name', 'legacy_name', 'local_name', 'scientific_name', 'search_keyword', 'other')`,
+		),
+		check("md_item_alias_source_ck", sql`${t.source} ~ '^[a-z0-9._-]+$'`),
+		check(
+			"md_item_alias_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_item_alias_version_ck", sql`${t.version} > 0`),
+		uniqueIndex("md_item_alias_active_identity_uidx")
+			.on(
+				t.organizationId,
+				t.itemId,
+				t.aliasType,
+				sql`coalesce(${t.languageId}::text, '')`,
+				t.normalizedValue,
+			)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
 	],
 );
 
@@ -818,15 +1123,18 @@ export const mdWarehouseExternalId = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		warehouseId: uuid("warehouse_id")
-			.notNull()
-			.references(() => mdWarehouse.id),
-		system: text("system").notNull(),
-		namespace: text("namespace").notNull().default(""),
-		externalId: text("external_id").notNull(),
+		warehouseId: uuid("warehouse_id").notNull(),
+		sourceSystem: text("source_system").notNull(),
+		externalIdType: text("external_id_type").notNull(),
+		externalValue: text("external_value").notNull(),
+		normalizedValue: text("normalized_value").notNull(),
+		caseSensitivity: text("case_sensitivity").notNull(),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -835,16 +1143,35 @@ export const mdWarehouseExternalId = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.warehouseId],
+			foreignColumns: [mdWarehouse.organizationId, mdWarehouse.id],
+			name: "md_warehouse_external_id_org_warehouse_fk",
+		}),
 		index("md_warehouse_external_id_org_wh_idx").on(
 			t.organizationId,
 			t.warehouseId,
 		),
-		uniqueIndex("md_warehouse_external_id_org_sys_ns_ext_uidx").on(
-			t.organizationId,
-			t.system,
-			t.namespace,
-			t.externalId,
+		uniqueIndex("md_warehouse_external_id_active_identity_uidx")
+			.on(t.organizationId, t.sourceSystem, t.externalIdType, t.normalizedValue)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
+		check(
+			"md_warehouse_external_id_source_system_ck",
+			sql`${t.sourceSystem} ~ '^[a-z0-9._-]+$'`,
 		),
+		check(
+			"md_warehouse_external_id_type_ck",
+			sql`${t.externalIdType} ~ '^[a-z0-9._-]+$'`,
+		),
+		check(
+			"md_warehouse_external_id_case_sensitivity_ck",
+			sql`${t.caseSensitivity} IN ('sensitive', 'insensitive')`,
+		),
+		check(
+			"md_warehouse_external_id_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_warehouse_external_id_version_ck", sql`${t.version} > 0`),
 	],
 );
 
@@ -874,6 +1201,7 @@ export const mdItemTemplate = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("md_item_template_org_id_uidx").on(t.organizationId, t.id),
 		index("md_item_template_org_id_idx").on(t.organizationId, t.id),
 		index("md_item_template_org_status_idx").on(t.organizationId, t.status),
 		index("md_item_template_org_updated_at_idx").on(
@@ -892,19 +1220,23 @@ export const mdItemTemplateAttribute = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		templateId: uuid("template_id")
-			.notNull()
-			.references(() => mdItemTemplate.id),
+		templateId: uuid("template_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
 		name: text("name").notNull(),
-		/** text | option */
-		valueKind: text("value_kind").notNull(),
+		description: text("description"),
+		dataType: text("data_type").notNull(),
 		isRequired: boolean("is_required").notNull().default(true),
-		sortOrder: integer("sort_order").notNull().default(0),
+		isVariantDefining: boolean("is_variant_defining").notNull().default(true),
+		isSearchable: boolean("is_searchable").notNull().default(false),
+		displayOrder: integer("display_order").notNull().default(0),
+		validationRules: jsonb("validation_rules").notNull().default({}),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -913,6 +1245,12 @@ export const mdItemTemplateAttribute = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.templateId],
+			foreignColumns: [mdItemTemplate.organizationId, mdItemTemplate.id],
+			name: "md_item_template_attribute_org_template_fk",
+		}),
+		unique("md_item_template_attribute_org_id_uidx").on(t.organizationId, t.id),
 		index("md_item_template_attribute_org_template_idx").on(
 			t.organizationId,
 			t.templateId,
@@ -922,6 +1260,23 @@ export const mdItemTemplateAttribute = pgTable(
 			t.templateId,
 			t.normalizedCode,
 		),
+		check(
+			"md_item_template_attribute_data_type_ck",
+			sql`${t.dataType} IN ('text', 'integer', 'decimal', 'boolean', 'date', 'single_option', 'multiple_option', 'reference')`,
+		),
+		check(
+			"md_item_template_attribute_display_order_ck",
+			sql`${t.displayOrder} >= 0`,
+		),
+		check(
+			"md_item_template_attribute_validation_rules_ck",
+			sql`jsonb_typeof(${t.validationRules}) = 'object'`,
+		),
+		check(
+			"md_item_template_attribute_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_item_template_attribute_version_ck", sql`${t.version} > 0`),
 	],
 );
 
@@ -930,16 +1285,18 @@ export const mdItemTemplateAttributeOption = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		attributeId: uuid("attribute_id")
-			.notNull()
-			.references(() => mdItemTemplateAttribute.id),
+		attributeId: uuid("attribute_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
 		label: text("label").notNull(),
-		sortOrder: integer("sort_order").notNull().default(0),
+		description: text("description"),
+		displayOrder: integer("display_order").notNull().default(0),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -948,6 +1305,23 @@ export const mdItemTemplateAttributeOption = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.attributeId],
+			foreignColumns: [
+				mdItemTemplateAttribute.organizationId,
+				mdItemTemplateAttribute.id,
+			],
+			name: "md_item_template_attribute_option_org_attribute_fk",
+		}),
+		unique("md_item_template_attribute_option_org_id_uidx").on(
+			t.organizationId,
+			t.id,
+		),
+		unique("md_item_template_attribute_option_org_id_attr_uidx").on(
+			t.organizationId,
+			t.id,
+			t.attributeId,
+		),
 		index("md_item_template_attribute_option_org_attr_idx").on(
 			t.organizationId,
 			t.attributeId,
@@ -957,6 +1331,18 @@ export const mdItemTemplateAttributeOption = pgTable(
 			t.attributeId,
 			t.normalizedCode,
 		),
+		check(
+			"md_item_template_attribute_option_display_order_ck",
+			sql`${t.displayOrder} >= 0`,
+		),
+		check(
+			"md_item_template_attribute_option_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check(
+			"md_item_template_attribute_option_version_ck",
+			sql`${t.version} > 0`,
+		),
 	],
 );
 
@@ -965,19 +1351,18 @@ export const mdItemVariant = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		itemId: uuid("item_id")
-			.notNull()
-			.references(() => mdItem.id),
-		templateId: uuid("template_id")
-			.notNull()
-			.references(() => mdItemTemplate.id),
+		itemId: uuid("item_id").notNull(),
+		templateId: uuid("template_id").notNull(),
 		/** Derived uniqueness aid — value rows remain SSOT (not JSON bag). */
 		combinationKey: text("combination_key").notNull(),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		retiredAt: timestamp("retired_at", { withTimezone: true }),
 		retiredBy: text("retired_by"),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -986,6 +1371,17 @@ export const mdItemVariant = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.itemId],
+			foreignColumns: [mdItem.organizationId, mdItem.id],
+			name: "md_item_variant_org_item_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.templateId],
+			foreignColumns: [mdItemTemplate.organizationId, mdItemTemplate.id],
+			name: "md_item_variant_org_template_fk",
+		}),
+		unique("md_item_variant_org_id_uidx").on(t.organizationId, t.id),
 		index("md_item_variant_org_template_idx").on(
 			t.organizationId,
 			t.templateId,
@@ -994,6 +1390,11 @@ export const mdItemVariant = pgTable(
 		uniqueIndex("md_item_variant_org_template_combination_live_uidx")
 			.on(t.organizationId, t.templateId, t.combinationKey)
 			.where(sql`${t.retiredAt} IS NULL`),
+		check(
+			"md_item_variant_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_item_variant_version_ck", sql`${t.version} > 0`),
 	],
 );
 
@@ -1002,19 +1403,22 @@ export const mdItemVariantAttributeValue = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		variantId: uuid("variant_id")
-			.notNull()
-			.references(() => mdItemVariant.id),
-		attributeId: uuid("attribute_id")
-			.notNull()
-			.references(() => mdItemTemplateAttribute.id),
-		valueText: text("value_text"),
-		optionId: uuid("option_id").references(
-			() => mdItemTemplateAttributeOption.id,
-		),
+		variantId: uuid("variant_id").notNull(),
+		attributeId: uuid("attribute_id").notNull(),
+		valueType: text("value_type").notNull(),
+		textValue: text("text_value"),
+		integerValue: numeric("integer_value", { precision: 38, scale: 0 }),
+		decimalValue: numeric("decimal_value", { precision: 38, scale: 18 }),
+		booleanValue: boolean("boolean_value"),
+		dateValue: date("date_value"),
+		optionId: uuid("option_id"),
+		referenceValue: text("reference_value"),
+		status: text("status").notNull().default("active"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
+		archivedAt: timestamp("archived_at", { withTimezone: true }),
+		archivedBy: text("archived_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -1023,14 +1427,99 @@ export const mdItemVariantAttributeValue = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.variantId],
+			foreignColumns: [mdItemVariant.organizationId, mdItemVariant.id],
+			name: "md_item_variant_attribute_value_org_variant_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.attributeId],
+			foreignColumns: [
+				mdItemTemplateAttribute.organizationId,
+				mdItemTemplateAttribute.id,
+			],
+			name: "md_item_variant_attribute_value_org_attribute_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.optionId, t.attributeId],
+			foreignColumns: [
+				mdItemTemplateAttributeOption.organizationId,
+				mdItemTemplateAttributeOption.id,
+				mdItemTemplateAttributeOption.attributeId,
+			],
+			name: "md_item_variant_attribute_value_org_option_fk",
+		}),
+		check(
+			"md_item_variant_attribute_value_typed_value_ck",
+			sql`(${t.valueType} = 'text' AND ${t.textValue} IS NOT NULL AND num_nonnulls(${t.integerValue}, ${t.decimalValue}, ${t.booleanValue}, ${t.dateValue}, ${t.optionId}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'integer' AND ${t.integerValue} IS NOT NULL AND num_nonnulls(${t.textValue}, ${t.decimalValue}, ${t.booleanValue}, ${t.dateValue}, ${t.optionId}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'decimal' AND ${t.decimalValue} IS NOT NULL AND num_nonnulls(${t.textValue}, ${t.integerValue}, ${t.booleanValue}, ${t.dateValue}, ${t.optionId}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'boolean' AND ${t.booleanValue} IS NOT NULL AND num_nonnulls(${t.textValue}, ${t.integerValue}, ${t.decimalValue}, ${t.dateValue}, ${t.optionId}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'date' AND ${t.dateValue} IS NOT NULL AND num_nonnulls(${t.textValue}, ${t.integerValue}, ${t.decimalValue}, ${t.booleanValue}, ${t.optionId}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'single_option' AND ${t.optionId} IS NOT NULL AND num_nonnulls(${t.textValue}, ${t.integerValue}, ${t.decimalValue}, ${t.booleanValue}, ${t.dateValue}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'multiple_option' AND num_nonnulls(${t.textValue}, ${t.integerValue}, ${t.decimalValue}, ${t.booleanValue}, ${t.dateValue}, ${t.optionId}, ${t.referenceValue}) = 0)
+				OR (${t.valueType} = 'reference' AND ${t.referenceValue} IS NOT NULL AND num_nonnulls(${t.textValue}, ${t.integerValue}, ${t.decimalValue}, ${t.booleanValue}, ${t.dateValue}, ${t.optionId}) = 0)`,
+		),
+		check(
+			"md_item_variant_attribute_value_status_ck",
+			sql`${t.status} IN ('draft', 'active', 'inactive', 'archived')`,
+		),
+		check("md_item_variant_attribute_value_version_ck", sql`${t.version} > 0`),
+		unique("md_item_variant_attribute_value_org_id_attr_uidx").on(
+			t.organizationId,
+			t.id,
+			t.attributeId,
+		),
 		index("md_item_variant_attribute_value_org_variant_idx").on(
 			t.organizationId,
 			t.variantId,
 		),
-		uniqueIndex("md_item_variant_attribute_value_org_variant_attr_uidx").on(
+		uniqueIndex("md_item_variant_attribute_value_current_uidx")
+			.on(t.organizationId, t.variantId, t.attributeId)
+			.where(sql`${t.status} = 'active' AND ${t.archivedAt} IS NULL`),
+	],
+);
+
+export const mdItemVariantAttributeValueOption = pgTable(
+	"md_item_variant_attribute_value_option",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		valueId: uuid("value_id").notNull(),
+		attributeId: uuid("attribute_id").notNull(),
+		optionId: uuid("option_id").notNull(),
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.valueId, t.attributeId],
+			foreignColumns: [
+				mdItemVariantAttributeValue.organizationId,
+				mdItemVariantAttributeValue.id,
+				mdItemVariantAttributeValue.attributeId,
+			],
+			name: "md_item_variant_attribute_value_option_org_value_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.optionId, t.attributeId],
+			foreignColumns: [
+				mdItemTemplateAttributeOption.organizationId,
+				mdItemTemplateAttributeOption.id,
+				mdItemTemplateAttributeOption.attributeId,
+			],
+			name: "md_item_variant_attribute_value_option_org_option_fk",
+		}),
+		uniqueIndex("md_item_variant_attribute_value_option_identity_uidx").on(
 			t.organizationId,
-			t.variantId,
-			t.attributeId,
+			t.valueId,
+			t.optionId,
+		),
+		index("md_item_variant_attribute_value_option_value_idx").on(
+			t.organizationId,
+			t.valueId,
 		),
 	],
 );
@@ -1063,6 +1552,10 @@ export const mdImportBatch = pgTable(
 			t.organizationId,
 			t.idempotencyKey,
 		),
+		check(
+			"md_import_batch_status_ck",
+			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'applying', 'applied', 'failed', 'cancelled', 'expired', 'superseded')`,
+		),
 	],
 );
 
@@ -1077,7 +1570,7 @@ export const mdChangeRequest = pgTable(
 		normalizedCode: text("normalized_code").notNull(),
 		/** activate_party | merge_parties */
 		commandKind: text("command_kind").notNull(),
-		/** submitted | approved | rejected | applied */
+		/** Governance workflow: draft | submitted | approved | rejected | applying | applied | failed | cancelled | expired | superseded */
 		status: text("status").notNull().default("submitted"),
 		version: integer("version").notNull().default(1),
 		payload: jsonb("payload").notNull(),
@@ -1105,6 +1598,10 @@ export const mdChangeRequest = pgTable(
 		uniqueIndex("md_change_request_org_normalized_code_uidx").on(
 			t.organizationId,
 			t.normalizedCode,
+		),
+		check(
+			"md_change_request_status_ck",
+			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'applying', 'applied', 'failed', 'cancelled', 'expired', 'superseded')`,
 		),
 	],
 );

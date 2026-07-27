@@ -4,12 +4,23 @@ import { listSearchDocumentIds, searchDocuments } from "@afenda/search";
 import { describe, expect, it } from "vitest";
 
 import { MemorySearchStore } from "../../../data-plane/search/__tests__/helpers/memory-search-store";
-import { activatePartyRole, createPartyRole } from "../src/extensions";
-import { activateParty, createParty, retireParty } from "../src/party";
+import { MASTER_SEARCH_ENTITY, rebuildMasterDataSearchIndex } from "../src";
+import { createItem } from "../src/capabilities/core-organization-masters/item";
 import {
-	MASTER_SEARCH_ENTITY,
-	rebuildMasterDataSearchIndex,
-} from "../src/search-projectors";
+	activateItemGroup,
+	createItemGroup,
+} from "../src/capabilities/core-organization-masters/item-group";
+import {
+	activateParty,
+	createParty,
+	retireParty,
+} from "../src/capabilities/core-organization-masters/party";
+import { createPaymentTerm } from "../src/capabilities/core-organization-masters/payment-term";
+import { createWarehouse } from "../src/capabilities/core-organization-masters/warehouse";
+import {
+	activatePartyRole,
+	createPartyRole,
+} from "../src/capabilities/extensions";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedActivatePartyChangeRequest } from "./helpers/mdg-approve";
 
@@ -22,6 +33,160 @@ function ctx(organizationId = "org-search-a") {
 }
 
 describe("@afenda/master-data search projectors", () => {
+	it("does not turn a committed party mutation into a failure when search throws", async () => {
+		const { options: harnessOptions } = createMasterDataTestHarness();
+		class ThrowingSearchStore extends MemorySearchStore {
+			override async upsert(
+				_input: Parameters<MemorySearchStore["upsert"]>[0],
+			): Promise<never> {
+				throw new Error("search unavailable");
+			}
+		}
+		const result = await createParty(
+			{
+				...ctx(),
+				code: "SRCH-FAIL",
+				name: "Committed Party",
+				partyKind: "organization",
+			},
+			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		const persisted = await harnessOptions.store.getPartyById(
+			result.data.organizationId,
+			result.data.id,
+		);
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+	});
+
+	it("does not turn a committed item-group mutation into a failure when search throws", async () => {
+		const { options: harnessOptions } = createMasterDataTestHarness();
+		class ThrowingSearchStore extends MemorySearchStore {
+			override async upsert(
+				_input: Parameters<MemorySearchStore["upsert"]>[0],
+			): Promise<never> {
+				throw new Error("search unavailable");
+			}
+		}
+		const result = await createItemGroup(
+			{ ...ctx(), code: "GROUP-FAIL", name: "Committed Group" },
+			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		const persisted = await harnessOptions.store.getItemGroupById(
+			result.data.organizationId,
+			result.data.id,
+		);
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+	});
+
+	it("does not turn a committed item mutation into a failure when search throws", async () => {
+		const { options: harnessOptions } = createMasterDataTestHarness();
+		const group = await createItemGroup(
+			{ ...ctx(), code: "ITEM-SEARCH", name: "Item search group" },
+			harnessOptions,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) return;
+		const activeGroup = await activateItemGroup(
+			{ ...ctx(), id: group.data.id, expectedVersion: group.data.version },
+			harnessOptions,
+		);
+		expect(activeGroup.ok).toBe(true);
+		if (!activeGroup.ok) return;
+		class ThrowingSearchStore extends MemorySearchStore {
+			override async upsert(
+				_input: Parameters<MemorySearchStore["upsert"]>[0],
+			): Promise<never> {
+				throw new Error("search unavailable");
+			}
+		}
+		const result = await createItem(
+			{
+				...ctx(),
+				code: "ITEM-SEARCH-FAIL",
+				name: "Committed item",
+				itemType: "stock",
+				baseUomId: "b1000000-0000-4000-8000-000000000001",
+				itemGroupId: activeGroup.data.id,
+			},
+			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		const persisted = await harnessOptions.store.getItemById(
+			result.data.organizationId,
+			result.data.id,
+		);
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+	});
+
+	it("does not turn a committed warehouse mutation into a failure when search throws", async () => {
+		const { options: harnessOptions } = createMasterDataTestHarness();
+		class ThrowingSearchStore extends MemorySearchStore {
+			override async upsert(
+				_input: Parameters<MemorySearchStore["upsert"]>[0],
+			): Promise<never> {
+				throw new Error("search unavailable");
+			}
+		}
+		const result = await createWarehouse(
+			{
+				...ctx(),
+				code: "WAREHOUSE-SEARCH-FAIL",
+				name: "Committed warehouse",
+				locationType: "warehouse",
+			},
+			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		const persisted = await harnessOptions.store.getWarehouseById(
+			result.data.organizationId,
+			result.data.id,
+		);
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+	});
+
+	it("does not turn a committed payment-term mutation into a failure when search throws", async () => {
+		const { options: harnessOptions } = createMasterDataTestHarness();
+		class ThrowingSearchStore extends MemorySearchStore {
+			override async upsert(
+				_input: Parameters<MemorySearchStore["upsert"]>[0],
+			): Promise<never> {
+				throw new Error("search unavailable");
+			}
+		}
+		const result = await createPaymentTerm(
+			{
+				...ctx(),
+				code: "TERM-SEARCH-FAIL",
+				name: "Committed payment term",
+				netDays: 30,
+			},
+			{ ...harnessOptions, searchStore: new ThrowingSearchStore() },
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		const persisted = await harnessOptions.store.getPaymentTermById(
+			result.data.organizationId,
+			result.data.id,
+		);
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) expect(persisted.data?.id).toBe(result.data.id);
+	});
+
 	it("upserts md_party on create and removes on retire", async () => {
 		const { options: harnessOptions } = createMasterDataTestHarness();
 		const searchStore = new MemorySearchStore();

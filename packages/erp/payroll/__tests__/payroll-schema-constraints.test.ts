@@ -19,40 +19,40 @@ import {
 	seedPayrollConstraintChain,
 } from "./helpers/payroll-constraint-live";
 
-const migrationPath = fileURLToPath(
+const baselineMigrationPath = fileURLToPath(
 	new URL(
-		"../../../data-plane/db/drizzle/0011_payroll_foundation.sql",
+		"../../../data-plane/db/drizzle/0000_damp_blue_shield.sql",
 		import.meta.url,
 	),
 );
-const migrationSql = readFileSync(migrationPath, "utf8");
-const assignmentInputsMigrationPath = fileURLToPath(
-	new URL(
-		"../../../data-plane/db/drizzle/0014_payroll_assignment_inputs.sql",
-		import.meta.url,
-	),
-);
-const assignmentInputsMigrationSql = readFileSync(
-	assignmentInputsMigrationPath,
-	"utf8",
-);
-const calculationOutputsMigrationPath = fileURLToPath(
-	new URL(
-		"../../../data-plane/db/drizzle/0016_payroll_calculation_outputs.sql",
-		import.meta.url,
-	),
-);
-const calculationOutputsMigrationSql = readFileSync(
-	calculationOutputsMigrationPath,
-	"utf8",
-);
+const baselineMigrationSql = readFileSync(baselineMigrationPath, "utf8");
+const migrationSql = baselineMigrationSql
+	.split("--> statement-breakpoint")
+	.filter((statement) => statement.includes('"payroll_'))
+	.join("--> statement-breakpoint");
+const assignmentInputsMigrationSql = migrationSql;
+const calculationOutputsMigrationSql = migrationSql;
+
+function expectCreatesTable(sqlText: string, table: string): void {
+	expect(sqlText).toContain(`CREATE TABLE "${table}"`);
+}
+
+function expectTableHasColumn(
+	sqlText: string,
+	table: string,
+	column: string,
+): void {
+	expect(sqlText).toMatch(
+		new RegExp(`CREATE TABLE "${table}" \\([\\s\\S]*"${column}"`),
+	);
+}
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 const payrollFoundationReady =
 	hasDatabase && (await isPayrollFoundationMigrationApplied());
 
 describe("Payroll foundation migration SQL", () => {
-	it("expands setup and run tables additively", () => {
+	it("defines setup and run tables without destructive operations", () => {
 		for (const table of [
 			"payroll_calendar",
 			"payroll_pay_group",
@@ -63,7 +63,7 @@ describe("Payroll foundation migration SQL", () => {
 			"payroll_run",
 			"payroll_exception",
 		]) {
-			expect(migrationSql).toContain(`ALTER TABLE "${table}" ADD COLUMN`);
+			expectCreatesTable(migrationSql, table);
 		}
 		expect(migrationSql).not.toMatch(/DROP TABLE "payroll_/);
 		expect(migrationSql).not.toMatch(/DROP COLUMN/);
@@ -88,10 +88,10 @@ describe("Payroll foundation migration SQL", () => {
 	it("enforces run identity and status vocabulary", () => {
 		expect(migrationSql).toContain('"payroll_run_org_identity_uidx"');
 		expect(migrationSql).toContain(
-			"\"payroll_run_status_check\" CHECK (\"status\" IN ('draft', 'calculating', 'calculated', 'failed', 'finalized', 'reversed'))",
+			"\"payroll_run_status_check\" CHECK (\"payroll_run\".\"status\" IN ('draft', 'calculating', 'calculated', 'failed', 'finalized', 'reversed'))",
 		);
 		expect(migrationSql).toContain(
-			"\"payroll_exception_severity_check\" CHECK (\"severity\" IN ('blocking', 'warning'))",
+			'"payroll_exception_severity_check" CHECK ("payroll_exception"."severity" IN (\'blocking\', \'warning\'))',
 		);
 	});
 
@@ -103,26 +103,20 @@ describe("Payroll foundation migration SQL", () => {
 			"payroll_earning_rule",
 			"payroll_run",
 		]) {
-			expect(migrationSql).toMatch(
-				new RegExp(
-					`"${table}" ADD COLUMN IF NOT EXISTS "create_idempotency_key"`,
-				),
-			);
+			expectTableHasColumn(migrationSql, table, "create_idempotency_key");
 		}
 	});
 });
 
 describe("Payroll assignment/input migration SQL", () => {
-	it("expands assignment and input tables additively", () => {
+	it("defines assignment and input tables without destructive operations", () => {
 		for (const table of [
 			"payroll_employee_assignment",
 			"payroll_recurring_earning",
 			"payroll_recurring_deduction",
 			"payroll_variable_input",
 		]) {
-			expect(assignmentInputsMigrationSql).toContain(
-				`ALTER TABLE "${table}" ADD COLUMN`,
-			);
+			expectCreatesTable(assignmentInputsMigrationSql, table);
 		}
 		expect(assignmentInputsMigrationSql).not.toMatch(/DROP TABLE "payroll_/);
 	});
@@ -162,21 +156,23 @@ describe("Payroll assignment/input migration SQL", () => {
 });
 
 describe("Payroll calculation outputs migration SQL", () => {
-	it("promotes output scaffolds and run metadata additively", () => {
+	it("defines output scaffolds and run metadata without destructive operations", () => {
 		for (const table of [
 			"payroll_run_employee",
 			"payroll_result_line",
 			"payroll_statutory_result",
 		]) {
-			expect(calculationOutputsMigrationSql).toContain(
-				`ALTER TABLE "${table}" ADD COLUMN`,
-			);
+			expectCreatesTable(calculationOutputsMigrationSql, table);
 		}
-		expect(calculationOutputsMigrationSql).toContain(
-			'"payroll_run" ADD COLUMN IF NOT EXISTS "calculation_version"',
+		expectTableHasColumn(
+			calculationOutputsMigrationSql,
+			"payroll_run",
+			"calculation_version",
 		);
-		expect(calculationOutputsMigrationSql).toContain(
-			'"payroll_deduction_rule" ADD COLUMN IF NOT EXISTS "tax_timing"',
+		expectTableHasColumn(
+			calculationOutputsMigrationSql,
+			"payroll_deduction_rule",
+			"tax_timing",
 		);
 		expect(calculationOutputsMigrationSql).not.toMatch(/DROP TABLE "payroll_/);
 		expect(calculationOutputsMigrationSql).not.toMatch(/DROP COLUMN/);
@@ -184,13 +180,13 @@ describe("Payroll calculation outputs migration SQL", () => {
 
 	it("declares calculation output constraints and org-scoped keys", () => {
 		expect(calculationOutputsMigrationSql).toContain(
-			"\"payroll_run_employee_status_check\" CHECK (\"status\" IN ('calculated', 'failed'))",
+			'"payroll_run_employee_status_check" CHECK ("payroll_run_employee"."status" IN (\'calculated\', \'failed\'))',
 		);
 		expect(calculationOutputsMigrationSql).toContain(
-			"\"payroll_result_line_kind_check\" CHECK (\"line_kind\" IN ('earning', 'pre_tax_deduction', 'employee_statutory', 'post_tax_deduction', 'employer_contribution'))",
+			"\"payroll_result_line_kind_check\" CHECK (\"payroll_result_line\".\"line_kind\" IN ('earning', 'pre_tax_deduction', 'employee_statutory', 'post_tax_deduction', 'employer_contribution'))",
 		);
 		expect(calculationOutputsMigrationSql).toContain(
-			"\"payroll_deduction_rule_tax_timing_check\" CHECK (\"tax_timing\" IN ('pre_tax', 'post_tax'))",
+			'"payroll_deduction_rule_tax_timing_check" CHECK ("payroll_deduction_rule"."tax_timing" IN (\'pre_tax\', \'post_tax\'))',
 		);
 		expect(calculationOutputsMigrationSql).toContain(
 			'"payroll_run_employee_org_run_employee_uidx"',
@@ -372,7 +368,7 @@ describe.skipIf(!payrollFoundationReady)(
 );
 
 describe("@afenda/payroll schema constraints (live gate)", () => {
-	it("documents live insert gate when DATABASE_URL or migration 0011 is absent", () => {
+	it("documents live insert gate when DATABASE_URL or payroll schema is absent", () => {
 		const requireDatabase =
 			process.env.REQUIRE_DATABASE_TESTS === "1" ||
 			process.env.REQUIRE_DATABASE_TESTS === "true" ||
@@ -381,7 +377,7 @@ describe("@afenda/payroll schema constraints (live gate)", () => {
 
 		if (requireDatabase && hasDatabase && !payrollFoundationReady) {
 			throw new Error(
-				"Payroll foundation migration 0011 is not applied — live constraint proofs cannot skip under REQUIRE_DATABASE_TESTS=1. Apply pending migrations with AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate.",
+				"Payroll foundation schema is not applied — live constraint proofs cannot skip under REQUIRE_DATABASE_TESTS=1. Apply pending migrations with AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate.",
 			);
 		}
 

@@ -1,3 +1,4 @@
+import { createEmptyDependencyInspector } from "../../src/capabilities/core-organization-masters/dependency";
 import { MASTER_DATA_PERMISSION_CODES } from "../../src/permissions";
 import { createGrantingMasterAuthorization } from "./memory-authorization";
 import {
@@ -15,10 +16,12 @@ export function createMasterDataTestHarness(seedRefs = true) {
 	const authorization = createGrantingMasterAuthorization([
 		...MASTER_DATA_PERMISSION_CODES,
 	]);
+	const dependencyInspector = createEmptyDependencyInspector();
 	return {
 		store,
 		ports,
 		authorization,
-		options: { store, ports, authorization },
+		dependencyInspector,
+		options: { store, ports, authorization, dependencyInspector },
 	};
 }

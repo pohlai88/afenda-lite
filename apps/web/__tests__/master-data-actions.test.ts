@@ -595,7 +595,7 @@ describe("master-data Server Actions", () => {
 		expect(result?.ok).toBe(true);
 		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
 			operatorSession,
-			"master_data.manage",
+			"master_data.item_variant_attribute_manage",
 		);
 		expect(masterDataMocks.createItemVariant).toHaveBeenCalledWith(
 			expect.objectContaining({

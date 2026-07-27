@@ -95,7 +95,7 @@ export function createMasterDataLookupPort(
 			if (!roles.ok) {
 				return roles;
 			}
-			const active = roles.data.some(
+			const active = roles.data.items.some(
 				(role) => role.roleCode === "supplier" && role.status === "active",
 			);
 			return ok(active);

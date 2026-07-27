@@ -270,19 +270,21 @@ const addressReferences: AddressReferencePort = {
 			.limit(1);
 		const country = countries[0];
 		if (country === undefined) return ok(null);
-		const activeFrom = result.data.validFrom?.toISOString().slice(0, 10);
-		const activeTo = result.data.validTo?.toISOString().slice(0, 10);
+		const activeFrom = result.data.effectiveFrom?.toISOString().slice(0, 10);
+		const activeTo = result.data.effectiveTo?.toISOString().slice(0, 10);
 		return ok({
 			organizationId: organizationIdSchema.parse(result.data.organizationId),
 			partyId: result.data.partyId,
 			active:
+				result.data.status === "active" &&
+				result.data.archivedAt === null &&
 				(activeFrom === undefined || activeFrom <= input.asOf) &&
 				(activeTo === undefined || input.asOf < activeTo),
 			sourcePartyAddressId: result.data.id,
 			line1: result.data.line1,
 			line2: result.data.line2,
 			city: result.data.city,
-			region: result.data.region,
+			region: result.data.administrativeArea,
 			postalCode: result.data.postalCode,
 			countryCode: country.code,
 		});

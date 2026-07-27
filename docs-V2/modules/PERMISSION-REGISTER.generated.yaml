@@ -457,6 +457,171 @@ permissions:
   - code: master_data.import_approve
     moduleId: master-data
     namespace: master_data
+  - code: master_data.party_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_block
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_unblock
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_retire
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_merge
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_block
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_unblock
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_retire
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_group_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_group_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_group_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_block
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_unblock
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_retire
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.payment_term_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.payment_term_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.payment_term_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_revoke
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_restore
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_template_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_template_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_template_retire
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_inactivate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_block
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_unblock
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_retire
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_role_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_address_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_contact_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_contact_verify
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_external_id_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_external_id_regulatory_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_relationship_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_relationship_control_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_uom_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_barcode_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_external_id_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_alias_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_external_id_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_template_attribute_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_template_option_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_attribute_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_variant_defining_attribute_manage
+    moduleId: master-data
+    namespace: master_data
   - code: payables.read
     moduleId: payables
     namespace: payables

@@ -63,21 +63,21 @@ describe("@afenda/master-data same-TX inventory", () => {
 		const extensionSource = readFileSync(
 			join(
 				dirname(fileURLToPath(import.meta.url)),
-				"../src/drizzle-extension-mutations.ts",
+				"../src/capabilities/extensions/adapters/drizzle/extension-mutations.ts",
 			),
 			"utf8",
 		);
 		const changeRequestSource = readFileSync(
 			join(
 				dirname(fileURLToPath(import.meta.url)),
-				"../src/drizzle-change-request.ts",
+				"../src/capabilities/data-governance-workflows/drizzle-change-request-store.ts",
 			),
 			"utf8",
 		);
 		const variantSource = readFileSync(
 			join(
 				dirname(fileURLToPath(import.meta.url)),
-				"../src/drizzle-variant-mutations.ts",
+				"../src/capabilities/extensions/adapters/drizzle/variant-mutations.ts",
 			),
 			"utf8",
 		);

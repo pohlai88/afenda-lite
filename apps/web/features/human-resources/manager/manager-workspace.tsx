@@ -19,7 +19,10 @@ import {
 	TabsTrigger,
 } from "@afenda/ui-system";
 import { InboxIcon, UsersIcon } from "lucide-react";
-
+import {
+	formatHrLocalDate,
+	type HrDisplayPreferences,
+} from "../display-preferences";
 import { ManagerDecisionDialog } from "./manager-decision-dialog";
 import {
 	type ManagerWorkspaceData,
@@ -48,7 +51,14 @@ function Unavailable() {
 	);
 }
 
-export function ManagerWorkspace({ data }: { data: ManagerWorkspaceData }) {
+export function ManagerWorkspace({
+	data,
+	preferences,
+}: {
+	data: ManagerWorkspaceData;
+	preferences: HrDisplayPreferences;
+}) {
+	const asOfLabel = formatHrLocalDate(data.asOf, preferences);
 	return (
 		<main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6">
 			<header className="space-y-2">
@@ -61,7 +71,7 @@ export function ManagerWorkspace({ data }: { data: ManagerWorkspaceData }) {
 				</h1>
 				<p className="max-w-3xl text-sm text-muted-foreground">
 					Review current team work queues, employee context, talent readiness,
-					and staffing gaps as of {data.asOf}.
+					and staffing gaps as of {asOfLabel}.
 				</p>
 			</header>
 			{data.errors.length > 0 ? (

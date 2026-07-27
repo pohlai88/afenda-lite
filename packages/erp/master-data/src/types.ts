@@ -8,6 +8,63 @@ export const MASTER_STATUSES = [
 
 export type MasterStatus = (typeof MASTER_STATUSES)[number];
 
+import type {
+	ExtensionLifecycleStatus,
+	IdentityRegistrationLifecycleStatus,
+	RelationshipLifecycleStatus,
+	StandardChildLifecycleStatus,
+} from "./capabilities/extensions/extension-lifecycle";
+import type { ItemAliasType } from "./capabilities/extensions/item-alias-policy";
+import type { ItemBarcodeSymbology } from "./capabilities/extensions/item-barcode-policy";
+import type { ItemUomCompatibilityMode } from "./capabilities/extensions/item-uom-policy";
+import type {
+	ItemTemplateAttributeDataType,
+	ItemTemplateAttributeValidationRules,
+} from "./capabilities/extensions/template-attribute-policy";
+import {
+	GOVERNANCE_WORKFLOW_STATES,
+	type GovernanceWorkflowState,
+} from "./capabilities/lifecycle-governance/types";
+
+export const EXTENSION_STATUSES = [
+	"draft",
+	"pending",
+	"active",
+	"inactive",
+	"expired",
+	"revoked",
+	"terminated",
+	"archived",
+] as const satisfies readonly ExtensionLifecycleStatus[];
+export type ExtensionStatus = ExtensionLifecycleStatus;
+export type {
+	ExtensionLifecycleFamily,
+	ExtensionLifecycleStatus,
+	IdentityRegistrationLifecycleStatus,
+	RelationshipLifecycleStatus,
+	StandardChildLifecycleStatus,
+} from "./capabilities/extensions/extension-lifecycle";
+export {
+	IDENTITY_REGISTRATION_LIFECYCLE_STATUSES,
+	RELATIONSHIP_LIFECYCLE_STATUSES,
+	STANDARD_CHILD_LIFECYCLE_STATUSES,
+} from "./capabilities/extensions/extension-lifecycle";
+
+type MutableExtensionRecord = {
+	id: string;
+	organizationId: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+type EffectiveDatedExtensionRecord = MutableExtensionRecord & {
+	validFrom: Date | null;
+	validTo: Date | null;
+};
+
 export const PARTY_KINDS = ["organization", "person"] as const;
 export type PartyKind = (typeof PARTY_KINDS)[number];
 
@@ -30,63 +87,16 @@ export const WAREHOUSE_LOCATION_TYPES = [
 ] as const;
 export type WarehouseLocationType = (typeof WAREHOUSE_LOCATION_TYPES)[number];
 
-export const UOM_DIMENSION_CODES = [
-	"count",
-	"mass",
-	"volume",
-	"length",
-	"area",
-	"time",
-] as const;
-export type UomDimensionCode = (typeof UOM_DIMENSION_CODES)[number];
-
-export type RefCountry = {
-	id: string;
-	code: string;
-	alpha3: string;
-	name: string;
-	active: boolean;
-};
-
-export type RefCurrency = {
-	id: string;
-	code: string;
-	name: string;
-	minorUnits: number;
-	active: boolean;
-};
-
-export type RefLanguage = {
-	id: string;
-	code: string;
-	name: string;
-	active: boolean;
-};
-
-export type RefTimeZone = {
-	id: string;
-	ianaName: string;
-	name: string;
-	active: boolean;
-};
-
-export type RefUomDimension = {
-	id: string;
-	code: UomDimensionCode;
-	name: string;
-};
-
-export type RefUom = {
-	id: string;
-	code: string;
-	name: string;
-	symbol: string;
-	dimensionId: string;
-	toBaseNumerator: string;
-	toBaseDenominator: string;
-	isBase: boolean;
-	active: boolean;
-};
+export {
+	type RefCountry,
+	type RefCurrency,
+	type RefLanguage,
+	type RefTimeZone,
+	type RefUom,
+	type RefUomDimension,
+	UOM_DIMENSION_CODES,
+	type UomDimensionCode,
+} from "./capabilities/platform-references";
 
 type OrgMasterBase = {
 	id: string;
@@ -130,73 +140,81 @@ export type Item = OrgMasterBase & {
 	itemGroupId: string;
 };
 
-/** Template attribute value kinds — typed columns only (no JSON bag). */
+/** @deprecated Use `ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES`. */
 export const ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS = ["text", "option"] as const;
+/** @deprecated Use `ItemTemplateAttributeDataType`. */
 export type ItemTemplateAttributeValueKind =
 	(typeof ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS)[number];
+export {
+	ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES,
+	type ItemTemplateAttributeDataType,
+	type ItemTemplateAttributeValidationRules,
+	OPTION_COMPATIBLE_ATTRIBUTE_DATA_TYPES,
+} from "./capabilities/extensions/template-attribute-policy";
 
 export type ItemTemplate = OrgMasterBase;
 
-export type ItemTemplateAttribute = {
-	id: string;
-	organizationId: string;
+export type ItemTemplateAttribute = MutableExtensionRecord & {
 	templateId: string;
 	code: string;
 	normalizedCode: string;
 	name: string;
+	description: string | null;
+	dataType: ItemTemplateAttributeDataType;
+	/** @deprecated Compatibility projection; use `dataType`. */
 	valueKind: ItemTemplateAttributeValueKind;
 	isRequired: boolean;
+	isVariantDefining: boolean;
+	isSearchable: boolean;
+	displayOrder: number;
+	/** @deprecated Compatibility alias; use `displayOrder`. */
 	sortOrder: number;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	validationRules: ItemTemplateAttributeValidationRules;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type ItemTemplateAttributeOption = {
-	id: string;
-	organizationId: string;
+export type ItemTemplateAttributeOption = MutableExtensionRecord & {
 	attributeId: string;
 	code: string;
 	normalizedCode: string;
 	label: string;
+	description: string | null;
+	displayOrder: number;
+	/** @deprecated Compatibility alias; use `displayOrder`. */
 	sortOrder: number;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type ItemVariantAttributeValue = {
-	id: string;
-	organizationId: string;
+export type ItemVariantAttributeValue = MutableExtensionRecord & {
 	variantId: string;
 	attributeId: string;
+	valueType: ItemTemplateAttributeDataType;
+	textValue: string | null;
+	/** @deprecated Compatibility alias; use `textValue`. */
 	valueText: string | null;
+	integerValue: string | null;
+	decimalValue: string | null;
+	booleanValue: boolean | null;
+	dateValue: string | null;
 	optionId: string | null;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	optionIds: readonly string[];
+	referenceValue: string | null;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
 /** Concrete variant membership — sellable identity remains `md_item`. */
-export type ItemVariant = {
-	id: string;
-	organizationId: string;
+export type ItemVariant = MutableExtensionRecord & {
 	itemId: string;
 	templateId: string;
 	combinationKey: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
 	retiredAt: Date | null;
 	retiredBy: string | null;
-	createdAt: Date;
-	updatedAt: Date;
 	item: Item;
 	values: ItemVariantAttributeValue[];
 };
@@ -207,8 +225,11 @@ export type Warehouse = OrgMasterBase & {
 };
 
 export type PaymentTerm = OrgMasterBase & {
+	/** Transactional documents persist their calculated due date and term snapshot. */
 	netDays: number;
 };
+
+export const MAX_PAYMENT_TERM_NET_DAYS = 999;
 
 export const TAX_REGISTRATION_TYPES = [
 	"vat_gst",
@@ -256,7 +277,13 @@ export type MasterDependency = {
 export type DependencyInspector = {
 	listBlockers(input: {
 		organizationId: string;
-		entityType: "party" | "item" | "item_group" | "warehouse" | "payment_term";
+		entityType:
+			| "party"
+			| "item"
+			| "item_group"
+			| "item_template"
+			| "warehouse"
+			| "payment_term";
 		entityId: string;
 	}): Promise<MasterDependency[]>;
 };
@@ -264,208 +291,252 @@ export type DependencyInspector = {
 export const PARTY_ROLE_CODES = [
 	"customer",
 	"supplier",
+	"employee",
 	"carrier",
 	"manufacturer",
 	"agent",
 	"distributor",
 	"franchisee",
-	"landlord",
+	"franchisor",
+	"service_provider",
+	"government_agency",
 	"bank",
+	"landlord",
+	"tenant",
+	"contact",
 	"regulator",
 	"other_authorized_role",
 ] as const;
 export type PartyRoleCode = (typeof PARTY_ROLE_CODES)[number];
 
-export const ITEM_UOM_USAGES = [
-	"purchase",
-	"sales",
-	"packaging",
+export const PARTY_ADDRESS_TYPES = [
+	"physical",
+	"postal",
+	"registered",
+	"billing",
+	"shipping",
+	"operational",
+] as const;
+export type PartyAddressType = (typeof PARTY_ADDRESS_TYPES)[number];
+
+export const PARTY_ADDRESS_PURPOSES = [
+	"registered",
+	"billing",
+	"shipping",
+	"correspondence",
+	"operational",
+	"returns",
+	"tax",
 	"other",
 ] as const;
-export type ItemUomUsage = (typeof ITEM_UOM_USAGES)[number];
+export type PartyAddressPurpose = (typeof PARTY_ADDRESS_PURPOSES)[number];
 
-/** Controlled rounding modes for item UoM conversions (Scratch §9). */
-export const ITEM_UOM_ROUNDING_RULES = [
-	"half_up",
-	"half_even",
-	"down",
-	"up",
+export const PARTY_ADDRESS_VALIDATION_STATUSES = [
+	"unvalidated",
+	"validated",
+	"invalid",
 ] as const;
-export type ItemUomRoundingRule = (typeof ITEM_UOM_ROUNDING_RULES)[number];
+export type PartyAddressValidationStatus =
+	(typeof PARTY_ADDRESS_VALIDATION_STATUSES)[number];
+
+export const PARTY_CONTACT_TYPES = [
+	"email",
+	"telephone",
+	"mobile",
+	"fax",
+	"website",
+	"messaging",
+	"other",
+] as const;
+export type PartyContactType = (typeof PARTY_CONTACT_TYPES)[number];
+
+export const PARTY_CONTACT_VERIFICATION_STATUSES = [
+	"unverified",
+	"pending",
+	"verified",
+	"failed",
+] as const;
+export type PartyContactVerificationStatus =
+	(typeof PARTY_CONTACT_VERIFICATION_STATUSES)[number];
 
 /** Controlled party relationship types (Scratch §8). */
 export const PARTY_RELATIONSHIP_TYPES = [
 	"parent_of",
 	"subsidiary_of",
+	"owned_by",
 	"contact_for",
 	"bill_to_for",
 	"ship_to_for",
+	"supplies",
+	"distributes_for",
+	"franchisee_of",
+	"related_party",
+	"landlord_of",
+	"tenant_of",
 ] as const;
 export type PartyRelationshipType = (typeof PARTY_RELATIONSHIP_TYPES)[number];
+export const PARTY_RELATIONSHIP_DIRECTIONS = [
+	"directional",
+	"reciprocal",
+	"hierarchical",
+	"symmetric",
+] as const;
+export type PartyRelationshipDirection =
+	(typeof PARTY_RELATIONSHIP_DIRECTIONS)[number];
 
-export type PartyRole = {
-	id: string;
-	organizationId: string;
+export type PartyRole = EffectiveDatedExtensionRecord & {
 	partyId: string;
 	roleCode: PartyRoleCode;
-	status: MasterStatus;
-	version: number;
-	validFrom: Date | null;
-	validTo: Date | null;
-	createdBy: string;
-	updatedBy: string;
+	status: StandardChildLifecycleStatus;
 	activatedAt: Date | null;
 	activatedBy: string | null;
 	retiredAt: Date | null;
 	retiredBy: string | null;
-	createdAt: Date;
-	updatedAt: Date;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type PartyAddress = {
-	id: string;
-	organizationId: string;
+export type PartyAddress = MutableExtensionRecord & {
 	partyId: string;
-	addressType: string;
+	addressType: PartyAddressType;
+	purpose: PartyAddressPurpose;
 	line1: string;
 	line2: string | null;
+	line3: string | null;
 	city: string;
-	region: string | null;
+	administrativeArea: string | null;
 	postalCode: string | null;
 	countryId: string;
-	isDefault: boolean;
-	verificationStatus: string;
-	version: number;
-	validFrom: Date | null;
-	validTo: Date | null;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	attention: string | null;
+	isPrimary: boolean;
+	validationStatus: PartyAddressValidationStatus;
+	effectiveFrom: Date | null;
+	effectiveTo: Date | null;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type PartyContact = {
-	id: string;
-	organizationId: string;
+export type PartyContact = MutableExtensionRecord & {
 	partyId: string;
-	contactType: string;
+	contactType: PartyContactType;
 	value: string;
+	normalizedValue: string;
+	label: string | null;
 	purpose: string | null;
 	isPrimary: boolean;
-	verificationStatus: string;
-	version: number;
-	validFrom: Date | null;
-	validTo: Date | null;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	verificationStatus: PartyContactVerificationStatus;
+	verifiedAt: Date | null;
+	effectiveFrom: Date | null;
+	effectiveTo: Date | null;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type PartyExternalId = {
-	id: string;
-	organizationId: string;
+export const EXTERNAL_ID_CASE_SENSITIVITIES = [
+	"sensitive",
+	"insensitive",
+] as const;
+export type ExternalIdCaseSensitivity =
+	(typeof EXTERNAL_ID_CASE_SENSITIVITIES)[number];
+/** @deprecated Use ExternalIdCaseSensitivity. */
+export type PartyExternalIdCaseSensitivity = ExternalIdCaseSensitivity;
+/** @deprecated Use EXTERNAL_ID_CASE_SENSITIVITIES. */
+export const PARTY_EXTERNAL_ID_CASE_SENSITIVITIES =
+	EXTERNAL_ID_CASE_SENSITIVITIES;
+
+export type PartyExternalId = MutableExtensionRecord & {
 	partyId: string;
-	system: string;
-	namespace: string;
-	externalId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type PartyRelationship = {
-	id: string;
-	organizationId: string;
-	fromPartyId: string;
-	toPartyId: string;
-	relationshipType: PartyRelationshipType;
-	status: string;
-	version: number;
-	validFrom: Date | null;
-	validTo: Date | null;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ItemUom = {
-	id: string;
-	organizationId: string;
-	itemId: string;
-	uomId: string;
-	toBaseNumerator: string;
-	toBaseDenominator: string;
-	usage: ItemUomUsage;
-	barcode: string | null;
-	roundingRule: ItemUomRoundingRule | null;
-	minQuantity: string | null;
-	version: number;
-	validFrom: Date | null;
-	validTo: Date | null;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
-};
-
-export type ItemBarcode = {
-	id: string;
-	organizationId: string;
-	itemId: string;
-	barcode: string;
-	barcodeType: string;
+	sourceSystem: string;
+	externalIdType: string;
+	externalValue: string;
+	normalizedValue: string;
+	caseSensitivity: PartyExternalIdCaseSensitivity;
 	isPrimary: boolean;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type ItemExternalId = {
-	id: string;
-	organizationId: string;
+export type PartyRelationship = MutableExtensionRecord & {
+	sourcePartyId: string;
+	targetPartyId: string;
+	relationshipType: PartyRelationshipType;
+	direction: PartyRelationshipDirection;
+	effectiveFrom: Date | null;
+	effectiveTo: Date | null;
+	status: RelationshipLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
+};
+
+export type ItemUom = EffectiveDatedExtensionRecord & {
 	itemId: string;
-	system: string;
-	namespace: string;
-	externalId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	alternateUomId: string;
+	conversionFactor: string;
+	roundingScale: number;
+	isPurchaseUom: boolean;
+	isSalesUom: boolean;
+	isInventoryUom: boolean;
+	isDefaultPurchaseUom: boolean;
+	isDefaultSalesUom: boolean;
+	compatibilityMode: ItemUomCompatibilityMode;
+	packagingApprovalReference: string | null;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type ItemAlias = {
-	id: string;
-	organizationId: string;
+export type ItemBarcode = MutableExtensionRecord & {
 	itemId: string;
-	aliasCode: string;
-	normalizedAlias: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	retiredAt: Date | null;
-	createdAt: Date;
-	updatedAt: Date;
+	barcodeValue: string;
+	normalizedValue: string;
+	symbology: ItemBarcodeSymbology;
+	uomId: string | null;
+	packQuantity: string | null;
+	isPrimary: boolean;
+	status: IdentityRegistrationLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
-export type WarehouseExternalId = {
-	id: string;
-	organizationId: string;
+export type ItemExternalId = MutableExtensionRecord & {
+	itemId: string;
+	sourceSystem: string;
+	externalIdType: string;
+	externalValue: string;
+	normalizedValue: string;
+	caseSensitivity: PartyExternalIdCaseSensitivity;
+	isPrimary: boolean;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
+};
+
+export type ItemAlias = MutableExtensionRecord & {
+	itemId: string;
+	aliasType: ItemAliasType;
+	aliasValue: string;
+	normalizedValue: string;
+	languageId: string | null;
+	source: string;
+	isSearchable: boolean;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
+};
+
+export type WarehouseExternalId = MutableExtensionRecord & {
 	warehouseId: string;
-	system: string;
-	namespace: string;
-	externalId: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	sourceSystem: string;
+	externalIdType: string;
+	externalValue: string;
+	normalizedValue: string;
+	caseSensitivity: PartyExternalIdCaseSensitivity;
+	status: StandardChildLifecycleStatus;
+	archivedAt: Date | null;
+	archivedBy: string | null;
 };
 
 /** MDG v1 gated command kinds (activate party + merge parties). */
@@ -476,13 +547,8 @@ export const CHANGE_REQUEST_COMMAND_KINDS = [
 export type ChangeRequestCommandKind =
 	(typeof CHANGE_REQUEST_COMMAND_KINDS)[number];
 
-export const CHANGE_REQUEST_STATUSES = [
-	"submitted",
-	"approved",
-	"rejected",
-	"applied",
-] as const;
-export type ChangeRequestStatus = (typeof CHANGE_REQUEST_STATUSES)[number];
+export const CHANGE_REQUEST_STATUSES = GOVERNANCE_WORKFLOW_STATES;
+export type ChangeRequestStatus = GovernanceWorkflowState;
 
 export type ActivatePartyChangePayload = {
 	partyId: string;

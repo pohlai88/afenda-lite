@@ -1,13 +1,19 @@
 import { randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
-import { activatePartyRole, createPartyRole } from "../src/extensions";
-import { activateItem, createItem, inactiveItem } from "../src/item";
+import {
+	activateItem,
+	createItem,
+	inactiveItem,
+	updateItem,
+} from "../src/capabilities/core-organization-masters/item";
 import {
 	activateItemGroup,
 	createItemGroup,
 	inactiveItemGroup,
-} from "../src/item-group";
+	retireItemGroup,
+	updateItemGroup,
+} from "../src/capabilities/core-organization-masters/item-group";
 import {
 	activateParty,
 	createParty,
@@ -16,18 +22,17 @@ import {
 	restoreParty,
 	retireParty,
 	updateParty,
-} from "../src/party";
+} from "../src/capabilities/core-organization-masters/party";
 import {
 	activatePaymentTerm,
 	createPaymentTerm,
 	getPaymentTermByCode,
 	inactivePaymentTerm,
 	listPaymentTerms,
+	retirePaymentTerm,
 	updatePaymentTerm,
-} from "../src/payment-term";
-import { masterListOptionsSchema } from "../src/schemas";
-import { normalizeTaxRegistrationNumber } from "../src/shared/tax-registration-number";
-import { validityRangesOverlap } from "../src/shared/validity-overlap";
+} from "../src/capabilities/core-organization-masters/payment-term";
+import { masterListOptionsSchema } from "../src/capabilities/core-organization-masters/schemas";
 import {
 	activateTaxRegistration,
 	blockTaxRegistration,
@@ -37,15 +42,22 @@ import {
 	restoreTaxRegistration,
 	retireTaxRegistration,
 	updateTaxRegistration,
-} from "../src/tax-registration";
-import type { DependencyInspector } from "../src/types";
+} from "../src/capabilities/core-organization-masters/tax-registration";
+import { normalizeTaxRegistrationNumber } from "../src/capabilities/core-organization-masters/tax-registration-number";
+import { validityRangesOverlap } from "../src/capabilities/core-organization-masters/validity-overlap";
 import {
 	activateWarehouse,
 	createWarehouse,
 	inactiveWarehouse,
 	moveWarehouse,
 	retireWarehouse,
-} from "../src/warehouse";
+	updateWarehouse,
+} from "../src/capabilities/core-organization-masters/warehouse";
+import {
+	activatePartyRole,
+	createPartyRole,
+} from "../src/capabilities/extensions";
+import type { DependencyInspector, RefUom } from "../src/types";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedActivatePartyChangeRequest } from "./helpers/mdg-approve";
 import type { createMemoryMasterDataStore } from "./helpers/memory-master-data-store";
@@ -106,6 +118,16 @@ describe("@afenda/master-data domain", () => {
 		if (!group.ok) {
 			return;
 		}
+		const activeGroup = await activateItemGroup(
+			{
+				...ctx(),
+				id: group.data.id,
+				expectedVersion: group.data.version,
+			},
+			options,
+		);
+		expect(activeGroup.ok).toBe(true);
+		if (!activeGroup.ok) return;
 
 		const item = await createItem(
 			{
@@ -114,7 +136,7 @@ describe("@afenda/master-data domain", () => {
 				name: "Widget",
 				itemType: "stock",
 				baseUomId: EA_UOM_ID,
-				itemGroupId: group.data.id,
+				itemGroupId: activeGroup.data.id,
 			},
 			options,
 		);
@@ -123,12 +145,58 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(item.data.baseUomId).toBe(EA_UOM_ID);
-		expect(item.data.itemGroupId).toBe(group.data.id);
+		expect(item.data.itemGroupId).toBe(activeGroup.data.id);
 		expect(
 			ports.outbox.calls.some(
 				(call) => call.type === "master_data.item.created.v1",
 			),
 		).toBe(true);
+	});
+
+	it("activateItem revalidates the base UoM is still active", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const group = await createItemGroup(
+			{ ...ctx(), code: "UOM-ACT", name: "UoM activation" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) return;
+		const activeGroup = await activateItemGroup(
+			{ ...ctx(), id: group.data.id, expectedVersion: group.data.version },
+			options,
+		);
+		expect(activeGroup.ok).toBe(true);
+		if (!activeGroup.ok) return;
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "UOM-ACT-ITEM",
+				name: "UoM activation item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: activeGroup.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) return;
+
+		const uoms = Reflect.get(store, "uoms") as Map<string, RefUom>;
+		const baseUom = uoms.get(EA_UOM_ID);
+		expect(baseUom).toBeDefined();
+		if (baseUom === undefined) return;
+		uoms.set(EA_UOM_ID, { ...baseUom, active: false });
+
+		const activated = await activateItem(
+			{ ...ctx(), id: item.data.id, expectedVersion: item.data.version },
+			options,
+		);
+		expect(activated.ok).toBe(false);
+		if (!activated.ok) {
+			expect((activated.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+		}
 	});
 
 	it("version CAS conflict", async () => {
@@ -165,6 +233,73 @@ describe("@afenda/master-data domain", () => {
 		expect((conflict.details as { reason?: string } | undefined)?.reason).toBe(
 			"MASTER_VERSION_CONFLICT",
 		);
+	});
+
+	it("ordinary item updates cannot redefine base UoM or operational item type", async () => {
+		const { options } = createMasterDataTestHarness();
+		const group = await createItemGroup(
+			{ ...ctx(), code: "GOV", name: "Governed items" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) return;
+		const activeGroup = await activateItemGroup(
+			{ ...ctx(), id: group.data.id, expectedVersion: group.data.version },
+			options,
+		);
+		expect(activeGroup.ok).toBe(true);
+		if (!activeGroup.ok) return;
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "GOV-ITEM",
+				name: "Governed item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: activeGroup.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) return;
+
+		const baseChange = await updateItem(
+			{
+				...ctx(),
+				id: item.data.id,
+				expectedVersion: item.data.version,
+				baseUomId: "b1000000-0000-4000-8000-000000000002",
+			},
+			options,
+		);
+		expect(baseChange.ok).toBe(false);
+		if (!baseChange.ok) {
+			expect((baseChange.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+		}
+
+		const activated = await activateItem(
+			{ ...ctx(), id: item.data.id, expectedVersion: item.data.version },
+			options,
+		);
+		expect(activated.ok).toBe(true);
+		if (!activated.ok) return;
+		const typeChange = await updateItem(
+			{
+				...ctx(),
+				id: activated.data.id,
+				expectedVersion: activated.data.version,
+				itemType: "service",
+			},
+			options,
+		);
+		expect(typeChange.ok).toBe(false);
+		if (!typeChange.ok) {
+			expect((typeChange.details as { reason?: string }).reason).toBe(
+				"MASTER_DEPENDENCY_BLOCKED",
+			);
+		}
 	});
 
 	it("cross-org get/update fail-closed", async () => {
@@ -222,6 +357,15 @@ describe("@afenda/master-data domain", () => {
 			organizationId: "org-a",
 			actorUserId: "user-1",
 			pageSize: 101,
+		});
+		expect(parsed.success).toBe(false);
+	});
+
+	it("rejects unsupported shared list fields", () => {
+		const parsed = masterListOptionsSchema.safeParse({
+			organizationId: "org-a",
+			actorUserId: "user-1",
+			partyKind: "organization",
 		});
 		expect(parsed.success).toBe(false);
 	});
@@ -290,6 +434,64 @@ describe("@afenda/master-data domain", () => {
 				(call) => call.type === "master_data.party.retired.v1",
 			),
 		).toBe(true);
+	});
+
+	it("party activation fails not-found before change-request governance", async () => {
+		const { options } = createMasterDataTestHarness();
+		const result = await activateParty(
+			{
+				...ctx(),
+				id: randomUUID(),
+				expectedVersion: 1,
+				changeRequestId: randomUUID(),
+			},
+			options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("NOT_FOUND");
+			expect(result.details).toMatchObject({ reason: "MASTER_NOT_FOUND" });
+		}
+	});
+
+	it("party store enforces the active-role invariant during transition", async () => {
+		const { options, store, ports } = createMasterDataTestHarness();
+		const created = await createParty(
+			{
+				...ctx(),
+				code: "NO-ROLE",
+				name: "No Role Party",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+		const cr = await approvedActivatePartyChangeRequest(
+			{ organizationId: created.data.organizationId, partyId: created.data.id },
+			options,
+		);
+
+		const result = await store.transitionParty(
+			{
+				organizationId: created.data.organizationId,
+				id: created.data.id,
+				expectedVersion: created.data.version,
+				actorUserId: ctx().actorUserId,
+				toStatus: "active",
+				changeRequestId: cr.id,
+				requireActiveRole: true,
+			},
+			ports,
+			{ correlationId: randomUUID(), eventSuffix: "activated" },
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.details).toMatchObject({ reason: "MASTER_INVALID_STATE" });
+		}
 	});
 
 	it("code conflict", async () => {
@@ -464,8 +666,139 @@ describe("@afenda/master-data domain", () => {
 		).toBe(true);
 	});
 
-	it("activateItem requires active item group", async () => {
+	it("item-group hierarchy requires active parents and rejects cycles", async () => {
 		const { options } = createMasterDataTestHarness();
+		const parent = await createItemGroup(
+			{ ...ctx(), code: "FOOD", name: "Food" },
+			options,
+		);
+		expect(parent.ok).toBe(true);
+		if (!parent.ok) return;
+
+		const underDraft = await createItemGroup(
+			{
+				...ctx(),
+				code: "FRESH-DRAFT",
+				name: "Fresh draft",
+				parentId: parent.data.id,
+			},
+			options,
+		);
+		expect(underDraft.ok).toBe(false);
+
+		const activeParent = await activateItemGroup(
+			{
+				...ctx(),
+				id: parent.data.id,
+				expectedVersion: parent.data.version,
+			},
+			options,
+		);
+		expect(activeParent.ok).toBe(true);
+		if (!activeParent.ok) return;
+
+		const child = await createItemGroup(
+			{
+				...ctx(),
+				code: "FRESH",
+				name: "Fresh",
+				parentId: activeParent.data.id,
+			},
+			options,
+		);
+		expect(child.ok).toBe(true);
+		if (!child.ok) return;
+
+		const activeChild = await activateItemGroup(
+			{
+				...ctx(),
+				id: child.data.id,
+				expectedVersion: child.data.version,
+			},
+			options,
+		);
+		expect(activeChild.ok).toBe(true);
+		if (!activeChild.ok) return;
+
+		const cycle = await updateItemGroup(
+			{
+				...ctx(),
+				id: activeParent.data.id,
+				expectedVersion: activeParent.data.version,
+				parentId: activeChild.data.id,
+			},
+			options,
+		);
+		expect(cycle.ok).toBe(false);
+		if (!cycle.ok) expect(cycle.code).toBe("BAD_REQUEST");
+
+		const retired = await retireItemGroup(
+			{
+				...ctx(),
+				id: activeParent.data.id,
+				expectedVersion: activeParent.data.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(false);
+		if (!retired.ok) {
+			expect(retired.code).toBe("CONFLICT");
+			expect((retired.details as { reason?: string }).reason).toBe(
+				"MASTER_DEPENDENCY_BLOCKED",
+			);
+		}
+	});
+
+	it("item-group retirement is blocked by an assigned non-retired item", async () => {
+		const { options } = createMasterDataTestHarness();
+		const group = await createItemGroup(
+			{ ...ctx(), code: "USED", name: "Used group" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) return;
+		const activeGroup = await activateItemGroup(
+			{
+				...ctx(),
+				id: group.data.id,
+				expectedVersion: group.data.version,
+			},
+			options,
+		);
+		expect(activeGroup.ok).toBe(true);
+		if (!activeGroup.ok) return;
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "USED-ITEM",
+				name: "Used item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: activeGroup.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) return;
+
+		const retired = await retireItemGroup(
+			{
+				...ctx(),
+				id: activeGroup.data.id,
+				expectedVersion: activeGroup.data.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(false);
+		if (!retired.ok) {
+			expect((retired.details as { reason?: string }).reason).toBe(
+				"MASTER_DEPENDENCY_BLOCKED",
+			);
+		}
+	});
+
+	it("activateItem requires active item group", async () => {
+		const { options, ports, store } = createMasterDataTestHarness();
 
 		const group = await createItemGroup(
 			{ ...ctx(), code: "FG", name: "Finished goods" },
@@ -476,37 +809,23 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 
-		const item = await createItem(
+		const createUnderDraft = await createItem(
 			{
 				...ctx(),
-				code: "SKU-1",
-				name: "Widget",
+				code: "SKU-DRAFT",
+				name: "Draft-group widget",
 				itemType: "stock",
 				baseUomId: EA_UOM_ID,
 				itemGroupId: group.data.id,
 			},
 			options,
 		);
-		expect(item.ok).toBe(true);
-		if (!item.ok) {
-			return;
+		expect(createUnderDraft.ok).toBe(false);
+		if (!createUnderDraft.ok) {
+			expect(
+				(createUnderDraft.details as { reason?: string } | undefined)?.reason,
+			).toBe("MASTER_INVALID_STATE");
 		}
-
-		const blocked = await activateItem(
-			{
-				...ctx(),
-				id: item.data.id,
-				expectedVersion: item.data.version,
-			},
-			options,
-		);
-		expect(blocked.ok).toBe(false);
-		if (blocked.ok) {
-			return;
-		}
-		expect((blocked.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_INVALID_STATE",
-		);
 
 		const activatedGroup = await activateItemGroup(
 			{
@@ -517,9 +836,68 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activatedGroup.ok).toBe(true);
-		if (!activatedGroup.ok) {
-			return;
+		if (!activatedGroup.ok) return;
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "SKU-1",
+				name: "Widget",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: activatedGroup.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) return;
+
+		const inactiveGroup = await inactiveItemGroup(
+			{
+				...ctx(),
+				id: activatedGroup.data.id,
+				expectedVersion: activatedGroup.data.version,
+			},
+			options,
+		);
+		expect(inactiveGroup.ok).toBe(true);
+		if (!inactiveGroup.ok) return;
+		const storeBlocked = await store.transitionItem(
+			{
+				organizationId: item.data.organizationId,
+				id: item.data.id,
+				expectedVersion: item.data.version,
+				actorUserId: "user-1",
+				toStatus: "active",
+			},
+			ports,
+			{ correlationId: randomUUID(), eventSuffix: "activated" },
+		);
+		expect(storeBlocked.ok).toBe(false);
+		if (!storeBlocked.ok) {
+			expect((storeBlocked.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
 		}
+		const blocked = await activateItem(
+			{ ...ctx(), id: item.data.id, expectedVersion: item.data.version },
+			options,
+		);
+		expect(blocked.ok).toBe(false);
+		if (!blocked.ok)
+			expect((blocked.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+
+		const reactivatedGroup = await activateItemGroup(
+			{
+				...ctx(),
+				id: inactiveGroup.data.id,
+				expectedVersion: inactiveGroup.data.version,
+			},
+			options,
+		);
+		expect(reactivatedGroup.ok).toBe(true);
+		if (!reactivatedGroup.ok) return;
 
 		const activated = await activateItem(
 			{
@@ -566,14 +944,20 @@ describe("@afenda/master-data domain", () => {
 		if (!parent.ok) {
 			return;
 		}
+		const activeParent = await activateWarehouse(
+			{ ...ctx(), id: parent.data.id, expectedVersion: parent.data.version },
+			options,
+		);
+		expect(activeParent.ok).toBe(true);
+		if (!activeParent.ok) return;
 
 		const child = await createWarehouse(
 			{
 				...ctx(),
 				code: "WH-C",
 				name: "Child",
-				locationType: "bin",
-				parentId: parent.data.id,
+				locationType: "zone",
+				parentId: activeParent.data.id,
 			},
 			options,
 		);
@@ -581,13 +965,55 @@ describe("@afenda/master-data domain", () => {
 		if (!child.ok) {
 			return;
 		}
+		const activeChild = await activateWarehouse(
+			{ ...ctx(), id: child.data.id, expectedVersion: child.data.version },
+			options,
+		);
+		expect(activeChild.ok).toBe(true);
+		if (!activeChild.ok) return;
+		const activeMove = await moveWarehouse(
+			{
+				...ctx(),
+				id: activeChild.data.id,
+				expectedVersion: activeChild.data.version,
+				parentId: null,
+			},
+			options,
+		);
+		expect(activeMove.ok).toBe(false);
+		if (!activeMove.ok) {
+			expect((activeMove.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+		}
+		const typeChange = await updateWarehouse(
+			{
+				...ctx(),
+				id: activeChild.data.id,
+				expectedVersion: activeChild.data.version,
+				locationType: "bin",
+			},
+			options,
+		);
+		expect(typeChange.ok).toBe(false);
+
+		const inactiveParent = await inactiveWarehouse(
+			{
+				...ctx(),
+				id: activeParent.data.id,
+				expectedVersion: activeParent.data.version,
+			},
+			options,
+		);
+		expect(inactiveParent.ok).toBe(true);
+		if (!inactiveParent.ok) return;
 
 		const cycle = await moveWarehouse(
 			{
 				...ctx(),
-				id: parent.data.id,
-				expectedVersion: parent.data.version,
-				parentId: child.data.id,
+				id: inactiveParent.data.id,
+				expectedVersion: inactiveParent.data.version,
+				parentId: activeChild.data.id,
 			},
 			options,
 		);
@@ -596,6 +1022,75 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(cycle.code).toBe("BAD_REQUEST");
+
+		const retired = await retireWarehouse(
+			{
+				...ctx(),
+				id: inactiveParent.data.id,
+				expectedVersion: inactiveParent.data.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(false);
+		if (!retired.ok) {
+			expect((retired.details as { reason?: string }).reason).toBe(
+				"MASTER_DEPENDENCY_BLOCKED",
+			);
+		}
+	});
+
+	it("activateWarehouse requires an active parent when nested", async () => {
+		const { options } = createMasterDataTestHarness();
+		const parent = await createWarehouse(
+			{
+				...ctx(),
+				code: "WH-STALE-P",
+				name: "Stale parent",
+				locationType: "warehouse",
+			},
+			options,
+		);
+		expect(parent.ok).toBe(true);
+		if (!parent.ok) return;
+		const activeParent = await activateWarehouse(
+			{ ...ctx(), id: parent.data.id, expectedVersion: parent.data.version },
+			options,
+		);
+		expect(activeParent.ok).toBe(true);
+		if (!activeParent.ok) return;
+		const child = await createWarehouse(
+			{
+				...ctx(),
+				code: "WH-STALE-C",
+				name: "Stale child",
+				locationType: "zone",
+				parentId: activeParent.data.id,
+			},
+			options,
+		);
+		expect(child.ok).toBe(true);
+		if (!child.ok) return;
+		const inactiveParent = await inactiveWarehouse(
+			{
+				...ctx(),
+				id: activeParent.data.id,
+				expectedVersion: activeParent.data.version,
+			},
+			options,
+		);
+		expect(inactiveParent.ok).toBe(true);
+		if (!inactiveParent.ok) return;
+
+		const activated = await activateWarehouse(
+			{ ...ctx(), id: child.data.id, expectedVersion: child.data.version },
+			options,
+		);
+		expect(activated.ok).toBe(false);
+		if (!activated.ok) {
+			expect((activated.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+		}
 	});
 
 	it("party restore emits restored not created", async () => {
@@ -738,7 +1233,31 @@ describe("@afenda/master-data domain", () => {
 	});
 
 	it("payment term create + getByCode + CAS + lifecycle outbox", async () => {
-		const { options, ports } = createMasterDataTestHarness();
+		const { options, ports, store } = createMasterDataTestHarness();
+
+		for (const netDays of [-1, 1.5, 1000]) {
+			const invalid = await createPaymentTerm(
+				{
+					...ctx(),
+					code: `INVALID-${netDays}`,
+					name: "Invalid payment term",
+					netDays,
+				},
+				options,
+			);
+			expect(invalid.ok).toBe(false);
+		}
+
+		const immediate = await createPaymentTerm(
+			{
+				...ctx(),
+				code: "DUE0",
+				name: "Due immediately",
+				netDays: 0,
+			},
+			options,
+		);
+		expect(immediate.ok).toBe(true);
 
 		const created = await createPaymentTerm(
 			{
@@ -774,7 +1293,7 @@ describe("@afenda/master-data domain", () => {
 		if (!listed.ok) {
 			return;
 		}
-		expect(listed.data).toHaveLength(1);
+		expect(listed.data).toHaveLength(2);
 
 		const casFail = await updatePaymentTerm(
 			{
@@ -821,6 +1340,47 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(inactive.data.status).toBe("inactive");
+
+		const invalidStoreTransition = await store.transitionPaymentTerm(
+			{
+				organizationId: inactive.data.organizationId,
+				id: inactive.data.id,
+				expectedVersion: inactive.data.version,
+				actorUserId: "user-1",
+				toStatus: "inactive",
+			},
+			ports,
+			{ correlationId: randomUUID(), eventSuffix: "inactive" },
+		);
+		expect(invalidStoreTransition.ok).toBe(false);
+
+		const retired = await retirePaymentTerm(
+			{
+				...ctx(),
+				id: inactive.data.id,
+				expectedVersion: inactive.data.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(true);
+		if (!retired.ok) return;
+
+		const updateRetired = await updatePaymentTerm(
+			{
+				...ctx(),
+				id: retired.data.id,
+				expectedVersion: retired.data.version,
+				netDays: 45,
+			},
+			options,
+		);
+		expect(updateRetired.ok).toBe(false);
+		if (!updateRetired.ok) {
+			expect(
+				(updateRetired.details as { reason?: string } | undefined)?.reason,
+			).toBe("MASTER_INVALID_STATE");
+		}
+
 		expect(
 			ports.outbox.calls.some(
 				(call) => call.type === "master_data.payment_term.created.v1",
@@ -834,7 +1394,7 @@ describe("@afenda/master-data domain", () => {
 	});
 
 	it("tax registration tenancy · uniqueness · overlap · CAS · lifecycle", async () => {
-		const { options, ports } = createMasterDataTestHarness();
+		const { options, ports, store } = createMasterDataTestHarness();
 		const countryId = "c1000000-0000-4000-8000-000000000001";
 
 		const normalized = normalizeTaxRegistrationNumber("vat-123 / ab");
@@ -871,6 +1431,18 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 
+		const invalidCountry = await createTaxRegistration(
+			{
+				...ctx(),
+				partyId: party.data.id,
+				jurisdictionCountryId: "c1000000-0000-4000-8000-999999999999",
+				registrationType: "vat_gst",
+				registrationNumber: "COUNTRY-FAIL",
+			},
+			options,
+		);
+		expect(invalidCountry.ok).toBe(false);
+
 		const created = await createTaxRegistration(
 			{
 				...ctx(),
@@ -880,6 +1452,7 @@ describe("@afenda/master-data domain", () => {
 				registrationNumber: "VAT-123 / ab",
 				name: "MY GST",
 				validFrom: new Date("2026-01-01T00:00:00.000Z"),
+				validTo: new Date("2026-06-01T00:00:00.000Z"),
 			},
 			options,
 		);
@@ -1011,6 +1584,48 @@ describe("@afenda/master-data domain", () => {
 		expect(
 			(overlapActivate.details as { reason?: string } | undefined)?.reason,
 		).toBe("MASTER_VALIDITY_OVERLAP");
+		const storeOverlapActivate = await store.transitionTaxRegistration(
+			{
+				organizationId: overlapSibling.data.organizationId,
+				id: overlapSibling.data.id,
+				expectedVersion: overlapSibling.data.version,
+				actorUserId: "user-1",
+				toStatus: "active",
+			},
+			ports,
+			{ correlationId: randomUUID(), eventSuffix: "activated" },
+		);
+		expect(storeOverlapActivate.ok).toBe(false);
+		if (!storeOverlapActivate.ok) {
+			expect(
+				(storeOverlapActivate.details as { reason?: string } | undefined)
+					?.reason,
+			).toBe("MASTER_VALIDITY_OVERLAP");
+		}
+
+		const adjacent = await createTaxRegistration(
+			{
+				...ctx(),
+				partyId: party.data.id,
+				jurisdictionCountryId: countryId,
+				registrationType: "vat_gst",
+				registrationNumber: "VAT-ADJACENT",
+				validFrom: new Date("2026-06-01T00:00:00.000Z"),
+				validTo: new Date("2026-12-31T00:00:00.000Z"),
+			},
+			options,
+		);
+		expect(adjacent.ok).toBe(true);
+		if (!adjacent.ok) return;
+		const adjacentActivated = await activateTaxRegistration(
+			{
+				...ctx(),
+				id: adjacent.data.id,
+				expectedVersion: adjacent.data.version,
+			},
+			options,
+		);
+		expect(adjacentActivated.ok).toBe(true);
 
 		const listed = await listTaxRegistrations(
 			{
@@ -1072,6 +1687,35 @@ describe("@afenda/master-data domain", () => {
 		}
 		expect(retired.data.status).toBe("retired");
 
+		const directRestoreToActive = await store.transitionTaxRegistration(
+			{
+				organizationId: retired.data.organizationId,
+				id: retired.data.id,
+				expectedVersion: retired.data.version,
+				actorUserId: "user-1",
+				toStatus: "active",
+			},
+			ports,
+			{ correlationId: randomUUID(), eventSuffix: "activated" },
+		);
+		expect(directRestoreToActive.ok).toBe(false);
+
+		const updateRetired = await updateTaxRegistration(
+			{
+				...ctx(),
+				id: retired.data.id,
+				expectedVersion: retired.data.version,
+				name: "must not change",
+			},
+			options,
+		);
+		expect(updateRetired.ok).toBe(false);
+		if (!updateRetired.ok) {
+			expect(
+				(updateRetired.details as { reason?: string } | undefined)?.reason,
+			).toBe("MASTER_INVALID_STATE");
+		}
+
 		const restored = await restoreTaxRegistration(
 			{
 				...ctx(),
@@ -1084,7 +1728,7 @@ describe("@afenda/master-data domain", () => {
 		if (!restored.ok) {
 			return;
 		}
-		expect(restored.data.status).toBe("draft");
+		expect(restored.data.status).toBe("blocked");
 		expect(
 			ports.outbox.calls.some(
 				(call) => call.type === "master_data.tax_registration.created.v1",
@@ -1105,5 +1749,15 @@ describe("@afenda/master-data domain", () => {
 				(call) => call.type === "master_data.tax_registration.restored.v1",
 			),
 		).toBe(true);
+		const taxSecurityEvidence = JSON.stringify({
+			audit: ports.audit.calls.filter(
+				(call) => call.entity === "tax_registration",
+			),
+			outbox: ports.outbox.calls.filter((call) =>
+				call.type.startsWith("master_data.tax_registration."),
+			),
+		});
+		expect(taxSecurityEvidence).not.toContain("VAT-123 / ab");
+		expect(taxSecurityEvidence).not.toContain("VAT123AB");
 	});
 });

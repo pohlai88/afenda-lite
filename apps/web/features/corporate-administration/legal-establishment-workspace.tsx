@@ -90,7 +90,7 @@ export function LegalEstablishmentWorkspace(props: {
 			className="space-y-6 border-t pt-6"
 		>
 			<div>
-				<h2 id="legal-presence-heading" className="text-xl font-semibold">
+				<h2 id="legal-presence-heading" className="text-lg font-medium">
 					Legal presence and premises
 				</h2>
 				<p className="text-sm text-muted-foreground">

@@ -2,9 +2,8 @@
  * Identity org-member search projection — sync prune + hit mapping.
  */
 
+import { MemorySearchStore } from "@afenda/search/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { MemorySearchStore } from "../../../packages/data-plane/search/__tests__/helpers/memory-search-store";
 import {
 	searchOrganizationMembers,
 	syncOrganizationMemberSearchIndex,

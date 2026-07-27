@@ -57,6 +57,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | `afenda-elite-backend-modules` | local-elite-farm | local | keep | Module ports, residue, ownership map | Modules / hexagonal boundaries | ARCH-001 · ARCH-006 · ARCH-009 · ARCH-022 · ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-backend-modules/SKILL.md` | Wave 2 extend closed → keep; Target vs docs-first path truth |
 | `afenda-elite-api-contract` | local-elite-farm | local | keep | ActionResult, brands, OpenAPI, REST contracts | API / BFF contract work | docs-V2/api Scratch · disk app/api · OPEN YAML | none | `.cursor/skills/afenda-elite-api-contract/SKILL.md` | Scratch + disk honesty; Living docs/api retired on this checkout |
 | `afenda-elite-module-readiness` | local-elite-farm | local | keep | Module evidence ledgers · Module Enterprise Readiness claims | MOD-009 / MOD-010 evidence and claim work | MOD-002 · owning `*-MOD-009` / `*-MOD-010` | none | `.cursor/skills/afenda-elite-module-readiness/SKILL.md` | MOD-002/009/010 only — no scratch QG · no edition certification |
+| `afenda-focused-verification` | local-elite-farm | local | keep | Verification lane selection; focused package checks before broad root gates; timeout/failure stop rule | Test/check selection · failed or timed-out verification · broad gate approval | testing/README.md · `.cursor/rules/focused-verification-lane.mdc` · `.cursor/hooks/focused-verification-lane.mjs` | none | `.cursor/skills/afenda-focused-verification/SKILL.md` | Broad `pnpm test`/`pnpm check`/`pnpm build:check` asks unless `AFENDA_ALLOW_BROAD_VERIFY=1`; no blind reruns |
 | `afenda-elite-repo-housekeeping` | local-elite-farm | local | keep | Knip/drift discovery; skill-catalog align | Housekeeping / catalog drift | ARCH-024 · ARCH-028 · this catalog | none | `.cursor/skills/afenda-elite-repo-housekeeping/SKILL.md` | Deletes → monorepo-refactor Slice D |
 | `afenda-elite-monorepo-discipline` | local-elite-farm | local | keep | Day-to-day `@afenda/*` import/DAG/export surface | Cross-package imports · new `packages/*` · layer violations · Rank-1 http/security/metrics/audit/search/notifications/events/master-data/ai-the-machine | ARCH-024 · ARCH-022 · docs-V2/monorepo · docs-V2/ai · docs-V2/events · docs-V2/master-data | none | `.cursor/skills/afenda-elite-monorepo-discipline/SKILL.md` · [LAYERS.md](../afenda-elite-monorepo-discipline/LAYERS.md) | Lite rewrite of Xerp `monorepo-discipline` (no Xerp LOAD); AI DNA under docs-V2/ai |
 | `afenda-elite-monorepo-refactor` | local-elite-farm | local | keep | Governed extract/move/Slice D | Cross-package refactor | ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-monorepo-refactor/SKILL.md` | Day-to-day boundaries → monorepo-discipline |
@@ -124,7 +125,7 @@ Management = `local`. Status = `keep`. Method library invoked after a farm is fi
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 
-_None. Last authored: `afenda-docs-app` 2026-07-20 → keep (local-domain-farm)._
+_None. Last authored: `afenda-focused-verification` 2026-07-28 → keep (local-elite-farm)._
 
 ## Candidate gaps (not approved for authoring)
 
@@ -136,7 +137,6 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 | `afenda-elite-env-governance` | Env fail-fast / client-secret boundary | ARCH-027 | Prefer extend nextjs first; promote only if size/ownership gap remains | Candidate |
 | `afenda-elite-server-action-security` | Dedicated Action security farm | ARCH-029 · API-002 · nextjs farm | Only if api-contract + nextjs extension remain too large after review | Candidate |
 | `afenda-elite-drizzle-migration` | Drizzle journal / migration governance | ARCH-025 · ARCH-028 | Target `@afenda/db` exists | Candidate |
-| `afenda-elite-test` | Lite test-pyramid farm | testing authority / vendor TDD | Proven routing gap after checkout paths reconcile | Candidate |
 
 **Retired candidate name:** `afenda-elite-enterprise-readiness` — do not create; use keep `afenda-elite-module-readiness` instead.
 
@@ -165,7 +165,7 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 | App Router Actions / ARCH-027 env | keep `afenda-elite-nextjs-best-practice` | Wave 2.3 done |
 | Module ports / ARCH-006 boundaries | keep `afenda-elite-backend-modules` | Wave 2.4 done |
 | Module evidence / readiness claims | keep `afenda-elite-module-readiness` | Authored after API env cleanup; Declarations/FFT product modules removed |
-| Broader RBAC/SoD farm · env farm · Action farm · drizzle · test | candidate (above) | Not Wave 2 authoring |
+| Broader RBAC/SoD farm · env farm · Action farm · drizzle | candidate (above) | Not Wave 2 authoring |
 
 ## Wave 2 extend status (history · 2026-07-14)
 

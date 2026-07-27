@@ -33,7 +33,8 @@ const createPartyRoleFormSchema = z.object({
 });
 
 /**
- * Master-data party role create — session org stamp + `master_data.manage`.
+ * Master-data party role create — session org stamp +
+ * `master_data.party_role_manage`.
  * Activation of the party still requires ≥1 active role (package rule).
  */
 export async function createPartyRoleAction(
@@ -57,7 +58,7 @@ export async function createPartyRoleAction(
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
-		"master_data.manage",
+		"master_data.party_role_manage",
 	);
 	if (permissionDenied) {
 		return permissionDenied;

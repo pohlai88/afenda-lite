@@ -50,7 +50,10 @@ describe("human resources Phase 7 surfaces", () => {
 		for (const route of routes) {
 			const text = source(route);
 			expect(text).toContain("parseHrDisplayPreferences");
-			expect(text).toContain("parseHrPage");
+			expect(
+				text.includes("parseHrPage") ||
+					text.includes("parseAdminEmployeeDirectoryParams"),
+			).toBe(true);
 			expect(text).toContain("@/features/human-resources/");
 			expect(text).not.toContain("@afenda/db");
 		}

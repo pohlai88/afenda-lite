@@ -1,11 +1,11 @@
 import type { SearchStore } from "@afenda/search";
 
 import type { MasterAuthorizationPort } from "./authorization";
-import { createEmptyDependencyInspector } from "./dependency";
+import { createUnavailableDependencyInspector } from "./capabilities/core-organization-masters/dependency";
+import type { MasterDataStore } from "./capabilities/core-organization-masters/store";
 import type { MutationPorts } from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveMasterDataStore } from "./resolve-store";
-import type { MasterDataStore } from "./store";
 import type { DependencyInspector } from "./types";
 
 export type MasterCommandOptions = {
@@ -18,6 +18,11 @@ export type MasterCommandOptions = {
 	authorization?: MasterAuthorizationPort;
 };
 
+export type MasterQueryOptions = Pick<
+	MasterCommandOptions,
+	"store" | "authorization"
+>;
+
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
 	return ports ?? createProductionMutationPorts();
 }
@@ -29,7 +34,7 @@ export function resolveStore(store?: MasterDataStore): MasterDataStore {
 export function resolveDependencyInspector(
 	inspector?: DependencyInspector,
 ): DependencyInspector {
-	return inspector ?? createEmptyDependencyInspector();
+	return inspector ?? createUnavailableDependencyInspector();
 }
 
 export function resolveCommandDeps(options: MasterCommandOptions = {}): {

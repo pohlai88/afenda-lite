@@ -1,12 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
-
-import {
-	upsertPartiesByCode,
-	validatePartyImportBatch,
-} from "../src/import-bulk";
-import { createParty } from "../src/party";
+import { upsertPartiesByCode, validatePartyImportBatch } from "../src";
+import { createParty } from "../src/capabilities/core-organization-masters/party";
 import { createMasterDataTestHarness } from "./helpers/harness";
 
 function ctx(organizationId = "org-import") {

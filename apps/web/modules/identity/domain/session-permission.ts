@@ -31,10 +31,46 @@ export const PERMISSION_DENIED_MESSAGE: Record<
 		"You do not have permission to approve master-data change requests.",
 	"master_data.import_approve":
 		"You do not have permission to approve and apply master-data import.",
+	"master_data.party_role_manage":
+		"You do not have permission to manage party roles.",
+	"master_data.party_address_manage":
+		"You do not have permission to manage party addresses.",
+	"master_data.party_contact_manage":
+		"You do not have permission to manage party contacts.",
+	"master_data.party_contact_verify":
+		"You do not have permission to verify party contacts.",
+	"master_data.party_external_id_manage":
+		"You do not have permission to manage party external identifiers.",
+	"master_data.party_external_id_regulatory_manage":
+		"You do not have permission to manage regulatory party identifiers.",
+	"master_data.party_relationship_manage":
+		"You do not have permission to manage party relationships.",
+	"master_data.party_relationship_control_manage":
+		"You do not have permission to manage ownership or control relationships.",
+	"master_data.item_uom_manage":
+		"You do not have permission to manage item UoM conversions.",
+	"master_data.item_barcode_manage":
+		"You do not have permission to manage item barcodes.",
+	"master_data.item_external_id_manage":
+		"You do not have permission to manage item external identifiers.",
+	"master_data.item_alias_manage":
+		"You do not have permission to manage item aliases.",
+	"master_data.warehouse_external_id_manage":
+		"You do not have permission to manage warehouse external identifiers.",
+	"master_data.item_template_attribute_manage":
+		"You do not have permission to manage item-template attributes.",
+	"master_data.item_template_option_manage":
+		"You do not have permission to manage item-template options.",
+	"master_data.item_variant_attribute_manage":
+		"You do not have permission to assign item-variant attributes.",
+	"master_data.item_variant_defining_attribute_manage":
+		"You do not have permission to manage identity-defining variant attributes.",
 	"corporate_administration.company.read":
 		"You do not have permission to read legal company drafts.",
 	"corporate_administration.company.manage":
 		"You do not have permission to register legal company drafts.",
+	"corporate_administration.establishment.manage":
+		"You do not have permission to manage legal establishments.",
 	"sales.order.create": "You do not have permission to create sales orders.",
 	"sales.order.update": "You do not have permission to update sales orders.",
 	"sales.order.post": "You do not have permission to post sales orders.",

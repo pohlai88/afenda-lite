@@ -748,6 +748,10 @@ tables:
   - moduleId: master-data
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
+    table: md_item_variant_attribute_value_option
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
     table: md_change_request
   - moduleId: master-data
     packageName: "@afenda/master-data"

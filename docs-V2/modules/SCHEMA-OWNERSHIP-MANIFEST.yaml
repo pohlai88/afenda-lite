@@ -155,6 +155,9 @@ tables:
   - table: md_item_variant_attribute_value
     writeOwner: "@afenda/master-data"
     kind: erp
+  - table: md_item_variant_attribute_value_option
+    writeOwner: "@afenda/master-data"
+    kind: erp
   - table: md_change_request
     writeOwner: "@afenda/master-data"
     kind: erp

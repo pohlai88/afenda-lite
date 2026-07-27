@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import {
 	createOrganizationDimension,
+	createOrganizationDimensionInputSchema,
 	getOrganizationDimensionEffective,
 	ORGANIZATION_DIMENSION_KINDS,
 	resolveOrganizationDimensionsAsOf,
 } from "../src";
+import { createMemoryOrganizationDimensionStore } from "../src/capabilities/core-organization-masters/testing-organization-dimension-store";
 import { MASTER_DATA_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryOrganizationDimensionStore } from "../src/testing/organization-dimension-store";
 import { createGrantingMasterAuthorization } from "./helpers/memory-authorization";
 
 const ORG_A = randomUUID();
@@ -48,6 +49,38 @@ async function seedRequired(
 }
 
 describe("organization dimension domain", () => {
+	it("requires predecessor CAS fields as a pair", () => {
+		const base = {
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			correlationId: "supersession-cas",
+			kind: "location" as const,
+			key: "LOC-KUL",
+			name: "Kuala Lumpur",
+			effectiveFrom: "2026-01-01",
+		};
+
+		expect(
+			createOrganizationDimensionInputSchema.safeParse({
+				...base,
+				supersedesId: randomUUID(),
+			}).success,
+		).toBe(false);
+		expect(
+			createOrganizationDimensionInputSchema.safeParse({
+				...base,
+				supersedesExpectedVersion: 1,
+			}).success,
+		).toBe(false);
+		expect(
+			createOrganizationDimensionInputSchema.safeParse({
+				...base,
+				supersedesId: randomUUID(),
+				supersedesExpectedVersion: 1,
+			}).success,
+		).toBe(true);
+	});
+
 	it("resolves exactly five tenant-scoped dimensions as of the assignment date", async () => {
 		const store = createMemoryOrganizationDimensionStore();
 		await seedRequired(store);
@@ -68,6 +101,41 @@ describe("organization dimension domain", () => {
 			[...ORGANIZATION_DIMENSION_KINDS].sort(),
 		);
 		expect(result.data.legal_entity.key).toBe(keys.legal_entity);
+	});
+
+	it("resolves the five independent dimensions concurrently", async () => {
+		const baseStore = createMemoryOrganizationDimensionStore();
+		await seedRequired(baseStore);
+		let inFlight = 0;
+		let peakInFlight = 0;
+		const store = {
+			...baseStore,
+			async findEffective(
+				input: Parameters<typeof baseStore.findEffective>[0],
+			) {
+				inFlight += 1;
+				peakInFlight = Math.max(peakInFlight, inFlight);
+				await Promise.resolve();
+				try {
+					return await baseStore.findEffective(input);
+				} finally {
+					inFlight -= 1;
+				}
+			},
+		};
+
+		const result = await resolveOrganizationDimensionsAsOf(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				asOf: "2025-06-01",
+				keys,
+			},
+			{ store, authorization },
+		);
+
+		expect(result.ok).toBe(true);
+		expect(peakInFlight).toBe(ORGANIZATION_DIMENSION_KINDS.length);
 	});
 
 	it("rejects overlapping versions for the same tenant, kind, and normalized key", async () => {

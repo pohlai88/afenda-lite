@@ -22,13 +22,23 @@ const corporateAdministrationMocks = vi.hoisted(() => ({
 	supersedeCompanyJurisdictionProfile: vi.fn(),
 	listLegalCompanies: vi.fn(),
 	getLegalCompany: vi.fn(),
+	listCompanyNames: vi.fn(),
+	findCompanyLegalFormAsOf: vi.fn(),
+	listCompanyIdentifiers: vi.fn(),
+	findCompanyFinancialYearAsOf: vi.fn(),
+	listCompanyActivitiesAsOf: vi.fn(),
+	listLegalEstablishmentsAsOf: vi.fn(),
+	findRegisteredAddressAsOf: vi.fn(),
+	listPremisesAsOf: vi.fn(),
 }));
 
 const compositionMocks = vi.hoisted(() => ({
 	createCorporateAdministrationCommandOptions: vi.fn(),
 	createCorporateAdministrationQueryOptions: vi.fn(),
 	createCorporateAdministrationLegalCompanyDependencies: vi.fn(),
+	createCorporateAdministrationCompanyDependencies: vi.fn(),
 	listCorporateAdministrationActiveOrganizationParties: vi.fn(),
+	listCorporateAdministrationPartyAddresses: vi.fn(),
 }));
 
 const cacheMocks = vi.hoisted(() => ({
@@ -67,6 +77,19 @@ vi.mock("@afenda/corporate-administration", () => ({
 		corporateAdministrationMocks.supersedeCompanyJurisdictionProfile,
 	listLegalCompanies: corporateAdministrationMocks.listLegalCompanies,
 	getLegalCompany: corporateAdministrationMocks.getLegalCompany,
+	listCompanyNames: corporateAdministrationMocks.listCompanyNames,
+	findCompanyLegalFormAsOf:
+		corporateAdministrationMocks.findCompanyLegalFormAsOf,
+	listCompanyIdentifiers: corporateAdministrationMocks.listCompanyIdentifiers,
+	findCompanyFinancialYearAsOf:
+		corporateAdministrationMocks.findCompanyFinancialYearAsOf,
+	listCompanyActivitiesAsOf:
+		corporateAdministrationMocks.listCompanyActivitiesAsOf,
+	listLegalEstablishmentsAsOf:
+		corporateAdministrationMocks.listLegalEstablishmentsAsOf,
+	findRegisteredAddressAsOf:
+		corporateAdministrationMocks.findRegisteredAddressAsOf,
+	listPremisesAsOf: corporateAdministrationMocks.listPremisesAsOf,
 }));
 
 vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
@@ -76,8 +99,12 @@ vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
 		compositionMocks.createCorporateAdministrationQueryOptions,
 	createCorporateAdministrationLegalCompanyDependencies:
 		compositionMocks.createCorporateAdministrationLegalCompanyDependencies,
+	createCorporateAdministrationCompanyDependencies:
+		compositionMocks.createCorporateAdministrationCompanyDependencies,
 	listCorporateAdministrationActiveOrganizationParties:
 		compositionMocks.listCorporateAdministrationActiveOrganizationParties,
+	listCorporateAdministrationPartyAddresses:
+		compositionMocks.listCorporateAdministrationPartyAddresses,
 }));
 
 vi.mock("next/cache", () => ({
@@ -144,6 +171,9 @@ describe("Corporate Administration legal-company Server Actions", () => {
 		compositionMocks.createCorporateAdministrationLegalCompanyDependencies.mockReturnValue(
 			{ store: "ca-store" },
 		);
+		compositionMocks.createCorporateAdministrationCompanyDependencies.mockReturnValue(
+			{ store: "ca-store" },
+		);
 		compositionMocks.listCorporateAdministrationActiveOrganizationParties.mockResolvedValue(
 			[
 				{
@@ -153,12 +183,49 @@ describe("Corporate Administration legal-company Server Actions", () => {
 				},
 			],
 		);
+		compositionMocks.listCorporateAdministrationPartyAddresses.mockResolvedValue(
+			[],
+		);
 		corporateAdministrationMocks.listLegalCompanies.mockResolvedValue({
 			ok: true,
 			data: {
 				items: [],
 				nextCursor: null,
 			},
+		});
+		corporateAdministrationMocks.listCompanyNames.mockResolvedValue({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
+		corporateAdministrationMocks.findCompanyLegalFormAsOf.mockResolvedValue({
+			ok: true,
+			data: null,
+		});
+		corporateAdministrationMocks.listCompanyIdentifiers.mockResolvedValue({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
+		corporateAdministrationMocks.findCompanyFinancialYearAsOf.mockResolvedValue(
+			{
+				ok: true,
+				data: null,
+			},
+		);
+		corporateAdministrationMocks.listCompanyActivitiesAsOf.mockResolvedValue({
+			ok: true,
+			data: [],
+		});
+		corporateAdministrationMocks.listLegalEstablishmentsAsOf.mockResolvedValue({
+			ok: true,
+			data: [],
+		});
+		corporateAdministrationMocks.findRegisteredAddressAsOf.mockResolvedValue({
+			ok: true,
+			data: null,
+		});
+		corporateAdministrationMocks.listPremisesAsOf.mockResolvedValue({
+			ok: true,
+			data: [],
 		});
 	});
 

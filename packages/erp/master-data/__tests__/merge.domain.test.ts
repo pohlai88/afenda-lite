@@ -1,20 +1,23 @@
 import { randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
-
+import {
+	findPartyDuplicateWarnings,
+	mergeParties,
+	resolveCanonicalPartyId,
+} from "../src";
+import {
+	createParty,
+	getPartyByCode,
+	getPartyById,
+} from "../src/capabilities/core-organization-masters/party";
 import {
 	activatePartyRole,
 	createPartyExternalId,
 	createPartyRole,
 	findPartyByExternalId,
 	listPartyRoles,
-} from "../src/extensions";
-import {
-	findPartyDuplicateWarnings,
-	mergeParties,
-	resolveCanonicalPartyId,
-} from "../src/merge";
-import { createParty, getPartyByCode } from "../src/party";
+} from "../src/capabilities/extensions";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedMergePartiesChangeRequest } from "./helpers/mdg-approve";
 
@@ -58,9 +61,11 @@ describe("@afenda/master-data mergeParties", () => {
 			{
 				...ctx(),
 				partyId: source.data.id,
-				system: "erp",
-				namespace: "party",
-				externalId: "E-SRC",
+				sourceSystem: "erp",
+				externalIdType: "party",
+				externalValue: "E-SRC",
+				caseSensitivity: "sensitive",
+				isPrimary: false,
 			},
 			options,
 		);
@@ -94,13 +99,53 @@ describe("@afenda/master-data mergeParties", () => {
 		expect(merged.data.merged.mergedIntoId).toBe(target.data.id);
 		expect(merged.data.merged.status).toBe("retired");
 
+		const exactSource = await getPartyById(
+			{
+				organizationId: "org-merge",
+				actorUserId: "user-1",
+				id: source.data.id,
+			},
+			options,
+		);
+		expect(exactSource.ok).toBe(true);
+		if (!exactSource.ok) {
+			return;
+		}
+		expect(exactSource.data).toMatchObject({
+			id: source.data.id,
+			code: "SRC1",
+			name: "Source Co",
+			mergedIntoId: target.data.id,
+			status: "retired",
+		});
+
+		const canonical = await resolveCanonicalPartyId(
+			{
+				organizationId: "org-merge",
+				actorUserId: "user-1",
+				partyId: source.data.id,
+			},
+			options,
+		);
+		expect(canonical.ok).toBe(true);
+		if (!canonical.ok) {
+			return;
+		}
+		expect(canonical.data).toMatchObject({
+			partyId: target.data.id,
+			requestedPartyId: source.data.id,
+			hops: 1,
+			lineage: [source.data.id, target.data.id],
+		});
+
 		const byFormer = await findPartyByExternalId(
 			{
 				organizationId: "org-merge",
 				actorUserId: "user-1",
-				system: "afenda.former_code",
-				namespace: "",
-				externalId: "SRC1",
+				sourceSystem: "afenda.former_code",
+				externalIdType: "party_code",
+				externalValue: "src1",
+				caseSensitivity: "insensitive",
 			},
 			options,
 		);
@@ -110,9 +155,10 @@ describe("@afenda/master-data mergeParties", () => {
 			{
 				organizationId: "org-merge",
 				actorUserId: "user-1",
-				system: "erp",
-				namespace: "party",
-				externalId: "E-SRC",
+				sourceSystem: "erp",
+				externalIdType: "party",
+				externalValue: "E-SRC",
+				caseSensitivity: "sensitive",
 			},
 			options,
 		);
@@ -336,7 +382,7 @@ describe("@afenda/master-data mergeParties", () => {
 			{
 				organizationId: "org-merge",
 				actorUserId: "user-1",
-				parentId: target.data.id,
+				partyId: target.data.id,
 				page: 1,
 				pageSize: 100,
 			},
@@ -347,12 +393,12 @@ describe("@afenda/master-data mergeParties", () => {
 			return;
 		}
 		expect(
-			survivorRoles.data.some(
+			survivorRoles.data.items.some(
 				(role) => role.roleCode === "supplier" && role.status === "active",
 			),
 		).toBe(true);
 		expect(
-			survivorRoles.data.some(
+			survivorRoles.data.items.some(
 				(role) =>
 					role.id === targetCustomer.data.id && role.status === "active",
 			),
@@ -362,7 +408,7 @@ describe("@afenda/master-data mergeParties", () => {
 			{
 				organizationId: "org-merge",
 				actorUserId: "user-1",
-				parentId: source.data.id,
+				partyId: source.data.id,
 				page: 1,
 				pageSize: 100,
 			},
@@ -373,9 +419,9 @@ describe("@afenda/master-data mergeParties", () => {
 			return;
 		}
 		expect(
-			sourceRoles.data.some(
+			sourceRoles.data.items.some(
 				(role) =>
-					role.id === sourceCustomer.data.id && role.status === "retired",
+					role.id === sourceCustomer.data.id && role.status === "archived",
 			),
 		).toBe(true);
 

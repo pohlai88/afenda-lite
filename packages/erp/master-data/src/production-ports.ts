@@ -5,6 +5,7 @@ import { createEventPublisher } from "@afenda/events";
 import type {
 	AuditFactInput,
 	AuditFactPort,
+	ClockPort,
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
@@ -60,9 +61,16 @@ export function createSqlOutboxPort(): OutboxPort {
 	};
 }
 
+export function createSystemClockPort(): ClockPort {
+	return {
+		now: () => new Date(),
+	};
+}
+
 export function createProductionMutationPorts(): MutationPorts {
 	return {
 		audit: createSqlAuditFactPort(),
 		outbox: createSqlOutboxPort(),
+		clock: createSystemClockPort(),
 	};
 }

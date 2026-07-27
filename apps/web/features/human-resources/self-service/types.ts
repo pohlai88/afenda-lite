@@ -122,5 +122,16 @@ export type SelfServiceSnapshot = {
 			version: number;
 		}>;
 	};
-	errors: Partial<Record<"profile" | "leave" | "attendance" | "timesheet" | "learning" | "performance" | "compliance", string>>;
+	errors: Partial<
+		Record<
+			| "profile"
+			| "leave"
+			| "attendance"
+			| "timesheet"
+			| "learning"
+			| "performance"
+			| "compliance",
+			string
+		>
+	>;
 };

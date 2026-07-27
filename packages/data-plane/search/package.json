@@ -7,6 +7,10 @@
 		".": {
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
+		},
+		"./testing": {
+			"types": "./src/testing/memory-search-store.ts",
+			"default": "./src/testing/memory-search-store.ts"
 		}
 	},
 	"scripts": {

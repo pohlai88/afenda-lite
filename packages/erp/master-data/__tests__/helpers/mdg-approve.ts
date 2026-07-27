@@ -1,7 +1,4 @@
-import {
-	approveChangeRequest,
-	submitChangeRequest,
-} from "../../src/change-request";
+import { approveChangeRequest, submitChangeRequest } from "../../src";
 import type { MasterCommandOptions } from "../../src/command-options";
 import type { ChangeRequest } from "../../src/types";
 

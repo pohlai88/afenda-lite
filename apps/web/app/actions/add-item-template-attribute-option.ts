@@ -32,7 +32,7 @@ const addOptionFormSchema = z.object({
 	label: z.string().trim().min(1).max(200),
 });
 
-/** Add closed option to a draft template attribute — `master_data.manage`. */
+/** Add a closed option — `master_data.item_template_option_manage`. */
 export async function addItemTemplateAttributeOptionAction(
 	_prev: AddItemTemplateAttributeOptionActionState,
 	formData: FormData,
@@ -55,7 +55,7 @@ export async function addItemTemplateAttributeOptionAction(
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
-		"master_data.manage",
+		"master_data.item_template_option_manage",
 	);
 	if (permissionDenied) {
 		return permissionDenied;

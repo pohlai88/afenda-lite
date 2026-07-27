@@ -21,18 +21,6 @@ export const taxRegistrationIdSchema = z
 	.brand<"TaxRegistrationId">();
 export type TaxRegistrationId = z.infer<typeof taxRegistrationIdSchema>;
 
-export const refUomIdSchema = z.string().uuid().brand<"RefUomId">();
-export type RefUomId = z.infer<typeof refUomIdSchema>;
-
-export const refCountryIdSchema = z.string().uuid().brand<"RefCountryId">();
-export type RefCountryId = z.infer<typeof refCountryIdSchema>;
-
-export const refCurrencyIdSchema = z.string().uuid().brand<"RefCurrencyId">();
-export type RefCurrencyId = z.infer<typeof refCurrencyIdSchema>;
-
-export const refLanguageIdSchema = z.string().uuid().brand<"RefLanguageId">();
-export type RefLanguageId = z.infer<typeof refLanguageIdSchema>;
-
 export const partyRoleIdSchema = z.string().uuid().brand<"PartyRoleId">();
 export type PartyRoleId = z.infer<typeof partyRoleIdSchema>;
 
@@ -112,3 +100,18 @@ export const changeRequestIdSchema = z
 	.uuid()
 	.brand<"ChangeRequestId">();
 export type ChangeRequestId = z.infer<typeof changeRequestIdSchema>;
+
+export {
+	type RefCountryId,
+	type RefCurrencyId,
+	type RefLanguageId,
+	type RefTimeZoneId,
+	type RefUomDimensionId,
+	type RefUomId,
+	refCountryIdSchema,
+	refCurrencyIdSchema,
+	refLanguageIdSchema,
+	refTimeZoneIdSchema,
+	refUomDimensionIdSchema,
+	refUomIdSchema,
+} from "./capabilities/platform-references/brands";

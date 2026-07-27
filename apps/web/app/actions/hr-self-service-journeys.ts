@@ -4,13 +4,13 @@ import {
 	acknowledgePolicy,
 	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
+	type HumanResourcesEmployeeId,
 	humanResourcesLeaveEntitlementIdSchema,
 	humanResourcesLeaveRequestIdSchema,
 	humanResourcesPolicyAcknowledgementIdSchema,
 	humanResourcesTimesheetIdSchema,
 	submitLeaveRequest,
 	submitTimesheet,
-	type HumanResourcesEmployeeId,
 	withdrawLeaveRequest,
 } from "@afenda/human-resources";
 import { resolveHumanResourcesStore } from "@afenda/human-resources/resolve-store";
@@ -122,18 +122,20 @@ export async function createOwnLeaveDraftAction(
 			});
 			if (!employee.ok) return employee;
 
-			const entitlement = await resolveHumanResourcesStore().getLeaveEntitlementById(
-				{
+			const entitlement =
+				await resolveHumanResourcesStore().getLeaveEntitlementById({
 					organizationId: session.orgId,
 					entitlementId: parsed.data.entitlementId,
-				},
-			);
+				});
 			if (!entitlement.ok) return mapPackageResult(entitlement);
 			if (
 				entitlement.data === null ||
 				entitlement.data.employeeId !== employee.data.employeeId
 			) {
-				return actionFail("FORBIDDEN", "That leave entitlement is not available.");
+				return actionFail(
+					"FORBIDDEN",
+					"That leave entitlement is not available.",
+				);
 			}
 
 			const result = await createDraftLeaveRequest(
@@ -258,7 +260,10 @@ export async function cancelOwnApprovedLeaveAction(
 				request.data.employeeId !== employee.data.employeeId ||
 				request.data.status !== "approved"
 			) {
-				return actionFail("FORBIDDEN", "That approved leave is not cancellable.");
+				return actionFail(
+					"FORBIDDEN",
+					"That approved leave is not cancellable.",
+				);
 			}
 
 			const result = await cancelApprovedLeaveRequest(
@@ -390,7 +395,10 @@ export async function acknowledgeOwnPolicyAction(
 			const mapped = mapPackageResult(result);
 			if (!mapped.ok) return mapped;
 			revalidatePath(HR_SELF_SERVICE_PATH);
-			return changed({ id: mapped.data.id, status: mapped.data.requirementStatus });
+			return changed({
+				id: mapped.data.id,
+				status: mapped.data.requirementStatus,
+			});
 		},
 	});
 }

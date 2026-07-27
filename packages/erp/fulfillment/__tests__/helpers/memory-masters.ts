@@ -1,5 +1,12 @@
 import { ok, type Result } from "@afenda/errors/result";
-import type { Item, RefUom, Warehouse } from "@afenda/master-data";
+import {
+	type Item,
+	type RefUom,
+	refUomDimensionIdSchema,
+	refUomIdSchema,
+	uomCodeSchema,
+	type Warehouse,
+} from "@afenda/master-data";
 
 import type { MasterLookupPort } from "../../src/ports";
 
@@ -7,7 +14,9 @@ export function createMemoryMasterLookup(
 	seed: { items?: Item[]; uoms?: RefUom[]; warehouses?: Warehouse[] } = {},
 ): MasterLookupPort {
 	const items = new Map((seed.items ?? []).map((row) => [row.id, row]));
-	const uoms = new Map((seed.uoms ?? []).map((row) => [row.id, row]));
+	const uoms = new Map<string, RefUom>(
+		(seed.uoms ?? []).map((row) => [row.id, row]),
+	);
 	const warehouses = new Map(
 		(seed.warehouses ?? []).map((row) => [row.id, row]),
 	);
@@ -94,11 +103,13 @@ export function seedWarehouse(
 
 export function seedUom(id: string, code: string): RefUom {
 	return {
-		id,
-		code,
+		id: refUomIdSchema.parse(id),
+		code: uomCodeSchema.parse(code),
 		name: code,
 		symbol: code,
-		dimensionId: "00000000-0000-4000-8000-000000000001",
+		dimensionId: refUomDimensionIdSchema.parse(
+			"00000000-0000-4000-8000-000000000001",
+		),
 		toBaseNumerator: "1",
 		toBaseDenominator: "1",
 		isBase: true,

@@ -54,6 +54,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Docs create/update/deprecate/classify? ─────────────→ afenda-elite-doc-control → documentation-and-adrs (prose)
     ├── Docs duplication / conflict / SSOT / register drift? → afenda-elite-doc-integrity
     ├── Authority / plan / code alignment · coverage matrix? → afenda-elite-audit-orchestrator
+    ├── Test/check lane selection · timeout/failure verification loop · focused vs broad gate? → afenda-focused-verification
     ├── One mission / commit mixing risk? ──────────────────→ bounded-agent-lanes
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
     ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
@@ -168,6 +169,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted **and** if Living 
 - Corporate Administration: [afenda-elite-corporate-administration](../afenda-elite-corporate-administration/SKILL.md) — `@afenda/corporate-administration` greenfield · CA-GREENFIELD-ENTERPRISE-01 · slice CA-X.Y · [reference](../afenda-elite-corporate-administration/reference.md) · [verification](../afenda-elite-corporate-administration/verification.md); Scratch `docs-V2/_scratch/erp/corporate-administration/greenfield`
 - API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — `docs-V2/api` Scratch + disk + companions; `pnpm check:openapi`
 - Module readiness: [afenda-elite-module-readiness](../afenda-elite-module-readiness/SKILL.md) — MOD-002 evidence + Module Enterprise Readiness claims (`*-MOD-009` / `*-MOD-010`)
+- Focused verification: [afenda-focused-verification](../afenda-focused-verification/SKILL.md) — package-local checks first; broad root gates require explicit approval / `AFENDA_ALLOW_BROAD_VERIFY=1`
 - Vendor lifecycle: [using-agent-skills](../agent-skills/skills/using-agent-skills/SKILL.md)
 - Docs prose: [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md)
 - Lanes: [bounded-agent-lanes](../agent-skills/skills/bounded-agent-lanes/SKILL.md)

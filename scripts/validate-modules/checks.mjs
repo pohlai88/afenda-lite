@@ -157,6 +157,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	mdItemTemplateAttributeOption: "md_item_template_attribute_option",
 	mdItemVariant: "md_item_variant",
 	mdItemVariantAttributeValue: "md_item_variant_attribute_value",
+	mdItemVariantAttributeValueOption: "md_item_variant_attribute_value_option",
 	mdChangeRequest: "md_change_request",
 	mdImportBatch: "md_import_batch",
 	mdOrganizationDimension: "md_organization_dimension",

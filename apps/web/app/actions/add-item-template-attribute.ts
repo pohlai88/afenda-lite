@@ -34,7 +34,7 @@ const addItemTemplateAttributeFormSchema = z.object({
 	valueKind: z.enum(ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS),
 });
 
-/** Add attribute to a draft template — `master_data.manage`. */
+/** Add a variant-defining attribute to a draft template. */
 export async function addItemTemplateAttributeAction(
 	_prev: AddItemTemplateAttributeActionState,
 	formData: FormData,
@@ -58,7 +58,7 @@ export async function addItemTemplateAttributeAction(
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
-		"master_data.manage",
+		"master_data.item_variant_defining_attribute_manage",
 	);
 	if (permissionDenied) {
 		return permissionDenied;

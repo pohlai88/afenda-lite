@@ -66,7 +66,7 @@ export async function listPartyRolesAction(
 		if (!mapped.ok) {
 			return mapped;
 		}
-		return { ok: true, data: { roles: mapped.data } };
+		return { ok: true, data: { roles: mapped.data.items } };
 	} catch {
 		logProductEvent({
 			level: "error",

@@ -45,8 +45,7 @@ export type HrAdminJourneyActionData = {
 };
 
 export type HrAdminJourneyActionState =
-	| ActionResult<HrAdminJourneyActionData>
-	| null;
+	ActionResult<HrAdminJourneyActionData> | null;
 
 const employmentJourneySchema = z.discriminatedUnion("intent", [
 	z.object({
@@ -162,7 +161,8 @@ export async function runEmploymentJourneyAction(
 	return runOperatorPermissionAction({
 		path: "runEmploymentJourneyAction",
 		permission: "human-resources.employment.manage",
-		safeMessage: "Could not update employment. Try again or contact HR support.",
+		safeMessage:
+			"Could not update employment. Try again or contact HR support.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(employmentJourneySchema, {
 				intent: formData.get("intent"),
@@ -247,7 +247,8 @@ export async function runAssignmentJourneyAction(
 	return runOperatorPermissionAction({
 		path: "runAssignmentJourneyAction",
 		permission: "human-resources.employment.manage",
-		safeMessage: "Could not update the assignment. Try again or contact HR support.",
+		safeMessage:
+			"Could not update the assignment. Try again or contact HR support.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(assignmentJourneySchema, {
 				intent: formData.get("intent"),
@@ -365,7 +366,8 @@ export async function runEmploymentLifecycleJourneyAction(
 	return runOperatorPermissionAction({
 		path: "runEmploymentLifecycleJourneyAction",
 		permission: "human-resources.employment.manage",
-		safeMessage: "Could not update the employee lifecycle. Try again or contact HR support.",
+		safeMessage:
+			"Could not update the employee lifecycle. Try again or contact HR support.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(employmentLifecycleJourneySchema, {
 				intent: formData.get("intent"),
@@ -443,9 +445,17 @@ export async function runEmploymentLifecycleJourneyAction(
 }
 
 const onboardingTasks = [
-	{ code: "identity", title: "Verify identity and employment records", mandatory: true },
+	{
+		code: "identity",
+		title: "Verify identity and employment records",
+		mandatory: true,
+	},
 	{ code: "access", title: "Provision required access", mandatory: true },
-	{ code: "orientation", title: "Complete employee orientation", mandatory: true },
+	{
+		code: "orientation",
+		title: "Complete employee orientation",
+		mandatory: true,
+	},
 ] as const;
 
 const offboardingTasks = [
@@ -468,7 +478,11 @@ export async function startOnboardingJourneyAction(
 				employmentId: formData.get("employmentId"),
 			});
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", "Select a valid employment.", parsed.details);
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Select a valid employment.",
+					parsed.details,
+				);
 			}
 			const owned = await loadOwnedEmployment({
 				organizationId: session.orgId,
@@ -508,14 +522,19 @@ export async function startOffboardingJourneyAction(
 	return runOperatorPermissionAction({
 		path: "startOffboardingJourneyAction",
 		permission: "human-resources.offboarding.manage",
-		safeMessage: "Could not start offboarding. Try again or contact HR support.",
+		safeMessage:
+			"Could not start offboarding. Try again or contact HR support.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(caseStartJourneySchema, {
 				employeeId: formData.get("employeeId"),
 				employmentId: formData.get("employmentId"),
 			});
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", "Select a valid employment.", parsed.details);
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Select a valid employment.",
+					parsed.details,
+				);
 			}
 			const owned = await loadOwnedEmployment({
 				organizationId: session.orgId,

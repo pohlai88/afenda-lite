@@ -141,7 +141,7 @@ export async function createItemVariantAction(
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
-		"master_data.manage",
+		"master_data.item_variant_attribute_manage",
 	);
 	if (permissionDenied) {
 		return permissionDenied;

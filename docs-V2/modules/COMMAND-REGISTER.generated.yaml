@@ -1227,22 +1227,22 @@ commands:
     permission: master_data.manage
   - id: master_data.party.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_activate
   - id: master_data.party.inactive
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_inactivate
   - id: master_data.party.block
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_block
   - id: master_data.party.restore
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_unblock
   - id: master_data.party.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_retire
   - id: master_data.party.merge
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_merge
   - id: master_data.item.create
     moduleId: master-data
     permission: master_data.manage
@@ -1251,13 +1251,13 @@ commands:
     permission: master_data.manage
   - id: master_data.item.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_activate
   - id: master_data.item.inactive
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_inactivate
   - id: master_data.item.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_retire
   - id: master_data.item_group.create
     moduleId: master-data
     permission: master_data.manage
@@ -1266,13 +1266,13 @@ commands:
     permission: master_data.manage
   - id: master_data.item_group.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_group_activate
   - id: master_data.item_group.inactive
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_group_inactivate
   - id: master_data.item_group.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_group_archive
   - id: master_data.warehouse.create
     moduleId: master-data
     permission: master_data.manage
@@ -1281,16 +1281,16 @@ commands:
     permission: master_data.manage
   - id: master_data.warehouse.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.warehouse_activate
   - id: master_data.warehouse.inactive
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.warehouse_inactivate
   - id: master_data.warehouse.move
     moduleId: master-data
     permission: master_data.manage
   - id: master_data.warehouse.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.warehouse_retire
   - id: master_data.payment_term.create
     moduleId: master-data
     permission: master_data.manage
@@ -1299,13 +1299,13 @@ commands:
     permission: master_data.manage
   - id: master_data.payment_term.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.payment_term_activate
   - id: master_data.payment_term.inactive
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.payment_term_inactivate
   - id: master_data.payment_term.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.payment_term_archive
   - id: master_data.tax_registration.create
     moduleId: master-data
     permission: master_data.manage
@@ -1314,58 +1314,76 @@ commands:
     permission: master_data.manage
   - id: master_data.tax_registration.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.tax_registration_activate
   - id: master_data.tax_registration.block
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.tax_registration_revoke
   - id: master_data.tax_registration.restore
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.tax_registration_restore
   - id: master_data.tax_registration.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.tax_registration_archive
   - id: master_data.party_role.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_role_manage
+  - id: master_data.party_role.update
+    moduleId: master-data
+    permission: master_data.party_role_manage
   - id: master_data.party_role.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_role_manage
+  - id: master_data.party_role.inactive
+    moduleId: master-data
+    permission: master_data.party_role_manage
+  - id: master_data.party_role.archive
+    moduleId: master-data
+    permission: master_data.party_role_manage
   - id: master_data.party_role.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_role_manage
   - id: master_data.party_address.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_address_manage
   - id: master_data.party_address.update
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_address_manage
   - id: master_data.party_contact.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_contact_manage
   - id: master_data.party_contact.update
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_contact_manage
+  - id: master_data.party_contact.verify
+    moduleId: master-data
+    permission: master_data.party_contact_verify
   - id: master_data.party_external_id.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_external_id_manage
+  - id: master_data.party_external_id.create_regulatory
+    moduleId: master-data
+    permission: master_data.party_external_id_regulatory_manage
   - id: master_data.party_relationship.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.party_relationship_manage
+  - id: master_data.party_relationship.create_control
+    moduleId: master-data
+    permission: master_data.party_relationship_control_manage
   - id: master_data.item_uom.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_uom_manage
   - id: master_data.item_barcode.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_barcode_manage
   - id: master_data.item_external_id.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_external_id_manage
   - id: master_data.item_alias.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_alias_manage
   - id: master_data.warehouse_external_id.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.warehouse_external_id_manage
   - id: master_data.item_template.create
     moduleId: master-data
     permission: master_data.manage
@@ -1374,25 +1392,28 @@ commands:
     permission: master_data.manage
   - id: master_data.item_template.activate
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_template_activate
   - id: master_data.item_template.inactive
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_template_inactivate
   - id: master_data.item_template.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_template_retire
   - id: master_data.item_template_attribute.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_template_attribute_manage
+  - id: master_data.item_template_attribute.create_variant_defining
+    moduleId: master-data
+    permission: master_data.item_variant_defining_attribute_manage
   - id: master_data.item_template_attribute_option.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_template_option_manage
   - id: master_data.item_variant.create
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_variant_attribute_manage
   - id: master_data.item_variant.retire
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.item_variant_retire
   - id: master_data.change_request.submit
     moduleId: master-data
     permission: master_data.manage

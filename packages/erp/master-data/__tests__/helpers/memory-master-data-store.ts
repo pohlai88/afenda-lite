@@ -2,10 +2,12 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { MasterDataEventType } from "@afenda/events";
-
-import type { MasterFailureDetails } from "../../src/contracts/reasons";
-import type { MutationPorts } from "../../src/ports";
-import { isPositiveIntegerFactor } from "../../src/shared/uom-factor";
+import { isWarehouseParentTypeCompatible } from "../../src/capabilities/core-organization-masters/core-master-policy";
+import {
+	assertLifecycleTransition,
+	assertRestoreTransition,
+	assertTaxRegistrationLifecycleTransition,
+} from "../../src/capabilities/core-organization-masters/lifecycle";
 import type {
 	ChangeRequestCreateRecord,
 	ChangeRequestListFilter,
@@ -17,10 +19,13 @@ import type {
 	ItemCreateRecord,
 	ItemExternalIdCreateRecord,
 	ItemGroupCreateRecord,
+	ItemGroupLifecycleEventSuffix,
+	ItemGroupLifecycleRecord,
 	ItemGroupUpdateRecord,
+	ItemLifecycleEventSuffix,
+	ItemLifecycleRecord,
 	ItemUomCreateRecord,
 	ItemUpdateRecord,
-	LifecycleRecord,
 	ListFilter,
 	MasterDataStore,
 	ParentListFilter,
@@ -28,30 +33,102 @@ import type {
 	PartyAddressUpdateRecord,
 	PartyContactCreateRecord,
 	PartyContactUpdateRecord,
+	PartyContactVerificationRecord,
 	PartyCreateRecord,
 	PartyExternalIdCreateRecord,
+	PartyLifecycleEventSuffix,
+	PartyLifecycleRecord,
 	PartyMergeRecord,
 	PartyRelationshipCreateRecord,
 	PartyRoleCreateRecord,
+	PartyRoleUpdateRecord,
 	PartyUpdateRecord,
 	PaymentTermCreateRecord,
+	PaymentTermLifecycleEventSuffix,
+	PaymentTermLifecycleRecord,
 	PaymentTermUpdateRecord,
 	TaxRegistrationCreateRecord,
+	TaxRegistrationLifecycleEventSuffix,
+	TaxRegistrationLifecycleRecord,
 	TaxRegistrationListFilter,
+	TaxRegistrationOverlapQuery,
 	TaxRegistrationUpdateRecord,
 	WarehouseCreateRecord,
 	WarehouseExternalIdCreateRecord,
+	WarehouseLifecycleEventSuffix,
+	WarehouseLifecycleRecord,
 	WarehouseMoveRecord,
 	WarehouseUpdateRecord,
-} from "../../src/store";
+} from "../../src/capabilities/core-organization-masters/store";
+import {
+	isInvalidValidityRange,
+	validityRangesOverlap,
+} from "../../src/capabilities/core-organization-masters/validity-overlap";
+import { buildCombinationKey } from "../../src/capabilities/core-organization-masters/variant-signature";
+import { assertExpectedVersion as assertExpectedCoreVersion } from "../../src/capabilities/core-organization-masters/version-cas";
+import {
+	assertExtensionTransitionReason,
+	assertStandardChildLifecycleStatus,
+	resolveExtensionLifecycleTransition,
+} from "../../src/capabilities/extensions/extension-lifecycle";
+import {
+	createExtensionEventPayload,
+	EXTENSION_EVENT_TYPES,
+	type ExtensionEventPayload,
+	extensionEventClassification,
+	partyRoleLifecycleEventType,
+} from "../../src/capabilities/extensions/extension-transaction-contract";
+import {
+	assertExpectedExtensionVersion,
+	nextExtensionVersion,
+} from "../../src/capabilities/extensions/extension-version-cas";
+import { normalizeExternalId } from "../../src/capabilities/extensions/external-id-normalization";
+import {
+	normalizeItemAlias,
+	normalizeItemAliasSource,
+} from "../../src/capabilities/extensions/item-alias-policy";
+import {
+	normalizeBarcodePackQuantity,
+	normalizeItemBarcode,
+} from "../../src/capabilities/extensions/item-barcode-policy";
+import {
+	assertItemUomCompatibility,
+	normalizeItemUomConversionFactor,
+} from "../../src/capabilities/extensions/item-uom-policy";
+import { hasPartyParentPath } from "../../src/capabilities/extensions/party-relationship-policy";
+import { isSameNullablePrimaryScope } from "../../src/capabilities/extensions/primary-record-policy";
 import type {
+	ExtensionListPage,
+	ItemAliasListFilter,
+	ItemAliasLookup,
+	ItemAliasSearchFilter,
+	ItemBarcodeLookup,
+	ItemExternalIdLookup,
+	ItemUomCompatibilityContext,
+	ItemUomCompatibilityContextFilter,
+	ItemUomDefaultFilter,
+	ItemUomListFilter,
+	PartyExternalIdLookup,
+	PartyRelationshipListFilter,
+	PartyRoleLifecycleEventSuffix,
+	PartyRoleLifecycleRecord,
+	PartyRoleListFilter,
+} from "../../src/capabilities/extensions/store";
+import type {
+	ItemTemplateAttributeContext,
 	ItemTemplateAttributeCreateRecord,
 	ItemTemplateAttributeOptionCreateRecord,
 	ItemTemplateCreateRecord,
+	ItemTemplateLifecycleEventSuffix,
+	ItemTemplateLifecycleRecord,
 	ItemTemplateUpdateRecord,
 	ItemVariantCreateRecord,
+	ItemVariantRetireRecord,
 	ListItemVariantsFilter,
-} from "../../src/store-variant-records";
+} from "../../src/capabilities/extensions/template-store";
+import { normalizeVariantAttributeValue } from "../../src/capabilities/extensions/variant-attribute-value-policy";
+import type { MasterFailureDetails } from "../../src/contracts/reasons";
+import type { MutationPorts } from "../../src/ports";
 import type {
 	ChangeRequest,
 	Item,
@@ -82,6 +159,7 @@ import type {
 	Warehouse,
 	WarehouseExternalId,
 } from "../../src/types";
+import { MAX_PAYMENT_TERM_NET_DAYS } from "../../src/types";
 
 type SeedRefsInput = {
 	countries?: RefCountry[];
@@ -138,7 +216,7 @@ function cloneItemTemplateAttributeOption(
 function cloneItemVariantAttributeValue(
 	value: ItemVariantAttributeValue,
 ): ItemVariantAttributeValue {
-	return { ...value };
+	return { ...value, optionIds: [...value.optionIds] };
 }
 
 function cloneItemVariant(variant: ItemVariant): ItemVariant {
@@ -152,6 +230,21 @@ function cloneItemVariant(variant: ItemVariant): ItemVariant {
 function paginate<T>(items: T[], page: number, pageSize: number): T[] {
 	const start = (page - 1) * pageSize;
 	return items.slice(start, start + pageSize);
+}
+
+function pageResult<T>(
+	items: T[],
+	page: number,
+	pageSize: number,
+): ExtensionListPage<T> {
+	const start = (page - 1) * pageSize;
+	const pageItems = items.slice(start, start + pageSize);
+	return {
+		items: pageItems,
+		page,
+		pageSize,
+		hasNextPage: start + pageSize < items.length,
+	};
 }
 
 function codeConflictDetails(): MasterFailureDetails {
@@ -243,6 +336,11 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			}
 		}
 		return ok(null);
+	}
+
+	async getRefCountryById(id: string): Promise<Result<RefCountry | null>> {
+		const row = this.countries.get(id);
+		return ok(row === undefined ? null : { ...row });
 	}
 
 	async getRefCurrencyByCode(
@@ -506,9 +604,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionParty(
-		record: LifecycleRecord,
+		record: PartyLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: PartyLifecycleEventSuffix;
+		},
 	): Promise<Result<Party>> {
 		const existing = this.parties.get(record.id);
 		if (existing === undefined) {
@@ -528,6 +629,30 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				"CONFLICT",
 				"Party version conflict",
 				versionConflictDetails(),
+			);
+		}
+		const lifecycle =
+			record.toStatus === "draft"
+				? assertRestoreTransition(existing.status, "draft")
+				: assertLifecycleTransition(existing.status, record.toStatus);
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
+		if (
+			record.toStatus === "active" &&
+			record.requireActiveRole &&
+			![...this.partyRoles.values()].some(
+				(role) =>
+					role.organizationId === record.organizationId &&
+					role.partyId === record.id &&
+					role.status === "active" &&
+					role.retiredAt === null,
+			)
+		) {
+			return fail(
+				"CONFLICT",
+				"Party activation requires at least one active role",
+				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
 			);
 		}
 		let crSnapshot: ChangeRequest | null = null;
@@ -798,16 +923,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				role.status === "active" &&
 				survivorActiveRoleCodes.has(role.roleCode)
 			) {
-				const retired: PartyRole = {
+				const archived: PartyRole = {
 					...role,
-					status: "retired",
+					status: "archived",
 					version: role.version + 1,
 					updatedBy: record.actorUserId,
 					updatedAt: now,
-					retiredAt: now,
-					retiredBy: record.actorUserId,
+					archivedAt: now,
+					archivedBy: record.actorUserId,
 				};
-				this.partyRoles.set(role.id, retired);
+				this.partyRoles.set(role.id, archived);
 				rolesRetiredColliding += 1;
 				continue;
 			}
@@ -871,9 +996,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					(other) =>
 						other.id !== ext.id &&
 						other.organizationId === ext.organizationId &&
-						other.system === ext.system &&
-						other.namespace === ext.namespace &&
-						other.externalId === ext.externalId &&
+						other.sourceSystem === ext.sourceSystem &&
+						other.externalIdType === ext.externalIdType &&
+						other.normalizedValue === ext.normalizedValue &&
 						other.partyId === survivor.id,
 				);
 				if (!conflict) {
@@ -889,10 +1014,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			id: formerCodeId,
 			organizationId: record.organizationId,
 			partyId: survivor.id,
-			system: "afenda.former_code",
-			namespace: "",
-			externalId: source.code,
+			sourceSystem: "afenda.former_code",
+			externalIdType: "party_code",
+			externalValue: source.code,
+			normalizedValue: source.normalizedCode,
+			caseSensitivity: "insensitive",
+			isPrimary: false,
+			status: "active",
 			version: 1,
+			archivedAt: null,
+			archivedBy: null,
 			createdBy: record.actorUserId,
 			updatedBy: record.actorUserId,
 			createdAt: now,
@@ -901,9 +1032,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		const formerConflict = [...this.partyExternalIds.values()].some(
 			(other) =>
 				other.organizationId === formerCodeRow.organizationId &&
-				other.system === formerCodeRow.system &&
-				other.namespace === formerCodeRow.namespace &&
-				other.externalId === formerCodeRow.externalId,
+				other.sourceSystem === formerCodeRow.sourceSystem &&
+				other.externalIdType === formerCodeRow.externalIdType &&
+				other.normalizedValue === formerCodeRow.normalizedValue,
 		);
 		if (!formerConflict) {
 			this.partyExternalIds.set(formerCodeId, formerCodeRow);
@@ -1318,6 +1449,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return parentCheck;
 		}
 		const snapshot = cloneItemGroup(existing);
+		const parentChanged = nextParentId !== existing.parentId;
 		const updated: ItemGroup = {
 			...existing,
 			name: record.name ?? existing.name,
@@ -1341,10 +1473,29 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "UPDATE",
 				changes: [
 					{ field: "name", oldValue: snapshot.name, newValue: updated.name },
+					...(parentChanged
+						? [
+								{
+									field: "parentId",
+									oldValue: snapshot.parentId,
+									newValue: updated.parentId,
+								},
+							]
+						: []),
 				],
-				oldValue: { name: snapshot.name, version: snapshot.version },
-				newValue: { name: updated.name, version: updated.version },
-				type: "master_data.item_group.updated.v1",
+				oldValue: {
+					name: snapshot.name,
+					parentId: snapshot.parentId,
+					version: snapshot.version,
+				},
+				newValue: {
+					name: updated.name,
+					parentId: updated.parentId,
+					version: updated.version,
+				},
+				type: parentChanged
+					? "master_data.item_group.reparented.v1"
+					: "master_data.item_group.updated.v1",
 				code: updated.code,
 				version: updated.version,
 			},
@@ -1356,9 +1507,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionItemGroup(
-		record: LifecycleRecord,
+		record: ItemGroupLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: ItemGroupLifecycleEventSuffix;
+		},
 	): Promise<Result<ItemGroup>> {
 		const existing = this.itemGroups.get(record.id);
 		if (existing === undefined) {
@@ -1379,6 +1533,49 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				"Item group version conflict",
 				versionConflictDetails(),
 			);
+		}
+		const lifecycle = assertLifecycleTransition(
+			existing.status,
+			record.toStatus,
+		);
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
+		if (record.toStatus === "active" && existing.parentId !== null) {
+			const parent = this.itemGroups.get(existing.parentId);
+			if (
+				parent === undefined ||
+				parent.organizationId !== record.organizationId ||
+				parent.status !== "active" ||
+				parent.retiredAt !== null
+			) {
+				return fail("CONFLICT", "Item group parent must be active", {
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails);
+			}
+		}
+		if (record.toStatus === "retired") {
+			const hasLiveChild = [...this.itemGroups.values()].some(
+				(group) =>
+					group.organizationId === record.organizationId &&
+					group.parentId === record.id &&
+					group.retiredAt === null,
+			);
+			const hasLiveItem = [...this.items.values()].some(
+				(item) =>
+					item.organizationId === record.organizationId &&
+					item.itemGroupId === record.id &&
+					item.retiredAt === null,
+			);
+			if (hasLiveChild || hasLiveItem) {
+				return fail("CONFLICT", "Item group has local dependency blockers", {
+					reason: "MASTER_DEPENDENCY_BLOCKED",
+					blockers: [
+						...(hasLiveChild ? ["item_group.child"] : []),
+						...(hasLiveItem ? ["item_group.item"] : []),
+					],
+				} satisfies MasterFailureDetails);
+			}
 		}
 		const snapshot = cloneItemGroup(existing);
 		const now = new Date();
@@ -1488,10 +1685,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				codeConflictDetails(),
 			);
 		}
-		if (!this.uoms.has(record.baseUomId)) {
+		const baseUom = this.uoms.get(record.baseUomId);
+		if (baseUom === undefined) {
 			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
+		}
+		if (!baseUom.active) {
+			return fail(
+				"BAD_REQUEST",
+				"baseUomId must reference an active platform UoM",
+				{
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails,
+			);
 		}
 		const group = this.itemGroups.get(record.itemGroupId);
 		if (group === undefined || group.organizationId !== record.organizationId) {
@@ -1500,6 +1707,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				"itemGroupId must exist in the same organization",
 				{
 					reason: "MASTER_CROSS_ORG_REFERENCE",
+				} satisfies MasterFailureDetails,
+			);
+		}
+		if (group.status !== "active" || group.retiredAt !== null) {
+			return fail(
+				"CONFLICT",
+				"itemGroupId must reference an active item group",
+				{
+					reason: "MASTER_INVALID_STATE",
 				} satisfies MasterFailureDetails,
 			);
 		}
@@ -1528,13 +1744,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			id: randomUUID(),
 			organizationId: item.organizationId,
 			itemId: item.id,
-			uomId: item.baseUomId,
-			toBaseNumerator: "1",
-			toBaseDenominator: "1",
-			usage: "other",
-			barcode: null,
-			roundingRule: null,
-			minQuantity: null,
+			alternateUomId: item.baseUomId,
+			conversionFactor: "1",
+			roundingScale: 0,
+			isPurchaseUom: false,
+			isSalesUom: false,
+			isInventoryUom: true,
+			isDefaultPurchaseUom: false,
+			isDefaultSalesUom: false,
+			compatibilityMode: "physical_dimension",
+			packagingApprovalReference: null,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			validFrom: null,
 			validTo: null,
@@ -1602,10 +1824,65 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}
 		const nextBaseUomId = record.baseUomId ?? existing.baseUomId;
 		const nextGroupId = record.itemGroupId ?? existing.itemGroupId;
-		if (!this.uoms.has(nextBaseUomId)) {
+		const nextItemType = record.itemType ?? existing.itemType;
+		if (nextBaseUomId !== existing.baseUomId) {
+			return fail(
+				"CONFLICT",
+				"Base UoM changes require a governed item conversion operation",
+				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+			);
+		}
+		if (nextItemType !== existing.itemType) {
+			const hasMaterialDependencies =
+				existing.status !== "draft" ||
+				[...this.itemVariants.values()].some(
+					(variant) =>
+						variant.organizationId === record.organizationId &&
+						variant.itemId === record.id &&
+						variant.retiredAt === null,
+				) ||
+				[...this.itemUoms.values()].some(
+					(uom) =>
+						uom.organizationId === record.organizationId &&
+						uom.itemId === record.id &&
+						(uom.alternateUomId !== existing.baseUomId ||
+							uom.conversionFactor !== "1"),
+				) ||
+				[...this.itemBarcodes.values()].some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.itemId === record.id,
+				) ||
+				[...this.itemExternalIds.values()].some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.itemId === record.id,
+				) ||
+				[...this.itemAliases.values()].some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.itemId === record.id,
+				);
+			if (hasMaterialDependencies) {
+				return fail("CONFLICT", "Item type has material dependency blockers", {
+					reason: "MASTER_DEPENDENCY_BLOCKED",
+				} satisfies MasterFailureDetails);
+			}
+		}
+		const baseUom = this.uoms.get(nextBaseUomId);
+		if (baseUom === undefined) {
 			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
+		}
+		if (!baseUom.active) {
+			return fail(
+				"BAD_REQUEST",
+				"baseUomId must reference an active platform UoM",
+				{
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails,
+			);
 		}
 		const group = this.itemGroups.get(nextGroupId);
 		if (group === undefined || group.organizationId !== record.organizationId) {
@@ -1617,11 +1894,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				} satisfies MasterFailureDetails,
 			);
 		}
+		if (group.status !== "active" || group.retiredAt !== null) {
+			return fail(
+				"CONFLICT",
+				"itemGroupId must reference an active item group",
+				{
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails,
+			);
+		}
 		const snapshot = cloneItem(existing);
 		const updated: Item = {
 			...existing,
 			name: record.name ?? existing.name,
-			itemType: record.itemType ?? existing.itemType,
+			itemType: nextItemType,
 			baseUomId: nextBaseUomId,
 			itemGroupId: nextGroupId,
 			version: existing.version + 1,
@@ -1643,9 +1929,39 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "UPDATE",
 				changes: [
 					{ field: "name", oldValue: snapshot.name, newValue: updated.name },
+					...(snapshot.itemType !== updated.itemType
+						? [
+								{
+									field: "itemType",
+									oldValue: snapshot.itemType,
+									newValue: updated.itemType,
+								},
+							]
+						: []),
+					...(snapshot.itemGroupId !== updated.itemGroupId
+						? [
+								{
+									field: "itemGroupId",
+									oldValue: snapshot.itemGroupId,
+									newValue: updated.itemGroupId,
+								},
+							]
+						: []),
 				],
-				oldValue: { name: snapshot.name, version: snapshot.version },
-				newValue: { name: updated.name, version: updated.version },
+				oldValue: {
+					name: snapshot.name,
+					itemType: snapshot.itemType,
+					baseUomId: snapshot.baseUomId,
+					itemGroupId: snapshot.itemGroupId,
+					version: snapshot.version,
+				},
+				newValue: {
+					name: updated.name,
+					itemType: updated.itemType,
+					baseUomId: updated.baseUomId,
+					itemGroupId: updated.itemGroupId,
+					version: updated.version,
+				},
 				type: "master_data.item.updated.v1",
 				code: updated.code,
 				version: updated.version,
@@ -1658,9 +1974,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionItem(
-		record: LifecycleRecord,
+		record: ItemLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: ItemLifecycleEventSuffix;
+		},
 	): Promise<Result<Item>> {
 		const existing = this.items.get(record.id);
 		if (existing === undefined) {
@@ -1681,6 +2000,61 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				"Item version conflict",
 				versionConflictDetails(),
 			);
+		}
+		const lifecycle = assertLifecycleTransition(
+			existing.status,
+			record.toStatus,
+		);
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
+		if (record.toStatus === "active") {
+			const group = this.itemGroups.get(existing.itemGroupId);
+			const baseUom = this.uoms.get(existing.baseUomId);
+			if (
+				group === undefined ||
+				group.organizationId !== record.organizationId ||
+				group.status !== "active" ||
+				group.retiredAt !== null ||
+				baseUom === undefined ||
+				!baseUom.active
+			) {
+				return fail(
+					"CONFLICT",
+					"Item requires an active item group and active platform UoM",
+					{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+				);
+			}
+		}
+		if (record.toStatus === "retired") {
+			const hasLocalBlocker =
+				[...this.itemUoms.values()].some(
+					(uom) =>
+						uom.organizationId === record.organizationId &&
+						uom.itemId === record.id &&
+						(uom.alternateUomId !== existing.baseUomId ||
+							uom.conversionFactor !== "1"),
+				) ||
+				[...this.itemBarcodes.values()].some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.itemId === record.id,
+				) ||
+				[...this.itemExternalIds.values()].some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.itemId === record.id,
+				) ||
+				[...this.itemAliases.values()].some(
+					(row) =>
+						row.organizationId === record.organizationId &&
+						row.itemId === record.id,
+				);
+			if (hasLocalBlocker) {
+				return fail("CONFLICT", "Item has local dependency blockers", {
+					reason: "MASTER_DEPENDENCY_BLOCKED",
+				} satisfies MasterFailureDetails);
+			}
 		}
 		const snapshot = cloneItem(existing);
 		const now = new Date();
@@ -1720,7 +2094,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				variantSnapshot = { ...liveVariant };
 				const retiredVariant: ItemVariantMembership = {
 					...liveVariant,
-					version: liveVariant.version + 1,
+					version: nextExtensionVersion(liveVariant.version),
 					updatedBy: record.actorUserId,
 					updatedAt: now,
 					retiredAt: now,
@@ -1863,6 +2237,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.organizationId,
 			null,
 			record.parentId ?? null,
+			record.locationType,
 		);
 		if (!parentCheck.ok) {
 			return parentCheck;
@@ -1939,10 +2314,49 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			);
 		}
 		const snapshot = cloneWarehouse(existing);
+		const nextLocationType = record.locationType ?? existing.locationType;
+		if (
+			nextLocationType !== existing.locationType &&
+			existing.status !== "draft"
+		) {
+			return fail(
+				"CONFLICT",
+				"Warehouse location type can change only while the warehouse is draft",
+				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+			);
+		}
+		if (nextLocationType !== existing.locationType) {
+			const parentCheck = this.assertParentWarehouse(
+				record.organizationId,
+				existing.id,
+				existing.parentId,
+				nextLocationType,
+			);
+			if (!parentCheck.ok) return parentCheck;
+			const incompatibleChild = [...this.warehouses.values()].some(
+				(child) =>
+					child.organizationId === record.organizationId &&
+					child.parentId === existing.id &&
+					!isWarehouseParentTypeCompatible(
+						nextLocationType,
+						child.locationType,
+					),
+			);
+			const hasExternalId = [...this.warehouseExternalIds.values()].some(
+				(row) =>
+					row.organizationId === record.organizationId &&
+					row.warehouseId === existing.id,
+			);
+			if (incompatibleChild || hasExternalId) {
+				return fail("CONFLICT", "Warehouse type has dependency blockers", {
+					reason: "MASTER_DEPENDENCY_BLOCKED",
+				} satisfies MasterFailureDetails);
+			}
+		}
 		const updated: Warehouse = {
 			...existing,
 			name: record.name ?? existing.name,
-			locationType: record.locationType ?? existing.locationType,
+			locationType: nextLocationType,
 			version: existing.version + 1,
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -2001,10 +2415,18 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				versionConflictDetails(),
 			);
 		}
+		if (existing.status !== "draft" && existing.status !== "inactive") {
+			return fail(
+				"CONFLICT",
+				"Only draft or inactive warehouses may move without governed operational clearance",
+				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+			);
+		}
 		const parentCheck = this.assertParentWarehouse(
 			record.organizationId,
 			existing.id,
 			record.parentId,
+			existing.locationType,
 		);
 		if (!parentCheck.ok) {
 			return parentCheck;
@@ -2051,9 +2473,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionWarehouse(
-		record: LifecycleRecord,
+		record: WarehouseLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: WarehouseLifecycleEventSuffix;
+		},
 	): Promise<Result<Warehouse>> {
 		const existing = this.warehouses.get(record.id);
 		if (existing === undefined) {
@@ -2074,6 +2499,42 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				"Warehouse version conflict",
 				versionConflictDetails(),
 			);
+		}
+		const lifecycle = assertLifecycleTransition(
+			existing.status,
+			record.toStatus,
+		);
+		if (!lifecycle.ok) return lifecycle;
+		if (record.toStatus === "active" && existing.parentId !== null) {
+			const parent = this.warehouses.get(existing.parentId);
+			if (
+				parent === undefined ||
+				parent.organizationId !== record.organizationId ||
+				parent.status !== "active" ||
+				parent.retiredAt !== null
+			) {
+				return fail("CONFLICT", "Warehouse parent must be active", {
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails);
+			}
+		}
+		if (record.toStatus === "retired") {
+			const hasLiveChild = [...this.warehouses.values()].some(
+				(child) =>
+					child.organizationId === record.organizationId &&
+					child.parentId === record.id &&
+					child.retiredAt === null,
+			);
+			const hasExternalId = [...this.warehouseExternalIds.values()].some(
+				(row) =>
+					row.organizationId === record.organizationId &&
+					row.warehouseId === record.id,
+			);
+			if (hasLiveChild || hasExternalId) {
+				return fail("CONFLICT", "Warehouse has local dependency blockers", {
+					reason: "MASTER_DEPENDENCY_BLOCKED",
+				} satisfies MasterFailureDetails);
+			}
 		}
 		const snapshot = cloneWarehouse(existing);
 		const now = new Date();
@@ -2179,6 +2640,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<PaymentTerm>> {
 		if (
+			!Number.isInteger(record.netDays) ||
+			record.netDays < 0 ||
+			record.netDays > MAX_PAYMENT_TERM_NET_DAYS
+		) {
+			return fail(
+				"BAD_REQUEST",
+				`netDays must be an integer between 0 and ${MAX_PAYMENT_TERM_NET_DAYS}`,
+				{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+			);
+		}
+		if (
 			this.hasLivePaymentTermCode(record.organizationId, record.normalizedCode)
 		) {
 			return fail(
@@ -2261,11 +2733,28 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				versionConflictDetails(),
 			);
 		}
+		if (existing.status === "retired") {
+			return fail("CONFLICT", "Retired payment terms are immutable", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		const nextNetDays = record.netDays ?? existing.netDays;
+		if (
+			!Number.isInteger(nextNetDays) ||
+			nextNetDays < 0 ||
+			nextNetDays > MAX_PAYMENT_TERM_NET_DAYS
+		) {
+			return fail(
+				"BAD_REQUEST",
+				`netDays must be an integer between 0 and ${MAX_PAYMENT_TERM_NET_DAYS}`,
+				{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+			);
+		}
 		const snapshot = clonePaymentTerm(existing);
 		const updated: PaymentTerm = {
 			...existing,
 			name: record.name ?? existing.name,
-			netDays: record.netDays ?? existing.netDays,
+			netDays: nextNetDays,
 			version: existing.version + 1,
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -2285,6 +2774,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "UPDATE",
 				changes: [
 					{ field: "name", oldValue: snapshot.name, newValue: updated.name },
+					...(snapshot.netDays !== updated.netDays
+						? [
+								{
+									field: "netDays",
+									oldValue: snapshot.netDays,
+									newValue: updated.netDays,
+								},
+							]
+						: []),
 				],
 				oldValue: {
 					name: snapshot.name,
@@ -2308,9 +2806,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionPaymentTerm(
-		record: LifecycleRecord,
+		record: PaymentTermLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: PaymentTermLifecycleEventSuffix;
+		},
 	): Promise<Result<PaymentTerm>> {
 		const existing = this.paymentTerms.get(record.id);
 		if (existing === undefined) {
@@ -2332,6 +2833,11 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				versionConflictDetails(),
 			);
 		}
+		const lifecycle = assertLifecycleTransition(
+			existing.status,
+			record.toStatus,
+		);
+		if (!lifecycle.ok) return lifecycle;
 		const snapshot = clonePaymentTerm(existing);
 		const now = new Date();
 		const updated: PaymentTerm = {
@@ -2432,6 +2938,29 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		});
 	}
 
+	async findOverlappingActiveTaxRegistration(
+		query: TaxRegistrationOverlapQuery,
+	): Promise<Result<TaxRegistration | null>> {
+		for (const row of this.taxRegistrations.values()) {
+			if (
+				row.organizationId === query.organizationId &&
+				row.partyId === query.partyId &&
+				row.jurisdictionCountryId === query.jurisdictionCountryId &&
+				row.registrationType === query.registrationType &&
+				row.status === "active" &&
+				row.deletedAt === null &&
+				row.id !== query.excludeId &&
+				validityRangesOverlap(
+					{ validFrom: query.validFrom, validTo: query.validTo },
+					{ validFrom: row.validFrom, validTo: row.validTo },
+				)
+			) {
+				return ok(cloneTaxRegistration(row));
+			}
+		}
+		return ok(null);
+	}
+
 	async createTaxRegistration(
 		record: TaxRegistrationCreateRecord,
 		ports: MutationPorts,
@@ -2441,6 +2970,27 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (party === undefined || party.organizationId !== record.organizationId) {
 			return fail("NOT_FOUND", "Party not found", {
 				reason: "MASTER_NOT_FOUND",
+			} satisfies MasterFailureDetails);
+		}
+		if (party.status === "retired") {
+			return fail("CONFLICT", "Party is retired", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		const country = this.countries.get(record.jurisdictionCountryId);
+		if (country === undefined || !country.active) {
+			return fail("BAD_REQUEST", "Active jurisdiction country not found", {
+				reason: "MASTER_VALIDATION_FAILED",
+			} satisfies MasterFailureDetails);
+		}
+		if (
+			isInvalidValidityRange({
+				validFrom: record.validFrom,
+				validTo: record.validTo,
+			})
+		) {
+			return fail("BAD_REQUEST", "validTo must be after validFrom", {
+				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
 		}
 		if (
@@ -2500,19 +3050,23 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "CREATE",
 				changes: [
 					{
-						field: "registrationNumber",
+						field: "identity",
 						oldValue: null,
-						newValue: row.registrationNumber,
+						newValue: {
+							partyId: row.partyId,
+							jurisdictionCountryId: row.jurisdictionCountryId,
+							registrationType: row.registrationType,
+						},
 					},
 				],
 				newValue: {
 					partyId: row.partyId,
+					jurisdictionCountryId: row.jurisdictionCountryId,
 					registrationType: row.registrationType,
-					normalizedRegistrationNumber: row.normalizedRegistrationNumber,
 					status: row.status,
 				},
 				type: "master_data.tax_registration.created.v1",
-				code: row.normalizedRegistrationNumber,
+				code: row.registrationType,
 				version: row.version,
 			},
 		);
@@ -2547,13 +3101,55 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				versionConflictDetails(),
 			);
 		}
+		if (existing.status === "retired") {
+			return fail("CONFLICT", "Retired tax registrations are immutable", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		const nextValidFrom =
+			record.validFrom !== undefined ? record.validFrom : existing.validFrom;
+		const nextValidTo =
+			record.validTo !== undefined ? record.validTo : existing.validTo;
+		if (
+			isInvalidValidityRange({
+				validFrom: nextValidFrom,
+				validTo: nextValidTo,
+			})
+		) {
+			return fail("BAD_REQUEST", "validTo must be after validFrom", {
+				reason: "MASTER_VALIDATION_FAILED",
+			} satisfies MasterFailureDetails);
+		}
+		if (existing.status === "active") {
+			if (nextValidFrom === null) {
+				return fail("CONFLICT", "Active tax registration requires validFrom", {
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails);
+			}
+			const overlap = await this.findOverlappingActiveTaxRegistration({
+				organizationId: existing.organizationId,
+				partyId: existing.partyId,
+				jurisdictionCountryId: existing.jurisdictionCountryId,
+				registrationType: existing.registrationType,
+				validFrom: nextValidFrom,
+				validTo: nextValidTo,
+				excludeId: existing.id,
+			});
+			if (!overlap.ok) return overlap;
+			if (overlap.data !== null) {
+				return fail(
+					"CONFLICT",
+					"Active tax registration validity ranges overlap",
+					{ reason: "MASTER_VALIDITY_OVERLAP" } satisfies MasterFailureDetails,
+				);
+			}
+		}
 		const snapshot = cloneTaxRegistration(existing);
 		const updated: TaxRegistration = {
 			...existing,
 			name: record.name !== undefined ? record.name : existing.name,
-			validFrom:
-				record.validFrom !== undefined ? record.validFrom : existing.validFrom,
-			validTo: record.validTo !== undefined ? record.validTo : existing.validTo,
+			validFrom: nextValidFrom,
+			validTo: nextValidTo,
 			version: existing.version + 1,
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
@@ -2573,6 +3169,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "UPDATE",
 				changes: [
 					{ field: "name", oldValue: snapshot.name, newValue: updated.name },
+					{
+						field: "validFrom",
+						oldValue: snapshot.validFrom,
+						newValue: updated.validFrom,
+					},
+					{
+						field: "validTo",
+						oldValue: snapshot.validTo,
+						newValue: updated.validTo,
+					},
 				],
 				oldValue: {
 					name: snapshot.name,
@@ -2587,7 +3193,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					version: updated.version,
 				},
 				type: "master_data.tax_registration.updated.v1",
-				code: updated.normalizedRegistrationNumber,
+				code: updated.registrationType,
 				version: updated.version,
 			},
 		);
@@ -2598,9 +3204,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionTaxRegistration(
-		record: LifecycleRecord,
+		record: TaxRegistrationLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: TaxRegistrationLifecycleEventSuffix;
+		},
 	): Promise<Result<TaxRegistration>> {
 		const existing = this.taxRegistrations.get(record.id);
 		if (existing === undefined) {
@@ -2622,10 +3231,66 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				versionConflictDetails(),
 			);
 		}
+		const lifecycle =
+			existing.status === "retired" && record.toStatus === "blocked"
+				? assertRestoreTransition(existing.status, "blocked")
+				: assertTaxRegistrationLifecycleTransition(
+						existing.status,
+						record.toStatus,
+					);
+		if (!lifecycle.ok) return lifecycle;
+		if (record.toStatus === "active") {
+			if (existing.validFrom === null) {
+				return fail("CONFLICT", "Active tax registration requires validFrom", {
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails);
+			}
+			if (
+				isInvalidValidityRange({
+					validFrom: existing.validFrom,
+					validTo: existing.validTo,
+				})
+			) {
+				return fail("BAD_REQUEST", "validTo must be after validFrom", {
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails);
+			}
+			const party = this.parties.get(existing.partyId);
+			if (
+				party === undefined ||
+				party.organizationId !== existing.organizationId ||
+				party.status === "retired"
+			) {
+				return fail("CONFLICT", "Party is unavailable", {
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails);
+			}
+			const country = this.countries.get(existing.jurisdictionCountryId);
+			if (country === undefined || !country.active) {
+				return fail("BAD_REQUEST", "Active jurisdiction country not found", {
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails);
+			}
+			const overlap = await this.findOverlappingActiveTaxRegistration({
+				organizationId: existing.organizationId,
+				partyId: existing.partyId,
+				jurisdictionCountryId: existing.jurisdictionCountryId,
+				registrationType: existing.registrationType,
+				validFrom: existing.validFrom,
+				validTo: existing.validTo,
+				excludeId: existing.id,
+			});
+			if (!overlap.ok) return overlap;
+			if (overlap.data !== null) {
+				return fail(
+					"CONFLICT",
+					"Active tax registration validity ranges overlap",
+					{ reason: "MASTER_VALIDITY_OVERLAP" } satisfies MasterFailureDetails,
+				);
+			}
+		}
 		const snapshot = cloneTaxRegistration(existing);
 		const now = new Date();
-		const clearRetired =
-			record.toStatus === "draft" && existing.status === "retired";
 		const updated: TaxRegistration = {
 			...existing,
 			status: record.toStatus,
@@ -2640,18 +3305,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				record.toStatus === "active"
 					? (existing.activatedBy ?? record.actorUserId)
 					: existing.activatedBy,
-			blockedAt:
-				record.toStatus === "blocked"
-					? now
-					: clearRetired
-						? null
-						: existing.blockedAt,
+			blockedAt: record.toStatus === "blocked" ? now : existing.blockedAt,
 			blockedBy:
-				record.toStatus === "blocked"
-					? record.actorUserId
-					: clearRetired
-						? null
-						: existing.blockedBy,
+				record.toStatus === "blocked" ? record.actorUserId : existing.blockedBy,
 			retiredAt: record.toStatus === "retired" ? now : null,
 			retiredBy: record.toStatus === "retired" ? record.actorUserId : null,
 		};
@@ -2680,7 +3336,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				oldValue: { status: snapshot.status, version: snapshot.version },
 				newValue: { status: updated.status, version: updated.version },
 				type: eventType,
-				code: updated.normalizedRegistrationNumber,
+				code: updated.registrationType,
 				version: updated.version,
 			},
 		);
@@ -2914,6 +3570,11 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				crossOrgDetails(),
 			);
 		}
+		if (parent.status !== "active" || parent.retiredAt !== null) {
+			return fail("CONFLICT", "Item group parent must be active", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
 		let cursor: string | null = parent.parentId;
 		const seen = new Set<string>([parentId]);
 		while (cursor !== null) {
@@ -2949,6 +3610,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		organizationId: string,
 		selfId: string | null,
 		parentId: string | null,
+		childLocationType: Warehouse["locationType"],
 	): Result<true> {
 		if (parentId === null) {
 			return ok(true);
@@ -2966,6 +3628,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				"CONFLICT",
 				"Warehouse parent must exist in the same organization",
 				crossOrgDetails(),
+			);
+		}
+		if (parent.status !== "active" || parent.retiredAt !== null) {
+			return fail("CONFLICT", "Warehouse parent must be active", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		if (
+			!isWarehouseParentTypeCompatible(parent.locationType, childLocationType)
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"Warehouse parent and child location types are incompatible",
+				{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
 			);
 		}
 		let cursor: string | null = parent.parentId;
@@ -3015,6 +3691,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			type: MasterDataEventType;
 			code: string;
 			version: number;
+			eventPayload?: ExtensionEventPayload;
 		},
 	): Promise<Result<true>> {
 		const auditResult = await ports.audit.record({
@@ -3037,7 +3714,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			actorUserId: input.actorUserId,
 			correlationId: input.correlationId,
 			type: input.type,
-			payload: {
+			payload: input.eventPayload ?? {
 				organizationId: input.organizationId,
 				entityType: input.entity,
 				entityId: input.entityId,
@@ -3067,6 +3744,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		version: number;
 		type: MasterDataEventType;
 		rollback: () => void;
+		eventPayload?: ExtensionEventPayload;
+		changes?: Array<{ field: string; oldValue: unknown; newValue: unknown }>;
+		newValue?: Record<string, unknown>;
 	}): Promise<Result<true>> {
 		return this.commitMutation(input.rollback, input.ports, {
 			organizationId: input.organizationId,
@@ -3075,11 +3755,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: input.entity,
 			entityId: input.entityId,
 			action: input.action,
-			changes: [{ field: "id", oldValue: null, newValue: input.entityId }],
-			newValue: { code: input.code },
+			changes: input.changes ?? [
+				{ field: "id", oldValue: null, newValue: input.entityId },
+			],
+			newValue: input.newValue ?? { code: input.code },
 			type: input.type,
 			code: input.code,
 			version: input.version,
+			eventPayload: input.eventPayload,
 		});
 	}
 
@@ -3093,7 +3776,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				role.organizationId === organizationId &&
 				role.partyId === partyId &&
 				role.status === "active" &&
-				role.retiredAt === null
+				role.archivedAt === null
 			) {
 				count += 1;
 			}
@@ -3101,17 +3784,91 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(count);
 	}
 
-	async listPartyRoles(filter: ParentListFilter): Promise<Result<PartyRole[]>> {
+	async listPartyRoles(
+		filter: PartyRoleListFilter,
+	): Promise<Result<ExtensionListPage<PartyRole>>> {
 		const rows = [...this.partyRoles.values()]
 			.filter(
 				(r) =>
 					r.organizationId === filter.organizationId &&
-					r.partyId === filter.parentId,
+					r.partyId === filter.partyId,
 			)
 			.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
+		return ok({
+			items: paginate(rows, filter.page, filter.pageSize).map((r) => ({
+				...r,
+			})),
+			page: filter.page,
+			pageSize: filter.pageSize,
+			hasNextPage: rows.length > filter.page * filter.pageSize,
+		});
+	}
+
+	async listActivePartyRoles(
+		filter: PartyRoleListFilter,
+	): Promise<Result<ExtensionListPage<PartyRole>>> {
+		const rows = [...this.partyRoles.values()]
+			.filter(
+				(role) =>
+					role.organizationId === filter.organizationId &&
+					role.partyId === filter.partyId &&
+					role.status === "active" &&
+					role.archivedAt === null,
+			)
+			.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
+		return ok({
+			items: paginate(rows, filter.page, filter.pageSize).map((role) => ({
+				...role,
+			})),
+			page: filter.page,
+			pageSize: filter.pageSize,
+			hasNextPage: rows.length > filter.page * filter.pageSize,
+		});
+	}
+
+	async getPartyRoleById(
+		organizationId: string,
+		partyId: string,
+		id: string,
+	): Promise<Result<PartyRole | null>> {
+		const role = this.partyRoles.get(id);
 		return ok(
-			paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
+			role?.organizationId === organizationId && role.partyId === partyId
+				? { ...role }
+				: null,
 		);
+	}
+
+	async getPartyRoleLifecycleContext(
+		organizationId: string,
+		id: string,
+	): Promise<
+		Result<{
+			role: PartyRole | null;
+			party: Party | null;
+			activeRoleCount: number;
+		}>
+	> {
+		const role = this.partyRoles.get(id);
+		if (role === undefined || role.organizationId !== organizationId) {
+			return ok({ role: null, party: null, activeRoleCount: 0 });
+		}
+		const party = this.parties.get(role.partyId);
+		const activeRoleCount = await this.countActivePartyRoles(
+			organizationId,
+			role.partyId,
+		);
+		if (!activeRoleCount.ok) return activeRoleCount;
+		return ok({
+			role: { ...role },
+			party:
+				party?.organizationId === organizationId
+					? {
+							...party,
+						}
+					: null,
+			activeRoleCount: activeRoleCount.data,
+		});
 	}
 
 	async createPartyRole(
@@ -3124,20 +3881,6 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return fail("NOT_FOUND", "Party not found", {
 				reason: "MASTER_NOT_FOUND",
 			});
-		}
-		for (const existing of this.partyRoles.values()) {
-			if (
-				existing.organizationId === record.organizationId &&
-				existing.partyId === record.partyId &&
-				existing.roleCode === record.roleCode &&
-				existing.retiredAt === null
-			) {
-				return fail(
-					"CONFLICT",
-					"Party role already exists",
-					codeConflictDetails(),
-				);
-			}
 		}
 		const now = new Date();
 		const role: PartyRole = {
@@ -3155,6 +3898,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			activatedBy: null,
 			retiredAt: null,
 			retiredBy: null,
+			archivedAt: null,
+			archivedBy: null,
 			createdAt: now,
 			updatedAt: now,
 		};
@@ -3168,7 +3913,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "CREATE",
 			code: record.roleCode,
 			version: 1,
-			type: "master_data.party_role.created.v1",
+			type: EXTENSION_EVENT_TYPES.partyRoleCreated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_role",
+				entityId: role.id,
+				parentEntityId: record.partyId,
+				classification: extensionEventClassification(
+					"party_role",
+					record.roleCode,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
 			rollback: () => this.partyRoles.delete(role.id),
 		});
 		if (!side.ok) return side;
@@ -3176,10 +3934,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ ...role });
 	}
 
-	async transitionPartyRole(
-		record: LifecycleRecord,
+	async updatePartyRole(
+		record: PartyRoleUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: { correlationId: string },
 	): Promise<Result<PartyRole>> {
 		const role = this.partyRoles.get(record.id);
 		if (!role || role.organizationId !== record.organizationId) {
@@ -3187,20 +3945,150 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
-		if (role.version !== record.expectedVersion) {
+		const version = assertExpectedExtensionVersion(
+			role,
+			record.expectedVersion,
+			"party_role",
+		);
+		if (!version.ok) return version;
+		if (role.status !== "draft" && role.status !== "inactive") {
 			return fail(
 				"CONFLICT",
-				"Party role version conflict",
-				versionConflictDetails(),
+				"Only draft or inactive party roles can be updated",
+				{
+					reason: "MASTER_INVALID_STATE",
+				},
 			);
+		}
+		const next: PartyRole = {
+			...role,
+			roleCode: record.roleCode ?? role.roleCode,
+			validFrom:
+				record.validFrom !== undefined ? record.validFrom : role.validFrom,
+			validTo: record.validTo !== undefined ? record.validTo : role.validTo,
+			version: nextExtensionVersion(role.version),
+			updatedBy: record.updatedBy,
+			updatedAt: new Date(),
+		};
+		if (
+			next.validFrom !== null &&
+			next.validTo !== null &&
+			next.validTo < next.validFrom
+		) {
+			return fail("BAD_REQUEST", "validTo must not precede validFrom", {
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
+		const previous = { ...role };
+		this.partyRoles.set(role.id, next);
+		const side = await this.commitSideEffects({
+			ports,
+			organizationId: record.organizationId,
+			actorUserId: record.updatedBy,
+			correlationId: meta.correlationId,
+			entity: "party_role",
+			entityId: role.id,
+			action: "UPDATE",
+			code: next.roleCode,
+			version: next.version,
+			type: EXTENSION_EVENT_TYPES.partyRoleUpdated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_role",
+				entityId: role.id,
+				parentEntityId: role.partyId,
+				classification: extensionEventClassification(
+					"party_role",
+					next.roleCode,
+				),
+				version: next.version,
+				actorId: record.updatedBy,
+				correlationId: meta.correlationId,
+			}),
+			changes: [
+				{ field: "roleCode", oldValue: role.roleCode, newValue: next.roleCode },
+			],
+			newValue: { roleCode: next.roleCode },
+			rollback: () => this.partyRoles.set(role.id, previous),
+		});
+		if (!side.ok) return side;
+		return ok({ ...next });
+	}
+
+	async transitionPartyRole(
+		record: PartyRoleLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: PartyRoleLifecycleEventSuffix;
+		},
+	): Promise<Result<PartyRole>> {
+		const role = this.partyRoles.get(record.id);
+		if (!role || role.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Party role not found", {
+				reason: "MASTER_NOT_FOUND",
+			});
+		}
+		const version = assertExpectedExtensionVersion(
+			role,
+			record.expectedVersion,
+			"party_role",
+		);
+		if (!version.ok) return version;
+		const transition = resolveExtensionLifecycleTransition(
+			"party_role",
+			assertStandardChildLifecycleStatus(role.status),
+			record.toStatus,
+		);
+		if (!transition.ok) return transition;
+		const reason = assertExtensionTransitionReason(
+			transition.data,
+			record.reason,
+		);
+		if (!reason.ok) return reason;
+		if (
+			record.toStatus === "active" &&
+			[...this.partyRoles.values()].some(
+				(sibling) =>
+					sibling.id !== role.id &&
+					sibling.organizationId === role.organizationId &&
+					sibling.partyId === role.partyId &&
+					sibling.roleCode === role.roleCode &&
+					sibling.status === "active" &&
+					sibling.archivedAt === null,
+			)
+		) {
+			return fail(
+				"CONFLICT",
+				"An active party role of this type already exists",
+				codeConflictDetails(),
+			);
+		}
+		const party = this.parties.get(role.partyId);
+		if (
+			party === undefined ||
+			party.organizationId !== record.organizationId ||
+			party.status === "retired" ||
+			party.mergedIntoId !== null
+		) {
+			return fail("CONFLICT", "Party cannot accept extension transitions", {
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
+		if (
+			transition.data.parentStateRequirement === "parent_active" &&
+			party.status !== "active"
+		) {
+			return fail("CONFLICT", "Party must be active for this transition", {
+				reason: "MASTER_INVALID_STATE",
+			});
 		}
 		// Active party cannot lose its final active role (reverse of activation invariant).
 		if (
-			record.toStatus === "retired" &&
+			record.toStatus !== "active" &&
 			role.status === "active" &&
-			role.retiredAt === null
+			role.archivedAt === null
 		) {
-			const party = this.parties.get(role.partyId);
 			if (
 				party?.organizationId === record.organizationId &&
 				party.status === "active"
@@ -3226,7 +4114,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		const next: PartyRole = {
 			...role,
 			status: record.toStatus,
-			version: role.version + 1,
+			version: nextExtensionVersion(role.version),
 			updatedBy: record.actorUserId,
 			updatedAt: new Date(),
 			activatedAt: record.toStatus === "active" ? new Date() : role.activatedAt,
@@ -3235,6 +4123,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			retiredAt: record.toStatus === "retired" ? new Date() : role.retiredAt,
 			retiredBy:
 				record.toStatus === "retired" ? record.actorUserId : role.retiredBy,
+			archivedAt: record.toStatus === "archived" ? new Date() : role.archivedAt,
+			archivedBy:
+				record.toStatus === "archived" ? record.actorUserId : role.archivedBy,
 		};
 		const prev = { ...role };
 		this.partyRoles.set(role.id, next);
@@ -3248,7 +4139,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "UPDATE",
 			code: role.roleCode,
 			version: next.version,
-			type: `master_data.party_role.${meta.eventSuffix}.v1` as MasterDataEventType,
+			type: partyRoleLifecycleEventType(
+				meta.eventSuffix,
+			) as MasterDataEventType,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_role",
+				entityId: role.id,
+				parentEntityId: role.partyId,
+				classification: extensionEventClassification(
+					"party_role",
+					role.roleCode,
+				),
+				version: next.version,
+				actorId: record.actorUserId,
+				correlationId: meta.correlationId,
+			}),
+			changes: [
+				{ field: "status", oldValue: role.status, newValue: next.status },
+			],
+			newValue: { status: next.status, reason: reason.data },
 			rollback: () => this.partyRoles.set(role.id, prev),
 		});
 		if (!side.ok) return side;
@@ -3286,6 +4196,23 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ ...row });
 	}
 
+	async getPrimaryPartyAddress(
+		organizationId: string,
+		partyId: string,
+		purpose: PartyAddress["purpose"],
+	): Promise<Result<PartyAddress | null>> {
+		const row = [...this.partyAddresses.values()].find(
+			(address) =>
+				address.organizationId === organizationId &&
+				address.partyId === partyId &&
+				address.purpose === purpose &&
+				address.isPrimary &&
+				address.status === "active" &&
+				address.archivedAt === null,
+		);
+		return ok(row ? { ...row } : null);
+	}
+
 	async createPartyAddress(
 		record: PartyAddressCreateRecord,
 		ports: MutationPorts,
@@ -3297,28 +4224,90 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
+		if (
+			party.status === "retired" ||
+			party.retiredAt !== null ||
+			party.mergedIntoId !== null
+		) {
+			return fail("CONFLICT", "Party cannot accept extension mutations", {
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
+		const country = this.countries.get(record.countryId);
+		if (!country) {
+			return fail("BAD_REQUEST", "Referenced country does not exist", {
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
+		if (!country.active) {
+			return fail(
+				"CONFLICT",
+				"New active addresses require an active country",
+				{
+					reason: "MASTER_INVALID_STATE",
+				},
+			);
+		}
+		if (
+			record.effectiveFrom != null &&
+			record.effectiveTo != null &&
+			record.effectiveFrom > record.effectiveTo
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"Invalid effective date range",
+				validationDetails(),
+			);
+		}
 		const now = new Date();
 		const row: PartyAddress = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			partyId: record.partyId,
 			addressType: record.addressType,
+			purpose: record.purpose,
 			line1: record.line1,
 			line2: record.line2 ?? null,
+			line3: record.line3 ?? null,
 			city: record.city,
-			region: record.region ?? null,
+			administrativeArea: record.administrativeArea ?? null,
 			postalCode: record.postalCode ?? null,
 			countryId: record.countryId,
-			isDefault: record.isDefault ?? false,
-			verificationStatus: "unverified",
+			attention: record.attention ?? null,
+			isPrimary: record.isPrimary ?? false,
+			validationStatus: record.validationStatus ?? "unvalidated",
+			effectiveFrom: record.effectiveFrom ?? null,
+			effectiveTo: record.effectiveTo ?? null,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
-			validFrom: null,
-			validTo: null,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
 			createdAt: now,
 			updatedAt: now,
 		};
+		const demoted = row.isPrimary
+			? [...this.partyAddresses.values()].find(
+					(address) =>
+						address.organizationId === row.organizationId &&
+						address.partyId === row.partyId &&
+						address.purpose === row.purpose &&
+						address.status === "active" &&
+						address.archivedAt === null &&
+						address.isPrimary,
+				)
+			: undefined;
+		const previousPrimary = demoted ? { ...demoted } : undefined;
+		if (demoted) {
+			this.partyAddresses.set(demoted.id, {
+				...demoted,
+				isPrimary: false,
+				version: demoted.version + 1,
+				updatedBy: record.createdBy,
+				updatedAt: now,
+			});
+		}
 		const side = await this.commitSideEffects({
 			ports,
 			organizationId: record.organizationId,
@@ -3329,8 +4318,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "CREATE",
 			code: record.addressType,
 			version: 1,
-			type: "master_data.party_address.created.v1",
-			rollback: () => this.partyAddresses.delete(row.id),
+			type: EXTENSION_EVENT_TYPES.partyAddressCreated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_address",
+				entityId: row.id,
+				parentEntityId: record.partyId,
+				classification: extensionEventClassification(
+					"party_address",
+					record.addressType,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.partyAddresses.delete(row.id);
+				if (previousPrimary) {
+					this.partyAddresses.set(previousPrimary.id, previousPrimary);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		this.partyAddresses.set(row.id, row);
@@ -3348,29 +4355,104 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
-		if (row.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Party address version conflict",
-				versionConflictDetails(),
-			);
+		const version = assertExpectedExtensionVersion(
+			row,
+			record.expectedVersion,
+			"party_address",
+		);
+		if (!version.ok) return version;
+		const party = this.parties.get(row.partyId);
+		if (
+			!party ||
+			party.organizationId !== record.organizationId ||
+			party.status === "retired" ||
+			party.retiredAt !== null ||
+			party.mergedIntoId !== null
+		) {
+			return fail("CONFLICT", "Party cannot accept extension mutations", {
+				reason: "MASTER_INVALID_STATE",
+			});
 		}
 		const next: PartyAddress = {
 			...row,
 			addressType: record.addressType ?? row.addressType,
+			purpose: record.purpose ?? row.purpose,
 			line1: record.line1 ?? row.line1,
 			line2: record.line2 !== undefined ? record.line2 : row.line2,
+			line3: record.line3 !== undefined ? record.line3 : row.line3,
 			city: record.city ?? row.city,
-			region: record.region !== undefined ? record.region : row.region,
+			administrativeArea:
+				record.administrativeArea !== undefined
+					? record.administrativeArea
+					: row.administrativeArea,
 			postalCode:
 				record.postalCode !== undefined ? record.postalCode : row.postalCode,
 			countryId: record.countryId ?? row.countryId,
-			isDefault: record.isDefault ?? row.isDefault,
-			version: row.version + 1,
+			attention:
+				record.attention !== undefined ? record.attention : row.attention,
+			isPrimary: record.isPrimary ?? row.isPrimary,
+			validationStatus: record.validationStatus ?? row.validationStatus,
+			effectiveFrom:
+				record.effectiveFrom !== undefined
+					? record.effectiveFrom
+					: row.effectiveFrom,
+			effectiveTo:
+				record.effectiveTo !== undefined ? record.effectiveTo : row.effectiveTo,
+			version: nextExtensionVersion(row.version),
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
 		};
+		const country = this.countries.get(next.countryId);
+		if (!country) {
+			return fail(
+				"BAD_REQUEST",
+				"Referenced country does not exist",
+				validationDetails(),
+			);
+		}
+		if (!country.active) {
+			return fail(
+				"CONFLICT",
+				"New active addresses require an active country",
+				{
+					reason: "MASTER_INVALID_STATE",
+				},
+			);
+		}
+		if (
+			next.effectiveFrom !== null &&
+			next.effectiveTo !== null &&
+			next.effectiveFrom > next.effectiveTo
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"Invalid effective date range",
+				validationDetails(),
+			);
+		}
 		const prev = { ...row };
+		const demoted = next.isPrimary
+			? [...this.partyAddresses.values()].find(
+					(address) =>
+						address.id !== next.id &&
+						address.organizationId === next.organizationId &&
+						address.partyId === next.partyId &&
+						address.purpose === next.purpose &&
+						address.status === "active" &&
+						address.archivedAt === null &&
+						address.isPrimary,
+				)
+			: undefined;
+		const previousPrimary = demoted ? { ...demoted } : undefined;
+		if (demoted) {
+			this.partyAddresses.set(demoted.id, {
+				...demoted,
+				isPrimary: false,
+				version: demoted.version + 1,
+				updatedBy: record.updatedBy,
+				updatedAt: next.updatedAt,
+			});
+		}
 		this.partyAddresses.set(row.id, next);
 		const side = await this.commitSideEffects({
 			ports,
@@ -3382,8 +4464,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "UPDATE",
 			code: next.addressType,
 			version: next.version,
-			type: "master_data.party_address.updated.v1",
-			rollback: () => this.partyAddresses.set(row.id, prev),
+			type: EXTENSION_EVENT_TYPES.partyAddressUpdated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_address",
+				entityId: row.id,
+				parentEntityId: row.partyId,
+				classification: extensionEventClassification(
+					"party_address",
+					next.addressType,
+				),
+				version: next.version,
+				actorId: record.updatedBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.partyAddresses.set(row.id, prev);
+				if (previousPrimary) {
+					this.partyAddresses.set(previousPrimary.id, previousPrimary);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		return ok({ ...next });
@@ -3404,6 +4504,25 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		);
 	}
 
+	async getPrimaryPartyContact(
+		organizationId: string,
+		partyId: string,
+		contactType: PartyContact["contactType"],
+		purpose: string | null,
+	): Promise<Result<PartyContact | null>> {
+		const row = [...this.partyContacts.values()].find(
+			(contact) =>
+				contact.organizationId === organizationId &&
+				contact.partyId === partyId &&
+				contact.contactType === contactType &&
+				contact.purpose === purpose &&
+				contact.isPrimary &&
+				contact.status === "active" &&
+				contact.archivedAt === null,
+		);
+		return ok(row ? { ...row } : null);
+	}
+
 	async createPartyContact(
 		record: PartyContactCreateRecord,
 		ports: MutationPorts,
@@ -3415,6 +4534,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
+		if (
+			party.status === "retired" ||
+			party.retiredAt !== null ||
+			party.mergedIntoId !== null
+		) {
+			return fail("CONFLICT", "Party cannot accept extension mutations", {
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
+		if (
+			record.effectiveFrom != null &&
+			record.effectiveTo != null &&
+			record.effectiveFrom > record.effectiveTo
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"Invalid effective date range",
+				validationDetails(),
+			);
+		}
 		const now = new Date();
 		const row: PartyContact = {
 			id: randomUUID(),
@@ -3422,17 +4561,45 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			partyId: record.partyId,
 			contactType: record.contactType,
 			value: record.value,
+			normalizedValue: record.normalizedValue,
+			label: record.label ?? null,
 			purpose: record.purpose ?? null,
 			isPrimary: record.isPrimary ?? false,
 			verificationStatus: "unverified",
+			verifiedAt: null,
+			effectiveFrom: record.effectiveFrom ?? null,
+			effectiveTo: record.effectiveTo ?? null,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
-			validFrom: null,
-			validTo: null,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
 			createdAt: now,
 			updatedAt: now,
 		};
+		const demoted = row.isPrimary
+			? [...this.partyContacts.values()].find(
+					(contact) =>
+						contact.organizationId === row.organizationId &&
+						contact.partyId === row.partyId &&
+						contact.contactType === row.contactType &&
+						contact.purpose === row.purpose &&
+						contact.status === "active" &&
+						contact.archivedAt === null &&
+						contact.isPrimary,
+				)
+			: undefined;
+		const previousPrimary = demoted ? { ...demoted } : undefined;
+		if (demoted) {
+			this.partyContacts.set(demoted.id, {
+				...demoted,
+				isPrimary: false,
+				version: demoted.version + 1,
+				updatedBy: record.createdBy,
+				updatedAt: now,
+			});
+		}
 		const side = await this.commitSideEffects({
 			ports,
 			organizationId: record.organizationId,
@@ -3443,8 +4610,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "CREATE",
 			code: record.contactType,
 			version: 1,
-			type: "master_data.party_contact.created.v1",
-			rollback: () => this.partyContacts.delete(row.id),
+			type: EXTENSION_EVENT_TYPES.partyContactCreated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_contact",
+				entityId: row.id,
+				parentEntityId: record.partyId,
+				classification: extensionEventClassification(
+					"party_contact",
+					record.contactType,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.partyContacts.delete(row.id);
+				if (previousPrimary) {
+					this.partyContacts.set(previousPrimary.id, previousPrimary);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		this.partyContacts.set(row.id, row);
@@ -3462,24 +4647,109 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
-		if (row.version !== record.expectedVersion) {
+		const version = assertExpectedExtensionVersion(
+			row,
+			record.expectedVersion,
+			"party_contact",
+		);
+		if (!version.ok) return version;
+		if (
+			(record.contactType === undefined) !== (record.value === undefined) ||
+			(record.value === undefined) !== (record.normalizedValue === undefined)
+		) {
 			return fail(
-				"CONFLICT",
-				"Party contact version conflict",
-				versionConflictDetails(),
+				"BAD_REQUEST",
+				"Contact type, value, and normalized value must change together",
+				validationDetails(),
 			);
 		}
+		if (
+			record.verificationStatus !== undefined &&
+			((record.verificationStatus === "verified" &&
+				record.verifiedAt == null) ||
+				(record.verificationStatus !== "verified" && record.verifiedAt != null))
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"Invalid party contact verification evidence",
+				validationDetails(),
+			);
+		}
+		const party = this.parties.get(row.partyId);
+		if (
+			!party ||
+			party.organizationId !== record.organizationId ||
+			party.status === "retired" ||
+			party.retiredAt !== null ||
+			party.mergedIntoId !== null
+		) {
+			return fail("CONFLICT", "Party cannot accept extension mutations", {
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
+		const contactIdentityChanged =
+			record.contactType !== undefined || record.value !== undefined;
 		const next: PartyContact = {
 			...row,
 			contactType: record.contactType ?? row.contactType,
 			value: record.value ?? row.value,
+			normalizedValue: record.normalizedValue ?? row.normalizedValue,
+			label: record.label !== undefined ? record.label : row.label,
 			purpose: record.purpose !== undefined ? record.purpose : row.purpose,
 			isPrimary: record.isPrimary ?? row.isPrimary,
-			version: row.version + 1,
+			verificationStatus: contactIdentityChanged
+				? "unverified"
+				: (record.verificationStatus ?? row.verificationStatus),
+			verifiedAt: contactIdentityChanged
+				? null
+				: record.verificationStatus !== undefined
+					? (record.verifiedAt ?? null)
+					: row.verifiedAt,
+			effectiveFrom:
+				record.effectiveFrom !== undefined
+					? record.effectiveFrom
+					: row.effectiveFrom,
+			effectiveTo:
+				record.effectiveTo !== undefined ? record.effectiveTo : row.effectiveTo,
+			version: nextExtensionVersion(row.version),
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
 		};
+		if (
+			next.effectiveFrom !== null &&
+			next.effectiveTo !== null &&
+			next.effectiveFrom > next.effectiveTo
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"Invalid effective date range",
+				validationDetails(),
+			);
+		}
 		const prev = { ...row };
+		const demoted = next.isPrimary
+			? [...this.partyContacts.values()].find(
+					(contact) =>
+						contact.id !== next.id &&
+						contact.organizationId === next.organizationId &&
+						contact.partyId === next.partyId &&
+						contact.contactType === next.contactType &&
+						contact.purpose === next.purpose &&
+						contact.status === "active" &&
+						contact.archivedAt === null &&
+						contact.isPrimary,
+				)
+			: undefined;
+		const previousPrimary = demoted ? { ...demoted } : undefined;
+		if (demoted) {
+			this.partyContacts.set(demoted.id, {
+				...demoted,
+				isPrimary: false,
+				version: demoted.version + 1,
+				updatedBy: record.updatedBy,
+				updatedAt: next.updatedAt,
+			});
+		}
 		this.partyContacts.set(row.id, next);
 		const side = await this.commitSideEffects({
 			ports,
@@ -3491,11 +4761,37 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "UPDATE",
 			code: next.contactType,
 			version: next.version,
-			type: "master_data.party_contact.updated.v1",
-			rollback: () => this.partyContacts.set(row.id, prev),
+			type: EXTENSION_EVENT_TYPES.partyContactUpdated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_contact",
+				entityId: row.id,
+				parentEntityId: row.partyId,
+				classification: extensionEventClassification(
+					"party_contact",
+					next.contactType,
+				),
+				version: next.version,
+				actorId: record.updatedBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.partyContacts.set(row.id, prev);
+				if (previousPrimary) {
+					this.partyContacts.set(previousPrimary.id, previousPrimary);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		return ok({ ...next });
+	}
+
+	async updatePartyContactVerification(
+		record: PartyContactVerificationRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PartyContact>> {
+		return this.updatePartyContact(record, ports, meta);
 	}
 
 	async createPartyExternalId(
@@ -3512,26 +4808,53 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		for (const existing of this.partyExternalIds.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
-				existing.system === record.system &&
-				existing.namespace === record.namespace &&
-				existing.externalId === record.externalId
+				existing.status === "active" &&
+				existing.sourceSystem === record.sourceSystem &&
+				existing.externalIdType === record.externalIdType &&
+				existing.normalizedValue === record.normalizedValue
 			) {
-				return fail(
-					"CONFLICT",
-					"External id already exists",
-					codeConflictDetails(),
-				);
+				return fail("CONFLICT", "External id already exists", {
+					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				});
 			}
 		}
 		const now = new Date();
+		let previousPrimary: PartyExternalId | null = null;
+		if (record.isPrimary) {
+			for (const existing of this.partyExternalIds.values()) {
+				if (
+					existing.organizationId === record.organizationId &&
+					existing.partyId === record.partyId &&
+					existing.sourceSystem === record.sourceSystem &&
+					existing.externalIdType === record.externalIdType &&
+					existing.isPrimary &&
+					existing.status === "active"
+				) {
+					previousPrimary = { ...existing };
+					this.partyExternalIds.set(existing.id, {
+						...existing,
+						isPrimary: false,
+						version: existing.version + 1,
+						updatedBy: record.createdBy,
+						updatedAt: now,
+					});
+				}
+			}
+		}
 		const row: PartyExternalId = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			partyId: record.partyId,
-			system: record.system,
-			namespace: record.namespace,
-			externalId: record.externalId,
+			sourceSystem: record.sourceSystem,
+			externalIdType: record.externalIdType,
+			externalValue: record.externalValue,
+			normalizedValue: record.normalizedValue,
+			caseSensitivity: record.caseSensitivity,
+			isPrimary: record.isPrimary,
+			status: "active",
 			version: 1,
+			archivedAt: null,
+			archivedBy: null,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
 			createdAt: now,
@@ -3545,10 +4868,28 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: "party_external_id",
 			entityId: row.id,
 			action: "CREATE",
-			code: record.externalId,
+			code: `${record.sourceSystem}:${record.externalIdType}`,
 			version: 1,
-			type: "master_data.party_external_id.created.v1",
-			rollback: () => this.partyExternalIds.delete(row.id),
+			type: EXTENSION_EVENT_TYPES.partyExternalIdAssigned,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_external_id",
+				entityId: row.id,
+				parentEntityId: record.partyId,
+				classification: extensionEventClassification(
+					"party_external_id",
+					`${record.sourceSystem}:${record.externalIdType}`,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.partyExternalIds.delete(row.id);
+				if (previousPrimary) {
+					this.partyExternalIds.set(previousPrimary.id, previousPrimary);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		this.partyExternalIds.set(row.id, row);
@@ -3556,23 +4897,30 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async findPartyByExternalId(
-		organizationId: string,
-		system: string,
-		namespace: string,
-		externalId: string,
+		filter: PartyExternalIdLookup,
 	): Promise<Result<Party | null>> {
+		const matches: PartyExternalId[] = [];
 		for (const ext of this.partyExternalIds.values()) {
 			if (
-				ext.organizationId === organizationId &&
-				ext.system === system &&
-				ext.namespace === namespace &&
-				ext.externalId === externalId
+				ext.organizationId === filter.organizationId &&
+				ext.status === "active" &&
+				ext.archivedAt === null &&
+				ext.sourceSystem === filter.sourceSystem &&
+				ext.externalIdType === filter.externalIdType &&
+				ext.normalizedValue === filter.normalizedValue &&
+				ext.caseSensitivity === filter.caseSensitivity
 			) {
-				const party = this.parties.get(ext.partyId);
-				return ok(party ? cloneParty(party) : null);
+				matches.push(ext);
 			}
 		}
-		return ok(null);
+		if (matches.length === 0) return ok(null);
+		if (matches.length > 1) {
+			return fail("CONFLICT", "External id resolves to multiple parties", {
+				reason: "MASTER_EXTERNAL_ID_CONFLICT",
+			});
+		}
+		const party = this.parties.get(matches[0].partyId);
+		return ok(party ? cloneParty(party) : null);
 	}
 
 	async createPartyRelationship(
@@ -3580,18 +4928,22 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<PartyRelationship>> {
-		if (record.fromPartyId === record.toPartyId) {
+		if (record.sourcePartyId === record.targetPartyId) {
 			return fail("BAD_REQUEST", "Party relationship cannot be reflexive", {
 				reason: "MASTER_VALIDATION_FAILED",
 			});
 		}
-		const from = this.parties.get(record.fromPartyId);
-		const to = this.parties.get(record.toPartyId);
+		const from = this.parties.get(record.sourcePartyId);
+		const to = this.parties.get(record.targetPartyId);
 		if (
 			!from ||
 			!to ||
 			from.organizationId !== record.organizationId ||
-			to.organizationId !== record.organizationId
+			to.organizationId !== record.organizationId ||
+			from.status === "retired" ||
+			to.status === "retired" ||
+			from.mergedIntoId !== null ||
+			to.mergedIntoId !== null
 		) {
 			return fail(
 				"CONFLICT",
@@ -3602,9 +4954,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		for (const existing of this.partyRelationships.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
-				existing.fromPartyId === record.fromPartyId &&
-				existing.toPartyId === record.toPartyId &&
-				existing.relationshipType === record.relationshipType
+				existing.sourcePartyId === record.sourcePartyId &&
+				existing.targetPartyId === record.targetPartyId &&
+				existing.relationshipType === record.relationshipType &&
+				existing.status === "active"
 			) {
 				return fail(
 					"CONFLICT",
@@ -3613,17 +4966,41 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				);
 			}
 		}
+		if (
+			record.direction === "hierarchical" &&
+			hasPartyParentPath(
+				[...this.partyRelationships.values()].filter(
+					(
+						relationship,
+					): relationship is PartyRelationship & {
+						relationshipType: "parent_of";
+					} =>
+						relationship.organizationId === record.organizationId &&
+						relationship.relationshipType === "parent_of" &&
+						relationship.status === "active",
+				),
+				record.targetPartyId,
+				record.sourcePartyId,
+			)
+		) {
+			return fail("CONFLICT", "Party relationship would create a cycle", {
+				reason: "MASTER_RELATIONSHIP_CYCLE",
+			});
+		}
 		const now = new Date();
 		const row: PartyRelationship = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
-			fromPartyId: record.fromPartyId,
-			toPartyId: record.toPartyId,
+			sourcePartyId: record.sourcePartyId,
+			targetPartyId: record.targetPartyId,
 			relationshipType: record.relationshipType,
+			direction: record.direction,
 			status: "active",
 			version: 1,
-			validFrom: null,
-			validTo: null,
+			effectiveFrom: record.effectiveFrom,
+			effectiveTo: record.effectiveTo,
+			archivedAt: null,
+			archivedBy: null,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
 			createdAt: now,
@@ -3639,7 +5016,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			action: "CREATE",
 			code: record.relationshipType,
 			version: 1,
-			type: "master_data.party_relationship.created.v1",
+			type: EXTENSION_EVENT_TYPES.partyRelationshipCreated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "party_relationship",
+				entityId: row.id,
+				parentEntityId: record.sourcePartyId,
+				classification: extensionEventClassification(
+					"party_relationship",
+					record.relationshipType,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
 			rollback: () => this.partyRelationships.delete(row.id),
 		});
 		if (!side.ok) return side;
@@ -3647,17 +5037,124 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ ...row });
 	}
 
-	async listItemUoms(filter: ParentListFilter): Promise<Result<ItemUom[]>> {
+	async listPartyRelationships(
+		filter: PartyRelationshipListFilter,
+	): Promise<Result<ExtensionListPage<PartyRelationship>>> {
+		const rows = [...this.partyRelationships.values()]
+			.filter(
+				(relationship) =>
+					relationship.organizationId === filter.organizationId &&
+					(relationship.sourcePartyId === filter.partyId ||
+						relationship.targetPartyId === filter.partyId),
+			)
+			.sort(
+				(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+			);
+		return ok({
+			items: paginate(rows, filter.page, filter.pageSize).map((row) => ({
+				...row,
+			})),
+			page: filter.page,
+			pageSize: filter.pageSize,
+			hasNextPage: rows.length > filter.page * filter.pageSize,
+		});
+	}
+
+	async resolveItemUomCompatibilityContext(
+		filter: ItemUomCompatibilityContextFilter,
+	): Promise<Result<ItemUomCompatibilityContext>> {
+		const item = this.items.get(filter.itemId);
+		if (
+			!item ||
+			item.organizationId !== filter.organizationId ||
+			item.status === "retired"
+		) {
+			return fail("NOT_FOUND", "Item not found", {
+				reason: "MASTER_NOT_FOUND",
+			});
+		}
+		if (filter.alternateUomId === item.baseUomId) {
+			return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
+				reason: "MASTER_INVALID_UOM_CONVERSION",
+				field: "alternateUomId",
+			});
+		}
+		const baseUom = this.uoms.get(item.baseUomId);
+		const altUom = this.uoms.get(filter.alternateUomId);
+		if (!baseUom || !altUom) {
+			return fail("BAD_REQUEST", "UoM not found", {
+				reason: "MASTER_VALIDATION_FAILED",
+				field: "alternateUomId",
+			});
+		}
+		if (!baseUom.active || !altUom.active) {
+			return fail("BAD_REQUEST", "UoM must be active", {
+				reason: "MASTER_VALIDATION_FAILED",
+				field: "alternateUomId",
+			});
+		}
+		const baseDimension = this.dimensions.get(baseUom.dimensionId);
+		const alternateDimension = this.dimensions.get(altUom.dimensionId);
+		if (!baseDimension || !alternateDimension) {
+			return fail("BAD_REQUEST", "UoM dimension not found", {
+				reason: "MASTER_VALIDATION_FAILED",
+				field: "alternateUomId",
+			});
+		}
+		return ok({
+			itemId: item.id,
+			baseUomId: item.baseUomId,
+			alternateUomId: filter.alternateUomId,
+			baseDimensionCode: baseDimension.code,
+			alternateDimensionCode: alternateDimension.code,
+		});
+	}
+
+	async listItemUoms(
+		filter: ItemUomListFilter,
+	): Promise<Result<ExtensionListPage<ItemUom>>> {
 		const rows = [...this.itemUoms.values()]
 			.filter(
 				(r) =>
 					r.organizationId === filter.organizationId &&
-					r.itemId === filter.parentId,
+					r.itemId === filter.itemId,
 			)
-			.sort((a, b) => a.usage.localeCompare(b.usage));
+			.sort((a, b) => a.alternateUomId.localeCompare(b.alternateUomId));
 		return ok(
-			paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
+			pageResult(
+				rows.map((r) => ({ ...r })),
+				filter.page,
+				filter.pageSize,
+			),
 		);
+	}
+
+	async getDefaultItemSalesUom(
+		filter: ItemUomDefaultFilter,
+	): Promise<Result<ItemUom | null>> {
+		const row = [...this.itemUoms.values()].find(
+			(uom) =>
+				uom.organizationId === filter.organizationId &&
+				uom.itemId === filter.itemId &&
+				uom.isDefaultSalesUom &&
+				uom.status === "active" &&
+				uom.archivedAt === null,
+		);
+		return ok(row ? { ...row } : null);
+	}
+
+	async getDefaultItemPurchaseUom(
+		filter: ItemUomDefaultFilter,
+	): Promise<Result<ItemUom | null>> {
+		const row = [...this.itemUoms.values()].find(
+			(uom) =>
+				uom.organizationId === filter.organizationId &&
+				uom.itemId === filter.itemId &&
+				uom.isDefaultPurchaseUom &&
+				uom.status === "active" &&
+				uom.archivedAt === null,
+		);
+		return ok(row ? { ...row } : null);
 	}
 
 	async createItemUom(
@@ -3672,42 +5169,109 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			});
 		}
 		const baseUom = this.uoms.get(item.baseUomId);
-		const altUom = this.uoms.get(record.uomId);
+		const altUom = this.uoms.get(record.alternateUomId);
 		if (!baseUom || !altUom) {
 			return fail("BAD_REQUEST", "UoM not found", {
 				reason: "MASTER_VALIDATION_FAILED",
 			});
 		}
-		if (baseUom.dimensionId !== altUom.dimensionId) {
-			return fail("BAD_REQUEST", "UoM dimension mismatch", {
+		if (!baseUom.active || !altUom.active) {
+			return fail("BAD_REQUEST", "UoM must be active", {
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
+		if (record.alternateUomId === item.baseUomId) {
+			return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
+				reason: "MASTER_INVALID_UOM_CONVERSION",
+				field: "alternateUomId",
+			});
+		}
+		const factor = normalizeItemUomConversionFactor(record.conversionFactor);
+		if (!factor.ok) return factor;
+		if (record.alternateUomId === item.baseUomId && factor.data !== "1") {
+			return fail("BAD_REQUEST", "Base UoM conversion factor must equal 1", {
 				reason: "MASTER_INVALID_UOM_CONVERSION",
 			});
 		}
+		const baseDimension = this.dimensions.get(baseUom.dimensionId);
+		const alternateDimension = this.dimensions.get(altUom.dimensionId);
+		if (!baseDimension || !alternateDimension) {
+			return fail("BAD_REQUEST", "UoM dimension not found", {
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
+		const compatible = assertItemUomCompatibility({
+			baseDimensionCode: baseDimension.code,
+			alternateDimensionCode: alternateDimension.code,
+			compatibilityMode: record.compatibilityMode,
+			packagingApprovalReference: record.packagingApprovalReference,
+		});
+		if (!compatible.ok) return compatible;
 		if (
-			!isPositiveIntegerFactor(record.toBaseNumerator) ||
-			!isPositiveIntegerFactor(record.toBaseDenominator)
+			(record.isDefaultPurchaseUom && !record.isPurchaseUom) ||
+			(record.isDefaultSalesUom && !record.isSalesUom)
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"UoM conversion factors must be positive non-zero integers",
-				{ reason: "MASTER_INVALID_UOM_CONVERSION" },
-			);
+			return fail("BAD_REQUEST", "Default UoM usage is inconsistent", {
+				reason: "MASTER_INVALID_UOM_CONVERSION",
+			});
+		}
+		for (const existing of this.itemUoms.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.itemId === record.itemId &&
+				existing.alternateUomId === record.alternateUomId &&
+				existing.status === "active"
+			) {
+				return fail("CONFLICT", "Item UoM conversion already exists", {
+					reason: "MASTER_DUPLICATE",
+				});
+			}
 		}
 		const now = new Date();
+		const previousDefaults: ItemUom[] = [];
+		for (const existing of this.itemUoms.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.itemId === record.itemId &&
+				existing.status === "active" &&
+				((record.isDefaultPurchaseUom && existing.isDefaultPurchaseUom) ||
+					(record.isDefaultSalesUom && existing.isDefaultSalesUom))
+			) {
+				previousDefaults.push({ ...existing });
+				this.itemUoms.set(existing.id, {
+					...existing,
+					isDefaultPurchaseUom: record.isDefaultPurchaseUom
+						? false
+						: existing.isDefaultPurchaseUom,
+					isDefaultSalesUom: record.isDefaultSalesUom
+						? false
+						: existing.isDefaultSalesUom,
+					version: existing.version + 1,
+					updatedBy: record.createdBy,
+					updatedAt: now,
+				});
+			}
+		}
 		const row: ItemUom = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			itemId: record.itemId,
-			uomId: record.uomId,
-			toBaseNumerator: record.toBaseNumerator,
-			toBaseDenominator: record.toBaseDenominator,
-			usage: record.usage,
-			barcode: record.barcode ?? null,
-			roundingRule: record.roundingRule ?? null,
-			minQuantity: record.minQuantity ?? null,
+			alternateUomId: record.alternateUomId,
+			conversionFactor: factor.data,
+			roundingScale: record.roundingScale,
+			isPurchaseUom: record.isPurchaseUom,
+			isSalesUom: record.isSalesUom,
+			isInventoryUom: record.isInventoryUom,
+			isDefaultPurchaseUom: record.isDefaultPurchaseUom,
+			isDefaultSalesUom: record.isDefaultSalesUom,
+			compatibilityMode: record.compatibilityMode,
+			packagingApprovalReference: record.packagingApprovalReference,
+			status: "active",
 			version: 1,
 			validFrom: null,
 			validTo: null,
+			archivedAt: null,
+			archivedBy: null,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
 			createdAt: now,
@@ -3721,10 +5285,28 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: "item_uom",
 			entityId: row.id,
 			action: "CREATE",
-			code: record.usage,
+			code: record.alternateUomId,
 			version: 1,
-			type: "master_data.item_uom.created.v1",
-			rollback: () => this.itemUoms.delete(row.id),
+			type: EXTENSION_EVENT_TYPES.itemUomCreated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "item_uom",
+				entityId: row.id,
+				parentEntityId: record.itemId,
+				classification: extensionEventClassification(
+					"item_uom",
+					record.alternateUomId,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.itemUoms.delete(row.id);
+				for (const previous of previousDefaults) {
+					this.itemUoms.set(previous.id, previous);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		this.itemUoms.set(row.id, row);
@@ -3737,15 +5319,54 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<ItemBarcode>> {
 		const item = this.items.get(record.itemId);
-		if (!item || item.organizationId !== record.organizationId) {
+		if (
+			!item ||
+			item.organizationId !== record.organizationId ||
+			item.status === "retired"
+		) {
 			return fail("NOT_FOUND", "Item not found", {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
+		const normalized = normalizeItemBarcode({
+			rawValue: record.barcodeValue,
+			symbology: record.symbology,
+		});
+		if (!normalized.ok) return normalized;
+		const packQuantity =
+			record.packQuantity === null
+				? null
+				: normalizeBarcodePackQuantity(record.packQuantity);
+		if (packQuantity !== null && !packQuantity.ok) return packQuantity;
+		if ((record.uomId === null) !== (packQuantity === null)) {
+			return fail("BAD_REQUEST", "Invalid barcode packaging", {
+				reason: "MASTER_INVALID_BARCODE",
+			});
+		}
+		if (record.uomId !== null) {
+			const uom = this.uoms.get(record.uomId);
+			const usableForItem =
+				uom?.active === true &&
+				(record.uomId === item.baseUomId ||
+					[...this.itemUoms.values()].some(
+						(conversion) =>
+							conversion.organizationId === record.organizationId &&
+							conversion.itemId === record.itemId &&
+							conversion.alternateUomId === record.uomId &&
+							conversion.status === "active" &&
+							conversion.archivedAt === null,
+					));
+			if (!usableForItem) {
+				return fail("BAD_REQUEST", "Barcode UoM is not valid for the item", {
+					reason: "MASTER_INVALID_BARCODE",
+				});
+			}
+		}
 		for (const existing of this.itemBarcodes.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
-				existing.barcode === record.barcode
+				existing.symbology === record.symbology &&
+				existing.normalizedValue === normalized.data.normalizedValue
 			) {
 				return fail(
 					"CONFLICT",
@@ -3754,14 +5375,42 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				);
 			}
 		}
+		const previousPrimaries: ItemBarcode[] = [];
+		if (record.isPrimary) {
+			for (const existing of this.itemBarcodes.values()) {
+				if (
+					existing.organizationId === record.organizationId &&
+					existing.itemId === record.itemId &&
+					isSameNullablePrimaryScope(existing.uomId, record.uomId) &&
+					existing.isPrimary &&
+					existing.status === "active" &&
+					existing.archivedAt === null
+				) {
+					previousPrimaries.push({ ...existing });
+					this.itemBarcodes.set(existing.id, {
+						...existing,
+						isPrimary: false,
+						version: existing.version + 1,
+						updatedBy: record.createdBy,
+						updatedAt: new Date(),
+					});
+				}
+			}
+		}
 		const now = new Date();
 		const row: ItemBarcode = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			itemId: record.itemId,
-			barcode: record.barcode,
-			barcodeType: record.barcodeType,
-			isPrimary: record.isPrimary ?? false,
+			barcodeValue: normalized.data.barcodeValue,
+			normalizedValue: normalized.data.normalizedValue,
+			symbology: record.symbology,
+			uomId: record.uomId,
+			packQuantity: packQuantity?.data ?? null,
+			isPrimary: record.isPrimary,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -3776,14 +5425,55 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: "item_barcode",
 			entityId: row.id,
 			action: "CREATE",
-			code: record.barcode,
+			code: record.symbology,
 			version: 1,
-			type: "master_data.item_barcode.created.v1",
-			rollback: () => this.itemBarcodes.delete(row.id),
+			type: EXTENSION_EVENT_TYPES.itemBarcodeAssigned,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "item_barcode",
+				entityId: row.id,
+				parentEntityId: record.itemId,
+				classification: extensionEventClassification(
+					"item_barcode",
+					record.symbology,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.itemBarcodes.delete(row.id);
+				for (const previous of previousPrimaries) {
+					this.itemBarcodes.set(previous.id, previous);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		this.itemBarcodes.set(row.id, row);
 		return ok({ ...row });
+	}
+
+	async findItemByBarcode(
+		filter: ItemBarcodeLookup,
+	): Promise<Result<Item | null>> {
+		const matches = [...this.itemBarcodes.values()].filter(
+			(row) =>
+				row.organizationId === filter.organizationId &&
+				row.symbology === filter.symbology &&
+				row.normalizedValue === filter.normalizedValue &&
+				(filter.includeArchived ||
+					(row.status === "active" && row.archivedAt === null)),
+		);
+		if (matches.length > 1) {
+			return fail("CONFLICT", "Barcode resolves to multiple items", {
+				reason: "MASTER_DUPLICATE",
+				candidateCount: matches.length,
+			});
+		}
+		const barcode = matches[0];
+		if (barcode === undefined) return ok(null);
+		const item = this.items.get(barcode.itemId);
+		return ok(item === undefined ? null : { ...item });
 	}
 
 	async createItemExternalId(
@@ -3792,23 +5482,54 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<ItemExternalId>> {
 		const item = this.items.get(record.itemId);
-		if (!item || item.organizationId !== record.organizationId) {
+		if (
+			!item ||
+			item.organizationId !== record.organizationId ||
+			item.status === "retired"
+		) {
 			return fail("NOT_FOUND", "Item not found", {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
+		const normalized = normalizeExternalId(record);
+		if (!normalized.ok) return normalized;
 		for (const existing of this.itemExternalIds.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
-				existing.system === record.system &&
-				existing.namespace === record.namespace &&
-				existing.externalId === record.externalId
+				existing.sourceSystem === normalized.data.sourceSystem &&
+				existing.externalIdType === normalized.data.externalIdType &&
+				existing.normalizedValue === normalized.data.normalizedValue &&
+				existing.status === "active" &&
+				existing.archivedAt === null
 			) {
 				return fail(
 					"CONFLICT",
-					"External id already exists",
+					"External ID already exists",
 					codeConflictDetails(),
 				);
+			}
+		}
+		const previousPrimaries: ItemExternalId[] = [];
+		if (record.isPrimary) {
+			for (const existing of this.itemExternalIds.values()) {
+				if (
+					existing.organizationId === record.organizationId &&
+					existing.itemId === record.itemId &&
+					existing.sourceSystem === normalized.data.sourceSystem &&
+					existing.externalIdType === normalized.data.externalIdType &&
+					existing.isPrimary &&
+					existing.status === "active" &&
+					existing.archivedAt === null
+				) {
+					previousPrimaries.push({ ...existing });
+					this.itemExternalIds.set(existing.id, {
+						...existing,
+						isPrimary: false,
+						version: existing.version + 1,
+						updatedBy: record.createdBy,
+						updatedAt: new Date(),
+					});
+				}
 			}
 		}
 		const now = new Date();
@@ -3816,9 +5537,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			itemId: record.itemId,
-			system: record.system,
-			namespace: record.namespace,
-			externalId: record.externalId,
+			sourceSystem: normalized.data.sourceSystem,
+			externalIdType: normalized.data.externalIdType,
+			externalValue: normalized.data.externalValue,
+			normalizedValue: normalized.data.normalizedValue,
+			caseSensitivity: normalized.data.caseSensitivity,
+			isPrimary: record.isPrimary,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -3833,10 +5560,28 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: "item_external_id",
 			entityId: row.id,
 			action: "CREATE",
-			code: record.externalId,
+			code: `${normalized.data.sourceSystem}:${normalized.data.externalIdType}`,
 			version: 1,
-			type: "master_data.item_external_id.created.v1",
-			rollback: () => this.itemExternalIds.delete(row.id),
+			type: EXTENSION_EVENT_TYPES.itemExternalIdAssigned,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "item_external_id",
+				entityId: row.id,
+				parentEntityId: record.itemId,
+				classification: extensionEventClassification(
+					"item_external_id",
+					`${normalized.data.sourceSystem}:${normalized.data.externalIdType}`,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
+			rollback: () => {
+				this.itemExternalIds.delete(row.id);
+				for (const previous of previousPrimaries) {
+					this.itemExternalIds.set(previous.id, previous);
+				}
+			},
 		});
 		if (!side.ok) return side;
 		this.itemExternalIds.set(row.id, row);
@@ -3844,23 +5589,28 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async findItemByExternalId(
-		organizationId: string,
-		system: string,
-		namespace: string,
-		externalId: string,
+		filter: ItemExternalIdLookup,
 	): Promise<Result<Item | null>> {
-		for (const ext of this.itemExternalIds.values()) {
-			if (
-				ext.organizationId === organizationId &&
-				ext.system === system &&
-				ext.namespace === namespace &&
-				ext.externalId === externalId
-			) {
-				const item = this.items.get(ext.itemId);
-				return ok(item ? cloneItem(item) : null);
-			}
+		const matches = [...this.itemExternalIds.values()].filter(
+			(ext) =>
+				ext.organizationId === filter.organizationId &&
+				ext.sourceSystem === filter.sourceSystem &&
+				ext.externalIdType === filter.externalIdType &&
+				ext.normalizedValue === filter.normalizedValue &&
+				ext.caseSensitivity === filter.caseSensitivity &&
+				ext.status === "active" &&
+				ext.archivedAt === null,
+		);
+		if (matches.length > 1) {
+			return fail("CONFLICT", "External id resolves to multiple items", {
+				reason: "MASTER_DUPLICATE",
+				candidateCount: matches.length,
+			});
 		}
-		return ok(null);
+		const ext = matches[0];
+		if (ext === undefined) return ok(null);
+		const item = this.items.get(ext.itemId);
+		return ok(item ? cloneItem(item) : null);
 	}
 
 	async createItemAlias(
@@ -3869,18 +5619,25 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<ItemAlias>> {
 		const item = this.items.get(record.itemId);
-		if (!item || item.organizationId !== record.organizationId) {
+		if (
+			!item ||
+			item.organizationId !== record.organizationId ||
+			item.status === "retired"
+		) {
 			return fail("NOT_FOUND", "Item not found", {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
-		for (const existing of this.itemAliases.values()) {
-			if (
-				existing.organizationId === record.organizationId &&
-				existing.normalizedAlias === record.normalizedAlias &&
-				existing.retiredAt === null
-			) {
-				return fail("CONFLICT", "Alias already exists", codeConflictDetails());
+		const normalized = normalizeItemAlias(record.aliasValue);
+		if (!normalized.ok) return normalized;
+		const source = normalizeItemAliasSource(record.source);
+		if (!source.ok) return source;
+		if (record.languageId !== null) {
+			const language = this.languages.get(record.languageId);
+			if (language?.active !== true) {
+				return fail("BAD_REQUEST", "Alias language is not active", {
+					reason: "MASTER_VALIDATION_FAILED",
+				});
 			}
 		}
 		const now = new Date();
@@ -3888,12 +5645,18 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			itemId: record.itemId,
-			aliasCode: record.aliasCode,
-			normalizedAlias: record.normalizedAlias,
+			aliasType: record.aliasType,
+			aliasValue: normalized.data.aliasValue,
+			normalizedValue: normalized.data.normalizedValue,
+			languageId: record.languageId,
+			source: source.data,
+			isSearchable: record.isSearchable,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
-			retiredAt: null,
 			createdAt: now,
 			updatedAt: now,
 		};
@@ -3905,9 +5668,22 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: "item_alias",
 			entityId: row.id,
 			action: "CREATE",
-			code: record.aliasCode,
+			code: record.aliasType,
 			version: 1,
-			type: "master_data.item_alias.created.v1",
+			type: EXTENSION_EVENT_TYPES.itemAliasCreated,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "item_alias",
+				entityId: row.id,
+				parentEntityId: record.itemId,
+				classification: extensionEventClassification(
+					"item_alias",
+					record.aliasType,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
 			rollback: () => this.itemAliases.delete(row.id),
 		});
 		if (!side.ok) return side;
@@ -3915,21 +5691,72 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok({ ...row });
 	}
 
-	async findItemByAlias(
-		organizationId: string,
-		normalizedAlias: string,
-	): Promise<Result<Item | null>> {
+	async listItemAliases(
+		filter: ItemAliasListFilter,
+	): Promise<Result<ExtensionListPage<ItemAlias>>> {
+		const rows = [...this.itemAliases.values()]
+			.filter(
+				(alias) =>
+					alias.organizationId === filter.organizationId &&
+					alias.itemId === filter.itemId,
+			)
+			.sort((left, right) => left.aliasValue.localeCompare(right.aliasValue));
+		return ok(
+			pageResult(
+				rows.map((row) => ({ ...row })),
+				filter.page,
+				filter.pageSize,
+			),
+		);
+	}
+
+	async listItemsByAlias(
+		filter: ItemAliasSearchFilter,
+	): Promise<Result<ExtensionListPage<Item>>> {
+		const matches = new Map<string, Item>();
 		for (const alias of this.itemAliases.values()) {
 			if (
-				alias.organizationId === organizationId &&
-				alias.normalizedAlias === normalizedAlias &&
-				alias.retiredAt === null
+				alias.organizationId === filter.organizationId &&
+				alias.normalizedValue === filter.normalizedValue &&
+				alias.isSearchable &&
+				alias.status === "active" &&
+				alias.archivedAt === null &&
+				(filter.aliasType === undefined ||
+					alias.aliasType === filter.aliasType) &&
+				(filter.languageId === undefined ||
+					alias.languageId === filter.languageId)
 			) {
 				const item = this.items.get(alias.itemId);
-				return ok(item ? cloneItem(item) : null);
+				if (
+					item !== undefined &&
+					item.status === "active" &&
+					item.retiredAt === null
+				) {
+					matches.set(item.id, cloneItem(item));
+				}
 			}
 		}
-		return ok(null);
+		const items = [...matches.values()].sort((left, right) => {
+			const codeOrder = left.code.localeCompare(right.code);
+			return codeOrder === 0 ? left.id.localeCompare(right.id) : codeOrder;
+		});
+		return ok(pageResult(items, filter.page, filter.pageSize));
+	}
+
+	async findItemByAlias(filter: ItemAliasLookup): Promise<Result<Item | null>> {
+		const matches = await this.listItemsByAlias({
+			...filter,
+			page: 1,
+			pageSize: 2,
+		});
+		if (!matches.ok) return matches;
+		if (matches.data.items.length > 1) {
+			return fail("CONFLICT", "Alias resolves to multiple active items", {
+				reason: "MASTER_DUPLICATE",
+				candidateCount: matches.data.items.length,
+			});
+		}
+		return ok(matches.data.items[0] ?? null);
 	}
 
 	async createWarehouseExternalId(
@@ -3943,12 +5770,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				reason: "MASTER_NOT_FOUND",
 			});
 		}
+		if (warehouse.status === "retired" || warehouse.retiredAt !== null) {
+			return fail("CONFLICT", "Retired warehouse cannot receive identifiers", {
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
 		for (const existing of this.warehouseExternalIds.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
-				existing.system === record.system &&
-				existing.namespace === record.namespace &&
-				existing.externalId === record.externalId
+				existing.sourceSystem === record.sourceSystem &&
+				existing.externalIdType === record.externalIdType &&
+				existing.normalizedValue === record.normalizedValue &&
+				existing.status === "active" &&
+				existing.archivedAt === null
 			) {
 				return fail(
 					"CONFLICT",
@@ -3962,9 +5796,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			warehouseId: record.warehouseId,
-			system: record.system,
-			namespace: record.namespace,
-			externalId: record.externalId,
+			sourceSystem: record.sourceSystem,
+			externalIdType: record.externalIdType,
+			externalValue: record.externalValue,
+			normalizedValue: record.normalizedValue,
+			caseSensitivity: record.caseSensitivity,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -3979,9 +5818,22 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			entity: "warehouse_external_id",
 			entityId: row.id,
 			action: "CREATE",
-			code: record.externalId,
+			code: `${record.sourceSystem}:${record.externalIdType}`,
 			version: 1,
-			type: "master_data.warehouse_external_id.created.v1",
+			type: EXTENSION_EVENT_TYPES.warehouseExternalIdAssigned,
+			eventPayload: createExtensionEventPayload({
+				organizationId: record.organizationId,
+				entityType: "warehouse_external_id",
+				entityId: row.id,
+				parentEntityId: record.warehouseId,
+				classification: extensionEventClassification(
+					"warehouse_external_id",
+					`${record.sourceSystem}:${record.externalIdType}`,
+				),
+				version: 1,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			}),
 			rollback: () => this.warehouseExternalIds.delete(row.id),
 		});
 		if (!side.ok) return side;
@@ -3991,22 +5843,37 @@ export class MemoryMasterDataStore implements MasterDataStore {
 
 	async findWarehouseByExternalId(
 		organizationId: string,
-		system: string,
-		namespace: string,
-		externalId: string,
+		sourceSystem: string,
+		externalIdType: string,
+		normalizedValue: string,
 	): Promise<Result<Warehouse | null>> {
+		const matches: WarehouseExternalId[] = [];
 		for (const ext of this.warehouseExternalIds.values()) {
 			if (
 				ext.organizationId === organizationId &&
-				ext.system === system &&
-				ext.namespace === namespace &&
-				ext.externalId === externalId
+				ext.sourceSystem === sourceSystem &&
+				ext.externalIdType === externalIdType &&
+				ext.normalizedValue === normalizedValue &&
+				ext.status === "active" &&
+				ext.archivedAt === null
 			) {
-				const warehouse = this.warehouses.get(ext.warehouseId);
-				return ok(warehouse ? cloneWarehouse(warehouse) : null);
+				matches.push(ext);
 			}
 		}
-		return ok(null);
+		if (matches.length > 1) {
+			return fail("CONFLICT", "External ID resolves to multiple warehouses", {
+				reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				candidateCount: matches.length,
+			});
+		}
+		const ext = matches[0];
+		if (ext === undefined) return ok(null);
+		const warehouse = this.warehouses.get(ext.warehouseId);
+		return ok(
+			warehouse?.status === "active" && warehouse.retiredAt === null
+				? cloneWarehouse(warehouse)
+				: null,
+		);
 	}
 
 	async getItemTemplateById(
@@ -4129,18 +5996,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				crossOrgDetails(),
 			);
 		}
-		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Item template version conflict",
-				versionConflictDetails(),
-			);
-		}
+		const version = assertExpectedExtensionVersion(
+			existing,
+			record.expectedVersion,
+			"item_template",
+		);
+		if (!version.ok) return version;
 		const snapshot = cloneItemTemplate(existing);
 		const updated: ItemTemplate = {
 			...existing,
 			name: record.name ?? existing.name,
-			version: existing.version + 1,
+			version: nextExtensionVersion(existing.version),
 			updatedBy: record.updatedBy,
 			updatedAt: new Date(),
 		};
@@ -4174,9 +6040,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	}
 
 	async transitionItemTemplate(
-		record: LifecycleRecord,
+		record: ItemTemplateLifecycleRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string; eventSuffix: string },
+		meta: {
+			correlationId: string;
+			eventSuffix: ItemTemplateLifecycleEventSuffix;
+		},
 	): Promise<Result<ItemTemplate>> {
 		const existing = this.itemTemplates.get(record.id);
 		if (existing === undefined) {
@@ -4191,19 +6060,67 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				crossOrgDetails(),
 			);
 		}
-		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Item template version conflict",
-				versionConflictDetails(),
+		const version = assertExpectedExtensionVersion(
+			existing,
+			record.expectedVersion,
+			"item_template",
+		);
+		if (!version.ok) return version;
+		const lifecycle = assertLifecycleTransition(
+			existing.status,
+			record.toStatus,
+		);
+		if (!lifecycle.ok) {
+			return lifecycle;
+		}
+		if (record.toStatus === "active") {
+			const attributes = [...this.itemTemplateAttributes.values()].filter(
+				(attribute) =>
+					attribute.organizationId === record.organizationId &&
+					attribute.templateId === record.id &&
+					attribute.status === "active" &&
+					attribute.archivedAt === null,
 			);
+			const incomplete =
+				attributes.length === 0 ||
+				!attributes.some((attribute) => attribute.isVariantDefining) ||
+				attributes.some(
+					(attribute) =>
+						(attribute.dataType === "single_option" ||
+							attribute.dataType === "multiple_option") &&
+						![...this.itemTemplateAttributeOptions.values()].some(
+							(option) =>
+								option.organizationId === record.organizationId &&
+								option.attributeId === attribute.id &&
+								option.status === "active" &&
+								option.archivedAt === null,
+						),
+				);
+			if (incomplete) {
+				return fail("CONFLICT", "Item template structure is incomplete", {
+					reason: "MASTER_INVALID_STATE",
+				} satisfies MasterFailureDetails);
+			}
+		}
+		if (
+			record.toStatus === "retired" &&
+			[...this.itemVariants.values()].some(
+				(variant) =>
+					variant.organizationId === record.organizationId &&
+					variant.templateId === record.id &&
+					variant.retiredAt === null,
+			)
+		) {
+			return fail("CONFLICT", "Item template has live variants", {
+				reason: "MASTER_DEPENDENCY_BLOCKED",
+			} satisfies MasterFailureDetails);
 		}
 		const snapshot = cloneItemTemplate(existing);
 		const now = new Date();
 		const updated: ItemTemplate = {
 			...existing,
 			status: record.toStatus,
-			version: existing.version + 1,
+			version: nextExtensionVersion(existing.version),
 			updatedBy: record.actorUserId,
 			updatedAt: now,
 			activatedAt:
@@ -4264,7 +6181,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			)
 			.sort((a, b) =>
 				a.sortOrder === b.sortOrder
-					? a.id.localeCompare(b.id)
+					? a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode)
 					: a.sortOrder - b.sortOrder,
 			);
 		return ok(rows.map(cloneItemTemplateAttribute));
@@ -4279,6 +6198,56 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				(row) =>
 					row.organizationId === organizationId &&
 					row.attributeId === attributeId,
+			)
+			.sort((a, b) =>
+				a.sortOrder === b.sortOrder
+					? a.normalizedCode === b.normalizedCode
+						? a.id.localeCompare(b.id)
+						: a.normalizedCode.localeCompare(b.normalizedCode)
+					: a.sortOrder - b.sortOrder,
+			);
+		return ok(rows.map(cloneItemTemplateAttributeOption));
+	}
+
+	async getItemTemplateAttributeContextById(
+		organizationId: string,
+		attributeId: string,
+	): Promise<Result<ItemTemplateAttributeContext | null>> {
+		const attribute = this.itemTemplateAttributes.get(attributeId);
+		if (
+			attribute === undefined ||
+			attribute.organizationId !== organizationId
+		) {
+			return ok(null);
+		}
+		const template = this.itemTemplates.get(attribute.templateId);
+		if (template === undefined || template.organizationId !== organizationId) {
+			return ok(null);
+		}
+		return ok({
+			attribute: cloneItemTemplateAttribute(attribute),
+			template: cloneItemTemplate(template),
+		});
+	}
+
+	async listItemTemplateAttributeOptionsByTemplate(
+		organizationId: string,
+		templateId: string,
+	): Promise<Result<ItemTemplateAttributeOption[]>> {
+		const attributeIds = new Set(
+			[...this.itemTemplateAttributes.values()]
+				.filter(
+					(attribute) =>
+						attribute.organizationId === organizationId &&
+						attribute.templateId === templateId,
+				)
+				.map((attribute) => attribute.id),
+		);
+		const rows = [...this.itemTemplateAttributeOptions.values()]
+			.filter(
+				(option) =>
+					option.organizationId === organizationId &&
+					attributeIds.has(option.attributeId),
 			)
 			.sort((a, b) =>
 				a.sortOrder === b.sortOrder
@@ -4300,13 +6269,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		) {
 			return fail("NOT_FOUND", "Item template not found", {
 				reason: "MASTER_NOT_FOUND",
+				field: "templateId",
 			} satisfies MasterFailureDetails);
 		}
 		if (template.status !== "draft") {
 			return fail(
 				"CONFLICT",
 				"Template attributes can only be added while draft",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+				{
+					reason: "MASTER_INVALID_STATE",
+					field: "templateId",
+					actualStatus: template.status,
+					requiredStatus: "draft",
+				} satisfies MasterFailureDetails,
 			);
 		}
 		if (
@@ -4330,9 +6305,22 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			code: record.code,
 			normalizedCode: record.normalizedCode,
 			name: record.name,
-			valueKind: record.valueKind,
+			description: record.description,
+			dataType: record.dataType,
+			valueKind:
+				record.dataType === "single_option" ||
+				record.dataType === "multiple_option"
+					? "option"
+					: "text",
 			isRequired: record.isRequired,
-			sortOrder: record.sortOrder,
+			isVariantDefining: record.isVariantDefining,
+			isSearchable: record.isSearchable,
+			displayOrder: record.displayOrder,
+			sortOrder: record.displayOrder,
+			validationRules: record.validationRules,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -4353,10 +6341,23 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				entityId: attribute.id,
 				action: "CREATE",
 				changes: [{ field: "code", oldValue: null, newValue: attribute.code }],
-				newValue: { code: attribute.code, valueKind: attribute.valueKind },
-				type: "master_data.item_template_attribute.created.v1",
+				newValue: { code: attribute.code, dataType: attribute.dataType },
+				type: EXTENSION_EVENT_TYPES.itemTemplateAttributeCreated,
 				code: attribute.code,
 				version: attribute.version,
+				eventPayload: createExtensionEventPayload({
+					organizationId: attribute.organizationId,
+					entityType: "item_template_attribute",
+					entityId: attribute.id,
+					parentEntityId: attribute.templateId,
+					classification: extensionEventClassification(
+						"item_template_attribute",
+						attribute.code,
+					),
+					version: attribute.version,
+					actorId: attribute.createdBy,
+					correlationId: meta.correlationId,
+				}),
 			},
 		);
 		if (!sideEffect.ok) {
@@ -4377,13 +6378,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		) {
 			return fail("NOT_FOUND", "Item template attribute not found", {
 				reason: "MASTER_NOT_FOUND",
+				field: "attributeId",
 			} satisfies MasterFailureDetails);
 		}
-		if (attribute.valueKind !== "option") {
+		if (
+			attribute.dataType !== "single_option" &&
+			attribute.dataType !== "multiple_option"
+		) {
 			return fail(
-				"BAD_REQUEST",
-				"Options can only be added to option-kind attributes",
-				{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+				"CONFLICT",
+				"Options can only be added to option-compatible attributes",
+				{
+					reason: "MASTER_INVALID_STATE",
+					field: "attributeId",
+				} satisfies MasterFailureDetails,
 			);
 		}
 		const template = this.itemTemplates.get(attribute.templateId);
@@ -4399,7 +6407,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return fail(
 				"CONFLICT",
 				"Template attribute options can only be added while draft",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
+				{
+					reason: "MASTER_INVALID_STATE",
+					field: "attributeId",
+					actualStatus: template.status,
+					requiredStatus: "draft",
+				} satisfies MasterFailureDetails,
 			);
 		}
 		if (
@@ -4423,7 +6436,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			code: record.code,
 			normalizedCode: record.normalizedCode,
 			label: record.label,
-			sortOrder: record.sortOrder,
+			description: record.description,
+			displayOrder: record.displayOrder,
+			sortOrder: record.displayOrder,
+			status: "active",
+			archivedAt: null,
+			archivedBy: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -4445,9 +6463,22 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				action: "CREATE",
 				changes: [{ field: "code", oldValue: null, newValue: option.code }],
 				newValue: { code: option.code, label: option.label },
-				type: "master_data.item_template_attribute_option.created.v1",
+				type: EXTENSION_EVENT_TYPES.itemTemplateAttributeOptionCreated,
 				code: option.code,
 				version: option.version,
+				eventPayload: createExtensionEventPayload({
+					organizationId: option.organizationId,
+					entityType: "item_template_attribute_option",
+					entityId: option.id,
+					parentEntityId: option.attributeId,
+					classification: extensionEventClassification(
+						"item_template_attribute_option",
+						option.code,
+					),
+					version: option.version,
+					actorId: option.createdBy,
+					correlationId: meta.correlationId,
+				}),
 			},
 		);
 		if (!sideEffect.ok) {
@@ -4515,7 +6546,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				codeConflictDetails(),
 			);
 		}
-		if (!this.uoms.has(record.baseUomId)) {
+		const baseUom = this.uoms.get(record.baseUomId);
+		if (baseUom === undefined || !baseUom.active) {
 			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
 				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
@@ -4528,6 +6560,11 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				{ reason: "MASTER_CROSS_ORG_REFERENCE" } satisfies MasterFailureDetails,
 			);
 		}
+		if (group.status === "retired" || group.retiredAt !== null) {
+			return fail("CONFLICT", "itemGroupId must not be retired", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
 		const template = this.itemTemplates.get(record.templateId);
 		if (
 			template === undefined ||
@@ -4535,6 +6572,123 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		) {
 			return fail("NOT_FOUND", "Item template not found", {
 				reason: "MASTER_NOT_FOUND",
+			} satisfies MasterFailureDetails);
+		}
+		if (template.status !== "active" || template.retiredAt !== null) {
+			return fail("CONFLICT", "Variants require an active template", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		const attributes = [...this.itemTemplateAttributes.values()].filter(
+			(attribute) =>
+				attribute.organizationId === record.organizationId &&
+				attribute.templateId === record.templateId &&
+				attribute.status === "active" &&
+				attribute.archivedAt === null,
+		);
+		const attributeById = new Map(
+			attributes.map((attribute) => [attribute.id, attribute] as const),
+		);
+		const seen = new Set<string>();
+		const entries: Array<{
+			attrNormalizedCode: string;
+			valueNormalized: string;
+		}> = [];
+		for (const value of record.attributeValues) {
+			if (seen.has(value.attributeId)) {
+				return fail("BAD_REQUEST", "Duplicate template attribute value", {
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails);
+			}
+			seen.add(value.attributeId);
+			const attribute = attributeById.get(value.attributeId);
+			if (attribute === undefined) {
+				return fail("BAD_REQUEST", "Unknown template attribute", {
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails);
+			}
+			if (value.valueType !== attribute.dataType) {
+				return fail("BAD_REQUEST", "Attribute value type mismatch", {
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails);
+			}
+			const normalized = normalizeVariantAttributeValue({
+				dataType: attribute.dataType,
+				validationRules: attribute.validationRules,
+				value: {
+					...(value.textValue === null ? {} : { textValue: value.textValue }),
+					...(value.integerValue === null
+						? {}
+						: { integerValue: value.integerValue }),
+					...(value.decimalValue === null
+						? {}
+						: { decimalValue: value.decimalValue }),
+					...(value.booleanValue === null
+						? {}
+						: { booleanValue: value.booleanValue }),
+					...(value.dateValue === null ? {} : { dateValue: value.dateValue }),
+					...(value.optionId === null ? {} : { optionId: value.optionId }),
+					...(value.optionIds.length === 0
+						? {}
+						: { optionIds: value.optionIds }),
+					...(value.referenceValue === null
+						? {}
+						: { referenceValue: value.referenceValue }),
+				},
+			});
+			if (!normalized.ok) return normalized;
+			let expectedNormalizedValue = normalized.data.normalizedValue;
+			const selectedOptionIds =
+				attribute.dataType === "single_option"
+					? value.optionId === null
+						? []
+						: [value.optionId]
+					: attribute.dataType === "multiple_option"
+						? [...value.optionIds]
+						: [];
+			if (selectedOptionIds.length > 0) {
+				const selectedOptions = selectedOptionIds.map((optionId) =>
+					this.itemTemplateAttributeOptions.get(optionId),
+				);
+				if (
+					selectedOptions.some(
+						(option) =>
+							option === undefined ||
+							option.organizationId !== record.organizationId ||
+							option.attributeId !== attribute.id ||
+							option.status !== "active" ||
+							option.archivedAt !== null,
+					)
+				) {
+					return fail("BAD_REQUEST", "Invalid option attribute value", {
+						reason: "MASTER_VALIDATION_FAILED",
+					} satisfies MasterFailureDetails);
+				}
+				expectedNormalizedValue = selectedOptions
+					.map((option) => option?.normalizedCode ?? "")
+					.sort()
+					.join(",");
+			}
+			if (value.normalizedValue !== expectedNormalizedValue) {
+				return fail("BAD_REQUEST", "Invalid normalized attribute value", {
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails);
+			}
+			if (attribute.isVariantDefining) {
+				entries.push({
+					attrNormalizedCode: attribute.normalizedCode,
+					valueNormalized: value.normalizedValue,
+				});
+			}
+		}
+		if (
+			attributes.some(
+				(attribute) => attribute.isRequired && !seen.has(attribute.id),
+			) ||
+			buildCombinationKey(entries) !== record.combinationKey
+		) {
+			return fail("BAD_REQUEST", "Variant attribute set is incomplete", {
+				reason: "MASTER_VALIDATION_FAILED",
 			} satisfies MasterFailureDetails);
 		}
 		if (
@@ -4592,8 +6746,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				organizationId: record.organizationId,
 				variantId: variant.id,
 				attributeId: value.attributeId,
-				valueText: value.valueText,
+				valueType: value.valueType,
+				textValue: value.textValue,
+				valueText: value.textValue,
+				integerValue: value.integerValue,
+				decimalValue: value.decimalValue,
+				booleanValue: value.booleanValue,
+				dateValue: value.dateValue,
 				optionId: value.optionId,
+				optionIds: [...value.optionIds],
+				referenceValue: value.referenceValue,
+				status: "active",
+				archivedAt: null,
+				archivedBy: null,
 				version: 1,
 				createdBy: record.createdBy,
 				updatedBy: record.createdBy,
@@ -4665,11 +6830,103 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return variantSide;
 		}
 
+		for (const value of values) {
+			const valueSide = await this.commitMutation(rollbackAll, ports, {
+				organizationId: value.organizationId,
+				actorUserId: value.createdBy,
+				correlationId: meta.correlationId,
+				entity: "item_variant_attribute_value",
+				entityId: value.id,
+				action: "CREATE",
+				changes: [
+					{
+						field: "attributeId",
+						oldValue: null,
+						newValue: value.attributeId,
+					},
+				],
+				newValue: {
+					attributeId: value.attributeId,
+					valueType: value.valueType,
+					version: value.version,
+				},
+				type: EXTENSION_EVENT_TYPES.itemVariantAttributeValueAssigned,
+				code: value.valueType,
+				version: value.version,
+				eventPayload: createExtensionEventPayload({
+					organizationId: value.organizationId,
+					entityType: "item_variant_attribute_value",
+					entityId: value.id,
+					parentEntityId: value.variantId,
+					classification: extensionEventClassification(
+						"item_variant_attribute_value",
+						value.valueType,
+					),
+					version: value.version,
+					actorId: value.createdBy,
+					correlationId: meta.correlationId,
+				}),
+			});
+			if (!valueSide.ok) {
+				return valueSide;
+			}
+		}
+
 		const assembled = this.assembleItemVariant(variant);
 		if (assembled === null) {
 			return fail("INTERNAL_ERROR", "Item variant create returned no row");
 		}
 		return ok(assembled);
+	}
+
+	async retireItemVariant(
+		record: ItemVariantRetireRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ItemVariant>> {
+		const variant = this.itemVariants.get(record.variantId);
+		const item = this.items.get(record.itemId);
+		if (
+			variant === undefined ||
+			item === undefined ||
+			variant.organizationId !== record.organizationId ||
+			item.organizationId !== record.organizationId ||
+			variant.itemId !== record.itemId
+		) {
+			return fail("NOT_FOUND", "Item variant not found", {
+				reason: "MASTER_NOT_FOUND",
+			} satisfies MasterFailureDetails);
+		}
+		const variantVersion = assertExpectedCoreVersion(
+			variant,
+			record.expectedVariantVersion,
+		);
+		if (!variantVersion.ok) return variantVersion;
+		const itemVersion = assertExpectedCoreVersion(
+			item,
+			record.expectedItemVersion,
+		);
+		if (!itemVersion.ok) return itemVersion;
+		const retired = await this.transitionItem(
+			{
+				organizationId: record.organizationId,
+				id: record.itemId,
+				expectedVersion: record.expectedItemVersion,
+				actorUserId: record.actorUserId,
+				toStatus: "retired",
+			},
+			ports,
+			{ correlationId: meta.correlationId, eventSuffix: "retired" },
+		);
+		if (!retired.ok) {
+			return retired;
+		}
+		const assembled = this.assembleItemVariant(
+			this.itemVariants.get(record.variantId) ?? variant,
+		);
+		return assembled === null
+			? fail("INTERNAL_ERROR", "Item variant retire returned no row")
+			: ok(assembled);
 	}
 
 	async getImportBatchByIdempotencyKey(
@@ -4825,6 +7082,28 @@ export function seedDefaultPlatformRefs(store: MemoryMasterDataStore): void {
 			toBaseNumerator: "1",
 			toBaseDenominator: "1",
 			isBase: true,
+			active: true,
+		},
+		{
+			id: "b1000000-0000-4000-8000-000000000008",
+			code: "CARTON",
+			name: "Carton",
+			symbol: "ctn",
+			dimensionId: "a1000000-0000-4000-8000-000000000001",
+			toBaseNumerator: "1",
+			toBaseDenominator: "1",
+			isBase: false,
+			active: true,
+		},
+		{
+			id: "b1000000-0000-4000-8000-000000000009",
+			code: "BOX",
+			name: "Box",
+			symbol: "box",
+			dimensionId: "a1000000-0000-4000-8000-000000000001",
+			toBaseNumerator: "1",
+			toBaseDenominator: "1",
+			isBase: false,
 			active: true,
 		},
 	];

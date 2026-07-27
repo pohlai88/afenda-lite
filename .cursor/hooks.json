@@ -30,6 +30,12 @@
     ],
     "beforeShellExecution": [
       {
+        "command": "node .cursor/hooks/focused-verification-lane.mjs",
+        "matcher": "\\b(pnpm\\s+(test|check|build:check)|(?:pnpm\\s+exec\\s+)?turbo\\s+run)\\b",
+        "failClosed": false,
+        "timeout": 20
+      },
+      {
         "command": "node .cursor/hooks/git-no-auto-recover.mjs",
         "matcher": "\\bgit\\b",
         "failClosed": true,

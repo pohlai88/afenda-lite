@@ -11,6 +11,14 @@ import {
 	queryDomainEvents,
 } from "@afenda/events";
 import {
+	type Employee,
+	type EmployeeComplianceSummary,
+	type EmployeeDocumentListItem,
+	type EmployeeOrgContextAsOf,
+	type EmployeeProfile,
+	type Employment,
+	type EmploymentContract,
+	type EmploymentStatusHistory,
 	getAssignment,
 	getAssignmentAsOf,
 	getEmployeeById,
@@ -22,6 +30,7 @@ import {
 	getOffboardingCase,
 	getOnboardingCase,
 	getPosition,
+	type HumanResourcesEmployeeId,
 	listDirectReports,
 	listEmployeeDocuments,
 	listEmploymentContracts,
@@ -29,20 +38,11 @@ import {
 	listOutstandingPolicyAcknowledgements,
 	listPositions,
 	listProbationReviewsByEmployment,
-	resolveEmployeeOrgContextAsOf,
-	resolvePrimaryManager,
-	type Employee,
-	type EmployeeComplianceSummary,
-	type EmployeeDocumentListItem,
-	type EmployeeOrgContextAsOf,
-	type EmployeeProfile,
-	type Employment,
-	type EmploymentContract,
-	type EmploymentStatusHistory,
-	type HumanResourcesEmployeeId,
 	type PolicyAcknowledgement,
 	type Position,
 	type ProbationReview,
+	resolveEmployeeOrgContextAsOf,
+	resolvePrimaryManager,
 	type WorkAssignment,
 	type WorkEligibility,
 } from "@afenda/human-resources";
@@ -148,7 +148,9 @@ async function lifecycleEvents(organizationId: string) {
 }
 
 function unique(values: readonly (string | null)[]): string[] {
-	return [...new Set(values.filter((value): value is string => value !== null))];
+	return [
+		...new Set(values.filter((value): value is string => value !== null)),
+	];
 }
 
 function timelineFromStatus(history: readonly EmploymentStatusHistory[]) {
@@ -184,7 +186,9 @@ function timelineFromAssignments(assignments: readonly WorkAssignment[]) {
 		(assignment): EmployeeLifecycleTimelineEntry => ({
 			id: `assignment-${assignment.id}`,
 			kind: "assignment",
-			title: assignment.predecessorAssignmentId ? "Assignment transfer" : "Assignment started",
+			title: assignment.predecessorAssignmentId
+				? "Assignment transfer"
+				: "Assignment started",
 			detail: assignment.endsOn
 				? `${assignment.startsOn} to ${assignment.endsOn}`
 				: `Effective from ${assignment.startsOn}`,
@@ -227,28 +231,67 @@ export async function loadEmployeeAdminRecord(input: {
 		};
 	}
 
-	const [profileResult, currentEmploymentResult, events, summaryResult, documentsResult, eligibilityResult, acknowledgementsResult, positionsResult] =
-		await Promise.all([
-			getEmployeeProfile({ ...context, employeeId: input.employeeId, asOf: input.asOf }, options),
-			getEmploymentAsOf({ ...context, employeeId: input.employeeId, asOf: input.asOf }, options),
-			lifecycleEvents(input.session.orgId),
-			getEmployeeComplianceSummary({ ...context, employeeId: input.employeeId, asOf: input.asOf }, options),
-			listEmployeeDocuments({ ...context, employeeId: input.employeeId, page: 1, pageSize: 100 }, options),
-			getEmployeeWorkEligibility({ ...context, employeeId: input.employeeId }, options),
-			listOutstandingPolicyAcknowledgements({ ...context, employeeId: input.employeeId, page: 1, pageSize: 100 }, options),
-			listPositions({ ...context, page: 1, pageSize: 100, status: "active" }, options),
-		]);
+	const [
+		profileResult,
+		currentEmploymentResult,
+		events,
+		summaryResult,
+		documentsResult,
+		eligibilityResult,
+		acknowledgementsResult,
+		positionsResult,
+	] = await Promise.all([
+		getEmployeeProfile(
+			{ ...context, employeeId: input.employeeId, asOf: input.asOf },
+			options,
+		),
+		getEmploymentAsOf(
+			{ ...context, employeeId: input.employeeId, asOf: input.asOf },
+			options,
+		),
+		lifecycleEvents(input.session.orgId),
+		getEmployeeComplianceSummary(
+			{ ...context, employeeId: input.employeeId, asOf: input.asOf },
+			options,
+		),
+		listEmployeeDocuments(
+			{ ...context, employeeId: input.employeeId, page: 1, pageSize: 100 },
+			options,
+		),
+		getEmployeeWorkEligibility(
+			{ ...context, employeeId: input.employeeId },
+			options,
+		),
+		listOutstandingPolicyAcknowledgements(
+			{ ...context, employeeId: input.employeeId, page: 1, pageSize: 100 },
+			options,
+		),
+		listPositions(
+			{ ...context, page: 1, pageSize: 100, status: "active" },
+			options,
+		),
+	]);
 
 	const warnings: string[] = [];
-	if (!profileResult.ok) warnings.push("Employee profile details are partially unavailable.");
-	if (!summaryResult.ok || !documentsResult.ok || !eligibilityResult.ok || !acknowledgementsResult.ok) {
+	if (!profileResult.ok)
+		warnings.push("Employee profile details are partially unavailable.");
+	if (
+		!summaryResult.ok ||
+		!documentsResult.ok ||
+		!eligibilityResult.ok ||
+		!acknowledgementsResult.ok
+	) {
 		warnings.push("Some compliance facts are unavailable.");
 	}
-	if (!positionsResult.ok) warnings.push("Active positions are unavailable for assignment changes.");
+	if (!positionsResult.ok)
+		warnings.push("Active positions are unavailable for assignment changes.");
 
-	const employmentStarted = events.get(HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT) ?? [];
+	const employmentStarted =
+		events.get(HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT) ?? [];
 	const employmentIds = unique([
-		currentEmploymentResult.ok ? currentEmploymentResult.data?.id ?? null : null,
+		currentEmploymentResult.ok
+			? (currentEmploymentResult.data?.id ?? null)
+			: null,
 		...employmentStarted.map((event) => eventEntityId(event.payload)),
 	]);
 	const employmentResults = await Promise.all(
@@ -258,50 +301,82 @@ export async function loadEmployeeAdminRecord(input: {
 	);
 	const employments = employmentResults
 		.flatMap((result) =>
-			result.ok && result.data.employeeId === input.employeeId ? [result.data] : [],
+			result.ok && result.data.employeeId === input.employeeId
+				? [result.data]
+				: [],
 		)
 		.sort((left, right) => right.startsOn.localeCompare(left.startsOn));
 	const currentEmployment = currentEmploymentResult.ok
 		? currentEmploymentResult.data
-		: employments[0] ?? null;
-	if (!currentEmploymentResult.ok) warnings.push("Current employment could not be resolved.");
+		: (employments[0] ?? null);
+	if (!currentEmploymentResult.ok)
+		warnings.push("Current employment could not be resolved.");
 
 	const employmentFacts = await Promise.all(
 		employments.map(async (employment) => {
 			const [history, contracts, probation] = await Promise.all([
-				listEmploymentStatusHistory({ ...context, employmentId: employment.id, asOf: input.asOf }, options),
-				listEmploymentContracts({ ...context, employmentId: employment.id }, options),
-				listProbationReviewsByEmployment({ ...context, employmentId: employment.id }, options),
+				listEmploymentStatusHistory(
+					{ ...context, employmentId: employment.id, asOf: input.asOf },
+					options,
+				),
+				listEmploymentContracts(
+					{ ...context, employmentId: employment.id },
+					options,
+				),
+				listProbationReviewsByEmployment(
+					{ ...context, employmentId: employment.id },
+					options,
+				),
 			]);
 			return { history, contracts, probation };
 		}),
 	);
-	const statusHistory = employmentFacts.flatMap((fact) => (fact.history.ok ? fact.history.data.history : []));
-	const contracts = employmentFacts.flatMap((fact) => (fact.contracts.ok ? fact.contracts.data : []));
-	const probationReviews = employmentFacts.flatMap((fact) => (fact.probation.ok ? fact.probation.data : []));
-	if (employmentFacts.some((fact) => !fact.history.ok || !fact.contracts.ok || !fact.probation.ok)) {
+	const statusHistory = employmentFacts.flatMap((fact) =>
+		fact.history.ok ? fact.history.data.history : [],
+	);
+	const contracts = employmentFacts.flatMap((fact) =>
+		fact.contracts.ok ? fact.contracts.data : [],
+	);
+	const probationReviews = employmentFacts.flatMap((fact) =>
+		fact.probation.ok ? fact.probation.data : [],
+	);
+	if (
+		employmentFacts.some(
+			(fact) => !fact.history.ok || !fact.contracts.ok || !fact.probation.ok,
+		)
+	) {
 		warnings.push("Some employment history facts are unavailable.");
 	}
 
-	const assignmentCreated = events.get(HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT) ?? [];
+	const assignmentCreated =
+		events.get(HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT) ?? [];
 	const currentAssignmentResult = currentEmployment
-		? await getAssignmentAsOf({ ...context, employmentId: currentEmployment.id, asOf: input.asOf }, options)
+		? await getAssignmentAsOf(
+				{ ...context, employmentId: currentEmployment.id, asOf: input.asOf },
+				options,
+			)
 		: null;
 	const assignmentIds = unique([
-		currentAssignmentResult?.ok ? currentAssignmentResult.data?.id ?? null : null,
+		currentAssignmentResult?.ok
+			? (currentAssignmentResult.data?.id ?? null)
+			: null,
 		...assignmentCreated.map((event) => eventEntityId(event.payload)),
 	]);
 	const assignmentResults = await Promise.all(
-		assignmentIds.map((assignmentId) => getAssignment({ ...context, assignmentId }, options)),
+		assignmentIds.map((assignmentId) =>
+			getAssignment({ ...context, assignmentId }, options),
+		),
 	);
 	const assignments = assignmentResults
 		.flatMap((result) =>
-			result.ok && result.data.employeeId === input.employeeId ? [result.data] : [],
+			result.ok && result.data.employeeId === input.employeeId
+				? [result.data]
+				: [],
 		)
 		.sort((left, right) => right.startsOn.localeCompare(left.startsOn));
 	const currentAssignment = currentAssignmentResult?.ok
 		? currentAssignmentResult.data
-		: assignments.find((assignment) => assignment.endsOn === null) ?? null;
+		: (assignments.find((assignment) => assignment.endsOn === null) ?? null);
 
 	const orgContextResult = currentEmployment
 		? await resolveEmployeeOrgContextAsOf(
@@ -310,49 +385,70 @@ export async function loadEmployeeAdminRecord(input: {
 			)
 		: null;
 	const orgContext = orgContextResult?.ok ? orgContextResult.data : null;
-	const [positionResult, managerLineResult, directReportLinesResult] = await Promise.all([
-		orgContext?.positionId
-			? getPosition({ ...context, positionId: orgContext.positionId }, options)
-			: Promise.resolve(null),
-		resolvePrimaryManager({ ...context, employeeId: input.employeeId, asOf: input.asOf }, options),
-		listDirectReports({ ...context, managerEmployeeId: input.employeeId, asOf: input.asOf, page: 1, pageSize: 100 }, options),
-	]);
+	const [positionResult, managerLineResult, directReportLinesResult] =
+		await Promise.all([
+			orgContext?.positionId
+				? getPosition(
+						{ ...context, positionId: orgContext.positionId },
+						options,
+					)
+				: Promise.resolve(null),
+			resolvePrimaryManager(
+				{ ...context, employeeId: input.employeeId, asOf: input.asOf },
+				options,
+			),
+			listDirectReports(
+				{
+					...context,
+					managerEmployeeId: input.employeeId,
+					asOf: input.asOf,
+					page: 1,
+					pageSize: 100,
+				},
+				options,
+			),
+		]);
 	const managerLine = managerLineResult.ok ? managerLineResult.data : null;
 	const managerResult = managerLine
-		? await getEmployeeById({ ...context, employeeId: managerLine.managerEmployeeId }, options)
+		? await getEmployeeById(
+				{ ...context, employeeId: managerLine.managerEmployeeId },
+				options,
+			)
 		: null;
 	const directReportIds = directReportLinesResult.ok
 		? directReportLinesResult.data.reportingLines.map((line) => line.employeeId)
 		: [];
 	const directReportResults = await Promise.all(
-		directReportIds.map((employeeId) => getEmployeeById({ ...context, employeeId }, options)),
+		directReportIds.map((employeeId) =>
+			getEmployeeById({ ...context, employeeId }, options),
+		),
 	);
 
 	const directTimelineEvents = [
-		...(events.get(HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT) ?? []).filter(
-			(event) => eventEntityId(event.payload) === input.employeeId,
-		).map(
-			(event): EmployeeLifecycleTimelineEntry => ({
-				id: `transfer-${event.id}`,
-				kind: "transfer",
-				title: "Employee transferred",
-				detail: "Assignment and organization context changed.",
-				date: eventEffectiveOn(event.payload, event.occurredAt),
-				status: "completed",
-			}),
-		),
-		...(events.get(HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT) ?? []).filter(
-			(event) => eventEntityId(event.payload) === input.employeeId,
-		).map(
-			(event): EmployeeLifecycleTimelineEntry => ({
-				id: `termination-${event.id}`,
-				kind: "termination",
-				title: "Employment terminated",
-				detail: "Termination finalized and employment status changed.",
-				date: eventEffectiveOn(event.payload, event.occurredAt),
-				status: "completed",
-			}),
-		),
+		...(events.get(HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT) ?? [])
+			.filter((event) => eventEntityId(event.payload) === input.employeeId)
+			.map(
+				(event): EmployeeLifecycleTimelineEntry => ({
+					id: `transfer-${event.id}`,
+					kind: "transfer",
+					title: "Employee transferred",
+					detail: "Assignment and organization context changed.",
+					date: eventEffectiveOn(event.payload, event.occurredAt),
+					status: "completed",
+				}),
+			),
+		...(events.get(HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT) ?? [])
+			.filter((event) => eventEntityId(event.payload) === input.employeeId)
+			.map(
+				(event): EmployeeLifecycleTimelineEntry => ({
+					id: `termination-${event.id}`,
+					kind: "termination",
+					title: "Employment terminated",
+					detail: "Termination finalized and employment status changed.",
+					date: eventEffectiveOn(event.payload, event.occurredAt),
+					status: "completed",
+				}),
+			),
 	];
 
 	const caseEventEntries = [
@@ -362,24 +458,35 @@ export async function loadEmployeeAdminRecord(input: {
 		...(events.get(HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT) ?? []),
 	];
 	const caseTimeline = await Promise.all(
-		caseEventEntries.map(async (event): Promise<EmployeeLifecycleTimelineEntry | null> => {
-			const caseId = eventEntityId(event.payload);
-			if (!caseId) return null;
-			const onboarding = event.type.startsWith("human-resources.onboarding");
-			const result = onboarding
-				? await getOnboardingCase({ ...context, onboardingCaseId: caseId }, options)
-				: await getOffboardingCase({ ...context, offboardingCaseId: caseId }, options);
-			if (!result.ok || result.data?.employeeId !== input.employeeId) return null;
-			const completed = event.type.includes("completed");
-			return {
-				id: `${onboarding ? "onboarding" : "offboarding"}-${event.id}`,
-				kind: onboarding ? "onboarding" : "offboarding",
-				title: `${onboarding ? "Onboarding" : "Offboarding"} ${completed ? "completed" : "started"}`,
-				detail: completed ? "All required case work completed." : "Lifecycle case opened.",
-				date: event.occurredAt.toISOString().slice(0, 10),
-				status: completed ? "completed" : "active",
-			};
-		}),
+		caseEventEntries.map(
+			async (event): Promise<EmployeeLifecycleTimelineEntry | null> => {
+				const caseId = eventEntityId(event.payload);
+				if (!caseId) return null;
+				const onboarding = event.type.startsWith("human-resources.onboarding");
+				const result = onboarding
+					? await getOnboardingCase(
+							{ ...context, onboardingCaseId: caseId },
+							options,
+						)
+					: await getOffboardingCase(
+							{ ...context, offboardingCaseId: caseId },
+							options,
+						);
+				if (!result.ok || result.data?.employeeId !== input.employeeId)
+					return null;
+				const completed = event.type.includes("completed");
+				return {
+					id: `${onboarding ? "onboarding" : "offboarding"}-${event.id}`,
+					kind: onboarding ? "onboarding" : "offboarding",
+					title: `${onboarding ? "Onboarding" : "Offboarding"} ${completed ? "completed" : "started"}`,
+					detail: completed
+						? "All required case work completed."
+						: "Lifecycle case opened.",
+					date: event.occurredAt.toISOString().slice(0, 10),
+					status: completed ? "completed" : "active",
+				};
+			},
+		),
 	);
 
 	const timeline = [
@@ -388,7 +495,9 @@ export async function loadEmployeeAdminRecord(input: {
 		...timelineFromAssignments(assignments),
 		...timelineFromProbation(probationReviews),
 		...directTimelineEvents,
-		...caseTimeline.filter((entry): entry is EmployeeLifecycleTimelineEntry => entry !== null),
+		...caseTimeline.filter(
+			(entry): entry is EmployeeLifecycleTimelineEntry => entry !== null,
+		),
 	].sort((left, right) => right.date.localeCompare(left.date));
 
 	return {
@@ -406,8 +515,12 @@ export async function loadEmployeeAdminRecord(input: {
 			orgContext,
 			position: positionResult?.ok ? positionResult.data : null,
 			manager: managerResult?.ok ? managerResult.data : null,
-			directReports: directReportResults.flatMap((result) => (result.ok ? [result.data] : [])),
-			availablePositions: positionsResult.ok ? positionsResult.data.positions : [],
+			directReports: directReportResults.flatMap((result) =>
+				result.ok ? [result.data] : [],
+			),
+			availablePositions: positionsResult.ok
+				? positionsResult.data.positions
+				: [],
 			complianceSummary: summaryResult.ok ? summaryResult.data : null,
 			documents: documentsResult.ok ? documentsResult.data.documents : [],
 			workEligibility: eligibilityResult.ok ? eligibilityResult.data : null,

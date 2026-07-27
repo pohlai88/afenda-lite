@@ -145,7 +145,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/create-party.ts": ["master_data.manage"],
 			"app/actions/activate-party.ts": ["master_data.manage"],
 			"app/actions/merge-parties.ts": ["master_data.manage"],
-			"app/actions/create-party-role.ts": ["master_data.manage"],
+			"app/actions/create-party-role.ts": ["master_data.party_role_manage"],
 			"app/actions/create-item.ts": ["master_data.manage"],
 			"app/actions/create-item-group.ts": ["master_data.manage"],
 			"app/actions/create-warehouse.ts": ["master_data.manage"],

@@ -71,6 +71,40 @@ describe("git-no-auto-recover", () => {
 	});
 });
 
+describe("focused-verification-lane", () => {
+	it("allows focused package verification commands", () => {
+		for (const command of [
+			"pnpm --filter @afenda/master-data test",
+			"pnpm --filter @afenda/web typecheck",
+			"pnpm --filter @afenda/payroll test -- payroll-schema-constraints",
+			"pnpm exec vitest run --config testing/vitest.unit.config.ts --project master-data",
+		]) {
+			const out = runHook("focused-verification-lane.mjs", { command });
+			assert.equal(out.permission, "allow", command);
+		}
+	});
+
+	it("asks before broad root verification commands", () => {
+		for (const command of [
+			"pnpm test",
+			"pnpm check",
+			"pnpm build:check",
+			"pnpm exec turbo run lint typecheck test",
+			"turbo run lint typecheck test build",
+		]) {
+			const out = runHook("focused-verification-lane.mjs", { command });
+			assert.equal(out.permission, "ask", command);
+		}
+	});
+
+	it("allows broad verification with explicit override", () => {
+		const out = runHook("focused-verification-lane.mjs", {
+			command: '$env:AFENDA_ALLOW_BROAD_VERIFY = "1"; pnpm test',
+		});
+		assert.equal(out.permission, "allow");
+	});
+});
+
 describe("no-drizzle-baseline-migrate", () => {
 	it("denies db:migrate without override", () => {
 		const out = runHook("no-drizzle-baseline-migrate.mjs", {
@@ -691,6 +725,7 @@ describe("smoke matrix — false-ban guards", () => {
 			"corporate-administration-dependency-policy.mjs",
 			"corporate-administration-lifecycle-position.mjs",
 			"git-no-auto-recover.mjs",
+			"focused-verification-lane.mjs",
 			"no-drizzle-baseline-migrate.mjs",
 		]) {
 			const result = spawnSync(

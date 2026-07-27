@@ -1,0 +1,1 @@
+ALTER TABLE "md_item_variant_attribute_value" ADD CONSTRAINT "md_item_variant_attribute_value_exactly_one_value_check" CHECK (("md_item_variant_attribute_value"."value_text" IS NOT NULL AND "md_item_variant_attribute_value"."option_id" IS NULL) OR ("md_item_variant_attribute_value"."value_text" IS NULL AND "md_item_variant_attribute_value"."option_id" IS NOT NULL));

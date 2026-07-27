@@ -1,0 +1,2 @@
+DROP INDEX "md_party_role_org_party_code_live_uidx";--> statement-breakpoint
+CREATE UNIQUE INDEX "md_party_role_org_party_code_active_uidx" ON "md_party_role" USING btree ("organization_id","party_id","role_code") WHERE "md_party_role"."status" = 'active' AND "md_party_role"."archived_at" IS NULL;

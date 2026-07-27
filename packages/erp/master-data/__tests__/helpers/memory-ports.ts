@@ -5,6 +5,7 @@ import { ok, type Result } from "@afenda/errors/result";
 import type {
 	AuditFactInput,
 	AuditFactPort,
+	ClockPort,
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
@@ -49,8 +50,21 @@ export function createMemoryOutboxPort(): OutboxPort & {
 export function createMemoryMutationPorts(): MutationPorts & {
 	audit: ReturnType<typeof createMemoryAuditPort>;
 	outbox: ReturnType<typeof createMemoryOutboxPort>;
+	clock: ClockPort & {
+		current: Date;
+		set(value: Date): void;
+	};
 } {
 	const audit = createMemoryAuditPort();
 	const outbox = createMemoryOutboxPort();
-	return { audit, outbox };
+	const clock = {
+		current: new Date("2026-01-01T00:00:00.000Z"),
+		now() {
+			return new Date(this.current);
+		},
+		set(value: Date) {
+			this.current = new Date(value);
+		},
+	};
+	return { audit, outbox, clock };
 }

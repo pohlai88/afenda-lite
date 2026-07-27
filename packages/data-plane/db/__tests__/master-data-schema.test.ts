@@ -16,6 +16,7 @@ import {
 	mdItemUom,
 	mdItemVariant,
 	mdItemVariantAttributeValue,
+	mdItemVariantAttributeValueOption,
 	mdOrganizationDimension,
 	mdParty,
 	mdPartyAddress,
@@ -63,6 +64,7 @@ const IN_SCOPE_TABLES = {
 	mdItemTemplateAttributeOption,
 	mdItemVariant,
 	mdItemVariantAttributeValue,
+	mdItemVariantAttributeValueOption,
 	mdChangeRequest,
 	mdImportBatch,
 	mdOrganizationDimension,
@@ -88,6 +90,7 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 				"md_item_uom",
 				"md_item_variant",
 				"md_item_variant_attribute_value",
+				"md_item_variant_attribute_value_option",
 				"md_organization_dimension",
 				"md_party",
 				"md_party_address",
@@ -113,6 +116,9 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_party");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_item_template");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_item_variant");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
+			"md_item_variant_attribute_value_option",
+		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_payment_term");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_tax_registration");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_change_request");
@@ -149,8 +155,17 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 
 	it("stores variant attribute values as typed columns (no JSON bag)", () => {
 		const columns = getTableColumns(mdItemVariantAttributeValue);
-		expect(columns.valueText).toBeDefined();
+		expect(columns.textValue).toBeDefined();
+		expect(columns.integerValue).toBeDefined();
+		expect(columns.decimalValue).toBeDefined();
+		expect(columns.booleanValue).toBeDefined();
+		expect(columns.dateValue).toBeDefined();
 		expect(columns.optionId).toBeDefined();
+		expect(columns.referenceValue).toBeDefined();
+		const optionColumns = getTableColumns(mdItemVariantAttributeValueOption);
+		expect(optionColumns.valueId).toBeDefined();
+		expect(optionColumns.attributeId).toBeDefined();
+		expect(optionColumns.optionId).toBeDefined();
 		expect(
 			Object.keys(columns).some((key) =>
 				/json|variantJson|variant_json/i.test(key),

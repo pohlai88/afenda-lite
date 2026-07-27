@@ -745,19 +745,49 @@ queries:
   - id: master_data.party_role.list
     moduleId: master-data
     permission: master_data.read
+  - id: master_data.party_role.get
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party_role.list_active
+    moduleId: master-data
+    permission: master_data.read
   - id: master_data.party_address.list
     moduleId: master-data
     permission: master_data.read
   - id: master_data.party_address.get
     moduleId: master-data
     permission: master_data.read
+  - id: master_data.party_address.get_primary
+    moduleId: master-data
+    permission: master_data.read
   - id: master_data.party_contact.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party_contact.get_primary
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party_relationship.list
     moduleId: master-data
     permission: master_data.read
   - id: master_data.item_uom.list
     moduleId: master-data
     permission: master_data.read
+  - id: master_data.item_uom.get_default_sales
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_uom.get_default_purchase
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_alias.list
+    moduleId: master-data
+    permission: master_data.read
   - id: master_data.item.find_by_alias
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.list_by_alias
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.find_by_barcode
     moduleId: master-data
     permission: master_data.read
   - id: master_data.item.find_by_external_id
@@ -788,6 +818,12 @@ queries:
     moduleId: master-data
     permission: master_data.read
   - id: master_data.item_variant.list_by_template
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_variant_attribute_value.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_variant.configuration.get
     moduleId: master-data
     permission: master_data.read
   - id: master_data.change_request.get_by_id

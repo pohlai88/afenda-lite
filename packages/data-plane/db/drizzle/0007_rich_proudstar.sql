@@ -1,0 +1,3 @@
+CREATE UNIQUE INDEX "md_item_barcode_primary_item_uidx" ON "md_item_barcode" USING btree ("organization_id","item_id") WHERE "md_item_barcode"."is_primary" = true AND "md_item_barcode"."archived_at" IS NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "md_party_address_primary_type_uidx" ON "md_party_address" USING btree ("organization_id","party_id","address_type") WHERE "md_party_address"."is_default" = true AND "md_party_address"."archived_at" IS NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "md_party_contact_primary_type_purpose_uidx" ON "md_party_contact" USING btree ("organization_id","party_id","contact_type",coalesce("purpose", '')) WHERE "md_party_contact"."is_primary" = true AND "md_party_contact"."archived_at" IS NULL;

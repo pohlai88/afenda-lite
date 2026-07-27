@@ -1,15 +1,20 @@
 import { randomUUID } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
-
 import {
 	approveChangeRequest,
+	mergeParties,
 	rejectChangeRequest,
 	submitChangeRequest,
-} from "../src/change-request";
-import { activatePartyRole, createPartyRole } from "../src/extensions";
-import { mergeParties } from "../src/merge";
-import { activateParty, createParty } from "../src/party";
+} from "../src";
+import {
+	activateParty,
+	createParty,
+} from "../src/capabilities/core-organization-masters/party";
+import {
+	activatePartyRole,
+	createPartyRole,
+} from "../src/capabilities/extensions";
 import { createMasterDataTestHarness } from "./helpers/harness";
 
 function ctx(organizationId = "org-mdg") {
@@ -299,5 +304,104 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 			mergeApproved.data.id,
 		);
 		expect(mergeCr.ok && mergeCr.data?.status === "applied").toBe(true);
+	});
+
+	it("does not let approved activation bypass current lifecycle revalidation", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const party = await createParty(
+			{
+				...ctx(),
+				code: "NO_ROLE",
+				name: "No Role Party",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(party.ok).toBe(true);
+		if (!party.ok) {
+			return;
+		}
+
+		const submitted = await submitChangeRequest(
+			{
+				...ctx(),
+				commandKind: "activate_party",
+				payload: { partyId: party.data.id },
+			},
+			options,
+		);
+		expect(submitted.ok).toBe(true);
+		if (!submitted.ok) {
+			return;
+		}
+		const approved = await approveChangeRequest(
+			{
+				organizationId: "org-mdg",
+				actorUserId: "user-checker",
+				correlationId: randomUUID(),
+				id: submitted.data.id,
+				expectedVersion: submitted.data.version,
+			},
+			options,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) {
+			return;
+		}
+
+		const missingRole = await activateParty(
+			{
+				...ctx(),
+				id: party.data.id,
+				expectedVersion: party.data.version,
+				changeRequestId: approved.data.id,
+			},
+			options,
+		);
+		expect(missingRole.ok).toBe(false);
+		if (!missingRole.ok) {
+			expect(missingRole.details).toMatchObject({
+				reason: "MASTER_INVALID_STATE",
+			});
+		}
+
+		const role = await createPartyRole(
+			{
+				...ctx(),
+				partyId: party.data.id,
+				roleCode: "customer",
+			},
+			options,
+		);
+		expect(role.ok).toBe(true);
+		if (!role.ok) {
+			return;
+		}
+		const activatedRole = await activatePartyRole(
+			{
+				...ctx(),
+				id: role.data.id,
+				expectedVersion: role.data.version,
+			},
+			options,
+		);
+		expect(activatedRole.ok).toBe(true);
+
+		const staleVersion = await activateParty(
+			{
+				...ctx(),
+				id: party.data.id,
+				expectedVersion: party.data.version + 1,
+				changeRequestId: approved.data.id,
+			},
+			options,
+		);
+		expect(staleVersion.ok).toBe(false);
+		if (!staleVersion.ok) {
+			expect(staleVersion.details).toMatchObject({
+				reason: "MASTER_VERSION_CONFLICT",
+			});
+		}
 	});
 });

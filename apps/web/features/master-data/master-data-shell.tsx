@@ -71,6 +71,20 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 
 	await requirePermission(session, "master_data.read");
 	const canManage = await sessionHasPermission(session, "master_data.manage");
+	const [
+		canManagePartyRoles,
+		canManageVariantDefiningAttributes,
+		canManageTemplateOptions,
+		canManageVariantAttributes,
+	] = await Promise.all([
+		sessionHasPermission(session, "master_data.party_role_manage"),
+		sessionHasPermission(
+			session,
+			"master_data.item_variant_defining_attribute_manage",
+		),
+		sessionHasPermission(session, "master_data.item_template_option_manage"),
+		sessionHasPermission(session, "master_data.item_variant_attribute_manage"),
+	]);
 	const canApprove = await sessionHasPermission(session, "master_data.approve");
 	const canImportApprove = await sessionHasPermission(
 		session,
@@ -315,7 +329,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<CreatePartyRoleForm
-							canManage={canManage}
+							canManage={canManagePartyRoles}
 							parties={partyOptions}
 							roleCodes={PARTY_ROLE_CODES}
 						/>
@@ -514,7 +528,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					<CardContent className="space-y-6">
 						<CreateItemTemplateForm canManage={canManage} />
 						<AddItemTemplateAttributeForm
-							canManage={canManage}
+							canManage={canManageVariantDefiningAttributes}
 							draftTemplates={templates
 								.filter((template) => template.status === "draft")
 								.map((template) => ({
@@ -524,7 +538,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 							valueKinds={ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS}
 						/>
 						<AddItemTemplateAttributeOptionForm
-							canManage={canManage}
+							canManage={canManageTemplateOptions}
 							draftOptionAttributes={draftOptionAttributes}
 						/>
 					</CardContent>
@@ -600,7 +614,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</CardHeader>
 					<CardContent>
 						<CreateItemVariantForm
-							canManage={canManage}
+							canManage={canManageVariantAttributes}
 							baseUomId={EA_UOM_ID}
 							itemTypes={ITEM_TYPES}
 							itemGroups={itemGroups.map((group) => ({

@@ -506,6 +506,9 @@ events:
     id: master_data.item_group.updated.v1
     moduleId: master-data
   - direction: emits
+    id: master_data.item_group.reparented.v1
+    moduleId: master-data
+  - direction: emits
     id: master_data.item_group.activated.v1
     moduleId: master-data
   - direction: emits
@@ -575,10 +578,19 @@ events:
     id: master_data.party_role.activated.v1
     moduleId: master-data
   - direction: emits
+    id: master_data.party_role.deactivated.v1
+    moduleId: master-data
+  - direction: emits
     id: master_data.party_role.retired.v1
     moduleId: master-data
   - direction: emits
+    id: master_data.party_role.archived.v1
+    moduleId: master-data
+  - direction: emits
     id: master_data.party_address.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_address.primary_changed.v1
     moduleId: master-data
   - direction: emits
     id: master_data.party_address.updated.v1
@@ -587,10 +599,16 @@ events:
     id: master_data.party_contact.created.v1
     moduleId: master-data
   - direction: emits
+    id: master_data.party_contact.primary_changed.v1
+    moduleId: master-data
+  - direction: emits
     id: master_data.party_contact.updated.v1
     moduleId: master-data
   - direction: emits
-    id: master_data.party_external_id.created.v1
+    id: master_data.party_external_id.assigned.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_external_id.primary_changed.v1
     moduleId: master-data
   - direction: emits
     id: master_data.party_relationship.created.v1
@@ -599,16 +617,28 @@ events:
     id: master_data.item_uom.created.v1
     moduleId: master-data
   - direction: emits
-    id: master_data.item_barcode.created.v1
+    id: master_data.item_uom.updated.v1
     moduleId: master-data
   - direction: emits
-    id: master_data.item_external_id.created.v1
+    id: master_data.item_uom.defaults_changed.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_barcode.assigned.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_barcode.primary_changed.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_external_id.assigned.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_external_id.primary_changed.v1
     moduleId: master-data
   - direction: emits
     id: master_data.item_alias.created.v1
     moduleId: master-data
   - direction: emits
-    id: master_data.warehouse_external_id.created.v1
+    id: master_data.warehouse_external_id.assigned.v1
     moduleId: master-data
   - direction: emits
     id: master_data.party.merged.v1
@@ -632,7 +662,13 @@ events:
     id: master_data.item_template_attribute.created.v1
     moduleId: master-data
   - direction: emits
-    id: master_data.item_template_attribute_option.created.v1
+    id: master_data.item_template_attribute.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template_option.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_variant_attribute_value.assigned.v1
     moduleId: master-data
   - direction: emits
     id: master_data.item_variant.created.v1
@@ -651,6 +687,42 @@ events:
     moduleId: master-data
   - direction: emits
     id: master_data.change_request.applied.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_role.inactivated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_address.primary_demoted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_contact.primary_demoted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_external_id.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_external_id.primary_demoted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_uom.defaults_demoted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_barcode.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_barcode.primary_demoted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_external_id.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_external_id.primary_demoted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse_external_id.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template_attribute_option.created.v1
     moduleId: master-data
   - direction: emits
     id: payables.invoice.created.v1

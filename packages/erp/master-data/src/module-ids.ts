@@ -66,8 +66,14 @@ export const MASTER_COMMAND_TAX_REGISTRATION_RETIRE =
 	"master_data.tax_registration.retire" as const;
 export const MASTER_COMMAND_PARTY_ROLE_CREATE =
 	"master_data.party_role.create" as const;
+export const MASTER_COMMAND_PARTY_ROLE_UPDATE =
+	"master_data.party_role.update" as const;
 export const MASTER_COMMAND_PARTY_ROLE_ACTIVATE =
 	"master_data.party_role.activate" as const;
+export const MASTER_COMMAND_PARTY_ROLE_INACTIVE =
+	"master_data.party_role.inactive" as const;
+export const MASTER_COMMAND_PARTY_ROLE_ARCHIVE =
+	"master_data.party_role.archive" as const;
 export const MASTER_COMMAND_PARTY_ROLE_RETIRE =
 	"master_data.party_role.retire" as const;
 export const MASTER_COMMAND_PARTY_ADDRESS_CREATE =
@@ -78,10 +84,16 @@ export const MASTER_COMMAND_PARTY_CONTACT_CREATE =
 	"master_data.party_contact.create" as const;
 export const MASTER_COMMAND_PARTY_CONTACT_UPDATE =
 	"master_data.party_contact.update" as const;
+export const MASTER_COMMAND_PARTY_CONTACT_VERIFY =
+	"master_data.party_contact.verify" as const;
 export const MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE =
 	"master_data.party_external_id.create" as const;
+export const MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE_REGULATORY =
+	"master_data.party_external_id.create_regulatory" as const;
 export const MASTER_COMMAND_PARTY_RELATIONSHIP_CREATE =
 	"master_data.party_relationship.create" as const;
+export const MASTER_COMMAND_PARTY_RELATIONSHIP_CREATE_CONTROL =
+	"master_data.party_relationship.create_control" as const;
 export const MASTER_COMMAND_ITEM_UOM_CREATE =
 	"master_data.item_uom.create" as const;
 export const MASTER_COMMAND_ITEM_BARCODE_CREATE =
@@ -104,6 +116,8 @@ export const MASTER_COMMAND_ITEM_TEMPLATE_RETIRE =
 	"master_data.item_template.retire" as const;
 export const MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE =
 	"master_data.item_template_attribute.create" as const;
+export const MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE_VARIANT_DEFINING =
+	"master_data.item_template_attribute.create_variant_defining" as const;
 export const MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_OPTION_CREATE =
 	"master_data.item_template_attribute_option.create" as const;
 export const MASTER_COMMAND_ITEM_VARIANT_CREATE =
@@ -167,14 +181,20 @@ export const MASTER_DATA_COMMAND_IDS = [
 	MASTER_COMMAND_TAX_REGISTRATION_RESTORE,
 	MASTER_COMMAND_TAX_REGISTRATION_RETIRE,
 	MASTER_COMMAND_PARTY_ROLE_CREATE,
+	MASTER_COMMAND_PARTY_ROLE_UPDATE,
 	MASTER_COMMAND_PARTY_ROLE_ACTIVATE,
+	MASTER_COMMAND_PARTY_ROLE_INACTIVE,
+	MASTER_COMMAND_PARTY_ROLE_ARCHIVE,
 	MASTER_COMMAND_PARTY_ROLE_RETIRE,
 	MASTER_COMMAND_PARTY_ADDRESS_CREATE,
 	MASTER_COMMAND_PARTY_ADDRESS_UPDATE,
 	MASTER_COMMAND_PARTY_CONTACT_CREATE,
 	MASTER_COMMAND_PARTY_CONTACT_UPDATE,
+	MASTER_COMMAND_PARTY_CONTACT_VERIFY,
 	MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE,
+	MASTER_COMMAND_PARTY_EXTERNAL_ID_CREATE_REGULATORY,
 	MASTER_COMMAND_PARTY_RELATIONSHIP_CREATE,
+	MASTER_COMMAND_PARTY_RELATIONSHIP_CREATE_CONTROL,
 	MASTER_COMMAND_ITEM_UOM_CREATE,
 	MASTER_COMMAND_ITEM_BARCODE_CREATE,
 	MASTER_COMMAND_ITEM_EXTERNAL_ID_CREATE,
@@ -186,6 +206,7 @@ export const MASTER_DATA_COMMAND_IDS = [
 	MASTER_COMMAND_ITEM_TEMPLATE_INACTIVE,
 	MASTER_COMMAND_ITEM_TEMPLATE_RETIRE,
 	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE,
+	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE_VARIANT_DEFINING,
 	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_OPTION_CREATE,
 	MASTER_COMMAND_ITEM_VARIANT_CREATE,
 	MASTER_COMMAND_ITEM_VARIANT_RETIRE,
@@ -244,15 +265,35 @@ export const MASTER_QUERY_TAX_REGISTRATION_FIND_BY_PARTY =
 	"master_data.tax_registration.find_by_party" as const;
 export const MASTER_QUERY_PARTY_ROLE_LIST =
 	"master_data.party_role.list" as const;
+export const MASTER_QUERY_PARTY_ROLE_GET =
+	"master_data.party_role.get" as const;
+export const MASTER_QUERY_PARTY_ROLE_LIST_ACTIVE =
+	"master_data.party_role.list_active" as const;
 export const MASTER_QUERY_PARTY_ADDRESS_LIST =
 	"master_data.party_address.list" as const;
 export const MASTER_QUERY_PARTY_ADDRESS_GET =
 	"master_data.party_address.get" as const;
+export const MASTER_QUERY_PARTY_ADDRESS_GET_PRIMARY =
+	"master_data.party_address.get_primary" as const;
 export const MASTER_QUERY_PARTY_CONTACT_LIST =
 	"master_data.party_contact.list" as const;
+export const MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY =
+	"master_data.party_contact.get_primary" as const;
+export const MASTER_QUERY_PARTY_RELATIONSHIP_LIST =
+	"master_data.party_relationship.list" as const;
 export const MASTER_QUERY_ITEM_UOM_LIST = "master_data.item_uom.list" as const;
+export const MASTER_QUERY_ITEM_UOM_GET_DEFAULT_SALES =
+	"master_data.item_uom.get_default_sales" as const;
+export const MASTER_QUERY_ITEM_UOM_GET_DEFAULT_PURCHASE =
+	"master_data.item_uom.get_default_purchase" as const;
+export const MASTER_QUERY_ITEM_ALIAS_LIST =
+	"master_data.item_alias.list" as const;
 export const MASTER_QUERY_ITEM_FIND_BY_ALIAS =
 	"master_data.item.find_by_alias" as const;
+export const MASTER_QUERY_ITEM_LIST_BY_ALIAS =
+	"master_data.item.list_by_alias" as const;
+export const MASTER_QUERY_ITEM_FIND_BY_BARCODE =
+	"master_data.item.find_by_barcode" as const;
 export const MASTER_QUERY_ITEM_FIND_BY_EXTERNAL_ID =
 	"master_data.item.find_by_external_id" as const;
 export const MASTER_QUERY_PARTY_FIND_BY_EXTERNAL_ID =
@@ -273,6 +314,10 @@ export const MASTER_QUERY_ITEM_VARIANT_GET_BY_ID =
 	"master_data.item_variant.get_by_id" as const;
 export const MASTER_QUERY_ITEM_VARIANT_LIST_BY_TEMPLATE =
 	"master_data.item_variant.list_by_template" as const;
+export const MASTER_QUERY_ITEM_VARIANT_ATTRIBUTE_VALUE_LIST =
+	"master_data.item_variant_attribute_value.list" as const;
+export const MASTER_QUERY_ITEM_VARIANT_CONFIGURATION_GET =
+	"master_data.item_variant.configuration.get" as const;
 export const MASTER_QUERY_CHANGE_REQUEST_GET_BY_ID =
 	"master_data.change_request.get_by_id" as const;
 export const MASTER_QUERY_CHANGE_REQUEST_LIST =
@@ -317,11 +362,21 @@ export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_TAX_REGISTRATION_LIST,
 	MASTER_QUERY_TAX_REGISTRATION_FIND_BY_PARTY,
 	MASTER_QUERY_PARTY_ROLE_LIST,
+	MASTER_QUERY_PARTY_ROLE_GET,
+	MASTER_QUERY_PARTY_ROLE_LIST_ACTIVE,
 	MASTER_QUERY_PARTY_ADDRESS_LIST,
 	MASTER_QUERY_PARTY_ADDRESS_GET,
+	MASTER_QUERY_PARTY_ADDRESS_GET_PRIMARY,
 	MASTER_QUERY_PARTY_CONTACT_LIST,
+	MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY,
+	MASTER_QUERY_PARTY_RELATIONSHIP_LIST,
 	MASTER_QUERY_ITEM_UOM_LIST,
+	MASTER_QUERY_ITEM_UOM_GET_DEFAULT_SALES,
+	MASTER_QUERY_ITEM_UOM_GET_DEFAULT_PURCHASE,
+	MASTER_QUERY_ITEM_ALIAS_LIST,
 	MASTER_QUERY_ITEM_FIND_BY_ALIAS,
+	MASTER_QUERY_ITEM_LIST_BY_ALIAS,
+	MASTER_QUERY_ITEM_FIND_BY_BARCODE,
 	MASTER_QUERY_ITEM_FIND_BY_EXTERNAL_ID,
 	MASTER_QUERY_PARTY_FIND_BY_EXTERNAL_ID,
 	MASTER_QUERY_WAREHOUSE_FIND_BY_EXTERNAL_ID,
@@ -332,6 +387,8 @@ export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_ITEM_TEMPLATE_ATTRIBUTE_OPTION_LIST,
 	MASTER_QUERY_ITEM_VARIANT_GET_BY_ID,
 	MASTER_QUERY_ITEM_VARIANT_LIST_BY_TEMPLATE,
+	MASTER_QUERY_ITEM_VARIANT_ATTRIBUTE_VALUE_LIST,
+	MASTER_QUERY_ITEM_VARIANT_CONFIGURATION_GET,
 	MASTER_QUERY_CHANGE_REQUEST_GET_BY_ID,
 	MASTER_QUERY_CHANGE_REQUEST_LIST,
 	MASTER_QUERY_REF_COUNTRY_GET_BY_CODE,

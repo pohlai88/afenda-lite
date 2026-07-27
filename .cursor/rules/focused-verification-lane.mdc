@@ -1,0 +1,23 @@
+---
+description: "Afenda verification lane discipline: focused package checks first; broad root gates require explicit approval"
+alwaysApply: true
+---
+
+# Focused verification lane
+
+Use [afenda-focused-verification](../skills/afenda-focused-verification/SKILL.md) for test/check selection after code edits, failures, timeouts, or architecture/register changes.
+
+## Binding rule
+
+- Use the smallest reliable check set that covers the changed surface.
+- Prefer package-local `lint`, `typecheck`, and `test` commands.
+- Add consumers only when package exports, contracts, schemas, or app actions changed.
+- Run `pnpm validate:modules` when module manifests/registers/permissions/queries/commands/events/table ownership changed.
+- Do not retry root-wide commands after timeout/failure as an edit-loop tactic.
+- Treat `pnpm test`, `pnpm check`, `pnpm build:check`, and broad `turbo run lint typecheck test build` as final CI-parity gates only.
+
+## Hook
+
+`beforeShellExecution` -> `.cursor/hooks/focused-verification-lane.mjs` asks before broad root verification commands unless `AFENDA_ALLOW_BROAD_VERIFY=1` is present in the environment or command.
+
+Do not rename, split, or wrap commands to bypass the hook. If a broad gate is required, state why and ask the user before running it.

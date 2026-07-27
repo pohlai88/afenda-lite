@@ -1,12 +1,14 @@
 # `@afenda/master-data`
 
-Rank-1 Platform ERP reference-data and operational-master spine for Afenda-Lite: platform `ref_*` lookups, org-scoped `md_*` masters and aggregate extensions, Zod brands, lifecycle + version CAS, and same-TX audit/outbox ports. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, NATS, or Action envelopes.
+`@afenda/master-data` is the Rank-1 ERP operational-master package for Afenda-Lite.
 
-**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `md_*` from `apps/web` or transactional modules.
+It owns domain commands, queries, Zod brands, lifecycle transitions, version CAS, import/change-request flows, merge policy, and search projection hooks for platform `ref_*` lookups and organization-scoped `md_*` masters. Outcomes use `@afenda/errors` `Result`; adapters map those results to HTTP, Server Actions, or UI state outside this package.
+
+Use this package from Platform and app server code when creating or mutating organization dimensions, parties, items, item groups, warehouses, payment terms, tax registrations, item templates, variants, and their extensions. Maintainers run lint, typecheck, and Vitest through the package filter scripts below.
+
+**Tables live in `@afenda/db`.** Master-data mutations are sole-owned here — do not dual-write `md_*` from `apps/web` or transactional modules.
 
 **UoM is platform-only:** `ref_uom_dimension` → `ref_uom`; `md_item.base_uom_id` → `ref_uom`; item packaging conversions in `md_item_uom`. There is no org-scoped `md_uom`.
-
-Use this package from Platform / app server code when creating or mutating Party · Item · Item group · Warehouse and their extensions. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
 
 ## Consume
 
@@ -37,8 +39,9 @@ Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on ever
 | Class | Tables |
 |---------|--------|
 | Platform refs | `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` |
-| Org masters | `md_party` · `md_item_group` · `md_item` · `md_warehouse` · `md_payment_term` · `md_tax_registration` |
-| Extensions | `md_party_role` · `md_party_address` · `md_party_contact` · `md_party_external_id` · `md_party_relationship` · `md_item_uom` · `md_item_barcode` · `md_item_external_id` · `md_item_alias` · `md_warehouse_external_id` |
+| Org masters | `md_organization_dimension` · `md_party` · `md_item_group` · `md_item` · `md_warehouse` · `md_payment_term` · `md_tax_registration` · `md_item_template` · `md_item_variant` |
+| Extensions | `md_party_role` · `md_party_address` · `md_party_contact` · `md_party_external_id` · `md_party_relationship` · `md_item_uom` · `md_item_barcode` · `md_item_external_id` · `md_item_alias` · `md_warehouse_external_id` · `md_item_template_attribute` · `md_item_template_attribute_option` · `md_item_variant_attribute_value` |
+| Governance | `md_change_request` · `md_import_batch` |
 
 Out of scope: BOM / stock qty / CoA, transactional modules (ARCH-006 lives in `@afenda/sales` and siblings).
 
@@ -65,9 +68,12 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Path | Role |
 |------|------|
 | `@afenda/master-data` | Commands · queries · Zod schemas · brands · permissions · reasons · `MasterDataStore` type · lifecycle/code helpers (no Drizzle class) |
-| `@afenda/master-data/adapters/drizzle` | `DrizzleMasterDataStore` · `createDrizzleMasterDataStore` |
+| `@afenda/master-data/platform-references` | Typed reference read-store, queries, policies, schemas, and Memory adapter |
+| `@afenda/master-data/lifecycle-governance` | Lifecycle policy, availability, canonical identity, merge, and version-CAS helpers |
+| `@afenda/master-data/adapters/drizzle` | Master-data and platform-reference Drizzle stores/factories |
 | `@afenda/master-data/types` | Shared domain types |
 | `@afenda/master-data/module-manifest` | Module manifest |
+| `@afenda/master-data/testing/organization-dimensions` | Organization-dimension testing store helpers |
 
 Never re-exports raw Drizzle tables or `db` / `eq`.
 
@@ -76,7 +82,7 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 | Surface | Owner |
 |---------|-------|
 | `md_*` / `ref_*` schema · hard-tenant `md_*` | `@afenda/db` |
-| Domain CRUD · brands · CAS · lifecycle · extensions | `@afenda/master-data` |
+| Domain CRUD · brands · CAS · lifecycle · extensions · import/change-request governance | `@afenda/master-data` |
 | `master_data.*` event contracts | `@afenda/events` |
 | `Result` / error codes | `@afenda/errors` |
 

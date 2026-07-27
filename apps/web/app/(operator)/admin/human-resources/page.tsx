@@ -1,6 +1,6 @@
-import { parseHrDisplayPreferences } from "@/features/human-resources/display-preferences";
 import { parseAdminEmployeeDirectoryParams } from "@/features/human-resources/admin/directory-params";
 import { EmployeeDirectoryWorkspace } from "@/features/human-resources/admin/employee-directory";
+import { parseHrDisplayPreferences } from "@/features/human-resources/display-preferences";
 
 type PageProps = {
 	searchParams: Promise<{

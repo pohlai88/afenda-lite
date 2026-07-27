@@ -42,6 +42,10 @@ export type OutboxPort = {
 	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
 };
 
+export type ClockPort = {
+	now(): Date;
+};
+
 /**
  * Memory/test composition only. Production Drizzle mutations embed audit + outbox
  * in the same SQL CTE and do not call these ports — do not wrap Drizzle in fake
@@ -50,4 +54,5 @@ export type OutboxPort = {
 export type MutationPorts = {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
+	clock: ClockPort;
 };

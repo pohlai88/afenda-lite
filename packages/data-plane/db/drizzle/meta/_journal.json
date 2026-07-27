@@ -36,6 +36,132 @@
       "when": 1785128687857,
       "tag": "0004_even_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785147349935,
+      "tag": "0005_uneven_rage",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785149513070,
+      "tag": "0006_cynical_roxanne_simpson",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785149906662,
+      "tag": "0007_rich_proudstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785150770748,
+      "tag": "0008_cloudy_strong_guy",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785151245213,
+      "tag": "0009_lively_paibok",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785151757192,
+      "tag": "0010_party_address_structured",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785152705015,
+      "tag": "0011_party_contact_structured",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785153300766,
+      "tag": "0012_party_external_id_structured",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785154388879,
+      "tag": "0013_party_relationship_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785155219561,
+      "tag": "0014_item_uom_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785155850339,
+      "tag": "0015_item_barcode_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785156081736,
+      "tag": "0016_item_external_id_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785156325986,
+      "tag": "0017_item_alias_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785156608306,
+      "tag": "0018_warehouse_external_id_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785156994309,
+      "tag": "0019_template_attribute_governed",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785157557345,
+      "tag": "0020_variant_attribute_value_typed",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785158379708,
+      "tag": "0021_primary_record_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785161671087,
+      "tag": "0022_extension_database_constraints",
+      "breakpoints": true
     }
   ]
 }

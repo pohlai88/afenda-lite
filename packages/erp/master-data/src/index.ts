@@ -25,83 +25,43 @@ export {
 	type PaymentTermId,
 	partyIdSchema,
 	paymentTermIdSchema,
-	type RefCountryId,
-	type RefCurrencyId,
-	type RefLanguageId,
-	type RefUomId,
-	refCountryIdSchema,
-	refCurrencyIdSchema,
-	refLanguageIdSchema,
-	refUomIdSchema,
 	type TaxRegistrationId,
 	taxRegistrationIdSchema,
 	type WarehouseId,
 	warehouseIdSchema,
 } from "./brands";
+export type {
+	PaymentTermStore,
+	TaxRegistrationStore,
+} from "./capabilities/core-organization-masters/commercial-master-store";
 export {
-	approveChangeRequest,
-	assertApprovedChangeRequestForApply,
-	getChangeRequestById,
-	listChangeRequests,
-	listChangeRequestsInputSchema,
-	type ReviewChangeRequestInput,
-	rejectChangeRequest,
-	requireChangeRequestId,
-	reviewChangeRequestInputSchema,
-	type SubmitChangeRequestInput,
-	submitChangeRequest,
-	submitChangeRequestInputSchema,
-} from "./change-request";
-export type { MasterCommandOptions } from "./command-options";
+	coreMasterDependencyBlocked,
+	coreMasterNotFound,
+} from "./capabilities/core-organization-masters/core-master-errors";
+export type {
+	ItemGroupLifecycleEventSuffix,
+	ItemLifecycleEventSuffix,
+	ItemTemplateLifecycleEventSuffix,
+	PartyLifecycleEventSuffix,
+	PaymentTermLifecycleEventSuffix,
+	TaxRegistrationLifecycleEventSuffix,
+	WarehouseLifecycleEventSuffix,
+} from "./capabilities/core-organization-masters/core-master-events";
 export {
-	MASTER_REASONS,
-	type MasterFailureDetails,
-	type MasterReason,
-} from "./contracts/reasons";
-export { createEmptyDependencyInspector } from "./dependency";
+	type CoreMasterUsability,
+	evaluateItemTemplateUsability,
+	evaluateItemUsability,
+	evaluateItemVariantUsability,
+	evaluateMasterStatus,
+	evaluatePartyUsability,
+	evaluatePaymentTermUsability,
+	evaluateTaxRegistrationUsability,
+	evaluateWarehouseUsability,
+} from "./capabilities/core-organization-masters/core-master-policy";
 export {
-	activatePartyRole,
-	createItemAlias,
-	createItemBarcode,
-	createItemExternalId,
-	createItemUom,
-	createPartyAddress,
-	createPartyContact,
-	createPartyExternalId,
-	createPartyRelationship,
-	createPartyRole,
-	createWarehouseExternalId,
-	findItemByAlias,
-	findItemByExternalId,
-	findPartyByExternalId,
-	findWarehouseByExternalId,
-	getPartyAddressById,
-	listItemUoms,
-	listPartyAddresses,
-	listPartyContacts,
-	listPartyRoles,
-	retirePartyRole,
-	updatePartyAddress,
-	updatePartyContact,
-} from "./extensions";
-export {
-	IMPORT_MODES,
-	IMPORT_ROW_OUTCOMES,
-	type ImportMode,
-	type ImportReconciliationReport,
-	type ImportRowOutcome,
-	type ImportRowResult,
-	ITEM_GROUP_IMPORT_MUTABLE_FIELDS,
-	ITEM_IMPORT_MUTABLE_FIELDS,
-	MAX_IMPORT_BATCH_SIZE,
-	PARTY_IMPORT_MUTABLE_FIELDS,
-	upsertItemGroupsByCode,
-	upsertItemsByCode,
-	upsertPartiesByCode,
-	upsertWarehousesByCode,
-	validatePartyImportBatch,
-	WAREHOUSE_IMPORT_MUTABLE_FIELDS,
-} from "./import-bulk";
+	createEmptyDependencyInspector,
+	createUnavailableDependencyInspector,
+} from "./capabilities/core-organization-masters/dependency";
 export {
 	activateItem,
 	createItem,
@@ -111,7 +71,7 @@ export {
 	listItems,
 	retireItem,
 	updateItem,
-} from "./item";
+} from "./capabilities/core-organization-masters/item";
 export {
 	activateItemGroup,
 	createItemGroup,
@@ -121,7 +81,11 @@ export {
 	listItemGroups,
 	retireItemGroup,
 	updateItemGroup,
-} from "./item-group";
+} from "./capabilities/core-organization-masters/item-group";
+export type {
+	ItemGroupStore,
+	ItemStore,
+} from "./capabilities/core-organization-masters/item-store";
 export {
 	activateItemTemplate,
 	addItemTemplateAttribute,
@@ -131,23 +95,25 @@ export {
 	getItemTemplateByCode,
 	getItemTemplateById,
 	getItemVariantById,
+	getVariantConfiguration,
 	inactiveItemTemplate,
 	listItemTemplateAttributeOptions,
 	listItemTemplateAttributes,
 	listItemTemplates,
 	listItemVariantsByTemplate,
+	listTemplateAttributeOptions,
+	listTemplateAttributes,
+	listVariantAttributeValues,
 	retireItemTemplate,
 	retireItemVariant,
 	updateItemTemplate,
-} from "./item-variant";
+} from "./capabilities/core-organization-masters/item-template-variant";
 export {
-	type DuplicatePartyWarning,
-	findPartyDuplicateWarnings,
-	type MergePartiesResult,
-	mergeParties,
-	mergePartiesInputSchema,
-	resolveCanonicalPartyId,
-} from "./merge";
+	assertLifecycleTransition,
+	assertRestoreTransition,
+	assertTaxRegistrationLifecycleTransition,
+} from "./capabilities/core-organization-masters/lifecycle";
+export { normalizeMasterCode } from "./capabilities/core-organization-masters/normalized-code";
 export {
 	createDrizzleOrganizationDimensionStore,
 	createOrganizationDimension,
@@ -157,12 +123,15 @@ export {
 	ORGANIZATION_DIMENSION_KINDS,
 	type OrganizationDimension,
 	type OrganizationDimensionKind,
-	type OrganizationDimensionOptions,
 	type OrganizationDimensionReference,
-	type OrganizationDimensionStore,
 	resolveOrganizationDimensionsAsOf,
 	resolveOrganizationDimensionsAsOfInputSchema,
-} from "./organization-dimension";
+} from "./capabilities/core-organization-masters/organization-dimension";
+export type {
+	CreateOrganizationDimensionStoreRecord,
+	OrganizationDimensionOptions,
+	OrganizationDimensionStore,
+} from "./capabilities/core-organization-masters/organization-dimension-store";
 export {
 	activateParty,
 	blockParty,
@@ -174,7 +143,8 @@ export {
 	restoreParty,
 	retireParty,
 	updateParty,
-} from "./party";
+} from "./capabilities/core-organization-masters/party";
+export type { PartyStore } from "./capabilities/core-organization-masters/party-store";
 export {
 	activatePaymentTerm,
 	createPaymentTerm,
@@ -184,30 +154,7 @@ export {
 	listPaymentTerms,
 	retirePaymentTerm,
 	updatePaymentTerm,
-} from "./payment-term";
-export type {
-	AuditFactInput,
-	AuditFactPort,
-	MutationPorts,
-	OutboxFactInput,
-	OutboxPort,
-} from "./ports";
-export {
-	createProductionMutationPorts,
-	createSqlAuditFactPort,
-	createSqlOutboxPort,
-} from "./production-ports";
-export {
-	getRefCountryByCode,
-	getRefCurrencyByCode,
-	getRefLanguageByCode,
-	getRefTimeZoneByIana,
-	getRefUomByCode,
-	getRefUomById,
-	getRefUomDimensionByCode,
-	listRefUoms,
-} from "./refs";
-export { resolveMasterDataStore } from "./resolve-store";
+} from "./capabilities/core-organization-masters/payment-term";
 export {
 	activatePartyInputSchema,
 	addItemTemplateAttributeInputSchema,
@@ -265,51 +212,35 @@ export {
 	updateTaxRegistrationInputSchema,
 	updateWarehouseInputSchema,
 	warehouseLifecycleInputSchema,
-} from "./schemas";
-export {
-	MASTER_SEARCH_ENTITY,
-	MASTER_SEARCH_ENTITY_VALUES,
-	type MasterSearchEntity,
-	projectMasterRoot,
-	type RebuildMasterDataSearchResult,
-	rebuildMasterDataSearchIndex,
-	searchMasterDataDocuments,
-	shouldIndexMasterStatus,
-	syncMasterRootProjection,
-} from "./search-projectors";
-export { normalizeMasterCode } from "./shared/code";
-export {
-	buildCombinationKey,
-	normalizeAttributeValueText,
-} from "./shared/combination-key";
-export {
-	assertLifecycleTransition,
-	restoreTargetStatus,
-} from "./shared/lifecycle";
-export { normalizeTaxRegistrationNumber } from "./shared/tax-registration-number";
-export {
-	isInvalidValidityRange,
-	validityRangesOverlap,
-} from "./shared/validity-overlap";
+} from "./capabilities/core-organization-masters/schemas";
 export type {
 	ItemCreateRecord,
 	ItemGroupCreateRecord,
+	ItemGroupLifecycleRecord,
 	ItemGroupUpdateRecord,
+	ItemLifecycleRecord,
+	ItemTemplateLifecycleRecord,
 	ItemUpdateRecord,
+	ItemVariantRetireRecord,
 	LifecycleRecord,
 	ListFilter,
 	MasterDataStore,
 	PartyCreateRecord,
+	PartyLifecycleRecord,
 	PartyUpdateRecord,
 	PaymentTermCreateRecord,
+	PaymentTermLifecycleRecord,
 	PaymentTermUpdateRecord,
 	TaxRegistrationCreateRecord,
+	TaxRegistrationLifecycleRecord,
 	TaxRegistrationListFilter,
+	TaxRegistrationOverlapQuery,
 	TaxRegistrationUpdateRecord,
 	WarehouseCreateRecord,
+	WarehouseLifecycleRecord,
 	WarehouseMoveRecord,
 	WarehouseUpdateRecord,
-} from "./store";
+} from "./capabilities/core-organization-masters/store";
 export {
 	activateTaxRegistration,
 	blockTaxRegistration,
@@ -320,68 +251,21 @@ export {
 	restoreTaxRegistration,
 	retireTaxRegistration,
 	updateTaxRegistration,
-} from "./tax-registration";
+} from "./capabilities/core-organization-masters/tax-registration";
+export { normalizeTaxRegistrationNumber } from "./capabilities/core-organization-masters/tax-registration-number";
 export {
-	type ActivatePartyChangePayload,
-	CHANGE_REQUEST_COMMAND_KINDS,
-	CHANGE_REQUEST_STATUSES,
-	type ChangeRequest,
-	type ChangeRequestCommandKind,
-	type ChangeRequestPayload,
-	type ChangeRequestStatus,
-	type DependencyInspector,
-	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
-	ITEM_TYPES,
-	ITEM_UOM_ROUNDING_RULES,
-	ITEM_UOM_USAGES,
-	type Item,
-	type ItemAlias,
-	type ItemBarcode,
-	type ItemExternalId,
-	type ItemGroup,
-	type ItemTemplate,
-	type ItemTemplateAttribute,
-	type ItemTemplateAttributeOption,
-	type ItemTemplateAttributeValueKind,
-	type ItemType,
-	type ItemUom,
-	type ItemUomRoundingRule,
-	type ItemUomUsage,
-	type ItemVariant,
-	type ItemVariantAttributeValue,
-	MASTER_STATUSES,
-	type MasterDependency,
-	type MasterStatus,
-	type MergePartiesChangePayload,
-	PARTY_KINDS,
-	PARTY_RELATIONSHIP_TYPES,
-	PARTY_ROLE_CODES,
-	type Party,
-	type PartyAddress,
-	type PartyContact,
-	type PartyExternalId,
-	type PartyKind,
-	type PartyRelationship,
-	type PartyRelationshipType,
-	type PartyRole,
-	type PartyRoleCode,
-	type PaymentTerm,
-	type RefCountry,
-	type RefCurrency,
-	type RefLanguage,
-	type RefTimeZone,
-	type RefUom,
-	type RefUomDimension,
-	TAX_REGISTRATION_TYPES,
-	type TaxRegistration,
-	type TaxRegistrationType,
-	UOM_DIMENSION_CODES,
-	type UomDimensionCode,
-	WAREHOUSE_LOCATION_TYPES,
-	type Warehouse,
-	type WarehouseExternalId,
-	type WarehouseLocationType,
-} from "./types";
+	isInvalidValidityRange,
+	validityRangesOverlap,
+} from "./capabilities/core-organization-masters/validity-overlap";
+export {
+	buildCombinationKey,
+	normalizeAttributeValueText,
+} from "./capabilities/core-organization-masters/variant-signature";
+export {
+	assertExpectedVersion,
+	nextMasterVersion,
+	type VersionedMaster,
+} from "./capabilities/core-organization-masters/version-cas";
 export {
 	activateWarehouse,
 	createWarehouse,
@@ -392,4 +276,293 @@ export {
 	moveWarehouse,
 	retireWarehouse,
 	updateWarehouse,
-} from "./warehouse";
+} from "./capabilities/core-organization-masters/warehouse";
+export type { WarehouseStore } from "./capabilities/core-organization-masters/warehouse-store";
+export {
+	approveChangeRequest,
+	assertApprovedChangeRequestForApply,
+	getChangeRequestById,
+	listChangeRequests,
+	listChangeRequestsInputSchema,
+	type ReviewChangeRequestInput,
+	rejectChangeRequest,
+	requireChangeRequestId,
+	reviewChangeRequestInputSchema,
+	type SubmitChangeRequestInput,
+	submitChangeRequest,
+	submitChangeRequestInputSchema,
+} from "./capabilities/data-governance-workflows/change-request-commands";
+export {
+	IMPORT_MODES,
+	IMPORT_ROW_OUTCOMES,
+	type ImportMode,
+	type ImportReconciliationReport,
+	type ImportRowOutcome,
+	type ImportRowResult,
+	ITEM_GROUP_IMPORT_MUTABLE_FIELDS,
+	ITEM_IMPORT_MUTABLE_FIELDS,
+	MAX_IMPORT_BATCH_SIZE,
+	PARTY_IMPORT_MUTABLE_FIELDS,
+	upsertItemGroupsByCode,
+	upsertItemsByCode,
+	upsertPartiesByCode,
+	upsertWarehousesByCode,
+	validatePartyImportBatch,
+	WAREHOUSE_IMPORT_MUTABLE_FIELDS,
+} from "./capabilities/data-governance-workflows/import-bulk-commands";
+export {
+	type DuplicatePartyWarning,
+	findPartyDuplicateWarnings,
+	type MergePartiesResult,
+	mergeParties,
+	mergePartiesInputSchema,
+	resolveCanonicalPartyId,
+} from "./capabilities/data-governance-workflows/merge-commands";
+export {
+	activatePartyRole,
+	archivePartyRole,
+	createItemAlias,
+	createItemBarcode,
+	createItemExternalId,
+	createItemUom,
+	createPartyAddress,
+	createPartyContact,
+	createPartyExternalId,
+	createPartyRelationship,
+	createPartyRole,
+	createWarehouseExternalId,
+	deactivatePartyRole,
+	findItemByAlias,
+	findItemByBarcode,
+	findItemByExternalId,
+	findPartyByExternalId,
+	findWarehouseByExternalId,
+	getDefaultItemPurchaseUom,
+	getDefaultItemSalesUom,
+	getPartyAddressById,
+	getPartyRole,
+	getPartyRoleById,
+	getPrimaryPartyAddress,
+	getPrimaryPartyContact,
+	listActivePartyRoles,
+	listItemAliases,
+	listItemsByAlias,
+	listItemUoms,
+	listPartyAddresses,
+	listPartyContacts,
+	listPartyRelationships,
+	listPartyRoles,
+	retirePartyRole,
+	updatePartyAddress,
+	updatePartyContact,
+	updatePartyContactVerification,
+	updatePartyRole,
+} from "./capabilities/extensions";
+export { normalizePartyContactValue } from "./capabilities/extensions/contact-normalization";
+export type {
+	ExtensionDependencyBehavior,
+	ExtensionLifecycleTransition,
+	ExtensionParentStateRequirement,
+} from "./capabilities/extensions/extension-lifecycle";
+export {
+	assertExtensionTransitionReason,
+	assertStandardChildLifecycleStatus,
+	EXTENSION_LIFECYCLE_FAMILY_BY_KIND,
+	EXTENSION_LIFECYCLE_PERMISSION_BY_KIND,
+	EXTENSION_LIFECYCLE_TRANSITIONS,
+	isStandardChildLifecycleStatus,
+	parseStandardChildLifecycleStatus,
+	resolveExtensionLifecycleTransition,
+} from "./capabilities/extensions/extension-lifecycle";
+export {
+	EXTENSION_EVENT_TYPES,
+	type ExtensionEventPayload,
+	type ExtensionEventType,
+} from "./capabilities/extensions/extension-transaction-contract";
+export {
+	assertExpectedExtensionVersion,
+	nextExtensionVersion,
+	type VersionedExtension,
+} from "./capabilities/extensions/extension-version-cas";
+export {
+	MAX_EXTERNAL_ID_QUALIFIER_LENGTH,
+	MAX_EXTERNAL_ID_VALUE_LENGTH,
+	type NormalizedExternalId,
+	type NormalizedPartyExternalId,
+	normalizeExternalId,
+	normalizeExternalIdQualifier,
+	normalizePartyExternalId,
+} from "./capabilities/extensions/external-id-normalization";
+export {
+	ITEM_ALIAS_TYPES,
+	type ItemAliasType,
+	MAX_ITEM_ALIAS_SOURCE_LENGTH,
+	MAX_ITEM_ALIAS_VALUE_LENGTH,
+	normalizeItemAlias,
+	normalizeItemAliasSource,
+} from "./capabilities/extensions/item-alias-policy";
+export {
+	ITEM_BARCODE_SYMBOLOGIES,
+	type ItemBarcodeSymbology,
+	MAX_ITEM_BARCODE_PACK_QUANTITY_SCALE,
+	MAX_ITEM_BARCODE_VALUE_LENGTH,
+	normalizeBarcodePackQuantity,
+	normalizeItemBarcode,
+} from "./capabilities/extensions/item-barcode-policy";
+export {
+	assertItemUomCompatibility,
+	ITEM_UOM_COMPATIBILITY_MODES,
+	ITEM_UOM_FACTOR_PRECISION,
+	ITEM_UOM_FACTOR_SCALE,
+	ITEM_UOM_MAX_INTEGER_DIGITS,
+	type ItemUomCompatibilityMode,
+	normalizeItemUomConversionFactor,
+} from "./capabilities/extensions/item-uom-policy";
+export {
+	isSameNullablePrimaryScope,
+	PRIMARY_RECORD_REPLACEMENT_POLICY,
+	PRIMARY_RECORD_SCOPES,
+} from "./capabilities/extensions/primary-record-policy";
+export type {
+	ExtensionStoreCapability,
+	ItemExtensionStore,
+	MasterDataExtensionStore,
+	PartyExtensionStore,
+	WarehouseExtensionStore,
+} from "./capabilities/extensions/store";
+export type {
+	ItemTemplateVariantStore,
+	ItemVariantExtensionStore,
+	MasterDataVariantStore,
+} from "./capabilities/extensions/template-store";
+export * from "./capabilities/integration-projections";
+export {
+	MASTER_SEARCH_ENTITY,
+	MASTER_SEARCH_ENTITY_VALUES,
+	type MasterSearchEntity,
+	projectMasterRoot,
+	type RebuildMasterDataSearchResult,
+	rebuildMasterDataSearchIndex,
+	searchMasterDataDocuments,
+	shouldIndexMasterStatus,
+	syncMasterRootProjection,
+} from "./capabilities/integration-projections/search-projector-commands";
+export * from "./capabilities/lifecycle-governance";
+export {
+	getRefCountryByCode,
+	getRefCurrencyByCode,
+	getRefLanguageByCode,
+	getRefTimeZoneByIana,
+	getRefUomByCode,
+	getRefUomById,
+	getRefUomDimensionByCode,
+	listRefUoms,
+} from "./capabilities/platform-references/legacy-queries";
+export * from "./capabilities/platform-references/policies";
+export * from "./capabilities/platform-references/queries";
+export * from "./capabilities/platform-references/reference-errors";
+export * from "./capabilities/platform-references/schemas";
+export * from "./capabilities/platform-references/types";
+export type {
+	MasterCommandOptions,
+	MasterQueryOptions,
+} from "./command-options";
+export {
+	MASTER_REASONS,
+	type MasterFailureDetails,
+	type MasterReason,
+} from "./contracts/reasons";
+export * from "./permissions";
+export type {
+	AuditFactInput,
+	AuditFactPort,
+	MutationPorts,
+	OutboxFactInput,
+	OutboxPort,
+} from "./ports";
+export {
+	createProductionMutationPorts,
+	createSqlAuditFactPort,
+	createSqlOutboxPort,
+} from "./production-ports";
+export { resolveMasterDataStore } from "./resolve-store";
+export {
+	type ActivatePartyChangePayload,
+	CHANGE_REQUEST_COMMAND_KINDS,
+	CHANGE_REQUEST_STATUSES,
+	type ChangeRequest,
+	type ChangeRequestCommandKind,
+	type ChangeRequestPayload,
+	type ChangeRequestStatus,
+	type DependencyInspector,
+	EXTENSION_STATUSES,
+	EXTERNAL_ID_CASE_SENSITIVITIES,
+	type ExtensionLifecycleFamily,
+	type ExtensionLifecycleStatus,
+	type ExtensionStatus,
+	type ExternalIdCaseSensitivity,
+	IDENTITY_REGISTRATION_LIFECYCLE_STATUSES,
+	type IdentityRegistrationLifecycleStatus,
+	ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES,
+	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
+	ITEM_TYPES,
+	type Item,
+	type ItemAlias,
+	type ItemBarcode,
+	type ItemExternalId,
+	type ItemGroup,
+	type ItemTemplate,
+	type ItemTemplateAttribute,
+	type ItemTemplateAttributeDataType,
+	type ItemTemplateAttributeOption,
+	type ItemTemplateAttributeValidationRules,
+	type ItemTemplateAttributeValueKind,
+	type ItemType,
+	type ItemUom,
+	type ItemVariant,
+	type ItemVariantAttributeValue,
+	MASTER_STATUSES,
+	MAX_PAYMENT_TERM_NET_DAYS,
+	type MasterDependency,
+	type MasterStatus,
+	type MergePartiesChangePayload,
+	OPTION_COMPATIBLE_ATTRIBUTE_DATA_TYPES,
+	PARTY_ADDRESS_PURPOSES,
+	PARTY_ADDRESS_TYPES,
+	PARTY_ADDRESS_VALIDATION_STATUSES,
+	PARTY_CONTACT_TYPES,
+	PARTY_CONTACT_VERIFICATION_STATUSES,
+	PARTY_EXTERNAL_ID_CASE_SENSITIVITIES,
+	PARTY_KINDS,
+	PARTY_RELATIONSHIP_DIRECTIONS,
+	PARTY_RELATIONSHIP_TYPES,
+	PARTY_ROLE_CODES,
+	type Party,
+	type PartyAddress,
+	type PartyAddressPurpose,
+	type PartyAddressType,
+	type PartyAddressValidationStatus,
+	type PartyContact,
+	type PartyContactType,
+	type PartyContactVerificationStatus,
+	type PartyExternalId,
+	type PartyExternalIdCaseSensitivity,
+	type PartyKind,
+	type PartyRelationship,
+	type PartyRelationshipDirection,
+	type PartyRelationshipType,
+	type PartyRole,
+	type PartyRoleCode,
+	type PaymentTerm,
+	RELATIONSHIP_LIFECYCLE_STATUSES,
+	type RelationshipLifecycleStatus,
+	STANDARD_CHILD_LIFECYCLE_STATUSES,
+	type StandardChildLifecycleStatus,
+	TAX_REGISTRATION_TYPES,
+	type TaxRegistration,
+	type TaxRegistrationType,
+	WAREHOUSE_LOCATION_TYPES,
+	type Warehouse,
+	type WarehouseExternalId,
+	type WarehouseLocationType,
+} from "./types";
