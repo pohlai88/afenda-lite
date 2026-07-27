@@ -47,10 +47,56 @@ async function constraintExists(sql, constraintName) {
 
 /**
  * @param {import("@neondatabase/serverless").NeonQueryFunction} sql
+ * @param {string} indexName
+ */
+async function indexExists(sql, indexName) {
+	const rows = await sql`
+		SELECT indexname
+		FROM pg_indexes
+		WHERE schemaname = 'public' AND indexname = ${indexName}
+	`;
+	return rows.length > 0;
+}
+
+/**
+ * @param {import("@neondatabase/serverless").NeonQueryFunction} sql
  * @param {string} tag
  * @returns {Promise<boolean | null>} true when DDL is present, false when absent, null when unprobed
  */
 export async function probeMigrationDdlApplied(sql, tag) {
+	if (tag === "0001_ca_relational_invariants") {
+		const [companyTenantKey, nameOverlap, activityOverlap] = await Promise.all([
+			constraintExists(sql, "ca_legal_company_org_id_unique"),
+			constraintExists(sql, "ca_company_name_no_overlap_excl"),
+			constraintExists(sql, "ca_company_activity_no_overlap_excl"),
+		]);
+		return companyTenantKey && nameOverlap && activityOverlap;
+	}
+
+	if (tag === "0003_glorious_madelyne_pryor") {
+		const [establishmentTable, addressOverlap, premiseCompanyFk] =
+			await Promise.all([
+				tableExists(sql, "ca_legal_establishment"),
+				constraintExists(sql, "ca_registered_address_no_overlap_excl"),
+				constraintExists(sql, "ca_premise_company_fk"),
+			]);
+		return establishmentTable && addressOverlap && premiseCompanyFk;
+	}
+
+	if (tag === "0004_even_tigra") {
+		return indexExists(sql, "ca_establishment_status_version_uidx");
+	}
+
+	if (tag === "0026_ca_recorded_range_zero_width") {
+		const [identifierSuccessor, nameRecordedRange, activityRecordedRange] =
+			await Promise.all([
+				indexExists(sql, "ca_company_identifier_supersedes_once_uidx"),
+				constraintExists(sql, "ca_company_name_recorded_range_check"),
+				constraintExists(sql, "ca_company_activity_recorded_range_check"),
+			]);
+		return identifierSuccessor && nameRecordedRange && activityRecordedRange;
+	}
+
 	if (tag === "0017_hr_candidate_consent") {
 		const [columnOk, constraintOk] = await Promise.all([
 			columnExists(sql, "hr_candidate", "consent_policy_version"),
