@@ -47,9 +47,9 @@ export type ClockPort = {
 };
 
 /**
- * Memory/test composition only. Production Drizzle mutations embed audit + outbox
- * in the same SQL CTE and do not call these ports — do not wrap Drizzle in fake
- * port invocations.
+ * Memory/test composition only. Production Drizzle mutations persist state,
+ * audit, and outbox in one database transaction and do not call these ports.
+ * Do not wrap Drizzle in fake port invocations.
  */
 export type MutationPorts = {
 	audit: AuditFactPort;

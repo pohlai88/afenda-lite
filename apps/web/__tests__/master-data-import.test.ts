@@ -65,7 +65,7 @@ describe("master-data import Actions", () => {
 		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
 	});
 
-	it("denies validate without master_data.manage", async () => {
+	it("denies validate without master_data.import_validate", async () => {
 		permissionMocks.forbidUnlessPermission.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
@@ -81,7 +81,7 @@ describe("master-data import Actions", () => {
 		expect(result.ok).toBe(false);
 		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
 			operatorSession,
-			"master_data.manage",
+			"master_data.import_validate",
 		);
 		expect(importMocks.validatePartyImportBatch).not.toHaveBeenCalled();
 	});
@@ -120,7 +120,7 @@ describe("master-data import Actions", () => {
 		);
 	});
 
-	it("denies apply without master_data.import_approve", async () => {
+	it("denies apply without master_data.import_apply", async () => {
 		permissionMocks.forbidUnlessPermission.mockResolvedValue({
 			ok: false,
 			code: "FORBIDDEN",
@@ -137,7 +137,7 @@ describe("master-data import Actions", () => {
 		expect(result.ok).toBe(false);
 		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
 			operatorSession,
-			"master_data.import_approve",
+			"master_data.import_apply",
 		);
 		expect(importMocks.upsertPartiesByCode).not.toHaveBeenCalled();
 	});
@@ -169,7 +169,7 @@ describe("master-data import Actions", () => {
 		expect(result.ok).toBe(true);
 		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
 			operatorSession,
-			"master_data.import_approve",
+			"master_data.import_apply",
 		);
 		expect(importMocks.upsertPartiesByCode).toHaveBeenCalledWith(
 			expect.objectContaining({

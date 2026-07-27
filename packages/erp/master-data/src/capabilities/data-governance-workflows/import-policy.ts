@@ -15,9 +15,8 @@ import type {
 import type { GovernancePermission } from "./permissions";
 
 export const IMPORT_DETERMINISTIC_MATCH_KEYS = [
-	"approved_external_identifier",
 	"normalized_canonical_code",
-	"configured_unique_key",
+	"approved_external_identifier",
 ] as const;
 export type ImportDeterministicMatchKey =
 	(typeof IMPORT_DETERMINISTIC_MATCH_KEYS)[number];
@@ -57,7 +56,7 @@ export type ImportTransitionDefinition = ImportBatchTransitionDefinition;
 export const IMPORT_BATCH_TRANSITIONS = {
 	parse: {
 		operation: "import_batch.parse",
-		from: ["uploaded"],
+		from: ["parsed"],
 		to: "parsed",
 		authority: "import_orchestrator",
 		requiredPermission: null,
@@ -70,7 +69,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	startValidation: {
 		operation: "import_batch.validation_start",
 		from: ["parsed"],
-		to: "validating",
+		to: "validated",
 		authority: "import_orchestrator",
 		requiredPermission: null,
 		reasonRequired: false,
@@ -81,7 +80,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	markValidated: {
 		operation: "import_batch.validated",
-		from: ["validating"],
+		from: ["parsed"],
 		to: "validated",
 		authority: "import_orchestrator",
 		requiredPermission: null,
@@ -93,8 +92,8 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	markValidationFailed: {
 		operation: "import_batch.validation_failed",
-		from: ["validating"],
-		to: "validation_failed",
+		from: ["parsed", "validated"],
+		to: "failed",
 		authority: "import_orchestrator",
 		requiredPermission: null,
 		reasonRequired: true,
@@ -130,7 +129,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	reject: {
 		operation: "import_batch.reject",
 		from: ["approval_pending"],
-		to: "rejected",
+		to: "cancelled",
 		authority: "actor",
 		requiredPermission: "master_data.import_reject",
 		reasonRequired: true,
@@ -189,7 +188,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	cancel: {
 		operation: "import_batch.cancel",
-		from: ["uploaded", "parsed", "validated", "approval_pending", "approved"],
+		from: ["parsed", "validated", "approval_pending", "approved"],
 		to: "cancelled",
 		authority: "actor",
 		requiredPermission: "master_data.import_cancel",
@@ -202,7 +201,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	expire: {
 		operation: "import_batch.expire",
 		from: ["approval_pending", "approved"],
-		to: "expired",
+		to: "cancelled",
 		authority: "system",
 		requiredPermission: null,
 		reasonRequired: false,
@@ -213,16 +212,8 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	supersede: {
 		operation: "import_batch.supersede",
-		from: [
-			"uploaded",
-			"parsed",
-			"validated",
-			"validation_failed",
-			"approval_pending",
-			"approved",
-			"failed",
-		],
-		to: "superseded",
+		from: ["parsed", "validated", "approval_pending", "approved", "failed"],
+		to: "cancelled",
 		authority: "actor",
 		requiredPermission: "master_data.import_create",
 		reasonRequired: true,

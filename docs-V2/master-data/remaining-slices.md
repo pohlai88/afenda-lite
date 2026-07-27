@@ -78,8 +78,9 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | Outcomes | Package `Result`; web `ActionResult` via thin adapters |
 | Concurrency | `expectedVersion` CAS; no silent overwrite |
 | Same-TX | Entity + `platform_audit_log` + `platform_domain_event` |
+| Change requests | Named controlled master-data operations only; shipped MDG v1 = `activate_party` + `merge_parties`; not a generic workflow engine |
 | Lists | `pageSize <= 100` |
-| Search | Derived projections; rebuild-from-SSOT; never authorizes masters |
+| Search | Async/idempotent derived projections; rebuild-from-SSOT; never authorizes masters; failure never rolls back committed masters |
 | UI | `@afenda/ui-system` barrel only |
 | Quality bar | Enterprise production — shrink **scope**, not quality |
 
@@ -126,7 +127,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | Invent SO/PO line behavior here — terms are referenced later by transactional modules. |
 | **Depends on** | Shipped party/item patterns (copy contracts, do not fork) |
 | **Status** | **Shipped** 2026-07-20 |
-| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdPaymentTerm`) · `drizzle/0009_md_payment_term.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/erp/master-data/src/payment-term.ts` · `drizzle-store.ts` CTEs · `packages/data-plane/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-payment-term,payment-term-lifecycle}.ts` · `features/master-data/{create-payment-term-form,payment-term-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
+| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdPaymentTerm`) · `drizzle/0009_md_payment_term.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/erp/master-data/src/payment-term.ts` · `drizzle-store.ts` transactional writes · `packages/data-plane/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-payment-term,payment-term-lifecycle}.ts` · `features/master-data/{create-payment-term-form,payment-term-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
 | **Domain fields** | §24 warehouse-shaped lifecycle + `net_days` (int ≥ 0) |
 
 ### R4 — `md_tax_registration`
@@ -140,7 +141,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | Premature `md_tax_*` columns guessed outside the tax Scratch SSOT |
 | **Depends on** | Tax architecture Scratch — **Q3 resolved**: [../tax/tax-architecture.md](../tax/tax-architecture.md) |
 | **Status** | **Shipped** 2026-07-20 |
-| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdTaxRegistration`) · `drizzle/0010_md_tax_registration.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/erp/master-data/src/tax-registration.ts` · `drizzle-store.ts` CTEs · `packages/data-plane/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-tax-registration,tax-registration-lifecycle}.ts` · `features/master-data/{create-tax-registration-form,tax-registration-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
+| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdTaxRegistration`) · `drizzle/0010_md_tax_registration.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/erp/master-data/src/tax-registration.ts` · `drizzle-store.ts` transactional writes · `packages/data-plane/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-tax-registration,tax-registration-lifecycle}.ts` · `features/master-data/{create-tax-registration-form,tax-registration-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
 | **Verify sketch** | See tax-architecture acceptance + `pnpm audit:tenancy-nulls` |
 
 ### R5 — Transactional modules (ARCH-006 consumers)
@@ -164,7 +165,7 @@ These improve fidelity to DNA prose; they are **not** missing spine stages. **On
 
 | Item | DNA cue | Suggested ship | Brief | Status |
 |------|---------|----------------|-------|--------|
-| Importer **approved** gate | §13 lifecycle `… → approved → applied → …` | Explicit approve step / permission before apply; keep dry-run + reconcile | R6-import-approve | **SHIPPED** 2026-07-20 — `approved` gate + `master_data.import_approve` · evidence in [r6-harden-missions.md](r6-harden-missions.md) |
+| Importer **approved** gate | §13 lifecycle `… → approved → applied → …` | Explicit approve step / permission before apply; keep dry-run + reconcile | R6-import-approve | **SHIPPED** 2026-07-20; hardened 2026-07-28 — `approved` gate + separated `master_data.import_validate` / `master_data.import_approve` / `master_data.import_apply` · optional `requireSegregatedApproval` policy |
 | Item optional commercial fields | §7.2 | Brand, manufacturer party, tax class, origin, shelf-life, dims — controlled columns or typed extensions, not free JSON | R6-item-optional | open |
 | Stale §13 wording | “Bulk APIs are a named importer slice…” | Doc-only: align DNA prose with §23 **Shipped** | R6-dna-prose | **SHIPPED** 2026-07-21 — DNA §13 + [operational-master-contract.md](operational-master-contract.md) |
 
@@ -175,7 +176,7 @@ These improve fidelity to DNA prose; they are **not** missing spine stages. **On
 | Surface | Role for remaining slices |
 |---------|---------------------------|
 | `@afenda/db` | New `md_*` tables + hard-tenant registration + migrations |
-| `@afenda/master-data` | Sole commands / Zod / store CTEs |
+| `@afenda/master-data` | Sole commands / Zod / transactional store writes |
 | `@afenda/events` | New versioned `master_data.*` types |
 | `@afenda/audit` | Same-TX audit rows |
 | `@afenda/search` | Projectors when new roots become searchable |

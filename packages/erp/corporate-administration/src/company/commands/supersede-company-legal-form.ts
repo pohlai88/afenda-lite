@@ -122,17 +122,20 @@ export async function supersedeCompanyLegalForm(
 	});
 	if (!eligible.ok) return eligible;
 
-	const jurisdictionProfile =
-		await dependencies.store.findJurisdictionProfileAsOf({
-			organizationId: options.organizationId,
-			legalCompanyId: parsed.data.legalCompanyId,
-			asOf: parsed.data.replacement.effectiveFrom,
-		});
-	if (!jurisdictionProfile.ok) return jurisdictionProfile;
-	if (jurisdictionProfile.data === null) {
+	const company = await dependencies.store.getLegalCompany({
+		organizationId: options.organizationId,
+		legalCompanyId: parsed.data.legalCompanyId,
+	});
+	if (!company.ok) return company;
+	const jurisdictionProfile = company.data?.currentJurisdictionProfile ?? null;
+	if (
+		jurisdictionProfile === null ||
+		jurisdictionProfile.jurisdictionCountryCode !==
+			parsed.data.replacement.jurisdictionCode
+	) {
 		return fail(
 			"VALIDATION_ERROR",
-			"Corporate Administration jurisdiction profile is required for the legal form effective date.",
+			"Corporate Administration jurisdiction profile is required for the legal form jurisdiction.",
 			corporateAdministrationErrorDetails(
 				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
 				{ field: "jurisdictionCode" },

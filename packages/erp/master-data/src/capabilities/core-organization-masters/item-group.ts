@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -37,9 +37,18 @@ import {
 	getByCodeInputSchema,
 	getByIdInputSchema,
 	itemGroupLifecycleInputSchema,
+	listByStatusInputSchema,
+	listUpdatedSinceInputSchema,
 	masterListOptionsSchema,
 	updateItemGroupInputSchema,
 } from "./schemas";
+
+export type ItemGroupPath = {
+	groupId: string;
+	path: ItemGroup[];
+	codePath: string[];
+	normalizedPath: string;
+};
 
 async function afterItemGroupMutation(
 	result: Result<ItemGroup>,
@@ -250,6 +259,68 @@ export async function retireItemGroup(
 	);
 }
 
+export async function resolveItemGroupPath(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<ItemGroupPath | null>> {
+	const parsed = parseMasterInput(
+		getByIdInputSchema,
+		input,
+		"Invalid item group path input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+	const store = resolveStore(options.store);
+	const { authorization } = options;
+	const authorized = await requireMasterQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_ITEM_GROUP_GET_BY_ID,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	const visited = new Set<string>();
+	const path: ItemGroup[] = [];
+	let currentId: string | null = parsed.data.id;
+	while (currentId !== null) {
+		if (visited.has(currentId)) {
+			return fail("CONFLICT", "Item group hierarchy contains a cycle", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		visited.add(currentId);
+		const current = await store.getItemGroupById(
+			parsed.data.organizationId,
+			currentId,
+		);
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return path.length === 0
+				? ok(null)
+				: fail("CONFLICT", "Item group parent is missing", {
+						reason: "MASTER_CROSS_ORG_REFERENCE",
+					} satisfies MasterFailureDetails);
+		}
+		path.unshift(current.data);
+		currentId = current.data.parentId;
+	}
+
+	return {
+		ok: true,
+		data: {
+			groupId: parsed.data.id,
+			path,
+			codePath: path.map((group) => group.code),
+			normalizedPath: path.map((group) => group.normalizedCode).join("/"),
+		},
+	};
+}
+
 export async function getItemGroupById(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -307,6 +378,15 @@ export async function getItemGroupByCode(
 	);
 }
 
+export async function existsItemGroupByCode(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<boolean>> {
+	const result = await getItemGroupByCode(input, options);
+	if (!result.ok) return result;
+	return ok(result.data !== null);
+}
+
 export async function listItemGroups(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -334,5 +414,45 @@ export async function listItemGroups(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
 	});
+}
+
+export async function listActiveItemGroups(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<ItemGroup[]>> {
+	const parsed = parseMasterInput(
+		masterListOptionsSchema,
+		input,
+		"Invalid active item group list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listItemGroups({ ...parsed.data, status: "active" }, options);
+}
+
+export async function listItemGroupsByStatus(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<ItemGroup[]>> {
+	const parsed = parseMasterInput(
+		listByStatusInputSchema,
+		input,
+		"Invalid item group list-by-status input",
+	);
+	if (!parsed.ok) return parsed;
+	return listItemGroups(parsed.data, options);
+}
+
+export async function listItemGroupsUpdatedSince(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<ItemGroup[]>> {
+	const parsed = parseMasterInput(
+		listUpdatedSinceInputSchema,
+		input,
+		"Invalid item group updated-since list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listItemGroups(parsed.data, options);
 }

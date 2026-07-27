@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	lifecycleInvalidExpectedVersion,
@@ -48,4 +48,37 @@ export function nextLifecycleVersion(currentVersion: number): number {
 		);
 	}
 	return currentVersion + 1;
+}
+
+export async function resolveTenantScopedCasMiss(input: {
+	entityType: string;
+	entityId: string;
+	expectedVersion: number;
+	loadCurrent: () => Promise<Result<VersionedLifecycleRecord | null>>;
+	notFoundMessage: string;
+	unchangedMissMessage: string;
+}): Promise<Result<never>> {
+	const current = await input.loadCurrent();
+	if (!current.ok) return current;
+	if (current.data === null) {
+		return fail("NOT_FOUND", input.notFoundMessage, {
+			reason: "MASTER_NOT_FOUND",
+			entityType: input.entityType,
+			entityId: input.entityId,
+		});
+	}
+	if (current.data.version !== input.expectedVersion) {
+		return lifecycleVersionConflict({
+			entityType: input.entityType,
+			entityId: input.entityId,
+			expectedVersion: input.expectedVersion,
+			actualVersion: current.data.version,
+		});
+	}
+	return fail("CONFLICT", input.unchangedMissMessage, {
+		reason: "MASTER_INVALID_STATE",
+		entityType: input.entityType,
+		entityId: input.entityId,
+		expectedVersion: input.expectedVersion,
+	});
 }

@@ -49,7 +49,10 @@ import type {
 	ItemLifecycleEventSuffix,
 	ItemTemplateLifecycleEventSuffix,
 } from "../../../core-organization-masters/core-master-events";
-import { assertLifecycleTransition } from "../../../core-organization-masters/lifecycle";
+import {
+	assertLifecycleTransition,
+	assertRestoreTransition,
+} from "../../../core-organization-masters/lifecycle";
 import { mapItem } from "../../../core-organization-masters/map-row";
 import type {
 	ItemLifecycleRecord,
@@ -2007,10 +2010,11 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 				reason: "MASTER_VERSION_CONFLICT",
 			} satisfies MasterFailureDetails);
 		}
-		const lifecycle = assertLifecycleTransition(
-			mapItem(existing).status,
-			record.toStatus,
-		);
+		const currentStatus = mapItem(existing).status;
+		const lifecycle =
+			record.toStatus === "draft"
+				? assertRestoreTransition(currentStatus, "draft")
+				: assertLifecycleTransition(currentStatus, record.toStatus);
 		if (!lifecycle.ok) {
 			return lifecycle;
 		}

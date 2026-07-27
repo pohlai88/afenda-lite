@@ -29,8 +29,16 @@ export const PERMISSION_DENIED_MESSAGE: Record<
 		"You do not have permission to manage organization master data.",
 	"master_data.approve":
 		"You do not have permission to approve master-data change requests.",
+	"master_data.import_create":
+		"You do not have permission to create master-data imports.",
+	"master_data.import_validate":
+		"You do not have permission to validate master-data imports.",
 	"master_data.import_approve":
-		"You do not have permission to approve and apply master-data import.",
+		"You do not have permission to approve master-data imports.",
+	"master_data.import_apply":
+		"You do not have permission to apply approved master-data imports.",
+	"master_data.import_cancel":
+		"You do not have permission to cancel master-data imports.",
 	"master_data.party_role_manage":
 		"You do not have permission to manage party roles.",
 	"master_data.party_address_manage":

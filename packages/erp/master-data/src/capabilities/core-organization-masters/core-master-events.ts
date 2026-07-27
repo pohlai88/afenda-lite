@@ -11,7 +11,11 @@ export type ItemGroupLifecycleEventSuffix =
 	| "inactive"
 	| "retired";
 
-export type ItemLifecycleEventSuffix = "activated" | "inactive" | "retired";
+export type ItemLifecycleEventSuffix =
+	| "activated"
+	| "inactive"
+	| "retired"
+	| "restored";
 
 export type WarehouseLifecycleEventSuffix =
 	| "activated"

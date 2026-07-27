@@ -83,4 +83,59 @@ describe("HR organization dimension composition port", () => {
 
 		expect(result).toEqual(failure);
 	});
+
+	it("fails closed when master data omits a required HR dimension", async () => {
+		mocks.resolve.mockResolvedValue({
+			ok: true,
+			data: {
+				legal_entity: {
+					id: randomUUID(),
+					kind: "legal_entity",
+					key: "LE",
+					name: "Legal Entity",
+				},
+				business_unit: {
+					id: randomUUID(),
+					kind: "business_unit",
+					key: "BU",
+					name: "Business Unit",
+				},
+				location: {
+					id: randomUUID(),
+					kind: "location",
+					key: "LOC",
+					name: "Location",
+				},
+				cost_centre: {
+					id: randomUUID(),
+					kind: "cost_centre",
+					key: "CC",
+					name: "Cost Centre",
+				},
+			},
+		});
+
+		const result =
+			await createHumanResourcesOrganizationDimensionPort().resolveRequiredAsOf(
+				{
+					organizationId: randomUUID(),
+					actorUserId: randomUUID(),
+					asOf: "2025-06-01",
+					keys: {
+						legal_entity: "LE",
+						business_unit: "BU",
+						location: "LOC",
+						cost_centre: "CC",
+						project: "PRJ",
+					},
+				},
+			);
+
+		expect(result).toMatchObject({
+			ok: false,
+			code: "INTERNAL_ERROR",
+			message: "Master Data did not return required HR organization dimension.",
+			details: { kind: "project" },
+		});
+	});
 });

@@ -6,6 +6,11 @@ import {
 	type MasterCommandOptions,
 	resolveCommandDeps,
 } from "../../command-options";
+import {
+	expectedVersionSchema,
+	idempotencyKeySchema,
+	orgActorContextSchema,
+} from "../../contracts/context";
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_IMPORT_UPSERT_ITEM_GROUPS,
@@ -57,14 +62,42 @@ export const IMPORT_ROW_OUTCOMES = [
 
 export type ImportRowOutcome = (typeof IMPORT_ROW_OUTCOMES)[number];
 
-export type ImportRowResult = {
+export type ImportReportPayload = Readonly<Record<string, unknown>>;
+
+export type ImportRowApplicationResult = Readonly<{
+	outcome: ImportRowOutcome;
+	message: string | null;
+	reason: string | null;
+}>;
+
+export type ImportRowResult = Readonly<{
+	rowIndex: number;
+	sourceRowNumber: number;
+	code: string;
+	outcome: ImportRowOutcome;
+	rawPayload: ImportReportPayload;
+	normalizedPayload: ImportReportPayload;
+	matchedTargetId: string | null;
+	intendedOperation: "create" | "update" | "skip" | "reject";
+	validationErrors: readonly string[];
+	applicationResult: ImportRowApplicationResult;
+	resultingEntityId: string | null;
+	resultingEntityVersion: number | null;
+	entityId?: string;
+	message?: string;
+	reason?: string;
+}>;
+
+type ImportRowResultDraft = Readonly<{
 	rowIndex: number;
 	code: string;
 	outcome: ImportRowOutcome;
 	entityId?: string;
+	entityVersion?: number;
+	matchedTargetId?: string | null;
 	message?: string;
 	reason?: string;
-};
+}>;
 
 export type ImportReconciliationReport = {
 	sourceSystem: string;
@@ -80,27 +113,54 @@ export type ImportReconciliationReport = {
 	rows: ImportRowResult[];
 };
 
-const orgImportContextSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-	correlationId: z.string().trim().min(1),
+const orgImportContextSchema = orgActorContextSchema.extend({
 	sourceSystem: z.string().trim().min(1).max(64),
 	mode: z.enum(IMPORT_MODES).default("create_or_update"),
 	dryRun: z.boolean().default(false),
 	/** Required true when dryRun is false (DNA §13 approved → applied). */
 	approved: z.boolean().default(false),
+	/**
+	 * Approval evidence for orgs that require four-eyes import application.
+	 * When `requireSegregatedApproval` is true, this must be a different actor
+	 * from the caller applying the import.
+	 */
+	approvedByActorUserId: z.string().trim().min(1).optional(),
+	requireSegregatedApproval: z.boolean().default(false),
 	/** Required on apply — dry-run/validate may omit. */
-	idempotencyKey: z.string().trim().min(1).max(128).optional(),
+	idempotencyKey: idempotencyKeySchema.optional(),
 });
 
 function requireApprovedForApply(ctx: {
 	dryRun: boolean;
 	approved: boolean;
+	actorUserId?: string;
+	approvedByActorUserId?: string;
+	requireSegregatedApproval?: boolean;
 }): Result<void> {
 	if (!ctx.dryRun && !ctx.approved) {
 		return fail("CONFLICT", "Import batch is not approved", {
 			reason: "MASTER_IMPORT_NOT_APPROVED",
 		} satisfies MasterFailureDetails);
+	}
+	if (!ctx.dryRun && ctx.requireSegregatedApproval === true) {
+		if (ctx.approvedByActorUserId === undefined) {
+			return fail(
+				"BAD_REQUEST",
+				"Import approval actor is required when segregation is enforced",
+				{
+					reason: "MASTER_VALIDATION_FAILED",
+				} satisfies MasterFailureDetails,
+			);
+		}
+		if (ctx.approvedByActorUserId === ctx.actorUserId) {
+			return fail(
+				"FORBIDDEN",
+				"Import approve and apply actors must be different",
+				{
+					reason: "MASTER_MAKER_CHECKER_VIOLATION",
+				} satisfies MasterFailureDetails,
+			);
+		}
 	}
 	if (!ctx.dryRun) {
 		const gate = approvedApplyAttemptGate(
@@ -188,7 +248,7 @@ const partyImportRowSchema = z.object({
 	code: z.string().trim().min(1).max(64),
 	name: z.string().trim().min(1).max(200),
 	partyKind: z.enum(PARTY_KINDS),
-	expectedVersion: z.number().int().positive().optional(),
+	expectedVersion: expectedVersionSchema.optional(),
 	externalId: z
 		.object({
 			sourceSystem: z.string().trim().min(1).max(64),
@@ -202,7 +262,7 @@ const partyImportRowSchema = z.object({
 const itemGroupImportRowSchema = z.object({
 	code: z.string().trim().min(1).max(64),
 	name: z.string().trim().min(1).max(200),
-	expectedVersion: z.number().int().positive().optional(),
+	expectedVersion: expectedVersionSchema.optional(),
 });
 
 const itemImportRowSchema = z.object({
@@ -211,14 +271,14 @@ const itemImportRowSchema = z.object({
 	itemType: z.enum(ITEM_TYPES),
 	baseUomId: refUomIdSchema,
 	itemGroupId: itemGroupIdSchema,
-	expectedVersion: z.number().int().positive().optional(),
+	expectedVersion: expectedVersionSchema.optional(),
 });
 
 const warehouseImportRowSchema = z.object({
 	code: z.string().trim().min(1).max(64),
 	name: z.string().trim().min(1).max(200),
 	locationType: z.enum(WAREHOUSE_LOCATION_TYPES),
-	expectedVersion: z.number().int().positive().optional(),
+	expectedVersion: expectedVersionSchema.optional(),
 });
 
 const upsertPartiesByCodeInputSchema = orgImportContextSchema.extend({
@@ -238,7 +298,7 @@ const upsertWarehousesByCodeInputSchema = orgImportContextSchema.extend({
 });
 
 function summarize(
-	rows: ImportRowResult[],
+	rows: readonly Pick<ImportRowResultDraft, "outcome">[],
 ): Omit<
 	ImportReconciliationReport,
 	"sourceSystem" | "dryRun" | "mode" | "organizationId" | "rows"
@@ -253,11 +313,104 @@ function summarize(
 	};
 }
 
+function toImportPayload(row: unknown): ImportReportPayload {
+	if (typeof row !== "object" || row === null || Array.isArray(row)) {
+		return { value: row };
+	}
+	return { ...row };
+}
+
+function normalizeImportReportPayload(input: {
+	rawPayload: ImportReportPayload;
+	code: string;
+}): ImportReportPayload {
+	const normalizedCode = normalizeMasterCode(input.code);
+	if (!normalizedCode.ok) {
+		return input.rawPayload;
+	}
+	return {
+		...input.rawPayload,
+		code: normalizedCode.data.code,
+		normalizedCode: normalizedCode.data.normalizedCode,
+	};
+}
+
+function intendedOperationForRow(
+	row: Pick<ImportRowResultDraft, "outcome" | "entityId">,
+): ImportRowResult["intendedOperation"] {
+	switch (row.outcome) {
+		case "create":
+			return "create";
+		case "update":
+			return "update";
+		case "unchanged":
+			return "skip";
+		case "rejected":
+		case "conflict":
+			return row.entityId === undefined ? "reject" : "update";
+		default:
+			return assertNever(row.outcome);
+	}
+}
+
+function validationErrorsForRow(
+	row: Pick<ImportRowResultDraft, "outcome" | "message" | "reason">,
+): readonly string[] {
+	if (row.outcome !== "rejected" && row.outcome !== "conflict") {
+		return [];
+	}
+	return [row.reason, row.message].filter(
+		(value): value is string => value !== undefined && value.trim().length > 0,
+	);
+}
+
+function completeImportRows<TRow>(
+	rows: readonly ImportRowResultDraft[],
+	sourceRows: readonly TRow[],
+): ImportRowResult[] {
+	return rows.map((row) => {
+		const sourceRow = sourceRows[row.rowIndex];
+		const rawPayload = toImportPayload(sourceRow);
+		const matchedTargetId =
+			row.matchedTargetId !== undefined
+				? row.matchedTargetId
+				: row.outcome === "update" ||
+						row.outcome === "unchanged" ||
+						row.outcome === "conflict"
+					? (row.entityId ?? null)
+					: null;
+		return {
+			rowIndex: row.rowIndex,
+			sourceRowNumber: row.rowIndex + 1,
+			code: row.code,
+			outcome: row.outcome,
+			rawPayload,
+			normalizedPayload: normalizeImportReportPayload({
+				rawPayload,
+				code: row.code,
+			}),
+			matchedTargetId,
+			intendedOperation: intendedOperationForRow(row),
+			validationErrors: validationErrorsForRow(row),
+			applicationResult: {
+				outcome: row.outcome,
+				message: row.message ?? null,
+				reason: row.reason ?? null,
+			},
+			resultingEntityId: row.entityId ?? null,
+			resultingEntityVersion: row.entityVersion ?? null,
+			...(row.entityId !== undefined ? { entityId: row.entityId } : {}),
+			...(row.message !== undefined ? { message: row.message } : {}),
+			...(row.reason !== undefined ? { reason: row.reason } : {}),
+		};
+	});
+}
+
 function modeBlocksCreate(
 	mode: ImportMode,
 	rowIndex: number,
 	code: string,
-): ImportRowResult | null {
+): ImportRowResultDraft | null {
 	if (mode === "update_existing") {
 		return {
 			rowIndex,
@@ -275,7 +428,7 @@ function modeBlocksUpdate(
 	rowIndex: number,
 	code: string,
 	entityId: string,
-): ImportRowResult | null {
+): ImportRowResultDraft | null {
 	if (mode === "create_only") {
 		return {
 			rowIndex,
@@ -362,7 +515,7 @@ async function upsertPartiesByCodeBody(
 	options: MasterCommandOptions,
 ): Promise<Result<ImportReconciliationReport>> {
 	const { store } = resolveCommandDeps(options);
-	const results: ImportRowResult[] = [];
+	const results: ImportRowResultDraft[] = [];
 
 	const normalizedRows: Array<{
 		rowIndex: number;
@@ -526,6 +679,7 @@ async function upsertPartiesByCodeBody(
 						code: entry.code,
 						outcome: "conflict",
 						entityId: created.data.id,
+						entityVersion: created.data.version,
 						message: ext.message,
 						reason: (ext.details as MasterFailureDetails | undefined)?.reason,
 					});
@@ -537,6 +691,9 @@ async function upsertPartiesByCodeBody(
 				code: entry.code,
 				outcome: "create",
 				entityId: created.data.id,
+				...(created.data.version !== undefined
+					? { entityVersion: created.data.version }
+					: {}),
 			});
 			continue;
 		}
@@ -575,6 +732,7 @@ async function upsertPartiesByCodeBody(
 				code: entry.code,
 				outcome: "unchanged",
 				entityId: current.id,
+				entityVersion: current.version,
 			});
 			continue;
 		}
@@ -630,6 +788,9 @@ async function upsertPartiesByCodeBody(
 			code: entry.code,
 			outcome: "update",
 			entityId: updated.data.id,
+			...(updated.data.version !== undefined
+				? { entityVersion: updated.data.version }
+				: {}),
 		});
 	}
 
@@ -640,7 +801,7 @@ async function upsertPartiesByCodeBody(
 		mode: ctx.mode,
 		organizationId: ctx.organizationId,
 		...summarize(results),
-		rows: results,
+		rows: completeImportRows(results, ctx.rows),
 	});
 }
 
@@ -655,6 +816,8 @@ async function upsertByCodeGeneric<
 		mode: ImportMode;
 		dryRun: boolean;
 		approved: boolean;
+		approvedByActorUserId?: string;
+		requireSegregatedApproval?: boolean;
 		idempotencyKey?: string;
 		entityType: "item" | "item_group" | "warehouse";
 		rows: TRow[];
@@ -665,11 +828,14 @@ async function upsertByCodeGeneric<
 			organizationId: string,
 			normalizedCode: string,
 		) => Promise<Result<{ id: string; name: string; version: number } | null>>;
-		create: (row: TRow, code: string) => Promise<Result<{ id: string }>>;
+		create: (
+			row: TRow,
+			code: string,
+		) => Promise<Result<{ id: string; version?: number }>>;
 		update: (
 			row: TRow,
 			existing: { id: string; version: number },
-		) => Promise<Result<{ id: string }>>;
+		) => Promise<Result<{ id: string; version?: number }>>;
 		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
 		/** Reject when row tries to change fields outside the mutable allowlist. */
 		rejectImmutable?: (
@@ -677,7 +843,7 @@ async function upsertByCodeGeneric<
 			row: TRow,
 			rowIndex: number,
 			code: string,
-		) => ImportRowResult | null;
+		) => ImportRowResultDraft | null;
 	},
 ): Promise<Result<ImportReconciliationReport>> {
 	const approvedGate = requireApprovedForApply(input);
@@ -719,21 +885,24 @@ async function upsertByCodeGenericBody<
 			organizationId: string,
 			normalizedCode: string,
 		) => Promise<Result<{ id: string; name: string; version: number } | null>>;
-		create: (row: TRow, code: string) => Promise<Result<{ id: string }>>;
+		create: (
+			row: TRow,
+			code: string,
+		) => Promise<Result<{ id: string; version?: number }>>;
 		update: (
 			row: TRow,
 			existing: { id: string; version: number },
-		) => Promise<Result<{ id: string }>>;
+		) => Promise<Result<{ id: string; version?: number }>>;
 		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
 		rejectImmutable?: (
 			existing: { id: string; name: string; version: number },
 			row: TRow,
 			rowIndex: number,
 			code: string,
-		) => ImportRowResult | null;
+		) => ImportRowResultDraft | null;
 	},
 ): Promise<Result<ImportReconciliationReport>> {
-	const results: ImportRowResult[] = [];
+	const results: ImportRowResultDraft[] = [];
 	const normalizedRows: Array<{
 		rowIndex: number;
 		normalizedCode: string;
@@ -829,6 +998,7 @@ async function upsertByCodeGenericBody<
 				code: entry.code,
 				outcome: "create",
 				entityId: created.data.id,
+				entityVersion: created.data.version,
 			});
 			continue;
 		}
@@ -864,6 +1034,7 @@ async function upsertByCodeGenericBody<
 				code: entry.code,
 				outcome: "unchanged",
 				entityId: current.id,
+				entityVersion: current.version,
 			});
 			continue;
 		}
@@ -906,6 +1077,7 @@ async function upsertByCodeGenericBody<
 			code: entry.code,
 			outcome: "update",
 			entityId: updated.data.id,
+			entityVersion: updated.data.version,
 		});
 	}
 
@@ -916,7 +1088,7 @@ async function upsertByCodeGenericBody<
 		mode: input.mode,
 		organizationId: input.organizationId,
 		...summarize(results),
-		rows: results,
+		rows: completeImportRows(results, input.rows),
 	});
 }
 
@@ -1169,7 +1341,7 @@ export async function upsertWarehousesByCode(
 	});
 }
 
-/** Validate-only alias — dry-run party upsert (`master_data.manage`). */
+/** Validate-only alias — dry-run party upsert (`master_data.import_validate`). */
 export async function validatePartyImportBatch(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -1186,4 +1358,8 @@ export async function validatePartyImportBatch(
 		{ ...parsed.data, dryRun: true, approved: false },
 		options,
 	);
+}
+
+function assertNever(value: never): never {
+	throw new Error(`Unsupported import row outcome: ${String(value)}`);
 }

@@ -31,6 +31,7 @@ import type {
 	WarehouseLifecycleEventSuffix,
 } from "./capabilities/core-organization-masters/core-master-events";
 import { isWarehouseParentTypeCompatible } from "./capabilities/core-organization-masters/core-master-policy";
+import { resolveItemOperationalProfile } from "./capabilities/core-organization-masters/item-operational-profile";
 import {
 	assertLifecycleTransition,
 	assertRestoreTransition,
@@ -50,6 +51,9 @@ import {
 	mapTaxRegistration,
 	mapWarehouse,
 } from "./capabilities/core-organization-masters/map-row";
+import { createDrizzleOrganizationDimensionStore } from "./capabilities/core-organization-masters/organization-dimension";
+import type { OrganizationDimensionStore } from "./capabilities/core-organization-masters/organization-dimension-store";
+import { normalizePaymentTermRule } from "./capabilities/core-organization-masters/payment-term-rule";
 import type {
 	ImportBatchCreateRecord,
 	ImportBatchEntityType,
@@ -58,12 +62,16 @@ import type {
 	ItemGroupCreateRecord,
 	ItemGroupLifecycleRecord,
 	ItemGroupUpdateRecord,
+	ItemListFilter,
 	ItemUpdateRecord,
 	ListFilter,
 	MasterDataStore,
+	PartyByRoleFilter,
 	PartyCreateRecord,
 	PartyLifecycleRecord,
 	PartyMergeRecord,
+	PartySearchFilter,
+	PartyTaxRegistrationLookup,
 	PartyUpdateRecord,
 	PaymentTermCreateRecord,
 	PaymentTermLifecycleRecord,
@@ -300,6 +308,12 @@ type ItemSqlRow = {
 	normalized_code: string;
 	name: string;
 	item_type: string;
+	description: string | null;
+	tracking_policy: string;
+	sellable: boolean;
+	purchasable: boolean;
+	stocked: boolean;
+	service_indicator: boolean;
 	status: string;
 	version: number;
 	base_uom_id: string;
@@ -322,6 +336,12 @@ type WarehouseSqlRow = {
 	name: string;
 	location_type: string;
 	parent_id: string | null;
+	address_country_id: string | null;
+	address_line1: string | null;
+	address_line2: string | null;
+	address_city: string | null;
+	address_region: string | null;
+	address_postal_code: string | null;
 	status: string;
 	version: number;
 	created_by: string;
@@ -341,6 +361,15 @@ type PaymentTermSqlRow = {
 	normalized_code: string;
 	name: string;
 	net_days: number;
+	discount_days: number | null;
+	discount_percent: string | null;
+	due_day_rule: string;
+	end_of_month: boolean;
+	installment_policy: string;
+	installment_count: number | null;
+	valid_from: string | Date | null;
+	valid_to: string | Date | null;
+	currency_restriction_id: string | null;
 	status: string;
 	version: number;
 	created_by: string;
@@ -483,10 +512,16 @@ function mapItemSqlRow(row: ItemSqlRow): Item {
 		normalizedCode: row.normalized_code,
 		name: row.name,
 		itemType: row.item_type,
+		description: row.description,
 		status: row.status,
 		version: row.version,
 		baseUomId: row.base_uom_id,
 		itemGroupId: row.item_group_id,
+		trackingPolicy: row.tracking_policy,
+		sellable: row.sellable,
+		purchasable: row.purchasable,
+		stocked: row.stocked,
+		serviceIndicator: row.service_indicator,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
 		activatedAt: toDate(row.activated_at),
@@ -507,6 +542,12 @@ function mapWarehouseSqlRow(row: WarehouseSqlRow): Warehouse {
 		name: row.name,
 		locationType: row.location_type,
 		parentId: row.parent_id,
+		addressCountryId: row.address_country_id,
+		addressLine1: row.address_line1,
+		addressLine2: row.address_line2,
+		addressCity: row.address_city,
+		addressRegion: row.address_region,
+		addressPostalCode: row.address_postal_code,
 		status: row.status,
 		version: row.version,
 		createdBy: row.created_by,
@@ -528,6 +569,15 @@ function mapPaymentTermSqlRow(row: PaymentTermSqlRow): PaymentTerm {
 		normalizedCode: row.normalized_code,
 		name: row.name,
 		netDays: row.net_days,
+		discountDays: row.discount_days,
+		discountPercent: row.discount_percent,
+		dueDayRule: row.due_day_rule,
+		endOfMonth: row.end_of_month,
+		installmentPolicy: row.installment_policy,
+		installmentCount: row.installment_count,
+		validFrom: toDate(row.valid_from),
+		validTo: toDate(row.valid_to),
+		currencyRestrictionId: row.currency_restriction_id,
 		status: row.status,
 		version: row.version,
 		createdBy: row.created_by,
@@ -585,10 +635,10 @@ async function assertItemGroupParent(
 	const seen = new Set<string>();
 	while (cursor !== null) {
 		if (selfId !== null && cursor === selfId) {
-			return validationFailed("Item group parent would create a cycle");
+			return invalidState("Item group parent would create a cycle");
 		}
 		if (seen.has(cursor)) {
-			return validationFailed("Item group parent would create a cycle");
+			return invalidState("Item group parent would create a cycle");
 		}
 		seen.add(cursor);
 		const [row] = await db
@@ -666,10 +716,61 @@ async function assertWarehouseParent(
 
 /**
  * Production MasterDataStore.
- * Mutations use Neon HTTP `runNeonHttpTransaction` CTE so entity + audit +
- * outbox commit in one round-trip (neon-http has no interactive TX).
+ * Current simple mutations use Neon HTTP `runNeonHttpTransaction` CTEs so
+ * entity, audit, and outbox commit atomically in one round-trip.
  */
 export class DrizzleMasterDataStore implements MasterDataStore {
+	private readonly organizationDimensions: OrganizationDimensionStore =
+		createDrizzleOrganizationDimensionStore();
+
+	create(
+		record: Parameters<OrganizationDimensionStore["create"]>[0],
+	): ReturnType<OrganizationDimensionStore["create"]> {
+		return this.organizationDimensions.create(record);
+	}
+
+	update(
+		record: Parameters<OrganizationDimensionStore["update"]>[0],
+	): ReturnType<OrganizationDimensionStore["update"]> {
+		return this.organizationDimensions.update(record);
+	}
+
+	transition(
+		input: Parameters<OrganizationDimensionStore["transition"]>[0],
+	): ReturnType<OrganizationDimensionStore["transition"]> {
+		return this.organizationDimensions.transition(input);
+	}
+
+	getById(
+		input: Parameters<OrganizationDimensionStore["getById"]>[0],
+	): ReturnType<OrganizationDimensionStore["getById"]> {
+		return this.organizationDimensions.getById(input);
+	}
+
+	getByCode(
+		input: Parameters<OrganizationDimensionStore["getByCode"]>[0],
+	): ReturnType<OrganizationDimensionStore["getByCode"]> {
+		return this.organizationDimensions.getByCode(input);
+	}
+
+	list(
+		input: Parameters<OrganizationDimensionStore["list"]>[0],
+	): ReturnType<OrganizationDimensionStore["list"]> {
+		return this.organizationDimensions.list(input);
+	}
+
+	findEffective(
+		input: Parameters<OrganizationDimensionStore["findEffective"]>[0],
+	): ReturnType<OrganizationDimensionStore["findEffective"]> {
+		return this.organizationDimensions.findEffective(input);
+	}
+
+	findEffectiveById(
+		input: Parameters<OrganizationDimensionStore["findEffectiveById"]>[0],
+	): ReturnType<OrganizationDimensionStore["findEffectiveById"]> {
+		return this.organizationDimensions.findEffectiveById(input);
+	}
+
 	async getRefCountryByCode(code: string): Promise<Result<RefCountry | null>> {
 		try {
 			const [row] = await db
@@ -704,6 +805,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.select()
 				.from(refCurrency)
 				.where(eq(refCurrency.code, code.trim().toUpperCase()))
+				.limit(1);
+			return ok(row === undefined ? null : mapRefCurrency(row));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to load ref currency");
+		}
+	}
+
+	async getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>> {
+		try {
+			const [row] = await db
+				.select()
+				.from(refCurrency)
+				.where(eq(refCurrency.id, id))
 				.limit(1);
 			return ok(row === undefined ? null : mapRefCurrency(row));
 		} catch (error) {
@@ -838,6 +952,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.status !== undefined) {
 				predicates.push(eq(mdParty.status, filter.status));
 			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(sql`${mdParty.updatedAt} > ${filter.updatedSince}`);
+			}
 			const rows = await db
 				.select()
 				.from(mdParty)
@@ -848,6 +965,104 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return ok(rows.map(mapParty));
 		} catch (error) {
 			return failFromUnknown(error, "Failed to list parties");
+		}
+	}
+
+	async listPartiesByRole(filter: PartyByRoleFilter): Promise<Result<Party[]>> {
+		try {
+			const predicates = [
+				eq(mdParty.organizationId, filter.organizationId),
+				sql`EXISTS (
+					SELECT 1
+					FROM md_party_role role
+					WHERE role.organization_id = ${mdParty.organizationId}
+						AND role.party_id = ${mdParty.id}
+						AND role.role_code = ${filter.roleCode}
+						AND role.archived_at IS NULL
+						AND (${filter.activeOnly} = false OR role.status = 'active')
+				)`,
+			];
+			if (filter.status !== undefined) {
+				predicates.push(eq(mdParty.status, filter.status));
+			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(sql`${mdParty.updatedAt} > ${filter.updatedSince}`);
+			}
+			const rows = await db
+				.select()
+				.from(mdParty)
+				.where(and(...predicates))
+				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
+				.limit(filter.pageSize)
+				.offset((filter.page - 1) * filter.pageSize);
+			return ok(rows.map(mapParty));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to list parties by role");
+		}
+	}
+
+	async findPartyByTaxRegistration(
+		filter: PartyTaxRegistrationLookup,
+	): Promise<Result<Party | null>> {
+		try {
+			const [row] = await db
+				.select({ party: mdParty })
+				.from(mdParty)
+				.innerJoin(
+					mdTaxRegistration,
+					and(
+						eq(mdTaxRegistration.organizationId, mdParty.organizationId),
+						eq(mdTaxRegistration.partyId, mdParty.id),
+					),
+				)
+				.where(
+					and(
+						eq(mdParty.organizationId, filter.organizationId),
+						isNull(mdParty.retiredAt),
+						isNull(mdParty.mergedIntoId),
+						eq(
+							mdTaxRegistration.jurisdictionCountryId,
+							filter.jurisdictionCountryId,
+						),
+						eq(mdTaxRegistration.registrationType, filter.registrationType),
+						eq(
+							mdTaxRegistration.normalizedRegistrationNumber,
+							filter.normalizedRegistrationNumber,
+						),
+						isNull(mdTaxRegistration.deletedAt),
+					),
+				)
+				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
+				.limit(1);
+			return ok(row === undefined ? null : mapParty(row.party));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to find party by tax registration");
+		}
+	}
+
+	async searchParties(filter: PartySearchFilter): Promise<Result<Party[]>> {
+		try {
+			const search = `%${filter.query.trim()}%`;
+			const predicates = [
+				eq(mdParty.organizationId, filter.organizationId),
+				sql`(${mdParty.code} ILIKE ${search} OR ${mdParty.name} ILIKE ${search} OR ${mdParty.legalName} ILIKE ${search} OR ${mdParty.tradingName} ILIKE ${search})`,
+			];
+			if (filter.status !== undefined) {
+				predicates.push(eq(mdParty.status, filter.status));
+			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(sql`${mdParty.updatedAt} > ${filter.updatedSince}`);
+			}
+			const rows = await db
+				.select()
+				.from(mdParty)
+				.where(and(...predicates))
+				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
+				.limit(filter.pageSize)
+				.offset((filter.page - 1) * filter.pageSize);
+			return ok(rows.map(mapParty));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to search parties");
 		}
 	}
 
@@ -1755,6 +1970,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.status !== undefined) {
 				predicates.push(eq(mdItemGroup.status, filter.status));
 			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(sql`${mdItemGroup.updatedAt} > ${filter.updatedSince}`);
+			}
 			const rows = await db
 				.select()
 				.from(mdItemGroup)
@@ -2210,11 +2428,17 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 	}
 
-	async listItems(filter: ListFilter): Promise<Result<Item[]>> {
+	async listItems(filter: ItemListFilter): Promise<Result<Item[]>> {
 		try {
 			const predicates = [eq(mdItem.organizationId, filter.organizationId)];
 			if (filter.status !== undefined) {
 				predicates.push(eq(mdItem.status, filter.status));
+			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(sql`${mdItem.updatedAt} > ${filter.updatedSince}`);
+			}
+			if (filter.itemGroupId !== undefined) {
+				predicates.push(eq(mdItem.itemGroupId, filter.itemGroupId));
 			}
 			const rows = await db
 				.select()
@@ -2259,6 +2483,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		if (group.data.status !== "active" || group.data.retiredAt !== null) {
 			return invalidState("itemGroupId must reference an active item group");
 		}
+		const profile = resolveItemOperationalProfile({
+			itemType: record.itemType,
+			trackingPolicy: record.trackingPolicy,
+			sellable: record.sellable,
+			purchasable: record.purchasable,
+			stocked: record.stocked,
+			serviceIndicator: record.serviceIndicator,
+		});
 		const entityId = randomUUID();
 		const baseUomRowId = randomUUID();
 		const auditId = randomUUID();
@@ -2266,6 +2498,12 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const changesJson = fieldChangeJson("code", null, record.code);
 		const newValueJson = valueSnapshotJson({
 			code: record.code,
+			description: record.description ?? null,
+			trackingPolicy: profile.trackingPolicy,
+			sellable: profile.sellable,
+			purchasable: profile.purchasable,
+			stocked: profile.stocked,
+			serviceIndicator: profile.serviceIndicator,
 			baseUomId: record.baseUomId,
 			itemGroupId: record.itemGroupId,
 		});
@@ -2298,12 +2536,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 					mutated AS (
 						INSERT INTO md_item (
-							id, organization_id, code, normalized_code, name, item_type,
+							id, organization_id, code, normalized_code, name, item_type, description,
+							tracking_policy, sellable, purchasable, stocked, service_indicator,
 							base_uom_id, item_group_id, status, version, created_by, updated_by
 						)
 						SELECT
 							${entityId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
-							${record.name}, ${record.itemType}, ${record.baseUomId}, ${record.itemGroupId},
+							${record.name}, ${record.itemType}, ${record.description ?? null},
+							${profile.trackingPolicy}, ${profile.sellable}, ${profile.purchasable},
+							${profile.stocked}, ${profile.serviceIndicator},
+							${record.baseUomId}, ${record.itemGroupId},
 							'draft', 1, ${record.createdBy}, ${record.createdBy}
 						FROM eligible_references
 						RETURNING *
@@ -2378,9 +2620,30 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		}
 		const existing = existingResult.data;
 		const nextName = record.name ?? existing.name;
+		const nextDescription =
+			record.description !== undefined
+				? record.description
+				: existing.description;
 		const nextItemType = record.itemType ?? existing.itemType;
 		const nextBaseUomId = record.baseUomId ?? existing.baseUomId;
 		const nextGroupId = record.itemGroupId ?? existing.itemGroupId;
+		const itemTypeChanged = nextItemType !== existing.itemType;
+		const nextProfile = resolveItemOperationalProfile({
+			itemType: nextItemType,
+			trackingPolicy:
+				record.trackingPolicy ??
+				(itemTypeChanged ? undefined : existing.trackingPolicy),
+			sellable:
+				record.sellable ?? (itemTypeChanged ? undefined : existing.sellable),
+			purchasable:
+				record.purchasable ??
+				(itemTypeChanged ? undefined : existing.purchasable),
+			stocked:
+				record.stocked ?? (itemTypeChanged ? undefined : existing.stocked),
+			serviceIndicator:
+				record.serviceIndicator ??
+				(itemTypeChanged ? undefined : existing.serviceIndicator),
+		});
 		if (nextBaseUomId !== existing.baseUomId) {
 			return invalidState(
 				"Base UoM changes require a governed item conversion operation",
@@ -2417,6 +2680,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const nextVersion = existing.version + 1;
 		const changesJson = JSON.stringify([
 			{ field: "name", oldValue: existing.name, newValue: nextName },
+			...(nextDescription !== existing.description
+				? [
+						{
+							field: "description",
+							oldValue: existing.description,
+							newValue: nextDescription,
+						},
+					]
+				: []),
 			...(nextItemType !== existing.itemType
 				? [
 						{
@@ -2435,19 +2707,76 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						},
 					]
 				: []),
+			...(nextProfile.trackingPolicy !== existing.trackingPolicy
+				? [
+						{
+							field: "trackingPolicy",
+							oldValue: existing.trackingPolicy,
+							newValue: nextProfile.trackingPolicy,
+						},
+					]
+				: []),
+			...(nextProfile.sellable !== existing.sellable
+				? [
+						{
+							field: "sellable",
+							oldValue: existing.sellable,
+							newValue: nextProfile.sellable,
+						},
+					]
+				: []),
+			...(nextProfile.purchasable !== existing.purchasable
+				? [
+						{
+							field: "purchasable",
+							oldValue: existing.purchasable,
+							newValue: nextProfile.purchasable,
+						},
+					]
+				: []),
+			...(nextProfile.stocked !== existing.stocked
+				? [
+						{
+							field: "stocked",
+							oldValue: existing.stocked,
+							newValue: nextProfile.stocked,
+						},
+					]
+				: []),
+			...(nextProfile.serviceIndicator !== existing.serviceIndicator
+				? [
+						{
+							field: "serviceIndicator",
+							oldValue: existing.serviceIndicator,
+							newValue: nextProfile.serviceIndicator,
+						},
+					]
+				: []),
 		]);
 		const oldValueJson = valueSnapshotJson({
 			name: existing.name,
+			description: existing.description,
 			itemType: existing.itemType,
 			baseUomId: existing.baseUomId,
 			itemGroupId: existing.itemGroupId,
+			trackingPolicy: existing.trackingPolicy,
+			sellable: existing.sellable,
+			purchasable: existing.purchasable,
+			stocked: existing.stocked,
+			serviceIndicator: existing.serviceIndicator,
 			version: existing.version,
 		});
 		const newValueJson = valueSnapshotJson({
 			name: nextName,
+			description: nextDescription,
 			itemType: nextItemType,
 			baseUomId: nextBaseUomId,
 			itemGroupId: nextGroupId,
+			trackingPolicy: nextProfile.trackingPolicy,
+			sellable: nextProfile.sellable,
+			purchasable: nextProfile.purchasable,
+			stocked: nextProfile.stocked,
+			serviceIndicator: nextProfile.serviceIndicator,
 			version: nextVersion,
 		});
 		const payloadJson = eventPayloadJson({
@@ -2468,7 +2797,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						UPDATE md_item
 						SET
 							name = ${nextName},
+							description = ${nextDescription},
 							item_type = ${nextItemType},
+							tracking_policy = ${nextProfile.trackingPolicy},
+							sellable = ${nextProfile.sellable},
+							purchasable = ${nextProfile.purchasable},
+							stocked = ${nextProfile.stocked},
+							service_indicator = ${nextProfile.serviceIndicator},
 							base_uom_id = ${nextBaseUomId},
 							item_group_id = ${nextGroupId},
 							version = version + 1,
@@ -2617,6 +2952,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.status !== undefined) {
 				predicates.push(eq(mdWarehouse.status, filter.status));
 			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(sql`${mdWarehouse.updatedAt} > ${filter.updatedSince}`);
+			}
 			const rows = await db
 				.select()
 				.from(mdWarehouse)
@@ -2635,6 +2973,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		_ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<Warehouse>> {
+		if (
+			record.addressCountryId !== undefined &&
+			record.addressCountryId !== null
+		) {
+			const country = await this.getRefCountryById(record.addressCountryId);
+			if (!country.ok) return country;
+			if (country.data === null || !country.data.active) {
+				return validationFailed("Warehouse address country must be active");
+			}
+		}
 		const parentCheck = await assertWarehouseParent(
 			record.organizationId,
 			null,
@@ -2650,6 +2998,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const changesJson = fieldChangeJson("code", null, record.code);
 		const newValueJson = valueSnapshotJson({
 			code: record.code,
+			addressCountryId: record.addressCountryId ?? null,
 			status: "draft",
 		});
 		const payloadJson = eventPayloadJson({
@@ -2688,11 +3037,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						mutated AS (
 							INSERT INTO md_warehouse (
 								id, organization_id, code, normalized_code, name, location_type,
-								parent_id, status, version, created_by, updated_by
+								parent_id, address_country_id, address_line1, address_line2,
+								address_city, address_region, address_postal_code,
+								status, version, created_by, updated_by
 							)
 							SELECT
 								${entityId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
 								${record.name}, ${record.locationType}, ${record.parentId ?? null},
+								${record.addressCountryId ?? null}, ${record.addressLine1 ?? null},
+								${record.addressLine2 ?? null}, ${record.addressCity ?? null},
+								${record.addressRegion ?? null}, ${record.addressPostalCode ?? null},
 								'draft', 1, ${record.createdBy}, ${record.createdBy}
 							FROM eligible_parent
 							RETURNING *
@@ -2753,6 +3107,37 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const existing = existingResult.data;
 		const nextName = record.name ?? existing.name;
 		const nextLocationType = record.locationType ?? existing.locationType;
+		const nextAddressCountryId =
+			record.addressCountryId !== undefined
+				? record.addressCountryId
+				: existing.addressCountryId;
+		const nextAddressLine1 =
+			record.addressLine1 !== undefined
+				? record.addressLine1
+				: existing.addressLine1;
+		const nextAddressLine2 =
+			record.addressLine2 !== undefined
+				? record.addressLine2
+				: existing.addressLine2;
+		const nextAddressCity =
+			record.addressCity !== undefined
+				? record.addressCity
+				: existing.addressCity;
+		const nextAddressRegion =
+			record.addressRegion !== undefined
+				? record.addressRegion
+				: existing.addressRegion;
+		const nextAddressPostalCode =
+			record.addressPostalCode !== undefined
+				? record.addressPostalCode
+				: existing.addressPostalCode;
+		if (nextAddressCountryId !== null) {
+			const country = await this.getRefCountryById(nextAddressCountryId);
+			if (!country.ok) return country;
+			if (country.data === null || !country.data.active) {
+				return validationFailed("Warehouse address country must be active");
+			}
+		}
 		const locationTypeChanged = nextLocationType !== existing.locationType;
 		if (locationTypeChanged && existing.status !== "draft") {
 			return invalidState(
@@ -2784,11 +3169,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const oldValueJson = valueSnapshotJson({
 			name: existing.name,
 			locationType: existing.locationType,
+			addressCountryId: existing.addressCountryId,
 			version: existing.version,
 		});
 		const newValueJson = valueSnapshotJson({
 			name: nextName,
 			locationType: nextLocationType,
+			addressCountryId: nextAddressCountryId,
 			version: nextVersion,
 		});
 		const payloadJson = eventPayloadJson({
@@ -2811,6 +3198,12 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							SET
 								name = ${nextName},
 								location_type = ${nextLocationType},
+								address_country_id = ${nextAddressCountryId},
+								address_line1 = ${nextAddressLine1},
+								address_line2 = ${nextAddressLine2},
+								address_city = ${nextAddressCity},
+								address_region = ${nextAddressRegion},
+								address_postal_code = ${nextAddressPostalCode},
 								version = version + 1,
 								updated_by = ${record.updatedBy},
 								updated_at = now()
@@ -3246,6 +3639,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (filter.status !== undefined) {
 				predicates.push(eq(mdPaymentTerm.status, filter.status));
 			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(
+					sql`${mdPaymentTerm.updatedAt} > ${filter.updatedSince}`,
+				);
+			}
 			const rows = await db
 				.select()
 				.from(mdPaymentTerm)
@@ -3264,14 +3662,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		_ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<PaymentTerm>> {
-		if (
-			!Number.isInteger(record.netDays) ||
-			record.netDays < 0 ||
-			record.netDays > MAX_PAYMENT_TERM_NET_DAYS
-		) {
-			return validationFailed(
-				`netDays must be an integer between 0 and ${MAX_PAYMENT_TERM_NET_DAYS}`,
+		const ruleResult = normalizePaymentTermRule(record);
+		if (!ruleResult.ok) return ruleResult;
+		const rule = ruleResult.data;
+		if (rule.currencyRestrictionId !== null) {
+			const currency = await this.getRefCurrencyById(
+				rule.currencyRestrictionId,
 			);
+			if (!currency.ok) return currency;
+			if (currency.data === null || !currency.data.active) {
+				return validationFailed(
+					"Payment term currency restriction must be active",
+				);
+			}
 		}
 		const entityId = randomUUID();
 		const auditId = randomUUID();
@@ -3279,7 +3682,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const changesJson = fieldChangeJson("code", null, record.code);
 		const newValueJson = valueSnapshotJson({
 			code: record.code,
-			netDays: record.netDays,
+			...rule,
 			status: "draft",
 		});
 		const payloadJson = eventPayloadJson({
@@ -3298,13 +3701,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						WITH mutated AS (
 							INSERT INTO md_payment_term (
 								id, organization_id, code, normalized_code, name, net_days,
+								discount_days, discount_percent, due_day_rule, end_of_month,
+								installment_policy, installment_count, valid_from, valid_to,
+								currency_restriction_id,
 								status, version, created_by, updated_by
 							)
 							SELECT
 								${entityId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
-								${record.name}, ${record.netDays},
+								${record.name}, ${rule.netDays}, ${rule.discountDays},
+								${rule.discountPercent}, ${rule.dueDayRule}, ${rule.endOfMonth},
+								${rule.installmentPolicy}, ${rule.installmentCount},
+								${rule.validFrom}, ${rule.validTo}, ${rule.currencyRestrictionId},
 								'draft', 1, ${record.createdBy}, ${record.createdBy}
-							WHERE ${record.netDays}::integer BETWEEN 0 AND ${MAX_PAYMENT_TERM_NET_DAYS}
+							WHERE ${rule.netDays}::integer BETWEEN 0 AND ${MAX_PAYMENT_TERM_NET_DAYS}
 							RETURNING *
 						),
 						audited AS (
@@ -3367,25 +3776,53 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return invalidState("Retired payment terms are immutable");
 		}
 		const nextName = record.name ?? existing.name;
-		const nextNetDays = record.netDays ?? existing.netDays;
-		if (
-			!Number.isInteger(nextNetDays) ||
-			nextNetDays < 0 ||
-			nextNetDays > MAX_PAYMENT_TERM_NET_DAYS
-		) {
-			return validationFailed(
-				`netDays must be an integer between 0 and ${MAX_PAYMENT_TERM_NET_DAYS}`,
+		const ruleResult = normalizePaymentTermRule({
+			netDays: record.netDays ?? existing.netDays,
+			discountDays:
+				record.discountDays !== undefined
+					? record.discountDays
+					: existing.discountDays,
+			discountPercent:
+				record.discountPercent !== undefined
+					? record.discountPercent
+					: existing.discountPercent,
+			dueDayRule: record.dueDayRule ?? existing.dueDayRule,
+			endOfMonth: record.endOfMonth ?? existing.endOfMonth,
+			installmentPolicy: record.installmentPolicy ?? existing.installmentPolicy,
+			installmentCount:
+				record.installmentCount !== undefined
+					? record.installmentCount
+					: existing.installmentCount,
+			validFrom:
+				record.validFrom !== undefined ? record.validFrom : existing.validFrom,
+			validTo: record.validTo !== undefined ? record.validTo : existing.validTo,
+			currencyRestrictionId:
+				record.currencyRestrictionId !== undefined
+					? record.currencyRestrictionId
+					: existing.currencyRestrictionId,
+		});
+		if (!ruleResult.ok) return ruleResult;
+		const rule = ruleResult.data;
+		if (rule.currencyRestrictionId !== null) {
+			const currency = await this.getRefCurrencyById(
+				rule.currencyRestrictionId,
 			);
+			if (!currency.ok) return currency;
+			if (currency.data === null || !currency.data.active) {
+				return validationFailed(
+					"Payment term currency restriction must be active",
+				);
+			}
 		}
 		const nextVersion = existing.version + 1;
 		const changesJson = JSON.stringify([
 			{ field: "name", oldValue: existing.name, newValue: nextName },
-			...(nextNetDays !== existing.netDays
+			...(rule.netDays !== existing.netDays
 				? [
 						{
 							field: "netDays",
 							oldValue: existing.netDays,
-							newValue: nextNetDays,
+							newValue: rule.netDays,
 						},
 					]
 				: []),
@@ -3393,11 +3830,20 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const oldValueJson = valueSnapshotJson({
 			name: existing.name,
 			netDays: existing.netDays,
+			discountDays: existing.discountDays,
+			discountPercent: existing.discountPercent,
+			dueDayRule: existing.dueDayRule,
+			endOfMonth: existing.endOfMonth,
+			installmentPolicy: existing.installmentPolicy,
+			installmentCount: existing.installmentCount,
+			validFrom: existing.validFrom,
+			validTo: existing.validTo,
+			currencyRestrictionId: existing.currencyRestrictionId,
 			version: existing.version,
 		});
 		const newValueJson = valueSnapshotJson({
 			name: nextName,
-			netDays: nextNetDays,
+			...rule,
 			version: nextVersion,
 		});
 		const payloadJson = eventPayloadJson({
@@ -3419,7 +3865,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							UPDATE md_payment_term
 							SET
 								name = ${nextName},
-								net_days = ${nextNetDays},
+								net_days = ${rule.netDays},
+								discount_days = ${rule.discountDays},
+								discount_percent = ${rule.discountPercent},
+								due_day_rule = ${rule.dueDayRule},
+								end_of_month = ${rule.endOfMonth},
+								installment_policy = ${rule.installmentPolicy},
+								installment_count = ${rule.installmentCount},
+								valid_from = ${rule.validFrom},
+								valid_to = ${rule.validTo},
+								currency_restriction_id = ${rule.currencyRestrictionId},
 								version = version + 1,
 								updated_by = ${record.updatedBy},
 								updated_at = now()
@@ -3427,7 +3882,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								AND organization_id = ${record.organizationId}
 								AND version = ${record.expectedVersion}
 								AND status <> 'retired'
-								AND ${nextNetDays}::integer BETWEEN 0 AND ${MAX_PAYMENT_TERM_NET_DAYS}
+								AND ${rule.netDays}::integer BETWEEN 0 AND ${MAX_PAYMENT_TERM_NET_DAYS}
 							RETURNING *
 						),
 						audited AS (
@@ -3623,6 +4078,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			}
 			if (filter.partyId !== undefined) {
 				predicates.push(eq(mdTaxRegistration.partyId, filter.partyId));
+			}
+			if (filter.updatedSince !== undefined) {
+				predicates.push(
+					sql`${mdTaxRegistration.updatedAt} > ${filter.updatedSince}`,
+				);
 			}
 			const rows = await db
 				.select()

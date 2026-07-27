@@ -46,6 +46,8 @@ export {
 export {
 	type ExecuteMasterMutationTransactionInput,
 	MASTER_MUTATION_OPERATION_IDS,
+	MASTER_PRODUCTION_MUTATION_SEQUENCE,
+	type MasterProductionMutationStep,
 } from "./integration/mutation-transaction";
 export {
 	canTransitionOutboxStatus,

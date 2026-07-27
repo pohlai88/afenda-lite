@@ -29,12 +29,16 @@ import {
 	decideAuthoritativeLifecycleTransition,
 	decideLifecycleTransition,
 	dependencyResult,
+	EFFECTIVE_DATED_EXTENSION_STATES,
 	EFFECTIVE_DATED_RECOMMENDED_AGGREGATES,
+	EFFECTIVE_DATED_STANDARD_STATE_BY_PERSISTED_STATE,
 	EFFECTIVE_DATED_STATE_MEANINGS,
 	EFFECTIVE_DATED_STATES,
 	evaluateEffectiveDatedAvailability,
 	evaluateLifecycleAvailability,
 	GOVERNANCE_WORKFLOW_RECOMMENDED_AGGREGATES,
+	GOVERNANCE_WORKFLOW_STANDARD_STATE_BY_PERSISTED_STATE,
+	GOVERNANCE_WORKFLOW_STANDARD_STATES,
 	GOVERNANCE_WORKFLOW_STATE_MEANINGS,
 	GOVERNANCE_WORKFLOW_STATES,
 	HISTORICAL_IDENTITY_PRESERVED_EVIDENCE,
@@ -46,9 +50,13 @@ import {
 	itemVariantLifecyclePolicy,
 	LIFECYCLE_AVAILABILITY_FACETS,
 	LIFECYCLE_FAMILY_STATES,
+	LIFECYCLE_STANDARD_FAMILY_STATES,
+	LIFECYCLE_STANDARD_STATE_ALIASES,
 	lifecycleReason,
 	nextLifecycleVersion,
 	OPERATIONAL_MASTER_RECOMMENDED_AGGREGATES,
+	OPERATIONAL_MASTER_STANDARD_STATE_BY_PERSISTED_STATE,
+	OPERATIONAL_MASTER_STANDARD_STATES,
 	OPERATIONAL_MASTER_STATE_MEANINGS,
 	OPERATIONAL_MASTER_STATES,
 	partyLifecyclePolicy,
@@ -56,10 +64,14 @@ import {
 	resolveAuthoritativeLifecycleState,
 	resolveCanonicalIdentity,
 	resolveCanonicalIdentityWithLineage,
+	resolveTenantScopedCasMiss,
 	SIMPLE_MASTER_RECOMMENDED_AGGREGATES,
 	SIMPLE_MASTER_STATE_MEANINGS,
 	SIMPLE_MASTER_STATES,
+	SIMPLE_REFERENCE_MASTER_STATES,
+	SIMPLE_REFERENCE_STANDARD_STATE_BY_PERSISTED_STATE,
 	taxRegistrationLifecyclePolicy,
+	toStandardLifecycleState,
 	warehouseLifecyclePolicy,
 } from "../src/capabilities/lifecycle-governance";
 import { CHANGE_REQUEST_STATUSES, MASTER_STATUSES } from "../src/types";
@@ -133,6 +145,93 @@ describe("lifecycle governance capability", () => {
 		expect(itemLifecyclePolicy.transitions).not.toHaveProperty("merge");
 		expect(warehouseLifecyclePolicy.transitions).not.toHaveProperty("merge");
 		expect(itemVariantLifecyclePolicy.transitions).not.toHaveProperty("merge");
+	});
+
+	it("publishes exact canonical lifecycle standards by shared family", () => {
+		expect(SIMPLE_REFERENCE_MASTER_STATES).toEqual([
+			"draft",
+			"active",
+			"inactive",
+			"archived",
+		]);
+		expect(OPERATIONAL_MASTER_STANDARD_STATES).toEqual([
+			"draft",
+			"active",
+			"suspended",
+			"archived",
+		]);
+		expect(EFFECTIVE_DATED_EXTENSION_STATES).toEqual([
+			"pending",
+			"active",
+			"expired",
+			"revoked",
+			"archived",
+		]);
+		expect(GOVERNANCE_WORKFLOW_STANDARD_STATES).toEqual([
+			"draft",
+			"submitted",
+			"approved",
+			"rejected",
+			"applied",
+			"cancelled",
+			"failed",
+		]);
+		expect(LIFECYCLE_STANDARD_FAMILY_STATES).toEqual({
+			simple_master: SIMPLE_REFERENCE_MASTER_STATES,
+			operational_master: OPERATIONAL_MASTER_STANDARD_STATES,
+			effective_dated: EFFECTIVE_DATED_EXTENSION_STATES,
+			governance_workflow: GOVERNANCE_WORKFLOW_STANDARD_STATES,
+		});
+	});
+
+	it("maps persisted legacy statuses to canonical lifecycle standards", () => {
+		expect(OPERATIONAL_MASTER_STANDARD_STATE_BY_PERSISTED_STATE).toEqual({
+			draft: "draft",
+			active: "active",
+			inactive: "suspended",
+			blocked: "suspended",
+			retired: "archived",
+			archived: "archived",
+			merged: "archived",
+		});
+		expect(SIMPLE_REFERENCE_STANDARD_STATE_BY_PERSISTED_STATE).toEqual({
+			draft: "draft",
+			active: "active",
+			inactive: "inactive",
+			archived: "archived",
+		});
+		expect(EFFECTIVE_DATED_STANDARD_STATE_BY_PERSISTED_STATE).toEqual({
+			draft: "pending",
+			active: "active",
+			inactive: "pending",
+			expired: "expired",
+			revoked: "revoked",
+			archived: "archived",
+		});
+		expect(GOVERNANCE_WORKFLOW_STANDARD_STATE_BY_PERSISTED_STATE).toEqual({
+			draft: "draft",
+			submitted: "submitted",
+			approved: "approved",
+			rejected: "rejected",
+			applying: "approved",
+			applied: "applied",
+			failed: "failed",
+			cancelled: "cancelled",
+			expired: "cancelled",
+			superseded: "cancelled",
+		});
+		expect(LIFECYCLE_STANDARD_STATE_ALIASES.operational_master).toBe(
+			OPERATIONAL_MASTER_STANDARD_STATE_BY_PERSISTED_STATE,
+		);
+		expect(toStandardLifecycleState("operational_master", "blocked")).toBe(
+			"suspended",
+		);
+		expect(toStandardLifecycleState("effective_dated", "draft")).toBe(
+			"pending",
+		);
+		expect(() => toStandardLifecycleState("simple_master", "blocked")).toThrow(
+			"Unknown simple_master lifecycle state: blocked",
+		);
 	});
 
 	it("documents the simple-master lifecycle family", () => {
@@ -514,6 +613,7 @@ describe("lifecycle governance capability", () => {
 				expect(["optional", "required"]).toContain(transition.reasonPolicy);
 				expect(transition.expectedVersionRequired).toBe(true);
 				expect(transition.eventType).toMatch(/^master_data\./u);
+				expect(transition.auditAction).toBe("UPDATE");
 				expect(typeof transition.reversible).toBe("boolean");
 				expect(
 					transition.requiredParentState === null ||
@@ -731,6 +831,64 @@ describe("lifecycle governance capability", () => {
 			});
 		}
 		expect(nextLifecycleVersion(2)).toBe(3);
+	});
+
+	it("interprets zero-row CAS updates with tenant-scoped probes", async () => {
+		const missing = await resolveTenantScopedCasMiss({
+			entityType: "party",
+			entityId: "party-cross-org",
+			expectedVersion: 3,
+			loadCurrent: async () => ok(null),
+			notFoundMessage: "Party not found",
+			unchangedMissMessage: "Party update did not satisfy mutation guards",
+		});
+		expect(missing.ok).toBe(false);
+		if (!missing.ok) {
+			expect(missing.code).toBe("NOT_FOUND");
+			expect(missing.details).toMatchObject({
+				reason: "MASTER_NOT_FOUND",
+				entityType: "party",
+				entityId: "party-cross-org",
+			});
+			expect(missing.details).not.toHaveProperty("actualVersion");
+		}
+
+		const stale = await resolveTenantScopedCasMiss({
+			entityType: "party",
+			entityId: "party-1",
+			expectedVersion: 3,
+			loadCurrent: async () => ok({ id: "party-1", version: 4 }),
+			notFoundMessage: "Party not found",
+			unchangedMissMessage: "Party update did not satisfy mutation guards",
+		});
+		expect(stale.ok).toBe(false);
+		if (!stale.ok) {
+			expect(stale.code).toBe("CONFLICT");
+			expect(stale.details).toMatchObject({
+				reason: "MASTER_VERSION_CONFLICT",
+				lifecycleCode: "MASTER_DATA_VERSION_CONFLICT",
+				expectedVersion: 3,
+				actualVersion: 4,
+			});
+		}
+
+		const guarded = await resolveTenantScopedCasMiss({
+			entityType: "party",
+			entityId: "party-1",
+			expectedVersion: 3,
+			loadCurrent: async () => ok({ id: "party-1", version: 3 }),
+			notFoundMessage: "Party not found",
+			unchangedMissMessage: "Party update did not satisfy mutation guards",
+		});
+		expect(guarded.ok).toBe(false);
+		if (!guarded.ok) {
+			expect(guarded.details).toMatchObject({
+				reason: "MASTER_INVALID_STATE",
+				entityType: "party",
+				entityId: "party-1",
+				expectedVersion: 3,
+			});
+		}
 	});
 
 	it("uses stable dependency codes and merge participant policy", () => {

@@ -198,6 +198,14 @@ export function validateDuplicateWarningRecord(
 		return duplicateWarningInvalid("confidence_out_of_range");
 	}
 
+	if (
+		!Number.isFinite(warning.score) ||
+		warning.score < 0 ||
+		warning.score > 1
+	) {
+		return duplicateWarningInvalid("score_out_of_range");
+	}
+
 	if (!Number.isSafeInteger(warning.version) || warning.version < 1) {
 		return duplicateWarningInvalid("invalid_version");
 	}

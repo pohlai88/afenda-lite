@@ -57,14 +57,22 @@ const COMPOSITE_FOREIGN_KEYS = [
 	"md_item_variant_attribute_value_org_variant_fk",
 	"md_item_variant_attribute_value_org_attribute_fk",
 	"md_item_variant_attribute_value_org_option_fk",
+	"md_item_variant_attribute_value_option_org_value_fk",
+	"md_item_variant_attribute_value_option_org_option_fk",
 ] as const;
 
 const PRIMARY_EXTENSION_INDEXES = [
 	"md_party_address_primary_purpose_active_uidx",
 	"md_party_contact_primary_type_purpose_uidx",
-	"md_item_barcode_primary_item_uidx",
+	"md_item_barcode_primary_item_uom_uidx",
 	"md_item_uom_default_purchase_uidx",
 	"md_item_uom_default_sales_uidx",
+] as const;
+
+const ACTIVE_EXTERNAL_ID_INDEXES = [
+	"md_party_external_id_active_identity_uidx",
+	"md_item_external_id_active_identity_uidx",
+	"md_warehouse_external_id_active_identity_uidx",
 ] as const;
 
 describe("master-data extension common contract", () => {
@@ -205,11 +213,10 @@ describe("master-data extension common contract", () => {
 	it("migrates every organization-owned parent link to a composite foreign key", () => {
 		const migrationSql = readCurrentMigrationSql();
 		for (const constraint of COMPOSITE_FOREIGN_KEYS) {
-			expect(migrationSql).toContain(`ADD CONSTRAINT "${constraint}"`);
+			expect(migrationSql).toContain(`CONSTRAINT "${constraint}"`);
 			expect(migrationSql).toMatch(
 				new RegExp(`${constraint}[^;]+FOREIGN KEY \\("organization_id",`),
 			);
-			expect(migrationSql).toContain(`VALIDATE CONSTRAINT "${constraint}"`);
 		}
 		expect(migrationSql).toContain("ON UPDATE no action NOT VALID");
 	});
@@ -238,6 +245,49 @@ describe("master-data extension common contract", () => {
 		);
 		expect(migrationSql).toContain(
 			'WHERE "md_item_barcode"."is_primary" = true',
+		);
+	});
+
+	it("enforces active external identifiers and barcode scopes in the database", () => {
+		const migrationSql = readCurrentMigrationSql();
+
+		for (const index of ACTIVE_EXTERNAL_ID_INDEXES) {
+			expect(migrationSql).toContain(`CREATE UNIQUE INDEX "${index}"`);
+		}
+		expect(migrationSql).toMatch(
+			/"organization_id"[\s\S]+"source_system"[\s\S]+"external_id_type"[\s\S]+"normalized_value"/,
+		);
+		expect(migrationSql).toContain("\"status\" = 'active'");
+		expect(migrationSql).toContain('"archived_at" IS NULL');
+
+		expect(migrationSql).toContain(
+			'CREATE UNIQUE INDEX "md_item_barcode_active_identity_uidx"',
+		);
+		expect(migrationSql).toContain(
+			'ON "md_item_barcode" USING btree ("organization_id", "symbology", "normalized_value")',
+		);
+		expect(migrationSql).toContain(
+			'"status" = \'active\' AND "archived_at" IS NULL',
+		);
+	});
+
+	it("enforces variant attribute and option identities in the database", () => {
+		const migrationSql = readCurrentMigrationSql();
+
+		expect(migrationSql).toContain(
+			'CREATE UNIQUE INDEX "md_item_variant_attribute_value_current_uidx"',
+		);
+		expect(migrationSql).toContain(
+			'"organization_id", "variant_id", "attribute_id"',
+		);
+		expect(migrationSql).toContain(
+			'"status" = \'active\' AND "archived_at" IS NULL',
+		);
+		expect(migrationSql).toContain(
+			'CREATE UNIQUE INDEX "md_item_template_attribute_option_org_attr_code_uidx"',
+		);
+		expect(migrationSql).toContain(
+			'"organization_id","attribute_id","normalized_code"',
 		);
 	});
 

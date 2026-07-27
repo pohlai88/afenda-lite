@@ -1,12 +1,18 @@
 import {
+	ITEM_TRACKING_POLICIES,
 	type Item,
 	type ItemGroup,
+	type ItemTrackingPolicy,
 	type ItemType,
 	MASTER_STATUSES,
 	type MasterStatus,
+	PAYMENT_TERM_DUE_DAY_RULES,
+	PAYMENT_TERM_INSTALLMENT_POLICIES,
 	type Party,
 	type PartyKind,
 	type PaymentTerm,
+	type PaymentTermDueDayRule,
+	type PaymentTermInstallmentPolicy,
 	type RefCountry,
 	type RefCurrency,
 	type RefLanguage,
@@ -50,6 +56,37 @@ function asKnownTaxRegistrationType(value: string): TaxRegistrationType {
 		}
 	}
 	throw new Error(`Unexpected tax registration type from store: ${value}`);
+}
+
+function asKnownItemTrackingPolicy(value: string): ItemTrackingPolicy {
+	for (const known of ITEM_TRACKING_POLICIES) {
+		if (known === value) {
+			return known;
+		}
+	}
+	throw new Error(`Unexpected item tracking policy from store: ${value}`);
+}
+
+function asKnownPaymentTermDueDayRule(value: string): PaymentTermDueDayRule {
+	for (const known of PAYMENT_TERM_DUE_DAY_RULES) {
+		if (known === value) {
+			return known;
+		}
+	}
+	throw new Error(`Unexpected payment term due-day rule from store: ${value}`);
+}
+
+function asKnownPaymentTermInstallmentPolicy(
+	value: string,
+): PaymentTermInstallmentPolicy {
+	for (const known of PAYMENT_TERM_INSTALLMENT_POLICIES) {
+		if (known === value) {
+			return known;
+		}
+	}
+	throw new Error(
+		`Unexpected payment term installment policy from store: ${value}`,
+	);
 }
 
 export function mapRefCountry(row: {
@@ -249,10 +286,16 @@ export function mapItem(row: {
 	normalizedCode: string;
 	name: string;
 	itemType: string;
+	description?: string | null;
 	status: string;
 	version: number;
 	baseUomId: string;
 	itemGroupId: string;
+	trackingPolicy?: string;
+	sellable?: boolean;
+	purchasable?: boolean;
+	stocked?: boolean;
+	serviceIndicator?: boolean;
 	createdBy: string;
 	updatedBy: string;
 	activatedAt: Date | null;
@@ -269,10 +312,16 @@ export function mapItem(row: {
 		normalizedCode: row.normalizedCode,
 		name: row.name,
 		itemType: row.itemType as ItemType,
+		description: row.description ?? null,
 		status: row.status as MasterStatus,
 		version: row.version,
 		baseUomId: row.baseUomId,
 		itemGroupId: row.itemGroupId,
+		trackingPolicy: asKnownItemTrackingPolicy(row.trackingPolicy ?? "none"),
+		sellable: row.sellable ?? true,
+		purchasable: row.purchasable ?? true,
+		stocked: row.stocked ?? row.itemType === "stock",
+		serviceIndicator: row.serviceIndicator ?? row.itemType === "service",
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
 		activatedAt: row.activatedAt,
@@ -292,6 +341,12 @@ export function mapWarehouse(row: {
 	name: string;
 	locationType: string;
 	parentId: string | null;
+	addressCountryId?: string | null;
+	addressLine1?: string | null;
+	addressLine2?: string | null;
+	addressCity?: string | null;
+	addressRegion?: string | null;
+	addressPostalCode?: string | null;
 	status: string;
 	version: number;
 	createdBy: string;
@@ -311,6 +366,12 @@ export function mapWarehouse(row: {
 		name: row.name,
 		locationType: row.locationType as WarehouseLocationType,
 		parentId: row.parentId,
+		addressCountryId: row.addressCountryId ?? null,
+		addressLine1: row.addressLine1 ?? null,
+		addressLine2: row.addressLine2 ?? null,
+		addressCity: row.addressCity ?? null,
+		addressRegion: row.addressRegion ?? null,
+		addressPostalCode: row.addressPostalCode ?? null,
 		status: row.status as MasterStatus,
 		version: row.version,
 		createdBy: row.createdBy,
@@ -331,6 +392,15 @@ export function mapPaymentTerm(row: {
 	normalizedCode: string;
 	name: string;
 	netDays: number;
+	discountDays?: number | null;
+	discountPercent?: string | null;
+	dueDayRule?: string;
+	endOfMonth?: boolean;
+	installmentPolicy?: string;
+	installmentCount?: number | null;
+	validFrom?: Date | null;
+	validTo?: Date | null;
+	currencyRestrictionId?: string | null;
 	status: string;
 	version: number;
 	createdBy: string;
@@ -349,6 +419,17 @@ export function mapPaymentTerm(row: {
 		normalizedCode: row.normalizedCode,
 		name: row.name,
 		netDays: row.netDays,
+		discountDays: row.discountDays ?? null,
+		discountPercent: row.discountPercent ?? null,
+		dueDayRule: asKnownPaymentTermDueDayRule(row.dueDayRule ?? "net_days"),
+		endOfMonth: row.endOfMonth ?? false,
+		installmentPolicy: asKnownPaymentTermInstallmentPolicy(
+			row.installmentPolicy ?? "none",
+		),
+		installmentCount: row.installmentCount ?? null,
+		validFrom: row.validFrom ?? null,
+		validTo: row.validTo ?? null,
+		currencyRestrictionId: row.currencyRestrictionId ?? null,
 		status: row.status as MasterStatus,
 		version: row.version,
 		createdBy: row.createdBy,

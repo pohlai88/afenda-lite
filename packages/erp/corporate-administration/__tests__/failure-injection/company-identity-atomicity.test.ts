@@ -16,7 +16,7 @@ import {
 import {
 	cleanupCorporateAdministrationInfrastructureTestData,
 	countCorporateAdministrationCompanyIdentifiers,
-	countCorporateAdministrationMutationReceipts,
+	countCorporateAdministrationMutationReceiptsByStatus,
 	countCorporateAdministrationOutboxEvents,
 } from "../helpers/neon-cleanup";
 import {
@@ -38,7 +38,7 @@ function createIdentityDependencies() {
 describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 	`company identity atomicity (${CORPORATE_ADMINISTRATION_NEON_PARITY_SKIP_REASON})`,
 	() => {
-		it("rolls back identifier, receipt, audit and outbox rows when event append fails", async () => {
+		it("rolls back identifier, completed receipt, audit and outbox rows when event append fails", async () => {
 			const organizationId = `org-ca-identity-atomic-${randomUUID()}`;
 			const dependencies = createIdentityDependencies();
 			const options = caCommandOptions({ organizationId });
@@ -85,13 +85,27 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					countCorporateAdministrationCompanyIdentifiers(organizationId),
 				).resolves.toBe(0);
 				await expect(
-					countCorporateAdministrationMutationReceipts({
-						organizationId,
-						commandId:
-							"corporate-administration.legal-company.register-company-identifier",
-						idempotencyKey: "idem-identity-atomic",
-					}),
+					countCorporateAdministrationMutationReceiptsByStatus(
+						{
+							organizationId,
+							commandId:
+								"corporate-administration.legal-company.register-company-identifier",
+							idempotencyKey: "idem-identity-atomic",
+						},
+						"completed",
+					),
 				).resolves.toBe(0);
+				await expect(
+					countCorporateAdministrationMutationReceiptsByStatus(
+						{
+							organizationId,
+							commandId:
+								"corporate-administration.legal-company.register-company-identifier",
+							idempotencyKey: "idem-identity-atomic",
+						},
+						"released",
+					),
+				).resolves.toBe(1);
 				await expect(
 					countCorporateAdministrationOutboxEvents(organizationId),
 				).resolves.toBe(beforeOutbox);

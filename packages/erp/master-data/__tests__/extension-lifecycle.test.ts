@@ -54,7 +54,7 @@ describe("extension lifecycle policy", () => {
 			"master_data.party_contact_manage",
 		);
 		expect(EXTENSION_LIFECYCLE_PERMISSION_BY_KIND.item_barcode).toBe(
-			"master_data.item_barcode_manage",
+			"master_data.item_extension_manage",
 		);
 		const resolved = resolveExtensionLifecycleTransition(
 			"party_contact",

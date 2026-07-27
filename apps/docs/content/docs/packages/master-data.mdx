@@ -102,6 +102,10 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 | `master_data.*` event contracts | `@afenda/events` |
 | `Result` / error codes | `@afenda/errors` |
 
+## Result and Error Taxonomy
+
+Package functions return `@afenda/errors` `Result<T>`. Domain failures normalize to the stable `MasterDataErrorCode` list exported from `@afenda/master-data`; adapters should use `masterDataErrorCodeForFailureDetails(details)` when they need a master-data-specific error code. Equivalent failures share one canonical name, so do not create aggregate-specific codes such as party-not-found or item-version-conflict.
+
 **Also shipped:** search projectors (`md_*` → `@afenda/search`) · bounded import upsert-by-code · `mergeParties` + duplicate warnings.
 
 **Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/monorepo/README.md).
@@ -120,7 +124,7 @@ There is no org-scoped `md_uom`. Item packaging conversions live in `md_item_uom
 |---------|------|
 | Search projectors | Package may call `@afenda/search` upsert/rebuild APIs after master writes; search never authorizes masters |
 | Merge | `mergeParties` is MDG-gated (approved change request); no peer-table rewrite; source gets `merged_into_id` |
-| Import modes | `create_only` · `update_existing` · `create_or_update` (default) + mutable-field allowlist; apply requires `approved` + `master_data.import_approve` |
+| Import modes | `create_only` · `update_existing` · `create_or_update` (default) + mutable-field allowlist; validate requires `master_data.import_validate`; apply requires `approved` + `master_data.import_apply`; approval remains `master_data.import_approve`; `requireSegregatedApproval` can require `actorUserId != approvedByActorUserId` |
 
 Operational contract (Scratch): [operational-master-contract.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/master-data/operational-master-contract.md).
 

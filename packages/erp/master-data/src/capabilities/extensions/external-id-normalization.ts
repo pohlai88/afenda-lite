@@ -2,9 +2,11 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import type { ExternalIdCaseSensitivity } from "../../types";
+import { normalizeExternalIdValue } from "../core-organization-masters/normalized-code";
+
+export { MAX_EXTERNAL_ID_VALUE_LENGTH } from "../core-organization-masters/normalized-code";
 
 export const MAX_EXTERNAL_ID_QUALIFIER_LENGTH = 64 as const;
-export const MAX_EXTERNAL_ID_VALUE_LENGTH = 256 as const;
 
 const EXTERNAL_ID_QUALIFIER_RE = /^[a-z0-9._-]+$/u;
 
@@ -82,26 +84,17 @@ export function normalizeExternalId(input: {
 		return externalIdType;
 	}
 
-	const externalValue = input.externalValue.normalize("NFC").trim();
-	if (
-		externalValue.length === 0 ||
-		externalValue.length > MAX_EXTERNAL_ID_VALUE_LENGTH
-	) {
-		return fail("BAD_REQUEST", "External identifier value is invalid", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "externalValue",
-			maxLength: MAX_EXTERNAL_ID_VALUE_LENGTH,
-		} satisfies MasterFailureDetails);
-	}
+	const externalValue = normalizeExternalIdValue({
+		value: input.externalValue,
+		caseSensitive: input.caseSensitivity === "sensitive",
+	});
+	if (!externalValue.ok) return externalValue;
 
 	return ok({
 		sourceSystem: sourceSystem.data,
 		externalIdType: externalIdType.data,
-		externalValue,
-		normalizedValue:
-			input.caseSensitivity === "insensitive"
-				? externalValue.toUpperCase()
-				: externalValue,
+		externalValue: externalValue.data.value,
+		normalizedValue: externalValue.data.normalizedValue,
 		caseSensitivity: input.caseSensitivity,
 	});
 }

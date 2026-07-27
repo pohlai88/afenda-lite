@@ -30,6 +30,61 @@ export const CHANGE_REQUEST_TYPES = [
 ] as const;
 export type ChangeRequestType = (typeof CHANGE_REQUEST_TYPES)[number];
 
+export const CHANGE_REQUEST_CANONICAL_FIELDS = [
+	"targetEntityType",
+	"targetEntityId",
+	"operationType",
+	"beforeSnapshot",
+	"proposedPatch",
+	"reason",
+	"requestedBy",
+	"reviewedBy",
+	"approvalStatus",
+	"expectedTargetVersion",
+	"decidedAt",
+	"appliedAt",
+] as const;
+export type ChangeRequestCanonicalField =
+	(typeof CHANGE_REQUEST_CANONICAL_FIELDS)[number];
+
+export const CHANGE_REQUEST_CONTROLLED_SCOPE = [
+	"activation",
+	"merge",
+	"sensitive_field_change",
+	"tax_identity_change",
+	"external_identifier_change",
+	"duplicate_resolution_merge",
+] as const;
+export type ChangeRequestControlledScope =
+	(typeof CHANGE_REQUEST_CONTROLLED_SCOPE)[number];
+
+export const CHANGE_REQUEST_SEPARATE_GOVERNANCE_SCOPE = [
+	"import_batch",
+	"bulk_import_apply",
+	"duplicate_warning_review",
+	"mass_update_batch",
+] as const;
+export type ChangeRequestSeparateGovernanceScope =
+	(typeof CHANGE_REQUEST_SEPARATE_GOVERNANCE_SCOPE)[number];
+
+export const CHANGE_REQUEST_PROHIBITED_SCOPE = [
+	"generic_workflow_engine",
+	"arbitrary_json_patch",
+	"cross_module_transaction_workflow",
+	"platform_reference_mutation",
+	"ui_state_approval",
+] as const;
+export type ChangeRequestProhibitedScope =
+	(typeof CHANGE_REQUEST_PROHIBITED_SCOPE)[number];
+
+export const CHANGE_REQUEST_SCOPE_CONTRACT = {
+	currentPublicCommandKinds: ["activate_party", "merge_parties"],
+	canonicalFields: CHANGE_REQUEST_CANONICAL_FIELDS,
+	controlledScope: CHANGE_REQUEST_CONTROLLED_SCOPE,
+	separateGovernanceScope: CHANGE_REQUEST_SEPARATE_GOVERNANCE_SCOPE,
+	prohibitedScope: CHANGE_REQUEST_PROHIBITED_SCOPE,
+} as const;
+
 export const CHANGE_REQUEST_OPERATIONS = [
 	"create",
 	"update",

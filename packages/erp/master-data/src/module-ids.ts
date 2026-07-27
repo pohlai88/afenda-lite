@@ -2,6 +2,14 @@
 
 export const MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE =
 	"master_data.organization_dimension.create" as const;
+export const MASTER_COMMAND_ORGANIZATION_DIMENSION_UPDATE =
+	"master_data.organization_dimension.update" as const;
+export const MASTER_COMMAND_ORGANIZATION_DIMENSION_ACTIVATE =
+	"master_data.organization_dimension.activate" as const;
+export const MASTER_COMMAND_ORGANIZATION_DIMENSION_DEACTIVATE =
+	"master_data.organization_dimension.deactivate" as const;
+export const MASTER_COMMAND_ORGANIZATION_DIMENSION_ARCHIVE =
+	"master_data.organization_dimension.archive" as const;
 export const MASTER_COMMAND_PARTY_CREATE = "master_data.party.create" as const;
 export const MASTER_COMMAND_PARTY_UPDATE = "master_data.party.update" as const;
 export const MASTER_COMMAND_PARTY_ACTIVATE =
@@ -19,6 +27,7 @@ export const MASTER_COMMAND_ITEM_ACTIVATE =
 	"master_data.item.activate" as const;
 export const MASTER_COMMAND_ITEM_INACTIVE =
 	"master_data.item.inactive" as const;
+export const MASTER_COMMAND_ITEM_RESTORE = "master_data.item.restore" as const;
 export const MASTER_COMMAND_ITEM_RETIRE = "master_data.item.retire" as const;
 export const MASTER_COMMAND_ITEM_GROUP_CREATE =
 	"master_data.item_group.create" as const;
@@ -145,6 +154,10 @@ export const MASTER_COMMAND_SEARCH_REBUILD =
 
 export const MASTER_DATA_COMMAND_IDS = [
 	MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_UPDATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_ACTIVATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_DEACTIVATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_ARCHIVE,
 	MASTER_COMMAND_PARTY_CREATE,
 	MASTER_COMMAND_PARTY_UPDATE,
 	MASTER_COMMAND_PARTY_ACTIVATE,
@@ -157,6 +170,7 @@ export const MASTER_DATA_COMMAND_IDS = [
 	MASTER_COMMAND_ITEM_UPDATE,
 	MASTER_COMMAND_ITEM_ACTIVATE,
 	MASTER_COMMAND_ITEM_INACTIVE,
+	MASTER_COMMAND_ITEM_RESTORE,
 	MASTER_COMMAND_ITEM_RETIRE,
 	MASTER_COMMAND_ITEM_GROUP_CREATE,
 	MASTER_COMMAND_ITEM_GROUP_UPDATE,
@@ -227,11 +241,18 @@ export const MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF =
 	"master_data.organization_dimension.resolve_as_of" as const;
 export const MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE =
 	"master_data.organization_dimension.get_effective" as const;
+export const MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_ID =
+	"master_data.organization_dimension.get_by_id" as const;
+export const MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_CODE =
+	"master_data.organization_dimension.get_by_code" as const;
+export const MASTER_QUERY_ORGANIZATION_DIMENSION_LIST =
+	"master_data.organization_dimension.list" as const;
 export const MASTER_QUERY_PARTY_GET_BY_ID =
 	"master_data.party.get_by_id" as const;
 export const MASTER_QUERY_PARTY_GET_BY_CODE =
 	"master_data.party.get_by_code" as const;
 export const MASTER_QUERY_PARTY_LIST = "master_data.party.list" as const;
+export const MASTER_QUERY_PARTY_SEARCH = "master_data.party.search" as const;
 export const MASTER_QUERY_PARTY_FIND_DUPLICATES =
 	"master_data.party.find_duplicates" as const;
 export const MASTER_QUERY_ITEM_GET_BY_ID =
@@ -342,9 +363,13 @@ export const MASTER_QUERY_SEARCH_QUERY = "master_data.search.query" as const;
 export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF,
 	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_ID,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_CODE,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_LIST,
 	MASTER_QUERY_PARTY_GET_BY_ID,
 	MASTER_QUERY_PARTY_GET_BY_CODE,
 	MASTER_QUERY_PARTY_LIST,
+	MASTER_QUERY_PARTY_SEARCH,
 	MASTER_QUERY_PARTY_FIND_DUPLICATES,
 	MASTER_QUERY_ITEM_GET_BY_ID,
 	MASTER_QUERY_ITEM_GET_BY_CODE,

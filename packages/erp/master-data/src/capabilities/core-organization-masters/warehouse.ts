@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -37,6 +37,8 @@ import {
 	createWarehouseInputSchema,
 	getByCodeInputSchema,
 	getByIdInputSchema,
+	listByStatusInputSchema,
+	listUpdatedSinceInputSchema,
 	masterListOptionsSchema,
 	moveWarehouseInputSchema,
 	updateWarehouseInputSchema,
@@ -96,6 +98,12 @@ export async function createWarehouse(
 			locationType: parsed.data.locationType,
 			createdBy: parsed.data.actorUserId,
 			parentId: parsed.data.parentId,
+			addressCountryId: parsed.data.addressCountryId,
+			addressLine1: parsed.data.addressLine1,
+			addressLine2: parsed.data.addressLine2,
+			addressCity: parsed.data.addressCity,
+			addressRegion: parsed.data.addressRegion,
+			addressPostalCode: parsed.data.addressPostalCode,
 		},
 		ports,
 		{ correlationId: parsed.data.correlationId },
@@ -139,6 +147,12 @@ export async function updateWarehouse(
 			updatedBy: parsed.data.actorUserId,
 			name: parsed.data.name,
 			locationType: parsed.data.locationType,
+			addressCountryId: parsed.data.addressCountryId,
+			addressLine1: parsed.data.addressLine1,
+			addressLine2: parsed.data.addressLine2,
+			addressCity: parsed.data.addressCity,
+			addressRegion: parsed.data.addressRegion,
+			addressPostalCode: parsed.data.addressPostalCode,
 		},
 		ports,
 		{ correlationId: parsed.data.correlationId },
@@ -299,6 +313,8 @@ export async function inactiveWarehouse(
 	);
 }
 
+export const suspendWarehouse = inactiveWarehouse;
+
 export async function retireWarehouse(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -311,6 +327,8 @@ export async function retireWarehouse(
 		options,
 	);
 }
+
+export const archiveWarehouse = retireWarehouse;
 
 export async function getWarehouseById(
 	input: unknown,
@@ -369,6 +387,15 @@ export async function getWarehouseByCode(
 	);
 }
 
+export async function existsWarehouseByCode(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<boolean>> {
+	const result = await getWarehouseByCode(input, options);
+	if (!result.ok) return result;
+	return ok(result.data !== null);
+}
+
 export async function listWarehouses(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -396,5 +423,45 @@ export async function listWarehouses(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
 	});
+}
+
+export async function listActiveWarehouses(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Warehouse[]>> {
+	const parsed = parseMasterInput(
+		masterListOptionsSchema,
+		input,
+		"Invalid active warehouse list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listWarehouses({ ...parsed.data, status: "active" }, options);
+}
+
+export async function listWarehousesByStatus(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Warehouse[]>> {
+	const parsed = parseMasterInput(
+		listByStatusInputSchema,
+		input,
+		"Invalid warehouse list-by-status input",
+	);
+	if (!parsed.ok) return parsed;
+	return listWarehouses(parsed.data, options);
+}
+
+export async function listWarehousesUpdatedSince(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Warehouse[]>> {
+	const parsed = parseMasterInput(
+		listUpdatedSinceInputSchema,
+		input,
+		"Invalid warehouse updated-since list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listWarehouses(parsed.data, options);
 }

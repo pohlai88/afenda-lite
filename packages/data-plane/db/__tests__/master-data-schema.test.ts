@@ -35,6 +35,7 @@ import {
 	refUom,
 	refUomDimension,
 } from "../src/schema/master-data";
+import { readCurrentMigrationSql } from "./helpers/current-migration-sql";
 
 const IN_SCOPE_TABLES = {
 	refCountry,
@@ -69,6 +70,38 @@ const IN_SCOPE_TABLES = {
 	mdImportBatch,
 	mdOrganizationDimension,
 } as const;
+
+const ROOT_NORMALIZED_CODE_UNIQUE_INDEXES = [
+	"md_party_org_normalized_code_live_uidx",
+	"md_item_group_org_normalized_code_live_uidx",
+	"md_item_org_normalized_code_live_uidx",
+	"md_warehouse_org_normalized_code_live_uidx",
+	"md_payment_term_org_normalized_code_live_uidx",
+	"md_item_template_org_normalized_code_live_uidx",
+	"md_change_request_org_normalized_code_uidx",
+] as const;
+
+const ROOT_VERSION_CHECKS = [
+	"md_org_dimension_version_ck",
+	"md_party_version_ck",
+	"md_item_group_version_ck",
+	"md_item_version_ck",
+	"md_warehouse_version_ck",
+	"md_payment_term_version_ck",
+	"md_tax_registration_version_ck",
+	"md_item_template_version_ck",
+	"md_change_request_version_ck",
+] as const;
+
+const ROOT_COMPOSITE_FOREIGN_KEYS = [
+	"md_org_dimension_org_parent_fk",
+	"md_org_dimension_org_supersedes_fk",
+	"md_party_merged_into_org_fk",
+	"md_item_group_org_parent_fk",
+	"md_item_org_group_fk",
+	"md_warehouse_org_parent_fk",
+	"md_tax_registration_org_party_fk",
+] as const;
 
 describe("@afenda/db master-data schema (Authority B)", () => {
 	it("exports all Authority B tables", () => {
@@ -141,6 +174,72 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		]) {
 			const columns = getTableColumns(table);
 			expect(columns.organizationId.notNull).toBe(true);
+		}
+	});
+
+	it("requires mutable md_* roots to carry version CAS and audit columns", () => {
+		for (const table of [
+			mdOrganizationDimension,
+			mdParty,
+			mdItemGroup,
+			mdItem,
+			mdWarehouse,
+			mdPaymentTerm,
+			mdTaxRegistration,
+			mdPartyRole,
+			mdPartyAddress,
+			mdPartyContact,
+			mdPartyExternalId,
+			mdPartyRelationship,
+			mdItemUom,
+			mdItemBarcode,
+			mdItemExternalId,
+			mdItemAlias,
+			mdWarehouseExternalId,
+			mdItemTemplate,
+			mdItemTemplateAttribute,
+			mdItemTemplateAttributeOption,
+			mdItemVariant,
+			mdItemVariantAttributeValue,
+		]) {
+			const columns = getTableColumns(table);
+			expect(columns.version.notNull).toBe(true);
+			expect(columns.createdAt.notNull).toBe(true);
+			expect(columns.createdBy.notNull).toBe(true);
+			expect(columns.updatedAt.notNull).toBe(true);
+			expect(columns.updatedBy.notNull).toBe(true);
+		}
+	});
+
+	it("enforces root master database constraints beyond application checks", () => {
+		const migrationSql = readCurrentMigrationSql();
+
+		for (const index of ROOT_NORMALIZED_CODE_UNIQUE_INDEXES) {
+			expect(migrationSql).toContain(index);
+		}
+
+		for (const constraint of ROOT_VERSION_CHECKS) {
+			expect(migrationSql).toContain(`ADD CONSTRAINT "${constraint}"`);
+			expect(migrationSql).toMatch(
+				new RegExp(`${constraint}" CHECK \\("version" > 0\\)`),
+			);
+		}
+	});
+
+	it("uses tenant-composite foreign keys for root same-authority references", () => {
+		const migrationSql = readCurrentMigrationSql();
+
+		for (const constraint of ROOT_COMPOSITE_FOREIGN_KEYS) {
+			expect(migrationSql).toContain(`"${constraint}"`);
+			expect(migrationSql).toMatch(
+				new RegExp(`${constraint}[^;]+FOREIGN KEY \\("organization_id",`),
+			);
+		}
+
+		for (const constraint of ROOT_COMPOSITE_FOREIGN_KEYS.filter(
+			(name) => !name.startsWith("md_org_dimension_"),
+		)) {
+			expect(migrationSql).toContain(`VALIDATE CONSTRAINT "${constraint}"`);
 		}
 	});
 

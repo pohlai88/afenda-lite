@@ -17,13 +17,12 @@
  *
  * ## Deterministic Matching
  *
- * Automatic matching should use only approved deterministic identifiers.
+ * Automatic matching uses only approved deterministic identifiers.
  *
- * Recommended order:
+ * Supported order:
  *
- * 1. approved external identifier and source system
- * 2. normalized canonical master code
- * 3. another explicitly configured unique key
+ * 1. normalized canonical master code
+ * 2. approved external identifier and source system
  *
  * Fuzzy names, addresses, telephone numbers, and similarity scores must not automatically select update targets.
  *
@@ -32,9 +31,7 @@
  * ## Recommended Import Lifecycle
  *
  * ```text
- * uploaded
- *   -> parsed
- *   -> validating
+ * parsed
  *   -> validated
  *   -> approval_pending
  *   -> approved
@@ -47,11 +44,17 @@
  * Other terminal states:
  *
  * ```text
- * validation_failed
  * cancelled
- * expired
- * superseded
  * ```
+ *
+ * Each row carries source row number, raw payload, normalized payload, matched
+ * target ID, intended operation, validation errors, application result, and the
+ * resulting entity ID/version when application creates or updates a record.
+ *
+ * Imports are bounded: callers validate row and payload-size limits, keep an
+ * immutable source snapshot, process rows or chunks atomically, and use
+ * idempotency keys to resume or retry failed rows without replaying successful
+ * mutations.
  */
 export * from "./import-apply";
 export * from "./import-policy";

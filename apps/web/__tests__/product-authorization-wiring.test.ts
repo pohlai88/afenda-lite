@@ -161,8 +161,10 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/submit-change-request.ts": ["master_data.manage"],
 			"app/actions/approve-change-request.ts": ["master_data.approve"],
 			"app/actions/reject-change-request.ts": ["master_data.approve"],
-			"app/actions/validate-master-data-import.ts": ["master_data.manage"],
-			"app/actions/apply-master-data-import.ts": ["master_data.import_approve"],
+			"app/actions/validate-master-data-import.ts": [
+				"master_data.import_validate",
+			],
+			"app/actions/apply-master-data-import.ts": ["master_data.import_apply"],
 			"app/actions/search-master-data.ts": ["master_data.read"],
 			"app/actions/register-legal-company-draft.ts": [
 				"corporate_administration.company.manage",
@@ -298,7 +300,8 @@ describe("N11 product authorization wiring", () => {
 				"master_data.read",
 				"master_data.manage",
 				"master_data.approve",
-				"master_data.import_approve",
+				"master_data.import_validate",
+				"master_data.import_apply",
 			],
 			"features/sales/sales-shell.tsx": [
 				"sales.order.read",

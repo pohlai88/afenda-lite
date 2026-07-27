@@ -10,6 +10,7 @@ import {
 	resolveCommandDeps,
 } from "../../command-options";
 import {
+	expectedVersionSchema,
 	orgActorContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
@@ -73,14 +74,13 @@ export const submitChangeRequestInputSchema = z.union([
 
 export const reviewChangeRequestInputSchema = orgActorContextSchema.extend({
 	id: changeRequestIdSchema,
-	expectedVersion: z.number().int().positive(),
+	expectedVersion: expectedVersionSchema,
 	reviewNote: z.string().trim().min(1).max(500).optional(),
 });
 
 export const listChangeRequestsInputSchema = z
 	.object({
-		organizationId: z.string().trim().min(1),
-		actorUserId: z.string().trim().min(1),
+		...orgQueryActorSchema.shape,
 		page: z.number().int().min(1).optional(),
 		pageSize: z.number().int().min(1).max(100).optional(),
 		status: z.enum(CHANGE_REQUEST_STATUSES).optional(),

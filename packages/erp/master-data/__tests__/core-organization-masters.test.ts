@@ -18,7 +18,11 @@ import {
 } from "../src/capabilities/core-organization-masters/lifecycle";
 import {
 	MAX_MASTER_CODE_LENGTH,
+	normalizeEmail,
+	normalizeExternalIdValue,
 	normalizeMasterCode,
+	normalizePhone,
+	normalizeSearchText,
 } from "../src/capabilities/core-organization-masters/normalized-code";
 import { resolveDependencyInspector } from "../src/command-options";
 import * as masterDataRoot from "../src/index";
@@ -82,7 +86,7 @@ describe("core organization masters capability", () => {
 		const invalidInputs = [
 			Reflect.apply(normalizeMasterCode, undefined, [42]),
 			normalizeMasterCode("   "),
-			normalizeMasterCode("CAFÉ"),
+			normalizeMasterCode(" acmé "),
 		];
 		for (const result of invalidInputs) {
 			expect(result.ok).toBe(false);
@@ -103,6 +107,49 @@ describe("core organization masters capability", () => {
 				maxLength: MAX_MASTER_CODE_LENGTH,
 			});
 		}
+	});
+
+	it("keeps search text, contacts, and external IDs out of master-code folding", () => {
+		expect(normalizeSearchText("  Café   Crème  ")).toEqual({
+			ok: true,
+			data: {
+				text: "Café Crème",
+				normalizedText: "café crème",
+			},
+		});
+		expect(normalizeEmail(" User.Name@EXAMPLE.COM ")).toEqual({
+			ok: true,
+			data: {
+				value: "User.Name@EXAMPLE.COM",
+				normalizedValue: "User.Name@example.com",
+			},
+		});
+		expect(normalizePhone("+60 (12) 345-6789")).toEqual({
+			ok: true,
+			data: {
+				value: "+60 (12) 345-6789",
+				normalizedValue: "+60123456789",
+			},
+		});
+
+		expect(
+			normalizeExternalIdValue({
+				value: " Acme-42 ",
+				caseSensitive: false,
+			}),
+		).toMatchObject({
+			ok: true,
+			data: { value: "Acme-42", normalizedValue: "ACME-42" },
+		});
+		expect(
+			normalizeExternalIdValue({
+				value: " Acme-42 ",
+				caseSensitive: true,
+			}),
+		).toMatchObject({
+			ok: true,
+			data: { value: "Acme-42", normalizedValue: "Acme-42" },
+		});
 	});
 
 	it("fails closed when dependency inspection is not composed", async () => {

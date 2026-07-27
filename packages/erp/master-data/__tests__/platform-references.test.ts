@@ -4,10 +4,14 @@ import { describe, expect, it } from "vitest";
 import { createItem } from "../src/capabilities/core-organization-masters/item";
 import { createItemGroup } from "../src/capabilities/core-organization-masters/item-group";
 import type {
+	RefCountry,
 	RefCurrency,
+	RefLanguage,
+	RefTimeZone,
 	RefUom,
 	RefUomDimension,
 } from "../src/capabilities/platform-references";
+import * as platformReferences from "../src/capabilities/platform-references";
 import {
 	countryCodeSchema,
 	currencyCodeSchema,
@@ -17,7 +21,10 @@ import {
 	readRefCurrencyByCode,
 	readRefUomDimensions,
 	readRefUomsByDimension,
+	refCountryIdSchema,
 	refCurrencyIdSchema,
+	refLanguageIdSchema,
+	refTimeZoneIdSchema,
 	refUomDimensionIdSchema,
 	refUomIdSchema,
 	resolveActiveUom,
@@ -36,6 +43,48 @@ const gramId = "b1000000-0000-4000-8000-000000000008";
 const inactiveEachId = "b1000000-0000-4000-8000-000000009999";
 const massDimensionId = "a1000000-0000-4000-8000-000000000003";
 const countDimensionId = "a1000000-0000-4000-8000-000000000001";
+const malaysiaCountryId = "c1000000-0000-4000-8000-000000000001";
+const inactiveCountryId = "c1000000-0000-4000-8000-000000000099";
+const englishLanguageId = "e1000000-0000-4000-8000-000000000001";
+const kualaLumpurTimeZoneId = "f1000000-0000-4000-8000-000000000001";
+const prohibitedReferenceMutationExports = [
+	"createCountry",
+	"createCurrency",
+	"createLanguage",
+	"createTimeZone",
+	"createUom",
+	"createUomDimension",
+	"updateCountry",
+	"updateCurrency",
+	"updateLanguage",
+	"updateTimeZone",
+	"updateUom",
+	"updateUomDimension",
+	"upsertCountry",
+	"upsertCurrency",
+	"upsertLanguage",
+	"upsertTimeZone",
+	"upsertUom",
+	"upsertUomDimension",
+	"activateCountry",
+	"activateCurrency",
+	"activateLanguage",
+	"activateTimeZone",
+	"activateUom",
+	"activateUomDimension",
+	"deactivateCountry",
+	"deactivateCurrency",
+	"deactivateLanguage",
+	"deactivateTimeZone",
+	"deactivateUom",
+	"deactivateUomDimension",
+	"retireCountry",
+	"retireCurrency",
+	"retireLanguage",
+	"retireTimeZone",
+	"retireUom",
+	"retireUomDimension",
+] as const;
 
 function currency(input: {
 	id: string;
@@ -48,6 +97,50 @@ function currency(input: {
 		code: currencyCodeSchema.parse(input.code),
 		name: input.name,
 		minorUnits: 2,
+		active: input.active,
+	};
+}
+
+function country(input: {
+	id: string;
+	code: string;
+	alpha3: string;
+	name: string;
+	active: boolean;
+}): RefCountry {
+	return {
+		id: refCountryIdSchema.parse(input.id),
+		code: countryCodeSchema.parse(input.code),
+		alpha3: input.alpha3,
+		name: input.name,
+		active: input.active,
+	};
+}
+
+function language(input: {
+	id: string;
+	code: string;
+	name: string;
+	active: boolean;
+}): RefLanguage {
+	return {
+		id: refLanguageIdSchema.parse(input.id),
+		code: languageCodeSchema.parse(input.code),
+		name: input.name,
+		active: input.active,
+	};
+}
+
+function timeZone(input: {
+	id: string;
+	ianaName: string;
+	name: string;
+	active: boolean;
+}): RefTimeZone {
+	return {
+		id: refTimeZoneIdSchema.parse(input.id),
+		ianaName: timeZoneCodeSchema.parse(input.ianaName),
+		name: input.name,
 		active: input.active,
 	};
 }
@@ -86,6 +179,22 @@ function uom(input: {
 
 function createReferenceStore(): MemoryPlatformReferenceStore {
 	return new MemoryPlatformReferenceStore({
+		countries: [
+			country({
+				id: malaysiaCountryId,
+				code: "MY",
+				alpha3: "MYS",
+				name: "Malaysia",
+				active: true,
+			}),
+			country({
+				id: inactiveCountryId,
+				code: "ZZ",
+				alpha3: "ZZZ",
+				name: "Inactive Country",
+				active: false,
+			}),
+		],
 		currencies: [
 			currency({
 				id: "d1000000-0000-4000-8000-000000000001",
@@ -103,6 +212,22 @@ function createReferenceStore(): MemoryPlatformReferenceStore {
 				id: "d1000000-0000-4000-8000-000000000003",
 				code: "USD",
 				name: "US Dollar",
+				active: true,
+			}),
+		],
+		languages: [
+			language({
+				id: englishLanguageId,
+				code: "en",
+				name: "English",
+				active: true,
+			}),
+		],
+		timeZones: [
+			timeZone({
+				id: kualaLumpurTimeZoneId,
+				ianaName: "Asia/Kuala_Lumpur",
+				name: "Kuala Lumpur",
 				active: true,
 			}),
 		],
@@ -197,6 +322,70 @@ describe("@afenda/master-data platform references", () => {
 				"USD",
 			]);
 		}
+	});
+
+	it("exposes MD-1.1 get/list platform reference queries without organization scope", async () => {
+		const store = createReferenceStore();
+
+		await expect(
+			platformReferences.getRefCountry(store, { id: malaysiaCountryId }),
+		).resolves.toMatchObject({ ok: true, data: { code: "MY" } });
+		await expect(
+			platformReferences.listRefCountries(store, {}),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { items: [{ code: "MY" }] },
+		});
+		await expect(
+			platformReferences.getRefCurrency(store, {
+				id: "d1000000-0000-4000-8000-000000000001",
+			}),
+		).resolves.toMatchObject({ ok: true, data: { code: "MYR" } });
+		await expect(
+			platformReferences.listRefCurrencies(store, {}),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { items: [{ code: "MYR" }, { code: "USD" }] },
+		});
+		await expect(
+			platformReferences.getRefLanguage(store, { id: englishLanguageId }),
+		).resolves.toMatchObject({ ok: true, data: { code: "en" } });
+		await expect(
+			platformReferences.listRefLanguages(store, {}),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { items: [{ code: "en" }] },
+		});
+		await expect(
+			platformReferences.getRefTimeZone(store, { id: kualaLumpurTimeZoneId }),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { ianaName: "Asia/Kuala_Lumpur" },
+		});
+		await expect(
+			platformReferences.listRefTimeZones(store, {}),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { items: [{ ianaName: "Asia/Kuala_Lumpur" }] },
+		});
+		await expect(
+			platformReferences.getRefUomDimension(store, { id: massDimensionId }),
+		).resolves.toMatchObject({ ok: true, data: { code: "mass" } });
+		await expect(
+			platformReferences.listRefUomDimensions(store, {}),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { items: [{ code: "count" }, { code: "mass" }] },
+		});
+		await expect(
+			platformReferences.getRefUom(store, { id: kilogramId }),
+		).resolves.toMatchObject({ ok: true, data: { code: "KG" } });
+		await expect(
+			platformReferences.listRefUoms(store, {}),
+		).resolves.toMatchObject({
+			ok: true,
+			data: { items: [{ code: "G" }, { code: "KG" }] },
+		});
 	});
 
 	it("filters UoMs by dimension with deterministic active default", async () => {
@@ -324,6 +513,10 @@ describe("@afenda/master-data platform references", () => {
 		});
 		expect(masterDataRoot).not.toHaveProperty("DrizzlePlatformReferenceStore");
 		expect(masterDataRoot).not.toHaveProperty("MemoryPlatformReferenceStore");
+		for (const exportName of prohibitedReferenceMutationExports) {
+			expect(masterDataRoot).not.toHaveProperty(exportName);
+			expect(platformReferences).not.toHaveProperty(exportName);
+		}
 
 		const packageJson = readFileSync(
 			join(repoRoot, "packages/erp/master-data/package.json"),

@@ -22,9 +22,9 @@
 | Slice | Title | Depends on | Status |
 |---|---|---|---|
 | CA-1.1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | DONE |
-| CA-1.2 | Effective legal names and legal forms | CA-1.1 | OPEN |
-| CA-1.3 | Corporate identifiers, financial years and registered activities | CA-1.2 | OPEN |
-| CA-1.4 | Registered offices, legal establishments and premises | CA-1.3 | OPEN |
+| CA-1.2 | Effective legal names and legal forms | CA-1.1 | PARTIAL |
+| CA-1.3 | Corporate identifiers, financial years and registered activities | CA-1.2 | PARTIAL |
+| CA-1.4 | Registered offices, legal establishments and premises | CA-1.3 | PARTIAL |
 | CA-1.5 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | OPEN |
 
 ## CA-1.1 — Legal-company registry and jurisdiction profile
@@ -106,8 +106,8 @@ The legal-company profile and jurisdiction can be reconstructed deterministicall
 
 ## CA-1.2 — Effective legal names and legal forms
 
-**Status:** `OPEN`  
-**Depends on:** CA-1.1  
+**Status:** `PARTIAL`
+**Depends on:** CA-1.1
 **Goal:** Record multilingual statutory names and legal-form history without rewriting the party master.
 
 ### Authoritative surface
@@ -183,8 +183,8 @@ Statutory names and legal forms are complete, effective-dated and independent fr
 
 ## CA-1.3 — Corporate identifiers, financial years and registered activities
 
-**Status:** `OPEN`  
-**Depends on:** CA-1.2  
+**Status:** `PARTIAL`
+**Depends on:** CA-1.2
 **Goal:** Complete the remaining legal-company identity facts while protecting Master Data tax authority.
 
 ### Authoritative surface
@@ -260,8 +260,8 @@ Non-tax identifiers, financial-year history and registered activities are comple
 
 ## CA-1.4 — Registered offices, legal establishments and premises
 
-**Status:** `OPEN`  
-**Depends on:** CA-1.3  
+**Status:** `PARTIAL`
+**Depends on:** CA-1.3
 **Goal:** Distinguish statutory establishments from physical premises and preserve legal-address history.
 
 ### Authoritative surface

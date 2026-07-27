@@ -61,8 +61,8 @@ UI mutation adapters only. Contract: `ActionResult<T>` (`ok: true | false`) — 
 | `reject-change-request.ts` | `rejectChangeRequestAction` | master-data | Reject MDG CR (`master_data.approve`) |
 | `search-master-data.ts` | `searchMasterDataAction` | master-data | Read-only FTS over `md_*` projections (`master_data.read`) |
 | `rebuild-master-data-search.ts` | `rebuildMasterDataSearchAction` | master-data | Rebuild search from SSOT (`master_data.manage`) |
-| `validate-master-data-import.ts` | `validateMasterDataImportAction` | master-data | Dry-run party import reconcile (`master_data.manage`) |
-| `apply-master-data-import.ts` | `applyMasterDataImportAction` | master-data | Apply bounded party upsert-by-code (`master_data.import_approve`) |
+| `validate-master-data-import.ts` | `validateMasterDataImportAction` | master-data | Dry-run party import reconcile (`master_data.import_validate`) |
+| `apply-master-data-import.ts` | `applyMasterDataImportAction` | master-data | Apply bounded party upsert-by-code (`master_data.import_apply`) |
 | `list-sales-orders.ts` | `listSalesOrdersAction` | sales | List sales orders (`sales.order.list`) |
 | `get-sales-order.ts` | `getSalesOrderAction` | sales | Get sales order (`sales.order.read`) |
 | `create-sales-order.ts` | `createSalesOrderAction` | sales | Create draft order (`sales.order.create`) |

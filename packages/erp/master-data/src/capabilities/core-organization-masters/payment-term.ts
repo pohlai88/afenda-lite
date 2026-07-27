@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -32,10 +32,13 @@ import { assertNoLifecycleControlledFieldMutation } from "../lifecycle-governanc
 import type { PaymentTermLifecycleEventSuffix } from "./core-master-events";
 import { assertLifecycleTransition } from "./lifecycle";
 import { normalizeMasterCode } from "./normalized-code";
+import { normalizePaymentTermRule } from "./payment-term-rule";
 import {
 	createPaymentTermInputSchema,
 	getByCodeInputSchema,
 	getByIdInputSchema,
+	listByStatusInputSchema,
+	listUpdatedSinceInputSchema,
 	masterListOptionsSchema,
 	paymentTermLifecycleInputSchema,
 	updatePaymentTermInputSchema,
@@ -85,13 +88,17 @@ export async function createPaymentTerm(
 	if (!codeResult.ok) {
 		return codeResult;
 	}
+	const ruleResult = normalizePaymentTermRule(parsed.data);
+	if (!ruleResult.ok) {
+		return ruleResult;
+	}
 	const result = await store.createPaymentTerm(
 		{
 			organizationId: parsed.data.organizationId,
 			code: codeResult.data.code,
 			normalizedCode: codeResult.data.normalizedCode,
 			name: parsed.data.name,
-			netDays: parsed.data.netDays,
+			...ruleResult.data,
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
@@ -136,6 +143,15 @@ export async function updatePaymentTerm(
 			updatedBy: parsed.data.actorUserId,
 			name: parsed.data.name,
 			netDays: parsed.data.netDays,
+			discountDays: parsed.data.discountDays,
+			discountPercent: parsed.data.discountPercent,
+			dueDayRule: parsed.data.dueDayRule,
+			endOfMonth: parsed.data.endOfMonth,
+			installmentPolicy: parsed.data.installmentPolicy,
+			installmentCount: parsed.data.installmentCount,
+			validFrom: parsed.data.validFrom,
+			validTo: parsed.data.validTo,
+			currencyRestrictionId: parsed.data.currencyRestrictionId,
 		},
 		ports,
 		{ correlationId: parsed.data.correlationId },
@@ -307,6 +323,15 @@ export async function getPaymentTermByCode(
 	);
 }
 
+export async function existsPaymentTermByCode(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<boolean>> {
+	const result = await getPaymentTermByCode(input, options);
+	if (!result.ok) return result;
+	return ok(result.data !== null);
+}
+
 export async function listPaymentTerms(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -334,5 +359,45 @@ export async function listPaymentTerms(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
 	});
+}
+
+export async function listActivePaymentTerms(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<PaymentTerm[]>> {
+	const parsed = parseMasterInput(
+		masterListOptionsSchema,
+		input,
+		"Invalid active payment term list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listPaymentTerms({ ...parsed.data, status: "active" }, options);
+}
+
+export async function listPaymentTermsByStatus(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<PaymentTerm[]>> {
+	const parsed = parseMasterInput(
+		listByStatusInputSchema,
+		input,
+		"Invalid payment term list-by-status input",
+	);
+	if (!parsed.ok) return parsed;
+	return listPaymentTerms(parsed.data, options);
+}
+
+export async function listPaymentTermsUpdatedSince(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<PaymentTerm[]>> {
+	const parsed = parseMasterInput(
+		listUpdatedSinceInputSchema,
+		input,
+		"Invalid payment term updated-since list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listPaymentTerms(parsed.data, options);
 }

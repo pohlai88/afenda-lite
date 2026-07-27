@@ -379,6 +379,8 @@ export async function blockTaxRegistration(
 	);
 }
 
+export const revokeTaxRegistration = blockTaxRegistration;
+
 export async function retireTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -391,6 +393,8 @@ export async function retireTaxRegistration(
 		options,
 	);
 }
+
+export const archiveTaxRegistration = retireTaxRegistration;
 
 export async function restoreTaxRegistration(
 	input: unknown,
@@ -462,7 +466,27 @@ export async function listTaxRegistrations(
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
 		partyId: parsed.data.partyId,
+		updatedSince: parsed.data.updatedSince,
 	});
+}
+
+export async function listTaxRegistrationsUpdatedSince(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<TaxRegistration[]>> {
+	const parsed = parseMasterInput(
+		listTaxRegistrationsInputSchema,
+		input,
+		"Invalid tax registration updated-since list input",
+	);
+	if (!parsed.ok) return parsed;
+	if (parsed.data.updatedSince === undefined) {
+		return fail("BAD_REQUEST", "updatedSince is required", {
+			reason: "MASTER_VALIDATION_FAILED",
+			field: "updatedSince",
+		} satisfies MasterFailureDetails);
+	}
+	return listTaxRegistrations(parsed.data, options);
 }
 
 export async function findTaxRegistrationsByParty(

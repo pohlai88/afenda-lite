@@ -16,6 +16,7 @@ import {
 	type MasterCommandOptions,
 	resolveCommandDeps,
 } from "../../command-options";
+import { orgQueryActorSchema } from "../../contracts/context";
 import {
 	MASTER_COMMAND_SEARCH_REBUILD,
 	MASTER_QUERY_SEARCH_QUERY,
@@ -29,6 +30,10 @@ import type {
 	PaymentTerm,
 	Warehouse,
 } from "../../types";
+import {
+	createDrizzleOrganizationDimensionStore,
+	type OrganizationDimension,
+} from "../core-organization-masters/organization-dimension";
 
 /** Search entity keys for Authority B roots (derived; rebuildable). */
 export const MASTER_SEARCH_ENTITY = {
@@ -36,6 +41,7 @@ export const MASTER_SEARCH_ENTITY = {
 	item: "md_item",
 	itemGroup: "md_item_group",
 	warehouse: "md_warehouse",
+	organizationDimension: "md_organization_dimension",
 	paymentTerm: "md_payment_term",
 } as const;
 
@@ -47,15 +53,63 @@ export const MASTER_SEARCH_ENTITY_VALUES = [
 	MASTER_SEARCH_ENTITY.item,
 	MASTER_SEARCH_ENTITY.itemGroup,
 	MASTER_SEARCH_ENTITY.warehouse,
+	MASTER_SEARCH_ENTITY.organizationDimension,
 	MASTER_SEARCH_ENTITY.paymentTerm,
 ] as const;
 
 /** Index draft/active/inactive; remove blocked/retired from the derived index. */
-export function shouldIndexMasterStatus(status: MasterStatus): boolean {
-	return status !== "retired" && status !== "blocked";
+type ProjectableMasterStatus = MasterStatus | OrganizationDimension["status"];
+
+export function shouldIndexMasterStatus(
+	status: ProjectableMasterStatus,
+): boolean {
+	return status !== "retired" && status !== "blocked" && status !== "archived";
 }
 
-type MasterRoot = Party | Item | ItemGroup | Warehouse | PaymentTerm;
+type MasterRoot =
+	| Party
+	| Item
+	| ItemGroup
+	| Warehouse
+	| PaymentTerm
+	| OrganizationDimension;
+
+function getRootCode(root: MasterRoot): string {
+	return "code" in root ? root.code : root.key;
+}
+
+function getRootNormalizedCode(root: MasterRoot): string {
+	return "normalizedCode" in root ? root.normalizedCode : root.key;
+}
+
+function getRootDescription(root: MasterRoot): string {
+	return `${getRootCode(root)} · ${root.status}`;
+}
+
+function getRootMetadata(
+	entity: MasterSearchEntity,
+	root: MasterRoot,
+): Record<string, unknown> {
+	const base = {
+		organizationId: root.organizationId,
+		entityType: entity,
+		entityId: root.id,
+		code: getRootCode(root),
+		normalizedCode: getRootNormalizedCode(root),
+		status: root.status,
+		version: root.version,
+		projectedAt: new Date().toISOString(),
+	};
+	if ("kind" in root) {
+		return {
+			...base,
+			dimensionKind: root.kind,
+			effectiveFrom: root.effectiveFrom,
+			effectiveTo: root.effectiveTo,
+		};
+	}
+	return base;
+}
 
 function toUpsertInput(
 	entity: MasterSearchEntity,
@@ -73,13 +127,8 @@ function toUpsertInput(
 		entity,
 		documentId: root.id,
 		title: root.name,
-		description: `${root.code} · ${root.status}`,
-		metadata: {
-			code: root.code,
-			normalizedCode: root.normalizedCode,
-			status: root.status,
-			version: root.version,
-		},
+		description: getRootDescription(root),
+		metadata: getRootMetadata(entity, root),
 	};
 }
 
@@ -114,8 +163,9 @@ export async function projectMasterRoot(
 }
 
 /**
- * Best-effort projection after a successful root mutation.
- * Search failure never rewrites the mutation Result (derived index).
+ * Best-effort, non-authoritative projection after a successful root mutation.
+ * Search failure never rewrites the mutation Result; the committed outbox event
+ * and rebuild command remain the recovery authority for the derived index.
  */
 export async function syncMasterRootProjection(
 	entity: MasterSearchEntity,
@@ -125,15 +175,11 @@ export async function syncMasterRootProjection(
 	await projectMasterRoot(entity, root, searchStore);
 }
 
-const rebuildInputSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
+const rebuildInputSchema = orgQueryActorSchema.extend({
 	entity: z.enum(MASTER_SEARCH_ENTITY_VALUES).optional(),
 });
 
-const searchQueryInputSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
+const searchQueryInputSchema = orgQueryActorSchema.extend({
 	query: z.string().trim().min(1),
 	entity: z.enum(MASTER_SEARCH_ENTITY_VALUES).optional(),
 	limit: z.number().int().min(1).max(100).optional(),
@@ -267,6 +313,20 @@ export async function rebuildMasterDataSearchIndex(
 				return listed;
 			}
 			roots = listed.data;
+		} else if (entity === MASTER_SEARCH_ENTITY.organizationDimension) {
+			const organizationDimensionStore =
+				options.organizationDimensionStore ??
+				createDrizzleOrganizationDimensionStore();
+			const listed = await organizationDimensionStore.list({
+				organizationId: parsed.data.organizationId,
+				status: "all",
+				page: 1,
+				pageSize: 100,
+			});
+			if (!listed.ok) {
+				return listed;
+			}
+			roots = listed.data.items;
 		} else {
 			const listed = await store.listPaymentTerms({
 				organizationId: parsed.data.organizationId,

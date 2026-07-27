@@ -3,11 +3,18 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import {
+	activateOrganizationDimension,
+	archiveOrganizationDimension,
 	createOrganizationDimension,
 	createOrganizationDimensionInputSchema,
+	deactivateOrganizationDimension,
+	getOrganizationDimensionByCode,
+	getOrganizationDimensionById,
 	getOrganizationDimensionEffective,
+	listOrganizationDimensions,
 	ORGANIZATION_DIMENSION_KINDS,
 	resolveOrganizationDimensionsAsOf,
+	updateOrganizationDimension,
 } from "../src";
 import { createMemoryOrganizationDimensionStore } from "../src/capabilities/core-organization-masters/testing-organization-dimension-store";
 import { MASTER_DATA_PERMISSION_CODES } from "../src/permissions";
@@ -23,8 +30,22 @@ const keys = {
 	legal_entity: "LE-MY",
 	business_unit: "BU-OPS",
 	location: "LOC-KUL",
+	department: "DEP-FIN",
+	cost_center: "CC-100",
 	cost_centre: "CC-100",
+	profit_center: "PC-100",
+	channel: "CH-DIRECT",
+	region: "RG-APAC",
+	brand: "BR-AFENDA",
 	project: "PRJ-ERP",
+	custom: "CU-1",
+} as const;
+const assignmentKeys = {
+	legal_entity: keys.legal_entity,
+	business_unit: keys.business_unit,
+	location: keys.location,
+	cost_centre: keys.cost_centre,
+	project: keys.project,
 } as const;
 
 async function seedRequired(
@@ -90,7 +111,7 @@ describe("organization dimension domain", () => {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				asOf: "2025-06-01",
-				keys,
+				keys: assignmentKeys,
 			},
 			{ store, authorization },
 		);
@@ -98,7 +119,7 @@ describe("organization dimension domain", () => {
 		expect(result.ok).toBe(true);
 		if (!result.ok) return;
 		expect(Object.keys(result.data).sort()).toEqual(
-			[...ORGANIZATION_DIMENSION_KINDS].sort(),
+			Object.keys(assignmentKeys).sort(),
 		);
 		expect(result.data.legal_entity.key).toBe(keys.legal_entity);
 	});
@@ -129,13 +150,13 @@ describe("organization dimension domain", () => {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				asOf: "2025-06-01",
-				keys,
+				keys: assignmentKeys,
 			},
 			{ store, authorization },
 		);
 
 		expect(result.ok).toBe(true);
-		expect(peakInFlight).toBe(ORGANIZATION_DIMENSION_KINDS.length);
+		expect(peakInFlight).toBe(Object.keys(assignmentKeys).length);
 	});
 
 	it("rejects overlapping versions for the same tenant, kind, and normalized key", async () => {
@@ -181,7 +202,7 @@ describe("organization dimension domain", () => {
 					organizationId,
 					actorUserId: ACTOR,
 					asOf: organizationId === ORG_A ? "2024-12-31" : "2025-06-01",
-					keys,
+					keys: assignmentKeys,
 				},
 				{ store, authorization },
 			);
@@ -212,7 +233,7 @@ describe("organization dimension domain", () => {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				asOf: "2025-06-01",
-				keys,
+				keys: assignmentKeys,
 			},
 			{ store, authorization },
 		);
@@ -269,6 +290,270 @@ describe("organization dimension domain", () => {
 			if (!byKey.ok) return;
 			expect(byKey.data?.id).toBe(created.data.id);
 		}
+	});
+
+	it("updates, transitions, lists, and reads organization dimensions with version CAS", async () => {
+		const store = createMemoryOrganizationDimensionStore();
+		const created = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "dimension-crud-create",
+				kind: "department",
+				key: "DEP-FIN",
+				name: "Finance",
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+		expect(created.data.version).toBe(1);
+		expect(created.data.createdBy).toBe(ACTOR);
+		expect(created.data.updatedBy).toBe(ACTOR);
+		expect(created.data.createdAt).toBeInstanceOf(Date);
+		expect(created.data.updatedAt).toBeInstanceOf(Date);
+
+		const updated = await updateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "dimension-crud-update",
+				id: created.data.id,
+				expectedVersion: created.data.version,
+				name: "Finance Operations",
+			},
+			{ store, authorization },
+		);
+		expect(updated.ok).toBe(true);
+		if (!updated.ok) return;
+		expect(updated.data.version).toBe(2);
+		expect(updated.data.name).toBe("Finance Operations");
+		expect(updated.data.updatedBy).toBe(ACTOR);
+		expect(updated.data.updatedAt.getTime()).toBeGreaterThanOrEqual(
+			created.data.updatedAt.getTime(),
+		);
+
+		const stale = await updateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "dimension-crud-stale",
+				id: created.data.id,
+				expectedVersion: created.data.version,
+				name: "Stale",
+			},
+			{ store, authorization },
+		);
+		expect(stale.ok).toBe(false);
+		if (!stale.ok) expect(stale.code).toBe("CONFLICT");
+
+		const inactive = await deactivateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "dimension-crud-deactivate",
+				id: updated.data.id,
+				expectedVersion: updated.data.version,
+			},
+			{ store, authorization },
+		);
+		expect(inactive.ok).toBe(true);
+		if (!inactive.ok) return;
+		expect(inactive.data.status).toBe("inactive");
+
+		const active = await activateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "dimension-crud-activate",
+				id: inactive.data.id,
+				expectedVersion: inactive.data.version,
+			},
+			{ store, authorization },
+		);
+		expect(active.ok).toBe(true);
+		if (!active.ok) return;
+		expect(active.data.status).toBe("active");
+
+		const byId = await getOrganizationDimensionById(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				id: active.data.id,
+			},
+			{ store, authorization },
+		);
+		expect(byId.ok && byId.data?.name).toBe("Finance Operations");
+
+		const byCode = await getOrganizationDimensionByCode(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				kind: "department",
+				key: "dep-fin",
+			},
+			{ store, authorization },
+		);
+		expect(byCode.ok && byCode.data?.id).toBe(active.data.id);
+
+		const listed = await listOrganizationDimensions(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				kind: "department",
+			},
+			{ store, authorization },
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) return;
+		expect(listed.data.items.map((row) => row.id)).toEqual([active.data.id]);
+
+		const archived = await archiveOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "dimension-crud-archive",
+				id: active.data.id,
+				expectedVersion: active.data.version,
+			},
+			{ store, authorization },
+		);
+		expect(archived.ok).toBe(true);
+		if (!archived.ok) return;
+		expect(archived.data.status).toBe("archived");
+	});
+
+	it("prevents cross-org hierarchy links, inactive parents, self-parenting, and ancestor cycles", async () => {
+		const store = createMemoryOrganizationDimensionStore();
+		const root = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-root",
+				kind: "business_unit",
+				key: "BU-ROOT",
+				name: "Root",
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(root.ok).toBe(true);
+		if (!root.ok) return;
+
+		const child = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-child",
+				kind: "department",
+				key: "DEP-CHILD",
+				name: "Child",
+				parentId: root.data.id,
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(child.ok).toBe(true);
+		if (!child.ok) return;
+
+		const clearedParent = await updateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-clear-parent",
+				id: child.data.id,
+				expectedVersion: child.data.version,
+				parentId: null,
+			},
+			{ store, authorization },
+		);
+		expect(clearedParent.ok).toBe(true);
+		if (!clearedParent.ok) return;
+		expect(clearedParent.data.parentId).toBeNull();
+
+		const reparented = await updateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-reparent",
+				id: clearedParent.data.id,
+				expectedVersion: clearedParent.data.version,
+				parentId: root.data.id,
+			},
+			{ store, authorization },
+		);
+		expect(reparented.ok).toBe(true);
+		if (!reparented.ok) return;
+
+		const selfParent = await updateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-self",
+				id: reparented.data.id,
+				expectedVersion: reparented.data.version,
+				parentId: reparented.data.id,
+			},
+			{ store, authorization },
+		);
+		expect(selfParent.ok).toBe(false);
+
+		const cycle = await updateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-cycle",
+				id: root.data.id,
+				expectedVersion: root.data.version,
+				parentId: reparented.data.id,
+			},
+			{ store, authorization },
+		);
+		expect(cycle.ok).toBe(false);
+
+		const inactiveRoot = await deactivateOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-inactive-parent",
+				id: root.data.id,
+				expectedVersion: root.data.version,
+			},
+			{ store, authorization },
+		);
+		expect(inactiveRoot.ok).toBe(true);
+		if (!inactiveRoot.ok) return;
+
+		const underInactive = await createOrganizationDimension(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-under-inactive",
+				kind: "department",
+				key: "DEP-BLOCKED",
+				name: "Blocked",
+				parentId: inactiveRoot.data.id,
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(underInactive.ok).toBe(false);
+
+		const crossOrg = await createOrganizationDimension(
+			{
+				organizationId: ORG_B,
+				actorUserId: ACTOR,
+				correlationId: "hierarchy-cross-org",
+				kind: "department",
+				key: "DEP-CROSS",
+				name: "Cross",
+				parentId: root.data.id,
+				effectiveFrom: "2025-01-01",
+			},
+			{ store, authorization },
+		);
+		expect(crossOrg.ok).toBe(false);
 	});
 
 	it("returns null when a dimension kind is not effective as-of", async () => {

@@ -19,8 +19,8 @@ import {
 	findItemByBarcodeInputSchema,
 } from "./extension-schemas";
 import {
+	normalizeBarcode,
 	normalizeBarcodePackQuantity,
-	normalizeItemBarcode,
 } from "./item-barcode-policy";
 
 export async function createItemBarcode(
@@ -35,7 +35,7 @@ export async function createItemBarcode(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const normalized = normalizeItemBarcode({
+	const normalized = normalizeBarcode({
 		rawValue: parsed.data.barcodeValue,
 		symbology: parsed.data.symbology,
 	});
@@ -91,7 +91,7 @@ export async function findItemByBarcode(
 		"Invalid item barcode lookup input",
 	);
 	if (!parsed.ok) return parsed;
-	const normalized = normalizeItemBarcode({
+	const normalized = normalizeBarcode({
 		rawValue: parsed.data.barcodeValue,
 		symbology: parsed.data.symbology,
 	});

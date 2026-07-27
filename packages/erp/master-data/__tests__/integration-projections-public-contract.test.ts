@@ -33,6 +33,7 @@ import {
 	MASTER_DATA_EVENT_SCHEMA_VERSION,
 	MASTER_DATA_EVENT_TYPES,
 	MASTER_MUTATION_OPERATION_IDS,
+	MASTER_PRODUCTION_MUTATION_SEQUENCE,
 	MASTER_SEARCH_DOCUMENT_ENTITY_TYPES,
 	MASTER_SEARCH_PROJECTION_SCHEMA_VERSION,
 	OUTBOX_CLAIM_RECOVERY_CODES,
@@ -64,6 +65,7 @@ const PUBLIC_INTEGRATION_PROJECTION_CONSTANTS = [
 	MASTER_DATA_EVENT_SCHEMA_VERSION,
 	MASTER_DATA_EVENT_TYPES,
 	MASTER_MUTATION_OPERATION_IDS,
+	MASTER_PRODUCTION_MUTATION_SEQUENCE,
 	MASTER_SEARCH_DOCUMENT_ENTITY_TYPES,
 	MASTER_SEARCH_PROJECTION_SCHEMA_VERSION,
 	OUTBOX_CLAIM_RECOVERY_CODES,
@@ -123,6 +125,50 @@ describe("integration projections public contract", () => {
 		) as { exports?: Record<string, unknown> };
 
 		expect(packageJson.exports).not.toHaveProperty("./integration-projections");
+	});
+
+	it("declares search as async derived infrastructure, not mutation authority", () => {
+		expect(
+			INTEGRATION_PROJECTIONS_MODULE_MANIFEST.searchContract,
+		).toMatchObject({
+			authority: "non_authoritative",
+			mutationAuthority: false,
+			authorizationAuthority: false,
+			updateTiming: "asynchronous",
+			idempotent: true,
+			failureSemantics: "does_not_rollback_committed_master_mutation",
+			canBeStaleAfterCommandSuccess: true,
+			recoveryAuthority: "master_data_outbox_and_rebuild_from_ssot",
+			rebuildable: true,
+			versionGuarded: true,
+		});
+		expect(
+			INTEGRATION_PROJECTIONS_MODULE_MANIFEST.searchContract
+				.requiredDocumentFields,
+		).toEqual([
+			"organizationId",
+			"entityType",
+			"entityId",
+			"version",
+			"projectedAt",
+		]);
+	});
+
+	it("publishes the standard production mutation sequence", () => {
+		expect(MASTER_PRODUCTION_MUTATION_SEQUENCE).toEqual([
+			"authorize_command",
+			"parse_and_normalize_input",
+			"begin_authoritative_mutation_transaction",
+			"load_target_under_tenant_scope",
+			"verify_expected_version",
+			"verify_lifecycle_and_business_invariants",
+			"mutate_entity",
+			"insert_audit_fact",
+			"insert_domain_event_outbox_record",
+			"commit",
+			"return_result",
+			"asynchronously_project_search",
+		]);
 	});
 
 	it("keeps search projector contracts on the canonical integration path", () => {

@@ -20,10 +20,11 @@ position. Keep its lifecycle and active-slice statement synchronized with
 
 ## Current mission
 
-`CA-0.4 — Durable infrastructure adapters and package boundaries` is
-`BLOCKED` on approved disposable-Neon migration and concurrency evidence.
-Do not begin CA-1.1 or create business commands, Actions, routes or UI before
-Phase 0 is `DONE`.
+`CA-1.4 — Registered offices, legal establishments and premises` is `PARTIAL`.
+The package and focused CA web lanes are implemented, but current closure is
+blocked by demo-branch migration drift and an unrelated web typecheck gate. Do
+not begin CA-1.5 until CA-1.4 has current Neon parity and all required web gates
+are green.
 
 ## Governed module files
 

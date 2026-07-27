@@ -98,7 +98,7 @@ export async function runApplyMasterDataImport(input: {
 
 	const permissionDenied = await forbidUnlessPermission(
 		input.session,
-		"master_data.import_approve",
+		"master_data.import_apply",
 	);
 	if (permissionDenied) {
 		return permissionDenied;

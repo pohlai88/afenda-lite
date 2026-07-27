@@ -44,7 +44,7 @@ export type NormalizedItemBarcode = Readonly<{
 	normalizedValue: string;
 }>;
 
-export function normalizeItemBarcode(input: {
+export function normalizeBarcode(input: {
 	rawValue: string;
 	symbology: ItemBarcodeSymbology;
 }): Result<NormalizedItemBarcode> {

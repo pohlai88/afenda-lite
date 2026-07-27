@@ -8,18 +8,63 @@ import type {
 
 export type CreateOrganizationDimensionStoreRecord = Omit<
 	OrganizationDimension,
-	"id" | "version" | "createdAt"
+	"id" | "version" | "createdAt" | "updatedAt"
 > & {
 	normalizedKey: string;
 	correlationId: string;
 	supersedesExpectedVersion: number | null;
 };
 
+export type UpdateOrganizationDimensionStoreRecord = {
+	organizationId: string;
+	id: string;
+	expectedVersion: number;
+	name?: string;
+	parentId?: string | null;
+	parentIdProvided: boolean;
+	effectiveTo?: string | null;
+	updatedBy: string;
+	correlationId: string;
+};
+
+export type OrganizationDimensionLifecycleStatus =
+	| "active"
+	| "inactive"
+	| "archived";
+
 /** Persistence boundary for effective-dated organization dimensions. */
 export type OrganizationDimensionStore = {
 	create(
 		record: CreateOrganizationDimensionStoreRecord,
 	): Promise<Result<OrganizationDimension>>;
+	update(
+		record: UpdateOrganizationDimensionStoreRecord,
+	): Promise<Result<OrganizationDimension>>;
+	transition(input: {
+		organizationId: string;
+		id: string;
+		expectedVersion: number;
+		status: OrganizationDimensionLifecycleStatus;
+		updatedBy: string;
+		correlationId: string;
+	}): Promise<Result<OrganizationDimension>>;
+	getById(input: {
+		organizationId: string;
+		id: string;
+	}): Promise<Result<OrganizationDimension | null>>;
+	getByCode(input: {
+		organizationId: string;
+		kind: OrganizationDimensionKind;
+		normalizedKey: string;
+	}): Promise<Result<OrganizationDimension | null>>;
+	list(input: {
+		organizationId: string;
+		kind?: OrganizationDimensionKind;
+		status?: OrganizationDimensionLifecycleStatus | "all";
+		parentId?: string | null;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<{ items: OrganizationDimension[]; total: number }>>;
 	findEffective(input: {
 		organizationId: string;
 		kind: OrganizationDimensionKind;

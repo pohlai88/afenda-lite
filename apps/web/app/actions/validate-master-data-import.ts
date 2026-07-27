@@ -38,7 +38,7 @@ const validateImportSchema = z.object({
 
 /**
  * Dry-run master-data import validate — file parse stays in the app; package
- * owns row outcomes. `master_data.manage`.
+ * owns row outcomes. `master_data.import_validate`.
  */
 export async function validateMasterDataImportAction(
 	input: unknown,
@@ -57,7 +57,7 @@ export async function validateMasterDataImportAction(
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,
-		"master_data.manage",
+		"master_data.import_validate",
 	);
 	if (permissionDenied) {
 		return permissionDenied;

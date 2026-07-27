@@ -14,7 +14,7 @@ import {
 export type ApplyMasterDataImportActionData = ImportReconciliationReport;
 
 /**
- * Apply bounded upsert-by-code — `master_data.import_approve`.
+ * Apply bounded upsert-by-code — `master_data.import_apply`.
  * Stamps package `approved: true` after the permission gate (never trust client).
  * Supports party, item_group, item, and warehouse batches.
  */

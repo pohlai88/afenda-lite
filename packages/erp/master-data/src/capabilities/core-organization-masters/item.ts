@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -15,6 +15,7 @@ import {
 	MASTER_COMMAND_ITEM_ACTIVATE,
 	MASTER_COMMAND_ITEM_CREATE,
 	MASTER_COMMAND_ITEM_INACTIVE,
+	MASTER_COMMAND_ITEM_RESTORE,
 	MASTER_COMMAND_ITEM_RETIRE,
 	MASTER_COMMAND_ITEM_UPDATE,
 	MASTER_QUERY_ITEM_GET_BY_CODE,
@@ -30,13 +31,19 @@ import {
 } from "../integration-projections/search-projector-commands";
 import { assertNoLifecycleControlledFieldMutation } from "../lifecycle-governance";
 import type { ItemLifecycleEventSuffix } from "./core-master-events";
-import { assertLifecycleTransition } from "./lifecycle";
+import {
+	assertLifecycleTransition,
+	assertRestoreTransition,
+} from "./lifecycle";
 import { normalizeMasterCode } from "./normalized-code";
 import {
 	createItemInputSchema,
 	getByCodeInputSchema,
 	getByIdInputSchema,
 	itemLifecycleInputSchema,
+	listByStatusInputSchema,
+	listItemsByGroupInputSchema,
+	listUpdatedSinceInputSchema,
 	masterListOptionsSchema,
 	updateItemInputSchema,
 } from "./schemas";
@@ -91,9 +98,15 @@ export async function createItem(
 			code: codeResult.data.code,
 			normalizedCode: codeResult.data.normalizedCode,
 			name: parsed.data.name,
+			description: parsed.data.description ?? null,
 			itemType: parsed.data.itemType,
 			baseUomId: parsed.data.baseUomId,
 			itemGroupId: parsed.data.itemGroupId,
+			trackingPolicy: parsed.data.trackingPolicy,
+			sellable: parsed.data.sellable,
+			purchasable: parsed.data.purchasable,
+			stocked: parsed.data.stocked,
+			serviceIndicator: parsed.data.serviceIndicator,
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
@@ -137,9 +150,15 @@ export async function updateItem(
 			expectedVersion: parsed.data.expectedVersion,
 			updatedBy: parsed.data.actorUserId,
 			name: parsed.data.name,
+			description: parsed.data.description,
 			itemType: parsed.data.itemType,
 			baseUomId: parsed.data.baseUomId,
 			itemGroupId: parsed.data.itemGroupId,
+			trackingPolicy: parsed.data.trackingPolicy,
+			sellable: parsed.data.sellable,
+			purchasable: parsed.data.purchasable,
+			stocked: parsed.data.stocked,
+			serviceIndicator: parsed.data.serviceIndicator,
 		},
 		ports,
 		{ correlationId: parsed.data.correlationId },
@@ -149,10 +168,11 @@ export async function updateItem(
 
 async function transitionItemStatus(
 	input: unknown,
-	toStatus: "active" | "inactive" | "retired",
+	toStatus: "draft" | "active" | "inactive" | "retired",
 	eventSuffix: ItemLifecycleEventSuffix,
 	command: MasterCommandId,
 	options: MasterCommandOptions,
+	transitionKind: "lifecycle" | "restore" = "lifecycle",
 ): Promise<Result<Item>> {
 	const parsed = parseMasterInput(
 		itemLifecycleInputSchema,
@@ -184,7 +204,10 @@ async function transitionItemStatus(
 			reason: "MASTER_NOT_FOUND",
 		} satisfies MasterFailureDetails);
 	}
-	const lifecycle = assertLifecycleTransition(current.data.status, toStatus);
+	const lifecycle =
+		transitionKind === "restore"
+			? assertRestoreTransition(current.data.status, "draft")
+			: assertLifecycleTransition(current.data.status, toStatus);
 	if (!lifecycle.ok) {
 		return lifecycle;
 	}
@@ -285,6 +308,8 @@ export async function inactiveItem(
 	);
 }
 
+export const suspendItem = inactiveItem;
+
 export async function retireItem(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -295,6 +320,22 @@ export async function retireItem(
 		"retired",
 		MASTER_COMMAND_ITEM_RETIRE,
 		options,
+	);
+}
+
+export const archiveItem = retireItem;
+
+export async function restoreItem(
+	input: unknown,
+	options: MasterCommandOptions = {},
+): Promise<Result<Item>> {
+	return transitionItemStatus(
+		input,
+		"draft",
+		"restored",
+		MASTER_COMMAND_ITEM_RESTORE,
+		options,
+		"restore",
 	);
 }
 
@@ -355,6 +396,15 @@ export async function getItemByCode(
 	);
 }
 
+export async function existsItemByCode(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<boolean>> {
+	const result = await getItemByCode(input, options);
+	if (!result.ok) return result;
+	return ok(result.data !== null);
+}
+
 export async function listItems(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -382,5 +432,73 @@ export async function listItems(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
+	});
+}
+
+export async function listActiveItems(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Item[]>> {
+	const parsed = parseMasterInput(
+		masterListOptionsSchema,
+		input,
+		"Invalid active item list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listItems({ ...parsed.data, status: "active" }, options);
+}
+
+export async function listItemsByStatus(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Item[]>> {
+	const parsed = parseMasterInput(
+		listByStatusInputSchema,
+		input,
+		"Invalid item list-by-status input",
+	);
+	if (!parsed.ok) return parsed;
+	return listItems(parsed.data, options);
+}
+
+export async function listItemsUpdatedSince(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Item[]>> {
+	const parsed = parseMasterInput(
+		listUpdatedSinceInputSchema,
+		input,
+		"Invalid item updated-since list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listItems(parsed.data, options);
+}
+
+export async function listItemsByGroup(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Item[]>> {
+	const parsed = parseMasterInput(
+		listItemsByGroupInputSchema,
+		input,
+		"Invalid item list-by-group input",
+	);
+	if (!parsed.ok) return parsed;
+	const store = resolveStore(options.store);
+	const { authorization } = options;
+	const authorized = await requireMasterQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_ITEM_LIST,
+	});
+	if (!authorized.ok) return authorized;
+	return store.listItems({
+		organizationId: parsed.data.organizationId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
+		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
+		itemGroupId: parsed.data.itemGroupId,
 	});
 }

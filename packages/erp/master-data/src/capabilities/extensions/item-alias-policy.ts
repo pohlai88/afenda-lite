@@ -1,5 +1,6 @@
 import { ok, type Result } from "@afenda/errors/result";
 
+import { normalizeSearchText } from "../core-organization-masters/normalized-code";
 import { extensionValidationFailure } from "./extension-errors";
 
 export const ITEM_ALIAS_TYPES = [
@@ -20,8 +21,6 @@ export const MAX_ITEM_ALIAS_VALUE_LENGTH = 256 as const;
 export const MAX_ITEM_ALIAS_SOURCE_LENGTH = 64 as const;
 
 const ALIAS_SOURCE_RE = /^[a-z0-9._-]+$/;
-const ALIAS_CONTROL_CHARACTER_RE = /\p{Cc}/u;
-
 export type NormalizedItemAlias = Readonly<{
 	aliasValue: string;
 	normalizedValue: string;
@@ -36,33 +35,15 @@ export type NormalizedItemAlias = Readonly<{
 export function normalizeItemAlias(
 	rawValue: string,
 ): Result<NormalizedItemAlias> {
-	if (typeof rawValue !== "string") {
-		return extensionValidationFailure(
-			"Item alias must be a string",
-			"aliasValue",
-		);
-	}
-
-	const aliasValue = rawValue.normalize("NFC").trim().replace(/\s+/gu, " ");
-	if (aliasValue.length === 0) {
-		return extensionValidationFailure("Item alias is required", "aliasValue");
-	}
-	if (aliasValue.length > MAX_ITEM_ALIAS_VALUE_LENGTH) {
-		return extensionValidationFailure(
-			`Item alias must not exceed ${MAX_ITEM_ALIAS_VALUE_LENGTH} characters`,
-			"aliasValue",
-		);
-	}
-	if (ALIAS_CONTROL_CHARACTER_RE.test(aliasValue)) {
-		return extensionValidationFailure(
-			"Item alias must not contain control characters",
-			"aliasValue",
-		);
-	}
+	const normalized = normalizeSearchText(rawValue, {
+		field: "aliasValue",
+		maxLength: MAX_ITEM_ALIAS_VALUE_LENGTH,
+	});
+	if (!normalized.ok) return normalized;
 
 	return ok({
-		aliasValue,
-		normalizedValue: aliasValue.normalize("NFKC").toLowerCase(),
+		aliasValue: normalized.data.text,
+		normalizedValue: normalized.data.normalizedText,
 	});
 }
 

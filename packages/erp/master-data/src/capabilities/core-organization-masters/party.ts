@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	requireMasterCommandPermission,
 	requireMasterQueryPermission,
@@ -21,6 +21,7 @@ import {
 	MASTER_QUERY_PARTY_GET_BY_CODE,
 	MASTER_QUERY_PARTY_GET_BY_ID,
 	MASTER_QUERY_PARTY_LIST,
+	MASTER_QUERY_PARTY_SEARCH,
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
@@ -40,12 +41,18 @@ import { normalizeMasterCode } from "./normalized-code";
 import {
 	activatePartyInputSchema,
 	createPartyInputSchema,
+	findPartyByTaxRegistrationInputSchema,
 	getByCodeInputSchema,
 	getByIdInputSchema,
+	listByStatusInputSchema,
+	listPartiesByRoleInputSchema,
+	listUpdatedSinceInputSchema,
 	masterListOptionsSchema,
 	partyLifecycleInputSchema,
+	searchPartiesInputSchema,
 	updatePartyInputSchema,
 } from "./schemas";
+import { normalizeTaxRegistrationNumber } from "./tax-registration-number";
 import { assertExpectedVersion } from "./version-cas";
 
 async function afterPartyMutation(
@@ -356,6 +363,8 @@ export async function blockParty(
 	);
 }
 
+export const suspendParty = blockParty;
+
 export async function retireParty(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -368,6 +377,8 @@ export async function retireParty(
 		options,
 	);
 }
+
+export const archiveParty = retireParty;
 
 export async function restoreParty(
 	input: unknown,
@@ -407,6 +418,8 @@ export async function getPartyById(
 	return store.getPartyById(parsed.data.organizationId, parsed.data.id);
 }
 
+export const getParty = getPartyById;
+
 export async function getPartyByCode(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -438,6 +451,15 @@ export async function getPartyByCode(
 	);
 }
 
+export async function existsPartyByCode(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<boolean>> {
+	const result = await getPartyByCode(input, options);
+	if (!result.ok) return result;
+	return ok(result.data !== null);
+}
+
 export async function listParties(
 	input: unknown,
 	options: MasterQueryOptions = {},
@@ -464,5 +486,133 @@ export async function listParties(
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
+	});
+}
+
+export async function listActiveParties(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Party[]>> {
+	const parsed = parseMasterInput(
+		masterListOptionsSchema,
+		input,
+		"Invalid active party list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listParties({ ...parsed.data, status: "active" }, options);
+}
+
+export async function listPartiesByStatus(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Party[]>> {
+	const parsed = parseMasterInput(
+		listByStatusInputSchema,
+		input,
+		"Invalid party list-by-status input",
+	);
+	if (!parsed.ok) return parsed;
+	return listParties(parsed.data, options);
+}
+
+export async function listPartiesUpdatedSince(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Party[]>> {
+	const parsed = parseMasterInput(
+		listUpdatedSinceInputSchema,
+		input,
+		"Invalid party updated-since list input",
+	);
+	if (!parsed.ok) return parsed;
+	return listParties(parsed.data, options);
+}
+
+export async function listPartiesByRole(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Party[]>> {
+	const parsed = parseMasterInput(
+		listPartiesByRoleInputSchema,
+		input,
+		"Invalid party list-by-role input",
+	);
+	if (!parsed.ok) return parsed;
+	const store = resolveStore(options.store);
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_LIST,
+	});
+	if (!authorized.ok) return authorized;
+	return store.listPartiesByRole({
+		organizationId: parsed.data.organizationId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
+		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
+		roleCode: parsed.data.roleCode,
+		activeOnly: parsed.data.activeOnly,
+	});
+}
+
+export async function findPartyByTaxRegistration(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Party | null>> {
+	const parsed = parseMasterInput(
+		findPartyByTaxRegistrationInputSchema,
+		input,
+		"Invalid party tax-registration lookup input",
+	);
+	if (!parsed.ok) return parsed;
+	const normalized = normalizeTaxRegistrationNumber(
+		parsed.data.registrationNumber,
+	);
+	if (!normalized.ok) return normalized;
+	const store = resolveStore(options.store);
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_LIST,
+	});
+	if (!authorized.ok) return authorized;
+	return store.findPartyByTaxRegistration({
+		organizationId: parsed.data.organizationId,
+		jurisdictionCountryId: parsed.data.jurisdictionCountryId,
+		registrationType: parsed.data.registrationType,
+		normalizedRegistrationNumber: normalized.data.normalizedRegistrationNumber,
+	});
+}
+
+export async function searchParties(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<Party[]>> {
+	const parsed = parseMasterInput(
+		searchPartiesInputSchema,
+		input,
+		"Invalid party search input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+	const store = resolveStore(options.store);
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_SEARCH,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+	return store.searchParties({
+		organizationId: parsed.data.organizationId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
+		status: parsed.data.status,
+		updatedSince: parsed.data.updatedSince,
+		query: parsed.data.query,
 	});
 }

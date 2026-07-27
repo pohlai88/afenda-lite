@@ -10,15 +10,22 @@ import type {
 	AuthoritativeLifecycleState,
 	LifecycleDecision,
 	LifecyclePolicy,
+	LifecyclePolicyInput,
 	LifecycleReason,
 	LifecycleTransitionContext,
 } from "./types";
 import { LIFECYCLE_CONTROLLED_FIELDS, LIFECYCLE_STATE_SOURCE } from "./types";
 
 export function defineLifecyclePolicy<State extends string>(
-	policy: LifecyclePolicy<State>,
+	policy: LifecyclePolicyInput<State>,
 ): LifecyclePolicy<State> {
-	return policy;
+	const transitions = Object.fromEntries(
+		Object.entries(policy.transitions).map(([key, definition]) => [
+			key,
+			{ ...definition, auditAction: definition.auditAction ?? "UPDATE" },
+		]),
+	) as Record<string, LifecyclePolicy<State>["transitions"][string]>;
+	return { ...policy, transitions };
 }
 
 export function resolveAuthoritativeLifecycleState<

@@ -74,8 +74,8 @@ import {
 } from "../../extension-transaction-contract";
 import { assertExpectedExtensionVersion } from "../../extension-version-cas";
 import {
+	normalizeBarcode,
 	normalizeBarcodePackQuantity,
-	normalizeItemBarcode,
 } from "../../item-barcode-policy";
 import {
 	assertItemUomCompatibility,
@@ -3080,7 +3080,7 @@ export async function drizzleCreateItemBarcode(
 	_ports: MutationPorts,
 	meta: { correlationId: string },
 ): Promise<Result<ItemBarcode>> {
-	const normalized = normalizeItemBarcode({
+	const normalized = normalizeBarcode({
 		rawValue: record.barcodeValue,
 		symbology: record.symbology,
 	});

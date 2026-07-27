@@ -86,9 +86,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 		sessionHasPermission(session, "master_data.item_variant_attribute_manage"),
 	]);
 	const canApprove = await sessionHasPermission(session, "master_data.approve");
-	const canImportApprove = await sessionHasPermission(
+	const canImportValidate = await sessionHasPermission(
 		session,
-		"master_data.import_approve",
+		"master_data.import_validate",
+	);
+	const canImportApply = await sessionHasPermission(
+		session,
+		"master_data.import_apply",
 	);
 	const masterDataAuth = { authorization: createMasterDataAuthorizationPort() };
 	const listActor = {
@@ -296,13 +300,13 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					<CardHeader>
 						<CardTitle>Party import</CardTitle>
 						<CardDescription>
-							Validate dry-run, then apply with import_approve. Max 100 rows.
+							Validate dry-run, then apply with import_apply. Max 100 rows.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<MasterDataImportPanel
-							canManage={canManage}
-							canImportApprove={canImportApprove}
+							canImportValidate={canImportValidate}
+							canImportApply={canImportApply}
 						/>
 					</CardContent>
 				</Card>

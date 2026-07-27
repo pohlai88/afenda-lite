@@ -2,61 +2,18 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import type { PartyContact, PartyContactType } from "../../types";
+import {
+	normalizeEmail,
+	normalizePhone,
+} from "../core-organization-masters/normalized-code";
 
 const MAX_CONTACT_VALUE_LENGTH = 500;
-const CANONICAL_TELEPHONE_RE = /^\+[1-9]\d{6,14}$/;
-const EMAIL_LOCAL_RE = /^[^\s@]+$/u;
-const DOMAIN_LABEL_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
 
 function invalidContactValue(message: string): Result<never> {
 	return fail("BAD_REQUEST", message, {
 		reason: "MASTER_VALIDATION_FAILED",
 		field: "value",
 	} satisfies MasterFailureDetails);
-}
-
-function normalizeEmail(value: string): Result<string> {
-	const separator = value.lastIndexOf("@");
-	if (
-		separator <= 0 ||
-		separator === value.length - 1 ||
-		value.indexOf("@") !== separator
-	) {
-		return invalidContactValue("Email contact value is invalid");
-	}
-	const local = value.slice(0, separator);
-	const domain = value.slice(separator + 1).toLowerCase();
-	if (
-		local.length > 64 ||
-		value.length > 254 ||
-		!EMAIL_LOCAL_RE.test(local) ||
-		domain.length > 253
-	) {
-		return invalidContactValue("Email contact value is invalid");
-	}
-
-	const labels = domain.split(".");
-	if (
-		labels.length < 2 ||
-		labels.some((label) => !DOMAIN_LABEL_RE.test(label))
-	) {
-		return invalidContactValue("Email contact value is invalid");
-	}
-
-	return ok(`${local}@${domain}`);
-}
-
-function normalizeTelephone(value: string): Result<string> {
-	const compact = value.replace(/[\s().-]/gu, "");
-	const normalizedValue = compact.startsWith("00")
-		? `+${compact.slice(2)}`
-		: compact;
-	if (!CANONICAL_TELEPHONE_RE.test(normalizedValue)) {
-		return invalidContactValue(
-			"Telephone contacts must use an international canonical number",
-		);
-	}
-	return ok(normalizedValue);
 }
 
 function normalizeWebsite(value: string): Result<string> {
@@ -102,7 +59,7 @@ export function normalizePartyContactValue(
 		);
 	}
 
-	let normalized: Result<string>;
+	let normalized: Result<{ value: string; normalizedValue: string }>;
 	switch (contactType) {
 		case "email":
 			normalized = normalizeEmail(value);
@@ -110,20 +67,23 @@ export function normalizePartyContactValue(
 		case "telephone":
 		case "mobile":
 		case "fax":
-			normalized = normalizeTelephone(value);
+			normalized = normalizePhone(value);
 			break;
-		case "website":
-			normalized = normalizeWebsite(value);
+		case "website": {
+			const website = normalizeWebsite(value);
+			if (!website.ok) return website;
+			normalized = ok({ value, normalizedValue: website.data });
 			break;
+		}
 		case "messaging":
 		case "other":
-			normalized = ok(value);
+			normalized = ok({ value, normalizedValue: value });
 			break;
 		default:
 			return invalidContactValue("Party contact type is invalid");
 	}
 	if (!normalized.ok) return normalized;
-	return ok({ value, normalizedValue: normalized.data });
+	return ok(normalized.data);
 }
 
 /** Trusted notification routing requires explicit verification and usability. */

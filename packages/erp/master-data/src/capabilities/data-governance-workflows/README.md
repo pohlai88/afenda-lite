@@ -39,6 +39,8 @@ Approval permits a mutation to be attempted. It does not guarantee that the muta
 
 * Imports may create or update records only through package-owned commands.
 * Import rows may modify only fields permitted by an approved, operation-specific mutable-field allowlist.
+* Import matching is deterministic: normalized code is primary, approved external identifiers are optional, and fuzzy matches are warning/review evidence only.
+* Import application is bounded by row count, payload size, and chunk policy; a batch must not hold one massive transaction across thousands of records.
 * Change-request application requires an approved request and the relevant master-data application permission.
 * Application must revalidate the current target version, lifecycle state, dependencies, authorization, and business invariants.
 * Approval and application remain separate governance actions.
@@ -48,6 +50,48 @@ Approval permits a mutation to be attempted. It does not guarantee that the muta
 * Applications must not write directly to `md_change_request`, `md_import_batch`, governed extension tables, or authoritative master tables.
 * Platform `ref_*` records are outside organization-scoped import and change-request mutation workflows.
 * Search projections, uploaded files, user-interface state, and external-system records are not authoritative workflow evidence.
+
+## Imports
+
+Canonical import lifecycle:
+
+```text
+parsed
+validated
+approval_pending
+approved
+applying
+partially_applied
+applied
+failed
+cancelled
+```
+
+Canonical row evidence:
+
+```text
+row
+├── source row number
+├── raw payload
+├── normalized payload
+├── matched target ID
+├── intended operation
+├── validation errors
+├── application result
+└── resulting entity ID/version
+```
+
+Supported import modes are `create_only`, `update_existing`, and
+`create_or_update`. Matching must be explicit: first normalized code, then an
+approved external identifier when present and permitted. Fuzzy matching may
+produce duplicate warnings or review candidates, but must not automatically
+select update targets.
+
+Import execution must support dry-run validation, immutable source snapshots,
+actor and correlation tracking, idempotent resume, retry of failed rows,
+partial-failure reporting, and bounded row/chunk transactions. Each successful
+row or chunk must atomically persist the authoritative state change, audit fact,
+and domain event through the package-owned command path.
 
 ## Core Governance Principles
 
@@ -126,6 +170,37 @@ The rule must be enforced by policy, not assumed from user-interface behavior.
 
 A change request represents exactly one governed domain operation. It is not a
 general patch document and must never permit arbitrary field mutation.
+
+The shipped MDG v1 public command surface is intentionally narrow:
+
+* `activate_party`
+* `merge_parties`
+
+Future change-request coverage may extend only to controlled master-data changes
+such as sensitive field changes, tax identity changes, external identifier
+changes, and duplicate-resolution merges. Imports, duplicate-warning review, and
+mass-update batches use their own bounded governance records unless a named
+master-data operation explicitly requires a change request. Platform `ref_*`
+mutation, cross-module transaction workflows, UI state approvals, and arbitrary
+JSON patch workflows are outside scope.
+
+Canonical change-request evidence is:
+
+```text
+change request
+├── target entity type
+├── target entity id, nullable for create
+├── operation type
+├── before snapshot
+├── proposed patch
+├── reason
+├── requested by
+├── reviewed by
+├── approval status
+├── expected target version
+├── decided at
+└── applied at
+```
 
 Proposal content may be modified only while the request is in draft status.
 Submission freezes request type, target identity, target expected version,

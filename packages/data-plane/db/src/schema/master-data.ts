@@ -164,17 +164,23 @@ export const mdOrganizationDimension = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		/** legal_entity | business_unit | location | cost_centre | project */
+		/** Controlled taxonomy; see @afenda/master-data ORGANIZATION_DIMENSION_KINDS. */
 		kind: text("kind").notNull(),
 		key: text("key").notNull(),
 		normalizedKey: text("normalized_key").notNull(),
 		name: text("name").notNull(),
+		parentId: uuid("parent_id"),
+		status: text("status").notNull().default("active"),
 		effectiveFrom: date("effective_from", { mode: "string" }).notNull(),
 		effectiveTo: date("effective_to", { mode: "string" }),
 		supersedesId: uuid("supersedes_id"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedBy: text("updated_by").notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
 	},
@@ -190,6 +196,8 @@ export const mdOrganizationDimension = pgTable(
 			t.effectiveFrom,
 			t.effectiveTo,
 		),
+		index("md_org_dimension_org_parent_idx").on(t.organizationId, t.parentId),
+		index("md_org_dimension_org_status_idx").on(t.organizationId, t.status),
 		uniqueIndex("md_org_dimension_org_kind_key_from_uidx").on(
 			t.organizationId,
 			t.kind,
@@ -198,16 +206,30 @@ export const mdOrganizationDimension = pgTable(
 		),
 		check(
 			"md_org_dimension_kind_check",
-			sql`${t.kind} IN ('legal_entity', 'business_unit', 'location', 'cost_centre', 'project')`,
+			sql`${t.kind} IN ('legal_entity', 'business_unit', 'location', 'department', 'cost_center', 'cost_centre', 'profit_center', 'channel', 'region', 'brand', 'project', 'custom')`,
+		),
+		check(
+			"md_org_dimension_status_check",
+			sql`${t.status} IN ('active', 'inactive', 'archived')`,
+		),
+		check(
+			"md_org_dimension_not_self_parent_check",
+			sql`${t.parentId} IS NULL OR ${t.parentId} <> ${t.id}`,
 		),
 		check(
 			"md_org_dimension_effective_range_check",
 			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
 		),
+		check("md_org_dimension_version_ck", sql`${t.version} > 0`),
 		foreignKey({
 			columns: [t.organizationId, t.supersedesId],
 			foreignColumns: [t.organizationId, t.id],
 			name: "md_org_dimension_org_supersedes_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.parentId],
+			foreignColumns: [t.organizationId, t.id],
+			name: "md_org_dimension_org_parent_fk",
 		}),
 	],
 );
@@ -266,6 +288,12 @@ export const mdParty = pgTable(
 		uniqueIndex("md_party_org_normalized_code_live_uidx")
 			.on(t.organizationId, t.normalizedCode)
 			.where(sql`${t.retiredAt} IS NULL AND ${t.mergedIntoId} IS NULL`),
+		check("md_party_version_ck", sql`${t.version} > 0`),
+		foreignKey({
+			columns: [t.organizationId, t.mergedIntoId],
+			foreignColumns: [t.organizationId, t.id],
+			name: "md_party_merged_into_org_fk",
+		}),
 	],
 );
 
@@ -294,6 +322,7 @@ export const mdItemGroup = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("md_item_group_org_id_uidx").on(t.organizationId, t.id),
 		index("md_item_group_org_id_idx").on(t.organizationId, t.id),
 		index("md_item_group_org_status_idx").on(t.organizationId, t.status),
 		index("md_item_group_org_parent_idx").on(t.organizationId, t.parentId),
@@ -305,6 +334,12 @@ export const mdItemGroup = pgTable(
 		uniqueIndex("md_item_group_org_normalized_code_live_uidx")
 			.on(t.organizationId, t.normalizedCode)
 			.where(sql`${t.retiredAt} IS NULL`),
+		check("md_item_group_version_ck", sql`${t.version} > 0`),
+		foreignKey({
+			columns: [t.organizationId, t.parentId],
+			foreignColumns: [t.organizationId, t.id],
+			name: "md_item_group_org_parent_fk",
+		}),
 	],
 );
 
@@ -318,6 +353,13 @@ export const mdItem = pgTable(
 		name: text("name").notNull(),
 		/** stock | non_stock | service | asset_candidate | expense */
 		itemType: text("item_type").notNull(),
+		description: text("description"),
+		/** none | lot | serial | lot_and_serial */
+		trackingPolicy: text("tracking_policy").notNull().default("none"),
+		sellable: boolean("sellable").notNull().default(true),
+		purchasable: boolean("purchasable").notNull().default(true),
+		stocked: boolean("stocked").notNull().default(false),
+		serviceIndicator: boolean("service_indicator").notNull().default(false),
 		status: text("status").notNull().default("draft"),
 		version: integer("version").notNull().default(1),
 		/** Platform UoM — never org-scoped md_uom. */
@@ -346,7 +388,24 @@ export const mdItem = pgTable(
 		index("md_item_org_status_idx").on(t.organizationId, t.status),
 		index("md_item_org_group_idx").on(t.organizationId, t.itemGroupId),
 		index("md_item_base_uom_idx").on(t.baseUomId),
+		index("md_item_org_operational_flags_idx").on(
+			t.organizationId,
+			t.sellable,
+			t.purchasable,
+			t.stocked,
+			t.serviceIndicator,
+		),
 		index("md_item_org_updated_at_idx").on(t.organizationId, t.updatedAt, t.id),
+		check(
+			"md_item_tracking_policy_ck",
+			sql`${t.trackingPolicy} IN ('none', 'lot', 'serial', 'lot_and_serial')`,
+		),
+		check("md_item_version_ck", sql`${t.version} > 0`),
+		foreignKey({
+			columns: [t.organizationId, t.itemGroupId],
+			foreignColumns: [mdItemGroup.organizationId, mdItemGroup.id],
+			name: "md_item_org_group_fk",
+		}),
 		uniqueIndex("md_item_org_normalized_code_live_uidx")
 			.on(t.organizationId, t.normalizedCode)
 			.where(sql`${t.retiredAt} IS NULL`),
@@ -364,6 +423,14 @@ export const mdWarehouse = pgTable(
 		/** site | warehouse | zone | aisle | rack | bin */
 		locationType: text("location_type").notNull(),
 		parentId: uuid("parent_id"),
+		addressCountryId: uuid("address_country_id").references(
+			() => refCountry.id,
+		),
+		addressLine1: text("address_line1"),
+		addressLine2: text("address_line2"),
+		addressCity: text("address_city"),
+		addressRegion: text("address_region"),
+		addressPostalCode: text("address_postal_code"),
 		status: text("status").notNull().default("draft"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
@@ -384,6 +451,7 @@ export const mdWarehouse = pgTable(
 		index("md_warehouse_org_id_idx").on(t.organizationId, t.id),
 		index("md_warehouse_org_status_idx").on(t.organizationId, t.status),
 		index("md_warehouse_org_parent_idx").on(t.organizationId, t.parentId),
+		index("md_warehouse_address_country_idx").on(t.addressCountryId),
 		index("md_warehouse_org_updated_at_idx").on(
 			t.organizationId,
 			t.updatedAt,
@@ -392,6 +460,12 @@ export const mdWarehouse = pgTable(
 		uniqueIndex("md_warehouse_org_normalized_code_live_uidx")
 			.on(t.organizationId, t.normalizedCode)
 			.where(sql`${t.retiredAt} IS NULL`),
+		check("md_warehouse_version_ck", sql`${t.version} > 0`),
+		foreignKey({
+			columns: [t.organizationId, t.parentId],
+			foreignColumns: [t.organizationId, t.id],
+			name: "md_warehouse_org_parent_fk",
+		}),
 	],
 );
 
@@ -405,6 +479,20 @@ export const mdPaymentTerm = pgTable(
 		name: text("name").notNull(),
 		/** Days until full payment is due (commercial default). */
 		netDays: integer("net_days").notNull(),
+		discountDays: integer("discount_days"),
+		discountPercent: numeric("discount_percent", {
+			precision: 7,
+			scale: 4,
+		}),
+		dueDayRule: text("due_day_rule").notNull().default("net_days"),
+		endOfMonth: boolean("end_of_month").notNull().default(false),
+		installmentPolicy: text("installment_policy").notNull().default("none"),
+		installmentCount: integer("installment_count"),
+		validFrom: timestamp("valid_from", { withTimezone: true }),
+		validTo: timestamp("valid_to", { withTimezone: true }),
+		currencyRestrictionId: uuid("currency_restriction_id").references(
+			() => refCurrency.id,
+		),
 		status: text("status").notNull().default("draft"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
@@ -423,6 +511,9 @@ export const mdPaymentTerm = pgTable(
 	(t) => [
 		index("md_payment_term_org_id_idx").on(t.organizationId, t.id),
 		index("md_payment_term_org_status_idx").on(t.organizationId, t.status),
+		index("md_payment_term_currency_restriction_idx").on(
+			t.currencyRestrictionId,
+		),
 		index("md_payment_term_org_updated_at_idx").on(
 			t.organizationId,
 			t.updatedAt,
@@ -431,6 +522,36 @@ export const mdPaymentTerm = pgTable(
 		uniqueIndex("md_payment_term_org_normalized_code_live_uidx")
 			.on(t.organizationId, t.normalizedCode)
 			.where(sql`${t.retiredAt} IS NULL`),
+		check("md_payment_term_net_days_ck", sql`${t.netDays} BETWEEN 0 AND 999`),
+		check(
+			"md_payment_term_discount_days_ck",
+			sql`${t.discountDays} IS NULL OR (${t.discountDays} >= 0 AND ${t.discountDays} <= ${t.netDays})`,
+		),
+		check(
+			"md_payment_term_discount_percent_ck",
+			sql`${t.discountPercent} IS NULL OR (${t.discountPercent} > 0 AND ${t.discountPercent} <= 100)`,
+		),
+		check(
+			"md_payment_term_discount_pair_ck",
+			sql`${t.discountPercent} IS NULL OR ${t.discountDays} IS NOT NULL`,
+		),
+		check(
+			"md_payment_term_due_day_rule_ck",
+			sql`${t.dueDayRule} IN ('net_days', 'end_of_month', 'day_of_month')`,
+		),
+		check(
+			"md_payment_term_installment_policy_ck",
+			sql`${t.installmentPolicy} IN ('none', 'equal_installments')`,
+		),
+		check(
+			"md_payment_term_installment_count_ck",
+			sql`(${t.installmentPolicy} = 'none' AND ${t.installmentCount} IS NULL) OR (${t.installmentPolicy} = 'equal_installments' AND ${t.installmentCount} >= 2)`,
+		),
+		check(
+			"md_payment_term_validity_range_ck",
+			sql`${t.validTo} IS NULL OR ${t.validFrom} IS NULL OR ${t.validTo} >= ${t.validFrom}`,
+		),
+		check("md_payment_term_version_ck", sql`${t.version} > 0`),
 	],
 );
 
@@ -492,6 +613,12 @@ export const mdTaxRegistration = pgTable(
 				t.normalizedRegistrationNumber,
 			)
 			.where(sql`${t.retiredAt} IS NULL AND ${t.deletedAt} IS NULL`),
+		check("md_tax_registration_version_ck", sql`${t.version} > 0`),
+		foreignKey({
+			columns: [t.organizationId, t.partyId],
+			foreignColumns: [mdParty.organizationId, mdParty.id],
+			name: "md_tax_registration_org_party_fk",
+		}),
 	],
 );
 
@@ -1212,6 +1339,7 @@ export const mdItemTemplate = pgTable(
 		uniqueIndex("md_item_template_org_normalized_code_live_uidx")
 			.on(t.organizationId, t.normalizedCode)
 			.where(sql`${t.retiredAt} IS NULL`),
+		check("md_item_template_version_ck", sql`${t.version} > 0`),
 	],
 );
 
@@ -1559,7 +1687,7 @@ export const mdImportBatch = pgTable(
 	],
 );
 
-// ── MDG change requests (R2) — maker-checker for gated commands ─────────────
+// ── MDG change requests (R2) — controlled master-data maker-checker only ────
 
 export const mdChangeRequest = pgTable(
 	"md_change_request",
@@ -1568,7 +1696,7 @@ export const mdChangeRequest = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** activate_party | merge_parties */
+		/** MDG v1: activate_party | merge_parties; not a generic workflow key */
 		commandKind: text("command_kind").notNull(),
 		/** Governance workflow: draft | submitted | approved | rejected | applying | applied | failed | cancelled | expired | superseded */
 		status: text("status").notNull().default("submitted"),
@@ -1603,5 +1731,6 @@ export const mdChangeRequest = pgTable(
 			"md_change_request_status_ck",
 			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'applying', 'applied', 'failed', 'cancelled', 'expired', 'superseded')`,
 		),
+		check("md_change_request_version_ck", sql`${t.version} > 0`),
 	],
 );

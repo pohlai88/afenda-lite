@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
 	approveChangeRequest,
+	CHANGE_REQUEST_COMMAND_KINDS,
 	mergeParties,
 	rejectChangeRequest,
 	submitChangeRequest,
@@ -26,6 +27,19 @@ function ctx(organizationId = "org-mdg") {
 }
 
 describe("@afenda/master-data change requests (MDG v1)", () => {
+	it("keeps the public MDG v1 command surface narrow", () => {
+		expect(CHANGE_REQUEST_COMMAND_KINDS).toEqual([
+			"activate_party",
+			"merge_parties",
+		]);
+		expect(CHANGE_REQUEST_COMMAND_KINDS).not.toContain("import_apply");
+		expect(CHANGE_REQUEST_COMMAND_KINDS).not.toContain("mass_update");
+		expect(CHANGE_REQUEST_COMMAND_KINDS).not.toContain(
+			"external_identifier_change",
+		);
+		expect(CHANGE_REQUEST_COMMAND_KINDS).not.toContain("tax_identity_change");
+	});
+
 	it("blocks maker self-approve and supports reject path with versioned events", async () => {
 		const { options, ports } = createMasterDataTestHarness();
 

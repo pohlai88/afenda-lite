@@ -10,6 +10,7 @@ import {
 	activateItemTemplate,
 	addItemTemplateAttribute,
 	addItemTemplateAttributeOption,
+	archiveItemTemplate,
 	createItemTemplate,
 	createItemVariant,
 	getItemVariantById,
@@ -23,11 +24,7 @@ import {
 	listItemTemplateAttributes,
 	listVariantAttributeValues,
 } from "../src/capabilities/extensions";
-import {
-	MASTER_DATA_PERMISSION_ITEM_TEMPLATE_ATTRIBUTE_MANAGE,
-	MASTER_DATA_PERMISSION_MANAGE,
-	MASTER_DATA_PERMISSION_READ,
-} from "../src/permissions";
+import { MASTER_DATA_PERMISSION_TEMPLATE_MANAGE } from "../src/permissions";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { createGrantingMasterAuthorization } from "./helpers/memory-authorization";
 import type { createMemoryMasterDataStore } from "./helpers/memory-master-data-store";
@@ -180,9 +177,7 @@ describe("@afenda/master-data item variants (R1)", () => {
 	it("defaults omitted attribute flags to non-required and non-variant-defining", async () => {
 		const { options, store, ports } = createMasterDataTestHarness();
 		const authorization = createGrantingMasterAuthorization([
-			MASTER_DATA_PERMISSION_MANAGE,
-			MASTER_DATA_PERMISSION_READ,
-			MASTER_DATA_PERMISSION_ITEM_TEMPLATE_ATTRIBUTE_MANAGE,
+			MASTER_DATA_PERMISSION_TEMPLATE_MANAGE,
 		]);
 		const template = await createItemTemplate(
 			{ ...ctx(), code: "DEFAULTS", name: "Defaulted flags" },
@@ -213,9 +208,7 @@ describe("@afenda/master-data item variants (R1)", () => {
 	it("requires elevated permission only for explicit variant-defining attributes", async () => {
 		const { options, store, ports } = createMasterDataTestHarness();
 		const authorization = createGrantingMasterAuthorization([
-			MASTER_DATA_PERMISSION_MANAGE,
-			MASTER_DATA_PERMISSION_READ,
-			MASTER_DATA_PERMISSION_ITEM_TEMPLATE_ATTRIBUTE_MANAGE,
+			MASTER_DATA_PERMISSION_TEMPLATE_MANAGE,
 		]);
 		const template = await createItemTemplate(
 			{ ...ctx(), code: "AUTH-ATTR", name: "Attribute auth" },
@@ -302,6 +295,250 @@ describe("@afenda/master-data item variants (R1)", () => {
 			"COLOR",
 			"SIZE",
 		]);
+	});
+
+	it("creates enforceable typed variants and keeps md_item as SKU authority", async () => {
+		const { options } = createMasterDataTestHarness();
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "TYPED", name: "Typed template" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) return;
+
+		const text = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "TEXT",
+				name: "Text",
+				dataType: "text",
+				isRequired: true,
+				validationRules: { minLength: 2, maxLength: 20 },
+				displayOrder: 1,
+			},
+			options,
+		);
+		const integer = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "COUNT",
+				name: "Count",
+				dataType: "integer",
+				isRequired: true,
+				validationRules: { minimum: 1, maximum: 10 },
+				displayOrder: 2,
+			},
+			options,
+		);
+		const decimal = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "WEIGHT",
+				name: "Weight",
+				dataType: "decimal",
+				isRequired: true,
+				validationRules: {
+					minimum: "0.1",
+					maximum: "99.9",
+					precision: 4,
+					scale: 1,
+				},
+				displayOrder: 3,
+			},
+			options,
+		);
+		const flag = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "FLAG",
+				name: "Flag",
+				dataType: "boolean",
+				isRequired: true,
+				displayOrder: 4,
+			},
+			options,
+		);
+		const date = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "INTRO",
+				name: "Intro date",
+				dataType: "date",
+				isRequired: true,
+				validationRules: { minimum: "2026-01-01", maximum: "2026-12-31" },
+				displayOrder: 5,
+			},
+			options,
+		);
+		const single = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "COLOR",
+				name: "Color",
+				dataType: "single_option",
+				isRequired: true,
+				isVariantDefining: true,
+				displayOrder: 6,
+			},
+			options,
+		);
+		const multi = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "CHANNELS",
+				name: "Channels",
+				dataType: "multiple_option",
+				isRequired: true,
+				displayOrder: 7,
+			},
+			options,
+		);
+		const reference = await addItemTemplateAttribute(
+			{
+				...ctx(),
+				templateId: template.data.id,
+				code: "RELATED",
+				name: "Related",
+				dataType: "reference",
+				isRequired: true,
+				validationRules: { referenceType: "item" },
+				displayOrder: 8,
+			},
+			options,
+		);
+		expect(text.ok).toBe(true);
+		expect(integer.ok).toBe(true);
+		expect(decimal.ok).toBe(true);
+		expect(flag.ok).toBe(true);
+		expect(date.ok).toBe(true);
+		expect(single.ok).toBe(true);
+		expect(multi.ok).toBe(true);
+		expect(reference.ok).toBe(true);
+		if (
+			!text.ok ||
+			!integer.ok ||
+			!decimal.ok ||
+			!flag.ok ||
+			!date.ok ||
+			!single.ok ||
+			!multi.ok ||
+			!reference.ok
+		) {
+			return;
+		}
+
+		const red = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: single.data.id,
+				code: "RED",
+				label: "Red",
+			},
+			options,
+		);
+		const web = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: multi.data.id,
+				code: "WEB",
+				label: "Web",
+			},
+			options,
+		);
+		const retail = await addItemTemplateAttributeOption(
+			{
+				...ctx(),
+				attributeId: multi.data.id,
+				code: "RETAIL",
+				label: "Retail",
+			},
+			options,
+		);
+		expect(red.ok).toBe(true);
+		expect(web.ok).toBe(true);
+		expect(retail.ok).toBe(true);
+		if (!red.ok || !web.ok || !retail.ok) return;
+
+		const activated = await activateItemTemplate(
+			{
+				...ctx(),
+				id: template.data.id,
+				expectedVersion: template.data.version,
+			},
+			options,
+		);
+		expect(activated.ok).toBe(true);
+		if (!activated.ok) return;
+		expect(activated.data.version).toBe(template.data.version + 1);
+
+		const group = await createItemGroup(
+			{ ...ctx(), code: "TYPED-GROUP", name: "Typed group" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) return;
+
+		const variant = await createItemVariant(
+			{
+				...ctx(),
+				templateId: activated.data.id,
+				code: "TYPED-RED",
+				name: "Typed red SKU",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: group.data.id,
+				attributeValues: [
+					{ attributeId: text.data.id, textValue: "Alpha" },
+					{ attributeId: integer.data.id, integerValue: 2 },
+					{ attributeId: decimal.data.id, decimalValue: "1.0" },
+					{ attributeId: flag.data.id, booleanValue: true },
+					{ attributeId: date.data.id, dateValue: "2026-06-01" },
+					{ attributeId: single.data.id, optionId: red.data.id },
+					{
+						attributeId: multi.data.id,
+						optionIds: [retail.data.id, web.data.id],
+					},
+					{ attributeId: reference.data.id, referenceValue: "item:RELATED" },
+				],
+			},
+			options,
+		);
+		expect(variant.ok).toBe(true);
+		if (!variant.ok) return;
+		expect(variant.data.item.code).toBe("TYPED-RED");
+		expect(variant.data.item.status).toBe("draft");
+		expect(variant.data.values).toHaveLength(8);
+		expect(variant.data.values.map((value) => value.valueType).sort()).toEqual([
+			"boolean",
+			"date",
+			"decimal",
+			"integer",
+			"multiple_option",
+			"reference",
+			"single_option",
+			"text",
+		]);
+
+		const item = await getItemById(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: variant.data.itemId,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (item.ok) {
+			expect(item.data?.id).toBe(variant.data.itemId);
+			expect(item.data?.code).toBe("TYPED-RED");
+		}
 	});
 
 	it("rejects options for non-option attributes and missing option parents", async () => {
@@ -693,6 +930,93 @@ describe("@afenda/master-data item variants (R1)", () => {
 		if (!retired.ok) {
 			expect(retired.details).toMatchObject({
 				reason: "MASTER_DEPENDENCY_BLOCKED",
+			});
+		}
+	});
+
+	it("exposes archiveItemTemplate as the archive intent for retired templates", async () => {
+		const { options } = createMasterDataTestHarness();
+		const template = await createItemTemplate(
+			{ ...ctx(), code: "ARCHIVE-TPL", name: "Archive template" },
+			options,
+		);
+		expect(template.ok).toBe(true);
+		if (!template.ok) return;
+
+		const archived = await archiveItemTemplate(
+			{
+				...ctx(),
+				id: template.data.id,
+				expectedVersion: template.data.version,
+			},
+			options,
+		);
+		expect(archived.ok).toBe(true);
+		if (archived.ok) {
+			expect(archived.data.status).toBe("retired");
+		}
+	});
+
+	it("rejects archived options for new variants while historical assignments remain readable", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+		const first = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-HIST-RED",
+				name: "Historical red",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+				],
+			},
+			options,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) return;
+
+		const archived = store.archiveItemTemplateAttributeOptionForTest(
+			"org-a",
+			seeded.red.id,
+			"user-1",
+		);
+		expect(archived.ok).toBe(true);
+
+		const historical = await getItemVariantById(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: first.data.id,
+			},
+			options,
+		);
+		expect(historical.ok).toBe(true);
+		if (historical.ok && historical.data !== null) {
+			expect(historical.data.values[0]?.optionId).toBe(seeded.red.id);
+		}
+
+		const next = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-ARCHIVED-RED",
+				name: "Archived red",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+				],
+			},
+			options,
+		);
+		expect(next.ok).toBe(false);
+		if (!next.ok) {
+			expect(next.details).toMatchObject({
+				reason: "MASTER_VALIDATION_FAILED",
 			});
 		}
 	});

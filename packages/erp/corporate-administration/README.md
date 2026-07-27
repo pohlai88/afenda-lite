@@ -15,12 +15,15 @@ Phase 0 is closed. The package remains governed by the greenfield roadmap under
   the first narrow draft-company persistence path. Required Neon parity ran on
   demo branch `br-fragrant-morning-aoywrnzr`.
 - CA-1.1 established legal-company registry and jurisdiction-profile behavior.
-- CA-1.2 established effective legal names and legal forms.
-- CA-1.3 established authority-aware identifiers, financial-year history and
-  activity classifications.
-- CA-1.4 implements registered offices, legal establishments and premises.
-  Its CA-owned lanes are green, but phase closure remains pending the
-  repository-wide web lint gate recorded in `CA-1.4-EVIDENCE.md`.
+- CA-1.2 implements effective legal names and legal forms, but the slice is not
+  `DONE` until current demo-branch Neon parity is re-established.
+- CA-1.3 implements authority-aware identifiers, financial-year history and
+  activity classifications, but the slice is not `DONE` until current
+  demo-branch Neon parity is re-established.
+- CA-1.4 implements registered offices, legal establishments and premises. Its
+  CA-owned backend lanes are green against the repaired demo branch, but slice
+  closure is blocked by the demo branch pending-forward migration ledger state
+  recorded in `CA-1.4-EVIDENCE.md`.
 
 ## Lifecycle
 

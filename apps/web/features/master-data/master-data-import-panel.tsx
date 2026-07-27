@@ -17,8 +17,8 @@ import { applyMasterDataImportAction } from "@/app/actions/apply-master-data-imp
 import { validateMasterDataImportAction } from "@/app/actions/validate-master-data-import";
 
 type ImportPanelProps = {
-	canManage: boolean;
-	canImportApprove: boolean;
+	canImportValidate: boolean;
+	canImportApply: boolean;
 };
 
 type RowPreview = {
@@ -31,8 +31,8 @@ type RowPreview = {
  * Party import validate (dry-run) + apply — JSON rows, max 100.
  */
 export function MasterDataImportPanel({
-	canManage,
-	canImportApprove,
+	canImportValidate,
+	canImportApply,
 }: ImportPanelProps) {
 	const [sourceSystem, setSourceSystem] = useState("manual");
 	const [mode, setMode] = useState<
@@ -122,6 +122,7 @@ export function MasterDataImportPanel({
 				sourceSystem,
 				entity: "party",
 				mode,
+				idempotencyKey: crypto.randomUUID(),
 				rows: parsed.rows,
 			});
 			if (!result.ok) {
@@ -142,13 +143,13 @@ export function MasterDataImportPanel({
 		});
 	}
 
-	if (!canManage && !canImportApprove) {
+	if (!canImportValidate && !canImportApply) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Import unavailable</AlertTitle>
 				<AlertDescription>
-					You need master_data.manage (validate) or master_data.import_approve
-					(apply) to use import.
+					You need master_data.import_validate or master_data.import_apply to
+					use import.
 				</AlertDescription>
 			</Alert>
 		);
@@ -203,13 +204,13 @@ export function MasterDataImportPanel({
 				/>
 			</FormField>
 			<div className="flex flex-wrap gap-2">
-				{canManage ? (
+				{canImportValidate ? (
 					<Button type="button" onClick={onValidate} disabled={pending}>
 						{pending ? <Spinner /> : null}
 						Validate (dry-run)
 					</Button>
 				) : null}
-				{canImportApprove ? (
+				{canImportApply ? (
 					<Button type="button" onClick={onApply} disabled={pending}>
 						{pending ? <Spinner /> : null}
 						Apply import

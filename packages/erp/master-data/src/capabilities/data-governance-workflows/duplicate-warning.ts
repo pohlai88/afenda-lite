@@ -89,6 +89,7 @@ type DuplicateWarningBase = Readonly<{
 	sourceEntityId: string;
 	candidateEntityId: string;
 	confidence: number;
+	score: number;
 	severity: DuplicateWarningSeverity;
 	status: DuplicateWarningStatus;
 	detectedAt: Date;

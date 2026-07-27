@@ -679,6 +679,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		};
 
 		if (input.transaction !== undefined) {
+			enqueueLegalCompanyVersionBump(input.transaction, {
+				organizationId: input.organizationId,
+				legalCompanyId: input.legalCompanyId,
+				expectedCompanyVersion: input.expectedCompanyVersion,
+				updatedAt: input.recordedAt,
+			});
 			input.transaction.enqueue((database) => {
 				const txSql = database as (
 					strings: TemplateStringsArray,
@@ -1594,6 +1600,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				issuingAuthorityCode: input.issuingAuthorityCode,
 				normalizedIdentifierValue: input.normalizedIdentifierValue,
 			});
+			enqueueLegalCompanyVersionBump(input.transaction, {
+				organizationId: input.organizationId,
+				legalCompanyId: input.legalCompanyId,
+				expectedCompanyVersion: input.expectedCompanyVersion,
+				updatedAt: input.recordedAt,
+			});
 			input.transaction.enqueue((database) => {
 				const txSql = asTransactionSql(database);
 				return txSql`
@@ -1990,6 +2002,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		const record = makeCompanyFinancialYearRecord(financialYearId, input);
 		if (input.transaction !== undefined) {
 			enqueueFinancialYearScopeLock(input.transaction, input);
+			enqueueLegalCompanyVersionBump(input.transaction, {
+				organizationId: input.organizationId,
+				legalCompanyId: input.legalCompanyId,
+				expectedCompanyVersion: input.expectedCompanyVersion,
+				updatedAt: input.recordedAt,
+			});
 			input.transaction.enqueue((database) => {
 				const txSql = asTransactionSql(database);
 				return txSql`
@@ -2130,6 +2148,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		const record = makeCompanyActivityRecord(activityId, input);
 		if (input.transaction !== undefined) {
 			enqueueActivityScopeLock(input.transaction, input);
+			enqueueLegalCompanyVersionBump(input.transaction, {
+				organizationId: input.organizationId,
+				legalCompanyId: input.legalCompanyId,
+				expectedCompanyVersion: input.expectedCompanyVersion,
+				updatedAt: input.recordedAt,
+			});
 			input.transaction.enqueue((database) => {
 				const txSql = asTransactionSql(database);
 				return txSql`
@@ -2960,6 +2984,31 @@ function asTransactionSql(
 		strings: TemplateStringsArray,
 		...values: unknown[]
 	) => unknown;
+}
+
+function enqueueLegalCompanyVersionBump(
+	transaction: CorporateAdministrationTransactionContext,
+	input: Readonly<{
+		organizationId: string;
+		legalCompanyId: string;
+		expectedCompanyVersion: number;
+		updatedAt: string;
+	}>,
+): void {
+	transaction.enqueue((database) => {
+		const txSql = asTransactionSql(database);
+		return txSql`
+			UPDATE ca_legal_company
+			SET
+				version = ${input.expectedCompanyVersion + 1},
+				updated_by = updated_by,
+				updated_at = ${input.updatedAt}
+			WHERE
+				organization_id = ${input.organizationId}
+				AND id = ${input.legalCompanyId}
+				AND version = ${input.expectedCompanyVersion}
+		`;
+	});
 }
 
 function enqueueIdentifierScopeLock(

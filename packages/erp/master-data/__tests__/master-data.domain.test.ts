@@ -3,24 +3,37 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
 	activateItem,
+	archiveItem,
 	createItem,
+	existsItemByCode,
 	inactiveItem,
+	listItemsByGroup,
+	restoreItem,
+	suspendItem,
 	updateItem,
 } from "../src/capabilities/core-organization-masters/item";
 import {
 	activateItemGroup,
 	createItemGroup,
 	inactiveItemGroup,
+	resolveItemGroupPath,
 	retireItemGroup,
 	updateItemGroup,
 } from "../src/capabilities/core-organization-masters/item-group";
 import {
 	activateParty,
+	archiveParty,
 	createParty,
+	existsPartyByCode,
+	findPartyByTaxRegistration,
+	getParty,
 	getPartyById,
 	inactiveParty,
+	listPartiesByRole,
 	restoreParty,
 	retireParty,
+	searchParties,
+	suspendParty,
 	updateParty,
 } from "../src/capabilities/core-organization-masters/party";
 import {
@@ -35,22 +48,30 @@ import {
 import { masterListOptionsSchema } from "../src/capabilities/core-organization-masters/schemas";
 import {
 	activateTaxRegistration,
-	blockTaxRegistration,
+	archiveTaxRegistration,
 	createTaxRegistration,
 	findTaxRegistrationsByParty,
 	listTaxRegistrations,
 	restoreTaxRegistration,
-	retireTaxRegistration,
+	revokeTaxRegistration,
 	updateTaxRegistration,
 } from "../src/capabilities/core-organization-masters/tax-registration";
-import { normalizeTaxRegistrationNumber } from "../src/capabilities/core-organization-masters/tax-registration-number";
+import {
+	maskTaxRegistrationNumber,
+	normalizeTaxRegistrationNumber,
+	projectTaxRegistrationLifecycleStatus,
+	toMaskedTaxRegistration,
+} from "../src/capabilities/core-organization-masters/tax-registration-number";
 import { validityRangesOverlap } from "../src/capabilities/core-organization-masters/validity-overlap";
 import {
 	activateWarehouse,
+	archiveWarehouse,
 	createWarehouse,
+	existsWarehouseByCode,
 	inactiveWarehouse,
 	moveWarehouse,
 	retireWarehouse,
+	suspendWarehouse,
 	updateWarehouse,
 } from "../src/capabilities/core-organization-masters/warehouse";
 import {
@@ -70,6 +91,13 @@ function ctx(organizationId = "org-a") {
 		organizationId,
 		actorUserId: "user-1",
 		correlationId: randomUUID(),
+	};
+}
+
+function queryCtx(organizationId = "org-a") {
+	return {
+		organizationId,
+		actorUserId: "user-1",
 	};
 }
 
@@ -103,6 +131,131 @@ async function withActiveCustomerRole(
 }
 
 describe("@afenda/master-data domain", () => {
+	it("exposes predictable operational query shapes", async () => {
+		const { options } = createMasterDataTestHarness();
+		const countryId = "c1000000-0000-4000-8000-000000000001";
+
+		const party = await createParty(
+			{
+				...ctx(),
+				code: "Q-PARTY",
+				name: "Query Party",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(party.ok).toBe(true);
+		if (!party.ok) return;
+
+		const role = await withActiveCustomerRole(party.data.id, options);
+		expect(role.ok).toBe(true);
+
+		const partyExists = await existsPartyByCode(
+			{ ...queryCtx(), code: "q-party" },
+			options,
+		);
+		expect(partyExists).toEqual({ ok: true, data: true });
+
+		const byRole = await listPartiesByRole(
+			{ ...queryCtx(), roleCode: "customer", pageSize: 10 },
+			options,
+		);
+		expect(byRole.ok).toBe(true);
+		if (!byRole.ok) return;
+		expect(byRole.data.map((row) => row.id)).toContain(party.data.id);
+
+		const taxRegistration = await createTaxRegistration(
+			{
+				...ctx(),
+				partyId: party.data.id,
+				jurisdictionCountryId: countryId,
+				registrationType: "vat_gst",
+				registrationNumber: "Q-VAT-001",
+			},
+			options,
+		);
+		expect(taxRegistration.ok).toBe(true);
+
+		const byTax = await findPartyByTaxRegistration(
+			{
+				...queryCtx(),
+				jurisdictionCountryId: countryId,
+				registrationType: "vat_gst",
+				registrationNumber: "q vat 001",
+			},
+			options,
+		);
+		expect(byTax.ok).toBe(true);
+		if (!byTax.ok) return;
+		expect(byTax.data?.id).toBe(party.data.id);
+
+		const group = await createItemGroup(
+			{
+				...ctx(),
+				code: "Q-GROUP",
+				name: "Query Group",
+			},
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) return;
+		const activeGroup = await activateItemGroup(
+			{
+				...ctx(),
+				id: group.data.id,
+				expectedVersion: group.data.version,
+			},
+			options,
+		);
+		expect(activeGroup.ok).toBe(true);
+		if (!activeGroup.ok) return;
+
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "Q-ITEM",
+				name: "Query Item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: activeGroup.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) return;
+
+		const itemExists = await existsItemByCode(
+			{ ...queryCtx(), code: "q-item" },
+			options,
+		);
+		expect(itemExists).toEqual({ ok: true, data: true });
+
+		const byGroup = await listItemsByGroup(
+			{ ...queryCtx(), itemGroupId: activeGroup.data.id, pageSize: 10 },
+			options,
+		);
+		expect(byGroup.ok).toBe(true);
+		if (!byGroup.ok) return;
+		expect(byGroup.data.map((row) => row.id)).toEqual([item.data.id]);
+
+		const warehouse = await createWarehouse(
+			{
+				...ctx(),
+				code: "Q-WH",
+				name: "Query Warehouse",
+				locationType: "warehouse",
+			},
+			options,
+		);
+		expect(warehouse.ok).toBe(true);
+
+		const warehouseExists = await existsWarehouseByCode(
+			{ ...queryCtx(), code: "q-wh" },
+			options,
+		);
+		expect(warehouseExists).toEqual({ ok: true, data: true });
+	});
+
 	it("UoM spine: create item group + item with baseUomId EA", async () => {
 		const { options, ports } = createMasterDataTestHarness();
 
@@ -151,6 +304,162 @@ describe("@afenda/master-data domain", () => {
 				(call) => call.type === "master_data.item.created.v1",
 			),
 		).toBe(true);
+	});
+
+	it("MD-3 item group hierarchy and item core lifecycle contract", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const root = await createItemGroup(
+			{ ...ctx(), code: "MD3-ROOT", name: "MD3 Root" },
+			options,
+		);
+		expect(root.ok).toBe(true);
+		if (!root.ok) return;
+		const activeRoot = await activateItemGroup(
+			{ ...ctx(), id: root.data.id, expectedVersion: root.data.version },
+			options,
+		);
+		expect(activeRoot.ok).toBe(true);
+		if (!activeRoot.ok) return;
+
+		const child = await createItemGroup(
+			{
+				...ctx(),
+				code: "MD3-CHILD",
+				name: "MD3 Child",
+				parentId: activeRoot.data.id,
+			},
+			options,
+		);
+		expect(child.ok).toBe(true);
+		if (!child.ok) return;
+		const activeChild = await activateItemGroup(
+			{ ...ctx(), id: child.data.id, expectedVersion: child.data.version },
+			options,
+		);
+		expect(activeChild.ok).toBe(true);
+		if (!activeChild.ok) return;
+
+		const path = await resolveItemGroupPath(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				id: activeChild.data.id,
+			},
+			options,
+		);
+		expect(path.ok).toBe(true);
+		if (!path.ok) return;
+		expect(path.data?.normalizedPath).toBe("MD3-ROOT/MD3-CHILD");
+
+		const cycle = await updateItemGroup(
+			{
+				...ctx(),
+				id: activeRoot.data.id,
+				expectedVersion: activeRoot.data.version,
+				parentId: activeChild.data.id,
+			},
+			options,
+		);
+		expect(cycle.ok).toBe(false);
+		if (!cycle.ok) {
+			expect((cycle.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+		}
+
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "MD3-ITEM",
+				name: "MD3 Item",
+				description: "Item core profile",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: activeChild.data.id,
+				trackingPolicy: "lot",
+				sellable: true,
+				purchasable: true,
+				stocked: true,
+				serviceIndicator: false,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) return;
+		expect(item.data).toMatchObject({
+			description: "Item core profile",
+			trackingPolicy: "lot",
+			sellable: true,
+			purchasable: true,
+			stocked: true,
+			serviceIndicator: false,
+		});
+
+		const service = await updateItem(
+			{
+				...ctx(),
+				id: item.data.id,
+				expectedVersion: item.data.version,
+				itemType: "service",
+			},
+			options,
+		);
+		expect(service.ok).toBe(true);
+		if (!service.ok) return;
+		expect(service.data).toMatchObject({
+			itemType: "service",
+			trackingPolicy: "none",
+			stocked: false,
+			serviceIndicator: true,
+		});
+
+		const activeItem = await activateItem(
+			{
+				...ctx(),
+				id: service.data.id,
+				expectedVersion: service.data.version,
+			},
+			options,
+		);
+		expect(activeItem.ok).toBe(true);
+		if (!activeItem.ok) return;
+
+		const suspended = await suspendItem(
+			{
+				...ctx(),
+				id: activeItem.data.id,
+				expectedVersion: activeItem.data.version,
+			},
+			options,
+		);
+		expect(suspended.ok).toBe(true);
+		if (!suspended.ok) return;
+		expect(suspended.data.status).toBe("inactive");
+
+		const archived = await archiveItem(
+			{
+				...ctx(),
+				id: suspended.data.id,
+				expectedVersion: suspended.data.version,
+			},
+			options,
+		);
+		expect(archived.ok).toBe(true);
+		if (!archived.ok) return;
+		expect(archived.data.status).toBe("retired");
+
+		const restored = await restoreItem(
+			{
+				...ctx(),
+				id: archived.data.id,
+				expectedVersion: archived.data.version,
+			},
+			options,
+		);
+		expect(restored.ok).toBe(true);
+		if (!restored.ok) return;
+		expect(restored.data.status).toBe("draft");
 	});
 
 	it("activateItem revalidates the base UoM is still active", async () => {
@@ -436,6 +745,99 @@ describe("@afenda/master-data domain", () => {
 		).toBe(true);
 	});
 
+	it("party core exposes MD-2 query/search and suspend/archive names", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const created = await createParty(
+			{
+				...ctx(),
+				code: "MD2-PARTY",
+				name: "MD2 Party",
+				partyKind: "organization",
+				legalName: "MD2 Legal Holdings",
+				tradingName: "Northstar Trading",
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const got = await getParty(
+			{ organizationId: "org-a", actorUserId: "user-1", id: created.data.id },
+			options,
+		);
+		expect(got.ok).toBe(true);
+		if (!got.ok) return;
+		expect(got.data?.id).toBe(created.data.id);
+
+		const search = await searchParties(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				query: "northstar",
+			},
+			options,
+		);
+		expect(search.ok).toBe(true);
+		if (!search.ok) return;
+		expect(search.data.map((party) => party.id)).toContain(created.data.id);
+
+		const roleReady = await withActiveCustomerRole(created.data.id, options);
+		expect(roleReady.ok).toBe(true);
+		if (!roleReady.ok) return;
+		const cr = await approvedActivatePartyChangeRequest(
+			{ organizationId: "org-a", partyId: created.data.id },
+			options,
+		);
+		const activated = await activateParty(
+			{
+				...ctx(),
+				id: created.data.id,
+				expectedVersion: created.data.version,
+				changeRequestId: cr.id,
+			},
+			options,
+		);
+		expect(activated.ok).toBe(true);
+		if (!activated.ok) return;
+
+		const suspended = await suspendParty(
+			{
+				...ctx(),
+				id: activated.data.id,
+				expectedVersion: activated.data.version,
+			},
+			options,
+		);
+		expect(suspended.ok).toBe(true);
+		if (!suspended.ok) return;
+		expect(suspended.data.status).toBe("blocked");
+
+		const archived = await archiveParty(
+			{
+				...ctx(),
+				id: suspended.data.id,
+				expectedVersion: suspended.data.version,
+			},
+			options,
+		);
+		expect(archived.ok).toBe(true);
+		if (!archived.ok) return;
+		expect(archived.data.status).toBe("retired");
+
+		const restored = await restoreParty(
+			{
+				...ctx(),
+				id: archived.data.id,
+				expectedVersion: archived.data.version,
+			},
+			options,
+		);
+		expect(restored.ok).toBe(true);
+		if (!restored.ok) return;
+		expect(restored.data.status).toBe("draft");
+	});
+
 	it("party activation fails not-found before change-request governance", async () => {
 		const { options } = createMasterDataTestHarness();
 		const result = await activateParty(
@@ -535,6 +937,9 @@ describe("@afenda/master-data domain", () => {
 				code: "WH-1",
 				name: "Main",
 				locationType: "warehouse",
+				addressCountryId: "c1000000-0000-4000-8000-000000000001",
+				addressLine1: "Level 1",
+				addressCity: "Kuala Lumpur",
 			},
 			options,
 		);
@@ -542,6 +947,10 @@ describe("@afenda/master-data domain", () => {
 		if (!created.ok) {
 			return;
 		}
+		expect(created.data.addressCountryId).toBe(
+			"c1000000-0000-4000-8000-000000000001",
+		);
+		expect(created.data.addressCity).toBe("Kuala Lumpur");
 
 		const inspector: DependencyInspector = {
 			async listBlockers() {
@@ -571,6 +980,72 @@ describe("@afenda/master-data domain", () => {
 		expect((blocked.details as { reason?: string } | undefined)?.reason).toBe(
 			"MASTER_DEPENDENCY_BLOCKED",
 		);
+	});
+
+	it("warehouse update validates address country and exposes suspend/archive aliases", async () => {
+		const { options } = createMasterDataTestHarness();
+		const created = await createWarehouse(
+			{
+				...ctx(),
+				code: "WH-ADDR",
+				name: "Addressed warehouse",
+				locationType: "warehouse",
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+
+		const invalidCountry = await updateWarehouse(
+			{
+				...ctx(),
+				id: created.data.id,
+				expectedVersion: created.data.version,
+				addressCountryId: "c1000000-0000-4000-8000-000000009999",
+			},
+			options,
+		);
+		expect(invalidCountry.ok).toBe(false);
+
+		const updated = await updateWarehouse(
+			{
+				...ctx(),
+				id: created.data.id,
+				expectedVersion: created.data.version,
+				addressCountryId: "c1000000-0000-4000-8000-000000000002",
+				addressCity: "Singapore",
+			},
+			options,
+		);
+		expect(updated.ok).toBe(true);
+		if (!updated.ok) return;
+		expect(updated.data.addressCity).toBe("Singapore");
+
+		const activated = await activateWarehouse(
+			{ ...ctx(), id: updated.data.id, expectedVersion: updated.data.version },
+			options,
+		);
+		expect(activated.ok).toBe(true);
+		if (!activated.ok) return;
+		const suspended = await suspendWarehouse(
+			{
+				...ctx(),
+				id: activated.data.id,
+				expectedVersion: activated.data.version,
+			},
+			options,
+		);
+		expect(suspended.ok).toBe(true);
+		if (!suspended.ok) return;
+		const archived = await archiveWarehouse(
+			{
+				...ctx(),
+				id: suspended.data.id,
+				expectedVersion: suspended.data.version,
+			},
+			options,
+		);
+		expect(archived.ok).toBe(true);
 	});
 
 	it("item group and warehouse activate/inactive lifecycle", async () => {
@@ -730,7 +1205,12 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(cycle.ok).toBe(false);
-		if (!cycle.ok) expect(cycle.code).toBe("BAD_REQUEST");
+		if (!cycle.ok) {
+			expect(cycle.code).toBe("CONFLICT");
+			expect((cycle.details as { reason?: string }).reason).toBe(
+				"MASTER_INVALID_STATE",
+			);
+		}
 
 		const retired = await retireItemGroup(
 			{
@@ -1265,6 +1745,12 @@ describe("@afenda/master-data domain", () => {
 				code: "NET30",
 				name: "Net 30",
 				netDays: 30,
+				discountDays: 10,
+				discountPercent: "2.5000",
+				dueDayRule: "net_days",
+				endOfMonth: false,
+				installmentPolicy: "none",
+				currencyRestrictionId: "d1000000-0000-4000-8000-000000000003",
 			},
 			options,
 		);
@@ -1273,7 +1759,25 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(created.data.netDays).toBe(30);
+		expect(created.data.discountDays).toBe(10);
+		expect(created.data.discountPercent).toBe("2.5000");
+		expect(created.data.currencyRestrictionId).toBe(
+			"d1000000-0000-4000-8000-000000000003",
+		);
 		expect(created.data.status).toBe("draft");
+
+		const invalidDiscount = await createPaymentTerm(
+			{
+				...ctx(),
+				code: "BAD-DISC",
+				name: "Bad discount",
+				netDays: 10,
+				discountDays: 11,
+				discountPercent: "2",
+			},
+			options,
+		);
+		expect(invalidDiscount.ok).toBe(false);
 
 		const byCode = await getPaymentTermByCode(
 			{ organizationId: "org-a", actorUserId: "user-1", code: "net30" },
@@ -1327,11 +1831,27 @@ describe("@afenda/master-data domain", () => {
 		}
 		expect(activated.data.status).toBe("active");
 
-		const inactive = await inactivePaymentTerm(
+		const installmentUpdate = await updatePaymentTerm(
 			{
 				...ctx(),
 				id: activated.data.id,
 				expectedVersion: activated.data.version,
+				installmentPolicy: "equal_installments",
+				installmentCount: 3,
+				endOfMonth: true,
+			},
+			options,
+		);
+		expect(installmentUpdate.ok).toBe(true);
+		if (!installmentUpdate.ok) return;
+		expect(installmentUpdate.data.installmentPolicy).toBe("equal_installments");
+		expect(installmentUpdate.data.installmentCount).toBe(3);
+
+		const inactive = await inactivePaymentTerm(
+			{
+				...ctx(),
+				id: installmentUpdate.data.id,
+				expectedVersion: installmentUpdate.data.version,
 			},
 			options,
 		);
@@ -1553,6 +2073,22 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(activated.data.status).toBe("active");
+		expect(
+			projectTaxRegistrationLifecycleStatus(
+				activated.data,
+				new Date("2026-03-01T00:00:00.000Z"),
+			),
+		).toBe("active");
+		expect(
+			projectTaxRegistrationLifecycleStatus(
+				activated.data,
+				new Date("2026-07-01T00:00:00.000Z"),
+			),
+		).toBe("expired");
+		expect(maskTaxRegistrationNumber("VAT-123 / ab")).toBe("********/ ab");
+		const masked = toMaskedTaxRegistration(activated.data);
+		expect(masked).not.toHaveProperty("registrationNumber");
+		expect(masked.registrationNumberMasked.endsWith("/ ab")).toBe(true);
 
 		const overlapSibling = await createTaxRegistration(
 			{
@@ -1659,7 +2195,7 @@ describe("@afenda/master-data domain", () => {
 		);
 		expect(byParty.ok).toBe(true);
 
-		const blocked = await blockTaxRegistration(
+		const blocked = await revokeTaxRegistration(
 			{
 				...ctx(),
 				id: activated.data.id,
@@ -1672,8 +2208,9 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(blocked.data.status).toBe("blocked");
+		expect(projectTaxRegistrationLifecycleStatus(blocked.data)).toBe("revoked");
 
-		const retired = await retireTaxRegistration(
+		const retired = await archiveTaxRegistration(
 			{
 				...ctx(),
 				id: blocked.data.id,
@@ -1686,6 +2223,9 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(retired.data.status).toBe("retired");
+		expect(projectTaxRegistrationLifecycleStatus(retired.data)).toBe(
+			"archived",
+		);
 
 		const directRestoreToActive = await store.transitionTaxRegistration(
 			{

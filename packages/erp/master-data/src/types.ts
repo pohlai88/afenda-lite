@@ -77,6 +77,14 @@ export const ITEM_TYPES = [
 ] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
 
+export const ITEM_TRACKING_POLICIES = [
+	"none",
+	"lot",
+	"serial",
+	"lot_and_serial",
+] as const;
+export type ItemTrackingPolicy = (typeof ITEM_TRACKING_POLICIES)[number];
+
 export const WAREHOUSE_LOCATION_TYPES = [
 	"site",
 	"warehouse",
@@ -136,8 +144,14 @@ export type ItemGroup = OrgMasterBase & {
 
 export type Item = OrgMasterBase & {
 	itemType: ItemType;
+	description: string | null;
 	baseUomId: string;
 	itemGroupId: string;
+	trackingPolicy: ItemTrackingPolicy;
+	sellable: boolean;
+	purchasable: boolean;
+	stocked: boolean;
+	serviceIndicator: boolean;
 };
 
 /** @deprecated Use `ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES`. */
@@ -222,11 +236,40 @@ export type ItemVariant = MutableExtensionRecord & {
 export type Warehouse = OrgMasterBase & {
 	locationType: WarehouseLocationType;
 	parentId: string | null;
+	addressCountryId: string | null;
+	addressLine1: string | null;
+	addressLine2: string | null;
+	addressCity: string | null;
+	addressRegion: string | null;
+	addressPostalCode: string | null;
 };
+
+export const PAYMENT_TERM_DUE_DAY_RULES = [
+	"net_days",
+	"end_of_month",
+	"day_of_month",
+] as const;
+export type PaymentTermDueDayRule = (typeof PAYMENT_TERM_DUE_DAY_RULES)[number];
+
+export const PAYMENT_TERM_INSTALLMENT_POLICIES = [
+	"none",
+	"equal_installments",
+] as const;
+export type PaymentTermInstallmentPolicy =
+	(typeof PAYMENT_TERM_INSTALLMENT_POLICIES)[number];
 
 export type PaymentTerm = OrgMasterBase & {
 	/** Transactional documents persist their calculated due date and term snapshot. */
 	netDays: number;
+	discountDays: number | null;
+	discountPercent: string | null;
+	dueDayRule: PaymentTermDueDayRule;
+	endOfMonth: boolean;
+	installmentPolicy: PaymentTermInstallmentPolicy;
+	installmentCount: number | null;
+	validFrom: Date | null;
+	validTo: Date | null;
+	currencyRestrictionId: string | null;
 };
 
 export const MAX_PAYMENT_TERM_NET_DAYS = 999;
@@ -292,18 +335,21 @@ export const PARTY_ROLE_CODES = [
 	"customer",
 	"supplier",
 	"employee",
+	"contact",
 	"carrier",
-	"manufacturer",
-	"agent",
-	"distributor",
+	"bank",
+	"tax_authority",
+	"government_agency",
 	"franchisee",
 	"franchisor",
+	"manufacturer",
+	"distributor",
+	"retailer",
 	"service_provider",
-	"government_agency",
-	"bank",
 	"landlord",
 	"tenant",
-	"contact",
+	"other",
+	"agent",
 	"regulator",
 	"other_authorized_role",
 ] as const;
@@ -539,7 +585,7 @@ export type WarehouseExternalId = MutableExtensionRecord & {
 	archivedBy: string | null;
 };
 
-/** MDG v1 gated command kinds (activate party + merge parties). */
+/** MDG v1 gated command kinds only; change requests are not a generic workflow engine. */
 export const CHANGE_REQUEST_COMMAND_KINDS = [
 	"activate_party",
 	"merge_parties",

@@ -15,6 +15,7 @@ import type {
 	TaxRegistrationLifecycleEventSuffix,
 	WarehouseLifecycleEventSuffix,
 } from "./core-master-events";
+import type { OrganizationDimensionStore } from "./organization-dimension-store";
 
 export type {
 	ItemAliasCreateRecord,
@@ -51,10 +52,12 @@ import type {
 	ChangeRequestStatus,
 	Item,
 	ItemGroup,
+	ItemTrackingPolicy,
 	ItemType,
 	MasterStatus,
 	Party,
 	PartyKind,
+	PartyRoleCode,
 	PaymentTerm,
 	RefCountry,
 	RefCurrency,
@@ -198,9 +201,15 @@ export type ItemCreateRecord = {
 	code: string;
 	normalizedCode: string;
 	name: string;
+	description?: string | null;
 	itemType: ItemType;
 	baseUomId: string;
 	itemGroupId: string;
+	trackingPolicy?: ItemTrackingPolicy;
+	sellable?: boolean;
+	purchasable?: boolean;
+	stocked?: boolean;
+	serviceIndicator?: boolean;
 	createdBy: string;
 };
 
@@ -210,13 +219,19 @@ export type ItemUpdateRecord = {
 	expectedVersion: number;
 	updatedBy: string;
 	name?: string;
+	description?: string | null;
 	itemType?: ItemType;
 	baseUomId?: string;
 	itemGroupId?: string;
+	trackingPolicy?: ItemTrackingPolicy;
+	sellable?: boolean;
+	purchasable?: boolean;
+	stocked?: boolean;
+	serviceIndicator?: boolean;
 };
 
 export type ItemLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
-	toStatus: "active" | "inactive" | "retired";
+	toStatus: "draft" | "active" | "inactive" | "retired";
 };
 
 export type WarehouseCreateRecord = {
@@ -227,6 +242,12 @@ export type WarehouseCreateRecord = {
 	locationType: WarehouseLocationType;
 	createdBy: string;
 	parentId?: string | null;
+	addressCountryId?: string | null;
+	addressLine1?: string | null;
+	addressLine2?: string | null;
+	addressCity?: string | null;
+	addressRegion?: string | null;
+	addressPostalCode?: string | null;
 };
 
 export type WarehouseUpdateRecord = {
@@ -236,6 +257,12 @@ export type WarehouseUpdateRecord = {
 	updatedBy: string;
 	name?: string;
 	locationType?: WarehouseLocationType;
+	addressCountryId?: string | null;
+	addressLine1?: string | null;
+	addressLine2?: string | null;
+	addressCity?: string | null;
+	addressRegion?: string | null;
+	addressPostalCode?: string | null;
 };
 
 export type WarehouseMoveRecord = {
@@ -257,6 +284,15 @@ export type PaymentTermCreateRecord = {
 	name: string;
 	netDays: number;
 	createdBy: string;
+	discountDays?: number | null;
+	discountPercent?: string | null;
+	dueDayRule?: PaymentTerm["dueDayRule"];
+	endOfMonth?: boolean;
+	installmentPolicy?: PaymentTerm["installmentPolicy"];
+	installmentCount?: number | null;
+	validFrom?: Date | null;
+	validTo?: Date | null;
+	currencyRestrictionId?: string | null;
 };
 
 export type PaymentTermUpdateRecord = {
@@ -266,6 +302,15 @@ export type PaymentTermUpdateRecord = {
 	updatedBy: string;
 	name?: string;
 	netDays?: number;
+	discountDays?: number | null;
+	discountPercent?: string | null;
+	dueDayRule?: PaymentTerm["dueDayRule"];
+	endOfMonth?: boolean;
+	installmentPolicy?: PaymentTerm["installmentPolicy"];
+	installmentCount?: number | null;
+	validFrom?: Date | null;
+	validTo?: Date | null;
+	currencyRestrictionId?: string | null;
 };
 
 export type PaymentTermLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
@@ -317,242 +362,329 @@ export type ListFilter = {
 	page: number;
 	pageSize: number;
 	status?: MasterStatus;
+	updatedSince?: Date;
+};
+
+export type PartySearchFilter = ListFilter & {
+	query: string;
+};
+
+export type PartyByRoleFilter = ListFilter & {
+	roleCode: PartyRoleCode;
+	activeOnly: boolean;
+};
+
+export type PartyTaxRegistrationLookup = {
+	organizationId: string;
+	jurisdictionCountryId: string;
+	registrationType: TaxRegistrationType;
+	normalizedRegistrationNumber: string;
 };
 
 export type TaxRegistrationListFilter = ListFilter & {
 	partyId?: string;
 };
 
+export type ItemListFilter = ListFilter & {
+	itemGroupId?: string;
+};
+
 /**
- * Persistence port for master-data.
+ * Read-only platform reference lookups used by ERP master-data validation.
+ * Physical `ref_*` table definition and seeding remain outside this package.
+ */
+export interface ReferenceQueryStore {
+	getRefCountryByCode(code: string): Promise<Result<RefCountry | null>>;
+	getRefCountryById(id: string): Promise<Result<RefCountry | null>>;
+	getRefCurrencyByCode(code: string): Promise<Result<RefCurrency | null>>;
+	getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>>;
+	getRefLanguageByCode(code: string): Promise<Result<RefLanguage | null>>;
+	getRefTimeZoneByIana(ianaName: string): Promise<Result<RefTimeZone | null>>;
+	getRefUomDimensionByCode(
+		code: string,
+	): Promise<Result<RefUomDimension | null>>;
+	getRefUomById(id: string): Promise<Result<RefUom | null>>;
+	getRefUomByCode(code: string): Promise<Result<RefUom | null>>;
+	listRefUoms(): Promise<Result<RefUom[]>>;
+}
+
+/** Persistence boundary required by the party aggregate. */
+export interface PartyStore {
+	getPartyById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<Party | null>>;
+	getPartyByCode(
+		organizationId: string,
+		normalizedCode: string,
+	): Promise<Result<Party | null>>;
+	listParties(filter: ListFilter): Promise<Result<Party[]>>;
+	listPartiesByRole(filter: PartyByRoleFilter): Promise<Result<Party[]>>;
+	findPartyByTaxRegistration(
+		filter: PartyTaxRegistrationLookup,
+	): Promise<Result<Party | null>>;
+	searchParties(filter: PartySearchFilter): Promise<Result<Party[]>>;
+	createParty(
+		record: PartyCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Party>>;
+	updateParty(
+		record: PartyUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Party>>;
+	transitionParty(
+		record: PartyLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: PartyLifecycleEventSuffix;
+		},
+	): Promise<Result<Party>>;
+}
+
+/** Merge persistence stays named and domain-specific; no generic executor. */
+export interface MergeStore {
+	mergeParties(
+		record: PartyMergeRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<{ survivor: Party; merged: Party }>>;
+}
+
+/** Persistence boundary for governed change requests. */
+export interface ChangeRequestStore {
+	getChangeRequestById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<ChangeRequest | null>>;
+	listChangeRequests(
+		filter: ChangeRequestListFilter,
+	): Promise<Result<ChangeRequest[]>>;
+	createChangeRequest(
+		record: ChangeRequestCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ChangeRequest>>;
+	transitionChangeRequest(
+		record: ChangeRequestReviewRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string; eventSuffix: "approved" | "rejected" },
+	): Promise<Result<ChangeRequest>>;
+}
+
+/** Persistence boundary required by the item-group aggregate. */
+export interface ItemGroupStore {
+	getItemGroupById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<ItemGroup | null>>;
+	getItemGroupByCode(
+		organizationId: string,
+		normalizedCode: string,
+	): Promise<Result<ItemGroup | null>>;
+	listItemGroups(filter: ListFilter): Promise<Result<ItemGroup[]>>;
+	createItemGroup(
+		record: ItemGroupCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ItemGroup>>;
+	updateItemGroup(
+		record: ItemGroupUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ItemGroup>>;
+	transitionItemGroup(
+		record: ItemGroupLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: ItemGroupLifecycleEventSuffix;
+		},
+	): Promise<Result<ItemGroup>>;
+}
+
+/** Persistence boundary required by the item aggregate. */
+export interface ItemStore {
+	getItemById(organizationId: string, id: string): Promise<Result<Item | null>>;
+	getItemByCode(
+		organizationId: string,
+		normalizedCode: string,
+	): Promise<Result<Item | null>>;
+	listItems(filter: ItemListFilter): Promise<Result<Item[]>>;
+	createItem(
+		record: ItemCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Item>>;
+	updateItem(
+		record: ItemUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Item>>;
+	transitionItem(
+		record: ItemLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: ItemLifecycleEventSuffix;
+		},
+	): Promise<Result<Item>>;
+}
+
+/** Persistence boundary required by the warehouse aggregate. */
+export interface WarehouseStore {
+	getWarehouseById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<Warehouse | null>>;
+	getWarehouseByCode(
+		organizationId: string,
+		normalizedCode: string,
+	): Promise<Result<Warehouse | null>>;
+	listWarehouses(filter: ListFilter): Promise<Result<Warehouse[]>>;
+	createWarehouse(
+		record: WarehouseCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Warehouse>>;
+	updateWarehouse(
+		record: WarehouseUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Warehouse>>;
+	moveWarehouse(
+		record: WarehouseMoveRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Warehouse>>;
+	transitionWarehouse(
+		record: WarehouseLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: WarehouseLifecycleEventSuffix;
+		},
+	): Promise<Result<Warehouse>>;
+}
+
+/** Persistence boundary required by commercial masters. */
+export interface CommercialMasterStore {
+	getPaymentTermById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<PaymentTerm | null>>;
+	getPaymentTermByCode(
+		organizationId: string,
+		normalizedCode: string,
+	): Promise<Result<PaymentTerm | null>>;
+	listPaymentTerms(filter: ListFilter): Promise<Result<PaymentTerm[]>>;
+	createPaymentTerm(
+		record: PaymentTermCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PaymentTerm>>;
+	updatePaymentTerm(
+		record: PaymentTermUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PaymentTerm>>;
+	transitionPaymentTerm(
+		record: PaymentTermLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: PaymentTermLifecycleEventSuffix;
+		},
+	): Promise<Result<PaymentTerm>>;
+
+	getTaxRegistrationById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<TaxRegistration | null>>;
+	listTaxRegistrations(
+		filter: TaxRegistrationListFilter,
+	): Promise<Result<TaxRegistration[]>>;
+	findTaxRegistrationsByParty(
+		organizationId: string,
+		partyId: string,
+	): Promise<Result<TaxRegistration[]>>;
+	findOverlappingActiveTaxRegistration(
+		query: TaxRegistrationOverlapQuery,
+	): Promise<Result<TaxRegistration | null>>;
+	createTaxRegistration(
+		record: TaxRegistrationCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<TaxRegistration>>;
+	updateTaxRegistration(
+		record: TaxRegistrationUpdateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<TaxRegistration>>;
+	transitionTaxRegistration(
+		record: TaxRegistrationLifecycleRecord,
+		ports: MutationPorts,
+		meta: {
+			correlationId: string;
+			eventSuffix: TaxRegistrationLifecycleEventSuffix;
+		},
+	): Promise<Result<TaxRegistration>>;
+}
+
+export type ItemTemplateStore = ItemVariantExtensionStore;
+
+/** Persistence boundary for idempotent import batch replay evidence. */
+export interface ImportBatchStore {
+	getImportBatchByIdempotencyKey(
+		organizationId: string,
+		idempotencyKey: string,
+	): Promise<Result<ImportBatchRecord | null>>;
+	saveImportBatch(
+		record: ImportBatchCreateRecord,
+	): Promise<Result<ImportBatchRecord>>;
+}
+
+/**
+ * Persistence port for master-data, composed from coherent capability stores.
  * Production: `DrizzleMasterDataStore` via `@afenda/master-data/adapters/drizzle`
  * (resolve-store defaults internally). Vitest: MemoryMasterDataStore (helpers).
+ *
+ * Commands should continue to depend on the smallest needed slice through Pick
+ * or one of the named capability stores above.
  */
-export type MasterDataStore = PartyExtensionStore &
-	ItemExtensionStore &
-	WarehouseExtensionStore &
-	ItemVariantExtensionStore & {
-		getRefCountryByCode(code: string): Promise<Result<RefCountry | null>>;
-		getRefCountryById(id: string): Promise<Result<RefCountry | null>>;
-		getRefCurrencyByCode(code: string): Promise<Result<RefCurrency | null>>;
-		getRefLanguageByCode(code: string): Promise<Result<RefLanguage | null>>;
-		getRefTimeZoneByIana(ianaName: string): Promise<Result<RefTimeZone | null>>;
-		getRefUomDimensionByCode(
-			code: string,
-		): Promise<Result<RefUomDimension | null>>;
-		getRefUomById(id: string): Promise<Result<RefUom | null>>;
-		getRefUomByCode(code: string): Promise<Result<RefUom | null>>;
-		listRefUoms(): Promise<Result<RefUom[]>>;
+export interface MasterDataStore
+	extends ReferenceQueryStore,
+		OrganizationDimensionStore,
+		PartyStore,
+		ItemGroupStore,
+		ItemStore,
+		WarehouseStore,
+		CommercialMasterStore,
+		ItemTemplateStore,
+		ChangeRequestStore,
+		ImportBatchStore,
+		MergeStore,
+		PartyExtensionStore,
+		ItemExtensionStore,
+		WarehouseExtensionStore {}
 
-		getPartyById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<Party | null>>;
-		getPartyByCode(
-			organizationId: string,
-			normalizedCode: string,
-		): Promise<Result<Party | null>>;
-		listParties(filter: ListFilter): Promise<Result<Party[]>>;
-		createParty(
-			record: PartyCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Party>>;
-		updateParty(
-			record: PartyUpdateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Party>>;
-		transitionParty(
-			record: PartyLifecycleRecord,
-			ports: MutationPorts,
-			meta: {
-				correlationId: string;
-				eventSuffix: PartyLifecycleEventSuffix;
-			},
-		): Promise<Result<Party>>;
-		mergeParties(
-			record: PartyMergeRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<{ survivor: Party; merged: Party }>>;
-
-		getChangeRequestById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<ChangeRequest | null>>;
-		listChangeRequests(
-			filter: ChangeRequestListFilter,
-		): Promise<Result<ChangeRequest[]>>;
-		createChangeRequest(
-			record: ChangeRequestCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<ChangeRequest>>;
-		transitionChangeRequest(
-			record: ChangeRequestReviewRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string; eventSuffix: "approved" | "rejected" },
-		): Promise<Result<ChangeRequest>>;
-
-		getItemGroupById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<ItemGroup | null>>;
-		getItemGroupByCode(
-			organizationId: string,
-			normalizedCode: string,
-		): Promise<Result<ItemGroup | null>>;
-		listItemGroups(filter: ListFilter): Promise<Result<ItemGroup[]>>;
-		createItemGroup(
-			record: ItemGroupCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<ItemGroup>>;
-		updateItemGroup(
-			record: ItemGroupUpdateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<ItemGroup>>;
-		transitionItemGroup(
-			record: ItemGroupLifecycleRecord,
-			ports: MutationPorts,
-			meta: {
-				correlationId: string;
-				eventSuffix: ItemGroupLifecycleEventSuffix;
-			},
-		): Promise<Result<ItemGroup>>;
-
-		getItemById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<Item | null>>;
-		getItemByCode(
-			organizationId: string,
-			normalizedCode: string,
-		): Promise<Result<Item | null>>;
-		listItems(filter: ListFilter): Promise<Result<Item[]>>;
-		createItem(
-			record: ItemCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Item>>;
-		updateItem(
-			record: ItemUpdateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Item>>;
-		transitionItem(
-			record: ItemLifecycleRecord,
-			ports: MutationPorts,
-			meta: {
-				correlationId: string;
-				eventSuffix: ItemLifecycleEventSuffix;
-			},
-		): Promise<Result<Item>>;
-
-		getWarehouseById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<Warehouse | null>>;
-		getWarehouseByCode(
-			organizationId: string,
-			normalizedCode: string,
-		): Promise<Result<Warehouse | null>>;
-		listWarehouses(filter: ListFilter): Promise<Result<Warehouse[]>>;
-		createWarehouse(
-			record: WarehouseCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Warehouse>>;
-		updateWarehouse(
-			record: WarehouseUpdateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Warehouse>>;
-		moveWarehouse(
-			record: WarehouseMoveRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<Warehouse>>;
-		transitionWarehouse(
-			record: WarehouseLifecycleRecord,
-			ports: MutationPorts,
-			meta: {
-				correlationId: string;
-				eventSuffix: WarehouseLifecycleEventSuffix;
-			},
-		): Promise<Result<Warehouse>>;
-
-		getPaymentTermById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<PaymentTerm | null>>;
-		getPaymentTermByCode(
-			organizationId: string,
-			normalizedCode: string,
-		): Promise<Result<PaymentTerm | null>>;
-		listPaymentTerms(filter: ListFilter): Promise<Result<PaymentTerm[]>>;
-		createPaymentTerm(
-			record: PaymentTermCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<PaymentTerm>>;
-		updatePaymentTerm(
-			record: PaymentTermUpdateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<PaymentTerm>>;
-		transitionPaymentTerm(
-			record: PaymentTermLifecycleRecord,
-			ports: MutationPorts,
-			meta: {
-				correlationId: string;
-				eventSuffix: PaymentTermLifecycleEventSuffix;
-			},
-		): Promise<Result<PaymentTerm>>;
-
-		getTaxRegistrationById(
-			organizationId: string,
-			id: string,
-		): Promise<Result<TaxRegistration | null>>;
-		listTaxRegistrations(
-			filter: TaxRegistrationListFilter,
-		): Promise<Result<TaxRegistration[]>>;
-		findTaxRegistrationsByParty(
-			organizationId: string,
-			partyId: string,
-		): Promise<Result<TaxRegistration[]>>;
-		findOverlappingActiveTaxRegistration(
-			query: TaxRegistrationOverlapQuery,
-		): Promise<Result<TaxRegistration | null>>;
-		createTaxRegistration(
-			record: TaxRegistrationCreateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<TaxRegistration>>;
-		updateTaxRegistration(
-			record: TaxRegistrationUpdateRecord,
-			ports: MutationPorts,
-			meta: { correlationId: string },
-		): Promise<Result<TaxRegistration>>;
-		transitionTaxRegistration(
-			record: TaxRegistrationLifecycleRecord,
-			ports: MutationPorts,
-			meta: {
-				correlationId: string;
-				eventSuffix: TaxRegistrationLifecycleEventSuffix;
-			},
-		): Promise<Result<TaxRegistration>>;
-
-		getImportBatchByIdempotencyKey(
-			organizationId: string,
-			idempotencyKey: string,
-		): Promise<Result<ImportBatchRecord | null>>;
-		saveImportBatch(
-			record: ImportBatchCreateRecord,
-		): Promise<Result<ImportBatchRecord>>;
-	};
+export type MasterDataStoreCapabilities =
+	| ReferenceQueryStore
+	| OrganizationDimensionStore
+	| PartyStore
+	| ItemGroupStore
+	| ItemStore
+	| WarehouseStore
+	| CommercialMasterStore
+	| ItemTemplateStore
+	| ChangeRequestStore
+	| ImportBatchStore
+	| MergeStore
+	| PartyExtensionStore
+	| ItemExtensionStore
+	| WarehouseExtensionStore;
 
 export type ImportBatchEntityType =
 	| "party"

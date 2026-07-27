@@ -24,33 +24,23 @@ export const DEFAULT_IMPORT_MODE =
 	"create_or_update" as const satisfies ImportMode;
 
 export const IMPORT_BATCH_STATUSES = [
-	"uploaded",
 	"parsed",
-	"validating",
 	"validated",
-	"validation_failed",
 	"approval_pending",
 	"approved",
-	"rejected",
 	"applying",
-	"applied",
 	"partially_applied",
+	"applied",
 	"failed",
 	"cancelled",
-	"expired",
-	"superseded",
 ] as const;
 export type ImportBatchStatus = (typeof IMPORT_BATCH_STATUSES)[number];
 
 export const IMPORT_TERMINAL_STATUSES = [
-	"validation_failed",
-	"rejected",
-	"applied",
 	"partially_applied",
+	"applied",
 	"failed",
 	"cancelled",
-	"expired",
-	"superseded",
 ] as const satisfies readonly ImportBatchStatus[];
 
 export const IMPORT_BATCH_TERMINAL_STATUSES = IMPORT_TERMINAL_STATUSES;

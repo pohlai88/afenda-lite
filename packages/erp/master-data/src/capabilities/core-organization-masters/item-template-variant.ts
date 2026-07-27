@@ -317,6 +317,8 @@ export async function retireItemTemplate(
 	);
 }
 
+export const archiveItemTemplate = retireItemTemplate;
+
 export async function getItemTemplateById(
 	input: unknown,
 	options: MasterCommandOptions = {},

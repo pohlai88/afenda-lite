@@ -1,18 +1,57 @@
 import { z } from "zod";
 
-/** Explicit org + actor context — never ambient / header tenancy. */
-export const orgActorContextSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-	correlationId: z.string().trim().min(1),
+export const organizationIdSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.brand<"OrganizationId">();
+export type OrganizationId = z.infer<typeof organizationIdSchema>;
+
+export const actorUserIdSchema = z.string().trim().min(1).brand<"UserId">();
+export type UserId = z.infer<typeof actorUserIdSchema>;
+
+export const correlationIdSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.brand<"CorrelationId">();
+export type CorrelationId = z.infer<typeof correlationIdSchema>;
+
+export const idempotencyKeySchema = z.string().trim().min(1).max(128);
+export type IdempotencyKey = z.infer<typeof idempotencyKeySchema>;
+
+export const expectedVersionSchema = z.number().int().positive().safe();
+
+/** Explicit mutation context — never ambient / header tenancy. */
+export const masterDataMutationContextSchema = z.object({
+	organizationId: organizationIdSchema,
+	actorUserId: actorUserIdSchema,
+	correlationId: correlationIdSchema,
+	idempotencyKey: idempotencyKeySchema.optional(),
 });
 
-export type OrgActorContext = z.infer<typeof orgActorContextSchema>;
+export type MasterDataMutationContext = z.infer<
+	typeof masterDataMutationContextSchema
+>;
+
+export const versionedMutationContextSchema =
+	masterDataMutationContextSchema.extend({
+		expectedVersion: expectedVersionSchema,
+	});
+
+export type VersionedMutationContext = z.infer<
+	typeof versionedMutationContextSchema
+>;
+
+/** @deprecated Use `masterDataMutationContextSchema`. */
+export const orgActorContextSchema = masterDataMutationContextSchema;
+/** @deprecated Use `MasterDataMutationContext`. */
+export type OrgActorContext = MasterDataMutationContext;
 
 /** Org-scoped read context — actor required for authorization port checks. */
 export const orgQueryActorSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
+	organizationId: organizationIdSchema,
+	actorUserId: actorUserIdSchema,
 });
 
 export type OrgQueryActor = z.infer<typeof orgQueryActorSchema>;

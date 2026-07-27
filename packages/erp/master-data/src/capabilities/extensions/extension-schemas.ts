@@ -9,6 +9,7 @@ import {
 	warehouseIdSchema,
 } from "../../brands";
 import {
+	expectedVersionSchema,
 	orgActorContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
@@ -74,7 +75,6 @@ const extensionPageSizeSchema = z
 	.positive()
 	.max(100)
 	.default(25);
-const expectedVersionSchema = z.number().int().positive().safe();
 const lifecycleReasonSchema = z
 	.string()
 	.trim()

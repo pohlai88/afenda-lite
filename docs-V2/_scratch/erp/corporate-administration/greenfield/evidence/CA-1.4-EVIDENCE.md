@@ -2,91 +2,93 @@
 
 ## Result
 
-`PARTIAL` - the production vertical is implemented and every CA-owned focused
-lane is green. CA-1.4 is not marked `DONE` because the required repository-wide
-web lint gate exits 1 on 15 pre-existing Human Resources errors. CA-1.5 is not
-eligible.
+`PARTIAL` - the CA backend slice is production-implemented and CA-owned backend
+evidence is green against the repaired demo branch. CA-1.4 is not marked
+`DONE` because the demo branch still reports pending forward migration ledger
+rows; no drift remains, but the branch is not ledger-applied through the current
+journal.
 
-## Demo branch
+CA-1.5 is not eligible.
+
+## Current audit - 2026-07-28
+
+Context-engineering refresh loaded the CA authority, package README, Phase 1
+roadmap and current disk state before verification.
+
+| Command | Exit | Evidence |
+|---|---:|---|
+| guarded demo repair: `pnpm --filter @afenda/db db:repair-ca-demo-foundation` with `AFENDA_ALLOW_DB_MIGRATE=1`, `AFENDA_ALLOW_CA_FOUNDATION_REPAIR=1`, `AFENDA_DATABASE_TEST_TARGET=demo` | 0 | repaired missing CA foundation tables on demo branch; subsequent run reported tables already present and recorded-range invariants repaired |
+| focused CA Neon set with demo `DATABASE_URL`, `REQUIRE_DATABASE_TESTS=1`, `AFENDA_DATABASE_TEST_TARGET=demo` | 0 | 5 files passed; 9 tests passed |
+| `pnpm --filter @afenda/corporate-administration check` with demo `DATABASE_URL`, `REQUIRE_DATABASE_TESTS=1`, `AFENDA_DATABASE_TEST_TARGET=demo` | 0 | lint clean; typecheck green; 54 files passed; 268 tests passed |
+| `pnpm --filter @afenda/db lint` | 0 | 93 files checked; no fixes applied |
+| `pnpm --filter @afenda/db typecheck` | 0 | DB package compiled |
+| `pnpm --filter @afenda/db test` | 0 | 51 files passed; 186 tests passed |
+| `git diff --check` | 0 | no whitespace errors |
+| `pnpm --filter @afenda/db db:migration-status` against demo `DATABASE_URL` | 0 | journal entries: 28; DB ledger rows: 1; pending forward: 28; no drift issues |
+| `pnpm --filter @afenda/db db:sync-migration-ledger` with demo `DATABASE_URL` and `AFENDA_ALLOW_DB_MIGRATE=1` | 1 | fails closed: no DDL probe for `0000_damp_blue_shield`; use `db:migrate` instead |
+
+## Delivered Backend Surface
+
+- Transaction-backed company identity commands now bump the legal-company
+  aggregate version for names, legal forms, identifiers, financial years and
+  activities.
+- Legal-form commands validate against the current jurisdiction profile rather
+  than a historical effective-date probe that rejected valid same-transaction
+  CA flows.
+- Regulated company activities accept uppercase authority/regulator codes while
+  preserving schema validation.
+- Identifier supersession has a database-level one-successor guard.
+- Recorded-range checks allow zero-width recorded intervals for same-instant
+  supersession/retirement writes while preserving effective-time chronology.
+- Failure-injection coverage now asserts that event-append failure rolls back
+  domain rows and completed receipts while releasing the idempotency reservation
+  per the retained-fingerprint contract.
+- Demo-only foundation repair is guarded by explicit operator flags and demo
+  target validation; it does not target production by default.
+
+## Demo Branch
 
 - Project: `young-hat-54755363`
 - Branch name: `ca-0-4-demo`
 - Branch ID: `br-fragrant-morning-aoywrnzr`
 - Parent production branch: `br-tiny-hill-ao82jp6f`
 - Local env documentation: `.env.local` keys `NEON_CA_0_4_DEMO_*`
-- Applied only additive CA migrations `0003_glorious_madelyne_pryor.sql` and
-  `0004_even_tigra.sql`; production was not targeted.
-- Demo permission catalog reconciled to 213 governed permissions.
+- Production was not targeted.
 
-## Delivered surface
-
-- Tables: `ca_legal_establishment`, `ca_establishment_status_history`,
-  `ca_registered_address`, `ca_premise`.
-- Commands: registration/update, activate/suspend/close, registered-address
-  history, and premise registration/end dating.
-- Queries: tenant-scoped establishment get/list-as-of, address-as-of and
-  premise-list-as-of.
-- Memory and Drizzle adapters share effective-time, tenant, stale-version and
-  overlap semantics; database constraints guard concurrent histories.
-- Shared platform audit/outbox remains platform-owned. Domain writes,
-  idempotency completion, audit and events participate in the same transaction.
-- Authenticated Actions derive organization and actor from session and expose a
-  real accessible legal-presence workspace with persisted reload evidence.
-
-## Verification
-
-| Command | Exit | Evidence |
-|---|---:|---|
-| `pnpm --filter @afenda/corporate-administration check` | 0 | lint/typecheck green; 44 files passed, 10 skipped; 236 tests passed, 32 policy-skipped |
-| focused CA-1.4 Neon test with demo `DATABASE_URL`, `REQUIRE_DATABASE_TESTS=1` and `AFENDA_DATABASE_TEST_TARGET=demo` | 0 | 1 file, 1 simultaneous-concurrency test passed, 0 skipped |
-| `pnpm --filter @afenda/db lint` and `typecheck` plus four focused DB suites | 0 | 4 files, 27 tests passed |
-| `DATABASE_URL='' pnpm --filter @afenda/db test` | 0 | 50 files, 171 tests passed |
-| `pnpm --filter @afenda/events lint`, `typecheck`, `test` | 0 | 8 files, 49 tests passed |
-| three focused CA-1.4 web suites | 0 | 3 files, 8 tests passed |
-| `pnpm --filter @afenda/web typecheck` | 0 | app composition, Actions and UI compiled |
-| targeted Biome check for CA-1.4 web files | 0 | 5 files clean |
-| `pnpm validate:modules` | 0 | 7 registers matched; 22 negative fixtures proven |
-| `git diff --check` | 0 | no whitespace errors; unrelated line-ending warnings only |
-| `pnpm --filter @afenda/web lint` | 1 | 605 files checked; 15 errors, 2 warnings and 1 info, all reported under unrelated Human Resources files |
-
-The full DB suite against the CA demo URL additionally exposes one unrelated HR
-live invariant failure because the branch intentionally received the additive
-CA migrations, not the reset chain's HR tenant-FK migration. The required CA
-Neon concurrency test itself is green and organization-scoped cleanup is
-guaranteed.
-
-## Fourteen-boundary matrix
+## Fourteen-Boundary Matrix
 
 | # | Boundary | Status | Evidence | Remaining gap |
 |---:|---|---|---|---|
-| 1 | Authority and ownership | DONE | Four CA tables; Master Data address facts consumed through a public read port | None |
-| 2 | Catalog and dependency governance | DONE | Scaffolded lifecycle preserved; manifest/register validation green | None |
-| 3 | Public package contracts | DONE | Branded IDs, schemas, eight commands, four queries and barrels compile | None |
-| 4 | Reference and peer boundaries | DONE | Party/address and jurisdiction checks use ports; no peer-table writes | None |
-| 5 | Schema and migrations | DONE | Additive migrations, composite tenant FKs, checks, indexes and exclusions tested | None |
-| 6 | Tenancy and data isolation | DONE | Scoped stores, cross-tenant tests, hard-root registration and cleanup | None |
-| 7 | Authorization, approvals and SoD | DONE | Read/manage permissions fail closed; Actions deny before mutation | None |
-| 8 | Domain behavior and historical truth | DONE | Company chronology, statuses, as-of addresses and premises tested | None |
-| 9 | Idempotency, concurrency and atomicity | DONE | Same-TX completion plus real Neon simultaneous duplicate with one winner | None |
-| 10 | Events, audit and privacy | DONE | Versioned redacted establishment/address/premise events; no address lines in events | None |
-| 11 | Adapter parity and database semantics | DONE | Memory contracts and Drizzle/Neon constraints map deterministic conflicts | None |
-| 12 | App composition and Server Actions | DONE | Session stamping, ActionResult mapping, production ports and targeted revalidation | None |
-| 13 | UI, journeys and accessibility | DONE | Authenticated persisted-reload journey, stale/denied states, labels and announcements | None |
-| 14 | Operations and production readiness | PARTIAL | Demo rehearsal, cleanup, full DB/events/type/governance gates green | Repository-wide web lint is red in unrelated HR worktree files |
+| 1 | Authority and ownership | DONE | CA package and DB schema own legal-company and establishment surfaces | None |
+| 2 | Catalog and dependency governance | DONE | Package check and CA DB suites green | None |
+| 3 | Public package contracts | DONE | Exported command/query contracts typecheck | None |
+| 4 | Reference and peer boundaries | DONE | CA flows continue through ports and public package imports | None |
+| 5 | Schema and migrations | PARTIAL | CA schema/tests green; forward CA migration added; migration-status has no journal drift | Demo branch still has 28 pending forward ledger rows |
+| 6 | Tenancy and data isolation | DONE | CA-specific DB suites include tenancy hard-root coverage | None |
+| 7 | Authorization, approvals and SoD | DONE | Existing command permission contracts remain green | None |
+| 8 | Domain behavior and historical truth | DONE | Full CA suite green against demo database | None |
+| 9 | Idempotency, concurrency and atomicity | DONE | Focused Neon concurrency/failure set green; full CA suite green | None |
+| 10 | Events, audit and privacy | DONE | Outbox/audit atomicity tests green | None |
+| 11 | Adapter parity and database semantics | DONE | Memory/Drizzle package tests green | None |
+| 12 | App composition and Server Actions | NOT IN SLICE | This pass was backend-only | None for backend slice |
+| 13 | UI, journeys and accessibility | NOT IN SLICE | This pass was backend-only | None for backend slice |
+| 14 | Operations and production readiness | PARTIAL | CA backend gates green; DB package gates green; guarded demo repair available | Demo branch ledger/apply remains pending forward |
 
-## Migration impact
+## Remaining Gap
 
-Expand-only CA schema on the non-production demo branch. The tables are hard
-tenant roots, use tenant-coherent company references, reject invalid chronology,
-and prevent overlapping status/address histories. No production migration was
-run.
+Resolve the demo branch pending-forward state through the governed DB lane.
+`db:sync-migration-ledger` currently fails closed for the 0000-0027 set because
+there are no DDL probes for those tags; use `db:migrate` or add explicit probes
+before backfilling ledger rows. Then rerun:
 
-## Remaining gap
+```bash
+pnpm --filter @afenda/db db:migration-status
+pnpm --filter @afenda/db test
+```
 
-Repair the existing Human Resources web lint failures in their owning mission,
-then rerun `pnpm --filter @afenda/web lint`. Only after that command exits 0 may
-CA-1.4 be promoted to `DONE` and CA-1.5 become eligible.
+Only after those global gates exit 0 may CA-1.4 be promoted to `DONE` and
+CA-1.5 become eligible.
 
-## Next eligible slice
+## Next Eligible Slice
 
 None. Stop at CA-1.4.

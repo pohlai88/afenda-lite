@@ -4,11 +4,12 @@ import { upsertPartiesByCode, validatePartyImportBatch } from "../src";
 import {
 	getRefCountryByCode,
 	listRefUoms,
-} from "../src/capabilities/platform-references";
+} from "../src/capabilities/platform-references/legacy-queries";
 import {
+	MASTER_DATA_PERMISSION_IMPORT_APPLY,
 	MASTER_DATA_PERMISSION_IMPORT_APPROVE,
-	MASTER_DATA_PERMISSION_MANAGE,
-	MASTER_DATA_PERMISSION_READ,
+	MASTER_DATA_PERMISSION_IMPORT_VALIDATE,
+	MASTER_DATA_PERMISSION_REFERENCE_READ,
 } from "../src/permissions";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { createGrantingMasterAuthorization } from "./helpers/memory-authorization";
@@ -30,10 +31,10 @@ describe("@afenda/master-data ref query auth", () => {
 		}
 	});
 
-	it("rejects ref queries without master_data.read", async () => {
+	it("rejects ref queries without master_data.reference_read", async () => {
 		const { store } = createMasterDataTestHarness();
 		const authorization = createGrantingMasterAuthorization([
-			MASTER_DATA_PERMISSION_MANAGE,
+			MASTER_DATA_PERMISSION_IMPORT_VALIDATE,
 		]);
 		const denied = await listRefUoms(
 			{ organizationId: "org-1", actorUserId: "user-1" },
@@ -45,22 +46,52 @@ describe("@afenda/master-data ref query auth", () => {
 		}
 	});
 
-	it("allows ref queries with master_data.read", async () => {
-		const { options } = createMasterDataTestHarness();
+	it("allows ref queries with master_data.reference_read", async () => {
+		const { store } = createMasterDataTestHarness();
+		const authorization = createGrantingMasterAuthorization([
+			MASTER_DATA_PERMISSION_REFERENCE_READ,
+		]);
 		const listed = await listRefUoms(
 			{ organizationId: "org-1", actorUserId: "user-1" },
-			options,
+			{ store, authorization },
 		);
 		expect(listed.ok).toBe(true);
 	});
 });
 
 describe("@afenda/master-data import permission mapping", () => {
-	it("allows validate with manage only (no import_approve)", async () => {
+	it("denies validate without import_validate even when manage is granted", async () => {
 		const { store, ports } = createMasterDataTestHarness();
 		const authorization = createGrantingMasterAuthorization([
-			MASTER_DATA_PERMISSION_MANAGE,
-			MASTER_DATA_PERMISSION_READ,
+			MASTER_DATA_PERMISSION_REFERENCE_READ,
+		]);
+		const options = { store, ports, authorization };
+		const denied = await validatePartyImportBatch(
+			{
+				organizationId: "org-import-auth",
+				actorUserId: "user-1",
+				correlationId: randomUUID(),
+				sourceSystem: "erp-test",
+				rows: [
+					{
+						code: "VAL0",
+						name: "Validate Denied",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			expect(denied.code).toBe("FORBIDDEN");
+		}
+	});
+
+	it("allows validate with import_validate only (no import_approve)", async () => {
+		const { store, ports } = createMasterDataTestHarness();
+		const authorization = createGrantingMasterAuthorization([
+			MASTER_DATA_PERMISSION_IMPORT_VALIDATE,
 		]);
 		const options = { store, ports, authorization };
 		const report = await validatePartyImportBatch(
@@ -85,11 +116,10 @@ describe("@afenda/master-data import permission mapping", () => {
 		}
 	});
 
-	it("denies apply without import_approve even when manage is granted", async () => {
+	it("denies apply without import_apply even when manage and import_approve are granted", async () => {
 		const { store, ports } = createMasterDataTestHarness();
 		const authorization = createGrantingMasterAuthorization([
-			MASTER_DATA_PERMISSION_MANAGE,
-			MASTER_DATA_PERMISSION_READ,
+			MASTER_DATA_PERMISSION_IMPORT_APPROVE,
 		]);
 		const options = { store, ports, authorization };
 		const denied = await upsertPartiesByCode(
@@ -100,6 +130,7 @@ describe("@afenda/master-data import permission mapping", () => {
 				sourceSystem: "erp-test",
 				dryRun: false,
 				approved: true,
+				idempotencyKey: randomUUID(),
 				rows: [
 					{
 						code: "APP1",
@@ -116,12 +147,10 @@ describe("@afenda/master-data import permission mapping", () => {
 		}
 	});
 
-	it("allows apply with import_approve", async () => {
+	it("allows apply with import_apply", async () => {
 		const { store, ports } = createMasterDataTestHarness();
 		const authorization = createGrantingMasterAuthorization([
-			MASTER_DATA_PERMISSION_MANAGE,
-			MASTER_DATA_PERMISSION_READ,
-			MASTER_DATA_PERMISSION_IMPORT_APPROVE,
+			MASTER_DATA_PERMISSION_IMPORT_APPLY,
 		]);
 		const options = { store, ports, authorization };
 		const applied = await upsertPartiesByCode(

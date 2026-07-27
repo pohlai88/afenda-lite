@@ -868,7 +868,7 @@ Scratch review **CLOSED**. Gaps closed in `@afenda/master-data` + web + `md_impo
 | ID | Status | Evidence |
 |----|--------|----------|
 | MD-01 Ref query auth | Closed | `src/refs.ts` · `requireMasterQueryPermission` · `__tests__/refs-auth.test.ts` |
-| MD-02 Import validate→manage / apply→import_approve | Closed | `module.manifest.ts` · `import-bulk.ts` approved gate |
+| MD-02 Import validate→import_validate / approve→import_approve / apply→import_apply | Closed | `module.manifest.ts` · `import-bulk.ts` approved gate + optional segregation policy |
 | MD-03 Coarse RBAC only | Pass | `permissions.ts` — no `party.merge` permission |
 | MD-04–05 Merge tombstone + consolidation | Closed | `merge.ts` · `resolveCanonicalPartyId` · drizzle CTE consolidation |
 | MD-06 Import modes/allowlists | Pass | `IMPORT_MODES` · `*_IMPORT_MUTABLE_FIELDS` |

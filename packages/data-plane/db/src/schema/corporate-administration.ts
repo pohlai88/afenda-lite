@@ -211,7 +211,7 @@ export const caCompanyJurisdictionProfile = pgTable(
 		),
 		check(
 			"ca_company_jurisdiction_profile_recorded_range_check",
-			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} < ${t.recordedTo}`,
+			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} <= ${t.recordedTo}`,
 		),
 		check(
 			"ca_company_jurisdiction_profile_supersedes_self_check",
@@ -324,7 +324,7 @@ export const caCompanyName = pgTable(
 		),
 		check(
 			"ca_company_name_recorded_range_check",
-			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} < ${t.recordedTo}`,
+			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} <= ${t.recordedTo}`,
 		),
 		check(
 			"ca_company_name_status_check",
@@ -425,7 +425,7 @@ export const caCompanyLegalFormHistory = pgTable(
 		),
 		check(
 			"ca_company_legal_form_recorded_range_check",
-			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} < ${t.recordedTo}`,
+			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} <= ${t.recordedTo}`,
 		),
 		check(
 			"ca_company_legal_form_status_check",
@@ -506,6 +506,9 @@ export const caCompanyIdentifier = pgTable(
 		),
 		index("ca_company_identifier_recorded_at_idx").on(t.recordedAt),
 		index("ca_company_identifier_supersedes_idx").on(t.supersedesId),
+		uniqueIndex("ca_company_identifier_supersedes_once_uidx")
+			.on(t.organizationId, t.legalCompanyId, t.supersedesId)
+			.where(sql`${t.supersedesId} IS NOT NULL`),
 		index("ca_company_identifier_type_authority_idx").on(
 			t.identifierType,
 			t.jurisdictionCode,
@@ -545,7 +548,7 @@ export const caCompanyIdentifier = pgTable(
 		),
 		check(
 			"ca_company_identifier_recorded_range_check",
-			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} < ${t.recordedTo}`,
+			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} <= ${t.recordedTo}`,
 		),
 		check(
 			"ca_company_identifier_status_check",
@@ -628,7 +631,7 @@ export const caCompanyFinancialYear = pgTable(
 		),
 		check(
 			"ca_company_financial_year_recorded_range_check",
-			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} < ${t.recordedTo}`,
+			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} <= ${t.recordedTo}`,
 		),
 		check(
 			"ca_company_financial_year_status_check",
@@ -726,7 +729,7 @@ export const caCompanyActivity = pgTable(
 		),
 		check(
 			"ca_company_activity_recorded_range_check",
-			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} < ${t.recordedTo}`,
+			sql`${t.recordedTo} IS NULL OR ${t.recordedFrom} <= ${t.recordedTo}`,
 		),
 		check(
 			"ca_company_activity_status_check",

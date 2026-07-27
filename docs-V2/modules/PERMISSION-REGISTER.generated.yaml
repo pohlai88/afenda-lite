@@ -454,7 +454,19 @@ permissions:
   - code: master_data.approve
     moduleId: master-data
     namespace: master_data
+  - code: master_data.import_create
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.import_validate
+    moduleId: master-data
+    namespace: master_data
   - code: master_data.import_approve
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.import_apply
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.import_cancel
     moduleId: master-data
     namespace: master_data
   - code: master_data.party_activate

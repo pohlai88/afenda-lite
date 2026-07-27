@@ -27,12 +27,12 @@
 |--|--|
 | **DNA** | §13 lifecycle `uploaded → parsed → validated → approved → applied → reconciled` |
 | **Ship** | Explicit approve step and/or permission before `apply` import; keep dry-run + reconcile |
-| **Surfaces** | `packages/erp/master-data` import primitives if needed · `apps/web` validate/apply Actions · RBAC code (e.g. extend `master_data.manage` or add `master_data.import_approve`) |
+| **Surfaces** | `packages/erp/master-data` import primitives if needed · `apps/web` validate/apply Actions · RBAC code (`master_data.import_validate` / `master_data.import_approve` / `master_data.import_apply`) |
 | **Must not** | Auto-apply on validate; bypass CAS; unbounded one-TX files |
 | **Pattern** | Existing `import-bulk.ts` · `validate-master-data-import.ts` · `apply-master-data-import.ts` |
 | **Verify** | Deny apply without approve · dry-run unchanged · org bind · web permission tests |
 | **Status** | **SHIPPED** |
-| **Evidence** | `import-bulk.ts` (`approved` required when `dryRun: false` → `MASTER_IMPORT_NOT_APPROVED`) · `platform-permission-catalog.ts` (`master_data.import_approve`) · validate Action `master_data.manage` · apply Action `master_data.import_approve` + stamps `approved: true` · `__tests__/import-bulk.test.ts` · `apps/web/__tests__/master-data-import.test.ts` |
+| **Evidence** | `import-bulk.ts` (`approved` required when `dryRun: false` → `MASTER_IMPORT_NOT_APPROVED`, optional `requireSegregatedApproval`) · `platform-permission-catalog.ts` (separate import lifecycle permissions) · validate Action `master_data.import_validate` · apply Action `master_data.import_apply` + stamps `approved: true` · `__tests__/import-bulk.test.ts` · `apps/web/__tests__/master-data-import.test.ts` |
 
 ```bash
 pnpm --filter @afenda/master-data typecheck test

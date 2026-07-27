@@ -20,10 +20,23 @@ import {
 	requireMasterQueryPermission,
 } from "../../authorization";
 import {
+	expectedVersionSchema,
+	orgActorContextSchema,
+	orgQueryActorSchema,
+} from "../../contracts/context";
+import {
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_ACTIVATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_ARCHIVE,
 	MASTER_COMMAND_ORGANIZATION_DIMENSION_CREATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_DEACTIVATE,
+	MASTER_COMMAND_ORGANIZATION_DIMENSION_UPDATE,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_CODE,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_ID,
 	MASTER_QUERY_ORGANIZATION_DIMENSION_GET_EFFECTIVE,
+	MASTER_QUERY_ORGANIZATION_DIMENSION_LIST,
 	MASTER_QUERY_ORGANIZATION_DIMENSION_RESOLVE_AS_OF,
 } from "../../module-ids";
+import { resolveTenantScopedCasMiss } from "../lifecycle-governance";
 import { normalizeMasterCode } from "./normalized-code";
 import type {
 	OrganizationDimensionOptions,
@@ -36,8 +49,15 @@ export const ORGANIZATION_DIMENSION_KINDS = [
 	"legal_entity",
 	"business_unit",
 	"location",
+	"department",
+	"cost_center",
 	"cost_centre",
+	"profit_center",
+	"channel",
+	"region",
+	"brand",
 	"project",
+	"custom",
 ] as const;
 
 export type OrganizationDimensionKind =
@@ -49,12 +69,16 @@ export type OrganizationDimension = {
 	kind: OrganizationDimensionKind;
 	key: string;
 	name: string;
+	parentId: string | null;
+	status: "active" | "inactive" | "archived";
 	effectiveFrom: string;
 	effectiveTo: string | null;
 	supersedesId: string | null;
 	version: number;
 	createdBy: string;
 	createdAt: Date;
+	updatedBy: string;
+	updatedAt: Date;
 };
 
 export type OrganizationDimensionReference = Pick<
@@ -65,32 +89,29 @@ export type OrganizationDimensionReference = Pick<
 // 2. Input schemas
 
 const isoDateSchema = z.iso.date();
+const organizationDimensionStatusSchema = z.enum([
+	"active",
+	"inactive",
+	"archived",
+]);
+const organizationDimensionPageSchema = z.number().int().positive().default(1);
+const organizationDimensionPageSizeSchema = z
+	.number()
+	.int()
+	.positive()
+	.max(100)
+	.default(25);
 
-const commandContextSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-	correlationId: z.string().trim().min(1),
-});
-
-const queryContextSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-});
-
-export const createOrganizationDimensionInputSchema = commandContextSchema
+export const createOrganizationDimensionInputSchema = orgActorContextSchema
 	.extend({
 		kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
 		key: z.string().trim().min(1).max(100),
 		name: z.string().trim().min(1).max(200),
+		parentId: z.uuid().nullable().optional(),
 		effectiveFrom: isoDateSchema,
 		effectiveTo: isoDateSchema.nullable().optional(),
 		supersedesId: z.uuid().nullable().optional(),
-		supersedesExpectedVersion: z
-			.number()
-			.int()
-			.positive()
-			.nullable()
-			.optional(),
+		supersedesExpectedVersion: expectedVersionSchema.nullable().optional(),
 	})
 	.strict()
 	.superRefine((value, context) => {
@@ -119,7 +140,7 @@ export const createOrganizationDimensionInputSchema = commandContextSchema
 		});
 	});
 
-export const resolveOrganizationDimensionsAsOfInputSchema = queryContextSchema
+export const resolveOrganizationDimensionsAsOfInputSchema = orgQueryActorSchema
 	.extend({
 		asOf: isoDateSchema,
 		keys: z
@@ -135,7 +156,7 @@ export const resolveOrganizationDimensionsAsOfInputSchema = queryContextSchema
 	.strict();
 
 export const getOrganizationDimensionEffectiveInputSchema = z.union([
-	queryContextSchema
+	orgQueryActorSchema
 		.extend({
 			kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
 			asOf: isoDateSchema,
@@ -143,7 +164,7 @@ export const getOrganizationDimensionEffectiveInputSchema = z.union([
 			key: z.never().optional(),
 		})
 		.strict(),
-	queryContextSchema
+	orgQueryActorSchema
 		.extend({
 			kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
 			asOf: isoDateSchema,
@@ -152,6 +173,48 @@ export const getOrganizationDimensionEffectiveInputSchema = z.union([
 		})
 		.strict(),
 ]);
+
+export const updateOrganizationDimensionInputSchema = orgActorContextSchema
+	.extend({
+		id: z.uuid(),
+		expectedVersion: expectedVersionSchema,
+		name: z.string().trim().min(1).max(200).optional(),
+		parentId: z.uuid().nullable().optional(),
+		effectiveTo: isoDateSchema.nullable().optional(),
+	})
+	.strict();
+
+export const organizationDimensionLifecycleInputSchema = orgActorContextSchema
+	.extend({
+		id: z.uuid(),
+		expectedVersion: expectedVersionSchema,
+	})
+	.strict();
+
+export const getOrganizationDimensionByIdInputSchema = orgQueryActorSchema
+	.extend({
+		id: z.uuid(),
+	})
+	.strict();
+
+export const getOrganizationDimensionByCodeInputSchema = orgQueryActorSchema
+	.extend({
+		kind: z.enum(ORGANIZATION_DIMENSION_KINDS),
+		key: z.string().trim().min(1).max(100),
+	})
+	.strict();
+
+export const listOrganizationDimensionsInputSchema = orgQueryActorSchema
+	.extend({
+		kind: z.enum(ORGANIZATION_DIMENSION_KINDS).optional(),
+		status: organizationDimensionStatusSchema
+			.or(z.literal("all"))
+			.default("active"),
+		parentId: z.uuid().nullable().optional(),
+		page: organizationDimensionPageSchema,
+		pageSize: organizationDimensionPageSizeSchema,
+	})
+	.strict();
 
 // 4. SQL row mapping
 
@@ -165,9 +228,13 @@ type OrganizationDimensionSqlRow = {
 	effective_from: string;
 	effective_to: string | null;
 	supersedes_id: string | null;
+	parent_id?: string | null;
+	status?: "active" | "inactive" | "archived";
 	version: number;
 	created_by: string;
 	created_at: Date;
+	updated_by: string | null;
+	updated_at: Date | null;
 };
 
 function mapDimension(
@@ -182,12 +249,16 @@ function mapDimension(
 			kind: row.kind,
 			key: row.key,
 			name: row.name,
+			parentId: row.parent_id ?? null,
+			status: row.status ?? "active",
 			effectiveFrom: row.effective_from,
 			effectiveTo: row.effective_to,
 			supersedesId: row.supersedes_id,
 			version: row.version,
 			createdBy: row.created_by,
 			createdAt: row.created_at,
+			updatedBy: row.updated_by ?? row.created_by,
+			updatedAt: row.updated_at ?? row.created_at,
 		};
 	}
 	return {
@@ -196,13 +267,51 @@ function mapDimension(
 		kind: z.enum(ORGANIZATION_DIMENSION_KINDS).parse(row.kind),
 		key: row.key,
 		name: row.name,
+		parentId: "parentId" in row ? row.parentId : null,
+		status:
+			"status" in row
+				? organizationDimensionStatusSchema.parse(row.status)
+				: "active",
 		effectiveFrom: row.effectiveFrom,
 		effectiveTo: row.effectiveTo,
 		supersedesId: row.supersedesId,
 		version: row.version,
 		createdBy: row.createdBy,
 		createdAt: row.createdAt,
+		updatedBy: row.updatedBy ?? row.createdBy,
+		updatedAt: row.updatedAt ?? row.createdAt,
 	};
+}
+
+async function loadOrganizationDimensionVersion(
+	organizationId: string,
+	id: string,
+): Promise<Result<{ id: string; version: number } | null>> {
+	try {
+		const [row] = await db
+			.select({
+				id: mdOrganizationDimension.id,
+				version: mdOrganizationDimension.version,
+			})
+			.from(mdOrganizationDimension)
+			.where(
+				and(
+					eq(mdOrganizationDimension.organizationId, organizationId),
+					eq(mdOrganizationDimension.id, id),
+				),
+			)
+			.limit(1);
+		return ok(row ?? null);
+	} catch (error) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Failed to inspect organization dimension version",
+			{
+				reason: "MASTER_PERSISTENCE_FAILURE",
+				cause: error instanceof Error ? error.message : "unknown",
+			},
+		);
+	}
 }
 
 // 5. Drizzle store
@@ -274,7 +383,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							UPDATE md_organization_dimension predecessor_row
 							SET
 								effective_to = (${record.effectiveFrom}::date - 1),
-								version = predecessor_row.version + 1
+								version = predecessor_row.version + 1,
+								updated_by = ${record.createdBy},
+								updated_at = now()
 							FROM predecessor, range_guard
 							WHERE predecessor_row.id = predecessor.id
 							RETURNING predecessor_row.*
@@ -288,13 +399,14 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						mutated AS (
 							INSERT INTO md_organization_dimension (
 								id, organization_id, kind, key, normalized_key, name,
-								effective_from, effective_to, supersedes_id, version,
-								created_by
+								parent_id, status, effective_from, effective_to,
+								supersedes_id, version, created_by, updated_by, updated_at
 							)
 							SELECT
 								${id}, ${record.organizationId}, ${record.kind}, ${record.key},
-								${record.normalizedKey}, ${record.name}, ${record.effectiveFrom},
-								${record.effectiveTo}, ${record.supersedesId}, 1, ${record.createdBy}
+								${record.normalizedKey}, ${record.name}, ${record.parentId},
+								${record.status}, ${record.effectiveFrom}, ${record.effectiveTo},
+								${record.supersedesId}, 1, ${record.createdBy}, ${record.updatedBy}, now()
 							FROM create_guard
 							RETURNING *
 						),
@@ -312,10 +424,12 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 									ELSE 'SUPERSEDE_CREATE'
 								END,
 								jsonb_build_array(
-									jsonb_build_object('field', 'kind', 'before', NULL, 'after', kind),
-									jsonb_build_object('field', 'key', 'before', NULL, 'after', key),
-									jsonb_build_object('field', 'name', 'before', NULL, 'after', name),
-									jsonb_build_object('field', 'effectiveFrom', 'before', NULL, 'after', effective_from),
+								jsonb_build_object('field', 'kind', 'before', NULL, 'after', kind),
+								jsonb_build_object('field', 'key', 'before', NULL, 'after', key),
+								jsonb_build_object('field', 'name', 'before', NULL, 'after', name),
+								jsonb_build_object('field', 'parentId', 'before', NULL, 'after', parent_id),
+								jsonb_build_object('field', 'status', 'before', NULL, 'after', status),
+								jsonb_build_object('field', 'effectiveFrom', 'before', NULL, 'after', effective_from),
 									jsonb_build_object('field', 'effectiveTo', 'before', NULL, 'after', effective_to),
 									jsonb_build_object('field', 'supersedesId', 'before', NULL, 'after', supersedes_id)
 								)
@@ -404,6 +518,342 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				return fail(
 					"INTERNAL_ERROR",
 					"Failed to create organization dimension",
+					{
+						reason: "MASTER_PERSISTENCE_FAILURE",
+						cause: error instanceof Error ? error.message : "unknown",
+					},
+				);
+			}
+		},
+		async update(record) {
+			try {
+				const auditId = randomUUID();
+				const eventId = randomUUID();
+				const [, rows] = await runNeonHttpTransaction<
+					[unknown[], OrganizationDimensionSqlRow[]]
+				>((sql) => [
+					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${record.organizationId}:${record.id}`}, 0))`,
+					sql`
+						WITH current_row AS (
+							SELECT *
+							FROM md_organization_dimension
+							WHERE organization_id = ${record.organizationId}
+								AND id = ${record.id}
+								AND version = ${record.expectedVersion}
+								AND status <> 'archived'
+							FOR UPDATE
+						),
+						parent_guard AS (
+							SELECT 1
+							FROM current_row
+							WHERE ${record.parentIdProvided} = false
+								OR ${record.parentId}::uuid IS NULL
+								OR EXISTS (
+									SELECT 1
+									FROM md_organization_dimension parent
+									WHERE parent.organization_id = ${record.organizationId}
+										AND parent.id = ${record.parentId}
+										AND parent.status = 'active'
+										AND parent.id <> current_row.id
+								)
+						),
+						cycle_guard AS (
+							WITH RECURSIVE ancestors AS (
+								SELECT parent.id, parent.parent_id
+								FROM md_organization_dimension parent, current_row
+								WHERE ${record.parentId}::uuid IS NOT NULL
+									AND parent.organization_id = ${record.organizationId}
+									AND parent.id = ${record.parentId}
+								UNION ALL
+								SELECT parent.id, parent.parent_id
+								FROM md_organization_dimension parent
+								INNER JOIN ancestors ON ancestors.parent_id = parent.id
+								WHERE parent.organization_id = ${record.organizationId}
+							)
+							SELECT 1
+							FROM parent_guard
+							WHERE ${record.parentIdProvided} = false
+								OR ${record.parentId}::uuid IS NULL
+								OR NOT EXISTS (
+									SELECT 1 FROM ancestors WHERE id = ${record.id}
+								)
+						),
+						mutated AS (
+							UPDATE md_organization_dimension dimension
+							SET
+								name = COALESCE(${record.name}, dimension.name),
+								parent_id = CASE
+									WHEN ${record.parentIdProvided} = false THEN dimension.parent_id
+									ELSE ${record.parentId}
+								END,
+								effective_to = CASE
+									WHEN ${record.effectiveTo}::date IS NULL THEN dimension.effective_to
+									ELSE ${record.effectiveTo}
+								END,
+								version = dimension.version + 1,
+								updated_by = ${record.updatedBy},
+								updated_at = now()
+							FROM cycle_guard
+							WHERE dimension.organization_id = ${record.organizationId}
+								AND dimension.id = ${record.id}
+							RETURNING dimension.*
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module,
+								entity, entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${record.updatedBy},
+								${record.correlationId}, 'master_data',
+								'organization_dimension', id, 'UPDATE',
+								jsonb_build_object('version', version)
+							FROM mutated
+							RETURNING id
+						),
+						emitted AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								'master_data.organization_dimension.updated.v1',
+								'master_data', ${record.correlationId}, ${record.updatedBy},
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'organization_dimension',
+									'entityId', id,
+									'kind', kind,
+									'code', key,
+									'version', version,
+									'actorId', ${record.updatedBy},
+									'correlationId', ${record.correlationId}
+								), 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.*
+						FROM mutated
+						WHERE EXISTS (SELECT 1 FROM audited)
+							AND EXISTS (SELECT 1 FROM emitted)
+					`,
+				]);
+				const row = rows[0];
+				if (row === undefined) {
+					return resolveTenantScopedCasMiss({
+						entityType: "organization_dimension",
+						entityId: record.id,
+						expectedVersion: record.expectedVersion,
+						loadCurrent: () =>
+							loadOrganizationDimensionVersion(
+								record.organizationId,
+								record.id,
+							),
+						notFoundMessage: "Organization dimension not found",
+						unchangedMissMessage:
+							"Organization dimension update did not satisfy mutation guards",
+					});
+				}
+				return ok(mapDimension(row));
+			} catch (error) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to update organization dimension",
+					{
+						reason: "MASTER_PERSISTENCE_FAILURE",
+						cause: error instanceof Error ? error.message : "unknown",
+					},
+				);
+			}
+		},
+		async transition(input) {
+			try {
+				const auditId = randomUUID();
+				const eventId = randomUUID();
+				const [, rows] = await runNeonHttpTransaction<
+					[unknown[], OrganizationDimensionSqlRow[]]
+				>((sql) => [
+					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${input.id}`}, 0))`,
+					sql`
+						WITH current_row AS (
+							SELECT *
+							FROM md_organization_dimension
+							WHERE organization_id = ${input.organizationId}
+								AND id = ${input.id}
+								AND version = ${input.expectedVersion}
+							FOR UPDATE
+						),
+						mutated AS (
+							UPDATE md_organization_dimension dimension
+							SET
+								status = ${input.status},
+								version = dimension.version + 1,
+								updated_by = ${input.updatedBy},
+								updated_at = now()
+							FROM current_row
+							WHERE dimension.organization_id = ${input.organizationId}
+								AND dimension.id = ${input.id}
+							RETURNING dimension.*
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module,
+								entity, entity_id, action, changes
+							)
+							SELECT
+								${auditId}, organization_id, ${input.updatedBy},
+								${input.correlationId}, 'master_data',
+								'organization_dimension', id, upper(${input.status}),
+								jsonb_build_object('status', status, 'version', version)
+							FROM mutated
+							RETURNING id
+						),
+						emitted AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id,
+								actor_user_id, payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id,
+								'master_data.organization_dimension.status_changed.v1',
+								'master_data', ${input.correlationId}, ${input.updatedBy},
+								jsonb_build_object(
+									'organizationId', organization_id,
+									'entityType', 'organization_dimension',
+									'entityId', id,
+									'kind', kind,
+									'code', key,
+									'status', status,
+									'version', version,
+									'actorId', ${input.updatedBy},
+									'correlationId', ${input.correlationId}
+								), 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.*
+						FROM mutated
+						WHERE EXISTS (SELECT 1 FROM audited)
+							AND EXISTS (SELECT 1 FROM emitted)
+					`,
+				]);
+				const row = rows[0];
+				if (row === undefined) {
+					return resolveTenantScopedCasMiss({
+						entityType: "organization_dimension",
+						entityId: input.id,
+						expectedVersion: input.expectedVersion,
+						loadCurrent: () =>
+							loadOrganizationDimensionVersion(input.organizationId, input.id),
+						notFoundMessage: "Organization dimension not found",
+						unchangedMissMessage:
+							"Organization dimension transition did not satisfy mutation guards",
+					});
+				}
+				return ok(mapDimension(row));
+			} catch (error) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to transition organization dimension",
+					{
+						reason: "MASTER_PERSISTENCE_FAILURE",
+						cause: error instanceof Error ? error.message : "unknown",
+					},
+				);
+			}
+		},
+		async getById(input) {
+			try {
+				const [row] = await db
+					.select()
+					.from(mdOrganizationDimension)
+					.where(
+						and(
+							eq(mdOrganizationDimension.organizationId, input.organizationId),
+							eq(mdOrganizationDimension.id, input.id),
+						),
+					)
+					.limit(1);
+				return ok(row === undefined ? null : mapDimension(row));
+			} catch (error) {
+				return fail("INTERNAL_ERROR", "Failed to get organization dimension", {
+					reason: "MASTER_PERSISTENCE_FAILURE",
+					cause: error instanceof Error ? error.message : "unknown",
+				});
+			}
+		},
+		async getByCode(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(mdOrganizationDimension)
+					.where(
+						and(
+							eq(mdOrganizationDimension.organizationId, input.organizationId),
+							eq(mdOrganizationDimension.kind, input.kind),
+							eq(mdOrganizationDimension.normalizedKey, input.normalizedKey),
+						),
+					)
+					.orderBy(
+						asc(mdOrganizationDimension.effectiveFrom),
+						asc(mdOrganizationDimension.id),
+					)
+					.limit(2);
+				if (rows.length > 1) {
+					return fail("CONFLICT", "Organization dimension code is ambiguous", {
+						reason: "MASTER_DIMENSION_AMBIGUOUS",
+						kind: input.kind,
+					});
+				}
+				const row = rows[0];
+				return ok(row === undefined ? null : mapDimension(row));
+			} catch (error) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to get organization dimension by code",
+					{
+						reason: "MASTER_PERSISTENCE_FAILURE",
+						cause: error instanceof Error ? error.message : "unknown",
+					},
+				);
+			}
+		},
+		async list(input) {
+			try {
+				const predicates = [
+					eq(mdOrganizationDimension.organizationId, input.organizationId),
+				];
+				if (input.kind !== undefined) {
+					predicates.push(eq(mdOrganizationDimension.kind, input.kind));
+				}
+				if (input.status !== undefined && input.status !== "all") {
+					predicates.push(eq(mdOrganizationDimension.status, input.status));
+				}
+				if (input.parentId !== undefined) {
+					predicates.push(
+						input.parentId === null
+							? isNull(mdOrganizationDimension.parentId)
+							: eq(mdOrganizationDimension.parentId, input.parentId),
+					);
+				}
+				const offset = (input.page - 1) * input.pageSize;
+				const rows = await db
+					.select()
+					.from(mdOrganizationDimension)
+					.where(and(...predicates))
+					.orderBy(
+						asc(mdOrganizationDimension.kind),
+						asc(mdOrganizationDimension.normalizedKey),
+						asc(mdOrganizationDimension.effectiveFrom),
+					)
+					.limit(input.pageSize)
+					.offset(offset);
+				return ok({ items: rows.map(mapDimension), total: rows.length });
+			} catch (error) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Failed to list organization dimensions",
 					{
 						reason: "MASTER_PERSISTENCE_FAILURE",
 						cause: error instanceof Error ? error.message : "unknown",
@@ -638,13 +1088,120 @@ export async function createOrganizationDimension(
 		key: normalized.data.code,
 		normalizedKey: normalized.data.normalizedCode,
 		name: parsed.data.name,
+		parentId: parsed.data.parentId ?? null,
+		status: "active",
 		effectiveFrom: parsed.data.effectiveFrom,
 		effectiveTo: parsed.data.effectiveTo ?? null,
 		supersedesId: parsed.data.supersedesId ?? null,
 		supersedesExpectedVersion: parsed.data.supersedesExpectedVersion ?? null,
 		createdBy: parsed.data.actorUserId,
+		updatedBy: parsed.data.actorUserId,
 		correlationId: parsed.data.correlationId,
 	});
+}
+
+export async function updateOrganizationDimension(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimension>> {
+	const parsed = updateOrganizationDimensionInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid organization dimension update input", {
+			issues: parsed.error.issues,
+		});
+	}
+	const authorized = await requireMasterCommandPermission(
+		options.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			command: MASTER_COMMAND_ORGANIZATION_DIMENSION_UPDATE,
+		},
+	);
+	if (!authorized.ok) return authorized;
+	return resolveStore(options.store).update({
+		organizationId: parsed.data.organizationId,
+		id: parsed.data.id,
+		expectedVersion: parsed.data.expectedVersion,
+		name: parsed.data.name,
+		parentId: parsed.data.parentId,
+		parentIdProvided: Object.hasOwn(parsed.data, "parentId"),
+		effectiveTo: parsed.data.effectiveTo,
+		updatedBy: parsed.data.actorUserId,
+		correlationId: parsed.data.correlationId,
+	});
+}
+
+async function transitionOrganizationDimension(
+	input: unknown,
+	options: OrganizationDimensionOptions,
+	status: "active" | "inactive" | "archived",
+	command:
+		| typeof MASTER_COMMAND_ORGANIZATION_DIMENSION_ACTIVATE
+		| typeof MASTER_COMMAND_ORGANIZATION_DIMENSION_DEACTIVATE
+		| typeof MASTER_COMMAND_ORGANIZATION_DIMENSION_ARCHIVE,
+): Promise<Result<OrganizationDimension>> {
+	const parsed = organizationDimensionLifecycleInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail(
+			"BAD_REQUEST",
+			"Invalid organization dimension lifecycle input",
+			{ issues: parsed.error.issues },
+		);
+	}
+	const authorized = await requireMasterCommandPermission(
+		options.authorization,
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			command,
+		},
+	);
+	if (!authorized.ok) return authorized;
+	return resolveStore(options.store).transition({
+		organizationId: parsed.data.organizationId,
+		id: parsed.data.id,
+		expectedVersion: parsed.data.expectedVersion,
+		status,
+		updatedBy: parsed.data.actorUserId,
+		correlationId: parsed.data.correlationId,
+	});
+}
+
+export async function activateOrganizationDimension(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimension>> {
+	return transitionOrganizationDimension(
+		input,
+		options,
+		"active",
+		MASTER_COMMAND_ORGANIZATION_DIMENSION_ACTIVATE,
+	);
+}
+
+export async function deactivateOrganizationDimension(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimension>> {
+	return transitionOrganizationDimension(
+		input,
+		options,
+		"inactive",
+		MASTER_COMMAND_ORGANIZATION_DIMENSION_DEACTIVATE,
+	);
+}
+
+export async function archiveOrganizationDimension(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimension>> {
+	return transitionOrganizationDimension(
+		input,
+		options,
+		"archived",
+		MASTER_COMMAND_ORGANIZATION_DIMENSION_ARCHIVE,
+	);
 }
 
 // 9. Public queries
@@ -653,7 +1210,9 @@ export async function resolveOrganizationDimensionsAsOf(
 	input: unknown,
 	options: OrganizationDimensionOptions = {},
 ): Promise<
-	Result<Record<OrganizationDimensionKind, OrganizationDimensionReference>>
+	Result<
+		Partial<Record<OrganizationDimensionKind, OrganizationDimensionReference>>
+	>
 > {
 	const parsed = resolveOrganizationDimensionsAsOfInputSchema.safeParse(input);
 	if (!parsed.success) {
@@ -739,5 +1298,80 @@ export async function getOrganizationDimensionEffective(
 		asOf: parsed.data.asOf,
 		id: parsed.data.id,
 		key: parsed.data.key,
+	});
+}
+
+export async function getOrganizationDimensionById(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimension | null>> {
+	const parsed = getOrganizationDimensionByIdInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid organization dimension get input", {
+			issues: parsed.error.issues,
+		});
+	}
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_ID,
+	});
+	if (!authorized.ok) return authorized;
+	return resolveStore(options.store).getById({
+		organizationId: parsed.data.organizationId,
+		id: parsed.data.id,
+	});
+}
+
+export async function getOrganizationDimensionByCode(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<OrganizationDimension | null>> {
+	const parsed = getOrganizationDimensionByCodeInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail(
+			"BAD_REQUEST",
+			"Invalid organization dimension get-by-code input",
+			{ issues: parsed.error.issues },
+		);
+	}
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_ORGANIZATION_DIMENSION_GET_BY_CODE,
+	});
+	if (!authorized.ok) return authorized;
+	const normalized = normalizeMasterCode(parsed.data.key);
+	if (!normalized.ok) return normalized;
+	return resolveStore(options.store).getByCode({
+		organizationId: parsed.data.organizationId,
+		kind: parsed.data.kind,
+		normalizedKey: normalized.data.normalizedCode,
+	});
+}
+
+export async function listOrganizationDimensions(
+	input: unknown,
+	options: OrganizationDimensionOptions = {},
+): Promise<Result<{ items: OrganizationDimension[]; total: number }>> {
+	const parsed = listOrganizationDimensionsInputSchema.safeParse(input);
+	if (!parsed.success) {
+		return fail("BAD_REQUEST", "Invalid organization dimension list input", {
+			issues: parsed.error.issues,
+		});
+	}
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_ORGANIZATION_DIMENSION_LIST,
+	});
+	if (!authorized.ok) return authorized;
+	return resolveStore(options.store).list({
+		organizationId: parsed.data.organizationId,
+		kind: parsed.data.kind,
+		status: parsed.data.status,
+		parentId: parsed.data.parentId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
 	});
 }

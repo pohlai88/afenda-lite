@@ -1,8 +1,9 @@
-import type { MasterDataStore } from "./store";
+import type { CommercialMasterStore } from "./store";
 
-/** Persistence boundary required by the payment-term aggregate. */
+export type { CommercialMasterStore };
+
 export type PaymentTermStore = Pick<
-	MasterDataStore,
+	CommercialMasterStore,
 	| "getPaymentTermById"
 	| "getPaymentTermByCode"
 	| "listPaymentTerms"
@@ -11,9 +12,8 @@ export type PaymentTermStore = Pick<
 	| "transitionPaymentTerm"
 >;
 
-/** Persistence boundary required by the tax-registration aggregate. */
 export type TaxRegistrationStore = Pick<
-	MasterDataStore,
+	CommercialMasterStore,
 	| "getTaxRegistrationById"
 	| "listTaxRegistrations"
 	| "findTaxRegistrationsByParty"

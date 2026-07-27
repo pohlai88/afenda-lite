@@ -11,11 +11,16 @@ import {
 	createItemGroup,
 } from "../src/capabilities/core-organization-masters/item-group";
 import {
+	archiveOrganizationDimension,
+	createOrganizationDimension,
+} from "../src/capabilities/core-organization-masters/organization-dimension";
+import {
 	activateParty,
 	createParty,
 	retireParty,
 } from "../src/capabilities/core-organization-masters/party";
 import { createPaymentTerm } from "../src/capabilities/core-organization-masters/payment-term";
+import { createMemoryOrganizationDimensionStore } from "../src/capabilities/core-organization-masters/testing-organization-dimension-store";
 import { createWarehouse } from "../src/capabilities/core-organization-masters/warehouse";
 import {
 	activatePartyRole,
@@ -218,6 +223,33 @@ describe("@afenda/master-data search projectors", () => {
 			return;
 		}
 		expect(listed.data).toContain(party.data.id);
+		const partyHits = await searchDocuments(
+			{
+				organizationId: "org-search-a",
+				query: "Searchable Party",
+				entity: MASTER_SEARCH_ENTITY.party,
+			},
+			searchStore,
+		);
+		expect(partyHits.ok).toBe(true);
+		if (!partyHits.ok) {
+			return;
+		}
+		const partyDocument = partyHits.data.find(
+			(hit) => hit.documentId === party.data.id,
+		);
+		expect(partyDocument?.metadata).toMatchObject({
+			organizationId: party.data.organizationId,
+			entityType: MASTER_SEARCH_ENTITY.party,
+			entityId: party.data.id,
+			code: party.data.code,
+			normalizedCode: party.data.normalizedCode,
+			status: party.data.status,
+			version: party.data.version,
+		});
+		expect(
+			Number.isFinite(Date.parse(String(partyDocument?.metadata?.projectedAt))),
+		).toBe(true);
 
 		const role = await createPartyRole(
 			{
@@ -356,5 +388,106 @@ describe("@afenda/master-data search projectors", () => {
 		expect(hits.data.every((hit) => hit.organizationId === "org-a")).toBe(true);
 		expect(hits.data.some((hit) => hit.documentId === a.data.id)).toBe(true);
 		expect(hits.data.some((hit) => hit.documentId === b.data.id)).toBe(false);
+	});
+
+	it("rebuilds organization-dimension search documents and prunes archived dimensions", async () => {
+		const { options: harnessOptions } = createMasterDataTestHarness();
+		const organizationDimensionStore = createMemoryOrganizationDimensionStore();
+		const searchStore = new MemorySearchStore();
+		const options = {
+			...harnessOptions,
+			organizationDimensionStore,
+			searchStore,
+		};
+		const dimensionOptions = {
+			store: organizationDimensionStore,
+			authorization: harnessOptions.authorization,
+		};
+
+		const dimension = await createOrganizationDimension(
+			{
+				...ctx("org-dim-search"),
+				kind: "cost_center",
+				key: "CC-100",
+				name: "Cost Center Search",
+				effectiveFrom: "2026-01-01",
+			},
+			dimensionOptions,
+		);
+		expect(dimension.ok).toBe(true);
+		if (!dimension.ok) {
+			return;
+		}
+
+		const rebuilt = await rebuildMasterDataSearchIndex(
+			{
+				organizationId: "org-dim-search",
+				actorUserId: "user-1",
+				entity: MASTER_SEARCH_ENTITY.organizationDimension,
+			},
+			options,
+		);
+		expect(rebuilt.ok).toBe(true);
+		if (!rebuilt.ok) {
+			return;
+		}
+		expect(rebuilt.data.upserted).toBe(1);
+		expect(rebuilt.data.entities).toEqual([
+			MASTER_SEARCH_ENTITY.organizationDimension,
+		]);
+
+		const hits = await searchDocuments(
+			{
+				organizationId: "org-dim-search",
+				query: "Cost Center Search",
+				entity: MASTER_SEARCH_ENTITY.organizationDimension,
+			},
+			searchStore,
+		);
+		expect(hits.ok).toBe(true);
+		if (!hits.ok) {
+			return;
+		}
+		const document = hits.data.find(
+			(hit) => hit.documentId === dimension.data.id,
+		);
+		expect(document?.metadata).toMatchObject({
+			organizationId: "org-dim-search",
+			entityType: MASTER_SEARCH_ENTITY.organizationDimension,
+			entityId: dimension.data.id,
+			code: "CC-100",
+			normalizedCode: "CC-100",
+			status: "active",
+			version: 1,
+			dimensionKind: "cost_center",
+		});
+
+		const archived = await archiveOrganizationDimension(
+			{
+				...ctx("org-dim-search"),
+				id: dimension.data.id,
+				expectedVersion: dimension.data.version,
+			},
+			dimensionOptions,
+		);
+		expect(archived.ok).toBe(true);
+		if (!archived.ok) {
+			return;
+		}
+
+		const pruned = await rebuildMasterDataSearchIndex(
+			{
+				organizationId: "org-dim-search",
+				actorUserId: "user-1",
+				entity: MASTER_SEARCH_ENTITY.organizationDimension,
+			},
+			options,
+		);
+		expect(pruned.ok).toBe(true);
+		if (!pruned.ok) {
+			return;
+		}
+		expect(pruned.data.upserted).toBe(0);
+		expect(pruned.data.pruned).toBe(1);
 	});
 });

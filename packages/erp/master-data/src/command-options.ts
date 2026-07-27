@@ -2,6 +2,7 @@ import type { SearchStore } from "@afenda/search";
 
 import type { MasterAuthorizationPort } from "./authorization";
 import { createUnavailableDependencyInspector } from "./capabilities/core-organization-masters/dependency";
+import type { OrganizationDimensionStore } from "./capabilities/core-organization-masters/organization-dimension-store";
 import type { MasterDataStore } from "./capabilities/core-organization-masters/store";
 import type { MutationPorts } from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
@@ -12,6 +13,7 @@ export type MasterCommandOptions = {
 	store?: MasterDataStore;
 	ports?: MutationPorts;
 	dependencyInspector?: DependencyInspector;
+	organizationDimensionStore?: OrganizationDimensionStore;
 	/** Optional derived search store for projectors (defaults to Drizzle). */
 	searchStore?: SearchStore;
 	/** Composition-root injected — never import `@afenda/admin` here. */

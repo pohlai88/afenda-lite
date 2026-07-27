@@ -15,6 +15,7 @@ import {
 	updatePartyContactInputSchema,
 	updatePartyRoleInputSchema,
 } from "../src/capabilities/extensions/extension-schemas";
+import { PARTY_ROLE_CODES } from "../src/types";
 
 const actor = {
 	organizationId: "org-a",
@@ -34,6 +35,47 @@ const addressId = "40000000-0000-4000-8000-000000000001";
 const contactId = "50000000-0000-4000-8000-000000000001";
 
 describe("extension input schemas", () => {
+	it("uses the MD-2 controlled party role catalog", () => {
+		const requiredCodes = [
+			"customer",
+			"supplier",
+			"employee",
+			"contact",
+			"carrier",
+			"bank",
+			"tax_authority",
+			"government_agency",
+			"franchisee",
+			"franchisor",
+			"manufacturer",
+			"distributor",
+			"retailer",
+			"service_provider",
+			"landlord",
+			"tenant",
+			"other",
+		] as const;
+
+		for (const roleCode of requiredCodes) {
+			expect(PARTY_ROLE_CODES).toContain(roleCode);
+			expect(
+				createPartyRoleInputSchema.safeParse({
+					...actor,
+					partyId,
+					roleCode,
+				}).success,
+			).toBe(true);
+		}
+
+		expect(
+			createPartyRoleInputSchema.safeParse({
+				...actor,
+				partyId,
+				roleCode: "free_text_role",
+			}).success,
+		).toBe(false);
+	});
+
 	it("validates supplied effective ranges on create and update inputs", () => {
 		expect(
 			createPartyRoleInputSchema.safeParse({

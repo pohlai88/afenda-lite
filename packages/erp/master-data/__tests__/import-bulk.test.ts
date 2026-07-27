@@ -66,6 +66,29 @@ describe("@afenda/master-data import bulk", () => {
 		expect(report.data.dryRun).toBe(true);
 		expect(report.data.created).toBe(1);
 		expect(report.data.unchanged).toBe(1);
+		expect(report.data.rows[0]).toMatchObject({
+			sourceRowNumber: 1,
+			code: "NEW1",
+			rawPayload: {
+				code: "NEW1",
+				name: "New Co",
+				partyKind: "organization",
+			},
+			normalizedPayload: {
+				code: "NEW1",
+				normalizedCode: "NEW1",
+			},
+			matchedTargetId: null,
+			intendedOperation: "create",
+			validationErrors: [],
+			applicationResult: {
+				outcome: "create",
+				message: "Would create party",
+				reason: null,
+			},
+			resultingEntityId: null,
+			resultingEntityVersion: null,
+		});
 
 		const updatePreview = await validatePartyImportBatch(
 			{
@@ -158,6 +181,59 @@ describe("@afenda/master-data import bulk", () => {
 		}
 	});
 
+	it("enforces four-eyes approval policy when required", async () => {
+		const { options } = createMasterDataTestHarness();
+		const rows = [
+			{
+				code: "FOUR1",
+				name: "Four Eyes Co",
+				partyKind: "organization" as const,
+			},
+		];
+
+		const missingApprover = await upsertPartiesByCode(
+			{
+				...applyBase(),
+				requireSegregatedApproval: true,
+				rows,
+			},
+			options,
+		);
+		expect(missingApprover.ok).toBe(false);
+		if (!missingApprover.ok) {
+			expect(missingApprover.details).toMatchObject({
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
+
+		const sameActor = await upsertPartiesByCode(
+			{
+				...applyBase(),
+				requireSegregatedApproval: true,
+				approvedByActorUserId: "user-1",
+				rows,
+			},
+			options,
+		);
+		expect(sameActor.ok).toBe(false);
+		if (!sameActor.ok) {
+			expect(sameActor.details).toMatchObject({
+				reason: "MASTER_MAKER_CHECKER_VIOLATION",
+			});
+		}
+
+		const differentActor = await upsertPartiesByCode(
+			{
+				...applyBase(),
+				requireSegregatedApproval: true,
+				approvedByActorUserId: "approver-1",
+				rows,
+			},
+			options,
+		);
+		expect(differentActor.ok).toBe(true);
+	});
+
 	it("rejects duplicate codes in file and CAS conflicts", async () => {
 		const { options } = createMasterDataTestHarness();
 
@@ -204,6 +280,21 @@ describe("@afenda/master-data import bulk", () => {
 			return;
 		}
 		expect(report.data.conflicted).toBe(3);
+		expect(report.data.rows[2]).toMatchObject({
+			sourceRowNumber: 3,
+			code: "CAS1",
+			matchedTargetId: existing.data.id,
+			intendedOperation: "update",
+			validationErrors: [
+				"MASTER_VERSION_CONFLICT",
+				"Version conflict: expected 99, found 1",
+			],
+			applicationResult: {
+				outcome: "conflict",
+				reason: "MASTER_VERSION_CONFLICT",
+			},
+			resultingEntityId: existing.data.id,
+		});
 		expect(
 			report.data.rows.every(
 				(row) =>
@@ -235,6 +326,18 @@ describe("@afenda/master-data import bulk", () => {
 			return;
 		}
 		expect(first.data.created).toBe(1);
+		expect(first.data.rows[0]).toMatchObject({
+			sourceRowNumber: 1,
+			matchedTargetId: null,
+			intendedOperation: "create",
+			applicationResult: {
+				outcome: "create",
+				message: null,
+				reason: null,
+			},
+		});
+		expect(first.data.rows[0]?.resultingEntityId).toBeTypeOf("string");
+		expect(first.data.rows[0]?.resultingEntityVersion).toBe(1);
 
 		const second = await upsertPartiesByCode(
 			{

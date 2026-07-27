@@ -134,17 +134,14 @@ export async function setCompanyLegalForm(
 		);
 	}
 
-	const jurisdictionProfile =
-		await dependencies.store.findJurisdictionProfileAsOf({
-			organizationId: options.organizationId,
-			legalCompanyId: parsed.data.legalCompanyId,
-			asOf: parsed.data.effectiveFrom,
-		});
-	if (!jurisdictionProfile.ok) return jurisdictionProfile;
-	if (jurisdictionProfile.data === null) {
+	const jurisdictionProfile = current.data.currentJurisdictionProfile;
+	if (
+		jurisdictionProfile === null ||
+		jurisdictionProfile.jurisdictionCountryCode !== parsed.data.jurisdictionCode
+	) {
 		return fail(
 			"VALIDATION_ERROR",
-			"Corporate Administration jurisdiction profile is required for the legal form effective date.",
+			"Corporate Administration jurisdiction profile is required for the legal form jurisdiction.",
 			corporateAdministrationErrorDetails(
 				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
 				{ field: "jurisdictionCode" },

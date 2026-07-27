@@ -109,43 +109,43 @@ describe("lifecycle authorization policy", () => {
 			"master_data.item_activate",
 		);
 		expect(commands[MASTER_COMMAND_ITEM_RETIRE]).toBe(
-			"master_data.item_retire",
+			"master_data.item_archive",
 		);
 		expect(commands[MASTER_COMMAND_PARTY_BLOCK]).toBe(
-			"master_data.party_block",
+			"master_data.party_suspend",
 		);
 		expect(commands[MASTER_COMMAND_PARTY_RESTORE]).toBe(
 			"master_data.party_unblock",
 		);
 		expect(commands[MASTER_COMMAND_PARTY_RETIRE]).toBe(
-			"master_data.party_retire",
+			"master_data.party_archive",
 		);
 		expect(commands[MASTER_COMMAND_PARTY_MERGE]).toBe(
 			"master_data.party_merge",
 		);
 		expect(commands[MASTER_COMMAND_ITEM_GROUP_RETIRE]).toBe(
-			"master_data.item_group_archive",
+			"master_data.item_extension_manage",
 		);
 		expect(commands[MASTER_COMMAND_WAREHOUSE_RETIRE]).toBe(
-			"master_data.warehouse_retire",
+			"master_data.warehouse_manage",
 		);
 		expect(commands[MASTER_COMMAND_PAYMENT_TERM_RETIRE]).toBe(
-			"master_data.payment_term_archive",
+			"master_data.payment_term_manage",
 		);
 		expect(commands[MASTER_COMMAND_TAX_REGISTRATION_BLOCK]).toBe(
-			"master_data.tax_registration_revoke",
+			"master_data.tax_registration_manage",
 		);
 		expect(commands[MASTER_COMMAND_TAX_REGISTRATION_RESTORE]).toBe(
-			"master_data.tax_registration_restore",
+			"master_data.tax_registration_manage",
 		);
 		expect(commands[MASTER_COMMAND_TAX_REGISTRATION_RETIRE]).toBe(
-			"master_data.tax_registration_archive",
+			"master_data.tax_registration_manage",
 		);
 		expect(commands[MASTER_COMMAND_ITEM_TEMPLATE_INACTIVE]).toBe(
-			"master_data.item_template_inactivate",
+			"master_data.template_manage",
 		);
 		expect(commands[MASTER_COMMAND_ITEM_TEMPLATE_RETIRE]).toBe(
-			"master_data.item_template_retire",
+			"master_data.template_manage",
 		);
 	});
 });

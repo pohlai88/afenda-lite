@@ -1425,19 +1425,19 @@ commands:
     permission: master_data.approve
   - id: master_data.import.upsert_parties
     moduleId: master-data
-    permission: master_data.import_approve
+    permission: master_data.import_apply
   - id: master_data.import.upsert_items
     moduleId: master-data
-    permission: master_data.import_approve
+    permission: master_data.import_apply
   - id: master_data.import.upsert_item_groups
     moduleId: master-data
-    permission: master_data.import_approve
+    permission: master_data.import_apply
   - id: master_data.import.upsert_warehouses
     moduleId: master-data
-    permission: master_data.import_approve
+    permission: master_data.import_apply
   - id: master_data.import.validate_party_batch
     moduleId: master-data
-    permission: master_data.manage
+    permission: master_data.import_validate
   - id: master_data.search.rebuild
     moduleId: master-data
     permission: master_data.manage

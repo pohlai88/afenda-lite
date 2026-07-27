@@ -23,6 +23,24 @@ export const MASTER_MUTATION_OPERATION_IDS = [
 export type MasterMutationOperationId =
 	(typeof MASTER_MUTATION_OPERATION_IDS)[number];
 
+export const MASTER_PRODUCTION_MUTATION_SEQUENCE = [
+	"authorize_command",
+	"parse_and_normalize_input",
+	"begin_authoritative_mutation_transaction",
+	"load_target_under_tenant_scope",
+	"verify_expected_version",
+	"verify_lifecycle_and_business_invariants",
+	"mutate_entity",
+	"insert_audit_fact",
+	"insert_domain_event_outbox_record",
+	"commit",
+	"return_result",
+	"asynchronously_project_search",
+] as const;
+
+export type MasterProductionMutationStep =
+	(typeof MASTER_PRODUCTION_MUTATION_SEQUENCE)[number];
+
 /**
  * Capabilities bound to the currently active master-data transaction.
  *

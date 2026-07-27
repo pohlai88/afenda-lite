@@ -29,9 +29,9 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 | CA-0.3 | 0 | Runtime composition and mutation contracts | CA-0.2 | DONE |
 | CA-0.4 | 0 | Durable infrastructure adapters and package boundaries | CA-0.3 | DONE |
 | CA-1.1 | 1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | DONE |
-| CA-1.2 | 1 | Effective legal names and legal forms | CA-1.1 | OPEN |
-| CA-1.3 | 1 | Corporate identifiers, financial years and registered activities | CA-1.2 | OPEN |
-| CA-1.4 | 1 | Registered offices, legal establishments and premises | CA-1.3 | OPEN |
+| CA-1.2 | 1 | Effective legal names and legal forms | CA-1.1 | PARTIAL |
+| CA-1.3 | 1 | Corporate identifiers, financial years and registered activities | CA-1.2 | PARTIAL |
+| CA-1.4 | 1 | Registered offices, legal establishments and premises | CA-1.3 | PARTIAL |
 | CA-1.5 | 1 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | OPEN |
 | CA-2.1 | 2 | Governance bodies and memberships | Phase 1 DONE | OPEN |
 | CA-2.2 | 2 | Statutory offices, appointments, qualifications and consent | CA-2.1 | OPEN |

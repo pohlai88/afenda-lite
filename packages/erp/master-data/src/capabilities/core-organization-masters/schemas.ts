@@ -15,6 +15,7 @@ import {
 import {
 	orgActorContextSchema,
 	orgQueryActorSchema,
+	versionedMutationContextSchema,
 } from "../../contracts/context";
 import {
 	DEFAULT_MASTER_PAGE,
@@ -24,9 +25,13 @@ import {
 } from "../../pagination";
 import {
 	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
+	ITEM_TRACKING_POLICIES,
 	ITEM_TYPES,
 	MAX_PAYMENT_TERM_NET_DAYS,
 	PARTY_KINDS,
+	PARTY_ROLE_CODES,
+	PAYMENT_TERM_DUE_DAY_RULES,
+	PAYMENT_TERM_INSTALLMENT_POLICIES,
 	TAX_REGISTRATION_TYPES,
 	WAREHOUSE_LOCATION_TYPES,
 } from "../../types";
@@ -37,6 +42,7 @@ import {
 	refLanguageIdSchema,
 	refUomIdSchema,
 } from "../platform-references/brands";
+import { normalizePaymentTermRule } from "./payment-term-rule";
 
 export { orgActorContextSchema } from "../../contracts/context";
 export {
@@ -65,9 +71,8 @@ export const createPartyInputSchema = orgActorContextSchema.extend({
 	defaultCurrencyId: refCurrencyIdSchema.optional(),
 });
 
-export const updatePartyInputSchema = orgActorContextSchema.extend({
+export const updatePartyInputSchema = versionedMutationContextSchema.extend({
 	id: partyIdSchema,
-	expectedVersion: z.number().int().positive(),
 	name: nameSchema.optional(),
 	legalName: z.string().trim().min(1).max(200).nullable().optional(),
 	tradingName: z.string().trim().min(1).max(200).nullable().optional(),
@@ -77,9 +82,8 @@ export const updatePartyInputSchema = orgActorContextSchema.extend({
 	defaultCurrencyId: refCurrencyIdSchema.nullable().optional(),
 });
 
-export const partyLifecycleInputSchema = orgActorContextSchema.extend({
+export const partyLifecycleInputSchema = versionedMutationContextSchema.extend({
 	id: partyIdSchema,
-	expectedVersion: z.number().int().positive(),
 });
 
 /** Activate requires an approved MDG change request (R2). */
@@ -87,44 +91,73 @@ export const activatePartyInputSchema = partyLifecycleInputSchema.extend({
 	changeRequestId: changeRequestIdSchema.optional(),
 });
 
+export const searchPartiesInputSchema = z
+	.object({
+		...orgQueryActorSchema.shape,
+		page: z.number().int().min(1).optional(),
+		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),
+		status: z
+			.enum(["draft", "active", "inactive", "blocked", "retired"])
+			.optional(),
+		updatedSince: z.coerce.date().optional(),
+		query: z.string().trim().min(1).max(100),
+	})
+	.strict()
+	.transform((value) => ({
+		...value,
+		page: value.page ?? DEFAULT_MASTER_PAGE,
+		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
+	}));
+
 export const createItemGroupInputSchema = orgActorContextSchema.extend({
 	code: codeInputSchema,
 	name: nameSchema,
 	parentId: itemGroupIdSchema.optional(),
 });
 
-export const updateItemGroupInputSchema = orgActorContextSchema.extend({
-	id: itemGroupIdSchema,
-	expectedVersion: z.number().int().positive(),
-	name: nameSchema.optional(),
-	parentId: itemGroupIdSchema.nullable().optional(),
-});
+export const updateItemGroupInputSchema = versionedMutationContextSchema.extend(
+	{
+		id: itemGroupIdSchema,
+		name: nameSchema.optional(),
+		parentId: itemGroupIdSchema.nullable().optional(),
+	},
+);
 
-export const itemGroupLifecycleInputSchema = orgActorContextSchema.extend({
-	id: itemGroupIdSchema,
-	expectedVersion: z.number().int().positive(),
-});
+export const itemGroupLifecycleInputSchema =
+	versionedMutationContextSchema.extend({
+		id: itemGroupIdSchema,
+	});
 
 export const createItemInputSchema = orgActorContextSchema.extend({
 	code: codeInputSchema,
 	name: nameSchema,
+	description: z.string().trim().max(1_000).nullable().optional(),
 	itemType: z.enum(ITEM_TYPES),
 	baseUomId: refUomIdSchema,
 	itemGroupId: itemGroupIdSchema,
+	trackingPolicy: z.enum(ITEM_TRACKING_POLICIES).default("none"),
+	sellable: z.boolean().optional(),
+	purchasable: z.boolean().optional(),
+	stocked: z.boolean().optional(),
+	serviceIndicator: z.boolean().optional(),
 });
 
-export const updateItemInputSchema = orgActorContextSchema.extend({
+export const updateItemInputSchema = versionedMutationContextSchema.extend({
 	id: itemIdSchema,
-	expectedVersion: z.number().int().positive(),
 	name: nameSchema.optional(),
+	description: z.string().trim().max(1_000).nullable().optional(),
 	itemType: z.enum(ITEM_TYPES).optional(),
 	baseUomId: refUomIdSchema.optional(),
 	itemGroupId: itemGroupIdSchema.optional(),
+	trackingPolicy: z.enum(ITEM_TRACKING_POLICIES).optional(),
+	sellable: z.boolean().optional(),
+	purchasable: z.boolean().optional(),
+	stocked: z.boolean().optional(),
+	serviceIndicator: z.boolean().optional(),
 });
 
-export const itemLifecycleInputSchema = orgActorContextSchema.extend({
+export const itemLifecycleInputSchema = versionedMutationContextSchema.extend({
 	id: itemIdSchema,
-	expectedVersion: z.number().int().positive(),
 });
 
 export const createWarehouseInputSchema = orgActorContextSchema.extend({
@@ -132,43 +165,125 @@ export const createWarehouseInputSchema = orgActorContextSchema.extend({
 	name: nameSchema,
 	locationType: z.enum(WAREHOUSE_LOCATION_TYPES),
 	parentId: warehouseIdSchema.optional(),
+	addressCountryId: refCountryIdSchema.optional(),
+	addressLine1: z.string().trim().min(1).max(200).optional(),
+	addressLine2: z.string().trim().min(1).max(200).optional(),
+	addressCity: z.string().trim().min(1).max(100).optional(),
+	addressRegion: z.string().trim().min(1).max(100).optional(),
+	addressPostalCode: z.string().trim().min(1).max(32).optional(),
 });
 
-export const updateWarehouseInputSchema = orgActorContextSchema.extend({
-	id: warehouseIdSchema,
-	expectedVersion: z.number().int().positive(),
-	name: nameSchema.optional(),
-	locationType: z.enum(WAREHOUSE_LOCATION_TYPES).optional(),
-});
+export const updateWarehouseInputSchema = versionedMutationContextSchema.extend(
+	{
+		id: warehouseIdSchema,
+		name: nameSchema.optional(),
+		locationType: z.enum(WAREHOUSE_LOCATION_TYPES).optional(),
+		addressCountryId: refCountryIdSchema.nullable().optional(),
+		addressLine1: z.string().trim().min(1).max(200).nullable().optional(),
+		addressLine2: z.string().trim().min(1).max(200).nullable().optional(),
+		addressCity: z.string().trim().min(1).max(100).nullable().optional(),
+		addressRegion: z.string().trim().min(1).max(100).nullable().optional(),
+		addressPostalCode: z.string().trim().min(1).max(32).nullable().optional(),
+	},
+);
 
-export const moveWarehouseInputSchema = orgActorContextSchema.extend({
+export const moveWarehouseInputSchema = versionedMutationContextSchema.extend({
 	id: warehouseIdSchema,
-	expectedVersion: z.number().int().positive(),
 	parentId: warehouseIdSchema.nullable(),
 });
 
-export const warehouseLifecycleInputSchema = orgActorContextSchema.extend({
-	id: warehouseIdSchema,
-	expectedVersion: z.number().int().positive(),
-});
+export const warehouseLifecycleInputSchema =
+	versionedMutationContextSchema.extend({
+		id: warehouseIdSchema,
+	});
 
-export const createPaymentTermInputSchema = orgActorContextSchema.extend({
-	code: codeInputSchema,
-	name: nameSchema,
-	netDays: z.number().int().min(0).max(MAX_PAYMENT_TERM_NET_DAYS),
-});
+const discountPercentSchema = z
+	.string()
+	.trim()
+	.regex(/^\d{1,3}(?:\.\d{1,4})?$/u);
 
-export const updatePaymentTermInputSchema = orgActorContextSchema.extend({
-	id: paymentTermIdSchema,
-	expectedVersion: z.number().int().positive(),
-	name: nameSchema.optional(),
-	netDays: z.number().int().min(0).max(MAX_PAYMENT_TERM_NET_DAYS).optional(),
-});
+export const createPaymentTermInputSchema = orgActorContextSchema
+	.extend({
+		code: codeInputSchema,
+		name: nameSchema,
+		netDays: z.number().int().min(0).max(MAX_PAYMENT_TERM_NET_DAYS),
+		discountDays: z
+			.number()
+			.int()
+			.min(0)
+			.max(MAX_PAYMENT_TERM_NET_DAYS)
+			.nullable()
+			.optional(),
+		discountPercent: discountPercentSchema.nullable().optional(),
+		dueDayRule: z.enum(PAYMENT_TERM_DUE_DAY_RULES).default("net_days"),
+		endOfMonth: z.boolean().default(false),
+		installmentPolicy: z
+			.enum(PAYMENT_TERM_INSTALLMENT_POLICIES)
+			.default("none"),
+		installmentCount: z.number().int().min(1).max(120).nullable().optional(),
+		validFrom: z.coerce.date().nullable().optional(),
+		validTo: z.coerce.date().nullable().optional(),
+		currencyRestrictionId: refCurrencyIdSchema.nullable().optional(),
+	})
+	.superRefine((value, ctx) => {
+		const normalized = normalizePaymentTermRule(value);
+		if (!normalized.ok) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: normalized.message,
+			});
+		}
+	});
 
-export const paymentTermLifecycleInputSchema = orgActorContextSchema.extend({
-	id: paymentTermIdSchema,
-	expectedVersion: z.number().int().positive(),
-});
+export const updatePaymentTermInputSchema = versionedMutationContextSchema
+	.extend({
+		id: paymentTermIdSchema,
+		name: nameSchema.optional(),
+		netDays: z.number().int().min(0).max(MAX_PAYMENT_TERM_NET_DAYS).optional(),
+		discountDays: z
+			.number()
+			.int()
+			.min(0)
+			.max(MAX_PAYMENT_TERM_NET_DAYS)
+			.nullable()
+			.optional(),
+		discountPercent: discountPercentSchema.nullable().optional(),
+		dueDayRule: z.enum(PAYMENT_TERM_DUE_DAY_RULES).optional(),
+		endOfMonth: z.boolean().optional(),
+		installmentPolicy: z.enum(PAYMENT_TERM_INSTALLMENT_POLICIES).optional(),
+		installmentCount: z.number().int().min(1).max(120).nullable().optional(),
+		validFrom: z.coerce.date().nullable().optional(),
+		validTo: z.coerce.date().nullable().optional(),
+		currencyRestrictionId: refCurrencyIdSchema.nullable().optional(),
+	})
+	.superRefine((value, ctx) => {
+		if (value.netDays === undefined) {
+			return;
+		}
+		const normalized = normalizePaymentTermRule({
+			netDays: value.netDays,
+			discountDays: value.discountDays,
+			discountPercent: value.discountPercent,
+			dueDayRule: value.dueDayRule,
+			endOfMonth: value.endOfMonth,
+			installmentPolicy: value.installmentPolicy,
+			installmentCount: value.installmentCount,
+			validFrom: value.validFrom,
+			validTo: value.validTo,
+			currencyRestrictionId: value.currencyRestrictionId,
+		});
+		if (!normalized.ok) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: normalized.message,
+			});
+		}
+	});
+
+export const paymentTermLifecycleInputSchema =
+	versionedMutationContextSchema.extend({
+		id: paymentTermIdSchema,
+	});
 
 export const createTaxRegistrationInputSchema = orgActorContextSchema.extend({
 	partyId: partyIdSchema,
@@ -180,31 +295,29 @@ export const createTaxRegistrationInputSchema = orgActorContextSchema.extend({
 	validTo: z.coerce.date().optional(),
 });
 
-export const updateTaxRegistrationInputSchema = orgActorContextSchema.extend({
-	id: taxRegistrationIdSchema,
-	expectedVersion: z.number().int().positive(),
-	name: z.string().trim().min(1).max(200).nullable().optional(),
-	validFrom: z.coerce.date().nullable().optional(),
-	validTo: z.coerce.date().nullable().optional(),
-});
-
-export const taxRegistrationLifecycleInputSchema = orgActorContextSchema.extend(
-	{
+export const updateTaxRegistrationInputSchema =
+	versionedMutationContextSchema.extend({
 		id: taxRegistrationIdSchema,
-		expectedVersion: z.number().int().positive(),
-	},
-);
+		name: z.string().trim().min(1).max(200).nullable().optional(),
+		validFrom: z.coerce.date().nullable().optional(),
+		validTo: z.coerce.date().nullable().optional(),
+	});
+
+export const taxRegistrationLifecycleInputSchema =
+	versionedMutationContextSchema.extend({
+		id: taxRegistrationIdSchema,
+	});
 
 export const listTaxRegistrationsInputSchema = z
 	.object({
-		organizationId: z.string().trim().min(1),
-		actorUserId: z.string().trim().min(1),
+		...orgQueryActorSchema.shape,
 		page: z.number().int().min(1).optional(),
 		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),
 		status: z
 			.enum(["draft", "active", "inactive", "blocked", "retired"])
 			.optional(),
 		partyId: partyIdSchema.optional(),
+		updatedSince: z.coerce.date().optional(),
 	})
 	.strict()
 	.transform((value) => ({
@@ -213,11 +326,10 @@ export const listTaxRegistrationsInputSchema = z
 		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
 	}));
 
-export const findTaxRegistrationsByPartyInputSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-	partyId: partyIdSchema,
-});
+export const findTaxRegistrationsByPartyInputSchema =
+	orgQueryActorSchema.extend({
+		partyId: partyIdSchema,
+	});
 
 export const getByIdInputSchema = orgQueryActorSchema.extend({
 	id: z.string().uuid(),
@@ -227,21 +339,97 @@ export const getByCodeInputSchema = orgQueryActorSchema.extend({
 	code: codeInputSchema,
 });
 
+export const listByStatusInputSchema = z
+	.object({
+		...orgQueryActorSchema.shape,
+		page: z.number().int().min(1).optional(),
+		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),
+		status: z.enum(["draft", "active", "inactive", "blocked", "retired"]),
+	})
+	.strict()
+	.transform((value) => ({
+		...value,
+		page: value.page ?? DEFAULT_MASTER_PAGE,
+		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
+	}));
+
+export const listUpdatedSinceInputSchema = z
+	.object({
+		...orgQueryActorSchema.shape,
+		page: z.number().int().min(1).optional(),
+		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),
+		status: z
+			.enum(["draft", "active", "inactive", "blocked", "retired"])
+			.optional(),
+		updatedSince: z.coerce.date(),
+	})
+	.strict()
+	.transform((value) => ({
+		...value,
+		page: value.page ?? DEFAULT_MASTER_PAGE,
+		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
+	}));
+
+export const listPartiesByRoleInputSchema = z
+	.object({
+		...orgQueryActorSchema.shape,
+		page: z.number().int().min(1).optional(),
+		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),
+		status: z
+			.enum(["draft", "active", "inactive", "blocked", "retired"])
+			.optional(),
+		updatedSince: z.coerce.date().optional(),
+		roleCode: z.enum(PARTY_ROLE_CODES),
+		activeOnly: z.boolean().default(true),
+	})
+	.strict()
+	.transform((value) => ({
+		...value,
+		page: value.page ?? DEFAULT_MASTER_PAGE,
+		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
+	}));
+
+export const findPartyByTaxRegistrationInputSchema = orgQueryActorSchema.extend(
+	{
+		jurisdictionCountryId: refCountryIdSchema,
+		registrationType: z.enum(TAX_REGISTRATION_TYPES),
+		registrationNumber: z.string().trim().min(1).max(128),
+	},
+);
+
+export const listItemsByGroupInputSchema = z
+	.object({
+		...orgQueryActorSchema.shape,
+		page: z.number().int().min(1).optional(),
+		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),
+		status: z
+			.enum(["draft", "active", "inactive", "blocked", "retired"])
+			.optional(),
+		updatedSince: z.coerce.date().optional(),
+		itemGroupId: itemGroupIdSchema,
+	})
+	.strict()
+	.transform((value) => ({
+		...value,
+		page: value.page ?? DEFAULT_MASTER_PAGE,
+		pageSize: value.pageSize ?? DEFAULT_MASTER_PAGE_SIZE,
+	}));
+
 export const createItemTemplateInputSchema = orgActorContextSchema.extend({
 	code: codeInputSchema,
 	name: nameSchema,
 });
 
-export const updateItemTemplateInputSchema = orgActorContextSchema.extend({
-	id: itemTemplateIdSchema,
-	expectedVersion: z.number().int().positive().safe(),
-	name: nameSchema.optional(),
-});
+export const updateItemTemplateInputSchema =
+	versionedMutationContextSchema.extend({
+		id: itemTemplateIdSchema,
+		name: nameSchema.optional(),
+	});
 
-export const itemTemplateLifecycleInputSchema = orgActorContextSchema.extend({
-	id: itemTemplateIdSchema,
-	expectedVersion: z.number().int().positive().safe(),
-});
+export const itemTemplateLifecycleInputSchema =
+	versionedMutationContextSchema.extend({
+		id: itemTemplateIdSchema,
+	});
 
 export const addItemTemplateAttributeInputSchema = orgActorContextSchema
 	.extend({
@@ -415,15 +603,14 @@ export const createItemVariantInputSchema = orgActorContextSchema.extend({
 });
 
 /** CAS `expectedVersion` is the variant membership version (`md_item_variant.version`). */
-export const retireItemVariantInputSchema = orgActorContextSchema.extend({
-	id: itemVariantIdSchema,
-	expectedVersion: z.number().int().positive().safe(),
-});
+export const retireItemVariantInputSchema =
+	versionedMutationContextSchema.extend({
+		id: itemVariantIdSchema,
+	});
 
 export const listItemVariantsByTemplateInputSchema = z
 	.object({
-		organizationId: z.string().trim().min(1),
-		actorUserId: z.string().trim().min(1),
+		...orgQueryActorSchema.shape,
 		templateId: itemTemplateIdSchema,
 		page: z.number().int().min(1).optional(),
 		pageSize: z.number().int().min(1).max(MAX_MASTER_PAGE_SIZE).optional(),

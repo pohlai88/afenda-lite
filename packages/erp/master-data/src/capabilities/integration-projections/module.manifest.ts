@@ -46,8 +46,20 @@ export type IntegrationProjectionManifest = Readonly<{
 		authority: "non_authoritative";
 		mutationAuthority: false;
 		authorizationAuthority: false;
+		updateTiming: "asynchronous";
+		idempotent: true;
+		failureSemantics: "does_not_rollback_committed_master_mutation";
+		canBeStaleAfterCommandSuccess: true;
+		recoveryAuthority: "master_data_outbox_and_rebuild_from_ssot";
 		rebuildable: true;
 		versionGuarded: true;
+		requiredDocumentFields: readonly [
+			"organizationId",
+			"entityType",
+			"entityId",
+			"version",
+			"projectedAt",
+		];
 	}>;
 }>;
 
@@ -80,7 +92,19 @@ export const INTEGRATION_PROJECTIONS_MODULE_MANIFEST = {
 		authority: "non_authoritative",
 		mutationAuthority: false,
 		authorizationAuthority: false,
+		updateTiming: "asynchronous",
+		idempotent: true,
+		failureSemantics: "does_not_rollback_committed_master_mutation",
+		canBeStaleAfterCommandSuccess: true,
+		recoveryAuthority: "master_data_outbox_and_rebuild_from_ssot",
 		rebuildable: true,
 		versionGuarded: true,
+		requiredDocumentFields: [
+			"organizationId",
+			"entityType",
+			"entityId",
+			"version",
+			"projectedAt",
+		],
 	},
 } as const satisfies IntegrationProjectionManifest;

@@ -40,11 +40,11 @@ import {
 	listPartyContacts,
 	listPartyRelationships,
 	listPartyRoles,
+	normalizeBarcode,
 	normalizeBarcodePackQuantity,
 	normalizeExternalId,
 	normalizeItemAlias,
 	normalizeItemAliasSource,
-	normalizeItemBarcode,
 	normalizeItemUomConversionFactor,
 	normalizePartyContactValue,
 	retirePartyRole,
@@ -190,7 +190,7 @@ describe("@afenda/master-data extensions", () => {
 		["UPC_E", "04252614"],
 		["GTIN_14", "10012345000017"],
 	] as const)("accepts valid %s barcode checksums", (symbology, rawValue) => {
-		const normalized = normalizeItemBarcode({ symbology, rawValue });
+		const normalized = normalizeBarcode({ symbology, rawValue });
 		expect(normalized.ok).toBe(true);
 		if (!normalized.ok) return;
 		expect(normalized.data.normalizedValue).toBe(rawValue);
@@ -198,7 +198,7 @@ describe("@afenda/master-data extensions", () => {
 
 	it("normalizes numeric barcode separators while preserving display input", () => {
 		expect(
-			normalizeItemBarcode({
+			normalizeBarcode({
 				symbology: "EAN_13",
 				rawValue: " 400-6381 333931 ",
 			}),
@@ -213,7 +213,7 @@ describe("@afenda/master-data extensions", () => {
 
 	it("returns barcode policy failures instead of throwing on invalid runtime input", () => {
 		expect(
-			normalizeItemBarcode({
+			normalizeBarcode({
 				rawValue: 12345 as unknown as string,
 				symbology: "EAN_13",
 			}),
@@ -222,7 +222,7 @@ describe("@afenda/master-data extensions", () => {
 			message: "Barcode value must be a string",
 		});
 		expect(
-			normalizeItemBarcode({
+			normalizeBarcode({
 				rawValue: "ABC123",
 				symbology: "UNKNOWN" as never,
 			}),
@@ -241,7 +241,7 @@ describe("@afenda/master-data extensions", () => {
 
 	it("enforces barcode comparison policy for generic and CODE_128 symbologies", () => {
 		expect(
-			normalizeItemBarcode({
+			normalizeBarcode({
 				symbology: "INTERNAL",
 				rawValue: " Internal-A1 ",
 			}),
@@ -253,13 +253,13 @@ describe("@afenda/master-data extensions", () => {
 			},
 		});
 		expect(
-			normalizeItemBarcode({
+			normalizeBarcode({
 				symbology: "QR",
 				rawValue: "QR\u200BVALUE",
 			}).ok,
 		).toBe(false);
 		expect(
-			normalizeItemBarcode({
+			normalizeBarcode({
 				symbology: "CODE_128",
 				rawValue: "Café",
 			}),

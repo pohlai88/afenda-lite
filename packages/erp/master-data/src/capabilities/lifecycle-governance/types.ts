@@ -6,6 +6,53 @@ export const LIFECYCLE_FAMILIES = [
 ] as const;
 export type LifecycleFamily = (typeof LIFECYCLE_FAMILIES)[number];
 
+export const SIMPLE_REFERENCE_MASTER_STATES = [
+	"draft",
+	"active",
+	"inactive",
+	"archived",
+] as const;
+export type SimpleReferenceMasterState =
+	(typeof SIMPLE_REFERENCE_MASTER_STATES)[number];
+
+export const OPERATIONAL_MASTER_STANDARD_STATES = [
+	"draft",
+	"active",
+	"suspended",
+	"archived",
+] as const;
+export type OperationalMasterStandardState =
+	(typeof OPERATIONAL_MASTER_STANDARD_STATES)[number];
+
+export const EFFECTIVE_DATED_EXTENSION_STATES = [
+	"pending",
+	"active",
+	"expired",
+	"revoked",
+	"archived",
+] as const;
+export type EffectiveDatedExtensionState =
+	(typeof EFFECTIVE_DATED_EXTENSION_STATES)[number];
+
+export const GOVERNANCE_WORKFLOW_STANDARD_STATES = [
+	"draft",
+	"submitted",
+	"approved",
+	"rejected",
+	"applied",
+	"cancelled",
+	"failed",
+] as const;
+export type GovernanceWorkflowStandardState =
+	(typeof GOVERNANCE_WORKFLOW_STANDARD_STATES)[number];
+
+export const LIFECYCLE_STANDARD_FAMILY_STATES = {
+	simple_master: SIMPLE_REFERENCE_MASTER_STATES,
+	operational_master: OPERATIONAL_MASTER_STANDARD_STATES,
+	effective_dated: EFFECTIVE_DATED_EXTENSION_STATES,
+	governance_workflow: GOVERNANCE_WORKFLOW_STANDARD_STATES,
+} as const satisfies Record<LifecycleFamily, readonly string[]>;
+
 export const OPERATIONAL_MASTER_STATES = [
 	"draft",
 	"active",
@@ -26,6 +73,19 @@ export const OPERATIONAL_MASTER_STATE_MEANINGS = {
 	archived: "Removed from normal working views; retained historically",
 	merged: "Superseded by a canonical master record",
 } as const satisfies Record<OperationalMasterState, string>;
+
+export const OPERATIONAL_MASTER_STANDARD_STATE_BY_PERSISTED_STATE = {
+	draft: "draft",
+	active: "active",
+	inactive: "suspended",
+	blocked: "suspended",
+	retired: "archived",
+	archived: "archived",
+	merged: "archived",
+} as const satisfies Record<
+	OperationalMasterState,
+	OperationalMasterStandardState
+>;
 
 export const OPERATIONAL_MASTER_RECOMMENDED_AGGREGATES = [
 	"party",
@@ -50,6 +110,13 @@ export const SIMPLE_MASTER_STATE_MEANINGS = {
 	inactive: "Temporarily unavailable for new assignment; may be restored",
 	archived: "Removed from normal working views; retained historically",
 } as const satisfies Record<SimpleMasterState, string>;
+
+export const SIMPLE_REFERENCE_STANDARD_STATE_BY_PERSISTED_STATE = {
+	draft: "draft",
+	active: "active",
+	inactive: "inactive",
+	archived: "archived",
+} as const satisfies Record<SimpleMasterState, SimpleReferenceMasterState>;
 
 export const SIMPLE_MASTER_RECOMMENDED_AGGREGATES = [
 	"organization_dimension",
@@ -78,6 +145,15 @@ export const EFFECTIVE_DATED_STATE_MEANINGS = {
 	revoked: "Explicitly withdrawn before ordinary expiry",
 	archived: "Removed from normal working views; retained historically",
 } as const satisfies Record<EffectiveDatedState, string>;
+
+export const EFFECTIVE_DATED_STANDARD_STATE_BY_PERSISTED_STATE = {
+	draft: "pending",
+	active: "active",
+	inactive: "pending",
+	expired: "expired",
+	revoked: "revoked",
+	archived: "archived",
+} as const satisfies Record<EffectiveDatedState, EffectiveDatedExtensionState>;
 
 export const EFFECTIVE_DATED_RECOMMENDED_AGGREGATES = [
 	"tax_registration",
@@ -117,6 +193,60 @@ export const GOVERNANCE_WORKFLOW_STATE_MEANINGS = {
 	expired: "Workflow work item is no longer valid for application",
 	superseded: "Workflow work item was replaced by another governance record",
 } as const satisfies Record<GovernanceWorkflowState, string>;
+
+export const GOVERNANCE_WORKFLOW_STANDARD_STATE_BY_PERSISTED_STATE = {
+	draft: "draft",
+	submitted: "submitted",
+	approved: "approved",
+	rejected: "rejected",
+	applying: "approved",
+	applied: "applied",
+	failed: "failed",
+	cancelled: "cancelled",
+	expired: "cancelled",
+	superseded: "cancelled",
+} as const satisfies Record<
+	GovernanceWorkflowState,
+	GovernanceWorkflowStandardState
+>;
+
+export const LIFECYCLE_STANDARD_STATE_ALIASES = {
+	simple_master: SIMPLE_REFERENCE_STANDARD_STATE_BY_PERSISTED_STATE,
+	operational_master: OPERATIONAL_MASTER_STANDARD_STATE_BY_PERSISTED_STATE,
+	effective_dated: EFFECTIVE_DATED_STANDARD_STATE_BY_PERSISTED_STATE,
+	governance_workflow: GOVERNANCE_WORKFLOW_STANDARD_STATE_BY_PERSISTED_STATE,
+} as const;
+
+export function toStandardLifecycleState(
+	family: "simple_master",
+	state: SimpleMasterState,
+): SimpleReferenceMasterState;
+export function toStandardLifecycleState(
+	family: "operational_master",
+	state: OperationalMasterState,
+): OperationalMasterStandardState;
+export function toStandardLifecycleState(
+	family: "effective_dated",
+	state: EffectiveDatedState,
+): EffectiveDatedExtensionState;
+export function toStandardLifecycleState(
+	family: "governance_workflow",
+	state: GovernanceWorkflowState,
+): GovernanceWorkflowStandardState;
+export function toStandardLifecycleState(
+	family: LifecycleFamily,
+	state: string,
+): string {
+	const aliases = LIFECYCLE_STANDARD_STATE_ALIASES[family] as Record<
+		string,
+		string
+	>;
+	const standard = aliases[state];
+	if (standard === undefined) {
+		throw new RangeError(`Unknown ${family} lifecycle state: ${state}`);
+	}
+	return standard;
+}
 
 export const GOVERNANCE_WORKFLOW_RECOMMENDED_AGGREGATES = [
 	"change_request",
@@ -206,6 +336,9 @@ export type LifecycleAvailabilityDecision = Readonly<{
 export const LIFECYCLE_REASON_POLICIES = ["optional", "required"] as const;
 export type LifecycleReasonPolicy = (typeof LIFECYCLE_REASON_POLICIES)[number];
 
+export const LIFECYCLE_AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE"] as const;
+export type LifecycleAuditAction = (typeof LIFECYCLE_AUDIT_ACTIONS)[number];
+
 export const LIFECYCLE_REASON_CODES = [
 	"ordinary_deactivation",
 	"reactivation",
@@ -264,13 +397,30 @@ export interface LifecycleTransitionDefinition<State extends string>
 	expectedVersionRequired: boolean;
 	dependencyPolicy?: string;
 	eventType: string;
+	auditAction: LifecycleAuditAction;
 	reversible: boolean;
 }
+
+export type LifecycleTransitionDefinitionInput<State extends string> = Omit<
+	LifecycleTransitionDefinition<State>,
+	"auditAction"
+> &
+	Readonly<{
+		auditAction?: LifecycleAuditAction;
+	}>;
 
 export type LifecyclePolicy<State extends string> = Readonly<{
 	family: LifecycleFamily;
 	entityType: string;
 	transitions: Readonly<Record<string, LifecycleTransitionDefinition<State>>>;
+}>;
+
+export type LifecyclePolicyInput<State extends string> = Readonly<{
+	family: LifecycleFamily;
+	entityType: string;
+	transitions: Readonly<
+		Record<string, LifecycleTransitionDefinitionInput<State>>
+	>;
 }>;
 
 export interface LifecycleDecision<State extends string> {

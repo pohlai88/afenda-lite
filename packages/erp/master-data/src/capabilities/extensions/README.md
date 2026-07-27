@@ -225,29 +225,26 @@ Extension mutations use capability-specific permissions rather than the broad
 | Party contacts | `master_data.party_contact_manage` |
 | Party external IDs | `master_data.party_external_id_manage` |
 | Party relationships | `master_data.party_relationship_manage` |
-| Item UoM conversions | `master_data.item_uom_manage` |
-| Item barcodes | `master_data.item_barcode_manage` |
-| Item external IDs | `master_data.item_external_id_manage` |
-| Item aliases | `master_data.item_alias_manage` |
-| Warehouse external IDs | `master_data.warehouse_external_id_manage` |
-| Template attributes | `master_data.item_template_attribute_manage` |
-| Template attribute options | `master_data.item_template_option_manage` |
-| Variant attribute assignment | `master_data.item_variant_attribute_manage` |
+| Item UoM conversions, barcodes, external IDs, aliases, and groups | `master_data.item_extension_manage` |
+| Warehouse external IDs | `master_data.warehouse_manage` |
+| Template attributes and options | `master_data.template_manage` |
+| Variant creation and attribute assignment | `master_data.variant_manage` |
 
 Higher-risk operations use separate grants:
 
 | Sensitive operation | Required permission |
 | --- | --- |
-| Verify or revoke contact verification | `master_data.party_contact_verify` |
-| Legal, government, tax, VAT, registration, national or regulatory party ID | `master_data.party_external_id_regulatory_manage` |
-| Parent, subsidiary or ownership relationship | `master_data.party_relationship_control_manage` |
-| Create an identity-defining template attribute | `master_data.item_variant_defining_attribute_manage` |
+| Verify or revoke contact verification | `master_data.party_contact_manage` |
+| Legal, government, tax, VAT, registration, national or regulatory party ID | `master_data.party_external_id_manage`; unmasked sensitive reads additionally require `master_data.sensitive_external_id_read` |
+| Parent, subsidiary or ownership relationship | `master_data.party_relationship_manage` |
+| Create an identity-defining template attribute | `master_data.variant_manage` |
 
 `extension-authorization-policy.ts` is the command-to-permission authority and
 contains the deterministic sensitive-input classifiers. The module manifest
 enforces that mapping through the package authorization port. Base extension
 permissions are included in the Editor role template for compatibility;
-elevated permissions remain Org Admin-only unless explicitly assigned.
+field-level sensitive read permissions remain Org Admin-only unless explicitly
+assigned.
 
 ### Query surface
 

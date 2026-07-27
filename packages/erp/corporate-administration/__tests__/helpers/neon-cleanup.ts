@@ -247,6 +247,24 @@ export async function countCorporateAdministrationMutationReceipts(
 	return Number(rows[0]?.value ?? 0);
 }
 
+export async function countCorporateAdministrationMutationReceiptsByStatus(
+	scope: CorporateAdministrationIdempotencyScope,
+	status: "completed" | "in_progress" | "released",
+): Promise<number> {
+	const rows = await db
+		.select({ value: sql<number>`count(*)::int` })
+		.from(caMutationReceipt)
+		.where(
+			and(
+				eq(caMutationReceipt.organizationId, scope.organizationId),
+				eq(caMutationReceipt.commandId, scope.commandId),
+				eq(caMutationReceipt.idempotencyKey, scope.idempotencyKey),
+				eq(caMutationReceipt.status, status),
+			),
+		);
+	return Number(rows[0]?.value ?? 0);
+}
+
 export async function countCorporateAdministrationOutboxEvents(
 	organizationId: string,
 ): Promise<number> {

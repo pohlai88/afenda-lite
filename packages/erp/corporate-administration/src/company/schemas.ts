@@ -46,6 +46,7 @@ export const companyIdentifierAuthoritySchema = z
 	.min(1)
 	.max(64)
 	.regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/);
+const regulatorCodeSchema = companyIdentifierAuthoritySchema;
 const sourceReferenceSchema = z.string().trim().min(1).max(256);
 const languageCodePattern = /^[a-z]{2,3}(?:-[A-Z]{2})?$/;
 
@@ -285,7 +286,7 @@ const companyActivityObjectSchema = z.object({
 	activityCode: entityTypeSchema,
 	classification: companyActivityClassificationSchema,
 	jurisdictionCode: countryCodeSchema,
-	regulatorCode: entityTypeSchema.nullable(),
+	regulatorCode: regulatorCodeSchema.nullable(),
 	description: z.string().trim().min(1).max(512),
 	effectiveFrom: canonicalDateSchema,
 	effectiveTo: canonicalDateSchema.nullable(),
@@ -605,7 +606,7 @@ export const registerCompanyActivityInputSchema = z
 		activityCode: entityTypeSchema,
 		classification: companyActivityClassificationSchema,
 		jurisdictionCode: countryCodeSchema,
-		regulatorCode: entityTypeSchema.nullable().optional(),
+		regulatorCode: regulatorCodeSchema.nullable().optional(),
 		description: z.string().trim().min(1).max(512),
 		...commandEffectivePeriodFields,
 		sourceDocumentId: sourceEvidenceSchema,
@@ -733,7 +734,7 @@ export const listCompanyActivitiesAsOfInputSchema = z
 		classification: companyActivityClassificationSchema.optional(),
 		classificationSystem: entityTypeSchema.optional(),
 		jurisdictionCode: countryCodeSchema.optional(),
-		regulatorCode: entityTypeSchema.optional(),
+		regulatorCode: regulatorCodeSchema.optional(),
 		primaryOnly: z.boolean().optional(),
 		knownAt: z.coerce.date().optional(),
 	})
