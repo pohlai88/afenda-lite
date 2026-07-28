@@ -1,3 +1,5 @@
+# HISTORICAL SCORE SNAPSHOT — evidence date 2026-07-24; superseded for current status and package rollup on 2026-07-28 by 47-current-implementation-evidence-and-dual-scores.md.
+# Rows below remain audit provenance. Open findings are not current unless restated in 47 or ../../00.hrm.md; local implementation is not external certification and lifecycle remains scaffolded.
 domain_id	cluster	product_score_10	coding_score_10	confidence	primary_finding	repair_mission	notes
 person	A_foundation	8.7	10.0	high	—	—	Authz Partial only blocker
 worker	A_foundation	8.7	10.0	high	—	—	Same as person

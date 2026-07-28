@@ -12,16 +12,23 @@ import {
 	type PublishEventCommand,
 } from "@afenda/events";
 import {
+	type HrObservabilityPorts,
 	type HumanResourcesAccountingProvisioningFact,
 	type HumanResourcesPlatformFacts,
 	type HumanResourcesWorkItemFact,
 	projectHumanResourcesAccountingProvisioningFacts,
 	projectHumanResourcesPlatformFacts,
+	recordHrEventFailure,
+	recordHrOutboxLag,
 } from "@afenda/human-resources";
 import {
 	createNotificationRecorder,
 	type Notification,
 } from "@afenda/notifications";
+import {
+	classifyHrFailure,
+	createProductionHrObservabilityPorts,
+} from "@/modules/platform/observability/human-resources-observability";
 import { createDrizzlePlatformWorkItemStore } from "./platform-work-items";
 
 export type HumanResourcesPlatformEventResult = {
@@ -190,7 +197,7 @@ async function publishPlatformFacts(
 	return ok(published);
 }
 
-export async function handleHumanResourcesPlatformEvent(
+async function handleHumanResourcesPlatformEventCore(
 	event: DomainEvent,
 	recorder: HumanResourcesNotificationRecorderPort = createNotificationRecorder(),
 	publisher: HumanResourcesFactPublisherPort = createEventPublisher(),
@@ -249,6 +256,38 @@ export async function handleHumanResourcesPlatformEvent(
 		platformEvents: platformEvents.data,
 		workItems: workItems.data,
 	});
+}
+
+export async function handleHumanResourcesPlatformEvent(
+	event: DomainEvent,
+	recorder: HumanResourcesNotificationRecorderPort = createNotificationRecorder(),
+	publisher: HumanResourcesFactPublisherPort = createEventPublisher(),
+	workItemSink: HumanResourcesWorkItemSinkPort | null = createProductionHumanResourcesWorkItemSink(),
+	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
+): Promise<Result<HumanResourcesPlatformEventResult>> {
+	await recordHrOutboxLag(
+		{
+			eventFamily: "domain_event",
+			lagMs: Math.max(0, Date.now() - event.occurredAt.getTime()),
+		},
+		observability,
+	);
+	const result = await handleHumanResourcesPlatformEventCore(
+		event,
+		recorder,
+		publisher,
+		workItemSink,
+	);
+	if (!result.ok) {
+		await recordHrEventFailure(
+			{
+				eventFamily: "domain_event",
+				reason: classifyHrFailure(result.code),
+			},
+			observability,
+		);
+	}
+	return result;
 }
 
 export function createHumanResourcesPlatformEventHandlers(

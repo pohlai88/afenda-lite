@@ -6,6 +6,7 @@ import {
 	humanResourcesErrorDetails,
 } from "./error-codes";
 import type { HumanResourcesIdentityResolverPort } from "./identity-resolver";
+import type { HrObservabilityPorts } from "./observability";
 import type {
 	ApprovedLeaveQueryPort,
 	AttendanceSourcePort,
@@ -42,6 +43,7 @@ export type HumanResourcesCommandOptions = {
 	identityResolver?: HumanResourcesIdentityResolverPort;
 	privacy?: HumanResourcesPrivacyPort;
 	documentObjectResolver?: DocumentObjectResolverPort;
+	observability?: HrObservabilityPorts;
 };
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {

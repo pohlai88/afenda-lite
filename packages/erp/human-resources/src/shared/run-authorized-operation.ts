@@ -2,6 +2,12 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED } from "../error-codes";
+import {
+	authorizationReasonFromFailure,
+	classifyHrAuthorizationDenial,
+	observeAuthorizedOperationResult,
+	recordAuthorizedOperationTelemetry,
+} from "../observability/operation-observability";
 import type { HumanResourcesPermission } from "../permissions";
 import { PRIVILEGED_ACTOR_ATTRIBUTE } from "./authorization-policy-helpers";
 import type {
@@ -165,47 +171,97 @@ export async function runAuthorizedHumanResourcesOperation<
 >(
 	params: RunHumanResourcesOperationOptions<Input, Output, Projected>,
 ): Promise<Result<Projected>> {
-	const resource = params.resolveResource
-		? await params.resolveResource(params.input, params.options)
-		: undefined;
+	const startedAtMs = Date.now();
+	try {
+		const resource = params.resolveResource
+			? await params.resolveResource(params.input, params.options)
+			: undefined;
 
-	const actor = await enrichActorFromIdentityResolver(
-		resolveActorContextFromInput(params.input),
-		params.options,
-	);
+		const actor = await enrichActorFromIdentityResolver(
+			resolveActorContextFromInput(params.input),
+			params.options,
+		);
 
-	const authorizationResult = await authorizeHumanResourcesOperation(
-		{
+		const authorizationResult = await authorizeHumanResourcesOperation(
+			{
+				operationId: params.operationId,
+				operationKind: params.operationKind,
+				requiredPermission: params.requiredPermission,
+				actor,
+				resource,
+				...(params.requestedFields === undefined
+					? {}
+					: { requestedFields: params.requestedFields }),
+			},
+			params.options,
+		);
+
+		if (!authorizationResult.ok) {
+			return observeAuthorizedOperationResult({
+				operationId: params.operationId,
+				operationKind: params.operationKind,
+				observability: params.options.observability,
+				startedAtMs,
+				result: authorizationResult,
+				authorizationReason:
+					authorizationReasonFromFailure(authorizationResult),
+			});
+		}
+
+		const decision = authorizationResult.data;
+		if (!decision.allowed) {
+			const failure = authorizationDecisionToFailure(
+				decision,
+				params.operationId,
+			);
+			return observeAuthorizedOperationResult({
+				operationId: params.operationId,
+				operationKind: params.operationKind,
+				observability: params.options.observability,
+				startedAtMs,
+				result: failure,
+				authorizationReason: classifyHrAuthorizationDenial(decision.code),
+			});
+		}
+
+		const result = await params.execute();
+		if (!result.ok) {
+			return observeAuthorizedOperationResult({
+				operationId: params.operationId,
+				operationKind: params.operationKind,
+				observability: params.options.observability,
+				startedAtMs,
+				result,
+			});
+		}
+		if (params.project === undefined) {
+			return observeAuthorizedOperationResult({
+				operationId: params.operationId,
+				operationKind: params.operationKind,
+				observability: params.options.observability,
+				startedAtMs,
+				result: ok(result.data as Projected & Output),
+			});
+		}
+
+		return observeAuthorizedOperationResult({
 			operationId: params.operationId,
 			operationKind: params.operationKind,
-			requiredPermission: params.requiredPermission,
-			actor,
-			resource,
-			...(params.requestedFields === undefined
-				? {}
-				: { requestedFields: params.requestedFields }),
-		},
-		params.options,
-	);
-
-	if (!authorizationResult.ok) {
-		return authorizationResult;
+			observability: params.options.observability,
+			startedAtMs,
+			result: ok(params.project(result.data, decision.projection)),
+		});
+	} catch (error) {
+		await recordAuthorizedOperationTelemetry({
+			operationId: params.operationId,
+			operationKind: params.operationKind,
+			observability: params.options.observability,
+			startedAtMs,
+			outcome: "failure",
+			failureReason: "unknown",
+		});
+		throw error;
 	}
-
-	const decision = authorizationResult.data;
-	if (!decision.allowed) {
-		return authorizationDecisionToFailure(decision, params.operationId);
-	}
-
-	const result = await params.execute();
-	if (!result.ok) {
-		return result;
-	}
-	if (params.project === undefined) {
-		return ok(result.data as Projected & Output);
-	}
-
-	return ok(params.project(result.data, decision.projection));
 }
 
 /**
@@ -235,6 +291,7 @@ export async function runDomainAuthorizedOperation<
 	) => TProjected;
 	execute: () => Promise<Result<TOut>>;
 }): Promise<Result<TProjected>> {
+	const startedAtMs = Date.now();
 	const requiredPermission = resolveManifestOperationPermission(
 		params.operationId,
 		params.operationKind,
@@ -246,7 +303,14 @@ export async function runDomainAuthorizedOperation<
 			denyCode: "permission_denied",
 			policyId: "hr.manifest-permission",
 		};
-		return fail("FORBIDDEN", AUTHORIZATION_DENIED_MESSAGE, details);
+		return observeAuthorizedOperationResult({
+			operationId: params.operationId,
+			operationKind: params.operationKind,
+			observability: params.options.observability,
+			startedAtMs,
+			result: fail("FORBIDDEN", AUTHORIZATION_DENIED_MESSAGE, details),
+			authorizationReason: "permission_missing",
+		});
 	}
 
 	const parityResourceKind = params.parityResourceKind;

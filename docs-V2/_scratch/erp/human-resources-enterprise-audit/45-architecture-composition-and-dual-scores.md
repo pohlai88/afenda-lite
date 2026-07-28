@@ -1,5 +1,15 @@
 # HR-AUD-05 — Architecture composition and dual scores
 
+> **Superseded score snapshot (2026-07-28):** The **48 Product / 74 Coding**
+> rollup and open-item statements in this file are the 2026-07-24 audit snapshot.
+> They are retained as architecture and scoring provenance, not current status.
+> Current implementation evidence and the **90 Product / 93 Coding** local scores
+> are in
+> [`47-current-implementation-evidence-and-dual-scores.md`](47-current-implementation-evidence-and-dual-scores.md).
+> Those current local scores do not constitute external security, privacy,
+> performance, or recovery certification and do not authorize promotion from
+> `lifecycle: scaffolded`.
+
 | Field | Value |
 |---|---|
 | Mission | **HR-AUD-05** (composition + scoring) |

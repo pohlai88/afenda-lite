@@ -1,5 +1,14 @@
 # HR-AUD-04 — Repair roadmap
 
+> **Historical status marker (2026-07-28):** This file preserves the HR-AUD-04
+> repair sequence and is not the current implementation queue. For current status,
+> scores, and remaining gates, use
+> [`47-current-implementation-evidence-and-dual-scores.md`](47-current-implementation-evidence-and-dual-scores.md);
+> for current program sequencing, use [`00.hrm.md`](../../00.hrm.md). Any
+> **open**, **next**, or incomplete item below is historical unless it is restated
+> in one of those current sources. Local Phase 13 implementation does not supply
+> external certification or authorize promotion from `lifecycle: scaffolded`.
+
 | Field | Value |
 |---|---|
 | Mission | **HR-AUD-04** |

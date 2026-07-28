@@ -13,6 +13,7 @@ import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resour
 import { createHumanResourcesOrganizationDimensionPort } from "@/lib/erp/human-resources-organization-dimension-port";
 import { createHumanResourcesPrivacyPort } from "@/lib/erp/human-resources-privacy-port";
 import { createHumanResourcesWorkCalendarPort } from "@/lib/erp/human-resources-work-calendar-port";
+import { createProductionHrObservabilityPorts } from "@/modules/platform/observability/human-resources-observability";
 
 /** Composition-root options for `@afenda/human-resources` public APIs. */
 export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptions {
@@ -35,5 +36,6 @@ export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptio
 			documentObjectResolver,
 		),
 		privacy: createHumanResourcesPrivacyPort(),
+		observability: createProductionHrObservabilityPorts(),
 	};
 }

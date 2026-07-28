@@ -34,14 +34,14 @@ import {
 } from "@/lib/erp/human-resources-reporting-bulk-worker";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 import {
+	classifyHrFailure,
+	createProductionHrObservabilityPorts,
+} from "@/modules/platform/observability/human-resources-observability";
+import {
 	type ActionResult,
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
-import {
-	classifyHrFailure,
-	createProductionHrObservabilityPorts,
-} from "@/modules/platform/observability/human-resources-observability";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const reportingInputSchema = z

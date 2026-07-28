@@ -119,6 +119,10 @@ The root barrel does not export raw Drizzle tables, SQL builders, database handl
 | Compensation | [`hr-compensation.ts`](../../../apps/web/app/actions/hr-compensation.ts) |
 | Reporting and bulk import | [`hr-reporting-bulk.ts`](../../../apps/web/app/actions/hr-reporting-bulk.ts) · [`human-resources-reporting-bulk-worker.ts`](../../../apps/web/lib/erp/human-resources-reporting-bulk-worker.ts) |
 | Bulk export | [`hr-bulk-export.ts`](../../../apps/web/app/actions/hr-bulk-export.ts) · [`human-resources-bulk-export-worker.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-worker.ts) · [`human-resources-bulk-export-registry.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-registry.ts) |
+| Payroll delivery | [`hr-payroll-delivery.ts`](../../../apps/web/app/actions/hr-payroll-delivery.ts) · [`human-resources-payroll-delivery.ts`](../../../apps/web/modules/platform/domain/human-resources-payroll-delivery.ts) |
+| Privacy deletion | [`hr-privacy-deletion.ts`](../../../apps/web/app/actions/hr-privacy-deletion.ts) · [`human-resources-privacy-deletion.ts`](../../../apps/web/lib/erp/human-resources-privacy-deletion.ts) |
+| Reliability worker | [`human-resources-reliability-worker.ts`](../../../apps/web/modules/platform/domain/human-resources-reliability-worker.ts) |
+| Observability | [`human-resources-observability.ts`](../../../apps/web/modules/platform/observability/human-resources-observability.ts) |
 | Operational recovery | [`44-operational-recovery-runbooks.md`](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-operational-recovery-runbooks.md) |
 
 ## Maintain

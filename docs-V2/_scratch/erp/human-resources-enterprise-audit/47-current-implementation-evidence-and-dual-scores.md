@@ -5,6 +5,13 @@
 **Manifest lifecycle:** `scaffolded`
 **Enterprise certification:** **Not ready**
 
+**Current-status marker (2026-07-28):** This report supersedes
+[`43-repair-roadmap.md`](43-repair-roadmap.md),
+[`45-architecture-composition-and-dual-scores.md`](45-architecture-composition-and-dual-scores.md),
+and [`46-dual-score-matrix.tsv`](46-dual-score-matrix.tsv) for current
+implementation status, open gates, and package-level scores. Those files remain
+historical audit and architecture provenance.
+
 This Scratch report reconciles the current implementation with the enterprise roadmap. Phases 0–12 are implemented and locally verified. Phase 13 implementation assets exist, but this report does not grant external security/privacy approval, production-scale performance certification, signed recovery certification, controlled module-readiness approval, or lifecycle promotion.
 
 ## Measured evidence ledger
@@ -19,7 +26,7 @@ This Scratch report reconciles the current implementation with the enterprise ro
 | `pnpm --filter @afenda/web typecheck` | **Passed** | Web Action and worker composition |
 | `pnpm --filter @afenda/events typecheck` | **Passed** | Event contract integration |
 | `pnpm --filter @afenda/db typecheck` | **Passed** | Schema and migration-host contracts |
-| Database migration verification | **Applied through 0032** | Payroll delivery, platform work items and bulk reliability durability are present on the approved branch |
+| Database migration verification | **Repository ledger applied through 0033; HR implementation migrations through 0032** | Payroll delivery, platform work items and bulk reliability durability are present; `0033_schema_reconciliation` is a repository ledger repair with no `hr_*` DDL |
 | `pnpm audit:tenancy-nulls` | **245 roots / 243 audited / 2 skipped** | Current hard-tenant inventory; the two skips are unrelated pending-DDL roots, not HR roots silently omitted |
 
 The HR inventory is **348 commands**, **198 queries**, **111 permissions**, **136 HR hard-tenant roots**, **136/136 effective-truth classifications**, and **348/348 mutation-emission classifications**.
@@ -48,6 +55,12 @@ Phase 12 reporting, bulk and integration composition:
 
 Phase 13 local implementation assets:
 
+- [Payroll-delivery Actions](../../../../apps/web/app/actions/hr-payroll-delivery.ts)
+- [Payroll-delivery worker](../../../../apps/web/modules/platform/domain/human-resources-payroll-delivery.ts)
+- [Privacy-deletion Actions](../../../../apps/web/app/actions/hr-privacy-deletion.ts)
+- [Privacy-deletion composition](../../../../apps/web/lib/erp/human-resources-privacy-deletion.ts)
+- [Reliability worker](../../../../apps/web/modules/platform/domain/human-resources-reliability-worker.ts)
+- [HR observability adapter](../../../../apps/web/modules/platform/observability/human-resources-observability.ts)
 - [Performance verification workloads and harness](../../../../packages/erp/human-resources/src/performance-verification/)
 - [Recovery verification drills and harness](../../../../packages/erp/human-resources/src/recovery-verification/)
 - [Operational recovery runbooks](44-operational-recovery-runbooks.md)
@@ -82,7 +95,7 @@ The Coding Score measures architecture, typed boundaries, adapter parity, automa
 | Audit, event and correlation integrity | 10 / 10 | 348/348 mutation outcomes classified with fail-closed evidence paths. |
 | Memory adapter completeness | 10 / 10 | Deterministic stores cover the full domain and reliability kernels. |
 | Drizzle adapter and parity | 10 / 10 | Full live lane records 37 files and 368 passes. |
-| Tenancy and database integrity | 10 / 10 | 136 HR roots, migrations through 0032 and current null audit evidence. |
+| Tenancy and database integrity | 10 / 10 | 136 HR roots, HR implementation migrations through 0032, repository ledger through 0033, and current null-audit evidence. |
 | Automated test depth | 10 / 10 | 961 unit passes, 368 live parity passes and focused web lanes. |
 | Reliability and observability | 8 / 10 | Bounded retry, dead-letter, metrics and recovery implementations exist; production operations are not certified. |
 | Documentation and recovery | 8 / 10 | Roadmap, package guide and eight recovery runbooks are linked; signed drill results are absent. |

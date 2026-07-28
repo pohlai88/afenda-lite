@@ -4,11 +4,17 @@ import { describe, expect, it, vi } from "vitest";
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import type { HumanResourcesQueryId } from "../src/module-ids";
 import {
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
 	HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
 	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
 } from "../src/module-ids";
 import {
+	createMemoryHrObservabilityRecorder,
+	type HrObservabilityPorts,
+} from "../src/observability";
+import {
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
@@ -27,6 +33,20 @@ function grantingAuthorization(
 	return {
 		async can(input) {
 			return permissions.has(input.permission);
+		},
+	};
+}
+
+function observabilityHarness(): {
+	ports: HrObservabilityPorts;
+	recorder: ReturnType<typeof createMemoryHrObservabilityRecorder>;
+} {
+	const recorder = createMemoryHrObservabilityRecorder();
+	return {
+		recorder,
+		ports: {
+			recorder,
+			clock: { now: () => new Date("2026-07-28T00:00:00.000Z") },
 		},
 	};
 }
@@ -54,24 +74,76 @@ describe("runAuthorizedHumanResourcesOperation", () => {
 	});
 
 	it("executes when authorization allows", async () => {
+		const telemetry = observabilityHarness();
 		const result = await runAuthorizedHumanResourcesOperation({
-			operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+			operationId: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
 			operationKind: "command",
-			requiredPermission: HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+			requiredPermission: HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 			input: {
 				organizationId: "org-1",
 				actorUserId: "user-1",
 				correlationId: "corr-1",
 			},
 			options: {
+				observability: telemetry.ports,
 				authorization: grantingAuthorization(
-					new Set([HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE]),
+					new Set([HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE]),
 				),
 			},
+			resolveResource: async () =>
+				createParityResourceShell({
+					organizationId: "org-1",
+					kind: "compensation",
+				}),
 			execute: async () => ok({ created: true }),
 		});
 
 		expect(result).toEqual(ok({ created: true }));
+		expect(telemetry.recorder.metrics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "hr.command.total",
+					labels: { area: "compensation", outcome: "success" },
+				}),
+			]),
+		);
+	});
+
+	it("records bounded command and authorization-denial telemetry", async () => {
+		const telemetry = observabilityHarness();
+		const result = await runAuthorizedHumanResourcesOperation({
+			operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+			operationKind: "command",
+			requiredPermission: HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+			input: {
+				organizationId: "org-sensitive-1",
+				actorUserId: "user-sensitive-1",
+				correlationId: "corr-sensitive-1",
+			},
+			options: {
+				observability: telemetry.ports,
+				authorization: grantingAuthorization(new Set()),
+			},
+			execute: async () => ok({ created: true }),
+		});
+
+		expect(result).toMatchObject({ ok: false, code: "FORBIDDEN" });
+		expect(telemetry.recorder.metrics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "hr.authorization.denial.total",
+					labels: { area: "workforce", reason: "permission_missing" },
+				}),
+				expect.objectContaining({
+					name: "hr.command.total",
+					labels: { area: "workforce", outcome: "failure" },
+				}),
+			]),
+		);
+		const serialized = JSON.stringify(telemetry.recorder);
+		expect(serialized).not.toContain("org-sensitive-1");
+		expect(serialized).not.toContain("user-sensitive-1");
+		expect(serialized).not.toContain("corr-sensitive-1");
 	});
 
 	it("applies project using the authorization decision projection", async () => {
@@ -150,6 +222,7 @@ const EMPLOYEE_COMPENSATION_GET =
 
 describe("runAuthorizedHumanResourcesOperation cross-tenant enforcement", () => {
 	it("denies a cross-tenant resource before execution", async () => {
+		const telemetry = observabilityHarness();
 		const execute = vi.fn(async () => ok({ id: "comp-1" }));
 
 		const result = await runAuthorizedHumanResourcesOperation({
@@ -162,6 +235,7 @@ describe("runAuthorizedHumanResourcesOperation cross-tenant enforcement", () => 
 				correlationId: "corr-1",
 			},
 			options: {
+				observability: telemetry.ports,
 				authorization: grantingAuthorization(
 					new Set([HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ]),
 				),
@@ -177,6 +251,17 @@ describe("runAuthorizedHumanResourcesOperation cross-tenant enforcement", () => 
 
 		expect(result.ok).toBe(false);
 		expect(execute).not.toHaveBeenCalled();
+		expect(telemetry.recorder.metrics).toContainEqual({
+			name: "hr.authorization.denial.total",
+			kind: "counter",
+			value: 1,
+			labels: { area: "compensation", reason: "tenant_mismatch" },
+		});
+		expect(
+			telemetry.recorder.metrics.some(
+				(metric) => metric.name === "hr.command.total",
+			),
+		).toBe(false);
 	});
 });
 
@@ -244,7 +329,38 @@ describe("createParityResourceShell", () => {
 
 describe("runAuthorizedHumanResourcesOperation execute failures", () => {
 	it("returns execute failures without projecting", async () => {
+		const telemetry = observabilityHarness();
 		const project = vi.fn();
+		const result = await runAuthorizedHumanResourcesOperation({
+			operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+			operationKind: "command",
+			requiredPermission: HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+			input: {
+				organizationId: "org-1",
+				actorUserId: "user-1",
+				correlationId: "corr-1",
+			},
+			options: {
+				observability: telemetry.ports,
+				authorization: grantingAuthorization(
+					new Set([HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE]),
+				),
+			},
+			execute: async () => fail("CONFLICT", "boom"),
+			project,
+		});
+
+		expect(result).toEqual(fail("CONFLICT", "boom"));
+		expect(project).not.toHaveBeenCalled();
+		expect(telemetry.recorder.events).toContainEqual({
+			name: "hr.command.failed",
+			severity: "error",
+			observedAt: new Date("2026-07-28T00:00:00.000Z"),
+			attributes: { area: "workforce", reason: "conflict" },
+		});
+	});
+
+	it("preserves domain results when the telemetry recorder fails", async () => {
 		const result = await runAuthorizedHumanResourcesOperation({
 			operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 			operationKind: "command",
@@ -258,12 +374,21 @@ describe("runAuthorizedHumanResourcesOperation execute failures", () => {
 				authorization: grantingAuthorization(
 					new Set([HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE]),
 				),
+				observability: {
+					clock: { now: () => new Date() },
+					recorder: {
+						recordMetric: () => {
+							throw new Error("telemetry unavailable");
+						},
+						recordEvent: () => {
+							throw new Error("telemetry unavailable");
+						},
+					},
+				},
 			},
-			execute: async () => fail("CONFLICT", "boom"),
-			project,
+			execute: async () => ok({ created: true }),
 		});
 
-		expect(result).toEqual(fail("CONFLICT", "boom"));
-		expect(project).not.toHaveBeenCalled();
+		expect(result).toEqual(ok({ created: true }));
 	});
 });
