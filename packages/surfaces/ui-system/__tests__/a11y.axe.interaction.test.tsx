@@ -18,9 +18,19 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerTitle,
+	DrawerTrigger,
 	FormError,
 	FormField,
 	Input,
+	Menubar,
+	MenubarContent,
+	MenubarItem,
+	MenubarMenu,
+	MenubarTrigger,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -106,6 +116,36 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 					</SheetHeader>
 				</SheetContent>
 			</Sheet>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("Drawer trigger tree has no serious violations", async () => {
+		const { container } = render(
+			<Drawer>
+				<DrawerTrigger asChild>
+					<Button type="button">Open quick filters</Button>
+				</DrawerTrigger>
+				<DrawerContent>
+					<DrawerTitle>Quick filters</DrawerTitle>
+					<DrawerDescription>Narrow the record set.</DrawerDescription>
+				</DrawerContent>
+			</Drawer>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("Menubar command tree has no serious violations", async () => {
+		const { container } = render(
+			<Menubar>
+				<MenubarMenu>
+					<MenubarTrigger>File</MenubarTrigger>
+					<MenubarContent>
+						<MenubarItem>Open record</MenubarItem>
+						<MenubarItem disabled>Restricted command</MenubarItem>
+					</MenubarContent>
+				</MenubarMenu>
+			</Menubar>,
 		);
 		await expectNoA11yViolations(container);
 	});

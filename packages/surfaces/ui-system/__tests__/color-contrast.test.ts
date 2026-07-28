@@ -37,6 +37,20 @@ const modes = {
 	dark: declarations(blockBetween(tokens, ".dark {", "\n}")),
 } as const;
 
+function resolveColor(
+	palette: ReadonlyMap<string, string>,
+	name: string,
+	seen = new Set<string>(),
+): string {
+	if (seen.has(name)) throw new Error(`Circular color alias: ${name}`);
+	seen.add(name);
+	const value = palette.get(name);
+	expect(value, `missing --${name}`).toBeTruthy();
+	if (!value) throw new Error(`Missing color token: --${name}`);
+	const alias = value.match(/^var\(--([\w-]+)\)$/);
+	return alias?.[1] ? resolveColor(palette, alias[1], seen) : value;
+}
+
 const toRgb = converter("rgb");
 
 function rgbChannels(value: string): readonly [number, number, number] {
@@ -98,6 +112,13 @@ const readablePairs: readonly Pair[] = [
 		apca: { kind: "font-lookup", fontSizePx: 16, fontWeight: 500 },
 	},
 	{
+		name: "tertiary body",
+		foreground: "foreground-tertiary",
+		background: "background",
+		minimumWcag: 4.5,
+		apca: { kind: "font-lookup", fontSizePx: 16, fontWeight: 500 },
+	},
+	{
 		name: "muted helper",
 		foreground: "muted-foreground",
 		background: "muted",
@@ -119,12 +140,42 @@ const readablePairs: readonly Pair[] = [
 		apca: { kind: "spot-text", minimumLc: 60 },
 	},
 	{
+		name: "accent interaction",
+		foreground: "accent-foreground",
+		background: "accent",
+		minimumWcag: 4.5,
+		apca: { kind: "spot-text", minimumLc: 60 },
+	},
+	{
+		name: "destructive action",
+		foreground: "destructive-foreground",
+		background: "destructive",
+		minimumWcag: 4.5,
+		apca: { kind: "spot-text", minimumLc: 60 },
+	},
+	{
 		name: "sidebar content",
 		foreground: "sidebar-foreground",
 		background: "sidebar",
 		minimumWcag: 4.5,
 		apca: { kind: "spot-text", minimumLc: 60 },
 	},
+	{
+		name: "sidebar primary action",
+		foreground: "sidebar-primary-foreground",
+		background: "sidebar-primary",
+		minimumWcag: 4.5,
+		apca: { kind: "spot-text", minimumLc: 60 },
+	},
+	...(["success", "warning", "info", "destructive"] as const).map(
+		(status): Pair => ({
+			name: `${status} solid pair`,
+			foreground: `${status}-foreground`,
+			background: status,
+			minimumWcag: 4.5,
+			apca: { kind: "spot-text", minimumLc: 60 },
+		}),
+	),
 	...(["success", "warning", "info", "destructive"] as const).map(
 		(status): Pair => ({
 			name: `${status} status badge`,
@@ -141,11 +192,8 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 		Object.entries(modes),
 	)("keeps readable %s pairs within their component typography contract", (_mode, palette) => {
 		for (const pair of readablePairs) {
-			const foreground = palette.get(pair.foreground);
-			const background = palette.get(pair.background);
-			expect(foreground, pair.foreground).toBeTruthy();
-			expect(background, pair.background).toBeTruthy();
-			if (!foreground || !background) continue;
+			const foreground = resolveColor(palette, pair.foreground);
+			const background = resolveColor(palette, pair.background);
 
 			const wcag = wcagContrast(foreground, background);
 			const apca = Math.abs(apcaContrast(foreground, background));
@@ -175,12 +223,11 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 	it.each(
 		Object.entries(modes),
 	)("keeps the actual %s destructive action pair readable", (mode, palette) => {
-		const background = palette.get(
+		const background = resolveColor(
+			palette,
 			mode === "dark" ? "destructive-soft" : "destructive",
 		);
-		const foreground = "oklch(1 0 0)";
-		expect(background).toBeTruthy();
-		if (!background) return;
+		const foreground = resolveColor(palette, "destructive-foreground");
 
 		expect(wcagContrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
 		expect(
@@ -191,16 +238,50 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 	it.each(
 		Object.entries(modes),
 	)("keeps %s focus and invalid-control indicators above 3:1", (_mode, palette) => {
-		const background = palette.get("background");
-		const focus = palette.get("ring-focus");
-		const invalid = palette.get("destructive");
-		expect(background).toBeTruthy();
-		expect(focus).toBeTruthy();
-		expect(invalid).toBeTruthy();
-		if (!background || !focus || !invalid) return;
+		const background = resolveColor(palette, "background");
+		const focus = resolveColor(palette, "ring-focus");
+		const invalid = resolveColor(palette, "destructive");
 
 		expect(wcagContrast(focus, background)).toBeGreaterThanOrEqual(3);
 		expect(wcagContrast(invalid, background)).toBeGreaterThanOrEqual(3);
+	});
+
+	it.each(
+		Object.entries(modes),
+	)("keeps the complete %s text ladder readable on approved surfaces", (_mode, palette) => {
+		const textRoles = [
+			["foreground", 400],
+			["foreground-secondary", 500],
+			["foreground-tertiary", 500],
+			["muted-foreground", 500],
+		] as const;
+		const surfaces = [
+			"canvas",
+			"surface-sunken",
+			"background",
+			"card",
+			"surface-raised",
+			"popover",
+		] as const;
+
+		for (const [foregroundName, fontWeight] of textRoles) {
+			for (const backgroundName of surfaces) {
+				const foreground = resolveColor(palette, foregroundName);
+				const background = resolveColor(palette, backgroundName);
+				const wcag = wcagContrast(foreground, background);
+				const apca = Math.abs(apcaContrast(foreground, background));
+				const minimumSize = Number(fontLookupAPCA(apca)[fontWeight / 100]);
+
+				expect(
+					wcag,
+					`${foregroundName}/${backgroundName} WCAG ${wcag.toFixed(2)}`,
+				).toBeGreaterThanOrEqual(4.5);
+				expect(
+					minimumSize,
+					`${foregroundName}/${backgroundName} requires ${minimumSize}px at ${fontWeight}`,
+				).toBeLessThanOrEqual(16);
+			}
+		}
 	});
 });
 

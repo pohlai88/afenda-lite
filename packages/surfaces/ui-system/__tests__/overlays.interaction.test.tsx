@@ -32,6 +32,11 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerTitle,
+	DrawerTrigger,
 	Empty,
 	FormError,
 	FormField,
@@ -40,6 +45,11 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	InputGroupText,
+	Menubar,
+	MenubarContent,
+	MenubarItem,
+	MenubarMenu,
+	MenubarTrigger,
 	Progress,
 	Select,
 	SelectContent,
@@ -113,6 +123,71 @@ describe("Sheet — keyboard/focus smoke", () => {
 		await waitFor(() =>
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 		);
+	});
+});
+
+describe("Drawer — keyboard/focus and portal smoke", () => {
+	it("opens in a portal, closes on Escape, and restores trigger focus", async () => {
+		const user = userEvent.setup();
+		render(
+			<Drawer>
+				<DrawerTrigger>Open quick filters</DrawerTrigger>
+				<DrawerContent>
+					<DrawerTitle>Quick filters</DrawerTitle>
+					<DrawerDescription>
+						Limit the records shown in this workspace.
+					</DrawerDescription>
+					<button type="button">Apply filters</button>
+				</DrawerContent>
+			</Drawer>,
+		);
+
+		const trigger = screen.getByRole("button", { name: "Open quick filters" });
+		await user.click(trigger);
+		const drawer = await screen.findByRole("dialog", { name: "Quick filters" });
+		expect(document.body).toContainElement(drawer);
+
+		await user.keyboard("{Escape}");
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(trigger).toHaveFocus();
+	});
+});
+
+describe("Menubar — keyboard, disabled state, and portal smoke", () => {
+	it("navigates enabled commands, skips disabled commands, and restores focus", async () => {
+		const user = userEvent.setup();
+		render(
+			<Menubar>
+				<MenubarMenu>
+					<MenubarTrigger>File</MenubarTrigger>
+					<MenubarContent>
+						<MenubarItem>Open record</MenubarItem>
+						<MenubarItem disabled>Restricted command</MenubarItem>
+						<MenubarItem>Close record</MenubarItem>
+					</MenubarContent>
+				</MenubarMenu>
+			</Menubar>,
+		);
+
+		const trigger = screen.getByRole("menuitem", { name: "File" });
+		await user.click(trigger);
+		const menu = await screen.findByRole("menu");
+		expect(document.body).toContainElement(menu);
+		expect(
+			screen.getByRole("menuitem", { name: "Restricted command" }),
+		).toHaveAttribute("data-disabled");
+		expect(screen.getByRole("menuitem", { name: "Open record" })).toHaveFocus();
+
+		await user.keyboard("{ArrowDown}");
+		expect(screen.getByRole("menuitem", { name: "Close record" })).toHaveFocus();
+
+		await user.keyboard("{Escape}");
+		await waitFor(() =>
+			expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
+		);
+		expect(trigger).toHaveFocus();
 	});
 });
 

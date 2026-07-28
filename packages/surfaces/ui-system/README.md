@@ -103,7 +103,7 @@ stylesheet again from individual components.
 | `@afenda/ui-system/base.css` | Duplicated semantic base rules in consumer stylesheets |
 | Package-relative imports inside this package | Product imports from `apps/web/shadcn-studio/**` |
 
-[`apps/web/__tests__/ui-boundary.test.ts`](../../../apps/web/__tests__/ui-boundary.test.ts) enforces the two public specifiers and prevents product code from importing internal or staged sources.
+[`apps/web/__tests__/ui-boundary.test.ts`](../../../apps/web/__tests__/ui-boundary.test.ts) enforces the three public specifiers and prevents product code from importing internal or staged sources.
 
 ## Decide where UI belongs
 
