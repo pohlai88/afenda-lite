@@ -28,15 +28,15 @@ import {
 	DialogContent,
 	DialogTitle,
 	DialogTrigger,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerTitle,
 	DrawerTrigger,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 	Empty,
 	FormError,
 	FormField,
@@ -181,7 +181,9 @@ describe("Menubar — keyboard, disabled state, and portal smoke", () => {
 		expect(screen.getByRole("menuitem", { name: "Open record" })).toHaveFocus();
 
 		await user.keyboard("{ArrowDown}");
-		expect(screen.getByRole("menuitem", { name: "Close record" })).toHaveFocus();
+		expect(
+			screen.getByRole("menuitem", { name: "Close record" }),
+		).toHaveFocus();
 
 		await user.keyboard("{Escape}");
 		await waitFor(() =>

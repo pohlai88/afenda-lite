@@ -20,7 +20,9 @@ export const menubarContract = defineManifestContract({
 	approvedVariants: {
 		default: {
 			meaning: "Ordinary command item.",
-			allowedWhen: ["The command does not represent a destructive consequence."],
+			allowedWhen: [
+				"The command does not represent a destructive consequence.",
+			],
 		},
 		destructive: {
 			meaning: "Destructive command item.",

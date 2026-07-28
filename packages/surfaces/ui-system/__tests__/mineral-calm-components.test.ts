@@ -29,12 +29,7 @@ describe("@afenda/ui-system — Mineral Calm component consumption", () => {
 		]) {
 			expect(readComponent(name), name).toContain("shadow-(--shadow-overlay)");
 		}
-		for (const name of [
-			"alert-dialog",
-			"dialog",
-			"drawer",
-			"sheet",
-		]) {
+		for (const name of ["alert-dialog", "dialog", "drawer", "sheet"]) {
 			expect(readComponent(name), name).toContain("shadow-(--shadow-dialog)");
 		}
 	});
@@ -56,7 +51,9 @@ describe("@afenda/ui-system — Mineral Calm component consumption", () => {
 	it("eliminates generic medium-to-large shadows from component source", () => {
 		const offenders = readdirSync(componentRoot)
 			.filter((name) => name.endsWith(".tsx"))
-			.filter((name) => /\bshadow-(?:sm|md|lg|xl)\b/.test(readComponent(name.slice(0, -4))));
+			.filter((name) =>
+				/\bshadow-(?:sm|md|lg|xl)\b/.test(readComponent(name.slice(0, -4))),
+			);
 
 		expect(offenders).toEqual([]);
 	});

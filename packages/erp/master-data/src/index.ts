@@ -359,46 +359,7 @@ export {
 	updateWarehouse,
 } from "./capabilities/core-organization-masters/warehouse";
 export type { WarehouseStore } from "./capabilities/core-organization-masters/warehouse-store";
-export {
-	approveChangeRequest,
-	assertApprovedChangeRequestForApply,
-	getChangeRequestById,
-	listChangeRequests,
-	listChangeRequestsInputSchema,
-	type ReviewChangeRequestInput,
-	rejectChangeRequest,
-	requireChangeRequestId,
-	reviewChangeRequestInputSchema,
-	type SubmitChangeRequestInput,
-	submitChangeRequest,
-	submitChangeRequestInputSchema,
-} from "./capabilities/data-governance-workflows/change-request-commands";
-export {
-	IMPORT_MODES,
-	IMPORT_ROW_OUTCOMES,
-	type ImportMode,
-	type ImportReconciliationReport,
-	type ImportRowOutcome,
-	type ImportRowResult,
-	ITEM_GROUP_IMPORT_MUTABLE_FIELDS,
-	ITEM_IMPORT_MUTABLE_FIELDS,
-	MAX_IMPORT_BATCH_SIZE,
-	PARTY_IMPORT_MUTABLE_FIELDS,
-	upsertItemGroupsByCode,
-	upsertItemsByCode,
-	upsertPartiesByCode,
-	upsertWarehousesByCode,
-	validatePartyImportBatch,
-	WAREHOUSE_IMPORT_MUTABLE_FIELDS,
-} from "./capabilities/data-governance-workflows/import-bulk-commands";
-export {
-	type DuplicatePartyWarning,
-	findPartyDuplicateWarnings,
-	type MergePartiesResult,
-	mergeParties,
-	mergePartiesInputSchema,
-	resolveCanonicalPartyId,
-} from "./capabilities/data-governance-workflows/merge-commands";
+export * from "./capabilities/data-governance-workflows";
 export {
 	activatePartyRole,
 	archivePartyRole,

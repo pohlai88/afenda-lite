@@ -26,9 +26,7 @@ function declaration(block: string, name: string): string | null {
 }
 
 function oklch(value: string | null): { l: number; c: number; h: number } {
-	const match = value?.match(
-		/oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/,
-	);
+	const match = value?.match(/oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/);
 	expect(match, `parse OKLCH from ${value}`).toBeTruthy();
 	return {
 		l: Number(match?.[1]),
@@ -80,7 +78,7 @@ const expectedDark = {
 	card: "oklch(0.19 0.015 255)",
 	"surface-raised": "oklch(0.215 0.016 255)",
 	popover: "oklch(0.225 0.016 255)",
-	foreground: "oklch(0.92 0.008 255)",
+	foreground: "oklch(0.925 0.008 255)",
 	"foreground-secondary": "oklch(0.9 0.01 255)",
 	"foreground-tertiary": "oklch(0.88 0.01 255)",
 	"muted-foreground": "oklch(0.86 0.012 255)",
@@ -179,9 +177,7 @@ describe("@afenda/ui-system — Mineral Calm token contract", () => {
 				"oklch(0.2 0.025 80)",
 			);
 			expect(declaration(block, "info")).toBe("oklch(0.53 0.11 245)");
-			expect(declaration(block, "destructive")).toBe(
-				"oklch(0.55 0.18 25)",
-			);
+			expect(declaration(block, "destructive")).toBe("oklch(0.55 0.18 25)");
 		}
 	});
 
