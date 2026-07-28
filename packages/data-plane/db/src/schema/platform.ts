@@ -8,7 +8,10 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	customType,
+	date,
+	foreignKey,
 	index,
 	integer,
 	jsonb,
@@ -300,5 +303,111 @@ export const platformDomainEvent = pgTable(
 		uniqueIndex("platform_domain_event_org_source_type_dedupe_uidx")
 			.on(t.organizationId, t.sourceModule, t.type, t.deduplicationKey)
 			.where(sql`${t.deduplicationKey} IS NOT NULL`),
+	],
+);
+
+/** Platform-owned approvals, tasks, reminders, and escalations. */
+export const platformWorkItem = pgTable(
+	"platform_work_item",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		kind: text("kind").notNull(),
+		status: text("status").notNull().default("pending"),
+		targetUserId: text("target_user_id").notNull(),
+		entityType: text("entity_type").notNull(),
+		entityId: text("entity_id").notNull(),
+		title: text("title").notNull(),
+		priority: text("priority").notNull(),
+		dueOn: date("due_on", { mode: "string" }),
+		sourceEventId: text("source_event_id").notNull(),
+		deduplicationKey: text("deduplication_key").notNull(),
+		factVersion: integer("fact_version").notNull(),
+		version: integer("version").notNull().default(1),
+		correlationId: text("correlation_id").notNull(),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("platform_work_item_org_dedupe_uidx").on(
+			t.organizationId,
+			t.deduplicationKey,
+		),
+		uniqueIndex("platform_work_item_org_id_uidx").on(t.organizationId, t.id),
+		index("platform_work_item_org_target_status_idx").on(
+			t.organizationId,
+			t.targetUserId,
+			t.status,
+			t.createdAt,
+		),
+		check(
+			"platform_work_item_kind_check",
+			sql`${t.kind} IN ('approval', 'task', 'reminder', 'escalation')`,
+		),
+		check(
+			"platform_work_item_status_check",
+			sql`${t.status} IN ('pending', 'in_progress', 'completed', 'approved', 'rejected', 'dismissed', 'cancelled')`,
+		),
+		check(
+			"platform_work_item_kind_status_check",
+			sql`(${t.kind} = 'approval' AND ${t.status} IN ('pending', 'approved', 'rejected', 'cancelled')) OR (${t.kind} = 'task' AND ${t.status} IN ('pending', 'in_progress', 'completed', 'cancelled')) OR (${t.kind} = 'reminder' AND ${t.status} IN ('pending', 'completed', 'dismissed', 'cancelled')) OR (${t.kind} = 'escalation' AND ${t.status} IN ('pending', 'in_progress', 'completed', 'cancelled'))`,
+		),
+		check("platform_work_item_version_check", sql`${t.version} > 0`),
+		check("platform_work_item_fact_version_check", sql`${t.factVersion} > 0`),
+	],
+);
+
+/** Immutable audit evidence for every platform work-item state version. */
+export const platformWorkItemActivity = pgTable(
+	"platform_work_item_activity",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		workItemId: uuid("work_item_id").notNull(),
+		fromStatus: text("from_status"),
+		toStatus: text("to_status").notNull(),
+		resultingVersion: integer("resulting_version").notNull(),
+		action: text("action").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		reason: text("reason"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("platform_work_item_activity_org_item_version_uidx").on(
+			t.organizationId,
+			t.workItemId,
+			t.resultingVersion,
+		),
+		index("platform_work_item_activity_org_created_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.workItemId],
+			foreignColumns: [platformWorkItem.organizationId, platformWorkItem.id],
+			name: "platform_work_item_activity_org_item_fk",
+		}),
+		check(
+			"platform_work_item_activity_status_check",
+			sql`${t.toStatus} IN ('pending', 'in_progress', 'completed', 'approved', 'rejected', 'dismissed', 'cancelled') AND (${t.fromStatus} IS NULL OR ${t.fromStatus} IN ('pending', 'in_progress', 'completed', 'approved', 'rejected', 'dismissed', 'cancelled'))`,
+		),
+		check(
+			"platform_work_item_activity_action_check",
+			sql`${t.action} IN ('recorded', 'transitioned')`,
+		),
+		check(
+			"platform_work_item_activity_version_check",
+			sql`${t.resultingVersion} > 0`,
+		),
 	],
 );

@@ -1,5 +1,5 @@
 /** Party-contact commands and queries. */
-import type { Result } from "@afenda/errors/result";
+import { ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -11,7 +11,9 @@ import {
 	MASTER_COMMAND_PARTY_CONTACT_UPDATE,
 	MASTER_COMMAND_PARTY_CONTACT_VERIFY,
 	MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY,
+	MASTER_QUERY_PARTY_CONTACT_GET_SENSITIVE_PRIMARY,
 	MASTER_QUERY_PARTY_CONTACT_LIST,
+	MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
 import type { PartyContact } from "../../types";
@@ -25,11 +27,17 @@ import {
 	updatePartyContactInputSchema,
 	updatePartyContactVerificationInputSchema,
 } from "./extension-schemas";
+import {
+	type PartyContactProjection,
+	type SensitivePartyContactProjection,
+	toPartyContactProjection,
+	toSensitivePartyContactProjection,
+} from "./party-contact-projection";
 
 export async function createPartyContact(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<PartyContact>> {
+): Promise<Result<PartyContactProjection>> {
 	const parsed = parseMasterInput(
 		createPartyContactInputSchema,
 		input,
@@ -61,29 +69,31 @@ export async function createPartyContact(
 		parsed.data.partyId,
 	);
 	if (!parent.ok) return parent;
-	return store.createPartyContact(
-		{
-			organizationId: parsed.data.organizationId,
-			partyId: parsed.data.partyId,
-			contactType: parsed.data.contactType,
-			value: normalized.data.value,
-			normalizedValue: normalized.data.normalizedValue,
-			label: parsed.data.label,
-			purpose: parsed.data.purpose,
-			isPrimary: parsed.data.isPrimary,
-			effectiveFrom: parsed.data.effectiveFrom,
-			effectiveTo: parsed.data.effectiveTo,
-			createdBy: parsed.data.actorUserId,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
+	return projectPartyContactResult(
+		await store.createPartyContact(
+			{
+				organizationId: parsed.data.organizationId,
+				partyId: parsed.data.partyId,
+				contactType: parsed.data.contactType,
+				value: normalized.data.value,
+				normalizedValue: normalized.data.normalizedValue,
+				label: parsed.data.label,
+				purpose: parsed.data.purpose,
+				isPrimary: parsed.data.isPrimary,
+				effectiveFrom: parsed.data.effectiveFrom,
+				effectiveTo: parsed.data.effectiveTo,
+				createdBy: parsed.data.actorUserId,
+			},
+			ports,
+			{ correlationId: parsed.data.correlationId },
+		),
 	);
 }
 
 export async function updatePartyContact(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<PartyContact>> {
+): Promise<Result<PartyContactProjection>> {
 	const parsed = parseMasterInput(
 		updatePartyContactInputSchema,
 		input,
@@ -108,30 +118,32 @@ export async function updatePartyContact(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	return store.updatePartyContact(
-		{
-			organizationId: parsed.data.organizationId,
-			id: parsed.data.id,
-			expectedVersion: parsed.data.expectedVersion,
-			updatedBy: parsed.data.actorUserId,
-			contactType: parsed.data.contactType,
-			value: normalized?.data.value,
-			normalizedValue: normalized?.data.normalizedValue,
-			label: parsed.data.label,
-			purpose: parsed.data.purpose,
-			isPrimary: parsed.data.isPrimary,
-			effectiveFrom: parsed.data.effectiveFrom,
-			effectiveTo: parsed.data.effectiveTo,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
+	return projectPartyContactResult(
+		await store.updatePartyContact(
+			{
+				organizationId: parsed.data.organizationId,
+				id: parsed.data.id,
+				expectedVersion: parsed.data.expectedVersion,
+				updatedBy: parsed.data.actorUserId,
+				contactType: parsed.data.contactType,
+				value: normalized?.data.value,
+				normalizedValue: normalized?.data.normalizedValue,
+				label: parsed.data.label,
+				purpose: parsed.data.purpose,
+				isPrimary: parsed.data.isPrimary,
+				effectiveFrom: parsed.data.effectiveFrom,
+				effectiveTo: parsed.data.effectiveTo,
+			},
+			ports,
+			{ correlationId: parsed.data.correlationId },
+		),
 	);
 }
 
 export async function updatePartyContactVerification(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<PartyContact>> {
+): Promise<Result<PartyContactProjection>> {
 	const parsed = parseMasterInput(
 		updatePartyContactVerificationInputSchema,
 		input,
@@ -147,27 +159,36 @@ export async function updatePartyContactVerification(
 		command: MASTER_COMMAND_PARTY_CONTACT_VERIFY,
 	});
 	if (!authorized.ok) return authorized;
-	return store.updatePartyContactVerification(
-		{
-			organizationId: parsed.data.organizationId,
-			id: parsed.data.id,
-			expectedVersion: parsed.data.expectedVersion,
-			updatedBy: parsed.data.actorUserId,
-			verificationStatus: parsed.data.verificationStatus,
-			verifiedAt:
-				parsed.data.verificationStatus === "verified"
-					? ports.clock.now()
-					: null,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
+	return projectPartyContactResult(
+		await store.updatePartyContactVerification(
+			{
+				organizationId: parsed.data.organizationId,
+				id: parsed.data.id,
+				expectedVersion: parsed.data.expectedVersion,
+				updatedBy: parsed.data.actorUserId,
+				verificationStatus: parsed.data.verificationStatus,
+				verifiedAt:
+					parsed.data.verificationStatus === "verified"
+						? ports.clock.now()
+						: null,
+			},
+			ports,
+			{ correlationId: parsed.data.correlationId },
+		),
 	);
+}
+
+function projectPartyContactResult(
+	result: Result<PartyContact>,
+): Result<PartyContactProjection> {
+	if (!result.ok) return result;
+	return ok(toPartyContactProjection(result.data));
 }
 
 export async function listPartyContacts(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<PartyContact[]>> {
+): Promise<Result<PartyContactProjection[]>> {
 	const parsed = parseMasterInput(
 		listPartyExtensionsInputSchema,
 		input,
@@ -187,18 +208,20 @@ export async function listPartyContacts(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	return store.listPartyContacts({
+	const result = await store.listPartyContacts({
 		organizationId: parsed.data.organizationId,
 		parentId: parsed.data.parentId,
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
 	});
+	if (!result.ok) return result;
+	return ok(result.data.map(toPartyContactProjection));
 }
 
 export async function getPrimaryPartyContact(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<PartyContact | null>> {
+): Promise<Result<PartyContactProjection | null>> {
 	const parsed = parseMasterInput(
 		getPrimaryPartyContactInputSchema,
 		input,
@@ -214,10 +237,72 @@ export async function getPrimaryPartyContact(
 		query: MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY,
 	});
 	if (!authorized.ok) return authorized;
-	return store.getPrimaryPartyContact(
+	const result = await store.getPrimaryPartyContact(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 		parsed.data.contactType,
 		parsed.data.purpose ?? null,
 	);
+	if (!result.ok) return result;
+	if (result.data === null) return ok(null);
+	return ok(toPartyContactProjection(result.data));
+}
+
+export async function listSensitivePartyContacts(
+	input: unknown,
+	options: MasterCommandOptions = {},
+): Promise<Result<SensitivePartyContactProjection[]>> {
+	const parsed = parseMasterInput(
+		listPartyExtensionsInputSchema,
+		input,
+		"Invalid sensitive party contact list input",
+	);
+	if (!parsed.ok) return parsed;
+	const { store, authorization } = resolvePartyExtensionDeps(options, [
+		"listPartyContacts",
+	]);
+	const authorized = await requireMasterQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE,
+	});
+	if (!authorized.ok) return authorized;
+	const result = await store.listPartyContacts({
+		organizationId: parsed.data.organizationId,
+		parentId: parsed.data.parentId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
+	});
+	if (!result.ok) return result;
+	return ok(result.data.map(toSensitivePartyContactProjection));
+}
+
+export async function getSensitivePrimaryPartyContact(
+	input: unknown,
+	options: MasterCommandOptions = {},
+): Promise<Result<SensitivePartyContactProjection | null>> {
+	const parsed = parseMasterInput(
+		getPrimaryPartyContactInputSchema,
+		input,
+		"Invalid sensitive primary party contact input",
+	);
+	if (!parsed.ok) return parsed;
+	const { store, authorization } = resolvePartyExtensionDeps(options, [
+		"getPrimaryPartyContact",
+	]);
+	const authorized = await requireMasterQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_CONTACT_GET_SENSITIVE_PRIMARY,
+	});
+	if (!authorized.ok) return authorized;
+	const result = await store.getPrimaryPartyContact(
+		parsed.data.organizationId,
+		parsed.data.partyId,
+		parsed.data.contactType,
+		parsed.data.purpose ?? null,
+	);
+	if (!result.ok) return result;
+	if (result.data === null) return ok(null);
+	return ok(toSensitivePartyContactProjection(result.data));
 }

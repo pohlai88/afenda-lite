@@ -104,7 +104,10 @@ export async function createItemGroup(
 			parentId: parsed.data.parentId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterItemGroupMutation(result, options);
 }
@@ -147,7 +150,10 @@ export async function updateItemGroup(
 			parentId: parsed.data.parentId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterItemGroupMutation(result, options);
 }

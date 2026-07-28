@@ -1,4 +1,13 @@
 export type SelfServicePermissions = {
+	canViewProfile: boolean;
+	canViewLeave: boolean;
+	canViewAttendance: boolean;
+	canViewTimesheet: boolean;
+	canViewLearning: boolean;
+	canViewCertifications: boolean;
+	canViewPerformance: boolean;
+	canViewDocuments: boolean;
+	canViewAcknowledgements: boolean;
 	canRecordAttendance: boolean;
 	canCancelApprovedLeave: boolean;
 	canSubmitTimesheet: boolean;

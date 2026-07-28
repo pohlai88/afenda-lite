@@ -26,7 +26,7 @@ import {
 	updateLegalCompanyProfile,
 	userIdSchema,
 } from "@afenda/corporate-administration";
-import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/adapters/memory";
+import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/testing";
 import { ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";

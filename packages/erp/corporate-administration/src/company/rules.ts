@@ -19,6 +19,7 @@ import type {
 	CompanyLegalForm,
 	CompanyName,
 	CompanyNameType,
+	LegalCompanyStatus,
 } from "./types";
 
 const COMPANY_CODE_SEPARATORS_PATTERN = /[\s_-]+/g;
@@ -627,6 +628,75 @@ export function resolveActivitiesAsOf(input: {
 				(knownAt === undefined || activity.recordedAt <= knownAt),
 		)
 		.sort(compareActivityResolutionOrder);
+}
+
+const LEGAL_COMPANY_STATUS_TRANSITIONS = {
+	draft: ["active", "archived"],
+	active: [
+		"suspended",
+		"struck_off",
+		"in_liquidation",
+		"dissolved",
+		"archived",
+	],
+	suspended: [
+		"active",
+		"struck_off",
+		"in_liquidation",
+		"dissolved",
+		"archived",
+	],
+	struck_off: ["restored", "dissolved", "archived"],
+	in_liquidation: ["dissolved", "restored"],
+	dissolved: ["restored", "archived"],
+	restored: ["active", "suspended", "in_liquidation", "dissolved", "archived"],
+	archived: [],
+} as const satisfies Readonly<
+	Record<LegalCompanyStatus, readonly LegalCompanyStatus[]>
+>;
+
+export function validateLegalCompanyStatusTransition(
+	input: Readonly<{
+		from: LegalCompanyStatus;
+		to: LegalCompanyStatus;
+	}>,
+): Result<void> {
+	if (input.from === input.to) {
+		return fail(
+			"CONFLICT",
+			"Corporate Administration legal company status is already current.",
+			corporateAdministrationErrorDetails(
+				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
+				{ field: "status" },
+			),
+		);
+	}
+	const allowedTransitions = LEGAL_COMPANY_STATUS_TRANSITIONS[
+		input.from
+	] as readonly LegalCompanyStatus[];
+	if (!allowedTransitions.includes(input.to)) {
+		return fail(
+			"CONFLICT",
+			"Corporate Administration legal company status transition is invalid.",
+			corporateAdministrationErrorDetails(
+				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
+				{ field: "status" },
+			),
+		);
+	}
+	return ok(undefined);
+}
+
+export function legalCompanyStatusRequiresApproval(
+	status: LegalCompanyStatus,
+): boolean {
+	return (
+		status === "struck_off" ||
+		status === "in_liquidation" ||
+		status === "dissolved" ||
+		status === "restored" ||
+		status === "archived"
+	);
 }
 
 export function companyIdentifierMatchesAsOf(input: {

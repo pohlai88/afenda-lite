@@ -30,6 +30,7 @@ import {
 	mdItemVariantAttributeValueOption,
 	refUom,
 	runNeonHttpTransaction,
+	tenantEntityPredicate,
 } from "@afenda/db";
 import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../../../contracts/reasons";
@@ -1476,11 +1477,9 @@ export async function drizzleCreateItemVariant(
 			)
 			.limit(1);
 		if (group === undefined) {
-			return fail(
-				"CONFLICT",
-				"itemGroupId must exist in the same organization",
-				{ reason: "MASTER_CROSS_ORG_REFERENCE" } satisfies MasterFailureDetails,
-			);
+			return fail("NOT_FOUND", "Item group not found", {
+				reason: "MASTER_NOT_FOUND",
+			} satisfies MasterFailureDetails);
 		}
 		const [template] = await db
 			.select()
@@ -1851,7 +1850,7 @@ export async function drizzleCreateItemVariant(
 									),
 									'version', version,
 									'actorId', created_by,
-									'correlationId', ${meta.correlationId}
+									'correlationId', ${meta.correlationId}::text
 								), 'pending', 0
 							FROM validated_value
 							RETURNING id
@@ -1960,7 +1959,7 @@ export async function drizzleRetireItemVariantMembership(
 								'code', combination_key,
 								'version', version,
 								'actorId', ${actorUserId},
-								'correlationId', ${correlationId}
+								'correlationId', ${correlationId}::text
 							),
 							'pending', 0
 						FROM variant_retired
@@ -1993,16 +1992,16 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 		const [existing] = await db
 			.select()
 			.from(mdItem)
-			.where(eq(mdItem.id, record.id))
+			.where(
+				tenantEntityPredicate(
+					{ id: mdItem.id, organizationId: mdItem.organizationId },
+					{ id: record.id, organizationId: record.organizationId },
+				),
+			)
 			.limit(1);
 		if (existing === undefined) {
 			return fail("NOT_FOUND", "Item not found", {
 				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
-		}
-		if (existing.organizationId !== record.organizationId) {
-			return fail("CONFLICT", "Item belongs to another organization", {
-				reason: "MASTER_CROSS_ORG_REFERENCE",
 			} satisfies MasterFailureDetails);
 		}
 		if (existing.version !== record.expectedVersion) {
@@ -2193,7 +2192,7 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 									'code', combination_key,
 									'version', version,
 									'actorId', ${record.actorUserId},
-									'correlationId', ${meta.correlationId}
+									'correlationId', ${meta.correlationId}::text
 								),
 								'pending', 0
 							FROM variant_retired

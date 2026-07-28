@@ -13,6 +13,7 @@ Commands select lanes. Environment variables may enable a lane, but they must no
 | Unit | Vitest node | `<pkg\|app>/__tests__/**/*.test.ts` | `pnpm test:unit` or `pnpm --filter @afenda/<pkg> test` | Yes |
 | Interaction | Vitest jsdom | `apps/web/__tests__/**/*.interaction.test.tsx`; `packages/surfaces/ui-system/__tests__/**/*.interaction.test.tsx` | `pnpm test:interaction` | Yes |
 | HR parity | Vitest node + Neon | `packages/erp/human-resources/__tests__/**/*.parity.test.ts` plus named shared-branch suites | `pnpm test:hr:parity` | No |
+| Master-data parity | Vitest node + Neon | `packages/erp/master-data/__tests__/{parity,integration}/**/*.{parity,integration}.test.ts` | `pnpm test:master-data:parity` | No |
 | Browser smoke/journey | Playwright | `e2e/**` | `pnpm test:e2e:smoke`; `pnpm test:e2e:journey` | Separate |
 | Coverage | Vitest/Playwright as needed | Existing lane paths | `pnpm test:coverage` when added | Separate |
 
@@ -25,9 +26,10 @@ Reject Cypress and Jest as new runners. Prefer the lowest layer that captures th
 | File | Owns |
 |------|------|
 | [`vitest.shared.ts`](vitest.shared.ts) | Repo root, common excludes, `SKIP_ENV_VALIDATION`, `forks`, isolation, mock cleanup, strict no-empty-suite behavior, aliases, project helpers |
-| [`vitest.unit.config.ts`](vitest.unit.config.ts) | Unit projects for apps and packages; excludes HR parity |
+| [`vitest.unit.config.ts`](vitest.unit.config.ts) | Unit projects for apps and packages; excludes explicit HR and master-data parity lanes |
 | [`vitest.interaction.config.ts`](vitest.interaction.config.ts) | jsdom interaction lane with React plugin and [`setup-interaction.ts`](setup-interaction.ts) |
 | [`vitest.hr-parity.config.ts`](vitest.hr-parity.config.ts) | Explicit HR Neon parity lane with [`setup-hr-parity-database.ts`](setup-hr-parity-database.ts), serial files, and parity timeouts |
+| [`vitest.master-data-parity.config.ts`](vitest.master-data-parity.config.ts) | Explicit master-data memory/Drizzle parity and Drizzle integration lane with fail-closed database setup |
 | [`vitest.config.ts`](vitest.config.ts) | Temporary compatibility wrapper for the unit lane |
 
 L0/L2 Vitest files live in each workspace member’s root `__tests__/` folder. Do **not** co-locate `*.test.ts` under `src/` or feature trees.
@@ -36,12 +38,16 @@ L0/L2 Vitest files live in each workspace member’s root `__tests__/` folder. D
 
 ```bash
 pnpm test                         # turbo unit package tests at --concurrency=50%
-pnpm test:unit                    # all unit Vitest projects, no HR parity
+pnpm test:unit                    # all unit Vitest projects, no DB parity
 pnpm test:interaction             # jsdom interaction lane
 pnpm test:hr:unit                 # HR memory/unit only, no Neon
 pnpm test:hr:parity               # explicit serial HR Neon parity
+pnpm test:master-data:parity      # explicit serial master-data Neon release gate
+pnpm test:master-data:parity:core # memory/Drizzle core contracts without import ledger
+pnpm test:master-data:parity:memory # same parity contracts against memory only
 pnpm --filter @afenda/human-resources test
 pnpm --filter @afenda/human-resources test:parity
+pnpm --filter @afenda/master-data test:parity
 pnpm exec turbo run lint typecheck test --concurrency=50%
 
 pnpm test:e2e:smoke               # Playwright @smoke
@@ -83,6 +89,12 @@ $env:REQUIRE_DATABASE_TESTS = "1"; pnpm test:hr:parity
 
 HR parity remains serial by file (`fileParallelism: false`) on the shared Neon branch. Keep the existing `30s` test timeout and `90s` hook timeout; do not add per-file timeout overrides.
 
+## Master-data unit vs parity
+
+`@afenda/master-data` keeps memory/unit tests separate from its production-adapter gate. The parity harness runs identical public contracts against memory and Drizzle. Drizzle-only integration tests cover SQL concurrency, rollback, import recovery, and sensitive projections.
+
+`pnpm --filter @afenda/master-data test` never requires `DATABASE_URL`. The Neon parity lanes are fail-closed through [`setup-master-data-parity-database.ts`](setup-master-data-parity-database.ts) and the live schema probes in [`verify-master-data-core-parity-schema.ts`](verify-master-data-core-parity-schema.ts) and [`verify-master-data-parity-schema.ts`](verify-master-data-parity-schema.ts). They run serially on the shared Neon branch and require the package's current core schema plus `0029_master_data_import_recovery.sql` for the full gate.
+
 ## Turbo and CI
 
 Turbo is the dominant cross-package scheduler. Package Vitest workers stay small and fixed to avoid nested parallelism pressure.
@@ -93,7 +105,7 @@ Turbo is the dominant cross-package scheduler. Package Vitest workers stay small
 | `test:interaction` | Interaction lane; cacheable; includes interaction config/setup in inputs |
 | `test:parity` | Explicit DB parity task; `cache: false` |
 
-CI runs unit tests through `pnpm exec turbo run typecheck test --concurrency=50%`, then runs HR parity exactly once with `pnpm test:hr:parity`.
+CI runs unit tests through `pnpm exec turbo run typecheck test --concurrency=50%`, then runs the HR and master-data parity gates exactly once.
 
 ## Collection checks
 
@@ -102,6 +114,7 @@ Use list checks after changing lane globs or package membership:
 ```bash
 pnpm exec vitest list --config testing/vitest.unit.config.ts --project human-resources-unit
 pnpm exec vitest list --config testing/vitest.hr-parity.config.ts --project human-resources-parity
+pnpm exec vitest list --config testing/vitest.master-data-parity.config.ts --project master-data-parity
 pnpm exec vitest list --config testing/vitest.interaction.config.ts
 ```
 
@@ -109,6 +122,7 @@ Acceptance:
 
 - HR unit collection contains no `*.parity.test.ts`, `leave-concurrency.test.ts`, `time-policy-concurrency.test.ts`, or `leave-failure-injection.test.ts`.
 - HR parity collection contains only the explicit parity set.
+- Master-data unit collection contains no `parity/` or `integration/` files; its parity collection contains only those two explicit directories.
 - Interaction collection contains only `*.interaction.test.tsx`.
 - `pnpm exec turbo run test --filter=@afenda/human-resources` does not run parity.
 

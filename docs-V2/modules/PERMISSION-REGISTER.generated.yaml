@@ -445,13 +445,112 @@ permissions:
   - code: inventory.adjustment.post
     moduleId: inventory
     namespace: inventory
-  - code: master_data.read
+  - code: master_data.reference_read
     moduleId: master-data
     namespace: master_data
-  - code: master_data.manage
+  - code: master_data.dimension_read
     moduleId: master-data
     namespace: master_data
-  - code: master_data.approve
+  - code: master_data.dimension_create
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.dimension_update
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.dimension_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.dimension_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_create
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_update
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_suspend
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_merge
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_role_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_address_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_contact_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_contact_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_external_id_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_relationship_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_create
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_update
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_activate
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_suspend
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_archive
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.item_extension_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.warehouse_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.payment_term_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.template_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.variant_manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.change_request_create
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.change_request_submit
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.change_request_approve
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.change_request_apply
     moduleId: master-data
     namespace: master_data
   - code: master_data.import_create
@@ -466,10 +565,31 @@ permissions:
   - code: master_data.import_apply
     moduleId: master-data
     namespace: master_data
-  - code: master_data.import_cancel
+  - code: master_data.search_rebuild
     moduleId: master-data
     namespace: master_data
-  - code: master_data.party_activate
+  - code: master_data.duplicate_review
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.tax_registration_sensitive_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.party_contact_sensitive_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.sensitive_external_id_read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.approve
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.import_cancel
     moduleId: master-data
     namespace: master_data
   - code: master_data.party_inactivate
@@ -484,15 +604,6 @@ permissions:
   - code: master_data.party_retire
     moduleId: master-data
     namespace: master_data
-  - code: master_data.party_archive
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.party_merge
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.item_activate
-    moduleId: master-data
-    namespace: master_data
   - code: master_data.item_inactivate
     moduleId: master-data
     namespace: master_data
@@ -503,9 +614,6 @@ permissions:
     moduleId: master-data
     namespace: master_data
   - code: master_data.item_retire
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.item_archive
     moduleId: master-data
     namespace: master_data
   - code: master_data.item_group_activate
@@ -583,25 +691,10 @@ permissions:
   - code: master_data.item_variant_archive
     moduleId: master-data
     namespace: master_data
-  - code: master_data.party_role_manage
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.party_address_manage
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.party_contact_manage
-    moduleId: master-data
-    namespace: master_data
   - code: master_data.party_contact_verify
     moduleId: master-data
     namespace: master_data
-  - code: master_data.party_external_id_manage
-    moduleId: master-data
-    namespace: master_data
   - code: master_data.party_external_id_regulatory_manage
-    moduleId: master-data
-    namespace: master_data
-  - code: master_data.party_relationship_manage
     moduleId: master-data
     namespace: master_data
   - code: master_data.party_relationship_control_manage

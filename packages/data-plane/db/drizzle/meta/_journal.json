@@ -197,6 +197,48 @@
       "when": 1785284000000,
       "tag": "0027_master_data_database_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1785285000000,
+      "tag": "0028_ca_company_status_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1785286000000,
+      "tag": "0029_master_data_import_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1785290000000,
+      "tag": "0030_hr_payroll_handoff_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1785291000000,
+      "tag": "0031_platform_work_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1785292000000,
+      "tag": "0032_hr_bulk_reliability_durability",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1785293000000,
+      "tag": "0033_schema_reconciliation",
+      "breakpoints": true
     }
   ]
 }

@@ -105,8 +105,8 @@ describe("data-governance workflow capability entrypoints", () => {
 	it("publishes the import workflow surface from the capability folder", () => {
 		expect(DEFAULT_IMPORT_MODE).toBe("create_or_update");
 		expect(IMPORT_BATCH_STATUSES).toEqual([
-			"parsed",
-			"validated",
+			"claimed",
+			"validating",
 			"approval_pending",
 			"approved",
 			"applying",

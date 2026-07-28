@@ -13,6 +13,7 @@ export const CORPORATE_ADMINISTRATION_MUTATION_TABLES = [
 	"ca_company_identifier",
 	"ca_company_financial_year",
 	"ca_company_activity",
+	"ca_company_status_history",
 	"ca_legal_establishment",
 	"ca_establishment_status_history",
 	"ca_registered_address",

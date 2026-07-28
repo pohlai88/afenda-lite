@@ -6,7 +6,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
-**Disk inventory (2026-07-26):** **348** commands · **198** queries · **111** permissions · **129** `hr_*` mutation / hard-tenant tables · **129/129** effective-truth classification register · emission registry **348/348**. Manifest `lifecycle: scaffolded`. Enterprise Scratch program: Phase 0 exit **MET**; Phase 3 Slice 3.4 lifecycle emissions **DONE**; Phase 4 Slice 4.1 effective-truth classification **DONE** — see [enterprise-audit pack](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+**Disk inventory (2026-07-28):** **348** commands · **198** queries · **111** permissions · **136** `hr_*` mutation / hard-tenant tables · **136/136** effective-truth classification register · emission registry **348/348**. Manifest `lifecycle: scaffolded`. Phases 0–12 are implemented and locally verified; Phase 13 local implementation is complete while external certification and controlled lifecycle promotion remain open — see [current evidence and dual scores](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/47-current-implementation-evidence-and-dual-scores.md) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
 
 ## Consume
 
@@ -50,6 +50,10 @@ import {
 | `employee-relations` | Employee cases, actions, appeals |
 | `time` | Work calendars, shifts, attendance, timesheets, overtime, payroll handoff ports |
 | `workforce-planning` | Headcount plans, reservations, availability |
+| `reporting` | Reconciled HR read-model snapshots and Memory/Drizzle sources |
+| `bulk` / `bulk-export` | Resumable imports, field-allowlisted exports, and privacy evidence |
+| `integrations` | Platform work items, payroll delivery, accounting, and provisioning facts |
+| `observability` / `reliability` | Bounded metrics, retries, dead letters, cursor recovery, and outage decisions |
 
 ## Worker identity model
 
@@ -72,7 +76,7 @@ Person → Worker → Employee specialization
 
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **129** `hr_*` hard-tenant roots of **222** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
+**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **136** `hr_*` hard-tenant roots of **245** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). The current null audit records **243 audited / 2 unrelated pending-DDL skips**. Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
 ## Public surfaces
 
@@ -90,6 +94,32 @@ Person → Worker → Employee specialization
 | `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
 
 The root barrel does not export raw Drizzle tables, SQL builders, database handles, Next.js types, or HTTP envelopes.
+
+## Integration contracts
+
+| Boundary | Consumer contract | Enforcement evidence |
+|---|---|---|
+| Permission | Callers inject `HumanResourcesAuthorizationPort`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/shared/run-authorized-operation.ts` · `apps/web/app/actions/hr-action-runner.ts` |
+| Events and audit | Mutation definitions classify audit-only versus domain-event behavior. Audit recording is required before outbox append; commands fail closed when either required fact cannot be recorded. | `src/emissions/mutation-outcome.ts` · `src/emissions/registry.ts` |
+| Privacy | Sensitive queries use contextual authorization and field projection. Bulk exports use an allowlisted definition-bound permission and record privacy evidence before rows are released. | `src/shared/contextual-authorization.ts` · `src/bulk-export/` · `src/privacy/` |
+| Document references | HR stores canonical `vault://` references only; object acceptance and immutable-version requirements are delegated through `DocumentReferencePort`. Document bytes remain outside this package. | `src/compliance/vault-document-reference-adapter.ts` · `src/ports.ts` |
+| Payroll | HR publishes approved, immutable handoff facts and owns delivery acknowledgement/correction state. The payroll producer must deduplicate by `deliveryId + payloadHash`. | `src/handoff/` · `src/integrations/payroll-delivery/` |
+
+`@afenda/payroll` is a test-only development dependency for contract verification. Production HR source does not import it and never calculates gross-to-net, statutory deductions, net pay, or payslips.
+
+## Product composition
+
+| Journey or worker | Composition entry |
+|---|---|
+| HR administration | [`hr-admin-journeys.ts`](../../../apps/web/app/actions/hr-admin-journeys.ts) |
+| Employee self-service | [`hr-self-service-journeys.ts`](../../../apps/web/app/actions/hr-self-service-journeys.ts) |
+| Manager self-service | [`hr-manager-journeys.ts`](../../../apps/web/app/actions/hr-manager-journeys.ts) |
+| Recruitment | [`hr-recruitment.ts`](../../../apps/web/app/actions/hr-recruitment.ts) |
+| HR operations | [`hr-operations.ts`](../../../apps/web/app/actions/hr-operations.ts) |
+| Compensation | [`hr-compensation.ts`](../../../apps/web/app/actions/hr-compensation.ts) |
+| Reporting and bulk import | [`hr-reporting-bulk.ts`](../../../apps/web/app/actions/hr-reporting-bulk.ts) · [`human-resources-reporting-bulk-worker.ts`](../../../apps/web/lib/erp/human-resources-reporting-bulk-worker.ts) |
+| Bulk export | [`hr-bulk-export.ts`](../../../apps/web/app/actions/hr-bulk-export.ts) · [`human-resources-bulk-export-worker.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-worker.ts) · [`human-resources-bulk-export-registry.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-registry.ts) |
+| Operational recovery | [`44-operational-recovery-runbooks.md`](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-operational-recovery-runbooks.md) |
 
 ## Maintain
 
@@ -125,7 +155,7 @@ pnpm governance:packages
 | Store adapters (`adapters/drizzle`, `adapters/memory`) | Payroll calculation (`@afenda/payroll`) |
 | Zod input/output contracts under `src/schemas/` | UI (`@afenda/ui-system` in `apps/web` only) |
 | **Compensation agreement** — `hr_employee_compensation`, `hr_allowance_entitlement`, `hr_bonus_eligibility`, benefit enrollment **contribution terms** on `hr_benefit_enrollment` | Pay-period calculated earnings/deductions/net; `payroll_*`, `journal*`, `payment*` writes |
-| Gross-to-net, statutory pay math, payslip generation | — |
+| Approved, immutable payroll handoff inputs and acknowledged delivery state | Gross-to-net, statutory pay math, payslip generation |
 
 **Allowance/deduction four-way ownership (Slice 8.6):** HR entitlement/agreement → payroll calculation → accounting posting → payments disbursement. SSOT: [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
 
@@ -137,9 +167,11 @@ pnpm governance:packages
 |-------|------|
 | Bounded-context map (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
 | Enterprise audit pack (Scratch) | [human-resources-enterprise-audit/](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) — authority, scorecard, repair roadmap (Phase 0 exit MET) |
-| Active mission queue (Scratch) | [44-next-repair-mission.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-next-repair-mission.md) · program [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md) (Slice 1.4 **DONE**; next Phase 1 = Slice 1.5 cleanup) |
+| Historical repair queue (Scratch) | [44-next-repair-mission.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-next-repair-mission.md) — retained as earlier repair evidence; current sequencing is the program roadmap |
 | Program roadmap (Scratch) | [00.hrm.md](../../../docs-V2/_scratch/00.hrm.md) |
-| Architecture + dual scores (Scratch) | [45-architecture-composition-and-dual-scores.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/45-architecture-composition-and-dual-scores.md) |
+| Operational recovery (Scratch) | [44-operational-recovery-runbooks.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-operational-recovery-runbooks.md) — migration, outbox, payroll, attendance, privacy, correction, leakage, rollback |
+| Current implementation evidence + dual scores (Scratch) | [47-current-implementation-evidence-and-dual-scores.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/47-current-implementation-evidence-and-dual-scores.md) — current gaps and certification gates; no lifecycle promotion |
+| Historical architecture + dual scores (Scratch) | [45-architecture-composition-and-dual-scores.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/45-architecture-composition-and-dual-scores.md) |
 | Phase sequencing (Scratch) | [human-resources-roadmap.md](../../../docs-V2/_scratch/erp/human-resources-roadmap.md) |
 | Time domain spec (Scratch) | [time.md](../../../docs-V2/_scratch/erp/time.md) · [time-slices-roadmap.md](../../../docs-V2/_scratch/erp/time-slices-roadmap.md) |
 | Implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) — **superseded** by enterprise-audit pack; 43-table snapshot only |

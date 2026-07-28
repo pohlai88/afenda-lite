@@ -4,6 +4,29 @@ import type { z } from "zod";
 import { corporateAdministrationErrorDetails } from "./error-codes";
 import { normalizeSafeFieldPath } from "./internal/safe-field-path";
 
+function omitUndefinedObjectFields<TValue>(value: TValue): TValue {
+	if (Array.isArray(value)) {
+		return value.map(omitUndefinedObjectFields) as TValue;
+	}
+
+	if (value === null || typeof value !== "object") {
+		return value;
+	}
+
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) {
+		return value;
+	}
+
+	const canonical: Record<string, unknown> = {};
+	for (const [key, entry] of Object.entries(value)) {
+		if (entry !== undefined) {
+			canonical[key] = omitUndefinedObjectFields(entry);
+		}
+	}
+	return canonical as TValue;
+}
+
 /**
  * Ordinary Zod validation failures become a governed `Result` failure.
  * Exceptions thrown by transforms, preprocessors, refinements, or getters are
@@ -17,7 +40,7 @@ export function parseCorporateAdministrationInput<TSchema extends z.ZodType>(
 	const parsed = schema.safeParse(input);
 
 	if (parsed.success) {
-		return ok(parsed.data);
+		return ok(omitUndefinedObjectFields(parsed.data));
 	}
 
 	const firstIssue = parsed.error.issues[0];

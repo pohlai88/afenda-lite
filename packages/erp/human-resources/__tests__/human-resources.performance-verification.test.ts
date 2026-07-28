@@ -1,0 +1,57 @@
+import { describe, expect, it } from "vitest";
+
+import {
+	createHrLocalBenchmarkWorkloads,
+	type LocalBenchmarkEvidence,
+	runLocalBenchmark,
+} from "../src/performance-verification";
+
+describe("HR local performance verification", () => {
+	it("executes all eight deterministic workloads within documented local thresholds", async () => {
+		const workloads = await createHrLocalBenchmarkWorkloads();
+		expect(workloads.map((workload) => workload.name)).toEqual([
+			"employee_lists",
+			"case_lists",
+			"timesheet_generation",
+			"attendance_import",
+			"bulk_employee_import",
+			"workforce_variance",
+			"payroll_handoff_delivery",
+			"large_tenant_isolation",
+		]);
+		const evidence: LocalBenchmarkEvidence[] = [];
+		for (const workload of workloads) {
+			evidence.push(
+				await runLocalBenchmark(workload, { warmupRuns: 1, sampleRuns: 3 }),
+			);
+		}
+		expect(evidence).toHaveLength(8);
+		for (const result of evidence) {
+			expect(result).toMatchObject({
+				scope: "local_verification_only",
+				warmupRuns: 1,
+				sampleRuns: 3,
+				passed: true,
+			});
+			expect(result.p95Ms).toBeLessThanOrEqual(result.thresholdP95Ms);
+			expect(result.fixtureSize).toBeGreaterThan(0);
+			expect(result.checksum).toBeGreaterThan(0);
+		}
+	});
+
+	it("fails verification when a workload exceeds its explicit threshold", async () => {
+		await expect(
+			runLocalBenchmark(
+				{
+					name: "threshold_guard",
+					description: "Harness threshold failure control",
+					implementation: "representative_fixture",
+					fixtureSize: 1,
+					thresholdP95Ms: Number.MIN_VALUE,
+					run: () => 1,
+				},
+				{ warmupRuns: 0, sampleRuns: 3 },
+			),
+		).rejects.toThrow("exceeded");
+	});
+});

@@ -74,6 +74,13 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"setCompanyFinancialYear",
 			"registerCompanyActivity",
 			"endCompanyActivity",
+			"activateLegalCompany",
+			"suspendLegalCompany",
+			"markCompanyStruckOff",
+			"enterLiquidation",
+			"dissolveLegalCompany",
+			"restoreLegalCompany",
+			"archiveLegalCompany",
 			"registerLegalEstablishment",
 			"updateLegalEstablishment",
 			"activateLegalEstablishment",
@@ -94,6 +101,9 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"findCompanyIdentifierAsOf",
 			"findCompanyFinancialYearAsOf",
 			"listCompanyActivitiesAsOf",
+			"findCompanyStatusAsOf",
+			"listCompaniesByStatus",
+			"getCompanyCompletenessForActivation",
 			"getLegalCompanyTimeline",
 			"getLegalEstablishment",
 			"listLegalEstablishmentsAsOf",
@@ -116,6 +126,13 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			| "setCompanyFinancialYear"
 			| "registerCompanyActivity"
 			| "endCompanyActivity"
+			| "activateLegalCompany"
+			| "suspendLegalCompany"
+			| "markCompanyStruckOff"
+			| "enterLiquidation"
+			| "dissolveLegalCompany"
+			| "restoreLegalCompany"
+			| "archiveLegalCompany"
 			| "registerLegalEstablishment"
 			| "updateLegalEstablishment"
 			| "activateLegalEstablishment"
@@ -136,6 +153,9 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			| "findCompanyIdentifierAsOf"
 			| "findCompanyFinancialYearAsOf"
 			| "listCompanyActivitiesAsOf"
+			| "findCompanyStatusAsOf"
+			| "listCompaniesByStatus"
+			| "getCompanyCompletenessForActivation"
 			| "getLegalCompanyTimeline"
 			| "getLegalEstablishment"
 			| "listLegalEstablishmentsAsOf"

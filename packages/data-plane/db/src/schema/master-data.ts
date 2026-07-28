@@ -1660,13 +1660,18 @@ export const mdImportBatch = pgTable(
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
 		idempotencyKey: text("idempotency_key").notNull(),
+		payloadHash: text("payload_hash").notNull(),
+		operationType: text("operation_type").notNull(),
 		entityType: text("entity_type").notNull(),
 		sourceSystem: text("source_system").notNull(),
 		mode: text("mode").notNull(),
-		status: text("status").notNull().default("applied"),
+		status: text("status").notNull().default("claimed"),
 		report: jsonb("report").notNull(),
+		leaseOwner: text("lease_owner"),
+		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
 		actorUserId: text("actor_user_id").notNull(),
 		correlationId: text("correlation_id").notNull(),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -1675,6 +1680,7 @@ export const mdImportBatch = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
+		unique("md_import_batch_org_id_uidx").on(t.organizationId, t.id),
 		index("md_import_batch_org_id_idx").on(t.organizationId, t.id),
 		uniqueIndex("md_import_batch_org_idempotency_uidx").on(
 			t.organizationId,
@@ -1682,7 +1688,75 @@ export const mdImportBatch = pgTable(
 		),
 		check(
 			"md_import_batch_status_ck",
-			sql`${t.status} IN ('draft', 'submitted', 'approved', 'rejected', 'applying', 'applied', 'failed', 'cancelled', 'expired', 'superseded')`,
+			sql`${t.status} IN ('claimed', 'validating', 'approval_pending', 'approved', 'applying', 'partially_applied', 'applied', 'failed', 'cancelled')`,
+		),
+		check(
+			"md_import_batch_lease_ck",
+			sql`(${t.leaseOwner} IS NULL AND ${t.leaseExpiresAt} IS NULL) OR (${t.leaseOwner} IS NOT NULL AND ${t.leaseExpiresAt} IS NOT NULL)`,
+		),
+	],
+);
+
+export const mdImportBatchRow = pgTable(
+	"md_import_batch_row",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		batchId: uuid("batch_id").notNull(),
+		sourceRowNumber: integer("source_row_number").notNull(),
+		payloadHash: text("payload_hash").notNull(),
+		normalizedPayload: jsonb("normalized_payload").notNull(),
+		intendedOperation: text("intended_operation"),
+		matchedEntityId: uuid("matched_entity_id"),
+		status: text("status").notNull().default("pending"),
+		errorCode: text("error_code"),
+		errorDetails: jsonb("error_details"),
+		resultEntityId: uuid("result_entity_id"),
+		resultVersion: integer("result_version"),
+		attemptCount: integer("attempt_count").notNull().default(0),
+		leaseOwner: text("lease_owner"),
+		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+		startedAt: timestamp("started_at", { withTimezone: true }),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.batchId],
+			foreignColumns: [mdImportBatch.organizationId, mdImportBatch.id],
+			name: "md_import_batch_row_org_batch_fk",
+		}),
+		uniqueIndex("md_import_batch_row_org_source_uidx").on(
+			t.organizationId,
+			t.batchId,
+			t.sourceRowNumber,
+		),
+		index("md_import_batch_row_org_status_idx").on(
+			t.organizationId,
+			t.batchId,
+			t.status,
+			t.sourceRowNumber,
+		),
+		check(
+			"md_import_batch_row_source_number_ck",
+			sql`${t.sourceRowNumber} > 0`,
+		),
+		check(
+			"md_import_batch_row_status_ck",
+			sql`${t.status} IN ('pending', 'applying', 'applied', 'failed', 'skipped')`,
+		),
+		check(
+			"md_import_batch_row_operation_ck",
+			sql`${t.intendedOperation} IS NULL OR ${t.intendedOperation} IN ('create', 'update', 'skip', 'reject')`,
+		),
+		check(
+			"md_import_batch_row_lease_ck",
+			sql`(${t.leaseOwner} IS NULL AND ${t.leaseExpiresAt} IS NULL) OR (${t.leaseOwner} IS NOT NULL AND ${t.leaseExpiresAt} IS NOT NULL)`,
 		),
 	],
 );

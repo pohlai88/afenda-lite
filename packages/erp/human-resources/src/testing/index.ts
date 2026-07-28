@@ -1,5 +1,6 @@
 // Testing utilities for human resources package
 
+export { createMemoryHumanResourcesReportingSource } from "../adapters/memory/reporting";
 export { createMemoryHumanResourcesStore } from "../adapters/memory/store";
 export { createStoreAssignmentContextQuery } from "../time/store-assignment-context-query";
 export { createStoreWorkCalendarLookup } from "../time/store-work-calendar-lookup";

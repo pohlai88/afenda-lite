@@ -1,6 +1,6 @@
 "use client";
 
-import type { TaxRegistration } from "@afenda/master-data";
+import type { TaxRegistrationProjection } from "@afenda/master-data";
 import {
 	Alert,
 	AlertDescription,
@@ -33,7 +33,7 @@ import {
 
 type TaxRegistrationLifecycleFormProps = {
 	canManage: boolean;
-	registrations: TaxRegistration[];
+	registrations: TaxRegistrationProjection[];
 };
 
 const activateInitial: ActivateTaxRegistrationActionState = null;
@@ -120,7 +120,7 @@ export function TaxRegistrationLifecycleForm({
 				<Alert role="status">
 					<AlertTitle>Lifecycle updated</AlertTitle>
 					<AlertDescription>
-						{success.data.taxRegistration.registrationNumber} is now{" "}
+						{success.data.taxRegistration.maskedRegistrationNumber} is now{" "}
 						{success.data.taxRegistration.status} (v
 						{success.data.taxRegistration.version}).
 					</AlertDescription>
@@ -139,8 +139,8 @@ export function TaxRegistrationLifecycleForm({
 				>
 					{selectable.map((row) => (
 						<NativeSelectOption key={row.id} value={row.id}>
-							{row.registrationType} · {row.registrationNumber} · {row.status} ·
-							v{row.version}
+							{row.taxType} · {row.maskedRegistrationNumber} · {row.status} · v
+							{row.version}
 						</NativeSelectOption>
 					))}
 				</NativeSelect>

@@ -2,13 +2,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { getTableColumns } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 
-import { withOrg } from "../src/client";
+import { tenantEntityPredicate, withOrg } from "../src/client";
 import {
 	HARD_TENANT_ROOT_TABLE_NAMES,
 	HARD_TENANT_ROOT_TABLES,
 } from "../src/hard-tenant-roots";
+import { mdParty } from "../src/schema/master-data";
 import {
 	platformAuditLog,
 	platformDomainEvent,
@@ -17,9 +19,32 @@ import {
 	platformRole,
 	platformRoleAssignment,
 	platformSearchDocument,
+	platformWorkItem,
+	platformWorkItemActivity,
 } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
+	it("builds entity identity predicates with both ID and organization", () => {
+		const predicate = tenantEntityPredicate(
+			{ id: mdParty.id, organizationId: mdParty.organizationId },
+			{
+				id: "11111111-1111-1111-1111-111111111111",
+				organizationId: "org-a",
+			},
+		);
+		expect(predicate).toBeDefined();
+		if (predicate === undefined) return;
+
+		const query = new PgDialect().sqlToQuery(predicate);
+		expect(query.sql).toBe(
+			'("md_party"."id" = $1 and "md_party"."organization_id" = $2)',
+		);
+		expect(query.params).toEqual([
+			"11111111-1111-1111-1111-111111111111",
+			"org-a",
+		]);
+	});
+
 	it("keeps the executable null-audit mirror aligned with the TypeScript SSOT", () => {
 		const auditSource = readFileSync(
 			fileURLToPath(
@@ -48,12 +73,12 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	});
 
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(235);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(235);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(245);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(245);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);
-		expect(hrRoots).toHaveLength(129);
+		expect(hrRoots).toHaveLength(136);
 		expect(hrRoots[0]).toBe("hr_person");
 		expect(hrRoots.at(-1)).toBe("hr_overtime_approval");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("supplier_credit_note_line");
@@ -81,6 +106,15 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_registered_address");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_premise");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("platform_work_item");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
+			"platform_work_item_activity",
+		);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("hr_bulk_import_checkpoint");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
+			"hr_reliability_dead_letter",
+		);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("hr_connector_cursor");
 	});
 
 	it("exposes organization_id NOT NULL on every hard tenant root", () => {
@@ -108,6 +142,12 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"organization_id",
 		);
 		expect(getTableColumns(platformDomainEvent).organizationId.name).toBe(
+			"organization_id",
+		);
+		expect(getTableColumns(platformWorkItem).organizationId.name).toBe(
+			"organization_id",
+		);
+		expect(getTableColumns(platformWorkItemActivity).organizationId.name).toBe(
 			"organization_id",
 		);
 	});

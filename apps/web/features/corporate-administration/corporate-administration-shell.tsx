@@ -5,6 +5,7 @@ import {
 	findCompanyFinancialYearAsOf,
 	findCompanyLegalFormAsOf,
 	findRegisteredAddressAsOf,
+	getCompanyCompletenessForActivation,
 	getLegalCompany,
 	listCompanyActivitiesAsOf,
 	listCompanyIdentifiers,
@@ -24,6 +25,10 @@ import {
 	type LegalCompanyIdentityName,
 	LegalCompanyIdentityWorkspace,
 } from "@/features/corporate-administration/legal-company-identity-workspace";
+import {
+	type LegalCompanyActivationCompleteness,
+	LegalCompanyLifecycleWorkspace,
+} from "@/features/corporate-administration/legal-company-lifecycle-workspace";
 import { LegalCompanyWorkspace } from "@/features/corporate-administration/legal-company-workspace";
 import { LegalEstablishmentWorkspace } from "@/features/corporate-administration/legal-establishment-workspace";
 import {
@@ -112,6 +117,14 @@ export async function CorporateAdministrationShell({
 		selectedCompany === undefined
 			? null
 			: await loadLegalPresence({
+					legalCompanyId: selectedCompany.legalCompanyId,
+					queryOptions,
+					dependencies,
+				});
+	const lifecycleState =
+		selectedCompany === undefined
+			? null
+			: await loadLegalCompanyLifecycle({
 					legalCompanyId: selectedCompany.legalCompanyId,
 					queryOptions,
 					dependencies,
@@ -211,10 +224,104 @@ export async function CorporateAdministrationShell({
 						}
 						partyAddresses={partyAddresses}
 					/>
+					{lifecycleState?.ok === false ? (
+						<Alert variant="destructive" role="alert">
+							<AlertTitle>Company lifecycle unavailable</AlertTitle>
+							<AlertDescription>{lifecycleState.message}</AlertDescription>
+						</Alert>
+					) : null}
+					<LegalCompanyLifecycleWorkspace
+						canWrite={canWrite}
+						company={{
+							legalCompanyId: selectedCompany.legalCompanyId,
+							companyCode: selectedCompany.companyCode,
+							displayName: selectedCompany.profile.displayName,
+							state: selectedCompany.state,
+							version: selectedCompany.version,
+						}}
+						completeness={
+							lifecycleState?.ok === true ? lifecycleState.completeness : null
+						}
+						organizationSlug="client"
+					/>
 				</>
 			)}
 		</section>
 	);
+}
+
+async function loadLegalCompanyLifecycle(input: {
+	legalCompanyId: string;
+	queryOptions: ReturnType<typeof createCorporateAdministrationQueryOptions>;
+	dependencies: CorporateAdministrationIdentityDependencies;
+}): Promise<
+	| Readonly<{
+			ok: true;
+			completeness: LegalCompanyActivationCompleteness;
+	  }>
+	| Readonly<{ ok: false; message: string }>
+> {
+	const today = new Date().toISOString().slice(0, 10);
+	const completeness = await getCompanyCompletenessForActivation(
+		{ legalCompanyId: input.legalCompanyId, asOf: today },
+		input.queryOptions,
+		{
+			store: input.dependencies.store,
+			nameStore: input.dependencies.nameStore,
+			legalFormStore: input.dependencies.legalFormStore,
+			identifierStore: input.dependencies.identifierStore,
+			financialYearStore: input.dependencies.financialYearStore,
+			activityStore: input.dependencies.activityStore,
+			establishmentStore: input.dependencies.establishmentStore,
+		},
+	);
+	if (!completeness.ok) {
+		return { ok: false, message: completeness.message };
+	}
+	return {
+		ok: true,
+		completeness: {
+			complete: completeness.data.complete,
+			missing: completeness.data.missing,
+			checks: [
+				{
+					key: "hasJurisdictionProfile",
+					label: "Jurisdiction profile",
+					complete: completeness.data.hasJurisdictionProfile,
+				},
+				{
+					key: "hasLegalName",
+					label: "English legal name",
+					complete: completeness.data.hasLegalName,
+				},
+				{
+					key: "hasLegalForm",
+					label: "Legal form",
+					complete: completeness.data.hasLegalForm,
+				},
+				{
+					key: "hasCompanyIdentifier",
+					label: "Company registration identifier",
+					complete: completeness.data.hasCompanyIdentifier,
+				},
+				{
+					key: "hasFinancialYear",
+					label: "Financial year",
+					complete: completeness.data.hasFinancialYear,
+				},
+				{
+					key: "hasRegisteredActivity",
+					label: "Registered activity",
+					complete: completeness.data.hasRegisteredActivity,
+				},
+				{
+					key: "hasRegisteredAddress",
+					label: "Registered office",
+					complete: completeness.data.hasRegisteredAddress,
+				},
+			],
+		},
+	};
 }
 
 async function loadLegalPresence(input: {

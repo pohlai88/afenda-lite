@@ -32,7 +32,7 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 | CA-1.2 | 1 | Effective legal names and legal forms | CA-1.1 | PARTIAL |
 | CA-1.3 | 1 | Corporate identifiers, financial years and registered activities | CA-1.2 | PARTIAL |
 | CA-1.4 | 1 | Registered offices, legal establishments and premises | CA-1.3 | PARTIAL |
-| CA-1.5 | 1 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | OPEN |
+| CA-1.5 | 1 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | PARTIAL |
 | CA-2.1 | 2 | Governance bodies and memberships | Phase 1 DONE | OPEN |
 | CA-2.2 | 2 | Statutory offices, appointments, qualifications and consent | CA-2.1 | OPEN |
 | CA-2.3 | 2 | Officer declarations, disqualifications and conflicts | CA-2.2 | OPEN |
@@ -71,6 +71,42 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 | CA-8.4 | 8 | Exports, reconciliation and entity health | CA-8.3 | OPEN |
 | CA-8.5 | 8 | Enterprise security, accessibility, performance, observability and recovery | CA-8.4 | OPEN |
 | CA-8.6 | 8 | Full verification matrix, migration rehearsal and activation | CA-8.5 | OPEN |
+
+## Implementation status audit
+
+Last updated: 2026-07-28.
+
+This audit records implementation posture without weakening the canonical
+`Status` column above. A slice stays `PARTIAL` until every required boundary for
+that slice is evidenced; backend-only completion does not promote a full
+product slice to `DONE`.
+
+| Slice | Canonical status | Current implementation posture | Evidence |
+|---|---|---|---|
+| CA-1.2 | PARTIAL | Backend plus focused name/legal-form Action/UI journey evidence are green against the repaired demo branch; a real-package Phase 1 app-composition journey now seeds name/legal-form through package commands and reloads persisted state before activation; full slice closure still requires complete 14-boundary product evidence including browser-authenticated/Neon-backed journey proof. | `evidence/CA-1.2-EVIDENCE.md`; demo CA package check 54/54 files, 268/268 tests; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused web CA tests 20/20 files, 64/64 tests |
+| CA-1.3 | PARTIAL | Backend plus focused identifier, financial-year and activity Action/UI journey evidence are green against the repaired demo branch; a real-package Phase 1 app-composition journey now seeds identifiers, financial year and activity through package commands and reloads persisted state before activation; full slice closure still requires complete 14-boundary product evidence including browser-authenticated/Neon-backed journey proof. | `evidence/CA-1.3-EVIDENCE.md`; demo CA package check 54/54 files, 268/268 tests; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused web CA tests 20/20 files, 64/64 tests |
+| CA-1.4 | PARTIAL | Backend implementation is complete, demo ledger is proven through `0026_ca_recorded_range_zero_width`, focused establishment Action/UI journey evidence is green, and the real-package Phase 1 app-composition journey now seeds registered address through package commands; full product-slice closure still requires complete phase-close proof. | `evidence/CA-1.4-EVIDENCE.md`; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused web CA tests 20/20 files, 64/64 tests |
+| CA-1.5 | PARTIAL | Backend status lifecycle, focused Server Action/UI coverage, focused lifecycle journey/accessibility markup evidence, real-package persisted Phase 1 app-composition journey and demo Neon lifecycle failure-injection plus simultaneous activation race proof are implemented and green. A browser-authenticated Playwright journey has been scaffolded, but it is not yet accepted: the demo Neon branch still exposes the older `md_party_address` schema (`region`, `is_default`, `valid_from`) and lacks the current source columns (`purpose`, `status`, `effective_from`, `administrative_area`), so seed/setup fails before the UI journey can prove production behavior. Full slice closure still requires browser-authenticated/Neon-backed journey proof, a successful current production build run, and final 14-boundary phase-close evidence. | `evidence/CA-1.5-EVIDENCE.md`; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused demo Neon `company-status-lifecycle-atomicity.test.ts` 1/1 file, 2/2 tests passed; focused web CA tests 20/20 files, 64/64 tests; `@afenda/web` typecheck green after `hr-privacy-deletion` parse-detail typing fix; latest `@afenda/web build` attempt timed out before completion; demo ledger applied through `0028_ca_company_status_lifecycle`; browser journey currently blocked by Master Data demo schema drift |
+
+## Latest implementation update - 2026-07-28
+
+- Added browser-only Playwright coverage for the Phase 1 Corporate
+  Administration journey at
+  `e2e/journey/corporate-administration-phase-1.spec.ts`; it drives the
+  authenticated UI from draft registration through activation and includes
+  cross-tenant visibility assertions.
+- Focused code quality for the new E2E spec and the related
+  `hr-privacy-deletion` typing fix passed:
+  `pnpm exec biome check e2e/journey/corporate-administration-phase-1.spec.ts apps/web/app/actions/hr-privacy-deletion.ts`.
+- `pnpm --filter @afenda/web typecheck` passed after tightening
+  `invalidDeletionRequest` to accept `ParseSchemaFailure["details"]`.
+- The browser journey is not accepted yet. Its first Neon setup run failed with
+  `column "purpose" of relation "md_party_address" does not exist`; read-only
+  schema inspection confirmed the demo branch is behind the current
+  Master Data source schema.
+- A current `pnpm --filter @afenda/web build` proof is still missing; the
+  latest retry ran past the five-minute command window after the HR type error
+  was fixed, so this audit does not promote CA-1.5 or Phase 1.
 
 ## Status vocabulary
 

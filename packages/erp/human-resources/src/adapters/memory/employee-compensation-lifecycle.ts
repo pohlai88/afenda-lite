@@ -618,11 +618,15 @@ export async function memoryCorrectEmployeeCompensation(
 
 	const now = new Date();
 	const previousPredecessor = { ...predecessor };
+	const correctionPredecessorEnd = dayBeforeIsoDate(input.effectiveFrom);
 	const superseded: EmployeeCompensation = {
 		...predecessor,
 		status: "superseded",
 		effectiveTo:
-			predecessor.effectiveTo ?? dayBeforeIsoDate(input.effectiveFrom),
+			predecessor.effectiveTo ??
+			(correctionPredecessorEnd < predecessor.effectiveFrom
+				? predecessor.effectiveFrom
+				: correctionPredecessorEnd),
 		version: predecessor.version + 1,
 		updatedBy: input.actorUserId,
 		updatedAt: now,

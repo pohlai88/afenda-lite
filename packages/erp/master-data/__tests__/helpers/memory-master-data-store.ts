@@ -15,8 +15,13 @@ import type {
 	ChangeRequestCreateRecord,
 	ChangeRequestListFilter,
 	ChangeRequestReviewRecord,
-	ImportBatchCreateRecord,
+	ImportBatchClaimRecord,
+	ImportBatchClaimResult,
+	ImportBatchCompletionRecord,
+	ImportBatchLeaseRequest,
+	ImportBatchLeaseResult,
 	ImportBatchRecord,
+	ImportBatchRowRecord,
 	ItemAliasCreateRecord,
 	ItemBarcodeCreateRecord,
 	ItemCreateRecord,
@@ -32,6 +37,7 @@ import type {
 	ItemUpdateRecord,
 	ListFilter,
 	MasterDataStore,
+	MutationMeta,
 	ParentListFilter,
 	PartyAddressCreateRecord,
 	PartyAddressUpdateRecord,
@@ -302,6 +308,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	>();
 	private readonly changeRequests = new Map<string, ChangeRequest>();
 	private readonly importBatches = new Map<string, ImportBatchRecord>();
+	private readonly importBatchRows = new Map<string, ImportBatchRowRecord>();
 	private readonly itemTemplates = new Map<string, ItemTemplate>();
 	private readonly itemTemplateAttributes = new Map<
 		string,
@@ -316,6 +323,46 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		string,
 		ItemVariantAttributeValue
 	>();
+
+	private applyImportMutationResult(
+		meta: MutationMeta,
+		entityId: string,
+		version: number,
+	): void {
+		const context = meta.importMutation;
+		if (context === undefined) return;
+		const batch = this.importBatches.get(context.batchId);
+		if (
+			batch === undefined ||
+			batch.organizationId !== context.organizationId ||
+			batch.status !== "applying" ||
+			batch.leaseOwner !== context.leaseOwner
+		) {
+			return;
+		}
+		const row = [...this.importBatchRows.values()].find(
+			(candidate) =>
+				candidate.organizationId === context.organizationId &&
+				candidate.batchId === context.batchId &&
+				candidate.sourceRowNumber === context.sourceRowNumber,
+		);
+		if (row === undefined || row.status === "applied") return;
+		const now = new Date();
+		this.importBatchRows.set(row.id, {
+			...row,
+			intendedOperation: context.intendedOperation,
+			matchedEntityId: context.matchedEntityId,
+			status: "applied",
+			errorCode: null,
+			errorDetails: null,
+			resultEntityId: entityId,
+			resultVersion: version,
+			attemptCount: row.attemptCount + 1,
+			startedAt: row.startedAt ?? now,
+			completedAt: now,
+			updatedAt: now,
+		});
+	}
 
 	create(
 		record: Parameters<OrganizationDimensionStore["create"]>[0],
@@ -599,7 +646,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	async createParty(
 		record: PartyCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Party>> {
 		if (this.hasLivePartyCode(record.organizationId, record.normalizedCode)) {
 			return fail(
@@ -636,10 +683,47 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			createdAt: now,
 			updatedAt: now,
 		};
+		const importedExternalIds = (
+			meta.importMutation?.partyExternalIds ?? []
+		).map(
+			(externalId): PartyExternalId => ({
+				...externalId,
+				organizationId: record.organizationId,
+				partyId: party.id,
+				status: "active",
+				version: 1,
+				archivedAt: null,
+				archivedBy: null,
+				updatedBy: externalId.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			}),
+		);
+		for (const externalId of importedExternalIds) {
+			const duplicate = [...this.partyExternalIds.values()].some(
+				(existing) =>
+					existing.organizationId === externalId.organizationId &&
+					existing.sourceSystem === externalId.sourceSystem &&
+					existing.externalIdType === externalId.externalIdType &&
+					existing.normalizedValue === externalId.normalizedValue &&
+					existing.status === "active",
+			);
+			if (duplicate) {
+				return fail("CONFLICT", "External id already exists", {
+					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				});
+			}
+		}
 		this.parties.set(party.id, party);
+		for (const externalId of importedExternalIds) {
+			this.partyExternalIds.set(externalId.id, externalId);
+		}
 		const sideEffect = await this.commitMutation(
 			() => {
 				this.parties.delete(party.id);
+				for (const externalId of importedExternalIds) {
+					this.partyExternalIds.delete(externalId.id);
+				}
 			},
 			ports,
 			{
@@ -659,13 +743,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, party.id, party.version);
 		return ok(cloneParty(party));
 	}
 
 	async updateParty(
 		record: PartyUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Party>> {
 		const existing = this.parties.get(record.id);
 		if (existing === undefined) {
@@ -743,6 +828,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, updated.id, updated.version);
 		return ok(cloneParty(updated));
 	}
 
@@ -1494,7 +1580,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	async createItemGroup(
 		record: ItemGroupCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<ItemGroup>> {
 		if (
 			this.hasLiveItemGroupCode(record.organizationId, record.normalizedCode)
@@ -1555,13 +1641,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, group.id, group.version);
 		return ok(cloneItemGroup(group));
 	}
 
 	async updateItemGroup(
 		record: ItemGroupUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<ItemGroup>> {
 		const existing = this.itemGroups.get(record.id);
 		if (existing === undefined) {
@@ -1648,6 +1735,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, updated.id, updated.version);
 		return ok(cloneItemGroup(updated));
 	}
 
@@ -1825,7 +1913,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	async createItem(
 		record: ItemCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Item>> {
 		if (this.hasLiveItemCode(record.organizationId, record.normalizedCode)) {
 			return fail(
@@ -1963,13 +2051,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, item.id, item.version);
 		return ok(cloneItem(item));
 	}
 
 	async updateItem(
 		record: ItemUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Item>> {
 		const existing = this.items.get(record.id);
 		if (existing === undefined) {
@@ -2231,6 +2320,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, updated.id, updated.version);
 		return ok(cloneItem(updated));
 	}
 
@@ -2485,7 +2575,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	async createWarehouse(
 		record: WarehouseCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Warehouse>> {
 		if (
 			this.hasLiveWarehouseCode(record.organizationId, record.normalizedCode)
@@ -2565,13 +2655,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, warehouse.id, warehouse.version);
 		return ok(cloneWarehouse(warehouse));
 	}
 
 	async updateWarehouse(
 		record: WarehouseUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Warehouse>> {
 		const existing = this.warehouses.get(record.id);
 		if (existing === undefined) {
@@ -2700,6 +2791,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
+		this.applyImportMutationResult(meta, updated.id, updated.version);
 		return ok(cloneWarehouse(updated));
 	}
 
@@ -7308,9 +7400,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return ok(null);
 	}
 
-	async saveImportBatch(
-		record: ImportBatchCreateRecord,
-	): Promise<Result<ImportBatchRecord>> {
+	async claimImportBatch(
+		record: ImportBatchClaimRecord,
+	): Promise<Result<ImportBatchClaimResult>> {
 		const existing = await this.getImportBatchByIdempotencyKey(
 			record.organizationId,
 			record.idempotencyKey,
@@ -7319,27 +7411,143 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return existing;
 		}
 		if (existing.data !== null) {
-			return fail("CONFLICT", "Import batch already exists", {
-				reason: "MASTER_IMPORT_IDEMPOTENT_REPLAY",
-			} satisfies MasterFailureDetails);
+			return ok({ kind: "existing", batch: existing.data });
 		}
 		const now = new Date();
 		const batch: ImportBatchRecord = {
-			id: randomUUID(),
+			id: record.id,
 			organizationId: record.organizationId,
 			idempotencyKey: record.idempotencyKey,
+			payloadHash: record.payloadHash,
+			operationType: record.operationType,
 			entityType: record.entityType,
 			sourceSystem: record.sourceSystem,
 			mode: record.mode,
-			status: "applied",
-			report: record.report,
+			status: "claimed",
+			report: null,
+			leaseOwner: null,
+			leaseExpiresAt: null,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			completedAt: null,
 			createdAt: now,
 			updatedAt: now,
 		};
 		this.importBatches.set(batch.id, batch);
-		return ok(batch);
+		for (const row of record.rows) {
+			this.importBatchRows.set(row.id, {
+				id: row.id,
+				organizationId: record.organizationId,
+				batchId: batch.id,
+				sourceRowNumber: row.sourceRowNumber,
+				payloadHash: row.payloadHash,
+				normalizedPayload: row.normalizedPayload,
+				intendedOperation: null,
+				matchedEntityId: null,
+				status: "pending",
+				errorCode: null,
+				errorDetails: null,
+				resultEntityId: null,
+				resultVersion: null,
+				attemptCount: 0,
+				leaseOwner: null,
+				leaseExpiresAt: null,
+				startedAt: null,
+				completedAt: null,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+		return ok({ kind: "claimed", batch });
+	}
+
+	async acquireImportBatchLease(
+		record: ImportBatchLeaseRequest,
+	): Promise<Result<ImportBatchLeaseResult>> {
+		const batch = this.importBatches.get(record.batchId);
+		if (batch === undefined || batch.organizationId !== record.organizationId) {
+			return fail("NOT_FOUND", "Import batch not found", {
+				reason: "MASTER_NOT_FOUND",
+			} satisfies MasterFailureDetails);
+		}
+		if (batch.status === "applied") {
+			return ok({ kind: "completed", batch });
+		}
+		const leaseActive =
+			batch.status === "applying" &&
+			batch.leaseExpiresAt !== null &&
+			batch.leaseExpiresAt.getTime() > Date.now();
+		if (leaseActive) {
+			return ok({ kind: "busy", batch });
+		}
+		const acquired: ImportBatchRecord = {
+			...batch,
+			status: "applying",
+			leaseOwner: record.leaseOwner,
+			leaseExpiresAt: record.leaseExpiresAt,
+			updatedAt: new Date(),
+		};
+		this.importBatches.set(acquired.id, acquired);
+		return ok({ kind: "acquired", batch: acquired });
+	}
+
+	async listImportBatchRows(
+		organizationId: string,
+		batchId: string,
+	): Promise<Result<ImportBatchRowRecord[]>> {
+		return ok(
+			[...this.importBatchRows.values()]
+				.filter(
+					(row) =>
+						row.organizationId === organizationId && row.batchId === batchId,
+				)
+				.sort((left, right) => left.sourceRowNumber - right.sourceRowNumber),
+		);
+	}
+
+	async completeImportBatch(
+		record: ImportBatchCompletionRecord,
+	): Promise<Result<ImportBatchRecord>> {
+		const batch = this.importBatches.get(record.batchId);
+		if (
+			batch === undefined ||
+			batch.organizationId !== record.organizationId ||
+			batch.leaseOwner !== record.leaseOwner
+		) {
+			return fail("CONFLICT", "Import batch lease was lost", {
+				reason: "MASTER_VERSION_CONFLICT",
+			} satisfies MasterFailureDetails);
+		}
+		const completedAt = new Date();
+		for (const result of record.rows) {
+			const row = [...this.importBatchRows.values()].find(
+				(candidate) =>
+					candidate.organizationId === record.organizationId &&
+					candidate.batchId === record.batchId &&
+					candidate.sourceRowNumber === result.sourceRowNumber,
+			);
+			if (row === undefined) continue;
+			if (row.status === "applied" && result.status !== "applied") continue;
+			this.importBatchRows.set(row.id, {
+				...row,
+				...result,
+				leaseOwner: null,
+				leaseExpiresAt: null,
+				completedAt,
+				updatedAt: completedAt,
+			});
+		}
+		const completed: ImportBatchRecord = {
+			...batch,
+			status: record.status,
+			report: record.report,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			completedAt,
+			updatedAt: completedAt,
+		};
+		this.importBatches.set(completed.id, completed);
+		return ok(completed);
 	}
 }
 

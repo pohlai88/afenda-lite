@@ -15,6 +15,7 @@ export * from "./item-external-ids";
 export * from "./item-uom-policy";
 export * from "./item-uoms";
 export * from "./party-addresses";
+export * from "./party-contact-projection";
 export * from "./party-contacts";
 export * from "./party-external-ids";
 export * from "./party-relationship-policy";

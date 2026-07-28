@@ -333,7 +333,14 @@
 				"hr_timesheet_entry",
 				"hr_overtime_approval",
 				"hr_attendance_import_batch",
-				"hr_attendance_import_error"
+				"hr_attendance_import_error",
+				"hr_payroll_handoff_delivery",
+				"hr_bulk_import_checkpoint",
+				"hr_bulk_import_audit",
+				"hr_bulk_import_error_artifact",
+				"hr_reliability_work_item",
+				"hr_reliability_dead_letter",
+				"hr_connector_cursor"
 			],
 			"scaffolds": [
 				"hr_learning_program",

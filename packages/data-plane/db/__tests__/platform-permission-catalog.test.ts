@@ -49,6 +49,20 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(PLATFORM_PERMISSION_CODES_V1).toContain("accounting.journal.read");
 		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain("accounting.read");
 		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain("accounting.manage");
+		expect(PLATFORM_PERMISSION_CODES_V1).toEqual(
+			expect.arrayContaining([
+				"master_data.tax_registration_read",
+				"master_data.tax_registration_sensitive_read",
+				"master_data.party_contact_read",
+				"master_data.party_contact_sensitive_read",
+			]),
+		);
+		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain(
+			"master_data.tax_registration_number_read",
+		);
+		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain(
+			"master_data.personal_contact_read",
+		);
 	});
 
 	it("isPlatformPermissionCodeV1 accepts only living v1 codes", () => {
@@ -113,6 +127,14 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(editorCodes).toContain("master_data.manage");
 		expect(editorCodes).not.toContain("master_data.approve");
 		expect(viewerCodes).toContain("master_data.read");
+		expect(viewerCodes).toContain("master_data.tax_registration_read");
+		expect(viewerCodes).toContain("master_data.party_contact_read");
+		expect(viewerCodes).not.toContain(
+			"master_data.tax_registration_sensitive_read",
+		);
+		expect(viewerCodes).not.toContain(
+			"master_data.party_contact_sensitive_read",
+		);
 		expect(viewerCodes).not.toContain("master_data.manage");
 		expect(viewerCodes).toContain("accounting.journal.read");
 		expect(viewerCodes).not.toContain("accounting.journal.post");

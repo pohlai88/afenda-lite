@@ -601,9 +601,10 @@ export async function drizzleActivateEmployeeCompensation(
 	});
 
 	try {
-		const [rows] = await runNeonHttpTransaction<[EmployeeCompensationSqlRow[]]>(
-			(sqlTag) => [
-				sqlTag`
+		const [, rows] = await runNeonHttpTransaction<
+			[{ id: string }[], EmployeeCompensationSqlRow[]]
+		>((sqlTag) => [
+			sqlTag`
 					WITH active_comp AS (
 						SELECT id, version
 						FROM hr_employee_compensation
@@ -647,7 +648,12 @@ export async function drizzleActivateEmployeeCompensation(
 							'pending', 0
 						FROM ended_comp
 						RETURNING id
-					),
+					)
+					SELECT ended_comp.id
+					FROM ended_comp, audit_ended, outbox_ended
+				`,
+			sqlTag`
+					WITH
 					mutated AS (
 						UPDATE hr_employee_compensation
 						SET status = 'active',
@@ -685,8 +691,7 @@ export async function drizzleActivateEmployeeCompensation(
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			],
-		);
+		]);
 		const row = rows[0];
 		if (!row) {
 			return missAfterOptimisticUpdate({
@@ -759,8 +764,12 @@ export async function drizzleCorrectEmployeeCompensation(
 	const successorStatus = resolveEmployeeCompensationApprovalStatus(
 		input.effectiveFrom,
 	);
+	const correctionPredecessorEnd = dayBeforeIsoDate(input.effectiveFrom);
 	const predecessorEffectiveTo =
-		predecessor.effectiveTo ?? dayBeforeIsoDate(input.effectiveFrom);
+		predecessor.effectiveTo ??
+		(correctionPredecessorEnd < predecessor.effectiveFrom
+			? predecessor.effectiveFrom
+			: correctionPredecessorEnd);
 
 	const id = randomUUID();
 	const brandedId = parseHumanResourcesEmployeeCompensationId(id);
@@ -798,10 +807,11 @@ export async function drizzleCorrectEmployeeCompensation(
 	);
 
 	try {
-		const [rows] = await runNeonHttpTransaction<[EmployeeCompensationSqlRow[]]>(
-			(sqlTag) => [
-				successorStatus === "active"
-					? sqlTag`
+		const [, rows] = await runNeonHttpTransaction<
+			[{ id: string }[], EmployeeCompensationSqlRow[]]
+		>((sqlTag) => [
+			successorStatus === "active"
+				? sqlTag`
 						WITH superseded AS (
 							UPDATE hr_employee_compensation
 							SET status = 'superseded',
@@ -841,6 +851,7 @@ export async function drizzleCorrectEmployeeCompensation(
 							FROM hr_employee_compensation
 							WHERE organization_id = ${input.organizationId}
 								AND employment_id = ${predecessor.employmentId}
+								AND id <> ${input.compensationId}
 								AND status = 'active'
 							FOR UPDATE
 						),
@@ -848,7 +859,7 @@ export async function drizzleCorrectEmployeeCompensation(
 							UPDATE hr_employee_compensation
 							SET status = 'ended',
 								effective_to = ${predecessorEffectiveToForActiveEnd},
-								version = version + 1,
+								version = hr_employee_compensation.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM active_comp
@@ -879,54 +890,11 @@ export async function drizzleCorrectEmployeeCompensation(
 								'pending', 0
 							FROM ended_comp
 							RETURNING id
-						),
-						mutated AS (
-							INSERT INTO hr_employee_compensation (
-								id, organization_id, employee_id, employment_id, grade_id,
-								salary_band_id, base_amount, currency_code, pay_frequency,
-								effective_from, effective_to, reason, confidential_note,
-								supersedes_compensation_id, approved_at, approved_by, status,
-								source_review_id, create_idempotency_key, create_request_fingerprint,
-								version, created_by, updated_by
-							)
-							SELECT
-								${brandedId.data}, superseded.organization_id, superseded.employee_id,
-								superseded.employment_id, ${input.gradeId}, ${input.salaryBandId},
-								${input.baseAmount}, ${input.currencyCode}, ${input.payFrequency},
-								${input.effectiveFrom}, ${input.effectiveTo}, ${reason},
-								${input.confidentialNote}, superseded.id, now(), ${input.actorUserId},
-								${successorStatus}, superseded.source_review_id,
-								${input.createIdempotencyKey}, ${input.createRequestFingerprint},
-								1, ${input.actorUserId}, ${input.actorUserId}
-							FROM superseded
-							RETURNING *
-						),
-						audited AS (
-							INSERT INTO platform_audit_log (
-								id, organization_id, actor_user_id, correlation_id, module, entity,
-								entity_id, action, changes
-							)
-							SELECT
-								${auditSuccessorId}, organization_id, created_by, ${meta.correlationId},
-								'human-resources', 'hr_employee_compensation', id, 'CREATE', '[]'::jsonb
-							FROM mutated
-							RETURNING id
-						),
-						outboxed AS (
-							INSERT INTO platform_domain_event (
-								id, organization_id, type, source_module, correlation_id,
-								actor_user_id, payload, status, attempts
-							)
-							SELECT
-								${eventSuccessorId}, organization_id, ${HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT},
-								'human-resources', ${meta.correlationId}, created_by,
-								${payloadSuccessorJson}::jsonb, 'pending', 0
-							FROM mutated
-							RETURNING id
 						)
-						SELECT mutated.* FROM mutated, audited, outboxed
+						SELECT superseded.id
+						FROM superseded, audit_superseded, outbox_superseded
 					`
-					: sqlTag`
+				: sqlTag`
 						WITH superseded AS (
 							UPDATE hr_employee_compensation
 							SET status = 'superseded',
@@ -960,8 +928,12 @@ export async function drizzleCorrectEmployeeCompensation(
 								${payloadSupersededJson}::jsonb, 'pending', 0
 							FROM superseded
 							RETURNING id
-						),
-						mutated AS (
+						)
+						SELECT superseded.id
+						FROM superseded, audit_superseded, outbox_superseded
+					`,
+			sqlTag`
+					WITH mutated AS (
 							INSERT INTO hr_employee_compensation (
 								id, organization_id, employee_id, employment_id, grade_id,
 								salary_band_id, base_amount, currency_code, pay_frequency,
@@ -971,15 +943,18 @@ export async function drizzleCorrectEmployeeCompensation(
 								version, created_by, updated_by
 							)
 							SELECT
-								${brandedId.data}, superseded.organization_id, superseded.employee_id,
-								superseded.employment_id, ${input.gradeId}, ${input.salaryBandId},
+								${brandedId.data}, predecessor.organization_id, predecessor.employee_id,
+								predecessor.employment_id, ${input.gradeId}, ${input.salaryBandId},
 								${input.baseAmount}, ${input.currencyCode}, ${input.payFrequency},
 								${input.effectiveFrom}, ${input.effectiveTo}, ${reason},
-								${input.confidentialNote}, superseded.id, now(), ${input.actorUserId},
-								${successorStatus}, superseded.source_review_id,
+								${input.confidentialNote}, predecessor.id, now(), ${input.actorUserId},
+								${successorStatus}, predecessor.source_review_id,
 								${input.createIdempotencyKey}, ${input.createRequestFingerprint},
 								1, ${input.actorUserId}, ${input.actorUserId}
-							FROM superseded
+							FROM hr_employee_compensation AS predecessor
+							WHERE predecessor.id = ${input.compensationId}
+								AND predecessor.organization_id = ${input.organizationId}
+								AND predecessor.status = 'superseded'
 							RETURNING *
 						),
 						audited AS (
@@ -1007,8 +982,7 @@ export async function drizzleCorrectEmployeeCompensation(
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-			],
-		);
+		]);
 		const row = rows[0];
 		if (!row) {
 			return notFound(

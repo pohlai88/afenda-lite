@@ -278,12 +278,18 @@ export const MASTER_QUERY_PAYMENT_TERM_GET_BY_CODE =
 	"master_data.payment_term.get_by_code" as const;
 export const MASTER_QUERY_PAYMENT_TERM_LIST =
 	"master_data.payment_term.list" as const;
-export const MASTER_QUERY_TAX_REGISTRATION_GET_BY_ID =
-	"master_data.tax_registration.get_by_id" as const;
+export const MASTER_QUERY_TAX_REGISTRATION_GET =
+	"master_data.tax_registration.get" as const;
 export const MASTER_QUERY_TAX_REGISTRATION_LIST =
 	"master_data.tax_registration.list" as const;
 export const MASTER_QUERY_TAX_REGISTRATION_FIND_BY_PARTY =
 	"master_data.tax_registration.find_by_party" as const;
+export const MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE =
+	"master_data.tax_registration.get_sensitive" as const;
+export const MASTER_QUERY_TAX_REGISTRATION_LIST_SENSITIVE =
+	"master_data.tax_registration.list_sensitive" as const;
+export const MASTER_QUERY_TAX_REGISTRATION_FIND_SENSITIVE_BY_PARTY =
+	"master_data.tax_registration.find_sensitive_by_party" as const;
 export const MASTER_QUERY_PARTY_ROLE_LIST =
 	"master_data.party_role.list" as const;
 export const MASTER_QUERY_PARTY_ROLE_GET =
@@ -300,6 +306,10 @@ export const MASTER_QUERY_PARTY_CONTACT_LIST =
 	"master_data.party_contact.list" as const;
 export const MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY =
 	"master_data.party_contact.get_primary" as const;
+export const MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE =
+	"master_data.party_contact.list_sensitive" as const;
+export const MASTER_QUERY_PARTY_CONTACT_GET_SENSITIVE_PRIMARY =
+	"master_data.party_contact.get_sensitive_primary" as const;
 export const MASTER_QUERY_PARTY_RELATIONSHIP_LIST =
 	"master_data.party_relationship.list" as const;
 export const MASTER_QUERY_ITEM_UOM_LIST = "master_data.item_uom.list" as const;
@@ -383,9 +393,12 @@ export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_PAYMENT_TERM_GET_BY_ID,
 	MASTER_QUERY_PAYMENT_TERM_GET_BY_CODE,
 	MASTER_QUERY_PAYMENT_TERM_LIST,
-	MASTER_QUERY_TAX_REGISTRATION_GET_BY_ID,
+	MASTER_QUERY_TAX_REGISTRATION_GET,
 	MASTER_QUERY_TAX_REGISTRATION_LIST,
 	MASTER_QUERY_TAX_REGISTRATION_FIND_BY_PARTY,
+	MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE,
+	MASTER_QUERY_TAX_REGISTRATION_LIST_SENSITIVE,
+	MASTER_QUERY_TAX_REGISTRATION_FIND_SENSITIVE_BY_PARTY,
 	MASTER_QUERY_PARTY_ROLE_LIST,
 	MASTER_QUERY_PARTY_ROLE_GET,
 	MASTER_QUERY_PARTY_ROLE_LIST_ACTIVE,
@@ -394,6 +407,8 @@ export const MASTER_DATA_QUERY_IDS = [
 	MASTER_QUERY_PARTY_ADDRESS_GET_PRIMARY,
 	MASTER_QUERY_PARTY_CONTACT_LIST,
 	MASTER_QUERY_PARTY_CONTACT_GET_PRIMARY,
+	MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE,
+	MASTER_QUERY_PARTY_CONTACT_GET_SENSITIVE_PRIMARY,
 	MASTER_QUERY_PARTY_RELATIONSHIP_LIST,
 	MASTER_QUERY_ITEM_UOM_LIST,
 	MASTER_QUERY_ITEM_UOM_GET_DEFAULT_SALES,

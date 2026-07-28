@@ -13,22 +13,22 @@ export const hrServerContextOmit = {
 	correlationId: true,
 } as const;
 
-const hrActionValidationStub = {
+const hrActionValidationContext = {
 	organizationId: "00000000-0000-4000-8000-000000000001",
 	actorUserId: "00000000-0000-4000-8000-000000000002",
-	correlationId: "stub-hr-action-validation",
+	correlationId: "schema-validation-hr-action",
 } as const;
 
 function hrActionSchemaFromRefinedPackageSchema(schema: z.ZodTypeAny) {
 	return hrMutationContextSchema.superRefine((actionInput, ctx) => {
 		const result = schema.safeParse({
 			...actionInput,
-			organizationId: hrActionValidationStub.organizationId,
-			actorUserId: hrActionValidationStub.actorUserId,
+			organizationId: hrActionValidationContext.organizationId,
+			actorUserId: hrActionValidationContext.actorUserId,
 			correlationId:
 				typeof actionInput.correlationId === "string"
 					? actionInput.correlationId
-					: hrActionValidationStub.correlationId,
+					: hrActionValidationContext.correlationId,
 		});
 		if (!result.success) {
 			for (const issue of result.error.issues) {
@@ -63,10 +63,10 @@ export function withHrSessionContext<T extends Record<string, unknown>>(
 	data: T,
 ) {
 	return {
+		...data,
 		organizationId: session.orgId,
 		actorUserId: session.userId,
 		correlationId: data.correlationId ?? correlationId,
-		...data,
 	};
 }
 

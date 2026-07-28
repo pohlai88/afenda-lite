@@ -30,6 +30,7 @@ const corporateAdministrationMocks = vi.hoisted(() => ({
 	listLegalEstablishmentsAsOf: vi.fn(),
 	findRegisteredAddressAsOf: vi.fn(),
 	listPremisesAsOf: vi.fn(),
+	getCompanyCompletenessForActivation: vi.fn(),
 }));
 
 const compositionMocks = vi.hoisted(() => ({
@@ -90,6 +91,8 @@ vi.mock("@afenda/corporate-administration", () => ({
 	findRegisteredAddressAsOf:
 		corporateAdministrationMocks.findRegisteredAddressAsOf,
 	listPremisesAsOf: corporateAdministrationMocks.listPremisesAsOf,
+	getCompanyCompletenessForActivation:
+		corporateAdministrationMocks.getCompanyCompletenessForActivation,
 }));
 
 vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
@@ -227,6 +230,30 @@ describe("Corporate Administration legal-company Server Actions", () => {
 			ok: true,
 			data: [],
 		});
+		corporateAdministrationMocks.getCompanyCompletenessForActivation.mockResolvedValue(
+			{
+				ok: true,
+				data: {
+					legalCompanyId: "22222222-2222-4222-8222-222222222222",
+					hasJurisdictionProfile: true,
+					hasLegalName: false,
+					hasLegalForm: false,
+					hasCompanyIdentifier: false,
+					hasFinancialYear: false,
+					hasRegisteredActivity: false,
+					hasRegisteredAddress: false,
+					complete: false,
+					missing: [
+						"hasLegalName",
+						"hasLegalForm",
+						"hasCompanyIdentifier",
+						"hasFinancialYear",
+						"hasRegisteredActivity",
+						"hasRegisteredAddress",
+					],
+				},
+			},
+		);
 	});
 
 	it("denies register when company manage permission is missing", async () => {

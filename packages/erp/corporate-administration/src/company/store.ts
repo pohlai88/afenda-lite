@@ -1,10 +1,10 @@
 import type { Result } from "@afenda/errors/result";
-
 import type {
 	CorporateAdministrationCommandOptions,
 	CorporateAdministrationPaginatedQueryOptions,
 	CorporateAdministrationQueryOptions,
 } from "../command-options";
+import type { EstablishmentStore } from "../establishments/store";
 import type {
 	CompanyActivityId,
 	CompanyFinancialYearId,
@@ -48,9 +48,11 @@ import type {
 	CompanyNameListItem,
 	CompanyNameStatus,
 	CompanyNameType,
+	CompanyStatusHistory,
 	LegalCompany,
 	LegalCompanyListPage,
 	LegalCompanyProfile,
+	LegalCompanyStatus,
 	LegalCompanyTimelineEntry,
 } from "./types";
 
@@ -178,6 +180,21 @@ export type CompanyActivitiesAsOfQuery = Readonly<{
 	regulatorCode?: string;
 	primaryOnly?: boolean;
 	knownAt?: CanonicalInstant;
+}>;
+
+export type CompanyStatusAsOfQuery = Readonly<{
+	organizationId: OrganizationId;
+	legalCompanyId: LegalCompanyId;
+	asOf: CanonicalDate;
+	knownAt?: CanonicalInstant;
+}>;
+
+export type CompaniesByStatusQuery = Readonly<{
+	organizationId: OrganizationId;
+	status: LegalCompanyStatus;
+	asOf?: CanonicalDate;
+	knownAt?: CanonicalInstant;
+	pagination: CursorPagination;
 }>;
 
 export type LegalCompanyLookupInput = Readonly<{
@@ -449,6 +466,21 @@ export type EndCompanyActivityStoreInput = Readonly<{
 	transaction?: CorporateAdministrationTransactionContext;
 }>;
 
+export type ChangeLegalCompanyStatusStoreInput = Readonly<{
+	organizationId: OrganizationId;
+	legalCompanyId: LegalCompanyId;
+	status: LegalCompanyStatus;
+	effectiveFrom: CanonicalDate;
+	recordedAt: CanonicalInstant;
+	recordedByUserId: CorporateAdministrationCommandOptions["actorUserId"];
+	reason: string | null;
+	sourceDocumentId: string;
+	expectedCompanyVersion: number;
+	correlationId: CorporateAdministrationCommandOptions["correlationId"];
+	causationId?: CorporateAdministrationCommandOptions["causationId"];
+	transaction?: CorporateAdministrationTransactionContext;
+}>;
+
 export type LegalCompanyTimelineStoreInput = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
@@ -656,6 +688,15 @@ export type LegalCompanyStore = Readonly<{
 			expectedVersion?: number;
 		}>,
 	): Promise<Result<LegalCompany | null>>;
+	changeLegalCompanyStatus(
+		input: ChangeLegalCompanyStatusStoreInput,
+	): Promise<Result<CompanyStatusHistory>>;
+	findCompanyStatusAsOf(
+		query: CompanyStatusAsOfQuery,
+	): Promise<Result<CompanyStatusHistory | null>>;
+	listCompaniesByStatus(
+		query: CompaniesByStatusQuery,
+	): Promise<Result<LegalCompanyListPage>>;
 	getLegalCompanyTimeline(
 		input: LegalCompanyTimelineStoreInput,
 	): Promise<Result<readonly LegalCompanyTimelineEntry[]>>;
@@ -848,6 +889,25 @@ export type CompanyActivityCommandDependencies =
 export type CompanyActivityQueryDependencies = Readonly<{
 	store: LegalCompanyStore;
 	activityStore: CompanyActivityStore;
+}>;
+
+export type LegalCompanyLifecycleCommandDependencies =
+	LegalCompanyCommandDependencies &
+		CompanyNameQueryDependencies &
+		CompanyLegalFormQueryDependencies &
+		CompanyIdentifierQueryDependencies &
+		CompanyFinancialYearQueryDependencies &
+		CompanyActivityQueryDependencies &
+		Readonly<{ establishmentStore: EstablishmentStore }>;
+
+export type LegalCompanyLifecycleQueryDependencies = Readonly<{
+	store: LegalCompanyStore;
+	nameStore: CompanyNameStore;
+	legalFormStore: CompanyLegalFormStore;
+	identifierStore: CompanyIdentifierStore;
+	financialYearStore: CompanyFinancialYearStore;
+	activityStore: CompanyActivityStore;
+	establishmentStore: EstablishmentStore;
 }>;
 
 export type LegalCompanyCommandContext = CorporateAdministrationCommandOptions;

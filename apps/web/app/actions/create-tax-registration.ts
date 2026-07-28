@@ -5,7 +5,7 @@ import { createCorrelationId } from "@afenda/http";
 import {
 	createTaxRegistration,
 	getRefCountryByCode,
-	type TaxRegistration,
+	type TaxRegistrationProjection,
 } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -21,7 +21,7 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type CreateTaxRegistrationActionData = {
-	taxRegistration: TaxRegistration;
+	taxRegistration: TaxRegistrationProjection;
 };
 
 export type CreateTaxRegistrationActionState =

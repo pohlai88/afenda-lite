@@ -16,6 +16,7 @@ import {
 	type MergePartiesChangePayload,
 	PARTY_KINDS,
 	PARTY_ROLE_CODES,
+	TAX_REGISTRATION_TYPES,
 	WAREHOUSE_LOCATION_TYPES,
 } from "@afenda/master-data";
 import {
@@ -476,6 +477,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 								label: party.label,
 							}))}
 							countryCodes={TAX_JURISDICTION_COUNTRY_CODES}
+							registrationTypes={TAX_REGISTRATION_TYPES}
 						/>
 					</CardContent>
 				</Card>
@@ -499,8 +501,7 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
 									>
 										<span>
-											<Code>{row.registrationType}</Code>{" "}
-											{row.registrationNumber}
+											<Code>{row.taxType}</Code> {row.maskedRegistrationNumber}
 										</span>
 										<span className="text-muted-foreground">
 											{row.status} · v{row.version}

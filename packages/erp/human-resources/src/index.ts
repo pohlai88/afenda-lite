@@ -1,7 +1,10 @@
 // Main exports for @afenda/human-resources package
 import "server-only";
 
+export * from "./audit-integrity";
 export * from "./brands";
+export * from "./bulk";
+export * from "./bulk-export";
 export * from "./command-options";
 export * from "./compensation-benefits/benefit-dependent";
 export * from "./compensation-benefits/benefit-eligibility";
@@ -46,6 +49,8 @@ export type * from "./handoff/ports";
 export * from "./hire-orchestration/hire-from-accepted-offer";
 export type * from "./hire-orchestration/types";
 export type * from "./identity-resolver";
+export * from "./integrations/accounting-provisioning-facts";
+export * from "./integrations/payroll-delivery";
 export * from "./integrations/platform-facts";
 export * from "./learning/certification";
 export * from "./learning/completion";
@@ -63,6 +68,7 @@ export * from "./lifecycle/onboarding-checklist";
 export * from "./lifecycle/probation";
 export * from "./lifecycle/termination";
 export * from "./lifecycle/transfer";
+export * from "./observability";
 export * from "./organization/department";
 export * from "./organization/job";
 export * from "./organization/position";
@@ -71,11 +77,14 @@ export * from "./performance/goal";
 export * from "./performance/improvement-plan";
 export * from "./performance/performance-cycle";
 export * from "./performance/review";
+export * from "./performance-verification";
 export * from "./permissions";
 // Ports and options
 export type * from "./ports";
 export * from "./privacy";
+export * from "./privacy/deletion-decision";
 export * from "./privacy/operations";
+export * from "./privacy/processor-boundary";
 export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
 export { createProductionAssignmentContextQuery } from "./production-assignment-context-query";
 export type {
@@ -84,12 +93,15 @@ export type {
 } from "./production-attendance-source";
 export { createProductionAttendanceSource } from "./production-attendance-source";
 export { createProductionWorkCalendar } from "./production-work-calendar";
+export * from "./recovery-verification";
 export * from "./recruitment/application";
 export * from "./recruitment/candidate";
 export * from "./recruitment/interview";
 export * from "./recruitment/interview-field-projection";
 export * from "./recruitment/offer";
 export * from "./recruitment/requisition";
+export * from "./reliability";
+export * from "./reporting";
 export * from "./schemas";
 export * from "./sensitive-operation-policies";
 export * from "./shared/authorization-policy-registry";

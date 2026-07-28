@@ -22,3 +22,15 @@ export async function requirePermission(
 		forbidPermissionAccess();
 	}
 }
+
+/** Fail closed unless the session holds at least one capability for the route. */
+export async function requireAnyPermission(
+	session: Session,
+	codes: readonly ProductPermissionCode[],
+): Promise<void> {
+	if (codes.length === 0) forbidPermissionAccess();
+	for (const code of codes) {
+		if (await sessionHasPermission(session, code)) return;
+	}
+	forbidPermissionAccess();
+}

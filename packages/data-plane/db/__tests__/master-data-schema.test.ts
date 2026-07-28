@@ -5,6 +5,7 @@ import { HARD_TENANT_ROOT_TABLE_NAMES } from "../src/hard-tenant-roots";
 import {
 	mdChangeRequest,
 	mdImportBatch,
+	mdImportBatchRow,
 	mdItem,
 	mdItemAlias,
 	mdItemBarcode,
@@ -68,6 +69,7 @@ const IN_SCOPE_TABLES = {
 	mdItemVariantAttributeValueOption,
 	mdChangeRequest,
 	mdImportBatch,
+	mdImportBatchRow,
 	mdOrganizationDimension,
 } as const;
 
@@ -112,6 +114,7 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 			[
 				"md_change_request",
 				"md_import_batch",
+				"md_import_batch_row",
 				"md_item",
 				"md_item_alias",
 				"md_item_barcode",
@@ -271,6 +274,29 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 			),
 		).toBe(false);
 		expect(getTableColumns(mdItemVariant).combinationKey).toBeDefined();
+	});
+
+	it("persists recoverable tenant-scoped import claims and row evidence", () => {
+		const batch = getTableColumns(mdImportBatch);
+		expect(batch.payloadHash.notNull).toBe(true);
+		expect(batch.operationType.notNull).toBe(true);
+		expect(batch.leaseOwner).toBeDefined();
+		expect(batch.leaseExpiresAt).toBeDefined();
+		const row = getTableColumns(mdImportBatchRow);
+		expect(row.organizationId.notNull).toBe(true);
+		expect(row.batchId.notNull).toBe(true);
+		expect(row.sourceRowNumber.notNull).toBe(true);
+		expect(row.payloadHash.notNull).toBe(true);
+		expect(row.normalizedPayload.notNull).toBe(true);
+		expect(row.resultEntityId).toBeDefined();
+		expect(row.resultVersion).toBeDefined();
+
+		const migrationSql = readCurrentMigrationSql();
+		expect(migrationSql).toContain("md_import_batch_org_idempotency_uidx");
+		expect(migrationSql).toContain(
+			"CREATE TABLE IF NOT EXISTS md_import_batch_row",
+		);
+		expect(migrationSql).toContain("md_import_batch_row_org_batch_fk");
 	});
 
 	it("keeps party free of customer/supplier booleans", () => {

@@ -174,7 +174,7 @@ Commands should depend on the smallest required store slice through `Pick<...>` 
 
 ## Query Completeness
 
-Code-bearing operational masters expose predictable query shapes: `get*ById`, `get*ByCode`, `list*`, `exists*ByCode`, `listActive*`, `list*ByStatus`, and `list*UpdatedSince`. Tax registrations do not expose a fake code identity; use `getTaxRegistrationById`, `listTaxRegistrations`, `listTaxRegistrationsUpdatedSince`, `findTaxRegistrationsByParty`, and `findPartyByTaxRegistration`.
+Code-bearing operational masters expose predictable query shapes: `get*ById`, `get*ByCode`, `list*`, `exists*ByCode`, `listActive*`, `list*ByStatus`, and `list*UpdatedSince`. Tax registrations do not expose a fake code identity. Ordinary operations (`getTaxRegistration`, `listTaxRegistrations`, `listTaxRegistrationsUpdatedSince`, and `findTaxRegistrationsByParty`) return masked `TaxRegistrationProjection` values. Explicit sensitive operations (`getSensitiveTaxRegistration`, `listSensitiveTaxRegistrations`, and `findSensitiveTaxRegistrationsByParty`) return `SensitiveTaxRegistrationProjection` values.
 
 Operational finders are named by domain semantics: `listPartiesByRole`, `findPartyByExternalId`, `findPartyByTaxRegistration`, `listPartyRelationships`, `listItemsByGroup`, `findItemByBarcode`, `findItemByAlias`, `findItemByExternalId`, `listItemUoms`, and `findWarehouseByExternalId`.
 
@@ -243,7 +243,7 @@ The canonical core permission catalog is `MASTER_DATA_CORE_PERMISSION_CODES` in 
 | Imports | `master_data.import_create` · `master_data.import_validate` · `master_data.import_approve` · `master_data.import_apply` |
 | Search and duplicates | `master_data.search_rebuild` · `master_data.duplicate_review` |
 
-Field-level sensitive reads are separate from entity read grants: `master_data.tax_registration_number_read`, `master_data.personal_contact_read`, and `master_data.sensitive_external_id_read`. Masked projections may be returned with ordinary read permissions, but unmasked tax registration numbers, personal contact values, and sensitive external IDs require the corresponding field permission.
+Sensitive reads are separate operations and grants. `master_data.tax_registration_read` and `master_data.party_contact_read` return masked projections even when authorization is satisfied by the corresponding stronger sensitive-read grant. Unmasked operations require `master_data.tax_registration_sensitive_read` or `master_data.party_contact_sensitive_read`; sensitive external identifiers require `master_data.sensitive_external_id_read`. Neither ordinary nor sensitive projections expose normalized sensitive values.
 
 ## Exports
 
@@ -253,7 +253,6 @@ Field-level sensitive reads are separate from entity read grants: `master_data.t
 | `@afenda/master-data/platform-references` | Typed reference read-store, queries, policies, schemas, and Memory adapter |
 | `@afenda/master-data/lifecycle-governance` | Lifecycle policy, availability, canonical identity, merge, and version-CAS helpers |
 | `@afenda/master-data/adapters/drizzle` | Master-data and platform-reference Drizzle stores/factories |
-| `@afenda/master-data/types` | Shared domain types |
 | `@afenda/master-data/module-manifest` | Module manifest |
 | `@afenda/master-data/testing/organization-dimensions` | Organization-dimension testing store helpers |
 
@@ -358,7 +357,7 @@ Warehouse lifecycle intent names are exposed as `activateWarehouse`, `suspendWar
 
 Payment terms use a structured commercial rule model: `netDays`, optional early-payment discount days/percent, due-day rule, end-of-month flag, installment policy/count, effective dates, and optional currency restriction. This is not a universal payment engine; sales and purchasing should snapshot the selected term and calculate due dates in their own transaction context.
 
-Tax registrations are unique while live by organization, party, country, tax type, and normalized registration number. Commands store the existing canonical status set, while MD-4 projections expose `pending_verification`, `active`, `expired`, `revoked`, and `archived`: `draft`/other non-active states project to `pending_verification`, active rows with `validTo < asOf` project to `expired`, `blocked` projects to `revoked`, and `retired` projects to `archived`. Use `toMaskedTaxRegistration` for restricted views; raw registration numbers are sensitive.
+Tax registrations are unique while live by organization, party, country, tax type, and normalized registration number. Commands store the existing canonical status set, while lifecycle evaluation exposes `pending_verification`, `active`, `expired`, `revoked`, and `archived`: `draft`/other non-active states project to `pending_verification`, active rows with `validUntil < asOf` project to `expired`, `blocked` projects to `revoked`, and `retired` projects to `archived`. Public commands and ordinary queries return `TaxRegistrationProjection`; raw registration numbers are available only through dedicated sensitive queries.
 
 Cross-module contract: sales references party, party role, item, payment term, and warehouse IDs; purchasing references supplier role, item, payment term, and warehouse IDs; inventory references item and warehouse IDs; accounting references dimensions and tax registrations where appropriate. Package tests prevent downstream ERP modules from importing master-data mutation commands or directly mutating `md_*` master tables.
 

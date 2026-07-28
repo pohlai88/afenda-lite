@@ -1,7 +1,7 @@
 import { getSession } from "@afenda/auth";
 import type { Result } from "@afenda/errors/result";
 import { createCorrelationId } from "@afenda/http";
-import type { TaxRegistration } from "@afenda/master-data";
+import type { TaxRegistrationProjection } from "@afenda/master-data";
 import {
 	activateTaxRegistration,
 	blockTaxRegistration,
@@ -23,7 +23,7 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type TaxRegistrationLifecycleActionData = {
-	taxRegistration: TaxRegistration;
+	taxRegistration: TaxRegistrationProjection;
 };
 
 export type TaxRegistrationLifecycleActionState =
@@ -36,7 +36,7 @@ const taxRegistrationLifecycleFormSchema = z.object({
 
 type TaxRegistrationLifecycleCommand = (
 	input: unknown,
-) => Promise<Result<TaxRegistration>>;
+) => Promise<Result<TaxRegistrationProjection>>;
 
 const LIFECYCLE_COMMANDS = {
 	activate: activateTaxRegistration,

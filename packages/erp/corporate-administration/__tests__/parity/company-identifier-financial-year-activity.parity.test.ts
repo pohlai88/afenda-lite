@@ -1,5 +1,5 @@
+import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/testing";
 import { describe, expect, it } from "vitest";
-import { createMemoryCorporateAdministrationLegalCompanyStore } from "../../src/adapters/memory";
 import type {
 	CompanyActivityStore,
 	CompanyFinancialYearStore,

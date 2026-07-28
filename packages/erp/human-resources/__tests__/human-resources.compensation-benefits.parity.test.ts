@@ -2,7 +2,7 @@
  * Memory vs Drizzle parity for compensation & benefits (HR-07 / slice 8.5).
  */
 
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import {
 	addBenefitEnrollmentDependent,
 	endBenefitEnrollmentDependent,
@@ -27,8 +27,11 @@ import {
 } from "../src/compensation-benefits/compensation-review";
 import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
 import {
+	activateEmployeeCompensation,
 	approveEmployeeCompensation,
+	correctEmployeeCompensation,
 	createEmployeeCompensation,
+	scheduleEmployeeCompensationChange,
 } from "../src/compensation-benefits/employee-compensation";
 import {
 	createSalaryBand,
@@ -49,6 +52,10 @@ import { resultFailureMessage } from "./helpers/result-details";
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+afterEach(() => {
+	vi.useRealTimers();
+});
 
 function defineCompensationBenefitsParitySuite(
 	adapter: WorkforceStoreAdapter,
@@ -375,6 +382,129 @@ function defineCompensationBenefitsParitySuite(
 		expect(waived.ok, resultFailureMessage(waived)).toBe(true);
 		if (!waived.ok) return;
 		expect(waived.data.status).toBe("waived");
+	});
+
+	it("employee compensation schedule, activate, and correct lifecycle", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-01-01T12:00:00.000Z"));
+		const ready = {
+			...createHrParityHarness(adapter),
+			currency: createMemoryCurrencyLookup(),
+		};
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-employee-${suffix}`,
+				idempotencyKey: `idem-lifecycle-employee-${suffix}`,
+				employeeNumber: `LC-${suffix}`.slice(0, 64),
+				legalName: `Lifecycle Worker ${suffix}`,
+			},
+			ready,
+		);
+		expect(employee.ok, resultFailureMessage(employee)).toBe(true);
+		if (!employee.ok) return;
+
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2025-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok, resultFailureMessage(employment)).toBe(true);
+		if (!employment.ok) return;
+
+		const initial = await createEmployeeCompensation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-initial-${suffix}`,
+				idempotencyKey: `idem-lifecycle-initial-${suffix}`,
+				employeeId: employee.data.id,
+				employmentId: employment.data.id,
+				baseAmount: "70000.0000",
+				currencyCode: "USD",
+				payFrequency: "monthly",
+				effectiveFrom: "2025-01-01",
+				reason: "Initial compensation",
+			},
+			ready,
+		);
+		expect(initial.ok, resultFailureMessage(initial)).toBe(true);
+		if (!initial.ok) return;
+		const active = await approveEmployeeCompensation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-approve-${suffix}`,
+				compensationId: initial.data.id,
+				expectedVersion: initial.data.version,
+			},
+			ready,
+		);
+		expect(active.ok, resultFailureMessage(active)).toBe(true);
+		if (!active.ok) return;
+
+		const scheduled = await scheduleEmployeeCompensationChange(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-schedule-${suffix}`,
+				idempotencyKey: `idem-lifecycle-schedule-${suffix}`,
+				compensationId: active.data.id,
+				baseAmount: "75000.0000",
+				currencyCode: "USD",
+				payFrequency: "monthly",
+				effectiveFrom: "2026-02-01",
+				reason: "Scheduled increase",
+			},
+			ready,
+		);
+		expect(scheduled.ok, resultFailureMessage(scheduled)).toBe(true);
+		if (!scheduled.ok) return;
+		expect(scheduled.data.status).toBe("scheduled");
+		expect(scheduled.data.supersedesCompensationId).toBe(active.data.id);
+		vi.setSystemTime(new Date("2026-02-02T12:00:00.000Z"));
+
+		const activated = await activateEmployeeCompensation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-activate-${suffix}`,
+				compensationId: scheduled.data.id,
+				expectedVersion: scheduled.data.version,
+			},
+			ready,
+		);
+		expect(activated.ok, resultFailureMessage(activated)).toBe(true);
+		if (!activated.ok) return;
+		expect(activated.data.status).toBe("active");
+
+		const corrected = await correctEmployeeCompensation(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-lifecycle-correct-${suffix}`,
+				idempotencyKey: `idem-lifecycle-correct-${suffix}`,
+				compensationId: activated.data.id,
+				baseAmount: "76000.0000",
+				currencyCode: "USD",
+				payFrequency: "monthly",
+				effectiveFrom: "2026-02-01",
+				reason: "Evidence-backed correction",
+				evidenceReference: `case-${suffix}`,
+			},
+			ready,
+		);
+		expect(corrected.ok, resultFailureMessage(corrected)).toBe(true);
+		if (!corrected.ok) return;
+		expect(corrected.data.status).toBe("active");
+		expect(corrected.data.baseAmount).toBe("76000.0000");
+		expect(corrected.data.supersedesCompensationId).toBe(activated.data.id);
 	});
 
 	it("Slice 8.4 — compensation review cycle lifecycle parity", async () => {

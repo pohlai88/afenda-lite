@@ -4,7 +4,7 @@ import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	listTaxRegistrations,
-	type TaxRegistration,
+	type TaxRegistrationProjection,
 } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
@@ -16,7 +16,7 @@ import {
 } from "@/modules/platform/schemas/action-result";
 
 export type ListTaxRegistrationsActionData = {
-	taxRegistrations: TaxRegistration[];
+	taxRegistrations: TaxRegistrationProjection[];
 };
 
 /**
@@ -25,7 +25,7 @@ export type ListTaxRegistrationsActionData = {
 export async function listTaxRegistrationsAction(input?: {
 	page?: number;
 	pageSize?: number;
-	status?: TaxRegistration["status"];
+	status?: TaxRegistrationProjection["status"];
 	partyId?: string;
 }): Promise<ActionResult<ListTaxRegistrationsActionData>> {
 	const correlationId = createCorrelationId();

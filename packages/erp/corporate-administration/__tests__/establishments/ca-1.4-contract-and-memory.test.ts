@@ -10,7 +10,7 @@ import {
 	validateEstablishmentChronology,
 	validateEstablishmentStatusTransition,
 } from "@afenda/corporate-administration";
-import { createMemoryCorporateAdministrationEstablishmentStore } from "@afenda/corporate-administration/adapters/memory";
+import { createMemoryCorporateAdministrationEstablishmentStore } from "@afenda/corporate-administration/testing";
 import { describe, expect, it } from "vitest";
 import {
 	legalCompanyIdSchema,

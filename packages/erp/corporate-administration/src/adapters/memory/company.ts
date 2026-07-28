@@ -8,6 +8,7 @@ import {
 	validateIdentifierEffectiveRange,
 } from "../../company/rules";
 import type {
+	CompaniesByStatusQuery,
 	CompanyActivitiesAsOfQuery,
 	CompanyActivityStore,
 	CompanyFinancialYearOverlapQuery,
@@ -32,6 +33,7 @@ import type {
 	CompanyLegalFormHistory,
 	CompanyName,
 	CompanyNameListItem,
+	CompanyStatusHistory,
 	LegalCompany,
 	LegalCompanyListPage,
 	LegalCompanyTimelineEntry,
@@ -84,6 +86,12 @@ function cloneActivity(activity: CompanyActivity): CompanyActivity {
 	return structuredClone(activity);
 }
 
+function cloneStatusHistory(
+	status: CompanyStatusHistory,
+): CompanyStatusHistory {
+	return structuredClone(status);
+}
+
 type MemoryCorporateAdministrationLegalCompanyStore = LegalCompanyStore &
 	CompanyNameStore &
 	CompanyLegalFormStore &
@@ -99,6 +107,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 	const identifiers = new Map<string, CompanyIdentifier>();
 	const financialYears = new Map<string, CompanyFinancialYear>();
 	const activities = new Map<string, CompanyActivity>();
+	const statusHistory = new Map<string, CompanyStatusHistory>();
 
 	function key(organizationId: string, legalCompanyId: string): string {
 		return `${organizationId}:${legalCompanyId}`;
@@ -124,13 +133,23 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				currentJurisdictionProfile: findCurrentProfile({
 					organizationId: input.organizationId,
 					legalCompanyId: input.legalCompanyId,
-					knownAt: input.knownAt,
 				}),
 			});
 		},
 		async listLegalCompanies(input): Promise<Result<LegalCompanyListPage>> {
 			const items = Array.from(companies.values())
 				.filter((company) => company.organizationId === input.organizationId)
+				.filter(
+					(company) =>
+						input.asOf === undefined ||
+						companyStatusMatchesAsOf({
+							organizationId: input.organizationId,
+							legalCompanyId: company.legalCompanyId,
+							status: company.state,
+							asOf: input.asOf,
+							knownAt: input.knownAt,
+						}),
+				)
 				.sort((left, right) =>
 					left.normalizedCompanyCode.localeCompare(right.normalizedCompanyCode),
 				)
@@ -963,11 +982,109 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 			);
 		},
 		async lockLegalCompany(input) {
-			return ok(
-				cloneNullable(
-					companies.get(key(input.organizationId, input.legalCompanyId)),
-				),
+			const company = cloneNullable(
+				companies.get(key(input.organizationId, input.legalCompanyId)),
 			);
+			if (company === null) return ok(null);
+			return ok({
+				...company,
+				currentJurisdictionProfile: findCurrentProfile({
+					organizationId: input.organizationId,
+					legalCompanyId: input.legalCompanyId,
+				}),
+			});
+		},
+		async changeLegalCompanyStatus(input) {
+			const company = companies.get(
+				key(input.organizationId, input.legalCompanyId),
+			);
+			if (company === undefined) {
+				return notFound("legalCompany");
+			}
+			if (company.version !== input.expectedCompanyVersion) {
+				return stale(input.expectedCompanyVersion, company.version);
+			}
+			for (const status of listStatusRecords(input)) {
+				if (status.effectiveTo === null) {
+					statusHistory.set(status.id, {
+						...status,
+						effectiveTo: input.effectiveFrom,
+					});
+				}
+			}
+			const id = randomUUID();
+			const version = input.expectedCompanyVersion + 1;
+			const record: CompanyStatusHistory = {
+				id,
+				organizationId: input.organizationId,
+				legalCompanyId: input.legalCompanyId,
+				status: input.status,
+				effectiveFrom: input.effectiveFrom,
+				effectiveTo: null,
+				recordedAt: new Date(input.recordedAt),
+				recordedBy: input.recordedByUserId,
+				reason: input.reason,
+				sourceDocumentId: input.sourceDocumentId,
+				version,
+			};
+			statusHistory.set(id, cloneStatusHistory(record));
+			companies.set(key(input.organizationId, input.legalCompanyId), {
+				...company,
+				state: input.status,
+				version,
+				updatedByUserId: input.recordedByUserId,
+				updatedAt: input.recordedAt,
+			});
+			return ok(cloneStatusHistory(record));
+		},
+		async findCompanyStatusAsOf(query) {
+			const status =
+				listStatusRecords(query)
+					.filter((candidate) => isKnownAt(candidate, query.knownAt))
+					.filter((candidate) =>
+						isEffectiveOn(
+							{ from: candidate.effectiveFrom, to: candidate.effectiveTo },
+							query.asOf,
+						),
+					)
+					.sort(
+						(left, right) =>
+							right.recordedAt.getTime() - left.recordedAt.getTime() ||
+							right.version - left.version ||
+							left.id.localeCompare(right.id),
+					)[0] ?? null;
+			return ok(status === null ? null : cloneStatusHistory(status));
+		},
+		async listCompaniesByStatus(query) {
+			const items = Array.from(companies.values())
+				.filter((company) => company.organizationId === query.organizationId)
+				.filter((company) =>
+					companyStatusMatchesAsOf({
+						organizationId: query.organizationId,
+						legalCompanyId: company.legalCompanyId,
+						status: query.status,
+						asOf: query.asOf,
+						knownAt: query.knownAt,
+					}),
+				)
+				.sort((left, right) =>
+					left.normalizedCompanyCode.localeCompare(right.normalizedCompanyCode),
+				)
+				.slice(0, query.pagination.limit)
+				.map((company) => ({
+					organizationId: company.organizationId,
+					legalCompanyId: company.legalCompanyId,
+					companyCode: company.companyCode,
+					normalizedCompanyCode: company.normalizedCompanyCode,
+					masterDataPartyId: company.masterDataPartyId,
+					homeJurisdictionCountryCode: company.homeJurisdictionCountryCode,
+					state: company.state,
+					profile: company.profile,
+					version: company.version,
+					jurisdictionCountryCode: company.homeJurisdictionCountryCode,
+					entityType: "draft_legal_company",
+				}));
+			return ok({ items, nextCursor: null });
 		},
 		async getLegalCompanyTimeline(input) {
 			const company = companies.get(
@@ -991,10 +1108,19 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					});
 				}
 			}
+			for (const status of listStatusRecords(input)) {
+				if (isKnownAt(status, input.knownAt)) {
+					entries.push({
+						...cloneStatusHistory(status),
+						kind: "company_status",
+					});
+				}
+			}
 			return ok(
 				entries.sort((left, right) =>
 					"recordedAt" in left && "recordedAt" in right
-						? left.recordedAt.localeCompare(right.recordedAt)
+						? new Date(left.recordedAt).getTime() -
+							new Date(right.recordedAt).getTime()
 						: 0,
 				),
 			);
@@ -1112,6 +1238,41 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 			(activity) =>
 				activity.organizationId === input.organizationId &&
 				activity.legalCompanyId === input.legalCompanyId,
+		);
+	}
+
+	function listStatusRecords(input: {
+		organizationId: string;
+		legalCompanyId: string;
+	}): CompanyStatusHistory[] {
+		return Array.from(statusHistory.values()).filter(
+			(status) =>
+				status.organizationId === input.organizationId &&
+				status.legalCompanyId === input.legalCompanyId,
+		);
+	}
+
+	function companyStatusMatchesAsOf(
+		input: Pick<CompaniesByStatusQuery, "organizationId" | "status"> & {
+			legalCompanyId: string;
+			asOf?: string;
+			knownAt?: string;
+		},
+	): boolean {
+		if (input.asOf === undefined) {
+			const company = companies.get(
+				key(input.organizationId, input.legalCompanyId),
+			);
+			return company?.state === input.status;
+		}
+		return listStatusRecords(input).some(
+			(status) =>
+				status.status === input.status &&
+				isKnownAt(status, input.knownAt) &&
+				isEffectiveOn(
+					{ from: status.effectiveFrom, to: status.effectiveTo },
+					input.asOf ?? "9999-12-31",
+				),
 		);
 	}
 

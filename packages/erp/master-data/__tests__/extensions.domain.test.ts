@@ -766,7 +766,7 @@ describe("@afenda/master-data extensions", () => {
 	});
 
 	it("replaces the primary contact atomically and requires explicit verification for trust", async () => {
-		const { options } = createMasterDataTestHarness();
+		const { options, store } = createMasterDataTestHarness();
 		const party = await createParty(
 			{
 				...ctx(),
@@ -806,8 +806,8 @@ describe("@afenda/master-data extensions", () => {
 		);
 		expect(replacement.ok).toBe(true);
 		if (!first.ok || !replacement.ok) return;
-		expect(replacement.data.normalizedValue).toBe("second@example.test");
-		expect(isPartyContactTrustedDestination(replacement.data)).toBe(false);
+		expect(replacement.data.maskedValue.endsWith("test")).toBe(true);
+		expect(replacement.data).not.toHaveProperty("normalizedValue");
 
 		const contacts = await listPartyContacts(
 			{ ...ctx(), parentId: party.data.id },
@@ -833,15 +833,27 @@ describe("@afenda/master-data extensions", () => {
 		);
 		expect(verified.ok).toBe(true);
 		if (!verified.ok) return;
-		expect(verified.data.verifiedAt).toEqual(verifiedAt);
-		expect(isPartyContactTrustedDestination(verified.data)).toBe(true);
+		expect(verified.data.verificationStatus).toBe("verified");
+		const verifiedContact = await store.getPrimaryPartyContact(
+			ctx().organizationId,
+			party.data.id,
+			"email",
+			"billing",
+		);
+		expect(verifiedContact.ok).toBe(true);
+		if (!verifiedContact.ok || verifiedContact.data === null) return;
+		expect(verifiedContact.data.verifiedAt).toEqual(verifiedAt);
+		expect(isPartyContactTrustedDestination(verifiedContact.data)).toBe(true);
 		expect(
-			isPartyContactTrustedDestination(verified.data, new Date("invalid")),
+			isPartyContactTrustedDestination(
+				verifiedContact.data,
+				new Date("invalid"),
+			),
 		).toBe(false);
 		expect(
 			isPartyContactTrustedDestination(
 				{
-					...verified.data,
+					...verifiedContact.data,
 					verifiedAt: new Date(Date.now() + 60_000),
 				},
 				new Date(),
@@ -861,11 +873,23 @@ describe("@afenda/master-data extensions", () => {
 		expect(changedValue.ok).toBe(true);
 		if (!changedValue.ok) return;
 		expect(changedValue.data).toMatchObject({
+			verificationStatus: "unverified",
+		});
+		expect(changedValue.data).not.toHaveProperty("normalizedValue");
+		const changedContact = await store.getPrimaryPartyContact(
+			ctx().organizationId,
+			party.data.id,
+			"email",
+			"billing",
+		);
+		expect(changedContact.ok).toBe(true);
+		if (!changedContact.ok || changedContact.data === null) return;
+		expect(changedContact.data).toMatchObject({
 			normalizedValue: "Replacement@example.test",
 			verificationStatus: "unverified",
 			verifiedAt: null,
 		});
-		expect(isPartyContactTrustedDestination(changedValue.data)).toBe(false);
+		expect(isPartyContactTrustedDestination(changedContact.data)).toBe(false);
 	});
 
 	it("rejects cross-organization and retired party extension parents", async () => {

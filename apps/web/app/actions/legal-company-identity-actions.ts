@@ -86,6 +86,7 @@ const approvalRequestIdSchema = z.string().uuid().brand("ApprovalRequestId");
 const approvalDecisionIdSchema = z.string().uuid().brand("ApprovalDecisionId");
 type ApprovalRequestId = z.infer<typeof approvalRequestIdSchema>;
 type ApprovalDecisionId = z.infer<typeof approvalDecisionIdSchema>;
+type OptionalCanonicalField = "correctionReason";
 
 const legalCompanyIdentityActionMetadataSchema = {
 	organizationSlug: z
@@ -111,6 +112,13 @@ const optionalCorrectionReasonSchema = z.preprocess(
 	emptyStringToUndefined,
 	correctionReasonSchema.optional(),
 );
+
+function optionalCanonicalString<K extends OptionalCanonicalField>(
+	key: K,
+	value: string | undefined,
+): Record<K, string> | Record<string, never> {
+	return value === undefined ? {} : ({ [key]: value } as Record<K, string>);
+}
 
 const addCompanyNameActionSchema = z
 	.object({
@@ -313,7 +321,10 @@ export async function addCompanyNameAction(
 					effectiveFrom: parsed.data.effectiveFrom,
 					effectiveTo: parsed.data.effectiveTo ?? null,
 					sourceDocumentId: parsed.data.sourceDocumentId ?? null,
-					correctionReason: parsed.data.correctionReason,
+					...optionalCanonicalString(
+						"correctionReason",
+						parsed.data.correctionReason,
+					),
 					expectedCompanyVersion: parsed.data.expectedCompanyVersion,
 				},
 				createCommandOptions(parsed.data, session, correlationId),
@@ -451,7 +462,10 @@ export async function setCompanyLegalFormAction(
 					effectiveFrom: parsed.data.effectiveFrom,
 					effectiveTo: parsed.data.effectiveTo ?? null,
 					sourceDocumentId: parsed.data.sourceDocumentId,
-					correctionReason: parsed.data.correctionReason,
+					...optionalCanonicalString(
+						"correctionReason",
+						parsed.data.correctionReason,
+					),
 					expectedCompanyVersion: parsed.data.expectedCompanyVersion,
 				},
 				createCommandOptions(parsed.data, session, correlationId),
@@ -553,7 +567,10 @@ export async function registerCompanyIdentifierAction(
 					effectiveFrom: parsed.data.effectiveFrom,
 					effectiveTo: parsed.data.effectiveTo ?? null,
 					sourceDocumentId: parsed.data.sourceDocumentId,
-					correctionReason: parsed.data.correctionReason,
+					...optionalCanonicalString(
+						"correctionReason",
+						parsed.data.correctionReason,
+					),
 					expectedCompanyVersion: parsed.data.expectedCompanyVersion,
 				},
 				createCommandOptions(parsed.data, session, correlationId),
@@ -700,7 +717,10 @@ export async function setCompanyFinancialYearAction(
 					effectiveFrom: parsed.data.effectiveFrom,
 					effectiveTo: parsed.data.effectiveTo ?? null,
 					sourceDocumentId: parsed.data.sourceDocumentId,
-					correctionReason: parsed.data.correctionReason,
+					...optionalCanonicalString(
+						"correctionReason",
+						parsed.data.correctionReason,
+					),
 					expectedCompanyVersion: parsed.data.expectedCompanyVersion,
 				},
 				createCommandOptions(parsed.data, session, correlationId),

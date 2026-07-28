@@ -116,6 +116,19 @@ export const companyActivityTypeSchema = companyActivityClassificationSchema;
 
 export const companyActivityStatusSchema = z.enum(["active", "ended"]);
 
+export const legalCompanyStatusSchema = z.enum([
+	"draft",
+	"active",
+	"suspended",
+	"struck_off",
+	"in_liquidation",
+	"dissolved",
+	"restored",
+	"archived",
+]);
+
+export const legalCompanyStatusReasonSchema = z.string().trim().min(1).max(512);
+
 export const languageCodeSchema = z
 	.string()
 	.trim()
@@ -299,6 +312,39 @@ const companyActivityObjectSchema = z.object({
 
 export const companyActivitySchema = companyActivityObjectSchema.readonly();
 
+const companyStatusHistoryObjectSchema = z.object({
+	id: z.uuid(),
+	organizationId: organizationIdSchema,
+	legalCompanyId: legalCompanyIdSchema,
+	status: legalCompanyStatusSchema,
+	effectiveFrom: canonicalDateSchema,
+	effectiveTo: canonicalDateSchema.nullable(),
+	recordedAt: z.coerce.date(),
+	recordedBy: userIdSchema,
+	reason: legalCompanyStatusReasonSchema.nullable(),
+	sourceDocumentId: sourceDocumentReferenceSchema,
+	version: z.number().int().positive(),
+});
+
+export const companyStatusHistorySchema =
+	companyStatusHistoryObjectSchema.readonly();
+
+export const companyActivationCompletenessSchema = z
+	.object({
+		legalCompanyId: legalCompanyIdSchema,
+		hasJurisdictionProfile: z.boolean(),
+		hasLegalName: z.boolean(),
+		hasLegalForm: z.boolean(),
+		hasCompanyIdentifier: z.boolean(),
+		hasFinancialYear: z.boolean(),
+		hasRegisteredActivity: z.boolean(),
+		hasRegisteredAddress: z.boolean(),
+		complete: z.boolean(),
+		missing: z.array(z.string()).readonly(),
+	})
+	.strict()
+	.readonly();
+
 const companyJurisdictionProfileObjectSchema = z.object({
 	jurisdictionProfileId: z.uuid(),
 	organizationId: organizationIdSchema,
@@ -334,7 +380,7 @@ const legalCompanyObjectSchema = z.object({
 	normalizedCompanyCode: normalizedCompanyCodeSchema,
 	masterDataPartyId: z.string().trim().min(1).max(128),
 	homeJurisdictionCountryCode: countryCodeSchema,
-	state: z.literal("draft"),
+	state: legalCompanyStatusSchema,
 	profile: legalCompanyProfileSchema,
 	currentJurisdictionProfile: companyJurisdictionProfileSchema.nullable(),
 	createdByUserId: userIdSchema,
@@ -390,6 +436,11 @@ export const legalCompanyTimelineEntrySchema = z
 			})
 			.readonly(),
 		companyJurisdictionProfileTimelineEntrySchema,
+		companyStatusHistoryObjectSchema
+			.extend({
+				kind: z.literal("company_status"),
+			})
+			.readonly(),
 	])
 	.readonly();
 
@@ -627,6 +678,67 @@ export const endCompanyActivityInputSchema = z
 	.strict()
 	.readonly();
 
+const changeLegalCompanyStatusInputFields = {
+	legalCompanyId: legalCompanyIdSchema,
+	effectiveFrom: canonicalDateSchema,
+	reason: legalCompanyStatusReasonSchema.optional(),
+	sourceDocumentId: sourceEvidenceSchema,
+	expectedCompanyVersion: z.number().int().nonnegative(),
+} as const;
+
+export const activateLegalCompanyInputSchema = z
+	.object(changeLegalCompanyStatusInputFields)
+	.strict()
+	.readonly();
+
+export const suspendLegalCompanyInputSchema = z
+	.object({
+		...changeLegalCompanyStatusInputFields,
+		reason: legalCompanyStatusReasonSchema,
+	})
+	.strict()
+	.readonly();
+
+export const markCompanyStruckOffInputSchema = z
+	.object({
+		...changeLegalCompanyStatusInputFields,
+		reason: legalCompanyStatusReasonSchema,
+	})
+	.strict()
+	.readonly();
+
+export const enterLiquidationInputSchema = z
+	.object({
+		...changeLegalCompanyStatusInputFields,
+		reason: legalCompanyStatusReasonSchema,
+	})
+	.strict()
+	.readonly();
+
+export const dissolveLegalCompanyInputSchema = z
+	.object({
+		...changeLegalCompanyStatusInputFields,
+		reason: legalCompanyStatusReasonSchema,
+	})
+	.strict()
+	.readonly();
+
+export const restoreLegalCompanyInputSchema = z
+	.object({
+		...changeLegalCompanyStatusInputFields,
+		reason: legalCompanyStatusReasonSchema,
+	})
+	.strict()
+	.readonly();
+
+export const archiveLegalCompanyInputSchema = z
+	.object({
+		...changeLegalCompanyStatusInputFields,
+		reason: legalCompanyStatusReasonSchema,
+	})
+	.strict()
+	.readonly();
+
 export const getLegalCompanyInputSchema = z
 	.object({
 		legalCompanyId: legalCompanyIdSchema,
@@ -640,6 +752,34 @@ export const listLegalCompaniesInputSchema = z
 		asOf: canonicalDateSchema.optional(),
 		knownAt: canonicalInstantSchema.optional(),
 		pagination: cursorPaginationSchema.optional(),
+	})
+	.strict()
+	.readonly();
+
+export const findCompanyStatusAsOfInputSchema = z
+	.object({
+		legalCompanyId: legalCompanyIdSchema,
+		asOf: canonicalDateSchema,
+		knownAt: z.coerce.date().optional(),
+	})
+	.strict()
+	.readonly();
+
+export const listCompaniesByStatusInputSchema = z
+	.object({
+		status: legalCompanyStatusSchema,
+		asOf: canonicalDateSchema.optional(),
+		knownAt: z.coerce.date().optional(),
+		pagination: cursorPaginationSchema.optional(),
+	})
+	.strict()
+	.readonly();
+
+export const getCompanyCompletenessForActivationInputSchema = z
+	.object({
+		legalCompanyId: legalCompanyIdSchema,
+		asOf: canonicalDateSchema,
+		knownAt: z.coerce.date().optional(),
 	})
 	.strict()
 	.readonly();

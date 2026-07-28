@@ -24,4 +24,24 @@ describe("platform integration deduplication migrations", () => {
 			'WHERE "platform_domain_event"."deduplication_key" IS NOT NULL',
 		);
 	});
+
+	it("owns replay-safe platform work items with CAS and immutable activity", () => {
+		const sql = readMigrationSqlForTables([
+			"platform_work_item",
+			"platform_work_item_activity",
+		]);
+		expect(sql).toContain('CREATE TABLE IF NOT EXISTS "platform_work_item"');
+		expect(sql).toContain(
+			'"platform_work_item_org_dedupe_uidx" ON "platform_work_item"',
+		);
+		expect(sql).toMatch(/"organization_id",\s*"deduplication_key"/);
+		expect(sql).toContain('"version" integer DEFAULT 1 NOT NULL');
+		expect(sql).toContain(
+			'CREATE TABLE IF NOT EXISTS "platform_work_item_activity"',
+		);
+		expect(sql).toContain(
+			'"platform_work_item_activity_org_item_version_uidx"',
+		);
+		expect(sql).toContain('FOREIGN KEY ("organization_id", "work_item_id")');
+	});
 });

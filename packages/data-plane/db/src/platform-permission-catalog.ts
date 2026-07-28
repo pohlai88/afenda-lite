@@ -473,15 +473,27 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
-		code: "master_data.tax_registration_number_read",
+		code: "master_data.tax_registration_read",
 		module: "master_data",
-		description: "Read unmasked tax-registration numbers",
+		description: "Read masked tax-registration projections",
+		sensitive: false,
+	},
+	{
+		code: "master_data.tax_registration_sensitive_read",
+		module: "master_data",
+		description: "Read unmasked tax-registration projections",
 		sensitive: true,
 	},
 	{
-		code: "master_data.personal_contact_read",
+		code: "master_data.party_contact_read",
 		module: "master_data",
-		description: "Read personal party contact values",
+		description: "Read masked party-contact projections",
+		sensitive: false,
+	},
+	{
+		code: "master_data.party_contact_sensitive_read",
+		module: "master_data",
+		description: "Read unmasked party-contact projections",
 		sensitive: true,
 	},
 	{
@@ -2047,6 +2059,8 @@ const RETIRED_PLATFORM_PERMISSION_CODES = [
 	"accounting.read",
 	"accounting.manage",
 	"human-resources.timesheet.approve",
+	"master_data.tax_registration_number_read",
+	"master_data.personal_contact_read",
 	...RETIRED_CORPORATE_ADMINISTRATION_PERMISSION_V1.map(([code]) => code),
 	"corporate-administration.company.update",
 	"corporate-administration.company.activate",
@@ -2066,6 +2080,21 @@ const RETIRED_PLATFORM_PERMISSION_CODES = [
 	"corporate-administration.documents-filings.manage",
 	"corporate-administration.documents-filings.read",
 	"corporate-administration.compliance.read",
+] as const;
+
+const MASTER_DATA_PERMISSION_GRANT_MIGRATIONS = [
+	{
+		from: "master_data.party_read",
+		to: ["master_data.tax_registration_read", "master_data.party_contact_read"],
+	},
+	{
+		from: "master_data.tax_registration_number_read",
+		to: ["master_data.tax_registration_sensitive_read"],
+	},
+	{
+		from: "master_data.personal_contact_read",
+		to: ["master_data.party_contact_sensitive_read"],
+	},
 ] as const;
 
 /** HR-TIME-P0-08 seed migration: legacy permission → successor. */
@@ -2126,6 +2155,8 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 			"master_data.dimension_activate",
 			"master_data.dimension_archive",
 			"master_data.party_read",
+			"master_data.tax_registration_read",
+			"master_data.party_contact_read",
 			"master_data.party_create",
 			"master_data.party_update",
 			"master_data.party_activate",
@@ -2250,6 +2281,8 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 			"master_data.reference_read",
 			"master_data.dimension_read",
 			"master_data.party_read",
+			"master_data.tax_registration_read",
+			"master_data.party_contact_read",
 			"master_data.item_read",
 			"sales.order.read",
 			"sales.order.list",
@@ -2311,6 +2344,29 @@ export async function ensurePlatformPermissionCatalog(
 					sensitive: row.sensitive,
 				},
 			});
+	}
+
+	for (const migration of MASTER_DATA_PERMISSION_GRANT_MIGRATIONS) {
+		const grants = await database
+			.select({
+				roleId: platformRolePermission.roleId,
+				grantedBy: platformRolePermission.grantedBy,
+			})
+			.from(platformRolePermission)
+			.where(eq(platformRolePermission.permissionCode, migration.from));
+		if (grants.length === 0) continue;
+		await database
+			.insert(platformRolePermission)
+			.values(
+				grants.flatMap((grant) =>
+					migration.to.map((permissionCode) => ({
+						roleId: grant.roleId,
+						permissionCode,
+						grantedBy: grant.grantedBy,
+					})),
+				),
+			)
+			.onConflictDoNothing();
 	}
 
 	// HR-TIME-P0-08: copy legacy timesheet.approve grants to successor before retire.

@@ -1,8 +1,14 @@
 export type {
+	ActivateLegalCompanyInput,
 	AddCompanyNameInput,
+	ArchiveLegalCompanyInput,
+	DissolveLegalCompanyInput,
 	EndCompanyActivityInput,
+	EnterLiquidationInput,
+	MarkCompanyStruckOffInput,
 	RegisterCompanyActivityInput,
 	RegisterCompanyIdentifierInput,
+	RestoreLegalCompanyInput,
 	RetireCompanyIdentifierInput,
 	RetireCompanyNameInput,
 	SetCompanyFinancialYearInput,
@@ -10,8 +16,18 @@ export type {
 	SupersedeCompanyIdentifierInput,
 	SupersedeCompanyLegalFormInput,
 	SupersedeCompanyNameInput,
+	SuspendLegalCompanyInput,
 } from "../types";
 export { addCompanyName } from "./add-company-name";
+export {
+	activateLegalCompany,
+	archiveLegalCompany,
+	dissolveLegalCompany,
+	enterLiquidation,
+	markCompanyStruckOff,
+	restoreLegalCompany,
+	suspendLegalCompany,
+} from "./change-legal-company-status";
 export { endCompanyActivity } from "./end-company-activity";
 export { registerCompanyActivity } from "./register-company-activity";
 export { registerCompanyIdentifier } from "./register-company-identifier";

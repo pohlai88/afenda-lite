@@ -90,37 +90,51 @@ export const MASTER_DATA_REQUIRED_TEST_LAYERS = [
 		requiredEvidence: "Same observable outcome as memory store",
 		gate: "database_integration",
 		evidencePaths: [
-			"src/drizzle-store.ts",
-			"__tests__/helpers/memory-master-data-store.ts",
+			"__tests__/parity/parity-harness.ts",
+			"__tests__/parity/party.parity.test.ts",
+			"__tests__/parity/item.parity.test.ts",
+			"__tests__/parity/item-group.parity.test.ts",
+			"__tests__/parity/warehouse.parity.test.ts",
+			"__tests__/parity/payment-term.parity.test.ts",
+			"__tests__/parity/tax-registration.parity.test.ts",
+			"__tests__/parity/organization-dimension.parity.test.ts",
+			"__tests__/parity/variants.parity.test.ts",
+			"__tests__/parity/import.parity.test.ts",
 		],
 		completeClaimRule: "required_before_complete",
 	},
 	{
 		id: "transaction_tests",
 		requiredEvidence: "Entity, audit, and event roll back together",
-		gate: "package_vitest",
-		evidencePaths: ["__tests__/same-tx-inventory.test.ts"],
+		gate: "database_integration",
+		evidencePaths: [
+			"__tests__/same-tx-inventory.test.ts",
+			"__tests__/integration/mutation-atomicity.integration.test.ts",
+		],
 		completeClaimRule: "required_before_complete",
 	},
 	{
 		id: "tenant_tests",
 		requiredEvidence: "Cross-org reads and writes rejected",
-		gate: "package_vitest",
+		gate: "database_integration",
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
 			"__tests__/organization-dimension.domain.test.ts",
 			"__tests__/import-bulk.test.ts",
+			"__tests__/tenant-loader-guard.test.ts",
+			"__tests__/integration/tenant-isolation.integration.test.ts",
 		],
 		completeClaimRule: "required_before_complete",
 	},
 	{
 		id: "concurrency_tests",
 		requiredEvidence: "Stale versions fail deterministically",
-		gate: "package_vitest",
+		gate: "database_integration",
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
 			"__tests__/change-request.domain.test.ts",
 			"__tests__/lifecycle-governance.test.ts",
+			"__tests__/integration/cas-concurrency.integration.test.ts",
 		],
 		completeClaimRule: "required_before_complete",
 	},
@@ -186,6 +200,8 @@ export const MASTER_DATA_REQUIRED_TEST_LAYERS = [
 		gate: "package_vitest",
 		evidencePaths: [
 			"__tests__/import-bulk.test.ts",
+			"__tests__/parity/import.parity.test.ts",
+			"__tests__/integration/import-concurrency.integration.test.ts",
 			"__tests__/refs-auth.test.ts",
 			"__tests__/data-governance-workflows.test.ts",
 		],
@@ -225,6 +241,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		cases: MASTER_DATA_REQUIRED_AGGREGATE_PARITY_CASES,
 		evidencePaths: [
 			"__tests__/organization-dimension.domain.test.ts",
+			"__tests__/parity/organization-dimension.parity.test.ts",
 			"src/capabilities/core-organization-masters/organization-dimension.ts",
 		],
 	},
@@ -234,6 +251,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
 			"__tests__/change-request.domain.test.ts",
+			"__tests__/parity/party.parity.test.ts",
 			"src/capabilities/core-organization-masters/party.ts",
 		],
 	},
@@ -242,6 +260,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		cases: MASTER_DATA_REQUIRED_AGGREGATE_PARITY_CASES,
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
+			"__tests__/parity/item-group.parity.test.ts",
 			"src/capabilities/core-organization-masters/item-group.ts",
 		],
 	},
@@ -251,6 +270,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
 			"__tests__/extensions.domain.test.ts",
+			"__tests__/parity/item.parity.test.ts",
 			"src/capabilities/core-organization-masters/item.ts",
 		],
 	},
@@ -260,6 +280,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
 			"__tests__/warehouse-external-ids.test.ts",
+			"__tests__/parity/warehouse.parity.test.ts",
 			"src/capabilities/core-organization-masters/warehouse.ts",
 		],
 	},
@@ -268,6 +289,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		cases: MASTER_DATA_REQUIRED_AGGREGATE_PARITY_CASES,
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
+			"__tests__/parity/payment-term.parity.test.ts",
 			"src/capabilities/core-organization-masters/payment-term.ts",
 		],
 	},
@@ -276,6 +298,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		cases: MASTER_DATA_REQUIRED_AGGREGATE_PARITY_CASES,
 		evidencePaths: [
 			"__tests__/master-data.domain.test.ts",
+			"__tests__/parity/tax-registration.parity.test.ts",
 			"src/capabilities/core-organization-masters/tax-registration.ts",
 		],
 	},
@@ -284,6 +307,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		cases: MASTER_DATA_REQUIRED_AGGREGATE_PARITY_CASES,
 		evidencePaths: [
 			"__tests__/item-variant.domain.test.ts",
+			"__tests__/parity/variants.parity.test.ts",
 			"src/capabilities/core-organization-masters/item-template-variant.ts",
 		],
 	},
@@ -292,6 +316,7 @@ export const MASTER_DATA_MUTABLE_AGGREGATE_PARITY_REQUIREMENTS = [
 		cases: MASTER_DATA_REQUIRED_AGGREGATE_PARITY_CASES,
 		evidencePaths: [
 			"__tests__/item-variant.domain.test.ts",
+			"__tests__/parity/variants.parity.test.ts",
 			"src/capabilities/core-organization-masters/item-template-variant.ts",
 		],
 	},
@@ -301,6 +326,7 @@ export const MASTER_DATA_COMPLETION_GATE_COMMANDS = [
 	"pnpm --filter @afenda/master-data lint",
 	"pnpm --filter @afenda/master-data typecheck",
 	"pnpm --filter @afenda/master-data test",
+	"pnpm test:master-data:parity",
 	'pnpm --filter @afenda/db test -- -t "master-data schema|master-data extension|tenancy"',
 	"pnpm audit:tenancy-nulls",
 ] as const;

@@ -152,6 +152,7 @@ export type {
 	UpdateLegalCompanyProfileInput,
 	UpdateLegalCompanyProfileStoreInput,
 } from "./company";
+export * from "./company";
 export {
 	addCompanyName,
 	addCompanyNameInputSchema,

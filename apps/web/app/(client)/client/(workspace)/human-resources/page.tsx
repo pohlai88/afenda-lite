@@ -1,6 +1,6 @@
 import { parseHrDisplayPreferences } from "@/features/human-resources/display-preferences";
-import { EmployeeHrShell } from "@/features/human-resources/human-resources-shell";
 import { parseHrPage } from "@/features/human-resources/pagination";
+import { SelfServiceWorkspaceServer } from "@/features/human-resources/self-service/self-service-workspace-server";
 
 type PageProps = {
 	searchParams: Promise<{
@@ -15,7 +15,7 @@ export default async function EmployeeHumanResourcesPage({
 }: PageProps) {
 	const params = await searchParams;
 	return (
-		<EmployeeHrShell
+		<SelfServiceWorkspaceServer
 			page={parseHrPage(params.page)}
 			preferences={parseHrDisplayPreferences(params)}
 		/>

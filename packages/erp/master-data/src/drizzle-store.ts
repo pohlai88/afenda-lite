@@ -7,12 +7,14 @@ import {
 	eq,
 	isNull,
 	mdImportBatch,
+	mdImportBatchRow,
 	mdItem,
 	mdItemGroup,
 	mdParty,
 	mdPaymentTerm,
 	mdTaxRegistration,
 	mdWarehouse,
+	type NeonHttpSql,
 	refCountry,
 	refCurrency,
 	refLanguage,
@@ -21,6 +23,7 @@ import {
 	refUomDimension,
 	runNeonHttpTransaction,
 	sql,
+	tenantEntityPredicate,
 } from "@afenda/db";
 import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 import type {
@@ -55,9 +58,14 @@ import { createDrizzleOrganizationDimensionStore } from "./capabilities/core-org
 import type { OrganizationDimensionStore } from "./capabilities/core-organization-masters/organization-dimension-store";
 import { normalizePaymentTermRule } from "./capabilities/core-organization-masters/payment-term-rule";
 import type {
-	ImportBatchCreateRecord,
+	ImportBatchClaimRecord,
+	ImportBatchClaimResult,
+	ImportBatchCompletionRecord,
 	ImportBatchEntityType,
+	ImportBatchLeaseRequest,
+	ImportBatchLeaseResult,
 	ImportBatchRecord,
+	ImportBatchRowRecord,
 	ItemCreateRecord,
 	ItemGroupCreateRecord,
 	ItemGroupLifecycleRecord,
@@ -66,6 +74,7 @@ import type {
 	ItemUpdateRecord,
 	ListFilter,
 	MasterDataStore,
+	MutationMeta,
 	PartyByRoleFilter,
 	PartyCreateRecord,
 	PartyLifecycleRecord,
@@ -93,6 +102,10 @@ import {
 	drizzleListChangeRequests,
 	drizzleTransitionChangeRequest,
 } from "./capabilities/data-governance-workflows/drizzle-change-request-store";
+import {
+	IMPORT_BATCH_STATUSES,
+	IMPORT_ROW_OPERATIONS,
+} from "./capabilities/data-governance-workflows/import-types";
 import {
 	drizzleCountActivePartyRoles,
 	drizzleCreateItemAlias,
@@ -170,6 +183,55 @@ import type {
 } from "./types";
 import { MAX_PAYMENT_TERM_NET_DAYS } from "./types";
 
+function importRowAppliedQuery(
+	sqlClient: NeonHttpSql,
+	meta: MutationMeta,
+	input: {
+		auditId: string;
+		eventId: string;
+		resultEntityId: string;
+		resultVersion: number;
+	},
+) {
+	const context = meta.importMutation;
+	if (context === undefined) {
+		return sqlClient`SELECT 1 AS import_row_committed`;
+	}
+	return sqlClient`
+		WITH completed AS (
+			UPDATE md_import_batch_row AS import_row
+			SET
+				intended_operation = ${context.intendedOperation ?? null},
+				matched_entity_id = ${context.matchedEntityId ?? null},
+				status = 'applied',
+				error_code = NULL,
+				error_details = NULL,
+				result_entity_id = ${input.resultEntityId},
+				result_version = ${input.resultVersion},
+				attempt_count = attempt_count + 1,
+				started_at = COALESCE(started_at, now()),
+				completed_at = now(),
+				updated_at = now()
+			FROM md_import_batch AS batch
+			WHERE import_row.organization_id = ${context.organizationId}
+				AND import_row.batch_id = ${context.batchId}
+				AND import_row.source_row_number = ${context.sourceRowNumber}
+				AND import_row.status <> 'applied'
+				AND batch.organization_id = import_row.organization_id
+				AND batch.id = import_row.batch_id
+				AND batch.status = 'applying'
+				AND batch.lease_owner = ${context.leaseOwner}
+				AND EXISTS (SELECT 1 FROM platform_audit_log WHERE id = ${input.auditId})
+				AND EXISTS (SELECT 1 FROM platform_domain_event WHERE id = ${input.eventId})
+			RETURNING import_row.id
+		)
+		SELECT 1 / CASE
+			WHEN EXISTS (SELECT 1 FROM completed) THEN 1
+			ELSE 0
+		END AS import_row_committed
+	`;
+}
+
 function isUniqueViolation(error: unknown): boolean {
 	let current: unknown = error;
 	for (let depth = 0; depth < 4; depth += 1) {
@@ -227,12 +289,6 @@ function codeConflict(message: string): Result<never> {
 function versionConflict(message: string): Result<never> {
 	return fail("CONFLICT", message, {
 		reason: "MASTER_VERSION_CONFLICT",
-	} satisfies MasterFailureDetails);
-}
-
-function crossOrg(message: string): Result<never> {
-	return fail("CONFLICT", message, {
-		reason: "MASTER_CROSS_ORG_REFERENCE",
 	} satisfies MasterFailureDetails);
 }
 
@@ -620,6 +676,134 @@ function mapTaxRegistrationSqlRow(row: TaxRegistrationSqlRow): TaxRegistration {
 	});
 }
 
+const IMPORT_BATCH_ENTITY_TYPES = [
+	"party",
+	"item",
+	"item_group",
+	"warehouse",
+] as const satisfies readonly ImportBatchEntityType[];
+
+function isImportBatchEntityType(
+	value: string,
+): value is ImportBatchEntityType {
+	return IMPORT_BATCH_ENTITY_TYPES.some((candidate) => candidate === value);
+}
+
+function isImportBatchStatus(
+	value: string,
+): value is ImportBatchRecord["status"] {
+	return IMPORT_BATCH_STATUSES.some((candidate) => candidate === value);
+}
+
+function isImportRowOperation(
+	value: string,
+): value is NonNullable<ImportBatchRowRecord["intendedOperation"]> {
+	return IMPORT_ROW_OPERATIONS.some((candidate) => candidate === value);
+}
+
+function isImportBatchRowStatus(
+	value: string,
+): value is ImportBatchRowRecord["status"] {
+	return ["pending", "applying", "applied", "failed", "skipped"].some(
+		(candidate) => candidate === value,
+	);
+}
+
+function importJsonObject(
+	value: unknown,
+	field: string,
+): Readonly<Record<string, unknown>> {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		throw new Error(`Import ${field} must be a JSON object`);
+	}
+	return Object.fromEntries(Object.entries(value));
+}
+
+function isImportClaimResult(value: unknown): boolean {
+	if (!Array.isArray(value) || value.length === 0) return false;
+	const first = value[0];
+	return (
+		typeof first === "object" &&
+		first !== null &&
+		"id" in first &&
+		typeof first.id === "string"
+	);
+}
+
+function mapImportBatchRow(
+	row: typeof mdImportBatch.$inferSelect,
+): ImportBatchRecord {
+	if (!isImportBatchEntityType(row.entityType)) {
+		throw new Error(`Unsupported import batch entity type: ${row.entityType}`);
+	}
+	if (!isImportBatchStatus(row.status)) {
+		throw new Error(`Unsupported import batch status: ${row.status}`);
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		idempotencyKey: row.idempotencyKey,
+		payloadHash: row.payloadHash,
+		operationType: row.operationType,
+		entityType: row.entityType,
+		sourceSystem: row.sourceSystem,
+		mode: row.mode,
+		status: row.status,
+		report: row.report,
+		leaseOwner: row.leaseOwner,
+		leaseExpiresAt: row.leaseExpiresAt,
+		actorUserId: row.actorUserId,
+		correlationId: row.correlationId,
+		completedAt: row.completedAt,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	};
+}
+
+function mapImportBatchRowRecord(
+	row: typeof mdImportBatchRow.$inferSelect,
+): ImportBatchRowRecord {
+	if (!isImportBatchRowStatus(row.status)) {
+		throw new Error(`Unsupported import batch row status: ${row.status}`);
+	}
+	if (
+		row.intendedOperation !== null &&
+		!isImportRowOperation(row.intendedOperation)
+	) {
+		throw new Error(
+			`Unsupported import batch row operation: ${row.intendedOperation}`,
+		);
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		batchId: row.batchId,
+		sourceRowNumber: row.sourceRowNumber,
+		payloadHash: row.payloadHash,
+		normalizedPayload: importJsonObject(
+			row.normalizedPayload,
+			"normalized payload",
+		),
+		intendedOperation: row.intendedOperation,
+		matchedEntityId: row.matchedEntityId,
+		status: row.status,
+		errorCode: row.errorCode,
+		errorDetails:
+			row.errorDetails === null
+				? null
+				: importJsonObject(row.errorDetails, "error details"),
+		resultEntityId: row.resultEntityId,
+		resultVersion: row.resultVersion,
+		attemptCount: row.attemptCount,
+		leaseOwner: row.leaseOwner,
+		leaseExpiresAt: row.leaseExpiresAt,
+		startedAt: row.startedAt,
+		completedAt: row.completedAt,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	};
+}
+
 async function assertItemGroupParent(
 	organizationId: string,
 	selfId: string | null,
@@ -650,10 +834,15 @@ async function assertItemGroupParent(
 				retiredAt: mdItemGroup.retiredAt,
 			})
 			.from(mdItemGroup)
-			.where(eq(mdItemGroup.id, cursor))
+			.where(
+				tenantEntityPredicate(
+					{ id: mdItemGroup.id, organizationId: mdItemGroup.organizationId },
+					{ id: cursor, organizationId },
+				),
+			)
 			.limit(1);
-		if (row === undefined || row.organizationId !== organizationId) {
-			return crossOrg("Item group parent must exist in the same organization");
+		if (row === undefined) {
+			return notFound("Item group parent not found");
 		}
 		if (
 			cursor === parentId &&
@@ -691,10 +880,15 @@ async function assertWarehouseParent(
 		const [rawRow] = await db
 			.select()
 			.from(mdWarehouse)
-			.where(eq(mdWarehouse.id, cursor))
+			.where(
+				tenantEntityPredicate(
+					{ id: mdWarehouse.id, organizationId: mdWarehouse.organizationId },
+					{ id: cursor, organizationId },
+				),
+			)
 			.limit(1);
-		if (rawRow === undefined || rawRow.organizationId !== organizationId) {
-			return crossOrg("Warehouse parent must exist in the same organization");
+		if (rawRow === undefined) {
+			return notFound("Warehouse parent not found");
 		}
 		const row = mapWarehouse(rawRow);
 		if (cursor === parentId) {
@@ -722,6 +916,11 @@ async function assertWarehouseParent(
 export class DrizzleMasterDataStore implements MasterDataStore {
 	private readonly organizationDimensions: OrganizationDimensionStore =
 		createDrizzleOrganizationDimensionStore();
+	private readonly generateId: () => string;
+
+	constructor(options: DrizzleMasterDataStoreOptions = {}) {
+		this.generateId = options.generateId ?? randomUUID;
+	}
 
 	create(
 		record: Parameters<OrganizationDimensionStore["create"]>[0],
@@ -1069,11 +1268,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async createParty(
 		record: PartyCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Party>> {
-		const partyId = randomUUID();
-		const auditId = randomUUID();
-		const eventId = randomUUID();
+		const partyId = this.generateId();
+		const auditId = this.generateId();
+		const eventId = this.generateId();
+		const externalId = meta.importMutation?.partyExternalIds?.[0];
+		const externalAuditId = this.generateId();
+		const externalEventId = this.generateId();
 		const changesJson = fieldChangeJson("code", null, record.code);
 		const newValueJson = valueSnapshotJson({
 			code: record.code,
@@ -1090,8 +1292,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PartySqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[PartySqlRow[], unknown[]]>(
+				(sql) => [
+					sql`
 					WITH mutated AS (
 						INSERT INTO md_party (
 							id, organization_id, code, normalized_code, name, party_kind,
@@ -1099,11 +1302,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							registration_country_id, preferred_language_id, default_currency_id,
 							created_by, updated_by
 						) VALUES (
-							${partyId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
+							${partyId}::uuid, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
 							${record.name}, ${record.partyKind}, 'draft', 1,
-							${record.legalName ?? null}, ${record.tradingName ?? null},
-							${record.registrationNumber ?? null}, ${record.registrationCountryId ?? null},
-							${record.preferredLanguageId ?? null}, ${record.defaultCurrencyId ?? null},
+							${record.legalName ?? null}::text, ${record.tradingName ?? null}::text,
+							${record.registrationNumber ?? null}::text, ${record.registrationCountryId ?? null}::uuid,
+							${record.preferredLanguageId ?? null}::uuid, ${record.defaultCurrencyId ?? null}::uuid,
 							${record.createdBy}, ${record.createdBy}
 						)
 						RETURNING *
@@ -1114,7 +1317,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							entity_id, action, changes, new_value
 						)
 						SELECT
-							${auditId}, organization_id, created_by, ${meta.correlationId},
+							${auditId}::uuid, organization_id, created_by, ${meta.correlationId},
 							'master_data', 'party', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 						FROM mutated
 						RETURNING id
@@ -1125,14 +1328,82 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							payload, status, attempts
 						)
 						SELECT
-							${eventId}, organization_id, 'master_data.party.created.v1', 'master_data',
+							${eventId}::uuid, organization_id, 'master_data.party.created.v1', 'master_data',
 							${meta.correlationId}, created_by, ${payloadJson}::jsonb, 'pending', 0
 						FROM mutated
 						RETURNING id
+					),
+					external_id_mutated AS (
+						INSERT INTO md_party_external_id (
+							id, organization_id, party_id, source_system, external_id_type,
+							external_value, normalized_value, case_sensitivity, is_primary,
+							version, created_by, updated_by
+						)
+						SELECT
+							${externalId?.id ?? null}::uuid, organization_id, id,
+							${externalId?.sourceSystem ?? null}::text, ${externalId?.externalIdType ?? null}::text,
+							${externalId?.externalValue ?? null}::text, ${externalId?.normalizedValue ?? null}::text,
+							${externalId?.caseSensitivity ?? null}::text, ${externalId?.isPrimary ?? false}::boolean,
+							1, ${externalId?.createdBy ?? null}::text, ${externalId?.createdBy ?? null}::text
+						FROM mutated
+						WHERE ${externalId !== undefined}::boolean
+						RETURNING *
+					),
+					external_id_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, new_value
+						)
+						SELECT
+							${externalAuditId}::uuid, organization_id, created_by, ${meta.correlationId},
+							'master_data', 'party_external_id', id, 'CREATE',
+							${fieldChangeJson("externalIdentity", null, "[protected]")}::jsonb,
+							jsonb_build_object(
+								'sourceSystem', source_system,
+								'externalIdType', external_id_type,
+								'caseSensitivity', case_sensitivity,
+								'isPrimary', is_primary
+							)
+						FROM external_id_mutated
+						RETURNING id
+					),
+					external_id_outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${externalEventId}::uuid, organization_id,
+							'master_data.party_external_id.assigned.v1', 'master_data',
+							${meta.correlationId}, created_by,
+							jsonb_build_object(
+								'organizationId', organization_id,
+								'entityType', 'party_external_id',
+								'entityId', id,
+								'parentEntityId', party_id,
+								'version', version,
+								'actorId', created_by,
+								'correlationId', ${meta.correlationId}::text
+							), 'pending', 0
+						FROM external_id_mutated
+						RETURNING id
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
+					WHERE ${externalId === undefined}::boolean
+						OR (
+							EXISTS (SELECT 1 FROM external_id_mutated)
+							AND EXISTS (SELECT 1 FROM external_id_audited)
+							AND EXISTS (SELECT 1 FROM external_id_outboxed)
+						)
 				`,
-			]);
+					importRowAppliedQuery(sql, meta, {
+						auditId,
+						eventId,
+						resultEntityId: partyId,
+						resultVersion: 1,
+					}),
+				],
+			);
 			const row = rows[0];
 			if (row === undefined) {
 				return fail("INTERNAL_ERROR", "Party create returned no row");
@@ -1150,7 +1421,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async updateParty(
 		record: PartyUpdateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Party>> {
 		const existingResult = await this.loadPartyForMutation(
 			record.organizationId,
@@ -1207,8 +1478,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const eventId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PartySqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[PartySqlRow[], unknown[]]>(
+				(sql) => [
+					sql`
 					WITH mutated AS (
 						UPDATE md_party
 						SET
@@ -1252,7 +1524,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			]);
+					importRowAppliedQuery(sql, meta, {
+						auditId,
+						eventId,
+						resultEntityId: record.id,
+						resultVersion: nextVersion,
+					}),
+				],
+			);
 			const row = rows[0];
 			if (row === undefined) {
 				return versionConflict("Party version conflict");
@@ -1541,7 +1820,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								'code', code,
 								'version', version,
 								'actorId', ${record.actorUserId},
-								'correlationId', ${meta.correlationId}
+								'correlationId', ${meta.correlationId}::text
 							),
 							'pending', 0
 						FROM claimed
@@ -1887,7 +2166,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								'code', code,
 								'version', version,
 								'actorId', ${record.actorUserId},
-								'correlationId', ${meta.correlationId}
+								'correlationId', ${meta.correlationId}::text
 							),
 							'pending', 0
 						FROM claimed
@@ -1989,7 +2268,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async createItemGroup(
 		record: ItemGroupCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<ItemGroup>> {
 		const parentCheck = await assertItemGroupParent(
 			record.organizationId,
@@ -2017,9 +2296,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemGroupSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction<
+				[ItemGroupSqlRow[], unknown[]]
+			>((sql) => [
+				sql`
 						WITH eligible_parent AS (
 							SELECT 1
 							WHERE ${record.parentId ?? null}::uuid IS NULL
@@ -2068,8 +2348,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+				importRowAppliedQuery(sql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: entityId,
+					resultVersion: 1,
+				}),
+			]);
 			const row = rows[0];
 			if (row === undefined) {
 				return invalidState("Item group parent must be active");
@@ -2087,7 +2372,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async updateItemGroup(
 		record: ItemGroupUpdateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<ItemGroup>> {
 		const existingResult = await this.loadItemGroupForMutation(
 			record.organizationId,
@@ -2149,9 +2434,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemGroupSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction<
+				[ItemGroupSqlRow[], unknown[]]
+			>((sql) => [
+				sql`
 						WITH RECURSIVE ancestor AS (
 							SELECT id, parent_id, ARRAY[id] AS path
 							FROM md_item_group
@@ -2220,8 +2506,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+				importRowAppliedQuery(sql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: record.id,
+					resultVersion: nextVersion,
+				}),
+			]);
 			const row = rows[0];
 			if (row === undefined) {
 				return versionConflict("Item group version conflict");
@@ -2456,7 +2747,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async createItem(
 		record: ItemCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Item>> {
 		const uom = await this.getRefUomById(record.baseUomId);
 		if (!uom.ok) {
@@ -2478,7 +2769,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return group;
 		}
 		if (group.data === null) {
-			return crossOrg("itemGroupId must exist in the same organization");
+			return notFound("Item group not found");
 		}
 		if (group.data.status !== "active" || group.data.retiredAt !== null) {
 			return invalidState("itemGroupId must reference an active item group");
@@ -2517,8 +2808,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[], unknown[]]>(
+				(sql) => [
+					sql`
 					WITH eligible_references AS (
 						SELECT 1
 						WHERE EXISTS (
@@ -2588,7 +2880,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, base_uom, audited, outboxed
 				`,
-			]);
+					importRowAppliedQuery(sql, meta, {
+						auditId,
+						eventId,
+						resultEntityId: entityId,
+						resultVersion: 1,
+					}),
+				],
+			);
 			const row = rows[0];
 			if (row === undefined) {
 				return invalidState(
@@ -2608,7 +2907,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async updateItem(
 		record: ItemUpdateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Item>> {
 		const existingResult = await this.loadItemForMutation(
 			record.organizationId,
@@ -2672,7 +2971,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return group;
 		}
 		if (group.data === null) {
-			return crossOrg("itemGroupId must exist in the same organization");
+			return notFound("Item group not found");
 		}
 		if (group.data.status !== "active" || group.data.retiredAt !== null) {
 			return invalidState("itemGroupId must reference an active item group");
@@ -2791,8 +3090,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[]]>((sql) => [
-				sql`
+			const [rows] = await runNeonHttpTransaction<[ItemSqlRow[], unknown[]]>(
+				(sql) => [
+					sql`
 					WITH mutated AS (
 						UPDATE md_item
 						SET
@@ -2888,7 +3188,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			]);
+					importRowAppliedQuery(sql, meta, {
+						auditId,
+						eventId,
+						resultEntityId: record.id,
+						resultVersion: nextVersion,
+					}),
+				],
+			);
 			const row = rows[0];
 			if (row === undefined) {
 				return versionConflict("Item version conflict");
@@ -2971,7 +3278,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async createWarehouse(
 		record: WarehouseCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Warehouse>> {
 		if (
 			record.addressCountryId !== undefined &&
@@ -3011,9 +3318,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[WarehouseSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction<
+				[WarehouseSqlRow[], unknown[]]
+			>((sql) => [
+				sql`
 						WITH eligible_parent AS (
 							SELECT 1
 							WHERE ${record.parentId ?? null}::uuid IS NULL
@@ -3075,8 +3383,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+				importRowAppliedQuery(sql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: entityId,
+					resultVersion: 1,
+				}),
+			]);
 			const row = rows[0];
 			if (row === undefined) {
 				return invalidState("Warehouse parent is not usable or compatible");
@@ -3094,7 +3407,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async updateWarehouse(
 		record: WarehouseUpdateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Warehouse>> {
 		const existingResult = await this.loadWarehouseForMutation(
 			record.organizationId,
@@ -3190,9 +3503,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[WarehouseSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction<
+				[WarehouseSqlRow[], unknown[]]
+			>((sql) => [
+				sql`
 						WITH mutated AS (
 							UPDATE md_warehouse
 							SET
@@ -3280,8 +3594,13 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+				importRowAppliedQuery(sql, meta, {
+					auditId,
+					eventId,
+					resultEntityId: record.id,
+					resultVersion: nextVersion,
+				}),
+			]);
 			const row = rows[0];
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
@@ -4199,16 +4518,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								name, status, version, valid_from, valid_to, created_by, updated_by
 							)
 							SELECT
-								${entityId}, ${record.organizationId}, ${record.partyId},
-								${record.jurisdictionCountryId}, ${record.registrationType},
+								${entityId}::uuid, ${record.organizationId}, ${record.partyId}::uuid,
+								${record.jurisdictionCountryId}::uuid, ${record.registrationType},
 								${record.registrationNumber}, ${record.normalizedRegistrationNumber},
-								${record.name}, 'draft', 1, ${record.validFrom}, ${record.validTo},
+								${record.name}::text, 'draft', 1, ${record.validFrom}::date, ${record.validTo}::date,
 								${record.createdBy}, ${record.createdBy}
 							FROM md_party AS party
 							JOIN ref_country AS country
-								ON country.id = ${record.jurisdictionCountryId}
+								ON country.id = ${record.jurisdictionCountryId}::uuid
 								AND country.active = true
-							WHERE party.id = ${record.partyId}
+							WHERE party.id = ${record.partyId}::uuid
 								AND party.organization_id = ${record.organizationId}
 								AND party.status <> 'retired'
 							RETURNING *
@@ -4219,7 +4538,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								entity_id, action, changes, new_value
 							)
 							SELECT
-								${auditId}, organization_id, created_by, ${meta.correlationId},
+								${auditId}::uuid, organization_id, created_by, ${meta.correlationId},
 								'master_data', 'tax_registration', id, 'CREATE', ${changesJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
 							RETURNING id
@@ -4230,7 +4549,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								payload, status, attempts
 							)
 							SELECT
-								${eventId}, organization_id, 'master_data.tax_registration.created.v1', 'master_data',
+								${eventId}::uuid, organization_id, 'master_data.tax_registration.created.v1', 'master_data',
 								${meta.correlationId}, created_by, ${payloadJson}::jsonb, 'pending', 0
 							FROM mutated
 							RETURNING id
@@ -4349,9 +4668,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						WITH mutated AS (
 							UPDATE md_tax_registration
 							SET
-								name = ${nextName},
-								valid_from = ${nextValidFrom},
-								valid_to = ${nextValidTo},
+								name = ${nextName}::text,
+								valid_from = ${nextValidFrom}::timestamptz,
+								valid_to = ${nextValidTo}::timestamptz,
 								version = version + 1,
 								updated_by = ${record.updatedBy},
 								updated_at = now()
@@ -4363,15 +4682,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								AND (
 									status <> 'active'
 									OR (
-										${nextValidFrom} IS NOT NULL
+									${nextValidFrom}::timestamptz IS NOT NULL
 										AND EXISTS (
 											SELECT 1 FROM ref_country AS country
-											WHERE country.id = ${existing.jurisdictionCountryId}
+											WHERE country.id = ${existing.jurisdictionCountryId}::uuid
 												AND country.active = true
 										)
 										AND EXISTS (
 											SELECT 1 FROM md_party AS party
-											WHERE party.id = ${existing.partyId}
+											WHERE party.id = ${existing.partyId}::uuid
 												AND party.organization_id = ${existing.organizationId}
 												AND party.status <> 'retired'
 										)
@@ -4379,15 +4698,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 											SELECT 1
 											FROM md_tax_registration AS sibling
 											WHERE sibling.organization_id = ${existing.organizationId}
-												AND sibling.party_id = ${existing.partyId}
-												AND sibling.jurisdiction_country_id = ${existing.jurisdictionCountryId}
+												AND sibling.party_id = ${existing.partyId}::uuid
+												AND sibling.jurisdiction_country_id = ${existing.jurisdictionCountryId}::uuid
 												AND sibling.registration_type = ${existing.registrationType}
 												AND sibling.status = 'active'
 												AND sibling.deleted_at IS NULL
-												AND sibling.id <> ${existing.id}
+												AND sibling.id <> ${existing.id}::uuid
 												AND sibling.valid_from IS NOT NULL
-												AND sibling.valid_from < COALESCE(${nextValidTo}, 'infinity'::timestamptz)
-												AND ${nextValidFrom} < COALESCE(sibling.valid_to, 'infinity'::timestamptz)
+												AND sibling.valid_from < COALESCE(${nextValidTo}::timestamptz, 'infinity'::timestamptz)
+												AND ${nextValidFrom}::timestamptz < COALESCE(sibling.valid_to, 'infinity'::timestamptz)
 										)
 									)
 								)
@@ -4399,7 +4718,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								entity_id, action, changes, old_value, new_value
 							)
 							SELECT
-								${auditId}, organization_id, ${record.updatedBy}, ${meta.correlationId},
+								${auditId}::uuid, organization_id, ${record.updatedBy}, ${meta.correlationId},
 								'master_data', 'tax_registration', id, 'UPDATE', ${changesJson}::jsonb,
 								${oldValueJson}::jsonb, ${newValueJson}::jsonb
 							FROM mutated
@@ -4411,7 +4730,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								payload, status, attempts
 							)
 							SELECT
-								${eventId}, organization_id, 'master_data.tax_registration.updated.v1', 'master_data',
+								${eventId}::uuid, organization_id, 'master_data.tax_registration.updated.v1', 'master_data',
 								${meta.correlationId}, ${record.updatedBy}, ${payloadJson}::jsonb, 'pending', 0
 							FROM mutated
 							RETURNING id
@@ -4645,13 +4964,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			const [row] = await db
 				.select()
 				.from(mdParty)
-				.where(eq(mdParty.id, id))
+				.where(
+					tenantEntityPredicate(
+						{ id: mdParty.id, organizationId: mdParty.organizationId },
+						{ id, organizationId },
+					),
+				)
 				.limit(1);
 			if (row === undefined) {
 				return notFound("Party not found");
-			}
-			if (row.organizationId !== organizationId) {
-				return crossOrg("Party belongs to another organization");
 			}
 			if (row.version !== expectedVersion) {
 				return versionConflict("Party version conflict");
@@ -4671,13 +4992,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			const [row] = await db
 				.select()
 				.from(mdItemGroup)
-				.where(eq(mdItemGroup.id, id))
+				.where(
+					tenantEntityPredicate(
+						{ id: mdItemGroup.id, organizationId: mdItemGroup.organizationId },
+						{ id, organizationId },
+					),
+				)
 				.limit(1);
 			if (row === undefined) {
 				return notFound("Item group not found");
-			}
-			if (row.organizationId !== organizationId) {
-				return crossOrg("Item group belongs to another organization");
 			}
 			if (row.version !== expectedVersion) {
 				return versionConflict("Item group version conflict");
@@ -4697,13 +5020,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			const [row] = await db
 				.select()
 				.from(mdItem)
-				.where(eq(mdItem.id, id))
+				.where(
+					tenantEntityPredicate(
+						{ id: mdItem.id, organizationId: mdItem.organizationId },
+						{ id, organizationId },
+					),
+				)
 				.limit(1);
 			if (row === undefined) {
 				return notFound("Item not found");
-			}
-			if (row.organizationId !== organizationId) {
-				return crossOrg("Item belongs to another organization");
 			}
 			if (row.version !== expectedVersion) {
 				return versionConflict("Item version conflict");
@@ -4723,13 +5048,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			const [row] = await db
 				.select()
 				.from(mdWarehouse)
-				.where(eq(mdWarehouse.id, id))
+				.where(
+					tenantEntityPredicate(
+						{ id: mdWarehouse.id, organizationId: mdWarehouse.organizationId },
+						{ id, organizationId },
+					),
+				)
 				.limit(1);
 			if (row === undefined) {
 				return notFound("Warehouse not found");
-			}
-			if (row.organizationId !== organizationId) {
-				return crossOrg("Warehouse belongs to another organization");
 			}
 			if (row.version !== expectedVersion) {
 				return versionConflict("Warehouse version conflict");
@@ -4749,13 +5076,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			const [row] = await db
 				.select()
 				.from(mdPaymentTerm)
-				.where(eq(mdPaymentTerm.id, id))
+				.where(
+					tenantEntityPredicate(
+						{
+							id: mdPaymentTerm.id,
+							organizationId: mdPaymentTerm.organizationId,
+						},
+						{ id, organizationId },
+					),
+				)
 				.limit(1);
 			if (row === undefined) {
 				return notFound("Payment term not found");
-			}
-			if (row.organizationId !== organizationId) {
-				return crossOrg("Payment term belongs to another organization");
 			}
 			if (row.version !== expectedVersion) {
 				return versionConflict("Payment term version conflict");
@@ -4775,13 +5107,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			const [row] = await db
 				.select()
 				.from(mdTaxRegistration)
-				.where(eq(mdTaxRegistration.id, id))
+				.where(
+					tenantEntityPredicate(
+						{
+							id: mdTaxRegistration.id,
+							organizationId: mdTaxRegistration.organizationId,
+						},
+						{ id, organizationId },
+					),
+				)
 				.limit(1);
 			if (row === undefined) {
 				return notFound("Tax registration not found");
-			}
-			if (row.organizationId !== organizationId) {
-				return crossOrg("Tax registration belongs to another organization");
 			}
 			if (row.version !== expectedVersion) {
 				return versionConflict("Tax registration version conflict");
@@ -4876,72 +5213,241 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return ok(null);
 			}
-			return ok({
-				id: row.id,
-				organizationId: row.organizationId,
-				idempotencyKey: row.idempotencyKey,
-				entityType: row.entityType as ImportBatchEntityType,
-				sourceSystem: row.sourceSystem,
-				mode: row.mode,
-				status: "applied",
-				report: row.report,
-				actorUserId: row.actorUserId,
-				correlationId: row.correlationId,
-				createdAt: row.createdAt,
-				updatedAt: row.updatedAt,
-			});
+			return ok(mapImportBatchRow(row));
 		} catch (error) {
 			return failFromUnknown(error, "Failed to load import batch");
 		}
 	}
 
-	async saveImportBatch(
-		record: ImportBatchCreateRecord,
-	): Promise<Result<ImportBatchRecord>> {
-		const entityId = randomUUID();
+	async claimImportBatch(
+		record: ImportBatchClaimRecord,
+	): Promise<Result<ImportBatchClaimResult>> {
 		try {
-			const [row] = await db
-				.insert(mdImportBatch)
-				.values({
-					id: entityId,
-					organizationId: record.organizationId,
-					idempotencyKey: record.idempotencyKey,
-					entityType: record.entityType,
-					sourceSystem: record.sourceSystem,
-					mode: record.mode,
-					status: "applied",
-					report: record.report,
-					actorUserId: record.actorUserId,
-					correlationId: record.correlationId,
-				})
-				.returning();
-			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "Import batch save returned no row");
+			const transactionResults = await runNeonHttpTransaction<unknown[]>(
+				(sql) => [
+					sql`
+						INSERT INTO md_import_batch (
+							id, organization_id, idempotency_key, payload_hash,
+							operation_type, entity_type, source_system, mode, status,
+							report, actor_user_id, correlation_id
+						) VALUES (
+							${record.id}, ${record.organizationId}, ${record.idempotencyKey},
+							${record.payloadHash}, ${record.operationType}, ${record.entityType},
+							${record.sourceSystem}, ${record.mode}, 'claimed', '{}'::jsonb,
+							${record.actorUserId}, ${record.correlationId}
+						)
+						ON CONFLICT (organization_id, idempotency_key) DO NOTHING
+						RETURNING id
+					`,
+					...record.rows.map(
+						(row) => sql`
+							INSERT INTO md_import_batch_row (
+								id, organization_id, batch_id, source_row_number,
+								payload_hash, normalized_payload, status
+							)
+							SELECT
+								${row.id}, ${record.organizationId}, ${record.id},
+								${row.sourceRowNumber}, ${row.payloadHash},
+								${JSON.stringify(row.normalizedPayload)}::jsonb, 'pending'
+							WHERE EXISTS (
+								SELECT 1 FROM md_import_batch
+								WHERE id = ${record.id}
+									AND organization_id = ${record.organizationId}
+									AND payload_hash = ${record.payloadHash}
+							)
+							ON CONFLICT (organization_id, batch_id, source_row_number)
+							DO NOTHING
+						`,
+					),
+				],
+			);
+			const claimed = isImportClaimResult(transactionResults[0]);
+			const batch = await this.getImportBatchByIdempotencyKey(
+				record.organizationId,
+				record.idempotencyKey,
+			);
+			if (!batch.ok) return batch;
+			if (batch.data === null) {
+				return fail("INTERNAL_ERROR", "Import batch claim returned no row");
 			}
 			return ok({
-				id: row.id,
-				organizationId: row.organizationId,
-				idempotencyKey: row.idempotencyKey,
-				entityType: row.entityType as ImportBatchEntityType,
-				sourceSystem: row.sourceSystem,
-				mode: row.mode,
-				status: "applied",
-				report: row.report,
-				actorUserId: row.actorUserId,
-				correlationId: row.correlationId,
-				createdAt: row.createdAt,
-				updatedAt: row.updatedAt,
+				kind: claimed ? "claimed" : "existing",
+				batch: batch.data,
 			});
 		} catch (error) {
-			return mapWriteError(
-				error,
-				"Import batch idempotency key already exists",
-				"Failed to save import batch",
+			return failFromUnknown(error, "Failed to claim import batch");
+		}
+	}
+
+	async acquireImportBatchLease(
+		record: ImportBatchLeaseRequest,
+	): Promise<Result<ImportBatchLeaseResult>> {
+		try {
+			const [row] = await db
+				.update(mdImportBatch)
+				.set({
+					status: "applying",
+					leaseOwner: record.leaseOwner,
+					leaseExpiresAt: record.leaseExpiresAt,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(mdImportBatch.organizationId, record.organizationId),
+						eq(mdImportBatch.id, record.batchId),
+						sql`(
+							${mdImportBatch.status} IN ('claimed', 'approved', 'failed', 'partially_applied')
+							OR (
+								${mdImportBatch.status} = 'applying'
+								AND ${mdImportBatch.leaseExpiresAt} <= now()
+							)
+						)`,
+					),
+				)
+				.returning();
+			if (row !== undefined) {
+				return ok({ kind: "acquired", batch: mapImportBatchRow(row) });
+			}
+			const current = await this.getImportBatchById(
+				record.organizationId,
+				record.batchId,
 			);
+			if (!current.ok) return current;
+			if (current.data === null) {
+				return notFound("Import batch not found");
+			}
+			return ok({
+				kind: current.data.status === "applied" ? "completed" : "busy",
+				batch: current.data,
+			});
+		} catch (error) {
+			return failFromUnknown(error, "Failed to acquire import batch lease");
+		}
+	}
+
+	async listImportBatchRows(
+		organizationId: string,
+		batchId: string,
+	): Promise<Result<ImportBatchRowRecord[]>> {
+		try {
+			const rows = await db
+				.select()
+				.from(mdImportBatchRow)
+				.where(
+					and(
+						eq(mdImportBatchRow.organizationId, organizationId),
+						eq(mdImportBatchRow.batchId, batchId),
+					),
+				)
+				.orderBy(asc(mdImportBatchRow.sourceRowNumber));
+			return ok(rows.map(mapImportBatchRowRecord));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to list import batch rows");
+		}
+	}
+
+	async completeImportBatch(
+		record: ImportBatchCompletionRecord,
+	): Promise<Result<ImportBatchRecord>> {
+		try {
+			const transactionResults = await runNeonHttpTransaction<unknown[]>(
+				(sql) => [
+					...record.rows.map(
+						(row) => sql`
+						UPDATE md_import_batch_row
+						SET
+							intended_operation = ${row.intendedOperation},
+							matched_entity_id = ${row.matchedEntityId},
+							status = ${row.status},
+							error_code = ${row.errorCode},
+							error_details = ${
+								row.errorDetails === null
+									? null
+									: JSON.stringify(row.errorDetails)
+							}::jsonb,
+							result_entity_id = ${row.resultEntityId},
+							result_version = ${row.resultVersion},
+							lease_owner = NULL,
+							lease_expires_at = NULL,
+							completed_at = now(),
+							updated_at = now()
+						WHERE organization_id = ${record.organizationId}
+							AND batch_id = ${record.batchId}
+							AND source_row_number = ${row.sourceRowNumber}
+							AND (status <> 'applied' OR ${row.status} = 'applied')
+							AND EXISTS (
+								SELECT 1 FROM md_import_batch
+								WHERE organization_id = ${record.organizationId}
+									AND id = ${record.batchId}
+									AND lease_owner = ${record.leaseOwner}
+							)
+					`,
+					),
+					sql`
+					UPDATE md_import_batch
+					SET
+						status = ${record.status},
+						report = ${JSON.stringify(record.report)}::jsonb,
+						lease_owner = NULL,
+						lease_expires_at = NULL,
+						completed_at = now(),
+						updated_at = now()
+					WHERE organization_id = ${record.organizationId}
+						AND id = ${record.batchId}
+						AND lease_owner = ${record.leaseOwner}
+					RETURNING id
+				`,
+				],
+			);
+			if (!isImportClaimResult(transactionResults[record.rows.length])) {
+				return versionConflict("Import batch lease was lost");
+			}
+			const completed = await this.getImportBatchById(
+				record.organizationId,
+				record.batchId,
+			);
+			if (!completed.ok) return completed;
+			if (completed.data === null) {
+				return notFound("Import batch not found");
+			}
+			return ok(completed.data);
+		} catch (error) {
+			return failFromUnknown(error, "Failed to complete import batch");
+		}
+	}
+
+	private async getImportBatchById(
+		organizationId: string,
+		batchId: string,
+	): Promise<Result<ImportBatchRecord | null>> {
+		try {
+			const [row] = await db
+				.select()
+				.from(mdImportBatch)
+				.where(
+					tenantEntityPredicate(
+						{
+							id: mdImportBatch.id,
+							organizationId: mdImportBatch.organizationId,
+						},
+						{ id: batchId, organizationId },
+					),
+				)
+				.limit(1);
+			return ok(row === undefined ? null : mapImportBatchRow(row));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to load import batch");
 		}
 	}
 }
 
-export function createDrizzleMasterDataStore(): MasterDataStore {
-	return new DrizzleMasterDataStore();
+export type DrizzleMasterDataStoreOptions = {
+	/** Injectable UUID source for deterministic transaction-failure verification. */
+	generateId?: () => string;
+};
+
+export function createDrizzleMasterDataStore(
+	options: DrizzleMasterDataStoreOptions = {},
+): MasterDataStore {
+	return new DrizzleMasterDataStore(options);
 }

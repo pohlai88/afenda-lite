@@ -35,6 +35,27 @@ events:
     id: corporate_administration.legal_company.activity_registered.v1
     moduleId: corporate-administration
   - direction: emits
+    id: corporate_administration.legal_company.activated.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.suspended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.struck_off_marked.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.liquidation_entered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.dissolved.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.restored.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.archived.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: corporate_administration.legal_establishment.registered.v1
     moduleId: corporate-administration
   - direction: emits

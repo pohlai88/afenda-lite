@@ -381,9 +381,13 @@ describe("master-data Server Actions", () => {
 			data: {
 				id: "33333333-3333-4333-8333-333333333333",
 				organizationId: "org-md-active",
-				registrationType: "vat_gst",
-				registrationNumber: "VAT-1",
+				partyId: "11111111-1111-4111-8111-111111111111",
+				countryId: "c1000000-0000-4000-8000-000000000001",
+				taxType: "vat_gst",
+				maskedRegistrationNumber: "*AT-1",
 				status: "draft",
+				validFrom: null,
+				validUntil: null,
 				version: 1,
 			},
 		});

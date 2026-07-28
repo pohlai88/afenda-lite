@@ -8,7 +8,10 @@ import type {
 	CompanyNameId,
 } from "../kernel/brands";
 import type {
+	activateLegalCompanyInputSchema,
 	addCompanyNameInputSchema,
+	archiveLegalCompanyInputSchema,
+	companyActivationCompletenessSchema,
 	companyActivityClassificationSchema,
 	companyActivitySchema,
 	companyActivityStatusSchema,
@@ -24,21 +27,30 @@ import type {
 	companyNameSchema,
 	companyNameStatusSchema,
 	companyNameTypeSchema,
+	companyStatusHistorySchema,
+	dissolveLegalCompanyInputSchema,
 	endCompanyActivityInputSchema,
+	enterLiquidationInputSchema,
 	findCompanyFinancialYearAsOfInputSchema,
 	findCompanyIdentifierAsOfInputSchema,
 	findCompanyLegalFormAsOfInputSchema,
 	findCompanyNameAsOfInputSchema,
+	findCompanyStatusAsOfInputSchema,
+	getCompanyCompletenessForActivationInputSchema,
 	legalCompanyListItemSchema,
 	legalCompanyListPageSchema,
 	legalCompanyProfileSchema,
 	legalCompanySchema,
+	legalCompanyStatusSchema,
 	legalCompanyTimelineEntrySchema,
+	listCompaniesByStatusInputSchema,
 	listCompanyActivitiesAsOfInputSchema,
 	listCompanyIdentifiersInputSchema,
 	listCompanyNamesInputSchema,
+	markCompanyStruckOffInputSchema,
 	registerCompanyActivityInputSchema,
 	registerCompanyIdentifierInputSchema,
+	restoreLegalCompanyInputSchema,
 	retireCompanyIdentifierInputSchema,
 	retireCompanyNameInputSchema,
 	setCompanyFinancialYearInputSchema,
@@ -46,6 +58,7 @@ import type {
 	supersedeCompanyIdentifierInputSchema,
 	supersedeCompanyLegalFormInputSchema,
 	supersedeCompanyNameInputSchema,
+	suspendLegalCompanyInputSchema,
 } from "./schemas";
 
 export type {
@@ -87,6 +100,8 @@ export type CompanyActivityClassification = z.infer<
 export type CompanyActivityType = z.infer<typeof companyActivityTypeSchema>;
 
 export type CompanyActivityStatus = z.infer<typeof companyActivityStatusSchema>;
+
+export type LegalCompanyStatus = z.infer<typeof legalCompanyStatusSchema>;
 
 export type CompanyName = z.infer<typeof companyNameSchema>;
 
@@ -152,6 +167,12 @@ export type CompanyFinancialYearTimelineEntry = CompanyFinancialYear &
 	}>;
 
 export type CompanyActivity = z.infer<typeof companyActivitySchema>;
+
+export type CompanyStatusHistory = z.infer<typeof companyStatusHistorySchema>;
+
+export type CompanyActivationCompleteness = z.infer<
+	typeof companyActivationCompletenessSchema
+>;
 
 export type CompanyActivityListItem = Pick<
 	CompanyActivity,
@@ -219,6 +240,32 @@ export type EndCompanyActivityInput = z.input<
 	typeof endCompanyActivityInputSchema
 >;
 
+export type ActivateLegalCompanyInput = z.input<
+	typeof activateLegalCompanyInputSchema
+>;
+
+export type SuspendLegalCompanyInput = z.input<
+	typeof suspendLegalCompanyInputSchema
+>;
+
+export type MarkCompanyStruckOffInput = z.input<
+	typeof markCompanyStruckOffInputSchema
+>;
+
+export type EnterLiquidationInput = z.input<typeof enterLiquidationInputSchema>;
+
+export type DissolveLegalCompanyInput = z.input<
+	typeof dissolveLegalCompanyInputSchema
+>;
+
+export type RestoreLegalCompanyInput = z.input<
+	typeof restoreLegalCompanyInputSchema
+>;
+
+export type ArchiveLegalCompanyInput = z.input<
+	typeof archiveLegalCompanyInputSchema
+>;
+
 export type ListCompanyNamesInput = z.input<typeof listCompanyNamesInputSchema>;
 
 export type FindCompanyNameAsOfInput = z.input<
@@ -243,6 +290,18 @@ export type FindCompanyFinancialYearAsOfInput = z.input<
 
 export type ListCompanyActivitiesAsOfInput = z.input<
 	typeof listCompanyActivitiesAsOfInputSchema
+>;
+
+export type FindCompanyStatusAsOfInput = z.input<
+	typeof findCompanyStatusAsOfInputSchema
+>;
+
+export type ListCompaniesByStatusInput = z.input<
+	typeof listCompaniesByStatusInputSchema
+>;
+
+export type GetCompanyCompletenessForActivationInput = z.input<
+	typeof getCompanyCompletenessForActivationInputSchema
 >;
 
 export type LegalCompany = z.infer<typeof legalCompanySchema>;

@@ -1,7 +1,20 @@
 import { fail, type Result } from "@afenda/errors/result";
-
+import type { PartyId, TaxRegistrationId } from "../../brands";
+import { partyIdSchema, taxRegistrationIdSchema } from "../../brands";
+import {
+	type OrganizationId,
+	organizationIdSchema,
+} from "../../contracts/context";
 import type { MasterFailureDetails } from "../../contracts/reasons";
-import type { TaxRegistration } from "../../types";
+import type {
+	MasterStatus,
+	TaxRegistration,
+	TaxRegistrationType,
+} from "../../types";
+import {
+	type RefCountryId,
+	refCountryIdSchema,
+} from "../platform-references/brands";
 
 export const MAX_TAX_REGISTRATION_NUMBER_LENGTH = 128 as const;
 
@@ -15,14 +28,25 @@ export const TAX_REGISTRATION_LIFECYCLE_STATUSES = [
 export type TaxRegistrationLifecycleStatus =
 	(typeof TAX_REGISTRATION_LIFECYCLE_STATUSES)[number];
 
-export type MaskedTaxRegistration = Omit<
-	TaxRegistration,
-	"registrationNumber" | "normalizedRegistrationNumber"
-> & {
-	lifecycleStatus: TaxRegistrationLifecycleStatus;
-	registrationNumberMasked: string;
-	normalizedRegistrationNumberMasked: string;
-};
+export type TaxRegistrationStatus = MasterStatus;
+
+export interface TaxRegistrationProjection {
+	id: TaxRegistrationId;
+	organizationId: OrganizationId;
+	partyId: PartyId;
+	countryId: RefCountryId;
+	taxType: TaxRegistrationType;
+	maskedRegistrationNumber: string;
+	status: TaxRegistrationStatus;
+	validFrom: Date | null;
+	validUntil: Date | null;
+	version: number;
+}
+
+export interface SensitiveTaxRegistrationProjection
+	extends TaxRegistrationProjection {
+	registrationNumber: string;
+}
 
 /**
  * Trim → Unicode NFC → uppercase → strip whitespace and separators (- / .).
@@ -67,7 +91,7 @@ export function normalizeTaxRegistrationNumber(raw: string): Result<{
 }
 
 export function projectTaxRegistrationLifecycleStatus(
-	registration: Pick<TaxRegistration, "status" | "validTo">,
+	registration: Pick<TaxRegistrationProjection, "status" | "validUntil">,
 	asOf: Date = new Date(),
 ): TaxRegistrationLifecycleStatus {
 	if (registration.status === "retired") {
@@ -78,8 +102,8 @@ export function projectTaxRegistrationLifecycleStatus(
 	}
 	if (
 		registration.status === "active" &&
-		registration.validTo !== null &&
-		registration.validTo < asOf
+		registration.validUntil !== null &&
+		registration.validUntil < asOf
 	) {
 		return "expired";
 	}
@@ -97,21 +121,30 @@ export function maskTaxRegistrationNumber(value: string): string {
 	return `${"*".repeat(Math.max(0, trimmed.length - 4))}${trimmed.slice(-4)}`;
 }
 
-export function toMaskedTaxRegistration(
+export function toTaxRegistrationProjection(
 	registration: TaxRegistration,
-	asOf: Date = new Date(),
-): MaskedTaxRegistration {
-	const {
-		registrationNumber,
-		normalizedRegistrationNumber,
-		...safeRegistration
-	} = registration;
+): TaxRegistrationProjection {
 	return {
-		...safeRegistration,
-		lifecycleStatus: projectTaxRegistrationLifecycleStatus(registration, asOf),
-		registrationNumberMasked: maskTaxRegistrationNumber(registrationNumber),
-		normalizedRegistrationNumberMasked: maskTaxRegistrationNumber(
-			normalizedRegistrationNumber,
+		id: taxRegistrationIdSchema.parse(registration.id),
+		organizationId: organizationIdSchema.parse(registration.organizationId),
+		partyId: partyIdSchema.parse(registration.partyId),
+		countryId: refCountryIdSchema.parse(registration.jurisdictionCountryId),
+		taxType: registration.registrationType,
+		maskedRegistrationNumber: maskTaxRegistrationNumber(
+			registration.registrationNumber,
 		),
+		status: registration.status,
+		validFrom: registration.validFrom,
+		validUntil: registration.validTo,
+		version: registration.version,
+	};
+}
+
+export function toSensitiveTaxRegistrationProjection(
+	registration: TaxRegistration,
+): SensitiveTaxRegistrationProjection {
+	return {
+		...toTaxRegistrationProjection(registration),
+		registrationNumber: registration.registrationNumber,
 	};
 }

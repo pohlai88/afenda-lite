@@ -103,6 +103,40 @@ describe("Human Resources platform facts", () => {
 		});
 	});
 
+	it.each([
+		["human-resources.leave.requested.v1", "approval"],
+		["human-resources.onboarding.started.v1", "task"],
+		["human-resources.employee-document.nearing-expiry.v1", "reminder"],
+		["human-resources.work-eligibility.expired.v1", "escalation"],
+	] as const)("projects %s into a replay-safe %s work item", (type, kind) => {
+		const result = projectHumanResourcesPlatformFacts(
+			event(type, {
+				metadata: { recipientUserId: "employee-user-1", dueOn: "2026-08-01" },
+			}),
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.data.workItems).toEqual([
+			expect.objectContaining({
+				kind,
+				targetUserId: "employee-user-1",
+				dueOn: "2026-08-01",
+				deduplicationKey: "event:event-1:work-item",
+			}),
+		]);
+	});
+
+	it("rejects malformed work-item due-date metadata", () => {
+		const result = projectHumanResourcesPlatformFacts(
+			event("human-resources.onboarding.started.v1", {
+				metadata: { dueOn: "next week" },
+			}),
+		);
+
+		expect(result.ok).toBe(false);
+	});
+
 	it("rejects an event whose payload crosses the envelope tenant", () => {
 		const result = projectHumanResourcesPlatformFacts(
 			event("human-resources.employee.transferred.v1", {

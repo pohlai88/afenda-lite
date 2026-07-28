@@ -3,7 +3,7 @@
 import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
-	type TaxRegistration,
+	type TaxRegistrationProjection,
 	updateTaxRegistration,
 } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
@@ -20,7 +20,7 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type UpdateTaxRegistrationActionData = {
-	taxRegistration: TaxRegistration;
+	taxRegistration: TaxRegistrationProjection;
 };
 
 export type UpdateTaxRegistrationActionState =

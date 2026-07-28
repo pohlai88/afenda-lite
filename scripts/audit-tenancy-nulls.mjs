@@ -21,6 +21,8 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"platform_search_document",
 	"platform_notification",
 	"platform_domain_event",
+	"platform_work_item",
+	"platform_work_item_activity",
 	"ca_mutation_receipt",
 	"ca_legal_company",
 	"ca_company_jurisdiction_profile",
@@ -58,6 +60,7 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"md_item_variant_attribute_value_option",
 	"md_change_request",
 	"md_import_batch",
+	"md_import_batch_row",
 	"sales_order",
 	"sales_order_line",
 	"purchase_order",
@@ -227,6 +230,13 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"hr_employee_document",
 	"hr_work_eligibility",
 	"hr_policy_acknowledgement",
+	"hr_payroll_handoff_delivery",
+	"hr_bulk_import_checkpoint",
+	"hr_bulk_import_audit",
+	"hr_bulk_import_error_artifact",
+	"hr_reliability_work_item",
+	"hr_reliability_dead_letter",
+	"hr_connector_cursor",
 	"hr_work_calendar",
 	"hr_work_calendar_holiday",
 	"hr_employment_calendar_assignment",
@@ -285,6 +295,10 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM platform_notification WHERE organization_id IS NULL`,
 	platform_domain_event: () =>
 		sql`SELECT count(*)::int AS null_count FROM platform_domain_event WHERE organization_id IS NULL`,
+	platform_work_item: () =>
+		sql`SELECT count(*)::int AS null_count FROM platform_work_item WHERE organization_id IS NULL`,
+	platform_work_item_activity: () =>
+		sql`SELECT count(*)::int AS null_count FROM platform_work_item_activity WHERE organization_id IS NULL`,
 	ca_mutation_receipt: () =>
 		sql`SELECT count(*)::int AS null_count FROM ca_mutation_receipt WHERE organization_id IS NULL`,
 	ca_legal_company: () =>
@@ -359,6 +373,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM md_change_request WHERE organization_id IS NULL`,
 	md_import_batch: () =>
 		sql`SELECT count(*)::int AS null_count FROM md_import_batch WHERE organization_id IS NULL`,
+	md_import_batch_row: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_import_batch_row WHERE organization_id IS NULL`,
 	sales_order: () =>
 		sql`SELECT count(*)::int AS null_count FROM sales_order WHERE organization_id IS NULL`,
 	sales_order_line: () =>
@@ -697,6 +713,20 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM hr_work_eligibility WHERE organization_id IS NULL`,
 	hr_policy_acknowledgement: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_policy_acknowledgement WHERE organization_id IS NULL`,
+	hr_payroll_handoff_delivery: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_payroll_handoff_delivery WHERE organization_id IS NULL`,
+	hr_bulk_import_checkpoint: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_bulk_import_checkpoint WHERE organization_id IS NULL`,
+	hr_bulk_import_audit: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_bulk_import_audit WHERE organization_id IS NULL`,
+	hr_bulk_import_error_artifact: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_bulk_import_error_artifact WHERE organization_id IS NULL`,
+	hr_reliability_work_item: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_reliability_work_item WHERE organization_id IS NULL`,
+	hr_reliability_dead_letter: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_reliability_dead_letter WHERE organization_id IS NULL`,
+	hr_connector_cursor: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_connector_cursor WHERE organization_id IS NULL`,
 	hr_work_calendar: () =>
 		sql`SELECT count(*)::int AS null_count FROM hr_work_calendar WHERE organization_id IS NULL`,
 	hr_work_calendar_holiday: () =>

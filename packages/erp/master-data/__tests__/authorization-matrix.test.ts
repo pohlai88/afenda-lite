@@ -23,14 +23,18 @@ import {
 	MASTER_COMMAND_WAREHOUSE_UPDATE,
 	MASTER_QUERY_ITEM_GET_BY_CODE,
 	MASTER_QUERY_ORGANIZATION_DIMENSION_LIST,
+	MASTER_QUERY_PARTY_CONTACT_LIST,
+	MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE,
 	MASTER_QUERY_PARTY_FIND_DUPLICATES,
 	MASTER_QUERY_PARTY_GET_BY_CODE,
 	MASTER_QUERY_REF_CURRENCY_GET_BY_CODE,
+	MASTER_QUERY_TAX_REGISTRATION_GET,
+	MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE,
 } from "../src/module-ids";
 import {
 	MASTER_DATA_CORE_PERMISSION_CODES,
-	MASTER_DATA_FIELD_PERMISSION_CODES,
 	MASTER_DATA_PERMISSION_CODES,
+	MASTER_DATA_SENSITIVE_READ_PERMISSION_CODES,
 } from "../src/permissions";
 
 const EXPECTED_CORE_PERMISSION_CODES = [
@@ -49,6 +53,7 @@ const EXPECTED_CORE_PERMISSION_CODES = [
 	"master_data.party_merge",
 	"master_data.party_role_manage",
 	"master_data.party_address_manage",
+	"master_data.party_contact_read",
 	"master_data.party_contact_manage",
 	"master_data.party_external_id_manage",
 	"master_data.party_relationship_manage",
@@ -61,6 +66,7 @@ const EXPECTED_CORE_PERMISSION_CODES = [
 	"master_data.item_extension_manage",
 	"master_data.warehouse_manage",
 	"master_data.payment_term_manage",
+	"master_data.tax_registration_read",
 	"master_data.tax_registration_manage",
 	"master_data.template_manage",
 	"master_data.variant_manage",
@@ -87,10 +93,10 @@ describe("master-data authorization matrix", () => {
 		}
 	});
 
-	it("publishes explicit field-level sensitive read permissions", () => {
-		expect(MASTER_DATA_FIELD_PERMISSION_CODES).toEqual([
-			"master_data.tax_registration_number_read",
-			"master_data.personal_contact_read",
+	it("publishes explicit sensitive projection permissions", () => {
+		expect(MASTER_DATA_SENSITIVE_READ_PERMISSION_CODES).toEqual([
+			"master_data.tax_registration_sensitive_read",
+			"master_data.party_contact_sensitive_read",
 			"master_data.sensitive_external_id_read",
 		]);
 	});
@@ -177,6 +183,18 @@ describe("master-data authorization matrix", () => {
 		);
 		expect(queries[MASTER_QUERY_PARTY_FIND_DUPLICATES]).toBe(
 			"master_data.duplicate_review",
+		);
+		expect(queries[MASTER_QUERY_TAX_REGISTRATION_GET]).toBe(
+			"master_data.tax_registration_read",
+		);
+		expect(queries[MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE]).toBe(
+			"master_data.tax_registration_sensitive_read",
+		);
+		expect(queries[MASTER_QUERY_PARTY_CONTACT_LIST]).toBe(
+			"master_data.party_contact_read",
+		);
+		expect(queries[MASTER_QUERY_PARTY_CONTACT_LIST_SENSITIVE]).toBe(
+			"master_data.party_contact_sensitive_read",
 		);
 	});
 });

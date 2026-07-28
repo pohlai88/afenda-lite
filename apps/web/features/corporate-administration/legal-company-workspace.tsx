@@ -52,7 +52,15 @@ export type LegalCompanyWorkspaceCompany = Readonly<{
 	companyCode: string;
 	displayName: string;
 	homeJurisdictionCountryCode: string;
-	state: "draft";
+	state:
+		| "draft"
+		| "active"
+		| "suspended"
+		| "struck_off"
+		| "in_liquidation"
+		| "dissolved"
+		| "restored"
+		| "archived";
 	version: number;
 	currentJurisdictionProfile: LegalCompanyWorkspaceJurisdictionProfile | null;
 }>;

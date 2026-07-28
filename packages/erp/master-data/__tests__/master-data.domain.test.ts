@@ -60,7 +60,6 @@ import {
 	maskTaxRegistrationNumber,
 	normalizeTaxRegistrationNumber,
 	projectTaxRegistrationLifecycleStatus,
-	toMaskedTaxRegistration,
 } from "../src/capabilities/core-organization-masters/tax-registration-number";
 import { validityRangesOverlap } from "../src/capabilities/core-organization-masters/validity-overlap";
 import {
@@ -1980,7 +1979,17 @@ describe("@afenda/master-data domain", () => {
 		if (!created.ok) {
 			return;
 		}
-		expect(created.data.normalizedRegistrationNumber).toBe("VAT123AB");
+		expect(created.data).not.toHaveProperty("normalizedRegistrationNumber");
+		expect(created.data).not.toHaveProperty("registrationNumber");
+		const storedRegistration = await store.getTaxRegistrationById(
+			ctx().organizationId,
+			created.data.id,
+		);
+		expect(storedRegistration.ok).toBe(true);
+		if (!storedRegistration.ok || storedRegistration.data === null) return;
+		expect(storedRegistration.data.normalizedRegistrationNumber).toBe(
+			"VAT123AB",
+		);
 		expect(created.data.status).toBe("draft");
 
 		const otherOrg = await createTaxRegistration(
@@ -2086,9 +2095,8 @@ describe("@afenda/master-data domain", () => {
 			),
 		).toBe("expired");
 		expect(maskTaxRegistrationNumber("VAT-123 / ab")).toBe("********/ ab");
-		const masked = toMaskedTaxRegistration(activated.data);
-		expect(masked).not.toHaveProperty("registrationNumber");
-		expect(masked.registrationNumberMasked.endsWith("/ ab")).toBe(true);
+		expect(activated.data).not.toHaveProperty("registrationNumber");
+		expect(activated.data.maskedRegistrationNumber.endsWith("/ ab")).toBe(true);
 
 		const overlapSibling = await createTaxRegistration(
 			{

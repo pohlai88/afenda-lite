@@ -1,12 +1,15 @@
 import type { Result } from "@afenda/errors/result";
 import type { MutationPorts } from "../../ports";
 import type {
+	ImportBatchStatus,
+	ImportRowOperation,
+} from "../data-governance-workflows/import-types";
+import type {
 	ItemExtensionStore,
 	PartyExtensionStore,
 	WarehouseExtensionStore,
 } from "../extensions/store";
 import type { ItemVariantExtensionStore } from "../extensions/template-store";
-import type { GovernanceWorkflowState } from "../lifecycle-governance/types";
 import type {
 	ItemGroupLifecycleEventSuffix,
 	ItemLifecycleEventSuffix,
@@ -16,6 +19,31 @@ import type {
 	WarehouseLifecycleEventSuffix,
 } from "./core-master-events";
 import type { OrganizationDimensionStore } from "./organization-dimension-store";
+
+export type ImportMutationContext = {
+	organizationId: string;
+	batchId: string;
+	sourceRowNumber: number;
+	leaseOwner: string;
+	intendedOperation: Extract<ImportRowOperation, "create" | "update">;
+	matchedEntityId: string | null;
+	partyExternalIds?: readonly {
+		id: string;
+		sourceSystem: string;
+		externalIdType: string;
+		externalValue: string;
+		normalizedValue: string;
+		caseSensitivity: "sensitive" | "insensitive";
+		isPrimary: boolean;
+		createdBy: string;
+	}[];
+};
+
+export type MutationMeta = {
+	correlationId: string;
+	/** Internal import execution context; the store commits the row result with the mutation. */
+	importMutation?: ImportMutationContext;
+};
 
 export type {
 	ItemAliasCreateRecord,
@@ -427,12 +455,12 @@ export interface PartyStore {
 	createParty(
 		record: PartyCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Party>>;
 	updateParty(
 		record: PartyUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Party>>;
 	transitionParty(
 		record: PartyLifecycleRecord,
@@ -488,12 +516,12 @@ export interface ItemGroupStore {
 	createItemGroup(
 		record: ItemGroupCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<ItemGroup>>;
 	updateItemGroup(
 		record: ItemGroupUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<ItemGroup>>;
 	transitionItemGroup(
 		record: ItemGroupLifecycleRecord,
@@ -516,12 +544,12 @@ export interface ItemStore {
 	createItem(
 		record: ItemCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Item>>;
 	updateItem(
 		record: ItemUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Item>>;
 	transitionItem(
 		record: ItemLifecycleRecord,
@@ -547,12 +575,12 @@ export interface WarehouseStore {
 	createWarehouse(
 		record: WarehouseCreateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Warehouse>>;
 	updateWarehouse(
 		record: WarehouseUpdateRecord,
 		ports: MutationPorts,
-		meta: { correlationId: string },
+		meta: MutationMeta,
 	): Promise<Result<Warehouse>>;
 	moveWarehouse(
 		record: WarehouseMoveRecord,
@@ -641,8 +669,18 @@ export interface ImportBatchStore {
 		organizationId: string,
 		idempotencyKey: string,
 	): Promise<Result<ImportBatchRecord | null>>;
-	saveImportBatch(
-		record: ImportBatchCreateRecord,
+	claimImportBatch(
+		record: ImportBatchClaimRecord,
+	): Promise<Result<ImportBatchClaimResult>>;
+	acquireImportBatchLease(
+		record: ImportBatchLeaseRequest,
+	): Promise<Result<ImportBatchLeaseResult>>;
+	listImportBatchRows(
+		organizationId: string,
+		batchId: string,
+	): Promise<Result<ImportBatchRowRecord[]>>;
+	completeImportBatch(
+		record: ImportBatchCompletionRecord,
 	): Promise<Result<ImportBatchRecord>>;
 }
 
@@ -696,24 +734,103 @@ export type ImportBatchRecord = {
 	id: string;
 	organizationId: string;
 	idempotencyKey: string;
+	payloadHash: string;
+	operationType: string;
 	entityType: ImportBatchEntityType;
 	sourceSystem: string;
 	mode: string;
-	status: GovernanceWorkflowState;
-	report: unknown;
+	status: ImportBatchStatus;
+	report: unknown | null;
+	leaseOwner: string | null;
+	leaseExpiresAt: Date | null;
 	actorUserId: string;
 	correlationId: string;
+	completedAt: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 };
 
-export type ImportBatchCreateRecord = {
+export type ImportBatchRowStatus =
+	| "pending"
+	| "applying"
+	| "applied"
+	| "failed"
+	| "skipped";
+
+export type ImportBatchRowRecord = {
+	id: string;
+	organizationId: string;
+	batchId: string;
+	sourceRowNumber: number;
+	payloadHash: string;
+	normalizedPayload: Readonly<Record<string, unknown>>;
+	intendedOperation: ImportRowOperation | null;
+	matchedEntityId: string | null;
+	status: ImportBatchRowStatus;
+	errorCode: string | null;
+	errorDetails: Readonly<Record<string, unknown>> | null;
+	resultEntityId: string | null;
+	resultVersion: number | null;
+	attemptCount: number;
+	leaseOwner: string | null;
+	leaseExpiresAt: Date | null;
+	startedAt: Date | null;
+	completedAt: Date | null;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ImportBatchRowClaimRecord = {
+	id: string;
+	sourceRowNumber: number;
+	payloadHash: string;
+	normalizedPayload: Readonly<Record<string, unknown>>;
+};
+
+export type ImportBatchClaimRecord = {
+	id: string;
 	organizationId: string;
 	idempotencyKey: string;
+	payloadHash: string;
+	operationType: string;
 	entityType: ImportBatchEntityType;
 	sourceSystem: string;
 	mode: string;
-	report: unknown;
 	actorUserId: string;
 	correlationId: string;
+	rows: readonly ImportBatchRowClaimRecord[];
+};
+
+export type ImportBatchClaimResult =
+	| { kind: "claimed"; batch: ImportBatchRecord }
+	| { kind: "existing"; batch: ImportBatchRecord };
+
+export type ImportBatchLeaseRequest = {
+	organizationId: string;
+	batchId: string;
+	leaseOwner: string;
+	leaseExpiresAt: Date;
+};
+
+export type ImportBatchLeaseResult =
+	| { kind: "acquired"; batch: ImportBatchRecord }
+	| { kind: "busy"; batch: ImportBatchRecord }
+	| { kind: "completed"; batch: ImportBatchRecord };
+
+export type ImportBatchCompletionRecord = {
+	organizationId: string;
+	batchId: string;
+	leaseOwner: string;
+	status: "partially_applied" | "applied" | "failed";
+	report: unknown;
+	rows: readonly {
+		sourceRowNumber: number;
+		intendedOperation: ImportRowOperation;
+		matchedEntityId: string | null;
+		status: Exclude<ImportBatchRowStatus, "pending" | "applying">;
+		errorCode: string | null;
+		errorDetails: Readonly<Record<string, unknown>> | null;
+		resultEntityId: string | null;
+		resultVersion: number | null;
+	}[];
 };

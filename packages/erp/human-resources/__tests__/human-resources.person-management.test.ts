@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { collectHumanResourcesSubjectData } from "../src/privacy/subject-data-collector";
@@ -15,15 +15,10 @@ import {
 	updatePersonPreferredName,
 } from "../src/workforce-foundation/person-management";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
-import { runDrizzleParity } from "./helpers/database-gate";
-import {
-	createHrParityHarness,
-	type WorkforceStoreAdapter,
-} from "./helpers/hr-parity-harness";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { createNeonOrgTracker } from "./helpers/neon-cleanup";
+import { definePersonManagementParity } from "./helpers/person-management-parity";
 
 const ORG = "org-person-management";
 const ORG_B = "org-person-management-b";
@@ -367,73 +362,6 @@ describe("@afenda/human-resources person management (memory)", () => {
 	});
 });
 
-function definePersonManagementParity(adapter: WorkforceStoreAdapter): void {
-	const suffix = `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const neonOrgs = createNeonOrgTracker();
-	const ORG = neonOrgs.trackOrg(`org-person-parity-${suffix}`);
-	const ACTOR = `user-person-parity-${suffix}`;
-
-	afterAll(async () => {
-		if (adapter === "drizzle") {
-			await neonOrgs.cleanup();
-		}
-	});
-
-	it("creates person contact and identifier with parity store", async () => {
-		const ready = createHrParityHarness(adapter);
-		const person = await createPerson(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-parity-person-${suffix}`,
-				idempotencyKey: `idem-parity-person-${suffix}`,
-				legalName: "Parity Person",
-				preferredName: "Parity",
-			},
-			ready,
-		);
-		expect(person.ok).toBe(true);
-		if (!person.ok) return;
-
-		const contact = await addPersonContact(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-parity-contact-${suffix}`,
-				idempotencyKey: `idem-parity-contact-${suffix}`,
-				personId: person.data.id,
-				contactType: "email",
-				valueText: "parity@example.com",
-				isPrimary: true,
-			},
-			ready,
-		);
-		expect(contact.ok).toBe(true);
-
-		const identifier = await addPersonIdentifier(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-parity-id-${suffix}`,
-				idempotencyKey: `idem-parity-id-${suffix}`,
-				personId: person.data.id,
-				identifierType: "passport",
-				identifierValue: "P123456789",
-				effectiveFrom: "2026-01-01",
-			},
-			ready,
-		);
-		expect(identifier.ok).toBe(true);
-	});
-}
-
 describe("@afenda/human-resources person management parity (memory)", () => {
 	definePersonManagementParity("memory");
 });
-
-describe.runIf(runDrizzleParity)(
-	"@afenda/human-resources person management parity (drizzle)",
-	() => {
-		definePersonManagementParity("drizzle");
-	},
-);

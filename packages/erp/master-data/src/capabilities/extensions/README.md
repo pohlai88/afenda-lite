@@ -222,7 +222,7 @@ Extension mutations use capability-specific permissions rather than the broad
 | --- | --- |
 | Party roles | `master_data.party_role_manage` |
 | Party addresses | `master_data.party_address_manage` |
-| Party contacts | `master_data.party_contact_manage` |
+| Party contacts | `master_data.party_contact_read` for masked reads · `master_data.party_contact_sensitive_read` for explicit unmasked reads · `master_data.party_contact_manage` for writes |
 | Party external IDs | `master_data.party_external_id_manage` |
 | Party relationships | `master_data.party_relationship_manage` |
 | Item UoM conversions, barcodes, external IDs, aliases, and groups | `master_data.item_extension_manage` |

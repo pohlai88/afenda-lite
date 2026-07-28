@@ -106,7 +106,10 @@ export const caLegalCompany = pgTable(
 			t.organizationId,
 			t.masterDataPartyId,
 		),
-		check("ca_legal_company_state_check", sql`${t.state} IN ('draft')`),
+		check(
+			"ca_legal_company_state_check",
+			sql`${t.state} IN ('draft', 'active', 'suspended', 'struck_off', 'in_liquidation', 'dissolved', 'restored', 'archived')`,
+		),
 		check(
 			"ca_legal_company_code_check",
 			sql`char_length(btrim(${t.companyCode})) > 0 AND char_length(btrim(${t.normalizedCompanyCode})) > 0`,
@@ -116,6 +119,63 @@ export const caLegalCompany = pgTable(
 			sql`${t.homeJurisdictionCountryCode} ~ '^[A-Z]{2}$'`,
 		),
 		check("ca_legal_company_version_check", sql`${t.version} > 0`),
+	],
+);
+
+export const caCompanyStatusHistory = pgTable(
+	"ca_company_status_history",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalCompanyId: uuid("legal_company_id").notNull(),
+		status: text("status").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+		recordedBy: text("recorded_by").notNull(),
+		reason: text("reason"),
+		sourceDocumentId: text("source_document_id").notNull(),
+		version: integer("version").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("ca_company_status_version_uidx").on(
+			t.organizationId,
+			t.legalCompanyId,
+			t.version,
+		),
+		index("ca_company_status_as_of_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
+			t.effectiveFrom,
+			t.effectiveTo,
+			t.recordedAt,
+		),
+		index("ca_company_status_value_idx").on(
+			t.organizationId,
+			t.status,
+			t.effectiveFrom,
+			t.effectiveTo,
+		),
+		check(
+			"ca_company_status_value_check",
+			sql`${t.status} IN ('draft', 'active', 'suspended', 'struck_off', 'in_liquidation', 'dissolved', 'restored', 'archived')`,
+		),
+		check(
+			"ca_company_status_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} < ${t.effectiveTo}`,
+		),
+		check(
+			"ca_company_status_source_check",
+			sql`char_length(btrim(${t.sourceDocumentId})) > 0`,
+		),
+		check(
+			"ca_company_status_reason_check",
+			sql`${t.reason} IS NULL OR char_length(btrim(${t.reason})) > 0`,
+		),
+		check("ca_company_status_version_check", sql`${t.version} > 0`),
 	],
 );
 

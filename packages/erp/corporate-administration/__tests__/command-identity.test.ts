@@ -98,6 +98,49 @@ describe("Corporate Administration command identity", () => {
 		);
 	});
 
+	it("fingerprints optional object fields by omission instead of undefined", () => {
+		const optionalSchema = z
+			.object({
+				code: z.string().trim().toUpperCase().pipe(normalizedCodeSchema),
+				reason: z.string().optional(),
+				nested: z.object({
+					label: z.string(),
+					note: z.string().optional(),
+				}),
+			})
+			.strict();
+
+		const omitted = createCorporateAdministrationCommandFingerprint({
+			schema: optionalSchema,
+			organizationId: organizationIdSchema.parse("org_1"),
+			commandId: "corporate-administration.test.create",
+			input: {
+				code: "ca-01",
+				nested: { label: "kept" },
+			},
+		});
+		const explicitUndefined = createCorporateAdministrationCommandFingerprint({
+			schema: optionalSchema,
+			organizationId: organizationIdSchema.parse("org_1"),
+			commandId: "corporate-administration.test.create",
+			input: {
+				code: "ca-01",
+				reason: undefined,
+				nested: { label: "kept", note: undefined },
+			},
+		});
+
+		expect(omitted.ok).toBe(true);
+		expect(explicitUndefined.ok).toBe(true);
+		if (!omitted.ok || !explicitUndefined.ok) return;
+
+		expect(explicitUndefined.data.envelope.input).toEqual({
+			code: "CA-01",
+			nested: { label: "kept" },
+		});
+		expect(explicitUndefined.data.fingerprint).toBe(omitted.data.fingerprint);
+	});
+
 	it("returns validation failures before fingerprinting and never throws on non-canonical output", () => {
 		const invalid = createCorporateAdministrationCommandFingerprint({
 			schema: commandSchema,

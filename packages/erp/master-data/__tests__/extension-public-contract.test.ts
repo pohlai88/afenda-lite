@@ -31,6 +31,7 @@ import {
 	getPartyRoleById,
 	getPrimaryPartyAddress,
 	getPrimaryPartyContact,
+	getSensitivePrimaryPartyContact,
 	getVariantConfiguration,
 	listActivePartyRoles,
 	listItemAliases,
@@ -42,6 +43,7 @@ import {
 	listPartyContacts,
 	listPartyRelationships,
 	listPartyRoles,
+	listSensitivePartyContacts,
 	listTemplateAttributeOptions,
 	listTemplateAttributes,
 	listVariantAttributeValues,
@@ -82,6 +84,7 @@ const PUBLIC_EXTENSION_OPERATIONS = [
 	["getPartyRoleById", getPartyRoleById],
 	["getPrimaryPartyAddress", getPrimaryPartyAddress],
 	["getPrimaryPartyContact", getPrimaryPartyContact],
+	["getSensitivePrimaryPartyContact", getSensitivePrimaryPartyContact],
 	["getVariantConfiguration", getVariantConfiguration],
 	["listActivePartyRoles", listActivePartyRoles],
 	["listItemAliases", listItemAliases],
@@ -91,6 +94,7 @@ const PUBLIC_EXTENSION_OPERATIONS = [
 	["listItemUoms", listItemUoms],
 	["listPartyAddresses", listPartyAddresses],
 	["listPartyContacts", listPartyContacts],
+	["listSensitivePartyContacts", listSensitivePartyContacts],
 	["listPartyRelationships", listPartyRelationships],
 	["listPartyRoles", listPartyRoles],
 	["listTemplateAttributeOptions", listTemplateAttributeOptions],
@@ -143,5 +147,6 @@ describe("extension public contract", () => {
 		) as { exports?: Record<string, unknown> };
 
 		expect(packageJson.exports).not.toHaveProperty("./extensions");
+		expect(packageJson.exports).not.toHaveProperty("./types");
 	});
 });

@@ -15,6 +15,14 @@ import {
 	HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ,
 	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
 } from "../src/permissions";
+import { SUCCESSION_READINESS_MAX_AGE_DAYS } from "../src/shared/talent-status";
+import {
+	acknowledgeCareerPlan,
+	addCareerPlanAction,
+	closeCareerPlan,
+	completeCareerPlanAction,
+	createCareerPlan,
+} from "../src/talent/career-plan";
 import {
 	assessEmployeeCompetency,
 	createCompetency,
@@ -33,6 +41,12 @@ import {
 	listCriticalRoleReadiness,
 	recordCriticalRoleReadiness,
 } from "../src/talent/critical-role-readiness";
+import {
+	approveSuccessionCandidate,
+	createSuccessionPlan,
+	getPositionSuccessionCoverage,
+	nominateSuccessionCandidate,
+} from "../src/talent/succession-plan";
 import {
 	approveTalentPoolMember,
 	closeTalentPool,
@@ -73,6 +87,12 @@ import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 function uniqueSuffix(adapter: WorkforceStoreAdapter): string {
 	return `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function daysAgoIso(days: number): string {
+	const date = new Date();
+	date.setUTCDate(date.getUTCDate() - days);
+	return date.toISOString().slice(0, 10);
 }
 
 async function seedEmployee(
@@ -1010,6 +1030,153 @@ function defineTalentParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(humanResourcesCodeFromResult(poolConflict)).toBe(
 			HUMAN_RESOURCES_ERROR_CONFLICT,
 		);
+	});
+
+	it("career plan draft through closed lifecycle", async () => {
+		const ready = createHrParityHarness(adapter);
+		const tag = `career-${suffix}`;
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: tag,
+		});
+		const created = await createCareerPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-career-${tag}`,
+				idempotencyKey: `idem-career-${tag}`,
+				employeeId: employee.id,
+				ownerUserId: ACTOR,
+				code: `CP-${tag}`.slice(0, 64),
+				title: "Parity career plan",
+			},
+			ready,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) return;
+		const acknowledged = await acknowledgeCareerPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-career-ack-${tag}`,
+				careerPlanId: created.data.id,
+				expectedVersion: created.data.version,
+			},
+			ready,
+		);
+		expect(acknowledged.ok).toBe(true);
+		if (!acknowledged.ok) return;
+		const action = await addCareerPlanAction(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-career-action-${tag}`,
+				careerPlanId: acknowledged.data.id,
+				title: "Complete parity objective",
+				dueOn: "2027-12-31",
+			},
+			ready,
+		);
+		expect(action.ok).toBe(true);
+		if (!action.ok) return;
+		const completed = await completeCareerPlanAction(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-career-complete-${tag}`,
+				actionId: action.data.id,
+				expectedVersion: action.data.version,
+			},
+			ready,
+		);
+		expect(completed.ok).toBe(true);
+		if (!completed.ok) return;
+		expect(completed.data.status).toBe("done");
+		const closed = await closeCareerPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-career-close-${tag}`,
+				careerPlanId: acknowledged.data.id,
+				expectedVersion: acknowledged.data.version,
+			},
+			ready,
+		);
+		expect(closed.ok).toBe(true);
+		if (!closed.ok) return;
+		expect(closed.data.status).toBe("closed");
+	});
+
+	it("succession candidate excludes stale readiness from coverage", async () => {
+		const ready = createHrParityHarness(adapter);
+		const tag = `succession-${suffix}`;
+		const employee = await seedEmployee(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: tag,
+		});
+		const position = await seedPosition(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			tag,
+		});
+		const plan = await createSuccessionPlan(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-succession-plan-${tag}`,
+				idempotencyKey: `idem-succession-plan-${tag}`,
+				code: `SP-${tag}`.slice(0, 64),
+				title: "Parity succession plan",
+				positionId: position.id,
+			},
+			ready,
+		);
+		expect(plan.ok).toBe(true);
+		if (!plan.ok) return;
+		const nominated = await nominateSuccessionCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-succession-nominate-${tag}`,
+				idempotencyKey: `idem-succession-nominate-${tag}`,
+				successionPlanId: plan.data.id,
+				employeeId: employee.id,
+				nominatorUserId: ACTOR,
+				readiness: "ready_now",
+				readinessEffectiveOn: daysAgoIso(SUCCESSION_READINESS_MAX_AGE_DAYS + 1),
+				evidenceSummary: "Stale parity evidence",
+			},
+			ready,
+		);
+		expect(nominated.ok).toBe(true);
+		if (!nominated.ok) return;
+		const approved = await approveSuccessionCandidate(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-succession-approve-${tag}`,
+				candidateId: nominated.data.id,
+				expectedVersion: nominated.data.version,
+			},
+			ready,
+		);
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+		const coverage = await getPositionSuccessionCoverage(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-succession-coverage-${tag}`,
+				positionId: position.id,
+			},
+			ready,
+		);
+		expect(coverage.ok).toBe(true);
+		if (!coverage.ok) return;
+		expect(coverage.data.totalActiveCandidateCount).toBe(1);
+		expect(coverage.data.readyNowCandidateCount).toBe(0);
 	});
 }
 

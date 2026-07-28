@@ -122,11 +122,16 @@ Same-TX: entity + `platform_audit_log` + `platform_domain_event`.
 | `createTaxRegistration` | Org + party + jurisdiction + type + number |
 | `updateTaxRegistration` | CAS; may adjust validity / name |
 | `activate` / `block` / `retire` / `restore` | Lifecycle |
-| `getTaxRegistrationById` | Org-bound |
-| `listTaxRegistrations` | Filter by party / status; `pageSize <= 100` |
-| `findTaxRegistrationsByParty` | Deterministic list for a party |
+| `getTaxRegistration` | Org-bound ordinary projection; registration number is masked |
+| `listTaxRegistrations` | Ordinary projection filtered by party / status; `pageSize <= 100` |
+| `findTaxRegistrationsByParty` | Ordinary deterministic list for a party |
+| `getSensitiveTaxRegistration` | Explicit sensitive operation; raw registration number, never the normalized value |
+| `listSensitiveTaxRegistrations` / `findSensitiveTaxRegistrationsByParty` | Explicit sensitive list operations under the dedicated sensitive-read permission |
 
-Web: thin Actions under `master_data.read` / `master_data.manage`; pattern = payment-term Actions.
+Web: thin Actions use the ordinary masked projection. Sensitive operations require
+`master_data.tax_registration_sensitive_read`; ordinary reads require
+`master_data.tax_registration_read`. The normalized registration number remains
+store-internal and is not part of either projection.
 
 ### What is not in this table
 

@@ -52,6 +52,15 @@ queries:
   - id: listCompanyActivitiesAsOf
     moduleId: corporate-administration
     permission: corporate_administration.company.read
+  - id: findCompanyStatusAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: listCompaniesByStatus
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
+  - id: getCompanyCompletenessForActivation
+    moduleId: corporate-administration
+    permission: corporate_administration.company.read
   - id: getLegalCompanyTimeline
     moduleId: corporate-administration
     permission: corporate_administration.company.read
@@ -681,40 +690,52 @@ queries:
     permission: inventory.availability.read
   - id: master_data.organization_dimension.resolve_as_of
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.dimension_read
   - id: master_data.organization_dimension.get_effective
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.dimension_read
+  - id: master_data.organization_dimension.get_by_id
+    moduleId: master-data
+    permission: master_data.dimension_read
+  - id: master_data.organization_dimension.get_by_code
+    moduleId: master-data
+    permission: master_data.dimension_read
+  - id: master_data.organization_dimension.list
+    moduleId: master-data
+    permission: master_data.dimension_read
   - id: master_data.party.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
+  - id: master_data.party.search
+    moduleId: master-data
+    permission: master_data.party_read
   - id: master_data.party.find_duplicates
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.duplicate_review
   - id: master_data.item.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_group.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_group.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_group.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.warehouse.get_by_id
     moduleId: master-data
     permission: master_data.read
@@ -733,99 +754,114 @@ queries:
   - id: master_data.payment_term.list
     moduleId: master-data
     permission: master_data.read
-  - id: master_data.tax_registration.get_by_id
+  - id: master_data.tax_registration.get
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.tax_registration_read
   - id: master_data.tax_registration.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.tax_registration_read
   - id: master_data.tax_registration.find_by_party
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.tax_registration_read
+  - id: master_data.tax_registration.get_sensitive
+    moduleId: master-data
+    permission: master_data.tax_registration_sensitive_read
+  - id: master_data.tax_registration.list_sensitive
+    moduleId: master-data
+    permission: master_data.tax_registration_sensitive_read
+  - id: master_data.tax_registration.find_sensitive_by_party
+    moduleId: master-data
+    permission: master_data.tax_registration_sensitive_read
   - id: master_data.party_role.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party_role.get
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party_role.list_active
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party_address.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party_address.get
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party_address.get_primary
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.party_contact.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_contact_read
   - id: master_data.party_contact.get_primary
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_contact_read
+  - id: master_data.party_contact.list_sensitive
+    moduleId: master-data
+    permission: master_data.party_contact_sensitive_read
+  - id: master_data.party_contact.get_sensitive_primary
+    moduleId: master-data
+    permission: master_data.party_contact_sensitive_read
   - id: master_data.party_relationship.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.item_uom.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_uom.get_default_sales
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_uom.get_default_purchase
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_alias.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item.find_by_alias
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item.list_by_alias
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item.find_by_barcode
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item.find_by_external_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.party.find_by_external_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.party_read
   - id: master_data.warehouse.find_by_external_id
     moduleId: master-data
     permission: master_data.read
   - id: master_data.item_template.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_template.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_template.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_template_attribute.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_template_attribute_option.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_variant.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_variant.list_by_template
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_variant_attribute_value.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.item_variant.configuration.get
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.item_read
   - id: master_data.change_request.get_by_id
     moduleId: master-data
     permission: master_data.read
@@ -834,28 +870,28 @@ queries:
     permission: master_data.read
   - id: master_data.ref.country.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.currency.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.language.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.time_zone.get_by_iana
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.uom.get_by_id
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.uom.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.uom.list
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.ref.uom_dimension.get_by_code
     moduleId: master-data
-    permission: master_data.read
+    permission: master_data.reference_read
   - id: master_data.search.query
     moduleId: master-data
     permission: master_data.read

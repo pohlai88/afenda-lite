@@ -2377,7 +2377,18 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					eligibilities.push(eligibility);
 				}
 			}
-			eligibilities.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+			eligibilities.sort((a, b) => {
+				const expiresCompare = (a.expiresOn ?? "").localeCompare(
+					b.expiresOn ?? "",
+				);
+				if (expiresCompare !== 0) {
+					return expiresCompare;
+				}
+				const issuedCompare = b.issuedOn.localeCompare(a.issuedOn);
+				return issuedCompare !== 0
+					? issuedCompare
+					: a.employeeId.localeCompare(b.employeeId);
+			});
 			const totalCount = eligibilities.length;
 			const offset = (input.page - 1) * input.pageSize;
 			return ok({

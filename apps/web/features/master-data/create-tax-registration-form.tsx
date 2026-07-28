@@ -1,6 +1,5 @@
 "use client";
 
-import { TAX_REGISTRATION_TYPES } from "@afenda/master-data/types";
 import {
 	Alert,
 	AlertDescription,
@@ -32,6 +31,7 @@ type CreateTaxRegistrationFormProps = {
 	canManage: boolean;
 	parties: PartyOption[];
 	countryCodes: readonly string[];
+	registrationTypes: readonly string[];
 };
 
 /**
@@ -41,6 +41,7 @@ export function CreateTaxRegistrationForm({
 	canManage,
 	parties,
 	countryCodes,
+	registrationTypes,
 }: CreateTaxRegistrationFormProps) {
 	const [state, formAction, pending] = useActionState(
 		createTaxRegistrationAction,
@@ -85,8 +86,8 @@ export function CreateTaxRegistrationForm({
 				<Alert role="status">
 					<AlertTitle>Tax registration created</AlertTitle>
 					<AlertDescription>
-						{state.data.taxRegistration.registrationType} ·{" "}
-						{state.data.taxRegistration.registrationNumber} (draft).
+						{state.data.taxRegistration.taxType} ·{" "}
+						{state.data.taxRegistration.maskedRegistrationNumber} (draft).
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -144,7 +145,7 @@ export function CreateTaxRegistrationForm({
 					disabled={pending}
 					defaultValue="vat_gst"
 				>
-					{TAX_REGISTRATION_TYPES.map((type) => (
+					{registrationTypes.map((type) => (
 						<NativeSelectOption key={type} value={type}>
 							{type}
 						</NativeSelectOption>

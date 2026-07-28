@@ -4,6 +4,8 @@ import { defineConfig, mergeConfig } from "vitest/config";
 import {
 	humanResourcesParityIncludes,
 	humanResourcesRoot,
+	masterDataParityIncludes,
+	masterDataRoot,
 	nodeProject,
 	nodeProjectWithServerOnly,
 	repoRoot,
@@ -22,6 +24,12 @@ const humanResourcesUnitProject = nodeProject(
 	"human-resources-unit",
 	humanResourcesRoot,
 );
+
+const masterDataUnitProject = nodeProjectWithServerOnly(
+	"master-data",
+	masterDataRoot,
+);
+masterDataUnitProject.test.exclude = masterDataParityIncludes;
 
 export default mergeConfig(
 	sharedVitestConfig,
@@ -73,10 +81,7 @@ export default mergeConfig(
 					"events",
 					path.join(repoRoot, "packages/data-plane/events"),
 				),
-				nodeProjectWithServerOnly(
-					"master-data",
-					path.join(repoRoot, "packages/erp/master-data"),
-				),
+				masterDataUnitProject,
 				nodeProjectWithServerOnly(
 					"sales",
 					path.join(repoRoot, "packages/erp/sales"),

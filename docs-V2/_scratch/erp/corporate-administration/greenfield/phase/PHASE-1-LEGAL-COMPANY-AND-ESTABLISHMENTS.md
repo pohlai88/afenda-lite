@@ -25,7 +25,7 @@
 | CA-1.2 | Effective legal names and legal forms | CA-1.1 | PARTIAL |
 | CA-1.3 | Corporate identifiers, financial years and registered activities | CA-1.2 | PARTIAL |
 | CA-1.4 | Registered offices, legal establishments and premises | CA-1.3 | PARTIAL |
-| CA-1.5 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | OPEN |
+| CA-1.5 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | PARTIAL |
 
 ## CA-1.1 — Legal-company registry and jurisdiction profile
 
@@ -337,7 +337,7 @@ Legal presence, registered addresses and physical premises are separately modele
 
 ## CA-1.5 — Company status, financial lifecycle and Phase 1 journey
 
-**Status:** `OPEN`  
+**Status:** `PARTIAL`
 **Depends on:** CA-1.4  
 **Goal:** Close legal-company lifecycle with controlled activation, suspension, strike-off, liquidation, dissolution, restoration and archival.
 

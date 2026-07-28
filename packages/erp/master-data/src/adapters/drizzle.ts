@@ -22,4 +22,5 @@ export {
 export {
 	createDrizzleMasterDataStore,
 	DrizzleMasterDataStore,
+	type DrizzleMasterDataStoreOptions,
 } from "../drizzle-store";

@@ -44,14 +44,14 @@ import {
 } from "@afenda/db";
 import { ok } from "@afenda/errors/result";
 import {
-	findTaxRegistrationsByParty,
+	findSensitiveTaxRegistrationsByParty,
 	getPartyAddressById,
 	getRefCountryByCode,
 	getRefCurrencyByCode,
 	getRefLanguageByCode,
-	getTaxRegistrationById,
+	getSensitiveTaxRegistration,
 	listPartyAddresses,
-	listTaxRegistrations,
+	listSensitiveTaxRegistrations,
 	normalizeTaxRegistrationNumber,
 } from "@afenda/master-data";
 import { createCorporateAdministrationAuthorizationPort } from "@/lib/erp/corporate-administration-authorization-port";
@@ -293,7 +293,7 @@ const addressReferences: AddressReferencePort = {
 
 const taxRegistrations: TaxRegistrationReadPort = {
 	getTaxRegistrationById: async (input) => {
-		const result = await getTaxRegistrationById(
+		const result = await getSensitiveTaxRegistration(
 			{
 				organizationId: input.organizationId,
 				actorUserId: "system-ca-tax-reference",
@@ -305,7 +305,7 @@ const taxRegistrations: TaxRegistrationReadPort = {
 		return ok(result.data === null ? null : toTaxReadModel(result.data));
 	},
 	findTaxRegistrationsForParty: async (input) => {
-		const result = await findTaxRegistrationsByParty(
+		const result = await findSensitiveTaxRegistrationsByParty(
 			{
 				organizationId: input.organizationId,
 				actorUserId: "system-ca-tax-reference",
@@ -321,7 +321,7 @@ const taxRegistrations: TaxRegistrationReadPort = {
 			input.normalizedRegistrationNumber,
 		);
 		if (!normalized.ok) return ok(null);
-		const result = await listTaxRegistrations(
+		const result = await listSensitiveTaxRegistrations(
 			{
 				organizationId: input.organizationId,
 				actorUserId: "system-ca-tax-reference",
@@ -334,9 +334,9 @@ const taxRegistrations: TaxRegistrationReadPort = {
 		const duplicate =
 			result.data.find(
 				(row) =>
-					row.jurisdictionCountryId === input.jurisdictionCode &&
-					row.registrationType === input.registrationType &&
-					row.normalizedRegistrationNumber ===
+					row.countryId === input.jurisdictionCode &&
+					row.taxType === input.registrationType &&
+					normalizedTaxRegistrationNumber(row.registrationNumber) ===
 						normalized.data.normalizedRegistrationNumber,
 			) ?? null;
 		return ok(duplicate === null ? null : toTaxReadModel(duplicate));
@@ -441,32 +441,43 @@ function toTaxReadModel(input: {
 	id: string;
 	organizationId: string;
 	partyId: string;
-	jurisdictionCountryId: string;
-	registrationType: string;
+	countryId: string;
+	taxType: string;
 	registrationNumber: string;
-	normalizedRegistrationNumber: string;
 	status: string;
 	validFrom: Date | null;
-	validTo: Date | null;
+	validUntil: Date | null;
 }) {
 	return {
 		id: input.id,
 		organizationId: organizationIdSchema.parse(input.organizationId),
 		partyId: input.partyId,
-		jurisdictionCode: input.jurisdictionCountryId,
-		registrationType: input.registrationType,
+		jurisdictionCode: input.countryId,
+		registrationType: input.taxType,
 		displayRegistrationNumber: input.registrationNumber,
-		normalizedRegistrationNumber: input.normalizedRegistrationNumber,
+		normalizedRegistrationNumber: normalizedTaxRegistrationNumber(
+			input.registrationNumber,
+		),
 		status: input.status,
 		effectiveFrom:
 			input.validFrom === null
 				? null
 				: canonicalDateSchema.parse(input.validFrom.toISOString().slice(0, 10)),
 		effectiveTo:
-			input.validTo === null
+			input.validUntil === null
 				? null
-				: canonicalDateSchema.parse(input.validTo.toISOString().slice(0, 10)),
+				: canonicalDateSchema.parse(
+						input.validUntil.toISOString().slice(0, 10),
+					),
 	};
+}
+
+function normalizedTaxRegistrationNumber(value: string): string {
+	const normalized = normalizeTaxRegistrationNumber(value);
+	if (!normalized.ok) {
+		throw new Error("Invalid tax registration projection");
+	}
+	return normalized.data.normalizedRegistrationNumber;
 }
 
 export async function listCorporateAdministrationActiveOrganizationParties(input: {

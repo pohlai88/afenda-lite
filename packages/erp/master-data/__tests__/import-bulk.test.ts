@@ -3,6 +3,10 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { upsertPartiesByCode, validatePartyImportBatch } from "../src";
 import { createParty } from "../src/capabilities/core-organization-masters/party";
+import {
+	hashImportPayload,
+	hashImportRow,
+} from "../src/capabilities/data-governance-workflows/import-idempotency";
 import { createMasterDataTestHarness } from "./helpers/harness";
 
 function ctx(organizationId = "org-import") {
@@ -24,6 +28,13 @@ function applyBase(organizationId = "org-import") {
 }
 
 describe("@afenda/master-data import bulk", () => {
+	it("hashes canonical payloads independently of object key order", () => {
+		expect(hashImportRow({ code: "A", nested: { b: 2, a: 1 } })).toBe(
+			hashImportRow({ nested: { a: 1, b: 2 }, code: "A" }),
+		);
+		expect(hashImportRow({ code: "A" })).not.toBe(hashImportRow({ code: "B" }));
+	});
+
 	it("dry-run reports create/update/unchanged without writing", async () => {
 		const { options, store } = createMasterDataTestHarness();
 
@@ -395,7 +406,7 @@ describe("@afenda/master-data import bulk", () => {
 				rows: [
 					{
 						code: "REPLAY1",
-						name: "Different Name Should Not Apply",
+						name: "Replay Co",
 						partyKind: "organization",
 					},
 				],
@@ -410,6 +421,208 @@ describe("@afenda/master-data import bulk", () => {
 
 		const party = await store.getPartyByCode("org-import", "REPLAY1");
 		expect(party.ok && party.data?.name === "Replay Co").toBe(true);
+	});
+
+	it("rejects an idempotency key reused with a different payload", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const idempotencyKey = "batch-key-conflict";
+		const first = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				idempotencyKey,
+				rows: [
+					{
+						code: "REPLAY2",
+						name: "Original Name",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(first.ok).toBe(true);
+
+		const conflicting = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				idempotencyKey,
+				rows: [
+					{
+						code: "REPLAY2",
+						name: "Changed Payload",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(conflicting.ok).toBe(false);
+		if (conflicting.ok) return;
+		expect(conflicting.details).toMatchObject({
+			reason: "MASTER_IDEMPOTENCY_CONFLICT",
+			errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
+		});
+
+		const party = await store.getPartyByCode("org-import", "REPLAY2");
+		expect(party.ok && party.data?.name === "Original Name").toBe(true);
+	});
+
+	it("resumes an expired lease without rerunning an applied row", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const batchId = randomUUID();
+		const idempotencyKey = "batch-key-recovery";
+		const row = {
+			code: "RECOVER1",
+			name: "Recovered Co",
+			partyKind: "organization" as const,
+		};
+		const payloadHash = hashImportPayload({
+			operationType: "upsert_party_by_code",
+			entityType: "party",
+			sourceSystem: "erp-test",
+			mode: "create_or_update",
+			rows: [row],
+		});
+		const claimed = await store.claimImportBatch({
+			id: batchId,
+			organizationId: "org-import",
+			idempotencyKey,
+			payloadHash,
+			operationType: "upsert_party_by_code",
+			entityType: "party",
+			sourceSystem: "erp-test",
+			mode: "create_or_update",
+			actorUserId: "user-1",
+			correlationId: randomUUID(),
+			rows: [
+				{
+					id: randomUUID(),
+					sourceRowNumber: 1,
+					payloadHash: hashImportRow(row),
+					normalizedPayload: row,
+				},
+			],
+		});
+		expect(claimed.ok).toBe(true);
+		const leaseOwner = randomUUID();
+		const leased = await store.acquireImportBatchLease({
+			organizationId: "org-import",
+			batchId,
+			leaseOwner,
+			leaseExpiresAt: new Date(Date.now() - 1_000),
+		});
+		expect(leased.ok).toBe(true);
+		const initiallyApplied = await createParty(
+			{
+				...ctx(),
+				code: row.code,
+				name: row.name,
+				partyKind: row.partyKind,
+			},
+			{
+				...options,
+				importMutation: {
+					organizationId: "org-import",
+					batchId,
+					sourceRowNumber: 1,
+					leaseOwner,
+					intendedOperation: "create",
+					matchedEntityId: null,
+				},
+			},
+		);
+		expect(initiallyApplied.ok).toBe(true);
+
+		const resumed = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				idempotencyKey,
+				rows: [row],
+			},
+			options,
+		);
+		expect(resumed.ok).toBe(true);
+		if (!resumed.ok) return;
+		expect(resumed.data.created).toBe(1);
+		const parties = await store.listParties({
+			organizationId: "org-import",
+			page: 1,
+			pageSize: 100,
+		});
+		expect(
+			parties.ok && parties.data.filter((party) => party.code === row.code),
+		).toHaveLength(1);
+		const ledger = await store.listImportBatchRows("org-import", batchId);
+		expect(ledger.ok && ledger.data[0]?.status).toBe("applied");
+	});
+
+	it("creates a party and its external ID as one import-row operation", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const applied = await upsertPartiesByCode(
+			{
+				...applyBase(),
+				rows: [
+					{
+						code: "EXTIMP1",
+						name: "External Import Co",
+						partyKind: "organization",
+						externalId: {
+							sourceSystem: "legacy.erp",
+							externalIdType: "customer",
+							externalValue: " Customer-42 ",
+							caseSensitivity: "insensitive",
+						},
+					},
+				],
+			},
+			options,
+		);
+		expect(applied.ok).toBe(true);
+		const party = await store.findPartyByExternalId({
+			organizationId: "org-import",
+			sourceSystem: "legacy.erp",
+			externalIdType: "customer",
+			normalizedValue: "CUSTOMER-42",
+			caseSensitivity: "insensitive",
+		});
+		expect(party.ok && party.data?.code).toBe("EXTIMP1");
+	});
+
+	it("allows only one executor for concurrent matching claims", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const request = {
+			...ctx(),
+			dryRun: false as const,
+			approved: true as const,
+			idempotencyKey: "batch-key-concurrent",
+			rows: [
+				{
+					code: "CONCURRENT1",
+					name: "Concurrent Co",
+					partyKind: "organization" as const,
+				},
+			],
+		};
+		const results = await Promise.all([
+			upsertPartiesByCode(request, options),
+			upsertPartiesByCode(request, options),
+		]);
+		expect(results.some((result) => result.ok)).toBe(true);
+		const parties = await store.listParties({
+			organizationId: "org-import",
+			page: 1,
+			pageSize: 100,
+		});
+		expect(
+			parties.ok &&
+				parties.data.filter((party) => party.code === "CONCURRENT1"),
+		).toHaveLength(1);
 	});
 
 	it("honors import mode create_only and update_existing", async () => {

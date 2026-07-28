@@ -19,7 +19,7 @@ import {
 	createDrizzleCorporateAdministrationOutboxPort,
 	createDrizzleCorporateAdministrationTransactionPort,
 } from "@afenda/corporate-administration/adapters/drizzle";
-import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/adapters/memory";
+import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/testing";
 import {
 	caCompanyJurisdictionProfile,
 	caLegalCompany,

@@ -21,6 +21,14 @@ function isDocumentKind(value: string): value is DocumentKind {
 	return DOCUMENT_KIND_SET.has(value);
 }
 
+function isSafePathSegment(value: string): boolean {
+	if (value.length === 0 || /[/?#\\]/u.test(value)) return false;
+	return !Array.from(value).some((character) => {
+		const codePoint = character.codePointAt(0);
+		return codePoint !== undefined && (codePoint <= 31 || codePoint === 127);
+	});
+}
+
 function parseQuery(query: string | undefined): {
 	version: string | null;
 	checksum: string | null;
@@ -132,9 +140,9 @@ function parseVaultReference(reference: string): Result<{
 	const query = match[4] ?? url.search.replace(/^\?/, "");
 
 	if (
-		organizationId.length === 0 ||
-		kindRaw.length === 0 ||
-		documentId.length === 0
+		!isSafePathSegment(organizationId) ||
+		!isSafePathSegment(kindRaw) ||
+		!isSafePathSegment(documentId)
 	) {
 		return fail(
 			"VALIDATION_ERROR",

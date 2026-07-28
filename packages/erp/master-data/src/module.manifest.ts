@@ -56,6 +56,8 @@ import {
 	MASTER_DATA_PERMISSION_ITEM_UPDATE,
 	MASTER_DATA_PERMISSION_PARTY_ACTIVATE,
 	MASTER_DATA_PERMISSION_PARTY_ARCHIVE,
+	MASTER_DATA_PERMISSION_PARTY_CONTACT_READ,
+	MASTER_DATA_PERMISSION_PARTY_CONTACT_SENSITIVE_READ,
 	MASTER_DATA_PERMISSION_PARTY_CREATE,
 	MASTER_DATA_PERMISSION_PARTY_MERGE,
 	MASTER_DATA_PERMISSION_PARTY_READ,
@@ -67,6 +69,8 @@ import {
 	MASTER_DATA_PERMISSION_REFERENCE_READ,
 	MASTER_DATA_PERMISSION_SEARCH_REBUILD,
 	MASTER_DATA_PERMISSION_TAX_REGISTRATION_MANAGE,
+	MASTER_DATA_PERMISSION_TAX_REGISTRATION_READ,
+	MASTER_DATA_PERMISSION_TAX_REGISTRATION_SENSITIVE_READ,
 	MASTER_DATA_PERMISSION_TEMPLATE_MANAGE,
 	MASTER_DATA_PERMISSION_VARIANT_MANAGE,
 	MASTER_DATA_PERMISSION_WAREHOUSE_MANAGE,
@@ -263,14 +267,29 @@ function coreQueryPermission(
 		return MASTER_DATA_PERMISSION_DUPLICATE_REVIEW;
 	}
 	if (
+		query === "master_data.tax_registration.get_sensitive" ||
+		query === "master_data.tax_registration.list_sensitive" ||
+		query === "master_data.tax_registration.find_sensitive_by_party"
+	) {
+		return MASTER_DATA_PERMISSION_TAX_REGISTRATION_SENSITIVE_READ;
+	}
+	if (query.startsWith("master_data.tax_registration.")) {
+		return MASTER_DATA_PERMISSION_TAX_REGISTRATION_READ;
+	}
+	if (
+		query === "master_data.party_contact.list_sensitive" ||
+		query === "master_data.party_contact.get_sensitive_primary"
+	) {
+		return MASTER_DATA_PERMISSION_PARTY_CONTACT_SENSITIVE_READ;
+	}
+	if (query.startsWith("master_data.party_contact.")) {
+		return MASTER_DATA_PERMISSION_PARTY_CONTACT_READ;
+	}
+	if (
 		query.startsWith("master_data.party.") ||
 		query.startsWith("master_data.party_role.") ||
 		query.startsWith("master_data.party_address.") ||
-		query.startsWith("master_data.party_contact.") ||
-		query.startsWith("master_data.party_relationship.") ||
-		query === "master_data.tax_registration.get_by_id" ||
-		query === "master_data.tax_registration.list" ||
-		query === "master_data.tax_registration.find_by_party"
+		query.startsWith("master_data.party_relationship.")
 	) {
 		return MASTER_DATA_PERMISSION_PARTY_READ;
 	}

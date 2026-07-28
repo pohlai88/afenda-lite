@@ -107,6 +107,73 @@ const NOTIFICATION_TEMPLATES: Partial<
 	},
 };
 
+const WORK_ITEM_DEFINITIONS: Partial<
+	Record<
+		HumanResourcesEventType,
+		{
+			kind: "approval" | "task" | "reminder" | "escalation";
+			title: string;
+			priority: "MEDIUM" | "HIGH";
+		}
+	>
+> = {
+	"human-resources.leave.requested.v1": {
+		kind: "approval",
+		title: "Review leave request",
+		priority: "MEDIUM",
+	},
+	"human-resources.time.timesheet.submitted.v1": {
+		kind: "approval",
+		title: "Review submitted timesheet",
+		priority: "MEDIUM",
+	},
+	"human-resources.onboarding.started.v1": {
+		kind: "task",
+		title: "Complete onboarding activities",
+		priority: "HIGH",
+	},
+	"human-resources.offboarding.started.v1": {
+		kind: "task",
+		title: "Complete offboarding activities",
+		priority: "HIGH",
+	},
+	"human-resources.learning-assignment.created.v1": {
+		kind: "task",
+		title: "Complete learning assignment",
+		priority: "MEDIUM",
+	},
+	"human-resources.time.exception.created.v1": {
+		kind: "task",
+		title: "Resolve attendance exception",
+		priority: "HIGH",
+	},
+	"human-resources.employee-document.nearing-expiry.v1": {
+		kind: "reminder",
+		title: "Renew employee document",
+		priority: "HIGH",
+	},
+	"human-resources.policy-acknowledgement.outstanding.v1": {
+		kind: "reminder",
+		title: "Acknowledge policy",
+		priority: "HIGH",
+	},
+	"human-resources.certification.expiring.v1": {
+		kind: "reminder",
+		title: "Renew expiring certification",
+		priority: "HIGH",
+	},
+	"human-resources.employee-document.expired.v1": {
+		kind: "escalation",
+		title: "Resolve expired employee document",
+		priority: "HIGH",
+	},
+	"human-resources.work-eligibility.expired.v1": {
+		kind: "escalation",
+		title: "Resolve expired work eligibility",
+		priority: "HIGH",
+	},
+};
+
 export type HumanResourcesWorkflowFact = {
 	kind: "workflow_transition";
 	eventId: string;
@@ -158,10 +225,26 @@ export type HumanResourcesReportingFact = {
 	requiredPermission: "human-resources.employee.read";
 };
 
+export type HumanResourcesWorkItemFact = {
+	kind: "approval" | "task" | "reminder" | "escalation";
+	factVersion: 1;
+	eventId: string;
+	organizationId: string;
+	correlationId: string;
+	targetUserId: string;
+	entityType: string;
+	entityId: string;
+	title: string;
+	priority: "MEDIUM" | "HIGH";
+	dueOn: string | null;
+	deduplicationKey: string;
+};
+
 export type HumanResourcesPlatformFacts = {
 	workflow: HumanResourcesWorkflowFact | null;
 	identity: HumanResourcesIdentityLifecycleFact | null;
 	notification: HumanResourcesNotificationIntent | null;
+	workItems: readonly HumanResourcesWorkItemFact[];
 	reporting: HumanResourcesReportingFact;
 };
 
@@ -186,6 +269,22 @@ function recipientFromEvent(
 		);
 	}
 	return ok(candidate.trim());
+}
+
+function dueOnFromEvent(event: DomainEvent): Result<string | null> {
+	const candidate = event.metadata?.dueOn;
+	if (candidate === undefined) return ok(null);
+	if (
+		typeof candidate !== "string" ||
+		!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(candidate) ||
+		Number.isNaN(Date.parse(`${candidate}T00:00:00.000Z`))
+	) {
+		return fail(
+			"VALIDATION_ERROR",
+			"Human Resources work-item due date metadata is invalid",
+		);
+	}
+	return ok(candidate);
 }
 
 export function projectHumanResourcesPlatformFacts(
@@ -219,6 +318,7 @@ export function projectHumanResourcesPlatformFacts(
 	const identityLifecycle = IDENTITY_LIFECYCLES[eventType];
 	const notificationTemplate = NOTIFICATION_TEMPLATES[eventType];
 	let notification: HumanResourcesNotificationIntent | null = null;
+	const workItems: HumanResourcesWorkItemFact[] = [];
 
 	if (notificationTemplate !== undefined) {
 		const recipient = recipientFromEvent(event, parsed.data.actorId);
@@ -236,6 +336,28 @@ export function projectHumanResourcesPlatformFacts(
 			body: notificationTemplate.body,
 			deduplicationKey: `event:${event.id}`,
 		};
+	}
+
+	const workItemDefinition = WORK_ITEM_DEFINITIONS[eventType];
+	if (workItemDefinition !== undefined) {
+		const target = recipientFromEvent(event, parsed.data.actorId);
+		if (!target.ok) return target;
+		const dueOn = dueOnFromEvent(event);
+		if (!dueOn.ok) return dueOn;
+		workItems.push({
+			kind: workItemDefinition.kind,
+			factVersion: 1,
+			eventId: event.id,
+			organizationId: event.organizationId,
+			correlationId: event.correlationId,
+			targetUserId: target.data,
+			entityType: parsed.data.entityType,
+			entityId: parsed.data.entityId,
+			title: workItemDefinition.title,
+			priority: workItemDefinition.priority,
+			dueOn: dueOn.data,
+			deduplicationKey: `event:${event.id}:work-item`,
+		});
 	}
 
 	return ok({
@@ -270,6 +392,7 @@ export function projectHumanResourcesPlatformFacts(
 						effectiveFactVersion: 1,
 					},
 		notification,
+		workItems,
 		reporting: {
 			kind: "reporting_fact",
 			factVersion: 1,

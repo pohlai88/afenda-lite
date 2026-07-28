@@ -697,6 +697,28 @@ tables:
     writeOwner: "@afenda/human-resources"
     kind: erp
 
+  - table: hr_payroll_handoff_delivery
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_import_checkpoint
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_import_audit
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_import_error_artifact
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_reliability_work_item
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_reliability_dead_letter
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_connector_cursor
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+
   - table: payroll_calendar
     writeOwner: "@afenda/payroll"
     kind: erp

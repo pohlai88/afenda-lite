@@ -1787,7 +1787,10 @@ export function createMemoryComplianceMethods(
 					if (expiresCompare !== 0) {
 						return expiresCompare;
 					}
-					return b.issuedOn.localeCompare(a.issuedOn);
+					const issuedCompare = b.issuedOn.localeCompare(a.issuedOn);
+					return issuedCompare !== 0
+						? issuedCompare
+						: a.employeeId.localeCompare(b.employeeId);
 				});
 
 			const totalCount = filtered.length;

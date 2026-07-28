@@ -3,7 +3,10 @@ import type { SearchStore } from "@afenda/search";
 import type { MasterAuthorizationPort } from "./authorization";
 import { createUnavailableDependencyInspector } from "./capabilities/core-organization-masters/dependency";
 import type { OrganizationDimensionStore } from "./capabilities/core-organization-masters/organization-dimension-store";
-import type { MasterDataStore } from "./capabilities/core-organization-masters/store";
+import type {
+	ImportMutationContext,
+	MasterDataStore,
+} from "./capabilities/core-organization-masters/store";
 import type { MutationPorts } from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveMasterDataStore } from "./resolve-store";
@@ -18,6 +21,8 @@ export type MasterCommandOptions = {
 	searchStore?: SearchStore;
 	/** Composition-root injected — never import `@afenda/admin` here. */
 	authorization?: MasterAuthorizationPort;
+	/** Package-internal import row context; never accept this from a public boundary. */
+	importMutation?: ImportMutationContext;
 };
 
 export type MasterQueryOptions = Pick<

@@ -106,7 +106,10 @@ export async function createWarehouse(
 			addressPostalCode: parsed.data.addressPostalCode,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterWarehouseMutation(result, options);
 }
@@ -155,7 +158,10 @@ export async function updateWarehouse(
 			addressPostalCode: parsed.data.addressPostalCode,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterWarehouseMutation(result, options);
 }

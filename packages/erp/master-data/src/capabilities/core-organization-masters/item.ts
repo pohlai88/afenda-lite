@@ -110,7 +110,10 @@ export async function createItem(
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterItemMutation(result, options);
 }
@@ -161,7 +164,10 @@ export async function updateItem(
 			serviceIndicator: parsed.data.serviceIndicator,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterItemMutation(result, options);
 }

@@ -1,5 +1,5 @@
 import { parseHrDisplayPreferences } from "@/features/human-resources/display-preferences";
-import { OperationsHrShell } from "@/features/human-resources/human-resources-shell";
+import { HrOperationsWorkspaceServer } from "@/features/human-resources/operations/hr-operations-workspace-server";
 import { parseHrPage } from "@/features/human-resources/pagination";
 
 type PageProps = {
@@ -15,7 +15,7 @@ export default async function OperationsHumanResourcesPage({
 }: PageProps) {
 	const params = await searchParams;
 	return (
-		<OperationsHrShell
+		<HrOperationsWorkspaceServer
 			page={parseHrPage(params.page)}
 			preferences={parseHrDisplayPreferences(params)}
 		/>

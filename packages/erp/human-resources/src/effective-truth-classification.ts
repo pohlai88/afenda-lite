@@ -867,6 +867,60 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 			"Phase 3 adoption point-lineage — acknowledgement effective point",
 	}),
 	row({
+		table: "hr_payroll_handoff_delivery",
+		category: "transactional-state-machine",
+		domain: "compensation",
+		cluster: "B",
+		rationale:
+			"Approved payroll handoff delivery, feedback, retry and correction supersession state",
+	}),
+	row({
+		table: "hr_bulk_import_checkpoint",
+		category: "transactional-state-machine",
+		domain: "core",
+		cluster: "A",
+		rationale: "Resumable bulk-import progress with compare-and-swap versions",
+	}),
+	row({
+		table: "hr_bulk_import_audit",
+		category: "append-only-operational-fact",
+		domain: "core",
+		cluster: "A",
+		rationale: "Immutable ordered bulk-import execution evidence",
+	}),
+	row({
+		table: "hr_bulk_import_error_artifact",
+		category: "append-only-operational-fact",
+		domain: "core",
+		cluster: "A",
+		rationale:
+			"Immutable downloadable bulk rejection evidence by checkpoint version",
+	}),
+	row({
+		table: "hr_reliability_work_item",
+		category: "transactional-state-machine",
+		domain: "core",
+		cluster: "A",
+		rationale:
+			"Durable integration execution, retry, success and terminal state",
+	}),
+	row({
+		table: "hr_reliability_dead_letter",
+		category: "transactional-state-machine",
+		domain: "core",
+		cluster: "A",
+		rationale:
+			"Terminal integration failure evidence with one replay successor",
+	}),
+	row({
+		table: "hr_connector_cursor",
+		category: "versioned-current-fact",
+		domain: "core",
+		cluster: "A",
+		rationale:
+			"Connector stream recovery position with compare-and-swap versions",
+	}),
+	row({
 		table: "hr_work_calendar",
 		category: "effective-definition",
 		domain: "time",

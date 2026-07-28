@@ -1,0 +1,423 @@
+import {
+	and,
+	db,
+	eq,
+	hrConnectorCursor,
+	hrReliabilityDeadLetter,
+	hrReliabilityWorkItem,
+	runNeonHttpTransaction,
+} from "@afenda/db";
+import { fail, ok, type Result } from "@afenda/errors/result";
+
+import type { ReliabilityStorePort } from "../../reliability/ports";
+import type {
+	ConnectorCursor,
+	ReliabilityDeadLetterRecord,
+	ReliabilityWorkItem,
+	ReliabilityWorkStatus,
+} from "../../reliability/types";
+import {
+	isPostgresUniqueViolation,
+	mapPersistenceFailure,
+} from "../../shared/persistence-errors";
+
+type WorkRow = typeof hrReliabilityWorkItem.$inferSelect;
+type DeadLetterRow = typeof hrReliabilityDeadLetter.$inferSelect;
+type CursorRow = typeof hrConnectorCursor.$inferSelect;
+
+const WORK_STATUSES = new Set<ReliabilityWorkStatus>([
+	"pending",
+	"succeeded",
+	"dead_lettered",
+]);
+
+function validDate(value: Date, field: string): Result<Date> {
+	return Number.isNaN(value.getTime())
+		? fail("INTERNAL_ERROR", `Reliability ${field} is invalid`)
+		: ok(value);
+}
+
+function mapWork(row: WorkRow): Result<ReliabilityWorkItem> {
+	if (!WORK_STATUSES.has(row.status as ReliabilityWorkStatus)) {
+		return fail("INTERNAL_ERROR", "Reliability work status is invalid");
+	}
+	const createdAt = validDate(row.createdAt, "createdAt");
+	if (!createdAt.ok) return createdAt;
+	const updatedAt = validDate(row.updatedAt, "updatedAt");
+	if (!updatedAt.ok) return updatedAt;
+	return ok({
+		id: row.id,
+		organizationId: row.organizationId,
+		connector: row.connector,
+		operation: row.operation,
+		correlationId: row.correlationId,
+		idempotencyKey: row.idempotencyKey,
+		requestFingerprint: row.requestFingerprint,
+		status: row.status as ReliabilityWorkStatus,
+		version: row.version,
+		attemptCount: row.attemptCount,
+		nextAttemptAt: row.nextAttemptAt,
+		lastAttemptAt: row.lastAttemptAt,
+		lastErrorCode: row.lastErrorCode,
+		lastErrorMessage: row.lastErrorMessage,
+		receiptId: row.receiptId,
+		createdAt: createdAt.data,
+		updatedAt: updatedAt.data,
+	});
+}
+
+function mapDeadLetter(
+	row: DeadLetterRow,
+): Result<ReliabilityDeadLetterRecord> {
+	const failedAt = validDate(row.failedAt, "failedAt");
+	if (!failedAt.ok) return failedAt;
+	return ok({
+		id: row.id,
+		organizationId: row.organizationId,
+		workItemId: row.workItemId,
+		connector: row.connector,
+		operation: row.operation,
+		correlationId: row.correlationId,
+		idempotencyKey: row.idempotencyKey,
+		requestFingerprint: row.requestFingerprint,
+		attemptCount: row.attemptCount,
+		errorCode: row.errorCode,
+		errorMessage: row.errorMessage,
+		failedAt: failedAt.data,
+		replayedByWorkItemId: row.replayedByWorkItemId,
+	});
+}
+
+function mapCursor(row: CursorRow): Result<ConnectorCursor> {
+	const updatedAt = validDate(row.updatedAt, "cursor updatedAt");
+	return updatedAt.ok
+		? ok({
+				organizationId: row.organizationId,
+				connector: row.connector,
+				stream: row.stream,
+				cursor: row.cursor,
+				version: row.version,
+				updatedAt: updatedAt.data,
+			})
+		: updatedAt;
+}
+
+function workValues(item: ReliabilityWorkItem) {
+	return {
+		id: item.id,
+		organizationId: item.organizationId,
+		connector: item.connector,
+		operation: item.operation,
+		correlationId: item.correlationId,
+		idempotencyKey: item.idempotencyKey,
+		requestFingerprint: item.requestFingerprint,
+		status: item.status,
+		version: item.version,
+		attemptCount: item.attemptCount,
+		nextAttemptAt: item.nextAttemptAt,
+		lastAttemptAt: item.lastAttemptAt,
+		lastErrorCode: item.lastErrorCode,
+		lastErrorMessage: item.lastErrorMessage,
+		receiptId: item.receiptId,
+		createdAt: item.createdAt,
+		updatedAt: item.updatedAt,
+	};
+}
+
+async function getWork(input: {
+	organizationId: string;
+	workItemId: string;
+}): Promise<Result<ReliabilityWorkItem | null>> {
+	const rows = await db
+		.select()
+		.from(hrReliabilityWorkItem)
+		.where(
+			and(
+				eq(hrReliabilityWorkItem.organizationId, input.organizationId),
+				eq(hrReliabilityWorkItem.id, input.workItemId),
+			),
+		)
+		.limit(1);
+	return rows[0] ? mapWork(rows[0]) : ok(null);
+}
+
+export function createDrizzleReliabilityStore(): ReliabilityStorePort {
+	return {
+		async findByIdempotencyKey(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(hrReliabilityWorkItem)
+					.where(
+						and(
+							eq(hrReliabilityWorkItem.organizationId, input.organizationId),
+							eq(hrReliabilityWorkItem.connector, input.connector),
+							eq(hrReliabilityWorkItem.idempotencyKey, input.idempotencyKey),
+						),
+					)
+					.limit(1);
+				return rows[0] ? mapWork(rows[0]) : ok(null);
+			} catch (error) {
+				return mapPersistenceFailure(error, "Failed to find reliability work");
+			}
+		},
+		async getWorkItem(input) {
+			try {
+				return await getWork(input);
+			} catch (error) {
+				return mapPersistenceFailure(error, "Failed to get reliability work");
+			}
+		},
+		async createWorkItem(item) {
+			try {
+				const rows = await db
+					.insert(hrReliabilityWorkItem)
+					.values(workValues(item))
+					.returning();
+				return rows[0]
+					? mapWork(rows[0])
+					: fail("INTERNAL_ERROR", "Reliability work insert returned no row");
+			} catch (error) {
+				return isPostgresUniqueViolation(error)
+					? fail("CONFLICT", "Reliability work item already exists")
+					: mapPersistenceFailure(error, "Failed to create reliability work");
+			}
+		},
+		async commitAttempt(input) {
+			const item = input.workItem;
+			if (item.version !== input.expectedVersion + 1) {
+				return fail("CONFLICT", "Reliability work item version conflict");
+			}
+			try {
+				if (input.deadLetter === null) {
+					const rows = await db
+						.update(hrReliabilityWorkItem)
+						.set({
+							status: item.status,
+							version: item.version,
+							attemptCount: item.attemptCount,
+							nextAttemptAt: item.nextAttemptAt,
+							lastAttemptAt: item.lastAttemptAt,
+							lastErrorCode: item.lastErrorCode,
+							lastErrorMessage: item.lastErrorMessage,
+							receiptId: item.receiptId,
+							updatedAt: item.updatedAt,
+						})
+						.where(
+							and(
+								eq(hrReliabilityWorkItem.organizationId, item.organizationId),
+								eq(hrReliabilityWorkItem.id, item.id),
+								eq(hrReliabilityWorkItem.version, input.expectedVersion),
+							),
+						)
+						.returning();
+					return rows[0]
+						? mapWork(rows[0])
+						: fail("CONFLICT", "Reliability work item version conflict");
+				}
+				const dead = input.deadLetter;
+				const [saved] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
+					(sqlTag) => [
+						sqlTag`
+						WITH updated AS (
+							UPDATE hr_reliability_work_item
+							SET status = ${item.status}, version = ${item.version},
+								attempt_count = ${item.attemptCount}, next_attempt_at = ${item.nextAttemptAt},
+								last_attempt_at = ${item.lastAttemptAt}, last_error_code = ${item.lastErrorCode},
+								last_error_message = ${item.lastErrorMessage}, receipt_id = ${item.receiptId},
+								updated_at = ${item.updatedAt}
+							WHERE organization_id = ${item.organizationId} AND id = ${item.id}
+								AND version = ${input.expectedVersion}
+							RETURNING id, organization_id
+						), inserted AS (
+							INSERT INTO hr_reliability_dead_letter (
+								id, organization_id, work_item_id, connector, operation, correlation_id,
+								idempotency_key, request_fingerprint, attempt_count, error_code,
+								error_message, failed_at, replayed_by_work_item_id
+							)
+							SELECT ${dead.id}, updated.organization_id, updated.id, ${dead.connector},
+								${dead.operation}, ${dead.correlationId}, ${dead.idempotencyKey},
+								${dead.requestFingerprint}, ${dead.attemptCount}, ${dead.errorCode},
+								${dead.errorMessage}, ${dead.failedAt}, ${dead.replayedByWorkItemId}
+							FROM updated
+							RETURNING work_item_id AS id
+						)
+						SELECT id FROM inserted
+					`,
+					],
+				);
+				if (!saved[0]) {
+					return fail("CONFLICT", "Reliability work item version conflict");
+				}
+				return await getWork({
+					organizationId: item.organizationId,
+					workItemId: item.id,
+				}).then((result) =>
+					result.ok && result.data
+						? ok(result.data)
+						: fail("INTERNAL_ERROR", "Reliability work readback failed"),
+				);
+			} catch (error) {
+				return isPostgresUniqueViolation(error)
+					? fail("CONFLICT", "Reliability dead letter already exists")
+					: mapPersistenceFailure(
+							error,
+							"Failed to commit reliability attempt",
+						);
+			}
+		},
+		async getDeadLetter(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(hrReliabilityDeadLetter)
+					.where(
+						and(
+							eq(hrReliabilityDeadLetter.organizationId, input.organizationId),
+							eq(hrReliabilityDeadLetter.id, input.deadLetterId),
+						),
+					)
+					.limit(1);
+				return rows[0] ? mapDeadLetter(rows[0]) : ok(null);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Failed to get reliability dead letter",
+				);
+			}
+		},
+		async findDeadLetterByWorkItem(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(hrReliabilityDeadLetter)
+					.where(
+						and(
+							eq(hrReliabilityDeadLetter.organizationId, input.organizationId),
+							eq(hrReliabilityDeadLetter.workItemId, input.workItemId),
+						),
+					)
+					.limit(1);
+				return rows[0] ? mapDeadLetter(rows[0]) : ok(null);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Failed to find reliability dead letter",
+				);
+			}
+		},
+		async createDeadLetterReplay(input) {
+			const item = input.workItem;
+			try {
+				const [created] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
+					(sqlTag) => [
+						sqlTag`
+						WITH eligible AS (
+							SELECT id FROM hr_reliability_dead_letter
+							WHERE id = ${input.deadLetterId}
+								AND organization_id = ${item.organizationId}
+								AND replayed_by_work_item_id IS NULL
+							FOR UPDATE
+						), inserted AS (
+							INSERT INTO hr_reliability_work_item (
+								id, organization_id, connector, operation, correlation_id, idempotency_key,
+								request_fingerprint, status, version, attempt_count, next_attempt_at,
+								last_attempt_at, last_error_code, last_error_message, receipt_id, created_at, updated_at
+							)
+							SELECT ${item.id}, ${item.organizationId}, ${item.connector}, ${item.operation},
+								${item.correlationId}, ${item.idempotencyKey}, ${item.requestFingerprint},
+								${item.status}, ${item.version}, ${item.attemptCount}, ${item.nextAttemptAt},
+								${item.lastAttemptAt}, ${item.lastErrorCode}, ${item.lastErrorMessage},
+								${item.receiptId}, ${item.createdAt}, ${item.updatedAt}
+							FROM eligible RETURNING id
+						), linked AS (
+							UPDATE hr_reliability_dead_letter
+							SET replayed_by_work_item_id = inserted.id
+							FROM inserted
+							WHERE hr_reliability_dead_letter.id = ${input.deadLetterId}
+								AND hr_reliability_dead_letter.organization_id = ${item.organizationId}
+							RETURNING inserted.id
+						)
+						SELECT id FROM linked
+					`,
+					],
+				);
+				if (!created[0]) {
+					return fail("CONFLICT", "Reliability dead letter already replayed");
+				}
+				return await getWork({
+					organizationId: item.organizationId,
+					workItemId: item.id,
+				}).then((result) =>
+					result.ok && result.data
+						? ok(result.data)
+						: fail("INTERNAL_ERROR", "Reliability replay readback failed"),
+				);
+			} catch (error) {
+				return isPostgresUniqueViolation(error)
+					? fail("CONFLICT", "Reliability work item already exists")
+					: mapPersistenceFailure(
+							error,
+							"Failed to replay reliability dead letter",
+						);
+			}
+		},
+		async getCursor(input) {
+			try {
+				const rows = await db
+					.select()
+					.from(hrConnectorCursor)
+					.where(
+						and(
+							eq(hrConnectorCursor.organizationId, input.organizationId),
+							eq(hrConnectorCursor.connector, input.connector),
+							eq(hrConnectorCursor.stream, input.stream),
+						),
+					)
+					.limit(1);
+				return rows[0] ? mapCursor(rows[0]) : ok(null);
+			} catch (error) {
+				return mapPersistenceFailure(error, "Failed to get connector cursor");
+			}
+		},
+		async commitCursor(input) {
+			if (input.cursor.version !== (input.expectedVersion ?? 0) + 1) {
+				return fail("CONFLICT", "Connector cursor version conflict");
+			}
+			try {
+				const rows =
+					input.expectedVersion === null
+						? await db
+								.insert(hrConnectorCursor)
+								.values(input.cursor)
+								.returning()
+						: await db
+								.update(hrConnectorCursor)
+								.set({
+									cursor: input.cursor.cursor,
+									version: input.cursor.version,
+									updatedAt: input.cursor.updatedAt,
+								})
+								.where(
+									and(
+										eq(
+											hrConnectorCursor.organizationId,
+											input.cursor.organizationId,
+										),
+										eq(hrConnectorCursor.connector, input.cursor.connector),
+										eq(hrConnectorCursor.stream, input.cursor.stream),
+										eq(hrConnectorCursor.version, input.expectedVersion),
+									),
+								)
+								.returning();
+				return rows[0]
+					? mapCursor(rows[0])
+					: fail("CONFLICT", "Connector cursor version conflict");
+			} catch (error) {
+				return isPostgresUniqueViolation(error)
+					? fail("CONFLICT", "Connector cursor version conflict")
+					: mapPersistenceFailure(error, "Failed to commit connector cursor");
+			}
+		},
+	};
+}

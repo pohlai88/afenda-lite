@@ -1,1 +1,4 @@
-export { createMemoryCorporateAdministrationLegalCompanyStore } from "../adapters/memory";
+export {
+	createMemoryCorporateAdministrationEstablishmentStore,
+	createMemoryCorporateAdministrationLegalCompanyStore,
+} from "../adapters/memory";

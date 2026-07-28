@@ -19,8 +19,11 @@ import {
 	MASTER_COMMAND_TAX_REGISTRATION_RETIRE,
 	MASTER_COMMAND_TAX_REGISTRATION_UPDATE,
 	MASTER_QUERY_TAX_REGISTRATION_FIND_BY_PARTY,
-	MASTER_QUERY_TAX_REGISTRATION_GET_BY_ID,
+	MASTER_QUERY_TAX_REGISTRATION_FIND_SENSITIVE_BY_PARTY,
+	MASTER_QUERY_TAX_REGISTRATION_GET,
+	MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE,
 	MASTER_QUERY_TAX_REGISTRATION_LIST,
+	MASTER_QUERY_TAX_REGISTRATION_LIST_SENSITIVE,
 	type MasterCommandId,
 } from "../../module-ids";
 import { parseMasterInput } from "../../parse-input";
@@ -40,7 +43,13 @@ import {
 	updateTaxRegistrationInputSchema,
 } from "./schemas";
 import type { MasterDataStore } from "./store";
-import { normalizeTaxRegistrationNumber } from "./tax-registration-number";
+import {
+	normalizeTaxRegistrationNumber,
+	type SensitiveTaxRegistrationProjection,
+	type TaxRegistrationProjection,
+	toSensitiveTaxRegistrationProjection,
+	toTaxRegistrationProjection,
+} from "./tax-registration-number";
 import { isInvalidValidityRange } from "./validity-overlap";
 
 async function assertPartyInOrg(
@@ -122,10 +131,18 @@ function assertValidity(range: {
 	return ok(true);
 }
 
+async function projectTaxRegistrationResult(
+	resultPromise: Promise<Result<TaxRegistration>>,
+): Promise<Result<TaxRegistrationProjection>> {
+	const result = await resultPromise;
+	if (!result.ok) return result;
+	return ok(toTaxRegistrationProjection(result.data));
+}
+
 export async function createTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	const parsed = parseMasterInput(
 		createTaxRegistrationInputSchema,
 		input,
@@ -168,29 +185,31 @@ export async function createTaxRegistration(
 		parsed.data.jurisdictionCountryId,
 	);
 	if (!countryOk.ok) return countryOk;
-	return store.createTaxRegistration(
-		{
-			organizationId: parsed.data.organizationId,
-			partyId: parsed.data.partyId,
-			jurisdictionCountryId: parsed.data.jurisdictionCountryId,
-			registrationType: parsed.data.registrationType,
-			registrationNumber: numberResult.data.registrationNumber,
-			normalizedRegistrationNumber:
-				numberResult.data.normalizedRegistrationNumber,
-			name: parsed.data.name ?? null,
-			validFrom,
-			validTo,
-			createdBy: parsed.data.actorUserId,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
+	return projectTaxRegistrationResult(
+		store.createTaxRegistration(
+			{
+				organizationId: parsed.data.organizationId,
+				partyId: parsed.data.partyId,
+				jurisdictionCountryId: parsed.data.jurisdictionCountryId,
+				registrationType: parsed.data.registrationType,
+				registrationNumber: numberResult.data.registrationNumber,
+				normalizedRegistrationNumber:
+					numberResult.data.normalizedRegistrationNumber,
+				name: parsed.data.name ?? null,
+				validFrom,
+				validTo,
+				createdBy: parsed.data.actorUserId,
+			},
+			ports,
+			{ correlationId: parsed.data.correlationId },
+		),
 	);
 }
 
 export async function updateTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	const lifecycleFields = assertNoLifecycleControlledFieldMutation(input, {
 		entityType: "tax_registration",
 	});
@@ -251,18 +270,20 @@ export async function updateTaxRegistration(
 			return overlap;
 		}
 	}
-	return store.updateTaxRegistration(
-		{
-			organizationId: parsed.data.organizationId,
-			id: parsed.data.id,
-			expectedVersion: parsed.data.expectedVersion,
-			updatedBy: parsed.data.actorUserId,
-			name: parsed.data.name,
-			validFrom: parsed.data.validFrom,
-			validTo: parsed.data.validTo,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId },
+	return projectTaxRegistrationResult(
+		store.updateTaxRegistration(
+			{
+				organizationId: parsed.data.organizationId,
+				id: parsed.data.id,
+				expectedVersion: parsed.data.expectedVersion,
+				updatedBy: parsed.data.actorUserId,
+				name: parsed.data.name,
+				validFrom: parsed.data.validFrom,
+				validTo: parsed.data.validTo,
+			},
+			ports,
+			{ correlationId: parsed.data.correlationId },
+		),
 	);
 }
 
@@ -273,7 +294,7 @@ async function transitionTaxRegistrationStatus(
 	command: MasterCommandId,
 	options: MasterCommandOptions,
 	transitionKind: "lifecycle" | "restore" = "lifecycle",
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	const parsed = parseMasterInput(
 		taxRegistrationLifecycleInputSchema,
 		input,
@@ -340,23 +361,25 @@ async function transitionTaxRegistrationStatus(
 			return overlap;
 		}
 	}
-	return store.transitionTaxRegistration(
-		{
-			organizationId: parsed.data.organizationId,
-			id: parsed.data.id,
-			expectedVersion: parsed.data.expectedVersion,
-			actorUserId: parsed.data.actorUserId,
-			toStatus,
-		},
-		ports,
-		{ correlationId: parsed.data.correlationId, eventSuffix },
+	return projectTaxRegistrationResult(
+		store.transitionTaxRegistration(
+			{
+				organizationId: parsed.data.organizationId,
+				id: parsed.data.id,
+				expectedVersion: parsed.data.expectedVersion,
+				actorUserId: parsed.data.actorUserId,
+				toStatus,
+			},
+			ports,
+			{ correlationId: parsed.data.correlationId, eventSuffix },
+		),
 	);
 }
 
 export async function activateTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	return transitionTaxRegistrationStatus(
 		input,
 		"active",
@@ -369,7 +392,7 @@ export async function activateTaxRegistration(
 export async function blockTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	return transitionTaxRegistrationStatus(
 		input,
 		"blocked",
@@ -384,7 +407,7 @@ export const revokeTaxRegistration = blockTaxRegistration;
 export async function retireTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	return transitionTaxRegistrationStatus(
 		input,
 		"retired",
@@ -399,7 +422,7 @@ export const archiveTaxRegistration = retireTaxRegistration;
 export async function restoreTaxRegistration(
 	input: unknown,
 	options: MasterCommandOptions = {},
-): Promise<Result<TaxRegistration>> {
+): Promise<Result<TaxRegistrationProjection>> {
 	return transitionTaxRegistrationStatus(
 		input,
 		"blocked",
@@ -410,10 +433,10 @@ export async function restoreTaxRegistration(
 	);
 }
 
-export async function getTaxRegistrationById(
+export async function getTaxRegistration(
 	input: unknown,
 	options: MasterQueryOptions = {},
-): Promise<Result<TaxRegistration | null>> {
+): Promise<Result<TaxRegistrationProjection | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
 		input,
@@ -427,21 +450,24 @@ export async function getTaxRegistrationById(
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
-		query: MASTER_QUERY_TAX_REGISTRATION_GET_BY_ID,
+		query: MASTER_QUERY_TAX_REGISTRATION_GET,
 	});
 	if (!authorized.ok) {
 		return authorized;
 	}
-	return store.getTaxRegistrationById(
+	const result = await store.getTaxRegistrationById(
 		parsed.data.organizationId,
 		parsed.data.id,
 	);
+	if (!result.ok) return result;
+	if (result.data === null) return ok(null);
+	return ok(toTaxRegistrationProjection(result.data));
 }
 
 export async function listTaxRegistrations(
 	input: unknown,
 	options: MasterQueryOptions = {},
-): Promise<Result<TaxRegistration[]>> {
+): Promise<Result<TaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		listTaxRegistrationsInputSchema,
 		input,
@@ -460,7 +486,7 @@ export async function listTaxRegistrations(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	return store.listTaxRegistrations({
+	const result = await store.listTaxRegistrations({
 		organizationId: parsed.data.organizationId,
 		page: parsed.data.page,
 		pageSize: parsed.data.pageSize,
@@ -468,12 +494,14 @@ export async function listTaxRegistrations(
 		partyId: parsed.data.partyId,
 		updatedSince: parsed.data.updatedSince,
 	});
+	if (!result.ok) return result;
+	return ok(result.data.map(toTaxRegistrationProjection));
 }
 
 export async function listTaxRegistrationsUpdatedSince(
 	input: unknown,
 	options: MasterQueryOptions = {},
-): Promise<Result<TaxRegistration[]>> {
+): Promise<Result<TaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		listTaxRegistrationsInputSchema,
 		input,
@@ -492,7 +520,7 @@ export async function listTaxRegistrationsUpdatedSince(
 export async function findTaxRegistrationsByParty(
 	input: unknown,
 	options: MasterQueryOptions = {},
-): Promise<Result<TaxRegistration[]>> {
+): Promise<Result<TaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		findTaxRegistrationsByPartyInputSchema,
 		input,
@@ -511,8 +539,90 @@ export async function findTaxRegistrationsByParty(
 	if (!authorized.ok) {
 		return authorized;
 	}
-	return store.findTaxRegistrationsByParty(
+	const result = await store.findTaxRegistrationsByParty(
 		parsed.data.organizationId,
 		parsed.data.partyId,
 	);
+	if (!result.ok) return result;
+	return ok(result.data.map(toTaxRegistrationProjection));
+}
+
+export async function getSensitiveTaxRegistration(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<SensitiveTaxRegistrationProjection | null>> {
+	const parsed = parseMasterInput(
+		getByIdInputSchema,
+		input,
+		"Invalid sensitive tax registration input",
+	);
+	if (!parsed.ok) return parsed;
+	const store = resolveStore(options.store);
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_TAX_REGISTRATION_GET_SENSITIVE,
+	});
+	if (!authorized.ok) return authorized;
+	const result = await store.getTaxRegistrationById(
+		parsed.data.organizationId,
+		parsed.data.id,
+	);
+	if (!result.ok) return result;
+	if (result.data === null) return ok(null);
+	return ok(toSensitiveTaxRegistrationProjection(result.data));
+}
+
+export async function listSensitiveTaxRegistrations(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<SensitiveTaxRegistrationProjection[]>> {
+	const parsed = parseMasterInput(
+		listTaxRegistrationsInputSchema,
+		input,
+		"Invalid sensitive tax registration list input",
+	);
+	if (!parsed.ok) return parsed;
+	const store = resolveStore(options.store);
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_TAX_REGISTRATION_LIST_SENSITIVE,
+	});
+	if (!authorized.ok) return authorized;
+	const result = await store.listTaxRegistrations({
+		organizationId: parsed.data.organizationId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
+		status: parsed.data.status,
+		partyId: parsed.data.partyId,
+		updatedSince: parsed.data.updatedSince,
+	});
+	if (!result.ok) return result;
+	return ok(result.data.map(toSensitiveTaxRegistrationProjection));
+}
+
+export async function findSensitiveTaxRegistrationsByParty(
+	input: unknown,
+	options: MasterQueryOptions = {},
+): Promise<Result<SensitiveTaxRegistrationProjection[]>> {
+	const parsed = parseMasterInput(
+		findTaxRegistrationsByPartyInputSchema,
+		input,
+		"Invalid sensitive tax registration find-by-party input",
+	);
+	if (!parsed.ok) return parsed;
+	const store = resolveStore(options.store);
+	const authorized = await requireMasterQueryPermission(options.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_TAX_REGISTRATION_FIND_SENSITIVE_BY_PARTY,
+	});
+	if (!authorized.ok) return authorized;
+	const result = await store.findTaxRegistrationsByParty(
+		parsed.data.organizationId,
+		parsed.data.partyId,
+	);
+	if (!result.ok) return result;
+	return ok(result.data.map(toSensitiveTaxRegistrationProjection));
 }

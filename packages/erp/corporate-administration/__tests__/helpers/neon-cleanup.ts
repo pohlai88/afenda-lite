@@ -6,6 +6,7 @@ import {
 	caCompanyJurisdictionProfile,
 	caCompanyLegalFormHistory,
 	caCompanyName,
+	caCompanyStatusHistory,
 	caEstablishmentStatusHistory,
 	caLegalCompany,
 	caLegalEstablishment,
@@ -37,6 +38,7 @@ export const CORPORATE_ADMINISTRATION_INFRASTRUCTURE_CLEANUP_TABLES = [
 	"ca_company_identifier",
 	"ca_company_legal_form_history",
 	"ca_company_name",
+	"ca_company_status_history",
 	"ca_company_jurisdiction_profile",
 	"ca_establishment_status_history",
 	"ca_registered_address",
@@ -153,6 +155,9 @@ export async function cleanupCorporateAdministrationInfrastructureTestData(
 		.delete(caCompanyName)
 		.where(eq(caCompanyName.organizationId, scopedOrganizationId));
 	await db
+		.delete(caCompanyStatusHistory)
+		.where(eq(caCompanyStatusHistory.organizationId, scopedOrganizationId));
+	await db
 		.delete(caCompanyJurisdictionProfile)
 		.where(
 			eq(caCompanyJurisdictionProfile.organizationId, scopedOrganizationId),
@@ -162,6 +167,9 @@ export async function cleanupCorporateAdministrationInfrastructureTestData(
 		.where(
 			eq(caEstablishmentStatusHistory.organizationId, scopedOrganizationId),
 		);
+	await db
+		.delete(caCompanyStatusHistory)
+		.where(eq(caCompanyStatusHistory.organizationId, scopedOrganizationId));
 	await db
 		.delete(caRegisteredAddress)
 		.where(eq(caRegisteredAddress.organizationId, scopedOrganizationId));
@@ -307,6 +315,16 @@ export async function countCorporateAdministrationCompanyActivities(
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caCompanyActivity)
 		.where(eq(caCompanyActivity.organizationId, organizationId));
+	return Number(rows[0]?.value ?? 0);
+}
+
+export async function countCorporateAdministrationCompanyStatusHistory(
+	organizationId: string,
+): Promise<number> {
+	const rows = await db
+		.select({ value: sql<number>`count(*)::int` })
+		.from(caCompanyStatusHistory)
+		.where(eq(caCompanyStatusHistory.organizationId, organizationId));
 	return Number(rows[0]?.value ?? 0);
 }
 

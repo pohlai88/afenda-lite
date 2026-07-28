@@ -24,6 +24,13 @@ export const humanResourcesRoot = path.join(
 	"packages/erp/human-resources",
 );
 
+export const masterDataRoot = path.join(repoRoot, "packages/erp/master-data");
+
+export const masterDataParityIncludes = [
+	`${TESTS_DIR}/parity/**/*.parity.test.ts`,
+	`${TESTS_DIR}/integration/**/*.integration.test.ts`,
+];
+
 /** Neon / shared-branch suites: explicit parity lane only. */
 export const humanResourcesParityIncludes = [
 	`${TESTS_DIR}/**/*.parity.test.ts`,

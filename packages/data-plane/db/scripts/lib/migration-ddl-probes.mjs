@@ -97,6 +97,16 @@ export async function probeMigrationDdlApplied(sql, tag) {
 		return identifierSuccessor && nameRecordedRange && activityRecordedRange;
 	}
 
+	if (tag === "0028_ca_company_status_lifecycle") {
+		const [statusTable, statusVersionIndex, legalCompanyState] =
+			await Promise.all([
+				tableExists(sql, "ca_company_status_history"),
+				indexExists(sql, "ca_company_status_version_uidx"),
+				constraintExists(sql, "ca_legal_company_state_check"),
+			]);
+		return statusTable && statusVersionIndex && legalCompanyState;
+	}
+
 	if (tag === "0017_hr_candidate_consent") {
 		const [columnOk, constraintOk] = await Promise.all([
 			columnExists(sql, "hr_candidate", "consent_policy_version"),
@@ -131,6 +141,14 @@ export async function probeMigrationDdlApplied(sql, tag) {
 	}
 	if (tag === "0048_hr_compliance_ddl") {
 		return tableExists(sql, "hr_document_requirement");
+	}
+	if (tag === "0032_hr_bulk_reliability_durability") {
+		const [checkpoint, deadLetter, cursor] = await Promise.all([
+			tableExists(sql, "hr_bulk_import_checkpoint"),
+			tableExists(sql, "hr_reliability_dead_letter"),
+			tableExists(sql, "hr_connector_cursor"),
+		]);
+		return checkpoint && deadLetter && cursor;
 	}
 
 	return null;

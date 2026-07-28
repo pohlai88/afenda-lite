@@ -117,7 +117,10 @@ export async function createParty(
 			defaultCurrencyId: parsed.data.defaultCurrencyId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterPartyMutation(result, options);
 }
@@ -165,7 +168,10 @@ export async function updateParty(
 			defaultCurrencyId: parsed.data.defaultCurrencyId,
 		},
 		ports,
-		{ correlationId: parsed.data.correlationId },
+		{
+			correlationId: parsed.data.correlationId,
+			importMutation: options.importMutation,
+		},
 	);
 	return afterPartyMutation(result, options);
 }

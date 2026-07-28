@@ -7,6 +7,7 @@ import {
 	caCompanyJurisdictionProfile,
 	caCompanyLegalFormHistory,
 	caCompanyName,
+	caCompanyStatusHistory,
 	caLegalCompany,
 	desc,
 	eq,
@@ -17,7 +18,9 @@ import {
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import { isVisibleAtKnownTime, matchesAsOf } from "../../company/rules";
+import { legalCompanyStatusSchema } from "../../company/schemas";
 import type {
+	CompaniesByStatusQuery,
 	CompanyActivitiesAsOfQuery,
 	CompanyActivityStore,
 	CompanyFinancialYearOverlapQuery,
@@ -42,6 +45,7 @@ import type {
 	CompanyLegalFormHistory,
 	CompanyName,
 	CompanyNameListItem,
+	CompanyStatusHistory,
 	LegalCompany,
 	LegalCompanyListItem,
 	LegalCompanyListPage,
@@ -2429,6 +2433,204 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		return this.getLegalCompany(input);
 	}
 
+	async changeLegalCompanyStatus(
+		input: Parameters<LegalCompanyStore["changeLegalCompanyStatus"]>[0],
+	): Promise<Result<CompanyStatusHistory>> {
+		const statusId = this.#createLegalCompanyId();
+		const record: CompanyStatusHistory = {
+			id: statusId,
+			organizationId: input.organizationId,
+			legalCompanyId: input.legalCompanyId,
+			status: input.status,
+			effectiveFrom: input.effectiveFrom,
+			effectiveTo: null,
+			recordedAt: new Date(input.recordedAt),
+			recordedBy: input.recordedByUserId,
+			reason: input.reason,
+			sourceDocumentId: input.sourceDocumentId,
+			version: input.expectedCompanyVersion + 1,
+		};
+		if (input.transaction !== undefined) {
+			input.transaction.enqueue((database) => {
+				const txSql = asTransactionSql(database);
+				return txSql`
+					WITH updated_company AS (
+						UPDATE ca_legal_company
+						SET state = ${input.status},
+							updated_at = ${new Date(input.recordedAt)},
+							updated_by = ${input.recordedByUserId},
+							version = version + 1
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.legalCompanyId}
+							AND version = ${input.expectedCompanyVersion}
+						RETURNING id
+					),
+					assert_updated AS (
+						SELECT CASE
+							WHEN EXISTS (SELECT 1 FROM updated_company) THEN 1
+							ELSE 1 / 0
+						END AS checked
+					),
+					closed_status AS (
+						UPDATE ca_company_status_history
+						SET effective_to = ${input.effectiveFrom}
+						WHERE organization_id = ${input.organizationId}
+							AND legal_company_id = ${input.legalCompanyId}
+							AND effective_to IS NULL
+							AND EXISTS (SELECT 1 FROM updated_company)
+						RETURNING id
+					)
+					INSERT INTO ca_company_status_history (
+						id, organization_id, legal_company_id, status, effective_from,
+						effective_to, recorded_at, recorded_by, reason, source_document_id,
+						version
+					)
+					SELECT
+						${record.id}, ${record.organizationId}, ${record.legalCompanyId},
+						${record.status}, ${record.effectiveFrom}, ${record.effectiveTo},
+						${record.recordedAt}, ${record.recordedBy}, ${record.reason},
+						${record.sourceDocumentId}, ${record.version}
+					FROM assert_updated, (SELECT count(*) FROM closed_status) closed
+				`;
+			});
+			return ok(record);
+		}
+
+		try {
+			await this.#database.execute(sql`
+				WITH updated_company AS (
+					UPDATE ca_legal_company
+					SET state = ${input.status},
+						updated_at = ${new Date(input.recordedAt)},
+						updated_by = ${input.recordedByUserId},
+						version = version + 1
+					WHERE organization_id = ${input.organizationId}
+						AND id = ${input.legalCompanyId}
+						AND version = ${input.expectedCompanyVersion}
+					RETURNING id
+				),
+				assert_updated AS (
+					SELECT CASE
+						WHEN EXISTS (SELECT 1 FROM updated_company) THEN 1
+						ELSE 1 / 0
+					END AS checked
+				),
+				closed_status AS (
+					UPDATE ca_company_status_history
+					SET effective_to = ${input.effectiveFrom}
+					WHERE organization_id = ${input.organizationId}
+						AND legal_company_id = ${input.legalCompanyId}
+						AND effective_to IS NULL
+						AND EXISTS (SELECT 1 FROM updated_company)
+					RETURNING id
+				)
+				INSERT INTO ca_company_status_history (
+					id, organization_id, legal_company_id, status, effective_from,
+					effective_to, recorded_at, recorded_by, reason, source_document_id,
+					version
+				)
+				SELECT
+					${record.id}, ${record.organizationId}, ${record.legalCompanyId},
+					${record.status}, ${record.effectiveFrom}, ${record.effectiveTo},
+					${record.recordedAt}, ${record.recordedBy}, ${record.reason},
+					${record.sourceDocumentId}, ${record.version}
+				FROM assert_updated, (SELECT count(*) FROM closed_status) closed
+			`);
+			return ok(record);
+		} catch (error) {
+			const translated =
+				translateCorporateAdministrationInfrastructureError(error);
+			if (translated !== undefined) return translated;
+			throw error;
+		}
+	}
+
+	async findCompanyStatusAsOf(
+		query: Parameters<LegalCompanyStore["findCompanyStatusAsOf"]>[0],
+	): Promise<Result<CompanyStatusHistory | null>> {
+		try {
+			const conditions = [
+				eq(caCompanyStatusHistory.organizationId, query.organizationId),
+				eq(caCompanyStatusHistory.legalCompanyId, query.legalCompanyId),
+				sql`${caCompanyStatusHistory.effectiveFrom} <= ${query.asOf}`,
+				sql`(${caCompanyStatusHistory.effectiveTo} IS NULL OR ${query.asOf} < ${caCompanyStatusHistory.effectiveTo})`,
+			];
+			if (query.knownAt !== undefined) {
+				conditions.push(
+					sql`${caCompanyStatusHistory.recordedAt} <= ${new Date(query.knownAt)}`,
+				);
+			}
+			const row = await this.#database
+				.select()
+				.from(caCompanyStatusHistory)
+				.where(and(...conditions))
+				.orderBy(desc(caCompanyStatusHistory.recordedAt))
+				.limit(1)
+				.then((rows) => rows[0]);
+			return ok(row === undefined ? null : mapCompanyStatusHistoryRow(row));
+		} catch (error) {
+			const translated =
+				translateCorporateAdministrationInfrastructureError(error);
+			if (translated !== undefined) return translated;
+			throw error;
+		}
+	}
+
+	async listCompaniesByStatus(
+		query: CompaniesByStatusQuery,
+	): Promise<Result<LegalCompanyListPage>> {
+		try {
+			const rows = await this.#database
+				.select()
+				.from(caLegalCompany)
+				.where(
+					and(
+						eq(caLegalCompany.organizationId, query.organizationId),
+						query.asOf === undefined
+							? eq(caLegalCompany.state, query.status)
+							: sql`true`,
+					),
+				)
+				.orderBy(asc(caLegalCompany.normalizedCompanyCode))
+				.limit(query.asOf === undefined ? query.pagination.limit : 500);
+			const items: LegalCompanyListItem[] = [];
+			for (const row of rows) {
+				const company = mapLegalCompanyRow(row);
+				if (!company.ok) return company;
+				if (query.asOf !== undefined) {
+					const status = await this.findCompanyStatusAsOf({
+						organizationId: query.organizationId,
+						legalCompanyId: company.data.legalCompanyId,
+						asOf: query.asOf,
+						knownAt: query.knownAt,
+					});
+					if (!status.ok) return status;
+					if (status.data?.status !== query.status) continue;
+				}
+				items.push({
+					organizationId: company.data.organizationId,
+					legalCompanyId: company.data.legalCompanyId,
+					companyCode: company.data.companyCode,
+					normalizedCompanyCode: company.data.normalizedCompanyCode,
+					masterDataPartyId: company.data.masterDataPartyId,
+					homeJurisdictionCountryCode: company.data.homeJurisdictionCountryCode,
+					state: company.data.state,
+					profile: company.data.profile,
+					version: company.data.version,
+					jurisdictionCountryCode: company.data.homeJurisdictionCountryCode,
+					entityType: "draft_legal_company",
+				});
+				if (items.length >= query.pagination.limit) break;
+			}
+			return ok({ items, nextCursor: null });
+		} catch (error) {
+			const translated =
+				translateCorporateAdministrationInfrastructureError(error);
+			if (translated !== undefined) return translated;
+			throw error;
+		}
+	}
+
 	async getLegalCompanyTimeline(
 		input: Parameters<LegalCompanyStore["getLegalCompanyTimeline"]>[0],
 	) {
@@ -2451,9 +2653,32 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				entries.push({ ...profile, kind: "jurisdiction_profile" });
 			}
 		}
+		const statuses = await this.#database
+			.select()
+			.from(caCompanyStatusHistory)
+			.where(
+				and(
+					eq(caCompanyStatusHistory.organizationId, input.organizationId),
+					eq(caCompanyStatusHistory.legalCompanyId, input.legalCompanyId),
+				),
+			)
+			.orderBy(asc(caCompanyStatusHistory.recordedAt));
+		for (const status of statuses) {
+			if (
+				input.knownAt === undefined ||
+				status.recordedAt <= new Date(input.knownAt)
+			) {
+				entries.push({
+					...mapCompanyStatusHistoryRow(status),
+					kind: "company_status",
+				});
+			}
+		}
 		return ok(
-			entries.sort((left, right) =>
-				left.recordedAt.localeCompare(right.recordedAt),
+			entries.sort(
+				(left, right) =>
+					new Date(left.recordedAt).getTime() -
+					new Date(right.recordedAt).getTime(),
 			),
 		);
 	}
@@ -2469,7 +2694,7 @@ function mapLegalCompanyRow(
 		normalizedCompanyCode: row.normalizedCompanyCode,
 		masterDataPartyId: row.masterDataPartyId,
 		homeJurisdictionCountryCode: row.homeJurisdictionCountryCode,
-		state: "draft",
+		state: legalCompanyStatusSchema.parse(row.state),
 		profile: {
 			displayName: row.displayName,
 			sourceReference: "ca_legal_company",
@@ -2481,6 +2706,27 @@ function mapLegalCompanyRow(
 		updatedAt: toCanonicalInstant(row.updatedAt),
 		version: row.version,
 	});
+}
+
+function mapCompanyStatusHistoryRow(
+	row: typeof caCompanyStatusHistory.$inferSelect,
+): CompanyStatusHistory {
+	return {
+		id: row.id,
+		organizationId: organizationIdSchema.parse(row.organizationId),
+		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
+		status: legalCompanyStatusSchema.parse(row.status),
+		effectiveFrom: canonicalDateSchema.parse(row.effectiveFrom),
+		effectiveTo:
+			row.effectiveTo === null
+				? null
+				: canonicalDateSchema.parse(row.effectiveTo),
+		recordedAt: row.recordedAt,
+		recordedBy: userIdSchema.parse(row.recordedBy),
+		reason: row.reason,
+		sourceDocumentId: row.sourceDocumentId,
+		version: row.version,
+	};
 }
 
 function mapJurisdictionProfileRow(

@@ -33,6 +33,49 @@ describe("Corporate Administration safe input parsing", () => {
 		});
 	});
 
+	it("omits undefined object fields from parsed optional command input", () => {
+		const optionalSchema = z
+			.object({
+				required: z.string(),
+				optional: z.string().optional(),
+				nested: z.object({
+					present: z.string(),
+					absent: z.string().optional(),
+				}),
+				lines: z.array(
+					z.object({
+						code: z.string(),
+						note: z.string().optional(),
+					}),
+				),
+			})
+			.strict();
+
+		const result = parseCorporateAdministrationInput(optionalSchema, {
+			required: "kept",
+			optional: undefined,
+			nested: {
+				present: "kept",
+				absent: undefined,
+			},
+			lines: [
+				{
+					code: "line-1",
+					note: undefined,
+				},
+			],
+		});
+
+		expect(result).toEqual({
+			ok: true,
+			data: {
+				required: "kept",
+				nested: { present: "kept" },
+				lines: [{ code: "line-1" }],
+			},
+		});
+	});
+
 	it("returns governed validation failures without submitted values or Zod details", () => {
 		const submittedSecret = "raw secret value";
 		const result = parseCorporateAdministrationInput(inputSchema, {

@@ -56,8 +56,8 @@ export type ImportTransitionDefinition = ImportBatchTransitionDefinition;
 export const IMPORT_BATCH_TRANSITIONS = {
 	parse: {
 		operation: "import_batch.parse",
-		from: ["parsed"],
-		to: "parsed",
+		from: ["claimed"],
+		to: "claimed",
 		authority: "import_orchestrator",
 		requiredPermission: null,
 		reasonRequired: false,
@@ -68,8 +68,8 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	startValidation: {
 		operation: "import_batch.validation_start",
-		from: ["parsed"],
-		to: "validated",
+		from: ["claimed"],
+		to: "validating",
 		authority: "import_orchestrator",
 		requiredPermission: null,
 		reasonRequired: false,
@@ -80,8 +80,8 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	markValidated: {
 		operation: "import_batch.validated",
-		from: ["parsed"],
-		to: "validated",
+		from: ["validating"],
+		to: "approval_pending",
 		authority: "import_orchestrator",
 		requiredPermission: null,
 		reasonRequired: false,
@@ -92,7 +92,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	markValidationFailed: {
 		operation: "import_batch.validation_failed",
-		from: ["parsed", "validated"],
+		from: ["validating"],
 		to: "failed",
 		authority: "import_orchestrator",
 		requiredPermission: null,
@@ -104,7 +104,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	requestApproval: {
 		operation: "import_batch.approval_request",
-		from: ["validated"],
+		from: ["validating"],
 		to: "approval_pending",
 		authority: "actor",
 		requiredPermission: "master_data.import_submit",
@@ -188,7 +188,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	cancel: {
 		operation: "import_batch.cancel",
-		from: ["parsed", "validated", "approval_pending", "approved"],
+		from: ["claimed", "validating", "approval_pending", "approved"],
 		to: "cancelled",
 		authority: "actor",
 		requiredPermission: "master_data.import_cancel",
@@ -212,7 +212,7 @@ export const IMPORT_BATCH_TRANSITIONS = {
 	},
 	supersede: {
 		operation: "import_batch.supersede",
-		from: ["parsed", "validated", "approval_pending", "approved", "failed"],
+		from: ["claimed", "validating", "approval_pending", "approved", "failed"],
 		to: "cancelled",
 		authority: "actor",
 		requiredPermission: "master_data.import_create",

@@ -75,6 +75,10 @@
 				"$TURBO_ROOT$/testing/vitest.shared.ts",
 				"$TURBO_ROOT$/testing/vitest.hr-parity.config.ts",
 				"$TURBO_ROOT$/testing/setup-hr-parity-database.ts",
+				"$TURBO_ROOT$/testing/vitest.master-data-parity.config.ts",
+				"$TURBO_ROOT$/testing/setup-master-data-parity-database.ts",
+				"$TURBO_ROOT$/testing/verify-master-data-core-parity-schema.ts",
+				"$TURBO_ROOT$/testing/verify-master-data-parity-schema.ts",
 				"$TURBO_ROOT$/packages/foundation/testing/src/require-database-for-ci.ts"
 			],
 			"outputs": []

@@ -21,9 +21,9 @@ Phase 0 is closed. The package remains governed by the greenfield roadmap under
   activity classifications, but the slice is not `DONE` until current
   demo-branch Neon parity is re-established.
 - CA-1.4 implements registered offices, legal establishments and premises. Its
-  CA-owned backend lanes are green against the repaired demo branch, but slice
-  closure is blocked by the demo branch pending-forward migration ledger state
-  recorded in `CA-1.4-EVIDENCE.md`.
+  CA-owned backend lanes are green against the repaired demo branch, and the
+  demo ledger is proven through `0026_ca_recorded_range_zero_width` as recorded
+  in `CA-1.4-EVIDENCE.md`.
 
 ## Lifecycle
 
@@ -54,8 +54,8 @@ Shared audit and pending-event infrastructure remains platform-owned.
 - `@afenda/corporate-administration/module-manifest` — governed manifest
 - `@afenda/corporate-administration/adapters/drizzle` — production adapter
   factories for app composition
-- `@afenda/corporate-administration/adapters/memory` — non-production parity
-  stores
+- `@afenda/corporate-administration/testing` — non-production fixtures, parity
+  harnesses and memory stores
 
 Consumers must not deep-import `src/*`.
 

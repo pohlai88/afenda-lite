@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, type GetColumnData } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
-import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
+import type { AnyPgColumn, AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
 import { getNeonSql } from "./http-transaction";
 import * as schema from "./schema";
 
@@ -31,6 +31,31 @@ export const db: Database = new Proxy({} as Database, {
 export type TenantTable = AnyPgTable & {
 	organizationId: PgColumn;
 };
+
+/**
+ * Builds the mandatory tenant boundary for an entity-identity lookup.
+ *
+ * Keep both predicates in the database query so a missing row and a row owned
+ * by another organization are publicly indistinguishable.
+ */
+export function tenantEntityPredicate<
+	TIdColumn extends AnyPgColumn,
+	TOrganizationColumn extends AnyPgColumn,
+>(
+	columns: {
+		id: TIdColumn;
+		organizationId: TOrganizationColumn;
+	},
+	input: {
+		id: GetColumnData<TIdColumn>;
+		organizationId: GetColumnData<TOrganizationColumn>;
+	},
+) {
+	return and(
+		eq(columns.id, input.id),
+		eq(columns.organizationId, input.organizationId),
+	);
+}
 
 /**
  * Documented tenant read entry point (ARCH-023 · ARCH-025 · ARCH-028 S2.2).

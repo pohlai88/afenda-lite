@@ -403,10 +403,10 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 								supersedes_id, version, created_by, updated_by, updated_at
 							)
 							SELECT
-								${id}, ${record.organizationId}, ${record.kind}, ${record.key},
-								${record.normalizedKey}, ${record.name}, ${record.parentId},
-								${record.status}, ${record.effectiveFrom}, ${record.effectiveTo},
-								${record.supersedesId}, 1, ${record.createdBy}, ${record.updatedBy}, now()
+								${id}::uuid, ${record.organizationId}, ${record.kind}, ${record.key},
+								${record.normalizedKey}, ${record.name}, ${record.parentId}::uuid,
+								${record.status}, ${record.effectiveFrom}::date, ${record.effectiveTo}::date,
+								${record.supersedesId}::uuid, 1, ${record.createdBy}, ${record.updatedBy}, now()
 							FROM create_guard
 							RETURNING *
 						),
@@ -416,7 +416,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 								entity, entity_id, action, changes
 							)
 							SELECT
-								${createAuditId}, organization_id, ${record.createdBy},
+								${createAuditId}::uuid, organization_id, ${record.createdBy},
 								${record.correlationId}, 'master_data',
 								'organization_dimension', id,
 								CASE
@@ -436,7 +436,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							FROM mutated
 							UNION ALL
 							SELECT
-								${predecessorAuditId}, closed_predecessor.organization_id,
+								${predecessorAuditId}::uuid, closed_predecessor.organization_id,
 								${record.createdBy}, ${record.correlationId}, 'master_data',
 								'organization_dimension', closed_predecessor.id,
 								'SUPERSEDE_CLOSE',
@@ -462,7 +462,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 								actor_user_id, payload, status, attempts
 							)
 							SELECT
-								${eventId}, organization_id,
+								${eventId}::uuid, organization_id,
 								CASE
 									WHEN supersedes_id IS NULL
 										THEN 'master_data.organization_dimension.created.v1'
@@ -479,8 +479,8 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 									'effectiveTo', effective_to,
 									'supersedesId', supersedes_id,
 									'version', version,
-									'actorId', ${record.createdBy},
-									'correlationId', ${record.correlationId}
+									'actorId', ${record.createdBy}::text,
+									'correlationId', ${record.correlationId}::text
 								), 'pending', 0
 							FROM mutated
 							RETURNING id
@@ -604,7 +604,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 								entity, entity_id, action, changes
 							)
 							SELECT
-								${auditId}, organization_id, ${record.updatedBy},
+								${auditId}::uuid, organization_id, ${record.updatedBy},
 								${record.correlationId}, 'master_data',
 								'organization_dimension', id, 'UPDATE',
 								jsonb_build_object('version', version)
@@ -617,7 +617,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 								actor_user_id, payload, status, attempts
 							)
 							SELECT
-								${eventId}, organization_id,
+								${eventId}::uuid, organization_id,
 								'master_data.organization_dimension.updated.v1',
 								'master_data', ${record.correlationId}, ${record.updatedBy},
 								jsonb_build_object(
@@ -627,8 +627,8 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 									'kind', kind,
 									'code', key,
 									'version', version,
-									'actorId', ${record.updatedBy},
-									'correlationId', ${record.correlationId}
+									'actorId', ${record.updatedBy}::text,
+									'correlationId', ${record.correlationId}::text
 								), 'pending', 0
 							FROM mutated
 							RETURNING id

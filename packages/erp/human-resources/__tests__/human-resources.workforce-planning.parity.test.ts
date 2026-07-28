@@ -3,11 +3,16 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
+import { createAssignment } from "../src/core/assignment";
+import { createEmployee } from "../src/core/employee";
+import { createEmployment } from "../src/core/employment";
 import { HUMAN_RESOURCES_ERROR_INVALID_INPUT } from "../src/error-codes";
+import { createPosition } from "../src/organization/position";
 import { cancelRequisition } from "../src/recruitment/requisition";
 import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
+	getWorkforcePlanVariance,
 	submitHeadcountPlan,
 } from "../src/workforce-planning/headcount-plan";
 import { addHeadcountPlanLine } from "../src/workforce-planning/headcount-plan-line";
@@ -259,6 +264,96 @@ function defineWorkforcePlanningParitySuite(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
 		}
+	});
+
+	it("computes employment-backed workforce variance", async () => {
+		const ready = createHrParityHarness(adapter);
+		const approved = await approvePlanWithLine(ready, {
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			suffix: `variance-${suffix}`,
+		});
+		expect(approved.ok).toBe(true);
+		if (!approved.ok) return;
+
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-variance-employee-${suffix}`,
+				idempotencyKey: `idem-variance-employee-${suffix}`,
+				employeeNumber: `VAR-${suffix}`.slice(0, 64),
+				legalName: "Variance Worker",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) return;
+		const employment = await createEmployment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-variance-employment-${suffix}`,
+				employeeId: employee.data.id,
+				startsOn: "2026-01-01",
+			},
+			ready,
+		);
+		expect(employment.ok).toBe(true);
+		if (!employment.ok) return;
+		const position = await createPosition(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-variance-position-${suffix}`,
+				code: `VP-${suffix}`.slice(0, 64),
+				title: "Variance Position",
+				departmentId: approved.data.line.departmentId,
+				jobId: approved.data.line.jobId,
+				status: "active",
+			},
+			ready,
+		);
+		expect(position.ok).toBe(true);
+		if (!position.ok) return;
+		const assignment = await createAssignment(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-variance-assignment-${suffix}`,
+				employmentId: employment.data.id,
+				positionId: position.data.id,
+				legalEntityKey: "legal-a",
+				businessUnitKey: "business-a",
+				locationKey: "hq",
+				costCentreKey: "cost-a",
+				projectKey: "project-a",
+				startsOn: "2026-01-01",
+			},
+			ready,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) return;
+
+		const variance = await getWorkforcePlanVariance(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: `corr-variance-${suffix}`,
+				planId: approved.data.plan.id,
+				asOf: "2026-07-01",
+			},
+			ready,
+		);
+		expect(variance.ok).toBe(true);
+		if (!variance.ok) return;
+		expect(variance.data.lines[0]).toMatchObject({
+			actualHeadcount: 1,
+			actualFte: "1.0000",
+			varianceHeadcount: 0,
+			varianceFte: "0.0000",
+			availableHeadcount: 1,
+		});
 	});
 }
 

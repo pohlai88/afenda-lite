@@ -88,6 +88,10 @@ tables:
   - moduleId: corporate-administration
     packageName: "@afenda/corporate-administration"
     schemaOwner: "@afenda/db"
+    table: ca_company_status_history
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
     table: ca_legal_establishment
   - moduleId: corporate-administration
     packageName: "@afenda/corporate-administration"
@@ -545,6 +549,34 @@ tables:
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
     table: hr_policy_acknowledgement
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_payroll_handoff_delivery
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bulk_import_checkpoint
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bulk_import_audit
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bulk_import_error_artifact
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_reliability_work_item
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_reliability_dead_letter
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_connector_cursor
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"

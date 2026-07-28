@@ -33,6 +33,7 @@ const requiredGateCommands = [
 	"pnpm --filter @afenda/master-data lint",
 	"pnpm --filter @afenda/master-data typecheck",
 	"pnpm --filter @afenda/master-data test",
+	"pnpm test:master-data:parity",
 	'pnpm --filter @afenda/db test -- -t "master-data schema|master-data extension|tenancy"',
 	"pnpm audit:tenancy-nulls",
 ] as const;

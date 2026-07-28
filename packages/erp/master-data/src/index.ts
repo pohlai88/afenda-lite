@@ -304,8 +304,11 @@ export {
 	archiveTaxRegistration,
 	blockTaxRegistration,
 	createTaxRegistration,
+	findSensitiveTaxRegistrationsByParty,
 	findTaxRegistrationsByParty,
-	getTaxRegistrationById,
+	getSensitiveTaxRegistration,
+	getTaxRegistration,
+	listSensitiveTaxRegistrations,
 	listTaxRegistrations,
 	listTaxRegistrationsUpdatedSince,
 	restoreTaxRegistration,
@@ -314,13 +317,16 @@ export {
 	updateTaxRegistration,
 } from "./capabilities/core-organization-masters/tax-registration";
 export {
-	type MaskedTaxRegistration,
 	maskTaxRegistrationNumber,
 	normalizeTaxRegistrationNumber,
 	projectTaxRegistrationLifecycleStatus,
+	type SensitiveTaxRegistrationProjection,
 	TAX_REGISTRATION_LIFECYCLE_STATUSES,
 	type TaxRegistrationLifecycleStatus,
-	toMaskedTaxRegistration,
+	type TaxRegistrationProjection,
+	type TaxRegistrationStatus,
+	toSensitiveTaxRegistrationProjection,
+	toTaxRegistrationProjection,
 } from "./capabilities/core-organization-masters/tax-registration-number";
 export {
 	isInvalidValidityRange,
@@ -419,6 +425,7 @@ export {
 	getPartyRoleById,
 	getPrimaryPartyAddress,
 	getPrimaryPartyContact,
+	getSensitivePrimaryPartyContact,
 	listActivePartyRoles,
 	listItemAliases,
 	listItemsByAlias,
@@ -427,6 +434,7 @@ export {
 	listPartyContacts,
 	listPartyRelationships,
 	listPartyRoles,
+	listSensitivePartyContacts,
 	retirePartyRole,
 	updatePartyAddress,
 	updatePartyContact,
@@ -493,6 +501,10 @@ export {
 	type ItemUomCompatibilityMode,
 	normalizeItemUomConversionFactor,
 } from "./capabilities/extensions/item-uom-policy";
+export type {
+	PartyContactProjection,
+	SensitivePartyContactProjection,
+} from "./capabilities/extensions/party-contact-projection";
 export {
 	isSameNullablePrimaryScope,
 	PRIMARY_RECORD_REPLACEMENT_POLICY,
@@ -666,7 +678,6 @@ export {
 	type PartyAddressPurpose,
 	type PartyAddressType,
 	type PartyAddressValidationStatus,
-	type PartyContact,
 	type PartyContactType,
 	type PartyContactVerificationStatus,
 	type PartyExternalId,
@@ -685,7 +696,6 @@ export {
 	STANDARD_CHILD_LIFECYCLE_STATUSES,
 	type StandardChildLifecycleStatus,
 	TAX_REGISTRATION_TYPES,
-	type TaxRegistration,
 	type TaxRegistrationType,
 	WAREHOUSE_LOCATION_TYPES,
 	type Warehouse,

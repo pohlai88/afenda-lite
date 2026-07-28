@@ -16,10 +16,6 @@
 			"types": "./src/adapters/drizzle/index.ts",
 			"default": "./src/adapters/drizzle/index.ts"
 		},
-		"./adapters/memory": {
-			"types": "./src/adapters/memory/index.ts",
-			"default": "./src/adapters/memory/index.ts"
-		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
 			"default": "./src/testing/index.ts"
