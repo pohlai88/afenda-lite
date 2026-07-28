@@ -21,16 +21,16 @@
 
 | Slice | Title | Depends on | Status |
 |---|---|---|---|
-| CA-2.1 | Governance bodies and memberships | Phase 1 DONE | OPEN |
-| CA-2.2 | Statutory offices, appointments, qualifications and consent | CA-2.1 | OPEN |
-| CA-2.3 | Officer declarations, disqualifications and conflicts | CA-2.2 | OPEN |
-| CA-2.4 | Meetings, notices, participants and quorum | CA-2.3 | OPEN |
-| CA-2.5 | Votes, resolutions, minutes and implementation actions | CA-2.4 | OPEN |
+| CA-2.1 | Governance bodies and memberships | Phase 1 DONE | DONE |
+| CA-2.2 | Statutory offices, appointments, qualifications and consent | CA-2.1 | DONE |
+| CA-2.3 | Officer declarations, disqualifications and conflicts | CA-2.2 | DONE |
+| CA-2.4 | Meetings, notices, participants and quorum | CA-2.3 | DONE |
+| CA-2.5 | Votes, resolutions, minutes and implementation actions | CA-2.4 | DONE |
 
 ## CA-2.1 — Governance bodies and memberships
 
-**Status:** `OPEN`  
-**Depends on:** Phase 1 DONE  
+**Status:** `DONE`
+**Depends on:** Phase 1 DONE
 **Goal:** Create effective governance bodies and membership history.
 
 ### Authoritative surface
@@ -106,8 +106,8 @@ Governance bodies and membership can be resolved accurately as-of any date.
 
 ## CA-2.2 — Statutory offices, appointments, qualifications and consent
 
-**Status:** `OPEN`  
-**Depends on:** CA-2.1  
+**Status:** `DONE`
+**Depends on:** CA-2.1
 **Goal:** Model jurisdiction-required offices and the evidence needed to hold them.
 
 ### Authoritative surface
@@ -181,10 +181,12 @@ handoff and stop; do not begin the next slice.
 
 Statutory offices, appointments and qualifications are enforceable and auditable.
 
+**Implementation evidence:** `../evidence/CA-2.2-EVIDENCE.md`
+
 ## CA-2.3 — Officer declarations, disqualifications and conflicts
 
-**Status:** `OPEN`  
-**Depends on:** CA-2.2  
+**Status:** `DONE`
+**Depends on:** CA-2.2
 **Goal:** Complete officer eligibility, independence and matter-specific conflict evidence.
 
 ### Authoritative surface
@@ -258,10 +260,12 @@ handoff and stop; do not begin the next slice.
 
 Officer fitness, declarations and conflicts are represented without exposing protected identity data.
 
+**Implementation evidence:** `../evidence/CA-2.3-EVIDENCE.md`
+
 ## CA-2.4 — Meetings, notices, participants and quorum
 
-**Status:** `OPEN`  
-**Depends on:** CA-2.3  
+**Status:** `DONE`
+**Depends on:** CA-2.3
 **Goal:** Create an evidentiary meeting process before decisions and resolutions.
 
 ### Authoritative surface
@@ -335,10 +339,12 @@ handoff and stop; do not begin the next slice.
 
 Meeting validity evidence exists before any resolution is adopted.
 
+**Implementation evidence:** `../evidence/CA-2.4-EVIDENCE.md`
+
 ## CA-2.5 — Votes, resolutions, minutes and implementation actions
 
-**Status:** `OPEN`  
-**Depends on:** CA-2.4  
+**Status:** `DONE`
+**Depends on:** CA-2.4
 **Goal:** Complete the governance decision chain from motion through implementation.
 
 ### Authoritative surface
@@ -411,6 +417,8 @@ handoff and stop; do not begin the next slice.
 ### Exit gate
 
 Phase 2 closes at 14/14 with an auditable chain from body membership to meeting, vote, resolution and executed action.
+
+**Implementation evidence:** `../evidence/CA-2.5-EVIDENCE.md`
 
 ## Phase-close rule
 

@@ -144,7 +144,7 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 
 | Pattern / skill | Why |
 |-----------------|-----|
-| Xerp editorial / presentation / Storybook stacks (`afenda-editorial-*`, presentation promotion, Storybook agentic) | Explicit router SKIP; Storybook product restore dormant |
+| Xerp editorial / presentation / legacy Storybook stacks (`afenda-editorial-*`, presentation promotion, Storybook agentic) | Explicit router SKIP; legacy recovery remains banned. Active greenfield catalog ownership is isolated to `apps/storybook`. |
 | `better-auth-erp` | ARCH-026 Neon Auth only |
 | Wholesale Xerp `multi-tenancy-erp` (7-tier + RLS primary) | ARCH-023 shared-schema hard `organization_id`; RLS out of scope on BFF |
 | `supabase` as auth/platform authority | Retired keys; Neon Auth lock |

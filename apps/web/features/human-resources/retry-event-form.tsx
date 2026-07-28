@@ -20,7 +20,10 @@ export function RetryEventForm({ eventId }: { eventId: string }) {
 			</Button>
 			{state?.ok === false ? <FormError>{state.message}</FormError> : null}
 			{state?.ok ? (
-				<p className="text-sm text-success" role="status">
+				<p
+					className="text-sm font-bold text-success-subtle-foreground"
+					role="status"
+				>
 					Queued for retry.
 				</p>
 			) : null}

@@ -2,27 +2,22 @@
 
 ## Result
 
-`PARTIAL` - company status lifecycle backend, Server Actions, focused UI and a
-focused authenticated lifecycle journey with accessibility markup checks are
-implemented and verified. A real-package Phase 1 app-composition journey now
-persists the complete Phase 1 company through package commands and activates it
-through the lifecycle Server Action. Demo Neon failure-injection and race
-coverage now prove status activation rollback/retry behavior and simultaneous
-activation CAS safety. The slice is not `DONE` because full product closure
-still requires accepted browser-authenticated/Neon-backed journey proof, a
-current successful production build proof and final 14-boundary phase-close
-evidence.
+`DONE` - company status lifecycle backend, Server Actions, focused UI, real
+package journey, demo Neon lifecycle failure-injection/race coverage, current
+production build and browser-authenticated Neon-backed Phase 1 journey are
+implemented and verified. The accepted Playwright journey drives the production
+app from draft registration through active status, reads back Neon state and
+proves cross-tenant isolation.
 
 ## Current audit - 2026-07-28
 
 | Command | Exit | Evidence |
 |---|---:|---|
-| `pnpm exec biome check e2e/journey/corporate-administration-phase-1.spec.ts apps/web/app/actions/hr-privacy-deletion.ts` | 0 | browser-only Phase 1 Playwright journey and HR parse-detail typing fix checked; no fixes applied |
-| `pnpm --filter @afenda/web typecheck` | 0 | web TypeScript gate green after `invalidDeletionRequest` was tightened to accept `ParseSchemaFailure["details"]` |
-| `PLAYWRIGHT_REUSE_SERVER=1` + demo `NEON_CA_0_4_DEMO_DATABASE_URL` loaded as `DATABASE_URL` + `pnpm exec playwright test e2e/journey/corporate-administration-phase-1.spec.ts --project=journey` | 1 | not accepted; setup failed before UI proof because the demo branch `md_party_address` table lacks current source column `purpose` |
-| read-only demo schema probe for `md_party_address` | 0 | demo branch still exposes older columns (`region`, `is_default`, `valid_from`) and lacks current source columns (`purpose`, `status`, `effective_from`, `administrative_area`) required by current Master Data address shape |
-| `pnpm --filter @afenda/web build` latest retry | inconclusive | prior HR type error was fixed, but the subsequent production build attempt exceeded the five-minute command window before completion; no current green production build proof is claimed by this audit |
-| `pnpm --filter @afenda/corporate-administration check` | 0 | 152 files checked; typecheck green; 46 files passed, 11 skipped; 240 tests passed, 34 skipped |
+| `pnpm exec biome check packages/erp/corporate-administration/src/parse-input.ts packages/erp/corporate-administration/__tests__/parse-input.test.ts packages/erp/corporate-administration/__tests__/command-identity.test.ts apps/web/lib/erp/corporate-administration-command-options.ts e2e/journey/corporate-administration-phase-1.spec.ts apps/web/app/actions/legal-company-identity-actions.ts` | 0 | 6 touched package/app/E2E files checked; no fixes applied |
+| `pnpm --filter @afenda/corporate-administration check` | 0 | 152 files checked; typecheck green; 46 files passed, 11 skipped; 242 tests passed, 34 skipped |
+| `pnpm --filter @afenda/web typecheck` | 0 | web TypeScript gate green after CA production composition changes |
+| `pnpm --filter @afenda/web build` | 0 | Next.js 16.2.10 production build compiled, typechecked and generated 48 static pages; Neon dynamic-route messages were non-fatal build-time warnings |
+| `Remove-Item Env:DATABASE_URL; Remove-Item Env:PLAYWRIGHT_REUSE_SERVER; PLAYWRIGHT_PORT=3117; PLAYWRIGHT_BASE_URL=http://localhost:3117; pnpm exec playwright test e2e/journey/corporate-administration-phase-1.spec.ts --project=journey` | 0 | 1 browser-authenticated production journey passed in 54.9s; the journey seeds Master Data prerequisites, registers the draft, records jurisdiction, legal name, legal form, company identifier, financial year, registered activity and registered office, activates the company, reads back Neon status history, and verifies cross-tenant isolation |
 | demo `DATABASE_URL`, `REQUIRE_DATABASE_TESTS=1`, `AFENDA_DATABASE_TEST_TARGET=demo` + `pnpm --filter @afenda/corporate-administration test` | 0 | 56 files passed; 272 tests passed |
 | demo `NEON_CA_0_4_DEMO_DATABASE_URL` loaded as `DATABASE_URL`, `REQUIRE_DATABASE_TESTS=1`, `AFENDA_DATABASE_TEST_TARGET=demo` + `pnpm --filter @afenda/corporate-administration test -- __tests__/failure-injection/company-status-lifecycle-atomicity.test.ts` | 0 | 1 file passed; 2 tests passed; proves status activation outbox failure rolls back `ca_company_status_history`, leaves no completed receipt, keeps the company in `draft`, releases the idempotency reservation and then successfully retries the same activation with the same idempotency key; also proves simultaneous activation with the same expected company version yields one persisted `active` transition and one governed failure |
 | `pnpm --filter @afenda/web test -- __tests__/corporate-administration/legal-company-lifecycle.journey.test.ts` | 0 | 1 file passed; 2 tests passed; focused authenticated lifecycle journey covers session stamping, persisted reload rendering, high-risk approval failure, unauthorized denial and accessible labels/status markup |
@@ -113,21 +108,18 @@ evidence.
   `e2e/journey/corporate-administration-phase-1.spec.ts` is implemented as a
   browser-only authenticated journey that seeds Master Data prerequisites,
   drives the Corporate Administration UI through Phase 1 activation, reads back
-  Neon state and checks cross-tenant isolation. It is not accepted evidence yet
-  because the current demo branch Master Data schema is behind source.
+  Neon state and checks cross-tenant isolation.
+- Production composition fixes:
+  `createCorporateAdministrationCompanyDependencies` now resolves CA
+  language/country/currency and party address reference reads through CA-owned
+  read ports over `@afenda/db`, avoiding synthetic Master Data actors at the CA
+  command boundary.
+- Canonical input fix:
+  `parseCorporateAdministrationInput` omits parsed `undefined` object fields
+  before command fingerprinting while preserving strict canonical JSON rejection
+  for unsupported values.
 
 ## Remaining gap
 
-Record the remaining product evidence before promoting CA-1.5 to
-`DONE`:
-
-- Browser-authenticated/Neon-backed Phase 1 journey. The real-package
-  app-composition journey proves package behavior through app composition, but
-  it still runs in the Vitest memory runtime rather than an accepted
-  browser-authenticated Neon-backed production lane. The Playwright journey is
-  scaffolded, but demo schema drift blocks setup before UI proof.
-- Current successful production build proof for `@afenda/web`. The latest
-  retry exceeded the command window after the HR type error was fixed.
-- Final 14-boundary phase-close evidence across CA-1.2 through CA-1.5,
-  including governance/full affected graph gates and any browser journey
-  artifacts required by `90-*` section 5.
+No CA-1.5 acceptance gap remains in this evidence file. Phase 2 can start from
+the Phase 1 `DONE` state recorded in `03-ROADMAP-INDEX.md`.

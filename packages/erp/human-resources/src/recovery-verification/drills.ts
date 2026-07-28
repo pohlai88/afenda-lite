@@ -11,8 +11,10 @@ import {
 } from "../integrations/payroll-delivery";
 import {
 	checkpointConnectorCursor,
+	claimDueReliabilityWork,
 	createMemoryReliabilityStore,
 	executeReliabilityWork,
+	type ReliabilityExecutionOutcome,
 	type ReliabilityKernelPorts,
 	recoverConnectorCursor,
 	registerReliabilityWork,
@@ -72,7 +74,7 @@ function payrollPayload(baseAmount = "85000.00"): ApprovedPayrollHandoff {
 }
 
 function reliabilityPorts(
-	outcomes: Result<{ receiptId: string | null }>[],
+	outcomes: Result<ReliabilityExecutionOutcome>[],
 ): ReliabilityKernelPorts & { advance(milliseconds: number): void } {
 	let now = new Date("2026-01-01T00:00:00.000Z");
 	return {
@@ -80,7 +82,10 @@ function reliabilityPorts(
 		clock: { now: () => new Date(now) },
 		executor: {
 			async execute() {
-				return outcomes.shift() ?? ok({ receiptId: "recovered" });
+				return (
+					outcomes.shift() ??
+					ok({ kind: "acknowledged", receiptId: "recovered" })
+				);
 			},
 		},
 		failureClassifier: {
@@ -90,6 +95,35 @@ function reliabilityPorts(
 			now = new Date(now.getTime() + milliseconds);
 		},
 	};
+}
+
+async function executeClaimedReliabilityWork(
+	ports: ReliabilityKernelPorts,
+	workItemId: string,
+	policy: Parameters<typeof executeReliabilityWork>[0]["policy"],
+) {
+	const claimed = await claimDueReliabilityWork(
+		{
+			workerId: "recovery-drill",
+			now: ports.clock.now(),
+			leaseDurationMs: 120_000,
+			limit: 1,
+			perOrganizationLimit: 1,
+		},
+		ports.store,
+	);
+	if (!claimed.ok || claimed.data.length !== 1) {
+		return fail("CONFLICT", "Recovery work was not due");
+	}
+	return executeReliabilityWork(
+		{
+			organizationId: ORGANIZATION_ID,
+			workItemId,
+			leaseOwner: "recovery-drill",
+			policy,
+		},
+		ports,
+	);
 }
 
 export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
@@ -125,8 +159,10 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 				const created = await registerReliabilityWork(
 					{
 						organizationId: ORGANIZATION_ID,
-						connector: "outbox",
-						operation: "publish",
+						connector: "platform",
+						operation: "dispatch-events",
+						targetType: "organization",
+						targetId: ORGANIZATION_ID,
 						correlationId: CORRELATION_ID,
 						idempotencyKey: "idem-outbox-drill",
 						requestFingerprint: "fingerprint-outbox-drill",
@@ -149,22 +185,12 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 					maxDelayMs: 10,
 					multiplier: 2,
 				};
-				await executeReliabilityWork(
-					{
-						organizationId: ORGANIZATION_ID,
-						workItemId: created.data.id,
-						policy,
-					},
-					ports,
-				);
+				await executeClaimedReliabilityWork(ports, created.data.id, policy);
 				ports.advance(10);
-				const terminal = await executeReliabilityWork(
-					{
-						organizationId: ORGANIZATION_ID,
-						workItemId: created.data.id,
-						policy,
-					},
+				const terminal = await executeClaimedReliabilityWork(
 					ports,
+					created.data.id,
+					policy,
 				);
 				const deadLetter = await ports.store.findDeadLetterByWorkItem({
 					organizationId: ORGANIZATION_ID,

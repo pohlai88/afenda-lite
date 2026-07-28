@@ -3,7 +3,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { HARD_TENANT_ROOT_TABLE_NAMES } from "@afenda/db";
-import { HUMAN_RESOURCES_EVENT_IDS } from "@afenda/events";
+import {
+	HUMAN_RESOURCES_EVENT_IDS,
+	PLATFORM_HUMAN_RESOURCES_ACCOUNTING_PROVISIONING_FACT_RECORDED_EVENT,
+	PLATFORM_HUMAN_RESOURCES_PAYROLL_DELIVERY_REQUESTED_EVENT,
+	PLATFORM_HUMAN_RESOURCES_RELIABILITY_WORK_REQUESTED_EVENT,
+	PLATFORM_HUMAN_RESOURCES_REPORTING_FACT_RECORDED_EVENT,
+	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
+} from "@afenda/events";
 import { describe, expect, it } from "vitest";
 import { validateEffectiveTruthClassificationRegister } from "../src/effective-truth-classification";
 import {
@@ -75,7 +82,14 @@ describe("humanResourcesModuleManifest", () => {
 			HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 		);
 		expect(new Set(humanResourcesModuleManifest.events.emits)).toEqual(
-			new Set(HUMAN_RESOURCES_EVENT_IDS),
+			new Set([
+				...HUMAN_RESOURCES_EVENT_IDS,
+				PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
+				PLATFORM_HUMAN_RESOURCES_REPORTING_FACT_RECORDED_EVENT,
+				PLATFORM_HUMAN_RESOURCES_ACCOUNTING_PROVISIONING_FACT_RECORDED_EVENT,
+				PLATFORM_HUMAN_RESOURCES_PAYROLL_DELIVERY_REQUESTED_EVENT,
+				PLATFORM_HUMAN_RESOURCES_RELIABILITY_WORK_REQUESTED_EVENT,
+			]),
 		);
 		expect(humanResourcesModuleManifest.owns.commands).toEqual([
 			...HUMAN_RESOURCES_COMMAND_IDS,

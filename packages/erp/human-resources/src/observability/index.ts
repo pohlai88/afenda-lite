@@ -1,4 +1,5 @@
 export { createMemoryHrObservabilityRecorder } from "./memory-recorder";
+export { observeHrPrivacyOperationResult } from "./operation-observability";
 export type {
 	HrObservabilityClockPort,
 	HrObservabilityPort,

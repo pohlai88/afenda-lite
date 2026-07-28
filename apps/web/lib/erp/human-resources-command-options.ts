@@ -19,6 +19,7 @@ import { createProductionHrObservabilityPorts } from "@/modules/platform/observa
 export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptions {
 	const documentObjectResolver =
 		createHumanResourcesDocumentObjectResolverPort();
+	const observability = createProductionHrObservabilityPorts();
 	return {
 		authorization: createHumanResourcesAuthorizationPort(),
 		resourceAwareAuthorization:
@@ -30,12 +31,12 @@ export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptio
 		assignmentContext: createProductionAssignmentContextQuery({
 			query: createDrizzleAssignmentContextQuery(),
 		}),
-		attendanceSource: createHumanResourcesAttendanceSourcePort(),
+		attendanceSource: createHumanResourcesAttendanceSourcePort(observability),
 		documentObjectResolver,
 		documentReference: createHumanResourcesDocumentReferencePort(
 			documentObjectResolver,
 		),
 		privacy: createHumanResourcesPrivacyPort(),
-		observability: createProductionHrObservabilityPorts(),
+		observability,
 	};
 }

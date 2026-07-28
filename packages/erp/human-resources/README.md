@@ -6,7 +6,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
-**Disk inventory (2026-07-28):** **348** commands · **198** queries · **111** permissions · **136** `hr_*` mutation / hard-tenant tables · **136/136** effective-truth classification register · emission registry **348/348**. Manifest `lifecycle: scaffolded`. Phases 0–12 are implemented and locally verified; Phase 13 local implementation is complete while external certification and controlled lifecycle promotion remain open — see [current evidence and dual scores](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/47-current-implementation-evidence-and-dual-scores.md) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+**Disk inventory (2026-07-28):** **348** commands · **198** queries · **113** permissions · **136** `hr_*` mutation / hard-tenant tables · **136/136** effective-truth classification register · emission registry **348/348**. Manifest `lifecycle: scaffolded`. Phases 0–12 are locally implemented. Phase 13 remediation remains open: the production scheduler/claim/acknowledgement path and permissioned recovery controls are present, while durable scheduled bulk import/export handling, same-revision full-suite/live-parity evidence, external certification, and controlled lifecycle approval remain outstanding — see [current evidence and dual scores](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/47-current-implementation-evidence-and-dual-scores.md) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
 
 ## Consume
 
@@ -53,7 +53,7 @@ import {
 | `reporting` | Reconciled HR read-model snapshots and Memory/Drizzle sources |
 | `bulk` / `bulk-export` | Resumable imports, field-allowlisted exports, and privacy evidence |
 | `integrations` | Platform work items, payroll delivery, accounting, and provisioning facts |
-| `observability` / `reliability` | Bounded metrics, retries, dead letters, cursor recovery, and outage decisions |
+| `observability` / `reliability` | Bounded metrics, fair claims, leases, acknowledgements, retries, dead letters, cursor recovery, and server-derived connector health |
 
 ## Worker identity model
 

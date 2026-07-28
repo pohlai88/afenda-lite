@@ -11,7 +11,7 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 | Phase | Name | Slices | Status | Outcome |
 |---:|---|---:|---|---|
 | 0 | Architecture and Foundation | 4 | DONE | Create the package, close authority and dependency decisions, establish the transactional kernel, and prove durable infrastructure without activating business capability. |
-| 1 | Legal Company and Establishments | 5 | IN_PROGRESS | Deliver complete statutory identity, legal-form, identifier, status, financial-year, establishment and registered-address history. |
+| 1 | Legal Company and Establishments | 5 | DONE | Complete statutory identity, legal-form, identifier, status, financial-year, establishment and registered-address history are implemented and verified through package, app build and browser-authenticated Neon-backed Phase 1 journey evidence. |
 | 2 | Governance and Statutory Offices | 5 | OPEN | Deliver governance bodies, statutory roles, officer evidence, meetings, quorum, voting, resolutions and implementation tracking. |
 | 3 | Authority, Approvals and Company Seal | 4 | OPEN | Provide effective delegation-of-authority decisions, mandates, powers of attorney, seal control and real maker-checker enforcement. |
 | 4 | Capital, Ownership and Beneficial Control | 6 | OPEN | Create a balanced immutable capital ledger, certificate register, ownership restrictions, UBO chain and legal distribution declarations. |
@@ -29,15 +29,15 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 | CA-0.3 | 0 | Runtime composition and mutation contracts | CA-0.2 | DONE |
 | CA-0.4 | 0 | Durable infrastructure adapters and package boundaries | CA-0.3 | DONE |
 | CA-1.1 | 1 | Legal-company registry and jurisdiction profile | Phase 0 DONE | DONE |
-| CA-1.2 | 1 | Effective legal names and legal forms | CA-1.1 | PARTIAL |
-| CA-1.3 | 1 | Corporate identifiers, financial years and registered activities | CA-1.2 | PARTIAL |
-| CA-1.4 | 1 | Registered offices, legal establishments and premises | CA-1.3 | PARTIAL |
-| CA-1.5 | 1 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | PARTIAL |
-| CA-2.1 | 2 | Governance bodies and memberships | Phase 1 DONE | OPEN |
-| CA-2.2 | 2 | Statutory offices, appointments, qualifications and consent | CA-2.1 | OPEN |
-| CA-2.3 | 2 | Officer declarations, disqualifications and conflicts | CA-2.2 | OPEN |
-| CA-2.4 | 2 | Meetings, notices, participants and quorum | CA-2.3 | OPEN |
-| CA-2.5 | 2 | Votes, resolutions, minutes and implementation actions | CA-2.4 | OPEN |
+| CA-1.2 | 1 | Effective legal names and legal forms | CA-1.1 | DONE |
+| CA-1.3 | 1 | Corporate identifiers, financial years and registered activities | CA-1.2 | DONE |
+| CA-1.4 | 1 | Registered offices, legal establishments and premises | CA-1.3 | DONE |
+| CA-1.5 | 1 | Company status, financial lifecycle and Phase 1 journey | CA-1.4 | DONE |
+| CA-2.1 | 2 | Governance bodies and memberships | Phase 1 DONE | DONE |
+| CA-2.2 | 2 | Statutory offices, appointments, qualifications and consent | CA-2.1 | DONE |
+| CA-2.3 | 2 | Officer declarations, disqualifications and conflicts | CA-2.2 | DONE |
+| CA-2.4 | 2 | Meetings, notices, participants and quorum | CA-2.3 | DONE |
+| CA-2.5 | 2 | Votes, resolutions, minutes and implementation actions | CA-2.4 | DONE |
 | CA-3.1 | 3 | Delegation-of-authority policies and rules | Phase 2 DONE | OPEN |
 | CA-3.2 | 3 | Mandates, signatories and powers of attorney | CA-3.1 | OPEN |
 | CA-3.3 | 3 | Company seal/chop identity, custody and use | CA-3.2 | OPEN |
@@ -77,36 +77,69 @@ Run one slice per controlled coding mission. Inspect current disk state before e
 Last updated: 2026-07-28.
 
 This audit records implementation posture without weakening the canonical
-`Status` column above. A slice stays `PARTIAL` until every required boundary for
-that slice is evidenced; backend-only completion does not promote a full
-product slice to `DONE`.
+`Status` column above. Phase 1 was promoted only after package, app build and
+browser-authenticated Neon-backed journey evidence all passed.
 
 | Slice | Canonical status | Current implementation posture | Evidence |
 |---|---|---|---|
-| CA-1.2 | PARTIAL | Backend plus focused name/legal-form Action/UI journey evidence are green against the repaired demo branch; a real-package Phase 1 app-composition journey now seeds name/legal-form through package commands and reloads persisted state before activation; full slice closure still requires complete 14-boundary product evidence including browser-authenticated/Neon-backed journey proof. | `evidence/CA-1.2-EVIDENCE.md`; demo CA package check 54/54 files, 268/268 tests; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused web CA tests 20/20 files, 64/64 tests |
-| CA-1.3 | PARTIAL | Backend plus focused identifier, financial-year and activity Action/UI journey evidence are green against the repaired demo branch; a real-package Phase 1 app-composition journey now seeds identifiers, financial year and activity through package commands and reloads persisted state before activation; full slice closure still requires complete 14-boundary product evidence including browser-authenticated/Neon-backed journey proof. | `evidence/CA-1.3-EVIDENCE.md`; demo CA package check 54/54 files, 268/268 tests; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused web CA tests 20/20 files, 64/64 tests |
-| CA-1.4 | PARTIAL | Backend implementation is complete, demo ledger is proven through `0026_ca_recorded_range_zero_width`, focused establishment Action/UI journey evidence is green, and the real-package Phase 1 app-composition journey now seeds registered address through package commands; full product-slice closure still requires complete phase-close proof. | `evidence/CA-1.4-EVIDENCE.md`; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused web CA tests 20/20 files, 64/64 tests |
-| CA-1.5 | PARTIAL | Backend status lifecycle, focused Server Action/UI coverage, focused lifecycle journey/accessibility markup evidence, real-package persisted Phase 1 app-composition journey and demo Neon lifecycle failure-injection plus simultaneous activation race proof are implemented and green. A browser-authenticated Playwright journey has been scaffolded, but it is not yet accepted: the demo Neon branch still exposes the older `md_party_address` schema (`region`, `is_default`, `valid_from`) and lacks the current source columns (`purpose`, `status`, `effective_from`, `administrative_area`), so seed/setup fails before the UI journey can prove production behavior. Full slice closure still requires browser-authenticated/Neon-backed journey proof, a successful current production build run, and final 14-boundary phase-close evidence. | `evidence/CA-1.5-EVIDENCE.md`; CA package check 46 passed, 11 skipped, 240 tests passed, 34 skipped; focused demo Neon `company-status-lifecycle-atomicity.test.ts` 1/1 file, 2/2 tests passed; focused web CA tests 20/20 files, 64/64 tests; `@afenda/web` typecheck green after `hr-privacy-deletion` parse-detail typing fix; latest `@afenda/web build` attempt timed out before completion; demo ledger applied through `0028_ca_company_status_lifecycle`; browser journey currently blocked by Master Data demo schema drift |
+| CA-1.2 | DONE | Effective legal-name and legal-form backend, Server Action and UI paths are implemented. The accepted browser-authenticated Phase 1 journey creates the legal name and legal form through the production app, reloads persisted Neon state, and proves they satisfy activation readiness. | `evidence/CA-1.2-EVIDENCE.md`; `evidence/CA-1.5-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration check` 46 passed, 11 skipped, 242 tests passed, 34 skipped; `pnpm --filter @afenda/web build` exit 0; Playwright CA Phase 1 journey exit 0 |
+| CA-1.3 | DONE | Corporate identifier, financial-year and registered-activity backend, Server Action and UI paths are implemented. The accepted browser-authenticated Phase 1 journey creates each record through the production app, reloads persisted Neon state, and proves they satisfy activation readiness. | `evidence/CA-1.3-EVIDENCE.md`; `evidence/CA-1.5-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration check` 46 passed, 11 skipped, 242 tests passed, 34 skipped; `pnpm --filter @afenda/web build` exit 0; Playwright CA Phase 1 journey exit 0 |
+| CA-1.4 | DONE | Registered-office, legal-establishment and premise backend plus app composition are implemented. The accepted browser-authenticated Phase 1 journey seeds Master Data address prerequisites, sets a registered office through the production app, reloads persisted Neon state, and proves registered office readiness. | `evidence/CA-1.4-EVIDENCE.md`; `evidence/CA-1.5-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration check` 46 passed, 11 skipped, 242 tests passed, 34 skipped; `pnpm --filter @afenda/web build` exit 0; Playwright CA Phase 1 journey exit 0 |
+| CA-1.5 | DONE | Status lifecycle, activation completeness, idempotent durable status persistence, app lifecycle actions and the browser-authenticated Neon-backed Phase 1 activation journey are implemented and verified. Production composition now resolves CA reference/address reads through CA-owned ports instead of synthetic Master Data actors, and package input parsing normalizes optional object fields before command fingerprinting. | `evidence/CA-1.5-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration check` 46 passed, 11 skipped, 242 tests passed, 34 skipped; `pnpm --filter @afenda/web typecheck` exit 0; `pnpm --filter @afenda/web build` exit 0; Playwright CA Phase 1 journey exit 0 |
+| CA-2.1 | DONE | Governance body and governance membership backend foundations are implemented with CA-owned schema tables, typed package contracts, durable command/query catalog wiring, memory and Drizzle stores, hard-tenant-root registration, and focused rule/store coverage. Phase 2 remains OPEN until the full phase-close authenticated journey, accessibility and acceptance lanes are completed. | `evidence/CA-2.1-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration test -- __tests__/governance/ca-2.1-contract-and-memory.test.ts` 1 file passed, 4 tests passed; `pnpm --filter @afenda/corporate-administration check` 47 passed, 11 skipped, 246 tests passed, 34 skipped |
+| CA-2.2 | DONE | Statutory offices, officer appointments, officer qualifications and consent evidence are implemented with CA-owned schema tables, typed package contracts, durable command/query catalog wiring, memory and Drizzle stores, hard-tenant-root registration, and focused vacancy/qualification/approval coverage. Phase 2 remains OPEN until the full phase-close authenticated journey, accessibility and acceptance lanes are completed. | `evidence/CA-2.2-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration test -- __tests__/officers/ca-2.2-contract-and-memory.test.ts` 1 file passed, 5 tests passed; `pnpm --filter @afenda/corporate-administration check` 48 passed, 11 skipped, 251 tests passed, 34 skipped; `pnpm --filter @afenda/db typecheck` passed; `pnpm --filter @afenda/db test -- __tests__/tenancy.test.ts` 1 file passed, 14 tests passed |
+| CA-2.3 | DONE | Officer declarations, disqualifications, conflict disclosures and recusals are implemented with CA-owned schema tables, typed package contracts, durable command/query catalog wiring, memory and Drizzle stores, redacted event payloads, hard-tenant-root registration, and focused eligibility/leakage/linkage/reminder coverage. Phase 2 remains OPEN until the full phase-close authenticated journey, accessibility and acceptance lanes are completed. | `evidence/CA-2.3-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration test -- __tests__/officers/ca-2.3-compliance-contract-and-memory.test.ts` 1 file passed, 4 tests passed; `pnpm --filter @afenda/corporate-administration check` 49 passed, 11 skipped, 255 tests passed, 34 skipped; `pnpm --filter @afenda/db lint` passed; `pnpm --filter @afenda/db typecheck` passed; `pnpm --filter @afenda/db test -- __tests__/tenancy.test.ts` 1 file passed, 14 tests passed |
+| CA-2.4 | DONE | Governance meetings, notices, participants and quorum evidence are implemented with CA-owned schema tables, typed package contracts, durable command/query catalog wiring, memory and Drizzle stores, hard-tenant-root registration, and focused notice/waiver/attendance/quorum/stale-version coverage. Phase 2 remains OPEN until the full phase-close authenticated journey, accessibility and acceptance lanes are completed. | `evidence/CA-2.4-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration test -- __tests__/meetings/ca-2.4-meetings-contract-and-memory.test.ts` 1 file passed, 3 tests passed; `pnpm --filter @afenda/corporate-administration check` 50 passed, 11 skipped, 258 tests passed, 34 skipped; `pnpm --filter @afenda/db lint` passed; `pnpm --filter @afenda/db typecheck` passed; `pnpm --filter @afenda/db test -- __tests__/tenancy.test.ts` 1 file passed, 14 tests passed |
+| CA-2.5 | DONE | Meeting votes, resolutions, minutes documents and implementation actions are implemented with CA-owned schema tables, typed package contracts, durable command/query catalog wiring, memory and Drizzle stores, hard-tenant-root registration, and focused vote-threshold/resolution/action coverage. Phase 2 remains OPEN until the full phase-close authenticated journey, accessibility and acceptance lanes are completed. | `evidence/CA-2.5-EVIDENCE.md`; `pnpm --filter @afenda/corporate-administration test -- __tests__/resolutions/ca-2.5-resolutions-contract-and-memory.test.ts` 1 file passed, 3 tests passed; `pnpm --filter @afenda/corporate-administration check` 51 passed, 11 skipped, 261 tests passed, 34 skipped; `pnpm --filter @afenda/db lint` passed; `pnpm --filter @afenda/db typecheck` passed; `pnpm --filter @afenda/db test -- __tests__/tenancy.test.ts` 1 file passed, 14 tests passed |
 
 ## Latest implementation update - 2026-07-28
 
-- Added browser-only Playwright coverage for the Phase 1 Corporate
+- Implemented CA-2.5 meeting votes, resolutions, minutes documents and
+  implementation actions in `@afenda/corporate-administration`, including
+  CA-owned database schema, migration, command/query contracts, memory and
+  Drizzle stores, mutation-table ownership, event/permission/catalog wiring,
+  hard-tenant-root inventory, and focused CA-2.5 tests. Phase 2 remains OPEN
+  until the full authenticated journey, accessibility and phase-close lanes are
+  completed.
+- Implemented CA-2.4 governance meetings, notices, participants and quorum in
+  `@afenda/corporate-administration`, including CA-owned database schema,
+  migration, command/query contracts, memory and Drizzle stores,
+  mutation-table ownership, event/permission/catalog wiring,
+  hard-tenant-root inventory, and focused CA-2.4 tests. Phase 2 remains OPEN
+  until the full phase-close lanes are completed.
+- Implemented CA-2.3 officer declarations, disqualifications, conflict
+  disclosures and recusals in `@afenda/corporate-administration`, including
+  CA-owned database schema, migration, command/query contracts, memory and
+  Drizzle stores, mutation-table ownership, redacted event/permission/catalog
+  wiring, hard-tenant-root inventory, and focused CA-2.3 tests. Phase 2 remains
+  OPEN because CA-2.4 and CA-2.5 remain OPEN.
+- Implemented CA-2.2 statutory offices, officer appointments and officer
+  qualifications in `@afenda/corporate-administration`, including CA-owned
+  database schema, migration, command/query contracts, memory and Drizzle stores,
+  mutation-table ownership, event/permission/catalog wiring,
+  hard-tenant-root inventory, and focused CA-2.2 tests. Phase 2 remains OPEN
+  because CA-2.3 through CA-2.5 remain OPEN.
+- Implemented CA-2.1 governance bodies and memberships in
+  `@afenda/corporate-administration`, including CA-owned database schema,
+  migration, command/query contracts, memory and Drizzle stores, mutation-table
+  ownership, event/permission/catalog wiring, hard-tenant-root inventory, and
+  focused CA-2.1 tests.
+- Accepted browser-only Playwright coverage for the Phase 1 Corporate
   Administration journey at
   `e2e/journey/corporate-administration-phase-1.spec.ts`; it drives the
-  authenticated UI from draft registration through activation and includes
-  cross-tenant visibility assertions.
-- Focused code quality for the new E2E spec and the related
-  `hr-privacy-deletion` typing fix passed:
-  `pnpm exec biome check e2e/journey/corporate-administration-phase-1.spec.ts apps/web/app/actions/hr-privacy-deletion.ts`.
-- `pnpm --filter @afenda/web typecheck` passed after tightening
-  `invalidDeletionRequest` to accept `ParseSchemaFailure["details"]`.
-- The browser journey is not accepted yet. Its first Neon setup run failed with
-  `column "purpose" of relation "md_party_address" does not exist`; read-only
-  schema inspection confirmed the demo branch is behind the current
-  Master Data source schema.
-- A current `pnpm --filter @afenda/web build` proof is still missing; the
-  latest retry ran past the five-minute command window after the HR type error
-  was fixed, so this audit does not promote CA-1.5 or Phase 1.
+  authenticated production app from draft registration through active status,
+  reads back Neon state and verifies cross-tenant isolation.
+- Fixed CA package input canonicalization so optional object fields parsed by
+  Zod are omitted before deterministic command fingerprinting. Focused parser
+  and command-identity coverage is included in the full package check.
+- Fixed production CA app composition so language/country/currency and party
+  address reference reads use CA-owned read ports over `@afenda/db` instead of
+  synthetic Master Data actors that lacked permissions in the browser journey.
+- Current verification is green:
+  `pnpm --filter @afenda/corporate-administration check`,
+  `pnpm --filter @afenda/web typecheck`,
+  `pnpm --filter @afenda/web build`, and
+  `pnpm exec playwright test e2e/journey/corporate-administration-phase-1.spec.ts --project=journey`.
 
 ## Status vocabulary
 

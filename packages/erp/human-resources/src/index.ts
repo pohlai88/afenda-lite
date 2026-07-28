@@ -5,6 +5,7 @@ export * from "./audit-integrity";
 export * from "./brands";
 export * from "./bulk";
 export * from "./bulk-export";
+export * from "./bulk-jobs";
 export * from "./command-options";
 export * from "./compensation-benefits/benefit-dependent";
 export * from "./compensation-benefits/benefit-eligibility";

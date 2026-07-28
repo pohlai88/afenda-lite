@@ -10,6 +10,7 @@ type OperatorErrorProps = {
 export default function OperatorError({ error, reset }: OperatorErrorProps) {
 	return (
 		<SegmentError
+			asLandmark={false}
 			title="Operator surface unavailable"
 			fallbackMessage="Something went wrong loading this operator surface."
 			error={error}

@@ -631,7 +631,11 @@ function ActionFeedback({
 }) {
 	if (state === null) return null;
 	return state.ok ? (
-		<p role="status" aria-live="polite" className="text-sm text-emerald-700">
+		<p
+			role="status"
+			aria-live="polite"
+			className="text-sm text-success-subtle-foreground"
+		>
 			{success}
 		</p>
 	) : (

@@ -8,6 +8,8 @@ import {
 	FormError,
 	FormField,
 	Input,
+	NativeSelect,
+	NativeSelectOption,
 	Spinner,
 	Textarea,
 } from "@afenda/ui-system";
@@ -15,6 +17,18 @@ import { useState, useTransition } from "react";
 
 import { applyMasterDataImportAction } from "@/app/actions/apply-master-data-import";
 import { validateMasterDataImportAction } from "@/app/actions/validate-master-data-import";
+
+const IMPORT_MODES = [
+	"create_only",
+	"update_existing",
+	"create_or_update",
+] as const;
+
+type ImportMode = (typeof IMPORT_MODES)[number];
+
+function isImportMode(value: string): value is ImportMode {
+	return IMPORT_MODES.some((mode) => mode === value);
+}
 
 type ImportPanelProps = {
 	canImportValidate: boolean;
@@ -35,9 +49,7 @@ export function MasterDataImportPanel({
 	canImportApply,
 }: ImportPanelProps) {
 	const [sourceSystem, setSourceSystem] = useState("manual");
-	const [mode, setMode] = useState<
-		"create_only" | "update_existing" | "create_or_update"
-	>("create_or_update");
+	const [mode, setMode] = useState<ImportMode>("create_or_update");
 	const [rowsJson, setRowsJson] = useState(
 		'[\n  { "code": "ACME", "name": "Acme Trading", "partyKind": "organization" }\n]',
 	);
@@ -174,24 +186,26 @@ export function MasterDataImportPanel({
 				/>
 			</FormField>
 			<FormField label="Mode" required fieldId="md-import-mode">
-				<select
+				<NativeSelect
 					id="md-import-mode"
-					className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
 					value={mode}
-					onChange={(event) =>
-						setMode(
-							event.target.value as
-								| "create_only"
-								| "update_existing"
-								| "create_or_update",
-						)
-					}
+					onChange={(event) => {
+						if (isImportMode(event.currentTarget.value)) {
+							setMode(event.currentTarget.value);
+						}
+					}}
 					disabled={pending}
 				>
-					<option value="create_or_update">create_or_update</option>
-					<option value="create_only">create_only</option>
-					<option value="update_existing">update_existing</option>
-				</select>
+					<NativeSelectOption value="create_or_update">
+						create_or_update
+					</NativeSelectOption>
+					<NativeSelectOption value="create_only">
+						create_only
+					</NativeSelectOption>
+					<NativeSelectOption value="update_existing">
+						update_existing
+					</NativeSelectOption>
+				</NativeSelect>
 			</FormField>
 			<FormField label="Party rows (JSON)" required fieldId="md-import-rows">
 				<Textarea

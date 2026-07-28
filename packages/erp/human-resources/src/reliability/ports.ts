@@ -3,6 +3,7 @@ import type { Result } from "@afenda/errors/result";
 import type {
 	ConnectorCursor,
 	ReliabilityDeadLetterRecord,
+	ReliabilityExecutionOutcome,
 	ReliabilityWorkItem,
 } from "./types";
 
@@ -10,11 +11,9 @@ export type ReliabilityClockPort = { now(): Date };
 
 export type ReliabilityExecutorPort = {
 	/** Must deduplicate by workItemId + requestFingerprint. */
-	execute(input: ReliabilityWorkItem): Promise<
-		Result<{
-			receiptId: string | null;
-		}>
-	>;
+	execute(
+		input: ReliabilityWorkItem,
+	): Promise<Result<ReliabilityExecutionOutcome>>;
 };
 
 export type ReliabilityFailureClassifierPort = {
@@ -34,6 +33,14 @@ export type ReliabilityStorePort = {
 	createWorkItem(
 		item: ReliabilityWorkItem,
 	): Promise<Result<ReliabilityWorkItem>>;
+	/** Atomically leases due work with per-tenant fairness and expired-lease recovery. */
+	claimDueWork(input: {
+		workerId: string;
+		now: Date;
+		leaseExpiresAt: Date;
+		limit: number;
+		perOrganizationLimit: number;
+	}): Promise<Result<readonly ReliabilityWorkItem[]>>;
 	/** Atomically commits the work update and optional dead-letter insert. */
 	commitAttempt(input: {
 		expectedVersion: number;

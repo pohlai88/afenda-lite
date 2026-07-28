@@ -21,6 +21,7 @@ const API_NOW_ROUTE_FILES = [
 	"app/api/auth/[...path]/route.ts",
 	"app/api/session/sync-cookies/route.ts",
 	"app/api/session/ensure-active-organization/route.ts",
+	"app/api/cron/hr-reliability/route.ts",
 ] as const;
 
 function collectRouteFiles(dir: string, relativePrefix: string): string[] {

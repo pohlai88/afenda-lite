@@ -35,7 +35,7 @@ function Calendar({
 				selected:
 					"bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
 				today: "bg-accent text-accent-foreground",
-				outside: "text-muted-foreground opacity-50",
+				outside: "text-muted-foreground",
 				disabled: "text-muted-foreground opacity-50",
 				hidden: "invisible",
 				...classNames,

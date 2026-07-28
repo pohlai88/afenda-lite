@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
+import {
+	createMemoryHrObservabilityRecorder,
+	type HrObservabilityPorts,
+} from "../src/observability";
 import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createProductionAttendanceSource } from "../src/production-attendance-source";
 import {
@@ -267,6 +271,11 @@ describe("createProductionAttendanceSource", () => {
 	});
 
 	it("fails closed after retry exhaustion", async () => {
+		const recorder = createMemoryHrObservabilityRecorder();
+		const observability: HrObservabilityPorts = {
+			recorder,
+			clock: { now: () => new Date("2026-07-28T00:00:00.000Z") },
+		};
 		const source = createProductionAttendanceSource({
 			pull: createPull(async () => ({
 				ok: false as const,
@@ -274,12 +283,25 @@ describe("createProductionAttendanceSource", () => {
 				message: "still down",
 			})),
 			retry: { maxAttempts: 2, backoffMs: 0 },
+			observability,
 		});
 
 		const fetched = await source.fetchEvents({ organizationId: ORG_A });
 		expect(fetched.ok).toBe(false);
 		if (fetched.ok) return;
 		expect(fetched.code).toBe("SERVICE_UNAVAILABLE");
+		expect(recorder.metrics).toContainEqual({
+			name: "hr.connector.health",
+			kind: "gauge",
+			value: 0,
+			labels: { connector: "attendance" },
+		});
+		expect(recorder.events).toContainEqual({
+			name: "hr.connector.unhealthy",
+			severity: "error",
+			observedAt: new Date("2026-07-28T00:00:00.000Z"),
+			attributes: { connector: "attendance", health: "unavailable" },
+		});
 	});
 
 	it("builds batch and preview from a single validation pass", async () => {

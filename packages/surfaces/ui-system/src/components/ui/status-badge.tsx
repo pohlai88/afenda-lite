@@ -13,7 +13,7 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 
 const statusBadgeVariants = cva(
-	"inline-flex w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors",
+	"inline-flex w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-2 py-1 text-sm font-bold whitespace-nowrap transition-colors",
 	{
 		variants: {
 			status: {
@@ -29,8 +29,8 @@ const statusBadgeVariants = cva(
 				active: "border-info-border bg-info-subtle text-info-subtle-foreground",
 			},
 			size: {
-				sm: "px-1.5 py-0.5 text-xs",
-				md: "px-2 py-1 text-xs",
+				sm: "px-1.5 py-0.5 text-sm",
+				md: "px-2 py-1 text-sm",
 				lg: "px-3 py-1.5 text-sm",
 			},
 		},

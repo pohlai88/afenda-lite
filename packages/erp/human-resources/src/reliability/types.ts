@@ -1,10 +1,23 @@
-export type ReliabilityWorkStatus = "pending" | "succeeded" | "dead_lettered";
+import type {
+	ReliabilityConnector,
+	ReliabilityOperation,
+	ReliabilityTargetType,
+} from "./operations";
+
+export type ReliabilityWorkStatus =
+	| "pending"
+	| "processing"
+	| "awaiting_acknowledgement"
+	| "succeeded"
+	| "dead_lettered";
 
 export type ReliabilityWorkItem = {
 	id: string;
 	organizationId: string;
-	connector: string;
-	operation: string;
+	connector: ReliabilityConnector;
+	operation: ReliabilityOperation;
+	targetType: ReliabilityTargetType;
+	targetId: string;
 	correlationId: string;
 	idempotencyKey: string;
 	requestFingerprint: string;
@@ -16,16 +29,29 @@ export type ReliabilityWorkItem = {
 	lastErrorCode: string | null;
 	lastErrorMessage: string | null;
 	receiptId: string | null;
+	acknowledgementDeadlineAt: Date | null;
+	leaseOwner: string | null;
+	leaseExpiresAt: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 };
+
+export type ReliabilityExecutionOutcome =
+	| { kind: "acknowledged"; receiptId: string }
+	| {
+			kind: "accepted";
+			receiptId: string;
+			acknowledgementDeadlineAt: Date;
+	  };
 
 export type ReliabilityDeadLetterRecord = {
 	id: string;
 	organizationId: string;
 	workItemId: string;
-	connector: string;
-	operation: string;
+	connector: ReliabilityConnector;
+	operation: ReliabilityOperation;
+	targetType: ReliabilityTargetType;
+	targetId: string;
 	correlationId: string;
 	idempotencyKey: string;
 	requestFingerprint: string;

@@ -8,6 +8,8 @@ import {
 	FormError,
 	FormField,
 	Input,
+	NativeSelect,
+	NativeSelectOption,
 	Spinner,
 } from "@afenda/ui-system";
 import type { ComponentProps, ReactNode } from "react";
@@ -579,22 +581,23 @@ export function RecordProofOfDeliveryForm({
 				fieldId="delivery-pod-outcome"
 				error={outcomeError}
 			>
-				<select
+				<NativeSelect
 					id="delivery-pod-outcome"
 					name="outcome"
 					required
-					className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
 					disabled={pending}
 					defaultValue=""
 				>
-					<option value="" disabled>
+					<NativeSelectOption value="" disabled>
 						Select outcome
-					</option>
-					<option value="delivered">delivered</option>
-					<option value="partially_delivered">partially_delivered</option>
-					<option value="refused">refused</option>
-					<option value="failed">failed</option>
-				</select>
+					</NativeSelectOption>
+					<NativeSelectOption value="delivered">delivered</NativeSelectOption>
+					<NativeSelectOption value="partially_delivered">
+						partially_delivered
+					</NativeSelectOption>
+					<NativeSelectOption value="refused">refused</NativeSelectOption>
+					<NativeSelectOption value="failed">failed</NativeSelectOption>
+				</NativeSelect>
 			</FormField>
 			<FormField
 				label="Received by"

@@ -1,8 +1,19 @@
 "use client";
 
+import {
+	type ColumnDef,
+	type ColumnOrderState,
+	type ColumnPinningState,
+	functionalUpdate,
+	getCoreRowModel,
+	useReactTable,
+	type VisibilityState,
+} from "@tanstack/react-table";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "../../lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "./alert";
+import { BulkActionBar } from "./bulk-action-bar";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 import { Empty } from "./empty";
@@ -59,6 +70,14 @@ export interface DataTableProps<T> {
 	filters?: Partial<Record<keyof T, string>>;
 	onFilterChange?: (key: keyof T, value: string) => void;
 	density?: DataTableDensity;
+	columnVisibility?: VisibilityState;
+	onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+	columnOrder?: ColumnOrderState;
+	onColumnOrderChange?: (order: ColumnOrderState) => void;
+	pinnedColumns?: ColumnPinningState;
+	onPinnedColumnsChange?: (pinning: ColumnPinningState) => void;
+	bulkActions?: React.ReactNode;
+	error?: { title?: string; description: string; action?: React.ReactNode };
 	className?: string;
 }
 
@@ -100,9 +119,51 @@ function DataTable<T extends Record<string, unknown>>({
 	filters,
 	onFilterChange,
 	density = "comfortable",
+	columnVisibility = {},
+	onColumnVisibilityChange,
+	columnOrder,
+	onColumnOrderChange,
+	pinnedColumns = {},
+	onPinnedColumnsChange,
+	bulkActions,
+	error,
 	className,
 }: DataTableProps<T>) {
 	const resolvedSelected = selectedRowIds ?? new Set<string>();
+	const tableColumns = React.useMemo<ColumnDef<T>[]>(
+		() =>
+			columns.map((column) => ({
+				id: String(column.key),
+				accessorFn: (row) => row[column.key],
+			})),
+		[columns],
+	);
+	const resolvedColumnOrder =
+		columnOrder ?? columns.map((column) => String(column.key));
+	const table = useReactTable({
+		data,
+		columns: tableColumns,
+		state: {
+			columnVisibility,
+			columnOrder: resolvedColumnOrder,
+			columnPinning: pinnedColumns,
+		},
+		onColumnVisibilityChange: (updater) =>
+			onColumnVisibilityChange?.(functionalUpdate(updater, columnVisibility)),
+		onColumnOrderChange: (updater) =>
+			onColumnOrderChange?.(functionalUpdate(updater, resolvedColumnOrder)),
+		onColumnPinningChange: (updater) =>
+			onPinnedColumnsChange?.(functionalUpdate(updater, pinnedColumns)),
+		getCoreRowModel: getCoreRowModel(),
+	});
+	const columnById = React.useMemo(
+		() => new Map(columns.map((column) => [String(column.key), column])),
+		[columns],
+	);
+	const visibleColumns = table.getVisibleLeafColumns().flatMap((column) => {
+		const definition = columnById.get(column.id);
+		return definition ? [{ column, definition }] : [];
+	});
 
 	const handleSort = (columnKey: keyof T) => {
 		if (!onSort) return;
@@ -155,6 +216,16 @@ function DataTable<T extends Record<string, unknown>>({
 		);
 	}
 
+	if (error) {
+		return (
+			<Alert variant="destructive" className={className}>
+				<AlertTitle>{error.title ?? "Unable to load data"}</AlertTitle>
+				<AlertDescription>{error.description}</AlertDescription>
+				{error.action ? <div className="mt-3">{error.action}</div> : null}
+			</Alert>
+		);
+	}
+
 	if (data.length === 0 && !toolbar && !onFilterChange) {
 		return (
 			<Empty
@@ -169,6 +240,12 @@ function DataTable<T extends Record<string, unknown>>({
 
 	return (
 		<div className={cn("space-y-3", className)}>
+			{bulkActions ? (
+				<BulkActionBar
+					selectedCount={resolvedSelected.size}
+					actions={bulkActions}
+				/>
+			) : null}
 			{(toolbar || onFilterChange) && (
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 					{onFilterChange ? (
@@ -202,7 +279,7 @@ function DataTable<T extends Record<string, unknown>>({
 					action={emptyAction}
 				/>
 			) : (
-				<div className="overflow-x-auto rounded-md border shadow-(--shadow-raised)">
+				<div className="overflow-x-auto rounded-md border">
 					<Table>
 						<TableHeader className="bg-surface-sunken sticky top-0 z-10">
 							<TableRow className={rowHeightClass}>
@@ -221,24 +298,37 @@ function DataTable<T extends Record<string, unknown>>({
 										/>
 									</TableHead>
 								)}
-								{columns.map((column) => (
+								{visibleColumns.map(({ column, definition }) => (
 									<TableHead
-										key={String(column.key)}
-										style={{ width: column.width }}
+										key={column.id}
+										style={{
+											width: definition.width,
+											left:
+												column.getIsPinned() === "left"
+													? column.getStart("left")
+													: undefined,
+											right:
+												column.getIsPinned() === "right"
+													? column.getAfter("right")
+													: undefined,
+										}}
+										className={cn(
+											column.getIsPinned() && "sticky z-20 bg-surface-sunken",
+										)}
 									>
-										{column.sortable && onSort ? (
+										{definition.sortable && onSort ? (
 											<Button
 												variant="ghost"
 												size="sm"
 												className="h-auto p-0 font-medium hover:bg-transparent"
-												onClick={() => handleSort(column.key)}
-												aria-label={`Sort by ${column.title}`}
+												onClick={() => handleSort(definition.key)}
+												aria-label={`Sort by ${definition.title}`}
 											>
-												{column.title}
-												{getSortIcon(column.key)}
+												{definition.title}
+												{getSortIcon(definition.key)}
 											</Button>
 										) : (
-											column.title
+											definition.title
 										)}
 									</TableHead>
 								))}
@@ -274,11 +364,26 @@ function DataTable<T extends Record<string, unknown>>({
 												/>
 											</TableCell>
 										)}
-										{columns.map((column) => (
-											<TableCell key={String(column.key)}>
-												{column.render
-													? column.render(row[column.key], row, index)
-													: String(row[column.key] ?? "")}
+										{visibleColumns.map(({ column, definition }) => (
+											<TableCell
+												key={column.id}
+												style={{
+													left:
+														column.getIsPinned() === "left"
+															? column.getStart("left")
+															: undefined,
+													right:
+														column.getIsPinned() === "right"
+															? column.getAfter("right")
+															: undefined,
+												}}
+												className={cn(
+													column.getIsPinned() && "sticky z-10 bg-background",
+												)}
+											>
+												{definition.render
+													? definition.render(row[definition.key], row, index)
+													: String(row[definition.key] ?? "")}
 											</TableCell>
 										))}
 										{rowActions ? (

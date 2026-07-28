@@ -13,6 +13,7 @@ export default function ClientWorkspaceError({
 }: ClientWorkspaceErrorProps) {
 	return (
 		<SegmentError
+			asLandmark={false}
 			title="Client workspace unavailable"
 			fallbackMessage="Something went wrong loading this surface."
 			error={error}

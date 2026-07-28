@@ -139,6 +139,111 @@ commands:
   - id: endPremise
     moduleId: corporate-administration
     permission: corporate_administration.establishment.manage
+  - id: createGovernanceBody
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.manage
+  - id: amendGovernanceBody
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.manage
+  - id: retireGovernanceBody
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.manage
+  - id: appointGovernanceMember
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.manage
+  - id: changeGovernanceMembership
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.manage
+  - id: endGovernanceMembership
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.manage
+  - id: defineStatutoryOffice
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.manage
+  - id: appointOfficer
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.manage
+  - id: amendOfficerAppointment
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.manage
+  - id: recordOfficerQualification
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.manage
+  - id: resignOfficer
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.manage
+  - id: removeOfficer
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.manage
+  - id: recordOfficerDeclaration
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.manage
+  - id: supersedeOfficerDeclaration
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.manage
+  - id: recordOfficerDisqualification
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.manage
+  - id: endOfficerDisqualification
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.manage
+  - id: discloseConflict
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.manage
+  - id: recordRecusal
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.manage
+  - id: scheduleGovernanceMeeting
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: issueMeetingNotice
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: recordNoticeDelivery
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: waiveNotice
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: recordMeetingParticipant
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: openMeeting
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: recordQuorum
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: adjournMeeting
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: closeMeeting
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.manage
+  - id: recordMeetingVote
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: adoptResolution
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: rejectResolution
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: recordWrittenResolution
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: supersedeResolution
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: assignResolutionAction
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: completeResolutionAction
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
+  - id: recordMinutesDocument
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.manage
   - id: fulfillment.delivery.create
     moduleId: fulfillment
     permission: fulfillment.delivery.create

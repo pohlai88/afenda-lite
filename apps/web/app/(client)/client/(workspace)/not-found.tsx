@@ -7,6 +7,7 @@ import { PublicMessageShell } from "@/features/auth/public-message-shell";
 export default function ClientWorkspaceNotFound() {
 	return (
 		<PublicMessageShell
+			asLandmark={false}
 			title="Not found"
 			footer={
 				<Button asChild variant="outline" className="mt-2">

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
-
+import { resolveReliabilityOperation } from "./operations";
 import type {
 	ReliabilityClockPort,
 	ReliabilityExecutorPort,
@@ -17,6 +17,7 @@ import {
 import type {
 	ConnectorCursor,
 	ReliabilityDeadLetterRecord,
+	ReliabilityExecutionOutcome,
 	ReliabilityWorkItem,
 } from "./types";
 
@@ -32,12 +33,21 @@ export async function registerReliabilityWork(
 		organizationId: string;
 		connector: string;
 		operation: string;
+		targetType: string;
+		targetId: string;
 		correlationId: string;
 		idempotencyKey: string;
 		requestFingerprint: string;
 	},
 	ports: Pick<ReliabilityKernelPorts, "store" | "clock">,
 ): Promise<Result<ReliabilityWorkItem>> {
+	const definition = resolveReliabilityOperation(input);
+	if (definition === null || input.targetId.trim().length === 0) {
+		return fail(
+			"VALIDATION_ERROR",
+			"Unsupported reliability connector, operation, or target",
+		);
+	}
 	const replay = await ports.store.findByIdempotencyKey(input);
 	if (!replay.ok) return replay;
 	if (replay.data) {
@@ -48,7 +58,14 @@ export async function registerReliabilityWork(
 	const now = ports.clock.now();
 	return ports.store.createWorkItem({
 		id: randomUUID(),
-		...input,
+		organizationId: input.organizationId,
+		connector: definition.connector,
+		operation: definition.operation,
+		targetType: definition.targetType,
+		targetId: input.targetId,
+		correlationId: input.correlationId,
+		idempotencyKey: input.idempotencyKey,
+		requestFingerprint: input.requestFingerprint,
 		status: "pending",
 		version: 1,
 		attemptCount: 0,
@@ -57,8 +74,44 @@ export async function registerReliabilityWork(
 		lastErrorCode: null,
 		lastErrorMessage: null,
 		receiptId: null,
+		acknowledgementDeadlineAt: null,
+		leaseOwner: null,
+		leaseExpiresAt: null,
 		createdAt: now,
 		updatedAt: now,
+	});
+}
+
+export function claimDueReliabilityWork(
+	input: {
+		workerId: string;
+		now: Date;
+		leaseDurationMs: number;
+		limit: number;
+		perOrganizationLimit: number;
+	},
+	store: ReliabilityStorePort,
+): Promise<Result<readonly ReliabilityWorkItem[]>> {
+	if (
+		input.workerId.trim().length === 0 ||
+		!Number.isInteger(input.leaseDurationMs) ||
+		input.leaseDurationMs < 1_000 ||
+		!Number.isInteger(input.limit) ||
+		input.limit < 1 ||
+		!Number.isInteger(input.perOrganizationLimit) ||
+		input.perOrganizationLimit < 1 ||
+		input.perOrganizationLimit > input.limit
+	) {
+		return Promise.resolve(
+			fail("VALIDATION_ERROR", "Invalid reliability claim"),
+		);
+	}
+	return store.claimDueWork({
+		workerId: input.workerId,
+		now: input.now,
+		leaseExpiresAt: new Date(input.now.getTime() + input.leaseDurationMs),
+		limit: input.limit,
+		perOrganizationLimit: input.perOrganizationLimit,
 	});
 }
 
@@ -66,6 +119,7 @@ export async function executeReliabilityWork(
 	input: {
 		organizationId: string;
 		workItemId: string;
+		leaseOwner: string;
 		policy?: ExponentialRetryPolicy;
 	},
 	ports: ReliabilityKernelPorts,
@@ -78,33 +132,56 @@ export async function executeReliabilityWork(
 	if (!found.ok) return found;
 	if (!found.data) return fail("NOT_FOUND", "Reliability work item not found");
 	const current = found.data;
-	if (current.status !== "pending") return ok(current);
+	if (current.status !== "processing") return ok(current);
 	const now = ports.clock.now();
-	if (current.nextAttemptAt && current.nextAttemptAt > now) {
-		return fail("CONFLICT", "Reliability retry is not due");
+	if (
+		current.leaseOwner !== input.leaseOwner ||
+		current.leaseExpiresAt === null ||
+		current.leaseExpiresAt <= now
+	) {
+		return fail("CONFLICT", "Reliability work lease is invalid or expired");
 	}
 	const attemptCount = current.attemptCount + 1;
 	const executed = await ports.executor.execute(current);
-	if (executed.ok) {
+	const executionResult: Result<ReliabilityExecutionOutcome> =
+		executed.ok &&
+		(executed.data.receiptId.trim().length === 0 ||
+			(executed.data.kind === "accepted" &&
+				executed.data.acknowledgementDeadlineAt <= now))
+			? fail(
+					"INTERNAL_ERROR",
+					"Connector returned invalid acknowledgement evidence",
+				)
+			: executed;
+	if (executionResult.ok) {
 		return ports.store.commitAttempt({
 			expectedVersion: current.version,
 			deadLetter: null,
 			workItem: {
 				...current,
-				status: "succeeded",
+				status:
+					executionResult.data.kind === "accepted"
+						? "awaiting_acknowledgement"
+						: "succeeded",
 				version: current.version + 1,
 				attemptCount,
 				nextAttemptAt: null,
 				lastAttemptAt: now,
 				lastErrorCode: null,
 				lastErrorMessage: null,
-				receiptId: executed.data.receiptId,
+				receiptId: executionResult.data.receiptId,
+				acknowledgementDeadlineAt:
+					executionResult.data.kind === "accepted"
+						? executionResult.data.acknowledgementDeadlineAt
+						: null,
+				leaseOwner: null,
+				leaseExpiresAt: null,
 				updatedAt: now,
 			},
 		});
 	}
 
-	const retryable = ports.failureClassifier.isRetryable(executed);
+	const retryable = ports.failureClassifier.isRetryable(executionResult);
 	const terminal = !retryable || attemptCount >= policy.maxAttempts;
 	const deadLetter: ReliabilityDeadLetterRecord | null = terminal
 		? {
@@ -113,12 +190,14 @@ export async function executeReliabilityWork(
 				workItemId: current.id,
 				connector: current.connector,
 				operation: current.operation,
+				targetType: current.targetType,
+				targetId: current.targetId,
 				correlationId: current.correlationId,
 				idempotencyKey: current.idempotencyKey,
 				requestFingerprint: current.requestFingerprint,
 				attemptCount,
-				errorCode: executed.code,
-				errorMessage: executed.message,
+				errorCode: executionResult.code,
+				errorMessage: executionResult.message,
 				failedAt: now,
 				replayedByWorkItemId: null,
 			}
@@ -135,8 +214,67 @@ export async function executeReliabilityWork(
 				? null
 				: new Date(now.getTime() + retryDelayMs(policy, attemptCount)),
 			lastAttemptAt: now,
-			lastErrorCode: executed.code,
-			lastErrorMessage: executed.message,
+			lastErrorCode: executionResult.code,
+			lastErrorMessage: executionResult.message,
+			receiptId: null,
+			acknowledgementDeadlineAt: null,
+			leaseOwner: null,
+			leaseExpiresAt: null,
+			updatedAt: now,
+		},
+	});
+}
+
+export async function acknowledgeReliabilityWork(
+	input: {
+		organizationId: string;
+		workItemId: string;
+		receiptId: string;
+		expectedVersion: number;
+		outcome: "acknowledged" | "rejected";
+		errorCode?: string;
+		errorMessage?: string;
+	},
+	ports: Pick<ReliabilityKernelPorts, "store" | "clock">,
+): Promise<Result<ReliabilityWorkItem>> {
+	const found = await ports.store.getWorkItem(input);
+	if (!found.ok) return found;
+	if (found.data === null)
+		return fail("NOT_FOUND", "Reliability work item not found");
+	const current = found.data;
+	if (current.receiptId !== input.receiptId) {
+		return fail("CONFLICT", "Reliability acknowledgement receipt mismatch");
+	}
+	if (current.status === "succeeded" && input.outcome === "acknowledged") {
+		return ok(current);
+	}
+	if (current.status !== "awaiting_acknowledgement") {
+		return fail("CONFLICT", "Reliability work is not awaiting acknowledgement");
+	}
+	if (current.version !== input.expectedVersion) {
+		return fail("CONFLICT", "Reliability acknowledgement version is stale");
+	}
+	const now = ports.clock.now();
+	if (
+		current.acknowledgementDeadlineAt !== null &&
+		current.acknowledgementDeadlineAt <= now
+	) {
+		return fail("CONFLICT", "Reliability acknowledgement deadline expired");
+	}
+	const rejected = input.outcome === "rejected";
+	return ports.store.commitAttempt({
+		expectedVersion: current.version,
+		deadLetter: null,
+		workItem: {
+			...current,
+			status: rejected ? "pending" : "succeeded",
+			version: current.version + 1,
+			nextAttemptAt: rejected ? now : null,
+			lastErrorCode: rejected ? (input.errorCode ?? "CONFLICT") : null,
+			lastErrorMessage: rejected
+				? (input.errorMessage ?? "Connector rejected accepted work")
+				: null,
+			acknowledgementDeadlineAt: null,
 			updatedAt: now,
 		},
 	});
@@ -184,6 +322,8 @@ export async function replayDeadLetter(
 			organizationId: input.organizationId,
 			connector: deadLetter.data.connector,
 			operation: deadLetter.data.operation,
+			targetType: deadLetter.data.targetType,
+			targetId: deadLetter.data.targetId,
 			correlationId: input.correlationId,
 			idempotencyKey: input.idempotencyKey,
 			requestFingerprint: input.requestFingerprint,
@@ -195,6 +335,9 @@ export async function replayDeadLetter(
 			lastErrorCode: null,
 			lastErrorMessage: null,
 			receiptId: null,
+			acknowledgementDeadlineAt: null,
+			leaseOwner: null,
+			leaseExpiresAt: null,
 			createdAt: now,
 			updatedAt: now,
 		},

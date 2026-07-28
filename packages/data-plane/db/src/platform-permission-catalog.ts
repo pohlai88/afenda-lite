@@ -853,6 +853,66 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
+		code: "corporate_administration.governance.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration governance records",
+		sensitive: false,
+	},
+	{
+		code: "corporate_administration.governance.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration governance records",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.officer.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration officer records",
+		sensitive: false,
+	},
+	{
+		code: "corporate_administration.officer.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration officer records",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.officer_compliance.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration officer compliance records",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.officer_compliance.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration officer compliance records",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.meeting.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration meeting records",
+		sensitive: false,
+	},
+	{
+		code: "corporate_administration.meeting.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration meeting records",
+		sensitive: true,
+	},
+	{
+		code: "corporate_administration.resolution.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration resolution records",
+		sensitive: false,
+	},
+	{
+		code: "corporate_administration.resolution.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration resolution records",
+		sensitive: true,
+	},
+	{
 		code: "sales.order.create",
 		module: "sales",
 		description: "Create draft sales orders",
@@ -1971,6 +2031,19 @@ export const PLATFORM_PERMISSION_V1 = [
 		code: "human-resources.privacy.anonymize.execute",
 		module: "human_resources",
 		description: "Execute human-resources subject anonymization",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.reliability.operate",
+		module: "human_resources",
+		description:
+			"Replay Human Resources reliability dead letters and acknowledge connector work",
+		sensitive: true,
+	},
+	{
+		code: "human-resources.connector-cursor.manage",
+		module: "human_resources",
+		description: "Repair Human Resources connector cursor checkpoints",
 		sensitive: true,
 	},
 	{

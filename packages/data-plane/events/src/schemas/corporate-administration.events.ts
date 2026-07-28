@@ -14,6 +14,61 @@ const corporateAdministrationBasePayloadSchema = z
 const corporateAdministrationChangePayloadSchema =
 	corporateAdministrationBasePayloadSchema.omit({ causationId: true });
 
+const corporateAdministrationGovernancePayloadSchema =
+	corporateAdministrationChangePayloadSchema
+		.extend({
+			companyStatusHistoryId: z.string().trim().min(1).optional(),
+			governanceBodyId: z.string().trim().min(1).optional(),
+			governanceMembershipId: z.string().trim().min(1).optional(),
+			statutoryOfficeId: z.string().trim().min(1).optional(),
+			officerAppointmentId: z.string().trim().min(1).optional(),
+			officerQualificationId: z.string().trim().min(1).optional(),
+			officerDeclarationId: z.string().trim().min(1).optional(),
+			officerDisqualificationId: z.string().trim().min(1).optional(),
+			conflictDisclosureId: z.string().trim().min(1).optional(),
+			governanceMeetingId: z.string().trim().min(1).optional(),
+			meetingParticipantId: z.string().trim().min(1).optional(),
+			meetingQuorumResultId: z.string().trim().min(1).optional(),
+			resolutionId: z.string().trim().min(1).optional(),
+			resolutionActionId: z.string().trim().min(1).optional(),
+			bodyType: z.string().trim().min(1).optional(),
+			officeTypeCode: z.string().trim().min(1).optional(),
+			qualificationTypeCode: z.string().trim().min(1).optional(),
+			declarationType: z.string().trim().min(1).optional(),
+			reasonCode: z.string().trim().min(1).optional(),
+			matterType: z.string().trim().min(1).optional(),
+			matterId: z.string().trim().min(1).optional(),
+			conflictTypeCode: z.string().trim().min(1).optional(),
+			procedureType: z.string().trim().min(1).optional(),
+			title: z.string().trim().min(1).optional(),
+			status: z.string().trim().min(1).optional(),
+			effectiveFrom: z.string().date().optional(),
+			effectiveTo: z.string().date().nullable().optional(),
+			endedOn: z.string().date().optional(),
+			scheduledStartAt: z.string().datetime().optional(),
+			scheduledEndAt: z.string().datetime().optional(),
+			issuedAt: z.string().datetime().optional(),
+			recordedAt: z.string().datetime().optional(),
+			deliveryMethod: z.string().trim().min(1).optional(),
+			attendanceStatus: z.string().trim().min(1).optional(),
+			hasQuorum: z.boolean().optional(),
+			eligibleMemberCount: z.number().int().nonnegative().optional(),
+			presentMemberCount: z.number().int().nonnegative().optional(),
+			requiredPresentCount: z.number().int().nonnegative().optional(),
+			motionCode: z.string().trim().min(1).optional(),
+			thresholdType: z.string().trim().min(1).optional(),
+			eligibleVotes: z.number().int().nonnegative().optional(),
+			votesFor: z.number().int().nonnegative().optional(),
+			votesAgainst: z.number().int().nonnegative().optional(),
+			abstentions: z.number().int().nonnegative().optional(),
+			outcome: z.string().trim().min(1).optional(),
+			outcomeBasis: z.string().trim().min(1).optional(),
+			approvalBasis: z.string().trim().min(1).optional(),
+			required: z.boolean().optional(),
+			verificationStatus: z.string().trim().min(1).optional(),
+		})
+		.strict();
+
 export const corporateAdministrationLegalCompanyDraftRegisteredPayloadSchema =
 	corporateAdministrationBasePayloadSchema
 		.extend({
@@ -337,6 +392,88 @@ export const CorporateAdministrationEventSchemas = {
 		corporateAdministrationPremiseRegisteredPayloadSchema,
 	"corporate_administration.premise.ended.v1":
 		corporateAdministrationPremiseEndedPayloadSchema,
+	"corporate_administration.legal_company.activated.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.legal_company.suspended.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.legal_company.struck_off_marked.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.legal_company.liquidation_entered.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.legal_company.dissolved.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.legal_company.restored.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.legal_company.archived.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_body.created.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_body.amended.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_body.retired.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_membership.appointed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_membership.changed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_membership.ended.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.statutory_office.defined.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.appointed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.appointment_amended.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.qualification_recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.resigned.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.removed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.declaration_recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.declaration_superseded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.disqualified.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.officer.disqualification_ended.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.conflict.disclosed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.conflict.recusal_recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_meeting.scheduled.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.meeting_notice.issued.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.meeting_notice.delivered.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.meeting_notice.waived.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.meeting_participant.recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_meeting.opened.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_meeting.quorum_recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_meeting.adjourned.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.governance_meeting.closed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.meeting_vote.recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.resolution.adopted.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.resolution.rejected.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.resolution.superseded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.resolution.minutes_recorded.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.resolution.action_assigned.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.resolution.action_completed.v1":
+		corporateAdministrationGovernancePayloadSchema,
 } as const;
 
 export type CorporateAdministrationEventType =

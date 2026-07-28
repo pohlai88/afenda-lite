@@ -11,16 +11,20 @@ import {
 	type BulkImportResult,
 	compensationBulkRowSchema,
 	employeeBulkRowSchema,
+	enqueueHumanResourcesBulkImport,
 	type HumanResourcesBulkEntityType,
+	type HumanResourcesBulkImportJob,
+	type HumanResourcesPermission,
 	type HumanResourcesReportingSnapshot,
 	learningAssignmentBulkRowSchema,
 	leaveEntitlementBulkRowSchema,
 	recordHrBulkError,
 } from "@afenda/human-resources";
+import { createDrizzleHumanResourcesBulkJobStore } from "@afenda/human-resources/adapters/drizzle";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
 	buildHumanResourcesReportingSnapshotWorker,
 	loadHumanResourcesBulkErrorArtifactWorker,
@@ -32,7 +36,6 @@ import {
 	runLearningAssignmentBulkImportWorker,
 	runLeaveEntitlementBulkImportWorker,
 } from "@/lib/erp/human-resources-reporting-bulk-worker";
-import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
@@ -120,14 +123,19 @@ async function runBulkAction<
 	Entity extends HumanResourcesBulkEntityType,
 >(input: {
 	path: string;
-	permission: ProductPermissionCode;
+	permission: HumanResourcesPermission;
 	schema: z.ZodType<BulkActionInput<Row>>;
 	rawInput: unknown;
 	entityType: Entity;
 	worker: (
 		request: BulkWorkerRequest<Row, Entity>,
 	) => Promise<Result<BulkImportResult<BulkCommandOutput>>>;
-}): Promise<ActionResult<{ result: BulkImportResult<BulkCommandOutput> }>> {
+}): Promise<
+	ActionResult<
+		| { mode: "dry_run"; result: BulkImportResult<BulkCommandOutput> }
+		| { mode: "queued"; job: HumanResourcesBulkImportJob }
+	>
+> {
 	return runOperatorPermissionAction({
 		path: input.path,
 		permission: input.permission,
@@ -144,6 +152,23 @@ async function runBulkAction<
 					"Enter a valid Human Resources bulk request.",
 					parsed.details,
 				);
+			}
+			if (parsed.data.mode === "commit") {
+				const queued = await enqueueHumanResourcesBulkImport(
+					{
+						...parsed.data,
+						organizationId: session.orgId,
+						actorUserId: session.userId,
+						correlationId,
+						entityType: input.entityType,
+						requiredPermission: input.permission,
+					},
+					createDrizzleHumanResourcesBulkJobStore(),
+				);
+				const mapped = mapPackageResult(queued);
+				return mapped.ok
+					? { ok: true, data: { mode: "queued" as const, job: mapped.data } }
+					: mapped;
 			}
 			const result = await input.worker({
 				...parsed.data,
@@ -162,7 +187,9 @@ async function runBulkAction<
 				);
 			}
 			const mapped = mapPackageResult(result);
-			return mapped.ok ? { ok: true, data: { result: mapped.data } } : mapped;
+			return mapped.ok
+				? { ok: true, data: { mode: "dry_run" as const, result: mapped.data } }
+				: mapped;
 		},
 	});
 }

@@ -45,6 +45,57 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 			idempotency.set(key, item.id);
 			return ok(clone(item));
 		},
+		async claimDueWork(input) {
+			const claimed: ReliabilityWorkItem[] = [];
+			const perOrganization = new Map<string, number>();
+			const eligible = Array.from(workItems.values())
+				.filter(
+					(item) =>
+						(item.status === "pending" &&
+							(item.nextAttemptAt === null ||
+								item.nextAttemptAt <= input.now)) ||
+						(item.status === "processing" &&
+							item.leaseExpiresAt !== null &&
+							item.leaseExpiresAt <= input.now) ||
+						(item.status === "awaiting_acknowledgement" &&
+							item.acknowledgementDeadlineAt !== null &&
+							item.acknowledgementDeadlineAt <= input.now),
+				)
+				.sort((left, right) => {
+					const due =
+						(
+							left.nextAttemptAt ??
+							left.acknowledgementDeadlineAt ??
+							left.createdAt
+						).getTime() -
+						(
+							right.nextAttemptAt ??
+							right.acknowledgementDeadlineAt ??
+							right.createdAt
+						).getTime();
+					return due !== 0 ? due : left.id.localeCompare(right.id);
+				});
+			for (const item of eligible) {
+				if (claimed.length >= input.limit) break;
+				const organizationCount = perOrganization.get(item.organizationId) ?? 0;
+				if (organizationCount >= input.perOrganizationLimit) continue;
+				const leased: ReliabilityWorkItem = {
+					...item,
+					status: "processing",
+					version: item.version + 1,
+					leaseOwner: input.workerId,
+					leaseExpiresAt: input.leaseExpiresAt,
+					receiptId:
+						item.status === "awaiting_acknowledgement" ? null : item.receiptId,
+					acknowledgementDeadlineAt: null,
+					updatedAt: input.now,
+				};
+				workItems.set(item.id, clone(leased));
+				claimed.push(clone(leased));
+				perOrganization.set(item.organizationId, organizationCount + 1);
+			}
+			return ok(claimed);
+		},
 		async commitAttempt(input) {
 			const current = workItems.get(input.workItem.id);
 			if (

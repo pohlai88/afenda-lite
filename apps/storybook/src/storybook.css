@@ -1,0 +1,67 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@afenda/ui-system/styles.css";
+@import "@afenda/ui-system/base.css";
+@import "@fontsource-variable/geist/wght.css";
+@import "@fontsource-variable/geist-mono/wght.css";
+
+@source "../../../packages/surfaces/ui-system/src";
+@source "./stories";
+
+@theme inline {
+	--font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "Geist Mono Variable", ui-monospace, monospace;
+}
+
+@layer base {
+	#storybook-root {
+		min-height: 100%;
+	}
+
+	body {
+		font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+	}
+
+	code,
+	kbd,
+	pre,
+	samp {
+		font-family: "Geist Mono Variable", ui-monospace, monospace;
+	}
+
+	[data-visual-test="true"] *,
+	[data-visual-test="true"] *::before,
+	[data-visual-test="true"] *::after {
+		animation-duration: 0ms;
+		caret-color: transparent;
+		transition-duration: 0ms;
+	}
+}
+
+/* Storybook generates these Docs blocks outside Afenda's component classes.
+   This narrow bridge maps only addon-owned typography back to the ERP scale. */
+.afenda-contract-docs table.docblock-argstable.sb-unstyled,
+.afenda-contract-docs
+	.docblock-argstable
+	:where(th, td, p, span, label, button, input, select, textarea) {
+	font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+}
+
+.afenda-contract-docs > #approved-evidence-stories,
+.afenda-contract-docs > .sb-anchor > h3 {
+	margin: 0;
+	font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+	font-size: 1.125rem;
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 1.75rem;
+}
+
+/* The labelled outer region owns horizontal scrolling and keyboard focus.
+   Table's generic responsive wrapper remains useful elsewhere but must not
+   create a second nested scroll container inside contract documentation. */
+.afenda-contract-api-table > [data-slot="table-container"] {
+	overflow-x: visible;
+}

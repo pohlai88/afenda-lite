@@ -84,7 +84,7 @@ export function DevLoginFab({ availability }: DevLoginFabProps) {
 				<Button
 					type="button"
 					size="icon-lg"
-					className="size-14 rounded-full shadow-[var(--shadow-raised)]"
+					className="size-14 rounded-full shadow-(--shadow-raised)"
 					aria-label={`Local dev login as ${onlyRole.label}`}
 					disabled={busy}
 					onClick={() => submitRole(onlyRole.role)}
@@ -114,7 +114,7 @@ export function DevLoginFab({ availability }: DevLoginFabProps) {
 					<Button
 						type="button"
 						size="icon-lg"
-						className="size-14 rounded-full shadow-[var(--shadow-raised)]"
+						className="size-14 rounded-full shadow-(--shadow-raised)"
 						aria-label="Local dev login"
 						disabled={busy}
 					>

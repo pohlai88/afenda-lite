@@ -159,7 +159,6 @@ function Combobox(props: ComboboxProps) {
 					}
 					aria-expanded={open}
 					aria-haspopup="listbox"
-					aria-multiselectable={multiple || undefined}
 					aria-invalid={ariaInvalid}
 					aria-describedby={ariaDescribedBy}
 					disabled={disabled}
@@ -202,7 +201,7 @@ function Combobox(props: ComboboxProps) {
 						value={searchValue}
 						onValueChange={handleSearchChange}
 					/>
-					<CommandList>
+					<CommandList aria-multiselectable={multiple || undefined}>
 						<CommandEmpty>{emptyMessage}</CommandEmpty>
 						<CommandGroup>
 							{visibleOptions.map((option) => {

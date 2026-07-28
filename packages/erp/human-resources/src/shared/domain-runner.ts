@@ -6,6 +6,7 @@ import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
 } from "../module-ids";
+import { observeAuthorizedOperationResult } from "../observability/operation-observability";
 import { parseHumanResourcesInput } from "../parse-input";
 import type {
 	HumanResourcesFieldProjection,
@@ -71,14 +72,26 @@ async function runParsedAuthorizedOperation<
 	operationKind: "command" | "query";
 	config: ParsedAuthorizedConfig<TSchema, TDeps, TOut, TProjected>;
 }): Promise<Result<TProjected>> {
+	const startedAtMs = Date.now();
 	const { config } = params;
+	const observeEarlyResult = <T>(
+		result: Result<T>,
+		options: HumanResourcesCommandOptions = params.options,
+	) =>
+		observeAuthorizedOperationResult({
+			operationId: params.operationId,
+			operationKind: params.operationKind,
+			observability: options.observability,
+			startedAtMs,
+			result,
+		});
 	const parsed = parseHumanResourcesInput(
 		config.schema,
 		params.input,
 		config.invalidMessage,
 	);
 	if (!parsed.ok) {
-		return parsed;
+		return observeEarlyResult(parsed);
 	}
 
 	let operationOptions = params.options;
@@ -88,14 +101,14 @@ async function runParsedAuthorizedOperation<
 			parsed.data,
 		);
 		if (!resolvedOptions.ok) {
-			return resolvedOptions;
+			return observeEarlyResult(resolvedOptions);
 		}
 		operationOptions = resolvedOptions.data;
 	}
 
 	const depsResult = await config.resolveDeps(operationOptions, parsed.data);
 	if (!depsResult.ok) {
-		return depsResult;
+		return observeEarlyResult(depsResult, operationOptions);
 	}
 
 	let resolvedResource: HumanResourcesResourceContext | undefined;
@@ -107,7 +120,7 @@ async function runParsedAuthorizedOperation<
 		);
 		if (resourceResolution !== undefined && "ok" in resourceResolution) {
 			if (!resourceResolution.ok) {
-				return resourceResolution;
+				return observeEarlyResult(resourceResolution, operationOptions);
 			}
 			resolvedResource = resourceResolution.data;
 		} else {

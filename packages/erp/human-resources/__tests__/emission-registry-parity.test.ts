@@ -1,4 +1,4 @@
-import { HumanResourcesEventSchemas } from "@afenda/events";
+import { AllEventSchemas, HumanResourcesEventSchemas } from "@afenda/events";
 import { describe, expect, it } from "vitest";
 import { humanResourcesModuleManifest } from "../src/module.manifest";
 import {
@@ -37,7 +37,7 @@ const SLICE_36_CLASSIFIED_PACKS = [
 describe("mutation emission registry parity", () => {
 	it("every manifest emit type has a Zod schema entry", () => {
 		for (const eventType of humanResourcesModuleManifest.events.emits) {
-			expect(HumanResourcesEventSchemas[eventType]).toBeDefined();
+			expect(AllEventSchemas[eventType]).toBeDefined();
 		}
 	});
 

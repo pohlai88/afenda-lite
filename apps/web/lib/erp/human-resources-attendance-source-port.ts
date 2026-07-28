@@ -3,10 +3,13 @@ import type { AttendanceSourcePort } from "@afenda/human-resources";
 import {
 	createHttpAttendanceConnectorPull,
 	createProductionAttendanceSource,
+	type HrObservabilityPorts,
 } from "@afenda/human-resources";
 
 /** Composition-root attendance source for Time import pulls. */
-export function createHumanResourcesAttendanceSourcePort(): AttendanceSourcePort {
+export function createHumanResourcesAttendanceSourcePort(
+	observability: HrObservabilityPorts,
+): AttendanceSourcePort {
 	const baseUrl = env.HR_ATTENDANCE_CONNECTOR_BASE_URL;
 	if (baseUrl === undefined) {
 		return createProductionAttendanceSource();
@@ -14,5 +17,6 @@ export function createHumanResourcesAttendanceSourcePort(): AttendanceSourcePort
 
 	return createProductionAttendanceSource({
 		pull: createHttpAttendanceConnectorPull({ baseUrl }),
+		observability,
 	});
 }

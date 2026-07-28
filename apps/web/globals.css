@@ -1,12 +1,14 @@
 /*
  * Target app entry — CSS ownership lives HERE (ARCH-024):
  *   - the app imports Tailwind + the animation layer,
- *   - @afenda/ui-system owns ONLY the semantic tokens (styles.css),
+ *   - @afenda/ui-system owns semantic tokens (styles.css) and shared base
+ *     rules (base.css),
  *   - the app registers the package source so Tailwind discovers its classes.
  */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@afenda/ui-system/styles.css";
+@import "@afenda/ui-system/base.css";
 
 @source "../../packages/surfaces/ui-system/src";
 

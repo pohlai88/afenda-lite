@@ -21,6 +21,21 @@ modules:
       - legal_company
       - legal_establishment
       - premise
+      - governance_body
+      - governance_membership
+      - statutory_office
+      - officer_appointment
+      - officer_qualification
+      - officer_declaration
+      - officer_disqualification
+      - conflict_disclosure
+      - governance_meeting
+      - meeting_notice
+      - meeting_participant
+      - meeting_quorum_result
+      - meeting_vote
+      - resolution
+      - resolution_action
     band: R1-F
     category: erp
     id: corporate-administration

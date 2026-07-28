@@ -19,6 +19,7 @@ This file mirrors the **api-now** allowlist. Verify with `Test-Path` / `pnpm che
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned; not portal JSON; excluded from OpenAPI YAML |
 | GET | `/api/session/sync-cookies` | Cookie-safe session mint / refresh | member session | Redirect; not `{ data }` JSON; excluded from YAML |
 | GET | `/api/session/ensure-active-organization` | Active-org persistence | member session | Redirect / plain-text; excluded from YAML |
+| GET | `/api/cron/hr-reliability` | Bounded HR reliability worker | bearer `CRON_SECRET` | Vercel Cron, Node.js, `HR_RELIABILITY_ENABLED` rollout gate, aggregate-only JSON, `no-store`; excluded from public YAML |
 
 Success JSON for health uses `{ data: T }`. Failures use bare `APIErrorBody`. Metrics is Prometheus text (not `{ data }`). OpenAPI: [openapi.md](openapi.md) — health + metrics YAML include set (`/api/ai/chat` excluded).
 
@@ -73,6 +74,7 @@ Operator / identity mutations                       → Server Action
 Neon Auth UI callbacks / magic-link                 → /api/auth/[...path] (api-now)
 Health probes (uptime, readiness)                   → /api/health/* (api-now)
 Session cookie bridges                              → /api/session/* (api-now)
+Internal scheduled workers                          → /api/cron/* (api-now)
 Future mobile / external REST consumer              → new RH only when consumer exists
 Wiped Declarations draft / FFT HTTP                 → do not recreate
 ```

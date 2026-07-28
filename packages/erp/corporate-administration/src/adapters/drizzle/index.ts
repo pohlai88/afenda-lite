@@ -9,11 +9,19 @@ export type {
 } from "./dependencies";
 export type { CorporateAdministrationDrizzleEstablishmentDependencies } from "./establishments";
 export { createDrizzleCorporateAdministrationEstablishmentStore } from "./establishments";
+export type { CorporateAdministrationDrizzleGovernanceDependencies } from "./governance";
+export { createDrizzleCorporateAdministrationGovernanceStore } from "./governance";
 export type { CorporateAdministrationDrizzleIdempotencyDependencies } from "./idempotency";
 export {
 	createDrizzleCorporateAdministrationIdempotencyPort,
 	DrizzleCorporateAdministrationIdempotencyPort,
 } from "./idempotency";
+export type { CorporateAdministrationDrizzleMeetingDependencies } from "./meetings";
+export { createDrizzleCorporateAdministrationMeetingStore } from "./meetings";
+export type { CorporateAdministrationDrizzleOfficerComplianceDependencies } from "./officer-compliance";
+export { createDrizzleCorporateAdministrationOfficerComplianceStore } from "./officer-compliance";
+export type { CorporateAdministrationDrizzleOfficerDependencies } from "./officers";
+export { createDrizzleCorporateAdministrationOfficerStore } from "./officers";
 export type {
 	CorporateAdministrationDrizzleOutboxDependencies,
 	CorporateAdministrationPendingEventAppender,
@@ -23,6 +31,8 @@ export {
 	createDrizzleCorporateAdministrationOutboxPort,
 	DrizzleCorporateAdministrationOutboxPort,
 } from "./outbox";
+export type { CorporateAdministrationDrizzleResolutionDependencies } from "./resolutions";
+export { createDrizzleCorporateAdministrationResolutionStore } from "./resolutions";
 export type { CorporateAdministrationDrizzleTransactionDependencies } from "./transaction";
 export {
 	createDrizzleCorporateAdministrationTransactionPort,

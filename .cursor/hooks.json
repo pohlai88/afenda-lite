@@ -108,6 +108,12 @@
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": false,
         "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/ui-contract-manifest.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
       }
     ]
   }

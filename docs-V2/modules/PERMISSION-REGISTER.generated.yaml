@@ -61,6 +61,36 @@ permissions:
   - code: corporate_administration.establishment.manage
     moduleId: corporate-administration
     namespace: corporate_administration
+  - code: corporate_administration.governance.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.governance.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.officer.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.officer.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.officer_compliance.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.officer_compliance.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.meeting.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.meeting.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.resolution.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.resolution.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
   - code: fulfillment.delivery.read
     moduleId: fulfillment
     namespace: fulfillment
@@ -419,6 +449,12 @@ permissions:
     moduleId: human-resources
     namespace: human-resources
   - code: human-resources.privacy.anonymize.execute
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.reliability.operate
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.connector-cursor.manage
     moduleId: human-resources
     namespace: human-resources
   - code: inventory.movement.create

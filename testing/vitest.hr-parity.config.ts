@@ -19,6 +19,13 @@ export default mergeConfig(
 			name: "human-resources-parity",
 			root: humanResourcesRoot,
 			include: humanResourcesParityIncludes,
+			reporters: [
+				"verbose",
+				path.join(
+					humanResourcesRoot,
+					"src/testing/parity-observability-reporter.ts",
+				),
+			],
 			environment: "node",
 			setupFiles: [path.join(repoRoot, "testing/setup-hr-parity-database.ts")],
 			testTimeout: 30_000,

@@ -8,6 +8,8 @@ import {
 	caCompanyName,
 	caCompanyStatusHistory,
 	caEstablishmentStatusHistory,
+	caGovernanceBody,
+	caGovernanceMembership,
 	caLegalCompany,
 	caLegalEstablishment,
 	caMutationReceipt,
@@ -43,6 +45,8 @@ export const CORPORATE_ADMINISTRATION_INFRASTRUCTURE_CLEANUP_TABLES = [
 	"ca_establishment_status_history",
 	"ca_registered_address",
 	"ca_premise",
+	"ca_governance_membership",
+	"ca_governance_body",
 	"ca_legal_establishment",
 	"ca_legal_company",
 	"ca_mutation_receipt",
@@ -177,6 +181,12 @@ export async function cleanupCorporateAdministrationInfrastructureTestData(
 		.delete(caPremise)
 		.where(eq(caPremise.organizationId, scopedOrganizationId));
 	await db
+		.delete(caGovernanceMembership)
+		.where(eq(caGovernanceMembership.organizationId, scopedOrganizationId));
+	await db
+		.delete(caGovernanceBody)
+		.where(eq(caGovernanceBody.organizationId, scopedOrganizationId));
+	await db
 		.delete(caLegalEstablishment)
 		.where(eq(caLegalEstablishment.organizationId, scopedOrganizationId));
 	await db
@@ -218,6 +228,12 @@ export async function cleanupCorporateAdministrationEstablishmentTestData(
 	await db
 		.delete(caPremise)
 		.where(eq(caPremise.organizationId, scopedOrganizationId));
+	await db
+		.delete(caGovernanceMembership)
+		.where(eq(caGovernanceMembership.organizationId, scopedOrganizationId));
+	await db
+		.delete(caGovernanceBody)
+		.where(eq(caGovernanceBody.organizationId, scopedOrganizationId));
 	await db
 		.delete(caLegalEstablishment)
 		.where(eq(caLegalEstablishment.organizationId, scopedOrganizationId));

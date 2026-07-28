@@ -1,6 +1,6 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-import type { DomainEvent } from "@afenda/events";
+import { fail, ok } from "@afenda/errors/result";
 import {
+	claimDueReliabilityWork,
 	createMemoryReliabilityStore,
 	type ReliabilityKernelPorts,
 } from "@afenda/human-resources";
@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
 	checkpointProductionConnectorCursor,
-	createReliabilityEventExecutor,
+	createReliabilityOperationExecutor,
 	processReliabilityWork,
 	recoverProductionConnectorCursor,
 	registerProductionReliabilityWork,
@@ -18,42 +18,35 @@ import {
 	createProductionHrObservabilityRecorder,
 } from "@/modules/platform/observability/human-resources-observability";
 
-function event(organizationId: string): DomainEvent {
-	return {
-		id: "event-1",
-		type: "platform.human-resources.reliability-work.requested.v1",
-		sourceModule: "platform",
-		deduplicationKey: "reliability:work:fingerprint",
-		correlationId: "correlation-1",
-		causationId: "work-1",
-		organizationId,
-		actorUserId: "operator-1",
-		payload: {},
-		metadata: null,
-		status: "pending",
-		attempts: 0,
-		lastError: null,
-		processedAt: null,
-		occurredAt: new Date("2026-07-28T00:00:00.000Z"),
-	};
+const now = new Date("2026-07-28T00:00:00.000Z");
+
+async function claimOne(ports: ReliabilityKernelPorts) {
+	return claimDueReliabilityWork(
+		{
+			workerId: "worker-1",
+			now,
+			leaseDurationMs: 120_000,
+			limit: 1,
+			perOrganizationLimit: 1,
+		},
+		ports.store,
+	);
 }
 
 describe("HR reliability runtime composition", () => {
-	it("rejects cross-tenant event execution evidence", async () => {
-		const publish = vi.fn(
-			async (_input: unknown): Promise<Result<DomainEvent>> =>
-				ok(event("org-other")),
-		);
-		const executor = createReliabilityEventExecutor({ publish }, "operator-1");
+	it("rejects operations that are not composed with a real handler", async () => {
+		const executor = createReliabilityOperationExecutor({});
 		const result = await executor.execute({
 			id: "7c8277b1-e3e8-49a3-84c4-eb74ae35ee84",
 			organizationId: "org-1",
 			connector: "payroll",
-			operation: "publish",
+			operation: "publish-delivery",
+			targetType: "payroll_delivery",
+			targetId: "delivery-1",
 			correlationId: "correlation-1",
 			idempotencyKey: "work-1",
 			requestFingerprint: "fingerprint-1",
-			status: "pending",
+			status: "processing",
 			version: 1,
 			attemptCount: 0,
 			nextAttemptAt: new Date("2026-07-28T00:00:00.000Z"),
@@ -61,14 +54,41 @@ describe("HR reliability runtime composition", () => {
 			lastErrorCode: null,
 			lastErrorMessage: null,
 			receiptId: null,
+			acknowledgementDeadlineAt: null,
+			leaseOwner: "worker-1",
+			leaseExpiresAt: new Date("2026-07-28T00:02:00.000Z"),
 			createdAt: new Date("2026-07-28T00:00:00.000Z"),
 			updatedAt: new Date("2026-07-28T00:00:00.000Z"),
 		});
-		expect(result).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
+	});
+
+	it("fails closed before persisting an uncomposed production operation", async () => {
+		const store = createMemoryReliabilityStore();
+		const result = await registerProductionReliabilityWork(
+			{
+				organizationId: "org-1",
+				connector: "bulk",
+				operation: "resume-import",
+				targetType: "bulk_import_checkpoint",
+				targetId: "checkpoint-1",
+				correlationId: "correlation-1",
+				idempotencyKey: "bulk-1",
+				requestFingerprint: "fingerprint-1",
+			},
+			{ store, clock: { now: () => now } },
+		);
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
+		expect(
+			await store.findByIdempotencyKey({
+				organizationId: "org-1",
+				connector: "bulk",
+				idempotencyKey: "bulk-1",
+			}),
+		).toEqual(ok(null));
 	});
 
 	it("persists retry state and emits only bounded failure vocabulary", async () => {
-		const now = new Date("2026-07-28T00:00:00.000Z");
 		const store = createMemoryReliabilityStore();
 		const telemetry: Array<{ level: string; event: string; code: string }> = [];
 		const observability = createProductionHrObservabilityPorts(
@@ -89,7 +109,9 @@ describe("HR reliability runtime composition", () => {
 			{
 				organizationId: "org-1",
 				connector: "payroll",
-				operation: "privacy.bulk.authorization",
+				operation: "publish-delivery",
+				targetType: "payroll_delivery",
+				targetId: "delivery-sensitive-123",
 				correlationId: "correlation-sensitive-123",
 				idempotencyKey: "employee-sensitive-123",
 				requestFingerprint: "fingerprint-sensitive-123",
@@ -98,9 +120,14 @@ describe("HR reliability runtime composition", () => {
 		);
 		expect(registered.ok).toBe(true);
 		if (!registered.ok) return;
+		expect(await claimOne(ports)).toMatchObject({ ok: true });
 
 		const processed = await processReliabilityWork(
-			{ organizationId: "org-1", workItemId: registered.data.id },
+			{
+				organizationId: "org-1",
+				workItemId: registered.data.id,
+				leaseOwner: "worker-1",
+			},
 			ports,
 			observability,
 		);
@@ -116,9 +143,6 @@ describe("HR reliability runtime composition", () => {
 			expect.arrayContaining([
 				"hr.command.failed",
 				"hr.event.failed",
-				"hr.authorization.denied",
-				"hr.privacy.operation.failed",
-				"hr.bulk.failed",
 				"hr.payroll_delivery.failed",
 			]),
 		);
@@ -128,9 +152,11 @@ describe("HR reliability runtime composition", () => {
 		expect(serialized).not.toContain("correlation-sensitive-123");
 	});
 
-	it("pauses work for required outages and records bounded connector health", async () => {
+	it("derives unhealthy connector telemetry from persisted execution outcomes", async () => {
 		const store = createMemoryReliabilityStore();
-		const execute = vi.fn(async () => ok({ receiptId: "receipt-1" }));
+		const execute = vi.fn(async () =>
+			fail("SERVICE_UNAVAILABLE", "downstream unavailable"),
+		);
 		const telemetry: Array<{ level: string; event: string; code: string }> = [];
 		const observability = createProductionHrObservabilityPorts(
 			createProductionHrObservabilityRecorder({
@@ -143,31 +169,44 @@ describe("HR reliability runtime composition", () => {
 			executor: { execute },
 			failureClassifier: { isRetryable: () => true },
 		};
+		const registered = await registerProductionReliabilityWork(
+			{
+				organizationId: "org-1",
+				connector: "attendance",
+				operation: "pull-events",
+				targetType: "connector_stream",
+				targetId: "clock-events",
+				correlationId: "correlation-1",
+				idempotencyKey: "attendance-1",
+				requestFingerprint: "fingerprint-1",
+			},
+			ports,
+		);
+		expect(registered.ok).toBe(true);
+		if (!registered.ok) return;
+		expect(await claimOne(ports)).toMatchObject({ ok: true });
 		const result = await processReliabilityWork(
 			{
 				organizationId: "org-1",
-				workItemId: "not-loaded-during-outage",
-				dependencies: [
-					{ name: "payroll", required: true, health: "unavailable" },
-				],
+				workItemId: registered.data.id,
+				leaseOwner: "worker-1",
 			},
 			ports,
 			observability,
 		);
-		expect(result).toMatchObject({
-			ok: false,
-			code: "SERVICE_UNAVAILABLE",
-		});
-		expect(execute).not.toHaveBeenCalled();
+		expect(result).toMatchObject({ ok: true, data: { status: "pending" } });
+		expect(execute).toHaveBeenCalledTimes(1);
 		expect(telemetry.map((entry) => entry.event)).toEqual(
 			expect.arrayContaining(["hr.connector.unhealthy", "hr.command.failed"]),
 		);
-		expect(JSON.stringify(telemetry)).not.toContain("not-loaded-during-outage");
+		expect(JSON.stringify(telemetry)).not.toContain("clock-events");
 	});
 
-	it("continues in degraded mode when only optional dependencies are down", async () => {
+	it("marks work succeeded only after a connector acknowledgement", async () => {
 		const store = createMemoryReliabilityStore();
-		const execute = vi.fn(async () => ok({ receiptId: "receipt-degraded" }));
+		const execute = vi.fn(async () =>
+			ok({ kind: "acknowledged" as const, receiptId: "receipt-acknowledged" }),
+		);
 		const ports: ReliabilityKernelPorts = {
 			store,
 			clock: { now: () => new Date("2026-07-28T00:00:00.000Z") },
@@ -178,7 +217,9 @@ describe("HR reliability runtime composition", () => {
 			{
 				organizationId: "org-1",
 				connector: "payroll",
-				operation: "publish",
+				operation: "publish-delivery",
+				targetType: "payroll_delivery",
+				targetId: "delivery-1",
 				correlationId: "correlation-1",
 				idempotencyKey: "idempotency-1",
 				requestFingerprint: "fingerprint-1",
@@ -187,11 +228,12 @@ describe("HR reliability runtime composition", () => {
 		);
 		expect(registered.ok).toBe(true);
 		if (!registered.ok) return;
+		expect(await claimOne(ports)).toMatchObject({ ok: true });
 		const processed = await processReliabilityWork(
 			{
 				organizationId: "org-1",
 				workItemId: registered.data.id,
-				dependencies: [{ name: "search", required: false, health: "degraded" }],
+				leaseOwner: "worker-1",
 			},
 			ports,
 		);

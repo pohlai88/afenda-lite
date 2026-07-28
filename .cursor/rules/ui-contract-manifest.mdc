@@ -1,0 +1,33 @@
+---
+description: "Internal @afenda/ui-system metadata contracts use the thin manifest authoring gateway"
+globs: "packages/surfaces/ui-system/src/metadata/contracts/*.contract.ts"
+alwaysApply: false
+---
+
+# UI component contract manifest
+
+Every component contract under `src/metadata/contracts`, except
+`manifest.contract.ts` itself, must import and call `defineManifestContract()`.
+Do not call the low-level `defineComponentContract()` from ordinary contract
+files.
+
+Author contracts in this order:
+
+1. Inspect the component implementation and catalogue entry.
+2. Inspect the nearest golden contract.
+3. State `ownership.componentOwns` and `ownership.consumerOwns` as non-empty clauses.
+4. State `semanticBoundaries` only as interpretations or decisions the component must not imply.
+5. Cover actual variants, sizes, rules, accessibility, and prohibited usage.
+6. Register the contract in the internal metadata barrel and `catalog.ts`.
+7. Run validation only when authorized.
+
+Authority order is TypeScript shape, `validateGovernance()`, source registry
+tests, this editor rule, then the edit hook. The manifest stamps and freezes the
+canonical shape only. It does not own discovery, registration, lifecycle,
+evidence, implementation parity, file paths, or public exports.
+
+Allowed contract export: `src/metadata/contracts/index.ts`.
+Forbidden public export: package `src/index.ts`.
+
+Do not create a second catalogue, manifest registry, lifecycle model, public
+contract API, dedicated contract agent, or semantic policy engine.

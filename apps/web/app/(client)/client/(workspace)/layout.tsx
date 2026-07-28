@@ -18,7 +18,11 @@ export default async function ClientWorkspaceLayout({
 	return (
 		<>
 			<ClientWorkspaceNav />
-			<main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-h-dvh">
+			<main
+				id={MAIN_CONTENT_ID}
+				tabIndex={-1}
+				className="min-h-dvh bg-background"
+			>
 				{children}
 			</main>
 		</>

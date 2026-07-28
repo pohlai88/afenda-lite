@@ -15,7 +15,7 @@ The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pi
 | Allowed | Forbidden |
 |---------|-----------|
 | `import { … } from "@afenda/ui-system"` | `from "@afenda/ui"` or any `@afenda/ui/` subpath |
-| `import "@afenda/ui-system/styles.css"` in `apps/web/globals.css` | Deep imports (`@afenda/ui-system/components/…`, package-internal paths) |
+| `import "@afenda/ui-system/styles.css"` then `import "@afenda/ui-system/base.css"` in consumer global CSS | Deep imports (`@afenda/ui-system/components/…`, package-internal paths) |
 | `cn` from the barrel | Handrolled primitives under `apps/web/components/ui/**` |
 
 ## Adding or regenerating primitives
@@ -29,6 +29,7 @@ The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pi
 ## Styling
 
 - **Semantic color tokens** live in `packages/surfaces/ui-system/src/styles/tokens.css` — use `bg-primary`, `text-muted-foreground`, etc.
+- **Universal semantic rendering defaults** live in `packages/surfaces/ui-system/src/styles/base.css`; import them after `styles.css`. Do not place palette values in `base.css` or duplicate its rules in consumers.
 - **Tailwind compilation** is owned by `apps/web/globals.css` (`@import "tailwindcss"`, `tw-animate-css`, `@source` for the package).
 - Do not add raw color literals (`#…`, `rgb(…)`, `hsl(…)`) in component source outside the token file.
 - Tailwind theme-scale utilities for spacing/dimensions (`h-9`, `px-3`, `gap-2`) are allowed.

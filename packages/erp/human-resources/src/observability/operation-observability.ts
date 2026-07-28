@@ -6,11 +6,16 @@ import type {
 	HumanResourcesOperationKind,
 } from "../shared/authorization-types";
 import type { HrObservabilityPorts } from "./ports";
-import { recordHrAuthorizationDenial, recordHrCommand } from "./recorder";
+import {
+	recordHrAuthorizationDenial,
+	recordHrCommand,
+	recordHrPrivacyOperation,
+} from "./recorder";
 import type {
 	HrAuthorizationReason,
 	HrFailureReason,
 	HrObservabilityArea,
+	HrPrivacyOperation,
 } from "./types";
 
 const COMPENSATION_SUBJECTS = new Set([
@@ -260,5 +265,27 @@ export async function observeAuthorizedOperationResult<T>(input: {
 			? {}
 			: { authorizationReason: input.authorizationReason }),
 	});
+	return input.result;
+}
+
+export async function observeHrPrivacyOperationResult<T>(input: {
+	operation: HrPrivacyOperation;
+	observability: HrObservabilityPorts | undefined;
+	result: Result<T>;
+}): Promise<Result<T>> {
+	const observability = input.observability;
+	if (observability === undefined) return input.result;
+	await ignoreTelemetryFailure(() =>
+		recordHrPrivacyOperation(
+			input.result.ok
+				? { operation: input.operation, outcome: "success" }
+				: {
+						operation: input.operation,
+						outcome: "failure",
+						failureReason: classifyHrOperationFailure(input.result.code),
+					},
+			observability,
+		),
+	);
 	return input.result;
 }

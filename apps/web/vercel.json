@@ -3,5 +3,11 @@
 	"regions": ["sin1"],
 	"installCommand": "cd ../.. && corepack enable && pnpm install --frozen-lockfile",
 	"buildCommand": "cd ../.. && pnpm exec turbo run build --filter=@afenda/web",
-	"ignoreCommand": "bash -c '[[ \"$VERCEL_ENV\" == \"production\" ]] && exit 0 || exit 1'"
+	"ignoreCommand": "bash -c '[[ \"$VERCEL_ENV\" == \"production\" ]] && exit 0 || exit 1'",
+	"crons": [
+		{
+			"path": "/api/cron/hr-reliability",
+			"schedule": "* * * * *"
+		}
+	]
 }

@@ -1,9 +1,10 @@
 import type { Result } from "@afenda/errors/result";
+import type { HrObservabilityArea } from "@afenda/human-resources";
 import type { z } from "zod";
 
 import { withHrSessionContext } from "@/app/actions/hr-mutation-context";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { createHrOperatorPermissionActionRunner } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 import {
@@ -26,12 +27,28 @@ type HrHumanResourcesActionConfig<
 	mapData: (data: TData) => TPayload;
 };
 
+function createHrHumanResourcesActionRunner(area: HrObservabilityArea) {
+	const runOperatorPermissionAction =
+		createHrOperatorPermissionActionRunner(area);
+	return async function runAreaHumanResourcesAction<
+		TData,
+		TPayload extends Record<string, unknown>,
+	>(
+		config: HrHumanResourcesActionConfig<TData, TPayload>,
+	): Promise<ActionResult<TPayload>> {
+		return runHrHumanResourcesAction(config, runOperatorPermissionAction);
+	};
+}
+
 /** Shared HR Server Action envelope: permission gate → Zod → session stamp → package delegate. */
 export async function runHrHumanResourcesAction<
 	TData,
 	TPayload extends Record<string, unknown>,
 >(
 	config: HrHumanResourcesActionConfig<TData, TPayload>,
+	runOperatorPermissionAction: ReturnType<
+		typeof createHrOperatorPermissionActionRunner
+	>,
 ): Promise<ActionResult<TPayload>> {
 	return runOperatorPermissionAction({
 		path: config.path,
@@ -58,6 +75,13 @@ export async function runHrHumanResourcesAction<
 		},
 	});
 }
+
+export const runHrCompensationHumanResourcesAction =
+	createHrHumanResourcesActionRunner("compensation");
+export const runHrComplianceHumanResourcesAction =
+	createHrHumanResourcesActionRunner("compliance");
+export const runHrWorkforceHumanResourcesAction =
+	createHrHumanResourcesActionRunner("workforce");
 
 type HrPackageFunction<TData> = (
 	input: unknown,

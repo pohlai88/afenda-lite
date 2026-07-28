@@ -76,6 +76,63 @@ queries:
   - id: listPremisesAsOf
     moduleId: corporate-administration
     permission: corporate_administration.company.read
+  - id: getGovernanceBody
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.read
+  - id: listGovernanceBodiesAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.read
+  - id: listGovernanceMembershipsAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.governance.read
+  - id: listRequiredStatutoryOffices
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.read
+  - id: listOfficersAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.read
+  - id: getOfficerAppointment
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.read
+  - id: getOfficerVacancyStatus
+    moduleId: corporate-administration
+    permission: corporate_administration.officer.read
+  - id: getOfficerEligibilityAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.read
+  - id: listExpiringDeclarations
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.read
+  - id: listActiveDisqualifications
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.read
+  - id: listConflictsForMatter
+    moduleId: corporate-administration
+    permission: corporate_administration.officer_compliance.read
+  - id: getGovernanceMeeting
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.read
+  - id: listGovernanceMeetings
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.read
+  - id: getMeetingAttendance
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.read
+  - id: getMeetingQuorumStatus
+    moduleId: corporate-administration
+    permission: corporate_administration.meeting.read
+  - id: getResolution
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.read
+  - id: listResolutionsAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.read
+  - id: getResolutionExecutionStatus
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.read
+  - id: listOverdueResolutionActions
+    moduleId: corporate-administration
+    permission: corporate_administration.resolution.read
   - id: fulfillment.delivery.get
     moduleId: fulfillment
     permission: fulfillment.delivery.read

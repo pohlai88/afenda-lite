@@ -105,6 +105,66 @@ tables:
     packageName: "@afenda/corporate-administration"
     schemaOwner: "@afenda/db"
     table: ca_premise
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_governance_body
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_governance_membership
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_statutory_office
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_officer_appointment
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_officer_qualification
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_officer_declaration
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_officer_disqualification
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_conflict_disclosure
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_governance_meeting
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_meeting_notice
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_meeting_participant
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_meeting_quorum_result
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_meeting_vote
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_resolution
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_resolution_action
   - moduleId: fulfillment
     packageName: "@afenda/fulfillment"
     schemaOwner: "@afenda/db"

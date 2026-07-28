@@ -79,6 +79,26 @@ export const PERMISSION_DENIED_MESSAGE: Record<
 		"You do not have permission to register legal company drafts.",
 	"corporate_administration.establishment.manage":
 		"You do not have permission to manage legal establishments.",
+	"corporate_administration.governance.read":
+		"You do not have permission to read corporate governance records.",
+	"corporate_administration.governance.manage":
+		"You do not have permission to manage corporate governance records.",
+	"corporate_administration.officer.read":
+		"You do not have permission to read corporate officer records.",
+	"corporate_administration.officer.manage":
+		"You do not have permission to manage corporate officer records.",
+	"corporate_administration.officer_compliance.read":
+		"You do not have permission to read officer compliance records.",
+	"corporate_administration.officer_compliance.manage":
+		"You do not have permission to manage officer compliance records.",
+	"corporate_administration.meeting.read":
+		"You do not have permission to read corporate meeting records.",
+	"corporate_administration.meeting.manage":
+		"You do not have permission to manage corporate meeting records.",
+	"corporate_administration.resolution.read":
+		"You do not have permission to read corporate resolution records.",
+	"corporate_administration.resolution.manage":
+		"You do not have permission to manage corporate resolution records.",
 	"sales.order.create": "You do not have permission to create sales orders.",
 	"sales.order.update": "You do not have permission to update sales orders.",
 	"sales.order.post": "You do not have permission to post sales orders.",

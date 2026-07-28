@@ -74,6 +74,108 @@ events:
     id: corporate_administration.premise.ended.v1
     moduleId: corporate-administration
   - direction: emits
+    id: corporate_administration.governance_body.created.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_body.amended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_body.retired.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_membership.appointed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_membership.changed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_membership.ended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.statutory_office.defined.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.appointed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.appointment_amended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.qualification_recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.resigned.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.removed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.declaration_recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.declaration_superseded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.disqualified.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.officer.disqualification_ended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.conflict.disclosed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.conflict.recusal_recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_meeting.scheduled.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.meeting_notice.issued.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.meeting_notice.delivered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.meeting_notice.waived.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.meeting_participant.recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_meeting.opened.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_meeting.quorum_recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_meeting.adjourned.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.governance_meeting.closed.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.meeting_vote.recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.resolution.adopted.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.resolution.rejected.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.resolution.superseded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.resolution.minutes_recorded.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.resolution.action_assigned.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.resolution.action_completed.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: fulfillment.delivery.created.v1
     moduleId: fulfillment
   - direction: emits
@@ -459,6 +561,21 @@ events:
     moduleId: human-resources
   - direction: emits
     id: human-resources.headcount.reservation-consumed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: platform.human-resources.workflow-fact.recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: platform.human-resources.reporting-fact.recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: platform.human-resources.accounting-provisioning-fact.recorded.v1
+    moduleId: human-resources
+  - direction: emits
+    id: platform.human-resources.payroll-delivery.requested.v1
+    moduleId: human-resources
+  - direction: emits
+    id: platform.human-resources.reliability-work.requested.v1
     moduleId: human-resources
   - direction: emits
     id: inventory.movement.created.v1

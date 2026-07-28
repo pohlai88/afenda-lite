@@ -5,12 +5,12 @@ import { AlertCircleIcon } from "lucide-react";
 import * as React from "react";
 import { cn } from "../../lib/utils";
 
-const formErrorVariants = cva("flex items-start gap-2 text-sm", {
+const formErrorVariants = cva("flex items-start gap-2 text-sm font-bold", {
 	variants: {
 		variant: {
 			default: "text-destructive",
-			warning: "text-warning",
-			info: "text-info",
+			warning: "text-warning-subtle-foreground",
+			info: "text-info-subtle-foreground",
 		},
 		size: {
 			sm: "text-xs",

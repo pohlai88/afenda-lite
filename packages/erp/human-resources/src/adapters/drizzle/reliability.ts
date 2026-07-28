@@ -27,6 +27,8 @@ type CursorRow = typeof hrConnectorCursor.$inferSelect;
 
 const WORK_STATUSES = new Set<ReliabilityWorkStatus>([
 	"pending",
+	"processing",
+	"awaiting_acknowledgement",
 	"succeeded",
 	"dead_lettered",
 ]);
@@ -48,8 +50,10 @@ function mapWork(row: WorkRow): Result<ReliabilityWorkItem> {
 	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
-		connector: row.connector,
-		operation: row.operation,
+		connector: row.connector as ReliabilityWorkItem["connector"],
+		operation: row.operation as ReliabilityWorkItem["operation"],
+		targetType: row.targetType as ReliabilityWorkItem["targetType"],
+		targetId: row.targetId,
 		correlationId: row.correlationId,
 		idempotencyKey: row.idempotencyKey,
 		requestFingerprint: row.requestFingerprint,
@@ -61,6 +65,9 @@ function mapWork(row: WorkRow): Result<ReliabilityWorkItem> {
 		lastErrorCode: row.lastErrorCode,
 		lastErrorMessage: row.lastErrorMessage,
 		receiptId: row.receiptId,
+		acknowledgementDeadlineAt: row.acknowledgementDeadlineAt,
+		leaseOwner: row.leaseOwner,
+		leaseExpiresAt: row.leaseExpiresAt,
 		createdAt: createdAt.data,
 		updatedAt: updatedAt.data,
 	});
@@ -75,8 +82,10 @@ function mapDeadLetter(
 		id: row.id,
 		organizationId: row.organizationId,
 		workItemId: row.workItemId,
-		connector: row.connector,
-		operation: row.operation,
+		connector: row.connector as ReliabilityDeadLetterRecord["connector"],
+		operation: row.operation as ReliabilityDeadLetterRecord["operation"],
+		targetType: row.targetType as ReliabilityDeadLetterRecord["targetType"],
+		targetId: row.targetId,
 		correlationId: row.correlationId,
 		idempotencyKey: row.idempotencyKey,
 		requestFingerprint: row.requestFingerprint,
@@ -108,6 +117,8 @@ function workValues(item: ReliabilityWorkItem) {
 		organizationId: item.organizationId,
 		connector: item.connector,
 		operation: item.operation,
+		targetType: item.targetType,
+		targetId: item.targetId,
 		correlationId: item.correlationId,
 		idempotencyKey: item.idempotencyKey,
 		requestFingerprint: item.requestFingerprint,
@@ -119,6 +130,9 @@ function workValues(item: ReliabilityWorkItem) {
 		lastErrorCode: item.lastErrorCode,
 		lastErrorMessage: item.lastErrorMessage,
 		receiptId: item.receiptId,
+		acknowledgementDeadlineAt: item.acknowledgementDeadlineAt,
+		leaseOwner: item.leaseOwner,
+		leaseExpiresAt: item.leaseExpiresAt,
 		createdAt: item.createdAt,
 		updatedAt: item.updatedAt,
 	};
@@ -183,6 +197,66 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					: mapPersistenceFailure(error, "Failed to create reliability work");
 			}
 		},
+		async claimDueWork(input) {
+			try {
+				const [claimed] = await runNeonHttpTransaction<
+					[Array<{ id: string; organizationId: string }>]
+				>((sqlTag) => [
+					sqlTag`
+						WITH ranked AS (
+							SELECT id, organization_id,
+								row_number() OVER (
+									PARTITION BY organization_id
+									ORDER BY COALESCE(next_attempt_at, acknowledgement_deadline_at, created_at), id
+								) AS organization_rank
+							FROM hr_reliability_work_item
+							WHERE (status = 'pending' AND (next_attempt_at IS NULL OR next_attempt_at <= ${input.now}))
+								OR (status = 'processing' AND lease_expires_at <= ${input.now})
+								OR (status = 'awaiting_acknowledgement' AND acknowledgement_deadline_at <= ${input.now})
+						), eligible AS (
+							SELECT work.id, work.organization_id
+							FROM hr_reliability_work_item AS work
+							INNER JOIN ranked
+								ON ranked.id = work.id AND ranked.organization_id = work.organization_id
+							WHERE ranked.organization_rank <= ${input.perOrganizationLimit}
+							ORDER BY COALESCE(work.next_attempt_at, work.acknowledgement_deadline_at, work.created_at), work.id
+							LIMIT ${input.limit}
+							FOR UPDATE OF work SKIP LOCKED
+						)
+						UPDATE hr_reliability_work_item AS work
+						SET status = 'processing', version = work.version + 1,
+							lease_owner = ${input.workerId}, lease_expires_at = ${input.leaseExpiresAt},
+							receipt_id = CASE WHEN work.status = 'awaiting_acknowledgement' THEN NULL ELSE work.receipt_id END,
+							acknowledgement_deadline_at = NULL,
+							updated_at = ${input.now}
+						FROM eligible
+						WHERE work.id = eligible.id AND work.organization_id = eligible.organization_id
+						RETURNING work.id, work.organization_id AS "organizationId"
+					`,
+				]);
+				const items: ReliabilityWorkItem[] = [];
+				for (const row of claimed) {
+					const item = await getWork({
+						organizationId: row.organizationId,
+						workItemId: row.id,
+					});
+					if (!item.ok) return item;
+					if (item.data === null) {
+						return fail(
+							"INTERNAL_ERROR",
+							"Claimed reliability work was not found",
+						);
+					}
+					items.push(item.data);
+				}
+				return ok(items);
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Failed to claim due reliability work",
+				);
+			}
+		},
 		async commitAttempt(input) {
 			const item = input.workItem;
 			if (item.version !== input.expectedVersion + 1) {
@@ -201,6 +275,9 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 							lastErrorCode: item.lastErrorCode,
 							lastErrorMessage: item.lastErrorMessage,
 							receiptId: item.receiptId,
+							acknowledgementDeadlineAt: item.acknowledgementDeadlineAt,
+							leaseOwner: item.leaseOwner,
+							leaseExpiresAt: item.leaseExpiresAt,
 							updatedAt: item.updatedAt,
 						})
 						.where(
@@ -224,19 +301,23 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 							SET status = ${item.status}, version = ${item.version},
 								attempt_count = ${item.attemptCount}, next_attempt_at = ${item.nextAttemptAt},
 								last_attempt_at = ${item.lastAttemptAt}, last_error_code = ${item.lastErrorCode},
-								last_error_message = ${item.lastErrorMessage}, receipt_id = ${item.receiptId},
-								updated_at = ${item.updatedAt}
+							last_error_message = ${item.lastErrorMessage}, receipt_id = ${item.receiptId},
+							acknowledgement_deadline_at = ${item.acknowledgementDeadlineAt},
+							lease_owner = ${item.leaseOwner}, lease_expires_at = ${item.leaseExpiresAt},
+							updated_at = ${item.updatedAt}
 							WHERE organization_id = ${item.organizationId} AND id = ${item.id}
 								AND version = ${input.expectedVersion}
 							RETURNING id, organization_id
 						), inserted AS (
 							INSERT INTO hr_reliability_dead_letter (
-								id, organization_id, work_item_id, connector, operation, correlation_id,
+								id, organization_id, work_item_id, connector, operation, target_type,
+								target_id, correlation_id,
 								idempotency_key, request_fingerprint, attempt_count, error_code,
 								error_message, failed_at, replayed_by_work_item_id
 							)
 							SELECT ${dead.id}, updated.organization_id, updated.id, ${dead.connector},
-								${dead.operation}, ${dead.correlationId}, ${dead.idempotencyKey},
+								${dead.operation}, ${dead.targetType}, ${dead.targetId},
+								${dead.correlationId}, ${dead.idempotencyKey},
 								${dead.requestFingerprint}, ${dead.attemptCount}, ${dead.errorCode},
 								${dead.errorMessage}, ${dead.failedAt}, ${dead.replayedByWorkItemId}
 							FROM updated
@@ -320,12 +401,14 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 							FOR UPDATE
 						), inserted AS (
 							INSERT INTO hr_reliability_work_item (
-								id, organization_id, connector, operation, correlation_id, idempotency_key,
+								id, organization_id, connector, operation, target_type, target_id,
+								correlation_id, idempotency_key,
 								request_fingerprint, status, version, attempt_count, next_attempt_at,
 								last_attempt_at, last_error_code, last_error_message, receipt_id, created_at, updated_at
 							)
 							SELECT ${item.id}, ${item.organizationId}, ${item.connector}, ${item.operation},
-								${item.correlationId}, ${item.idempotencyKey}, ${item.requestFingerprint},
+								${item.targetType}, ${item.targetId}, ${item.correlationId},
+								${item.idempotencyKey}, ${item.requestFingerprint},
 								${item.status}, ${item.version}, ${item.attemptCount}, ${item.nextAttemptAt},
 								${item.lastAttemptAt}, ${item.lastErrorCode}, ${item.lastErrorMessage},
 								${item.receiptId}, ${item.createdAt}, ${item.updatedAt}

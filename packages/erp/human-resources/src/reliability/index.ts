@@ -1,12 +1,25 @@
 export type { ReliabilityKernelPorts } from "./kernel";
 export {
+	acknowledgeReliabilityWork,
 	checkpointConnectorCursor,
+	claimDueReliabilityWork,
 	executeReliabilityWork,
 	recoverConnectorCursor,
 	registerReliabilityWork,
 	replayDeadLetter,
 } from "./kernel";
 export { createMemoryReliabilityStore } from "./memory-store";
+export type {
+	ReliabilityConnector,
+	ReliabilityOperation,
+	ReliabilityOperationDefinition,
+	ReliabilityOperationKey,
+	ReliabilityTargetType,
+} from "./operations";
+export {
+	RELIABILITY_OPERATION_DEFINITIONS,
+	resolveReliabilityOperation,
+} from "./operations";
 export type {
 	DependencyHealth,
 	OutageDependency,
@@ -30,6 +43,7 @@ export {
 export type {
 	ConnectorCursor,
 	ReliabilityDeadLetterRecord,
+	ReliabilityExecutionOutcome,
 	ReliabilityWorkItem,
 	ReliabilityWorkStatus,
 } from "./types";

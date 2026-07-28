@@ -6420,6 +6420,189 @@ export const hrBulkImportErrorArtifact = pgTable(
 	],
 );
 
+export const hrBulkImportJob = pgTable(
+	"hr_bulk_import_job",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id").notNull(),
+		batchId: text("batch_id").notNull(),
+		entityType: text("entity_type").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		requiredPermission: text("required_permission").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		rowCount: integer("row_count").notNull(),
+		maxRowsPerRun: integer("max_rows_per_run").notNull(),
+		checkpointVersion: integer("checkpoint_version"),
+		lastErrorCode: text("last_error_code"),
+		lastErrorMessage: text("last_error_message"),
+		payloadPurgeAt: timestamp("payload_purge_at", { withTimezone: true }),
+		payloadPurgedAt: timestamp("payload_purged_at", { withTimezone: true }),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+	},
+	(t) => [
+		uniqueIndex("hr_bulk_import_job_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+		unique("hr_bulk_import_job_org_id_uidx").on(t.organizationId, t.id),
+		index("hr_bulk_import_job_org_status_updated_idx").on(
+			t.organizationId,
+			t.status,
+			t.updatedAt,
+			t.id,
+		),
+		check(
+			"hr_bulk_import_job_entity_check",
+			sql`${t.entityType} IN ('employee', 'assignment', 'leave_entitlement', 'attendance', 'compensation', 'learning_assignment')`,
+		),
+		check(
+			"hr_bulk_import_job_status_check",
+			sql`${t.status} IN ('queued', 'running', 'completed', 'completed_with_rejections', 'failed')`,
+		),
+		check(
+			"hr_bulk_import_job_bounds_check",
+			sql`${t.version} > 0 AND ${t.rowCount} BETWEEN 1 AND 500 AND ${t.maxRowsPerRun} BETWEEN 1 AND 500`,
+		),
+		check(
+			"hr_bulk_import_job_hash_check",
+			sql`length(${t.requestFingerprint}) = 64`,
+		),
+	],
+);
+
+export const hrBulkImportJobRow = pgTable(
+	"hr_bulk_import_job_row",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		rowIndex: integer("row_index").notNull(),
+		sourceReference: text("source_reference").notNull(),
+		payload: jsonb("payload"),
+		payloadHash: text("payload_hash").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [hrBulkImportJob.organizationId, hrBulkImportJob.id],
+			name: "hr_bulk_import_job_row_job_fk",
+		}).onDelete("cascade"),
+		uniqueIndex("hr_bulk_import_job_row_org_job_index_uidx").on(
+			t.organizationId,
+			t.jobId,
+			t.rowIndex,
+		),
+		uniqueIndex("hr_bulk_import_job_row_org_job_source_uidx").on(
+			t.organizationId,
+			t.jobId,
+			t.sourceReference,
+		),
+		check(
+			"hr_bulk_import_job_row_bounds_check",
+			sql`${t.rowIndex} >= 0 AND length(${t.payloadHash}) = 64 AND char_length(btrim(${t.sourceReference})) > 0`,
+		),
+	],
+);
+
+export const hrBulkExportJob = pgTable(
+	"hr_bulk_export_job",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		requiredPermission: text("required_permission").notNull(),
+		exportType: text("export_type").notNull(),
+		requestedFields: jsonb("requested_fields").notNull(),
+		dateFrom: date("date_from"),
+		dateTo: date("date_to"),
+		effectiveOn: date("effective_on"),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		nextPage: integer("next_page").notNull().default(1),
+		rowCount: integer("row_count").notNull().default(0),
+		privacyEvidenceId: text("privacy_evidence_id"),
+		artifactSha256: text("artifact_sha256"),
+		artifactByteCount: integer("artifact_byte_count"),
+		artifactExpiresAt: timestamp("artifact_expires_at", { withTimezone: true }),
+		artifactPurgedAt: timestamp("artifact_purged_at", { withTimezone: true }),
+		lastErrorCode: text("last_error_code"),
+		lastErrorMessage: text("last_error_message"),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+	},
+	(t) => [
+		uniqueIndex("hr_bulk_export_job_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+		unique("hr_bulk_export_job_org_id_uidx").on(t.organizationId, t.id),
+		index("hr_bulk_export_job_org_status_updated_idx").on(
+			t.organizationId,
+			t.status,
+			t.updatedAt,
+			t.id,
+		),
+		check(
+			"hr_bulk_export_job_type_check",
+			sql`${t.exportType} IN ('employee', 'assignment', 'leave_entitlement', 'attendance', 'compensation', 'learning_assignment')`,
+		),
+		check(
+			"hr_bulk_export_job_status_check",
+			sql`${t.status} IN ('queued', 'running', 'completed', 'completed_with_rejections', 'failed')`,
+		),
+		check(
+			"hr_bulk_export_job_bounds_check",
+			sql`${t.version} > 0 AND ${t.nextPage} > 0 AND ${t.rowCount} BETWEEN 0 AND 5000`,
+		),
+		check(
+			"hr_bulk_export_job_hash_check",
+			sql`length(${t.requestFingerprint}) = 64 AND (${t.artifactSha256} IS NULL OR length(${t.artifactSha256}) = 64)`,
+		),
+	],
+);
+
+export const hrBulkExportArtifactChunk = pgTable(
+	"hr_bulk_export_artifact_chunk",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		chunkIndex: integer("chunk_index").notNull(),
+		content: text("content").notNull(),
+		contentSha256: text("content_sha256").notNull(),
+		byteCount: integer("byte_count").notNull(),
+		rowCount: integer("row_count").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [hrBulkExportJob.organizationId, hrBulkExportJob.id],
+			name: "hr_bulk_export_artifact_chunk_job_fk",
+		}).onDelete("cascade"),
+		uniqueIndex("hr_bulk_export_artifact_chunk_org_job_index_uidx").on(
+			t.organizationId,
+			t.jobId,
+			t.chunkIndex,
+		),
+		check(
+			"hr_bulk_export_artifact_chunk_content_check",
+			sql`${t.chunkIndex} >= 0 AND ${t.byteCount} > 0 AND ${t.rowCount} >= 0 AND length(${t.contentSha256}) = 64 AND length(${t.content}) > 0`,
+		),
+	],
+);
+
 export const hrReliabilityWorkItem = pgTable(
 	"hr_reliability_work_item",
 	{
@@ -6427,6 +6610,8 @@ export const hrReliabilityWorkItem = pgTable(
 		organizationId: text("organization_id").notNull(),
 		connector: text("connector").notNull(),
 		operation: text("operation").notNull(),
+		targetType: text("target_type").notNull(),
+		targetId: text("target_id").notNull(),
 		correlationId: text("correlation_id").notNull(),
 		idempotencyKey: text("idempotency_key").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),
@@ -6438,6 +6623,11 @@ export const hrReliabilityWorkItem = pgTable(
 		lastErrorCode: text("last_error_code"),
 		lastErrorMessage: text("last_error_message"),
 		receiptId: text("receipt_id"),
+		acknowledgementDeadlineAt: timestamp("acknowledgement_deadline_at", {
+			withTimezone: true,
+		}),
+		leaseOwner: text("lease_owner"),
+		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 	},
@@ -6454,9 +6644,24 @@ export const hrReliabilityWorkItem = pgTable(
 			t.nextAttemptAt,
 			t.id,
 		),
+		index("hr_reliability_work_item_status_due_global_idx").on(
+			t.status,
+			t.nextAttemptAt,
+			t.acknowledgementDeadlineAt,
+			t.organizationId,
+			t.id,
+		),
 		check(
 			"hr_reliability_work_item_status_check",
-			sql`${t.status} IN ('pending', 'succeeded', 'dead_lettered')`,
+			sql`${t.status} IN ('pending', 'processing', 'awaiting_acknowledgement', 'succeeded', 'dead_lettered')`,
+		),
+		check(
+			"hr_reliability_work_item_lease_check",
+			sql`(${t.status} = 'processing' AND ${t.leaseOwner} IS NOT NULL AND ${t.leaseExpiresAt} IS NOT NULL) OR (${t.status} <> 'processing' AND ${t.leaseOwner} IS NULL AND ${t.leaseExpiresAt} IS NULL)`,
+		),
+		check(
+			"hr_reliability_work_item_ack_check",
+			sql`(${t.status} = 'awaiting_acknowledgement' AND ${t.receiptId} IS NOT NULL AND ${t.acknowledgementDeadlineAt} IS NOT NULL) OR (${t.status} <> 'awaiting_acknowledgement' AND ${t.acknowledgementDeadlineAt} IS NULL)`,
 		),
 		check(
 			"hr_reliability_work_item_version_check",
@@ -6473,6 +6678,8 @@ export const hrReliabilityDeadLetter = pgTable(
 		workItemId: uuid("work_item_id").notNull(),
 		connector: text("connector").notNull(),
 		operation: text("operation").notNull(),
+		targetType: text("target_type").notNull(),
+		targetId: text("target_id").notNull(),
 		correlationId: text("correlation_id").notNull(),
 		idempotencyKey: text("idempotency_key").notNull(),
 		requestFingerprint: text("request_fingerprint").notNull(),

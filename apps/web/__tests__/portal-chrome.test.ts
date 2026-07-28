@@ -112,6 +112,29 @@ describe("portal-chrome (N16)", () => {
 		const layout = source("app/(client)/client/(workspace)/layout.tsx");
 		expect(layout).toContain("ClientWorkspaceNav");
 		expect(layout).toContain('requireRole("client")');
+		expect(layout).toContain('className="min-h-dvh bg-background"');
+	});
+
+	it("keeps authenticated workspaces on background and embeds segment states", () => {
+		const chrome = source(
+			"features/portal-chrome/operator-platform-chrome.tsx",
+		);
+		const clientHome = source("app/(client)/client/(workspace)/page.tsx");
+		expect(chrome).toContain('<SidebarInset className="bg-background">');
+		expect(clientHome).not.toContain("bg-gradient-to-b");
+
+		for (const relativePath of [
+			"app/(operator)/loading.tsx",
+			"app/(operator)/error.tsx",
+			"app/(operator)/not-found.tsx",
+			"app/(client)/client/(workspace)/loading.tsx",
+			"app/(client)/client/(workspace)/error.tsx",
+			"app/(client)/client/(workspace)/not-found.tsx",
+		]) {
+			const body = source(relativePath);
+			expect(body, relativePath).toContain("asLandmark={false}");
+			expect(body, relativePath).not.toContain("bg-canvas");
+		}
 	});
 
 	it("passes server-read sidebar cookie into SidebarProvider defaultOpen", () => {

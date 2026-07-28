@@ -36,7 +36,7 @@ import {
 
 import {
 	invokeHrPackage,
-	runHrHumanResourcesAction,
+	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";

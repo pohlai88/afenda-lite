@@ -21,6 +21,7 @@
 			"!!**/.next-workflow",
 			"!!**/test-results",
 			"!!**/playwright-report",
+			"!!**/storybook-static",
 			"!!**/playwright/.cache",
 			"!!**/*.{md,mdx}",
 			"!!**/docs",

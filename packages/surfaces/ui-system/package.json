@@ -11,6 +11,7 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
+		"./base.css": "./src/styles/base.css",
 		"./styles.css": "./src/styles/tokens.css"
 	},
 	"imports": {
@@ -21,11 +22,16 @@
 	},
 	"scripts": {
 		"lint": "biome check .",
+		"metadata:check": "vitest run --config ../../../testing/vitest.unit.config.ts --project ui-system metadata-contract",
+		"metadata:report": "tsx scripts/report-ui-metadata.mts",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
-		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project ui-system",
+		"test": "pnpm run test:unit && pnpm run test:interaction",
+		"test:interaction": "vitest run --config ../../../testing/vitest.interaction.config.ts packages/surfaces/ui-system/__tests__",
+		"test:unit": "vitest run --config ../../../testing/vitest.unit.config.ts --project ui-system",
 		"ui:add": "shadcn add"
 	},
 	"dependencies": {
+		"@tanstack/react-table": "catalog:",
 		"class-variance-authority": "catalog:",
 		"clsx": "catalog:",
 		"cmdk": "catalog:",
@@ -34,8 +40,11 @@
 		"next-themes": "catalog:",
 		"radix-ui": "catalog:",
 		"react-day-picker": "^10.0.1",
+		"react-resizable-panels": "catalog:",
+		"recharts": "catalog:",
 		"sonner": "catalog:",
-		"tailwind-merge": "catalog:"
+		"tailwind-merge": "catalog:",
+		"vaul": "catalog:"
 	},
 	"peerDependencies": {
 		"react": ">=19.0.0",
@@ -48,11 +57,14 @@
 		"@testing-library/user-event": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
+		"apca-w3": "catalog:",
 		"axe-core": "^4.12.1",
+		"culori": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"shadcn": "catalog:",
 		"tailwindcss": "catalog:",
+		"tsx": "catalog:",
 		"typescript": "catalog:"
 	}
 }

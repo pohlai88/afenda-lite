@@ -22,7 +22,8 @@ LOAD:
   ../afenda-elite-doc-control/doc-control-rules.md   # DOC-001…003 operative rules (skill-local)
 SKIP:
   recreating doc/ · restoring Living docs/ without Docs-lane · treating Fumadocs MDX as Living DOC-001
-  Storybook / Guardian Auth product restore · guardian-css-audit · recreating wiped Declarations/FFT product modules
+  legacy Storybook / Guardian Auth product restore · guardian-css-audit · recreating wiped Declarations/FFT product modules
+  mounting the active greenfield apps/storybook catalog into product routes or moving story ownership into @afenda/ui-system
   afenda-Xerp editorial bundles (different repo overlay)
   forking or syncing Xerp / vendor skills into afenda-elite-*
   LOAD / symlink / submodule paths into afenda-Xerp

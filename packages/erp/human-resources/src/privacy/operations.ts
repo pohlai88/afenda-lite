@@ -15,6 +15,12 @@ import {
 	HUMAN_RESOURCES_QUERY_PRIVACY_SUBJECT_EXPORT,
 } from "../module-ids";
 import {
+	authorizationReasonFromFailure,
+	observeAuthorizedOperationResult,
+	observeHrPrivacyOperationResult,
+} from "../observability/operation-observability";
+import type { HrPrivacyOperation } from "../observability/types";
+import {
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EVALUATE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EXECUTE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_EXPORT,
@@ -32,6 +38,7 @@ import {
 } from "../privacy";
 import type {
 	HumanResourcesOperationId,
+	HumanResourcesOperationKind,
 	HumanResourcesResourceContext,
 } from "../shared/authorization-types";
 import { authorizeHumanResourcesOperation } from "../shared/contextual-authorization";
@@ -149,7 +156,35 @@ async function authorizePrivacyOperation(
 	return ok(undefined);
 }
 
-export async function exportHumanResourcesSubjectData(
+async function observePrivacyOperationResult<T>(input: {
+	operationId: HumanResourcesOperationId;
+	operationKind: HumanResourcesOperationKind;
+	privacyOperation: HrPrivacyOperation;
+	startedAtMs: number;
+	observability: HumanResourcesCommandOptions["observability"];
+	result: Result<T>;
+}): Promise<Result<T>> {
+	const authorizationReason =
+		!input.result.ok &&
+		(input.result.code === "UNAUTHORIZED" || input.result.code === "FORBIDDEN")
+			? authorizationReasonFromFailure(input.result)
+			: undefined;
+	const observedResult = await observeAuthorizedOperationResult({
+		operationId: input.operationId,
+		operationKind: input.operationKind,
+		observability: input.observability,
+		startedAtMs: input.startedAtMs,
+		result: input.result,
+		...(authorizationReason === undefined ? {} : { authorizationReason }),
+	});
+	return observeHrPrivacyOperationResult({
+		operation: input.privacyOperation,
+		observability: input.observability,
+		result: observedResult,
+	});
+}
+
+async function exportHumanResourcesSubjectDataCore(
 	input: ExportHumanResourcesSubjectDataInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HumanResourcesSubjectExportBundle>> {
@@ -194,7 +229,7 @@ export async function exportHumanResourcesSubjectData(
 	});
 }
 
-export async function getHumanResourcesPrivacyCase(
+async function getHumanResourcesPrivacyCaseCore(
 	input: HumanResourcesPrivacyOperationInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HumanResourcesPrivacyCase>> {
@@ -218,7 +253,7 @@ export async function getHumanResourcesPrivacyCase(
 	);
 }
 
-export async function evaluateHumanResourcesAnonymization(
+async function evaluateHumanResourcesAnonymizationCore(
 	input: EvaluateHumanResourcesAnonymizationInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HumanResourcesAnonymizationEvaluation>> {
@@ -246,7 +281,7 @@ export async function evaluateHumanResourcesAnonymization(
 	});
 }
 
-export async function evaluateHumanResourcesRetention(
+async function evaluateHumanResourcesRetentionCore(
 	input: EvaluateHumanResourcesRetentionInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HumanResourcesRetentionEvaluation>> {
@@ -265,7 +300,7 @@ export async function evaluateHumanResourcesRetention(
 	});
 }
 
-export async function placeHumanResourcesLegalHold(
+async function placeHumanResourcesLegalHoldCore(
 	input: PlaceHumanResourcesLegalHoldInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ legalHoldId: string }>> {
@@ -292,7 +327,7 @@ export async function placeHumanResourcesLegalHold(
 	});
 }
 
-export async function releaseHumanResourcesLegalHold(
+async function releaseHumanResourcesLegalHoldCore(
 	input: ReleaseHumanResourcesLegalHoldInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
@@ -324,7 +359,7 @@ export async function releaseHumanResourcesLegalHold(
 	});
 }
 
-export async function anonymizeHumanResourcesSubject(
+async function anonymizeHumanResourcesSubjectCore(
 	input: AnonymizeHumanResourcesSubjectInput,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ anonymizedRecordCount: number }>> {
@@ -347,5 +382,110 @@ export async function anonymizeHumanResourcesSubject(
 	return privacyResult.data.anonymizeSubject({
 		...context,
 		classifications: input.classifications,
+	});
+}
+
+export async function exportHumanResourcesSubjectData(
+	input: ExportHumanResourcesSubjectDataInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<HumanResourcesSubjectExportBundle>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_QUERY_PRIVACY_SUBJECT_EXPORT,
+		operationKind: "query",
+		privacyOperation: "export",
+		startedAtMs,
+		observability: options.observability,
+		result: await exportHumanResourcesSubjectDataCore(input, options),
+	});
+}
+
+export async function getHumanResourcesPrivacyCase(
+	input: HumanResourcesPrivacyOperationInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<HumanResourcesPrivacyCase>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_QUERY_PRIVACY_CASE_GET,
+		operationKind: "query",
+		privacyOperation: "access",
+		startedAtMs,
+		observability: options.observability,
+		result: await getHumanResourcesPrivacyCaseCore(input, options),
+	});
+}
+
+export async function evaluateHumanResourcesAnonymization(
+	input: EvaluateHumanResourcesAnonymizationInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<HumanResourcesAnonymizationEvaluation>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_QUERY_PRIVACY_ANONYMIZATION_EVALUATE,
+		operationKind: "query",
+		privacyOperation: "erase",
+		startedAtMs,
+		observability: options.observability,
+		result: await evaluateHumanResourcesAnonymizationCore(input, options),
+	});
+}
+
+export async function evaluateHumanResourcesRetention(
+	input: EvaluateHumanResourcesRetentionInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<HumanResourcesRetentionEvaluation>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_QUERY_PRIVACY_RETENTION_EVALUATE,
+		operationKind: "query",
+		privacyOperation: "access",
+		startedAtMs,
+		observability: options.observability,
+		result: await evaluateHumanResourcesRetentionCore(input, options),
+	});
+}
+
+export async function placeHumanResourcesLegalHold(
+	input: PlaceHumanResourcesLegalHoldInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<{ legalHoldId: string }>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
+		operationKind: "command",
+		privacyOperation: "rectify",
+		startedAtMs,
+		observability: options.observability,
+		result: await placeHumanResourcesLegalHoldCore(input, options),
+	});
+}
+
+export async function releaseHumanResourcesLegalHold(
+	input: ReleaseHumanResourcesLegalHoldInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<void>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+		operationKind: "command",
+		privacyOperation: "rectify",
+		startedAtMs,
+		observability: options.observability,
+		result: await releaseHumanResourcesLegalHoldCore(input, options),
+	});
+}
+
+export async function anonymizeHumanResourcesSubject(
+	input: AnonymizeHumanResourcesSubjectInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<{ anonymizedRecordCount: number }>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
+		operationKind: "command",
+		privacyOperation: "erase",
+		startedAtMs,
+		observability: options.observability,
+		result: await anonymizeHumanResourcesSubjectCore(input, options),
 	});
 }

@@ -2,8 +2,7 @@ import { performance } from "node:perf_hooks";
 
 export type LocalBenchmarkImplementation =
 	| "real_memory_api"
-	| "real_domain_kernel"
-	| "representative_fixture";
+	| "real_domain_kernel";
 
 export type LocalBenchmarkWorkload = {
 	name: string;

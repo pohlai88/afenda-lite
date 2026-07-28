@@ -35,6 +35,21 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"ca_establishment_status_history",
 	"ca_registered_address",
 	"ca_premise",
+	"ca_governance_body",
+	"ca_governance_membership",
+	"ca_statutory_office",
+	"ca_officer_appointment",
+	"ca_officer_qualification",
+	"ca_officer_declaration",
+	"ca_officer_disqualification",
+	"ca_conflict_disclosure",
+	"ca_governance_meeting",
+	"ca_meeting_notice",
+	"ca_meeting_participant",
+	"ca_meeting_quorum_result",
+	"ca_meeting_vote",
+	"ca_resolution",
+	"ca_resolution_action",
 	"md_party",
 	"md_organization_dimension",
 	"md_item_group",
@@ -323,6 +338,36 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM ca_registered_address WHERE organization_id IS NULL`,
 	ca_premise: () =>
 		sql`SELECT count(*)::int AS null_count FROM ca_premise WHERE organization_id IS NULL`,
+	ca_governance_body: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_governance_body WHERE organization_id IS NULL`,
+	ca_governance_membership: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_governance_membership WHERE organization_id IS NULL`,
+	ca_statutory_office: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_statutory_office WHERE organization_id IS NULL`,
+	ca_officer_appointment: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_officer_appointment WHERE organization_id IS NULL`,
+	ca_officer_qualification: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_officer_qualification WHERE organization_id IS NULL`,
+	ca_officer_declaration: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_officer_declaration WHERE organization_id IS NULL`,
+	ca_officer_disqualification: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_officer_disqualification WHERE organization_id IS NULL`,
+	ca_conflict_disclosure: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_conflict_disclosure WHERE organization_id IS NULL`,
+	ca_governance_meeting: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_governance_meeting WHERE organization_id IS NULL`,
+	ca_meeting_notice: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_meeting_notice WHERE organization_id IS NULL`,
+	ca_meeting_participant: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_meeting_participant WHERE organization_id IS NULL`,
+	ca_meeting_quorum_result: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_meeting_quorum_result WHERE organization_id IS NULL`,
+	ca_meeting_vote: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_meeting_vote WHERE organization_id IS NULL`,
+	ca_resolution: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_resolution WHERE organization_id IS NULL`,
+	ca_resolution_action: () =>
+		sql`SELECT count(*)::int AS null_count FROM ca_resolution_action WHERE organization_id IS NULL`,
 	md_party: () =>
 		sql`SELECT count(*)::int AS null_count FROM md_party WHERE organization_id IS NULL`,
 	md_organization_dimension: () =>

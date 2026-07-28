@@ -11,7 +11,7 @@ import {
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runHrPayrollDeliveryOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
 	createProductionPayrollDeliveryPorts,
 	publishPayrollDelivery,

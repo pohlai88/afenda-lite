@@ -6,6 +6,8 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "./error-codes";
+import type { HrObservabilityPorts } from "./observability";
+import { recordHrConnectorHealth } from "./observability";
 import {
 	bindAttendanceConnectorCursor,
 	resolveAttendanceConnectorPullCursor,
@@ -36,6 +38,21 @@ function isRetryablePullFailure(result: {
 	return RETRYABLE_PULL_CODES.has(result.code);
 }
 
+async function observeAttendanceConnectorHealth(
+	health: "healthy" | "degraded" | "unavailable",
+	observability: HrObservabilityPorts | undefined,
+): Promise<void> {
+	if (observability === undefined) return;
+	try {
+		await recordHrConnectorHealth(
+			{ connector: "attendance", health },
+			observability,
+		);
+	} catch {
+		// Connector telemetry is best-effort and cannot replace the pull result.
+	}
+}
+
 async function sleep(ms: number): Promise<void> {
 	if (ms <= 0) {
 		return;
@@ -50,6 +67,7 @@ async function pullWithRetry(input: {
 	organizationId: string;
 	pullCursor?: string;
 	retry: { maxAttempts: number; backoffMs: number };
+	observability?: HrObservabilityPorts;
 }): Promise<
 	Result<{
 		events: readonly AttendanceSourceEvent[];
@@ -65,6 +83,7 @@ async function pullWithRetry(input: {
 				cursor: input.pullCursor,
 			});
 			if (pulled.ok) {
+				await observeAttendanceConnectorHealth("healthy", input.observability);
 				return pulled;
 			}
 			lastFailure = pulled;
@@ -72,6 +91,10 @@ async function pullWithRetry(input: {
 				!isRetryablePullFailure(pulled) ||
 				attempt === input.retry.maxAttempts
 			) {
+				await observeAttendanceConnectorHealth(
+					pulled.code === "SERVICE_UNAVAILABLE" ? "unavailable" : "degraded",
+					input.observability,
+				);
 				return pulled;
 			}
 		} catch {
@@ -83,6 +106,10 @@ async function pullWithRetry(input: {
 				),
 			);
 			if (attempt === input.retry.maxAttempts) {
+				await observeAttendanceConnectorHealth(
+					"unavailable",
+					input.observability,
+				);
 				return lastFailure;
 			}
 		}
@@ -134,6 +161,7 @@ async function pullNormalizedBatch(input: {
 	organizationId: string;
 	cursor?: string;
 	retry: { maxAttempts: number; backoffMs: number };
+	observability?: HrObservabilityPorts;
 }): Promise<
 	Result<{
 		batch: AttendanceSourceBatch;
@@ -158,6 +186,7 @@ async function pullNormalizedBatch(input: {
 		organizationId: input.organizationId,
 		pullCursor: resolvedCursor.data.pullCursor,
 		retry: input.retry,
+		observability: input.observability,
 	});
 	if (!pulled.ok) {
 		return pulled;
@@ -190,6 +219,7 @@ async function pullNormalizedBatch(input: {
 function createConfiguredAttendanceSource(input: {
 	pull: AttendanceConnectorPullPort;
 	retry: { maxAttempts: number; backoffMs: number };
+	observability?: HrObservabilityPorts;
 }): AttendanceSourcePort {
 	const resolve = (fetchInput: { organizationId: string; cursor?: string }) =>
 		pullNormalizedBatch({
@@ -197,6 +227,7 @@ function createConfiguredAttendanceSource(input: {
 			organizationId: fetchInput.organizationId,
 			cursor: fetchInput.cursor,
 			retry: input.retry,
+			observability: input.observability,
 		});
 
 	return {
@@ -224,6 +255,7 @@ function createConfiguredAttendanceSource(input: {
 export function createProductionAttendanceSource(deps?: {
 	pull?: AttendanceConnectorPullPort;
 	retry?: { maxAttempts: number; backoffMs: number };
+	observability?: HrObservabilityPorts;
 }): AttendanceSourcePort {
 	if (deps?.pull === undefined) {
 		return failClosedAttendanceSource();
@@ -232,6 +264,7 @@ export function createProductionAttendanceSource(deps?: {
 	return createConfiguredAttendanceSource({
 		pull: deps.pull,
 		retry: deps.retry ?? DEFAULT_RETRY,
+		observability: deps.observability,
 	});
 }
 

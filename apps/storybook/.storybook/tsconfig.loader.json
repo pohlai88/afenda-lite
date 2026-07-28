@@ -1,0 +1,10 @@
+{
+	"extends": "@afenda/config/tsconfig/react-library.json",
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
+		"rootDir": "../../..",
+		"types": ["node"]
+	},
+	"include": ["storybook-evidence-loader.ts"]
+}

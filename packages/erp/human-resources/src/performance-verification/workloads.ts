@@ -8,21 +8,31 @@ import {
 
 import { createMemoryHumanResourcesStore } from "../adapters/memory/store";
 import {
+	parseHumanResourcesAttendanceSessionId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 	parseHumanResourcesHeadcountPlanId,
 	parseHumanResourcesHeadcountPlanLineId,
 	parseHumanResourcesPositionId,
 } from "../brands";
+import { createMemoryBulkCheckpointPort, runEmployeeBulkImport } from "../bulk";
 import {
 	createMemoryPayrollDeliveryStore,
 	deliverPayrollHandoff,
 	queuePayrollDelivery,
 } from "../integrations/payroll-delivery";
-import { HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE } from "../module-ids";
+import {
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+} from "../module-ids";
 import type { MutationPorts } from "../ports";
-import { buildImportEventFingerprint } from "../time/attendance/import-keys";
-import type { HeadcountPlanLine } from "../types";
+import {
+	buildImportEventFingerprint,
+	namespacedImportSourceReference,
+} from "../time/attendance/import-keys";
+import { buildAttendanceTimesheetEntryPlans } from "../time/timesheet-generation";
+import type { AttendanceSession, HeadcountPlanLine } from "../types";
 import { computeWorkforcePlanVarianceLine } from "../workforce-planning/variance";
 import type { LocalBenchmarkWorkload } from "./harness";
 import { HR_LOCAL_BENCHMARK_THRESHOLDS_MS } from "./thresholds";
@@ -77,6 +87,115 @@ async function seedEmployees(input: {
 	return store;
 }
 
+async function seedEmployeeCases() {
+	const store = createMemoryHumanResourcesStore();
+	const organizations = [
+		{ id: ORGANIZATION_ID, count: 800 },
+		{ id: "org-other", count: 200 },
+	] as const;
+	let employeeSequence = 0;
+	let caseSequence = 0;
+	for (const organization of organizations) {
+		employeeSequence += 1;
+		const employee = unwrap(
+			await store.createEmployee(
+				{
+					organizationId: organization.id,
+					employeeNumber: `CASE-EMP-${employeeSequence}`,
+					normalizedEmployeeNumber: `CASE-EMP-${employeeSequence}`,
+					legalName: `Case Benchmark Employee ${employeeSequence}`,
+					createIdempotencyKey: `case-employee-${employeeSequence}`,
+					createRequestFingerprint: `case-employee-${employeeSequence}`,
+					createdBy: ACTOR_ID,
+				},
+				mutationPorts,
+				{
+					correlationId: `corr-case-employee-${employeeSequence}`,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+				},
+			),
+		);
+		const employment = unwrap(
+			await store.createEmployment(
+				{
+					organizationId: organization.id,
+					employeeId: employee.id,
+					startsOn: "2025-01-01",
+					endsOn: null,
+					createdBy: ACTOR_ID,
+				},
+				mutationPorts,
+				{
+					correlationId: `corr-case-employment-${employeeSequence}`,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+				},
+			),
+		);
+		for (let index = 0; index < organization.count; index += 1) {
+			caseSequence += 1;
+			unwrap(
+				await store.openEmployeeCase(
+					{
+						organizationId: organization.id,
+						employeeId: employee.id,
+						employmentId: employment.id,
+						caseType: "workplace_conflict",
+						severity: index % 10 === 0 ? "high" : "medium",
+						allegationSummary: `Benchmark case ${caseSequence}`,
+						classificationCode: "LOCAL_PERFORMANCE",
+						ownerActorUserId: ACTOR_ID,
+						subjectActorUserId: null,
+						conflictedActorUserIds: [],
+						createIdempotencyKey: `case-${caseSequence}`,
+						createRequestFingerprint: `case-${caseSequence}`,
+						createdBy: ACTOR_ID,
+					},
+					mutationPorts,
+					{
+						correlationId: `corr-case-${caseSequence}`,
+						operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+					},
+				),
+			);
+		}
+	}
+	return store;
+}
+
+function createResolvedAttendanceSession(index: number): AttendanceSession {
+	const workDay = ((index % 28) + 1).toString().padStart(2, "0");
+	const sessionId = unwrap(
+		parseHumanResourcesAttendanceSessionId(deterministicUuid(index + 10_000)),
+	);
+	const employeeId = unwrap(
+		parseHumanResourcesEmployeeId(deterministicUuid((index % 500) + 1)),
+	);
+	const startedAt = new Date(`2026-01-${workDay}T08:00:00.000Z`);
+	const endedAt = new Date(`2026-01-${workDay}T16:00:00.000Z`);
+	return {
+		id: sessionId,
+		organizationId: ORGANIZATION_ID,
+		employeeId,
+		employmentId: null,
+		shiftAssignmentId: null,
+		localWorkDate: `2026-01-${workDay}`,
+		timezone: "UTC",
+		firstClockInAt: startedAt,
+		finalClockOutAt: endedAt,
+		breakMinutes: 60,
+		workedMinutes: 420,
+		grossMinutes: 480,
+		provenance: { automaticBreak: null },
+		resolutionStatus: "resolved",
+		requiresReview: false,
+		version: 1,
+		createdBy: ACTOR_ID,
+		updatedBy: ACTOR_ID,
+		createdAt: startedAt,
+		updatedAt: endedAt,
+	};
+}
+
 function approvedHandoff(idempotency: number): ApprovedPayrollHandoff {
 	return {
 		contractVersion: HANDOFF_PAYROLL_CONTRACT_VERSION,
@@ -129,24 +248,31 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			{ id: "org-large-b", count: 500 },
 		],
 	});
-	const cases = Array.from({ length: 1_000 }, (_, index) => ({
-		organizationId: index % 5 === 0 ? "org-other" : ORGANIZATION_ID,
-		status: index % 3 === 0 ? "closed" : "open",
-		createdOrdinal: index,
-	}));
-	const attendance = Array.from({ length: 2_000 }, (_, index) => ({
-		employeeId: deterministicUuid((index % 500) + 1),
-		occurredAtIso: `2026-01-${((index % 28) + 1).toString().padStart(2, "0")}T08:00:00.000Z`,
-		sourceReference: `clock-${index}`,
-	}));
+	const caseStore = await seedEmployeeCases();
+	const attendanceBatches = Array.from({ length: 4 }, (_, batchIndex) =>
+		Array.from({ length: 500 }, (_, rowIndex) => {
+			const index = batchIndex * 500 + rowIndex;
+			const workDay = ((index % 28) + 1).toString().padStart(2, "0");
+			return {
+				employeeId: deterministicUuid((index % 500) + 1),
+				eventType: "clock_in" as const,
+				occurredAt: `2026-01-${workDay}T08:00:00.000Z`,
+				sourceTimezone: "UTC",
+				localWorkDate: `2026-01-${workDay}`,
+				sourceReference: `clock-${index}`,
+			};
+		}),
+	);
 	const bulkRows = Array.from({ length: 2_000 }, (_, index) => ({
-		employeeNumber: `BULK-${index.toString().padStart(6, "0")}`,
-		legalName: `Bulk Employee ${index}`,
+		sourceReference: `bulk-employee-${index}`,
+		payload: {
+			employeeNumber: `BULK-${index.toString().padStart(6, "0")}`,
+			legalName: `Bulk Employee ${index}`,
+		},
 	}));
-	const timeEntries = Array.from({ length: 2_000 }, (_, index) => ({
-		workDate: `2026-01-${((index % 28) + 1).toString().padStart(2, "0")}`,
-		minutes: 420 + (index % 4) * 15,
-	}));
+	const attendanceSessions = Array.from({ length: 2_000 }, (_, index) =>
+		createResolvedAttendanceSession(index),
+	);
 	const lineId = unwrap(
 		parseHumanResourcesHeadcountPlanLineId(deterministicUuid(1)),
 	);
@@ -216,81 +342,116 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 		{
 			name: "case_lists",
 			description:
-				"Representative tenant/status case-list projection over 1,000 rows",
-			implementation: "representative_fixture",
+				"Memory store tenant/status employee-case list over 1,000 rows",
+			implementation: "real_memory_api",
 			fixtureSize: 1_000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.case_lists,
-			run() {
-				return cases.filter(
-					(row) =>
-						row.organizationId === ORGANIZATION_ID && row.status === "open",
-				).length;
+			async run() {
+				const cases = unwrap(
+					await caseStore.listEmployeeCases({
+						organizationId: ORGANIZATION_ID,
+						status: "open",
+					}),
+				);
+				if (
+					cases.some(
+						(employeeCase) => employeeCase.organizationId !== ORGANIZATION_ID,
+					)
+				) {
+					throw new Error(
+						"Employee case list crossed the organization boundary",
+					);
+				}
+				return cases.length;
 			},
 		},
 		{
 			name: "timesheet_generation",
 			description:
-				"Representative daily timesheet aggregation over 2,000 entries",
-			implementation: "representative_fixture",
+				"Real timesheet-generation projection over 2,000 resolved sessions",
+			implementation: "real_domain_kernel",
 			fixtureSize: 2_000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.timesheet_generation,
 			run() {
-				const daily = new Map<string, number>();
-				for (const entry of timeEntries) {
-					daily.set(
-						entry.workDate,
-						(daily.get(entry.workDate) ?? 0) + entry.minutes,
-					);
+				let entryCount = 0;
+				let approvedMinutes = 0;
+				for (const session of attendanceSessions) {
+					for (const entry of buildAttendanceTimesheetEntryPlans(session)) {
+						entryCount += 1;
+						approvedMinutes += entry.approvedMinutes;
+					}
 				}
-				return (
-					daily.size +
-					Array.from(daily.values()).reduce((sum, value) => sum + value, 0)
-				);
+				return entryCount + approvedMinutes;
 			},
 		},
 		{
 			name: "attendance_import",
 			description:
-				"Real attendance fingerprint kernel over 2,000 imported events",
+				"Real attendance import namespacing, deduplication and fingerprint kernels over 2,000 events",
 			implementation: "real_domain_kernel",
 			fixtureSize: 2_000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.attendance_import,
 			run() {
-				let bytes = 0;
-				for (const event of attendance) {
-					bytes += buildImportEventFingerprint({
-						employeeId: event.employeeId,
-						employmentId: null,
-						shiftAssignmentId: null,
-						eventType: "clock_in",
-						occurredAtIso: event.occurredAtIso,
-						sourceTimezone: "UTC",
-						localWorkDate: event.occurredAtIso.slice(0, 10),
-						sourceKey: "local-benchmark",
-						sourceReference: event.sourceReference,
-						payloadChecksum: null,
-					}).length;
+				const seenReferences = new Set<string>();
+				let fingerprintBytes = 0;
+				for (const events of attendanceBatches) {
+					for (const event of events) {
+						const sourceReference = namespacedImportSourceReference(
+							"local-benchmark",
+							event.sourceReference,
+						);
+						if (seenReferences.has(sourceReference)) continue;
+						seenReferences.add(sourceReference);
+						fingerprintBytes += buildImportEventFingerprint({
+							employeeId: event.employeeId,
+							employmentId: null,
+							shiftAssignmentId: null,
+							eventType: event.eventType,
+							occurredAtIso: event.occurredAt,
+							sourceTimezone: event.sourceTimezone,
+							localWorkDate: event.localWorkDate,
+							sourceKey: "local-benchmark",
+							sourceReference,
+							payloadChecksum: null,
+						}).length;
+					}
 				}
-				return bytes;
+				return seenReferences.size + fingerprintBytes;
 			},
 		},
 		{
 			name: "bulk_employee_import",
-			description:
-				"Representative validation and deduplication of 2,000 employee rows",
-			implementation: "representative_fixture",
+			description: "Real HR bulk employee dry-run pipeline over 2,000 rows",
+			implementation: "real_domain_kernel",
 			fixtureSize: 2_000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.bulk_employee_import,
-			run() {
-				const seen = new Set<string>();
-				let valid = 0;
-				for (const row of bulkRows) {
-					if (row.legalName.length > 0 && !seen.has(row.employeeNumber)) {
-						seen.add(row.employeeNumber);
-						valid += 1;
-					}
+			async run() {
+				let accepted = 0;
+				for (let batchIndex = 0; batchIndex < 4; batchIndex += 1) {
+					const rows = bulkRows.slice(batchIndex * 500, (batchIndex + 1) * 500);
+					const result = unwrap(
+						await runEmployeeBulkImport(
+							{
+								organizationId: ORGANIZATION_ID,
+								actorUserId: ACTOR_ID,
+								correlationId: `corr-bulk-${batchIndex}`,
+								batchId: `bulk-${batchIndex}`,
+								entityType: "employee",
+								mode: "dry_run",
+								idempotencyKey: `bulk-${batchIndex}`,
+								rows,
+							},
+							{
+								checkpoints: createMemoryBulkCheckpointPort(),
+								commands: {
+									createEmployee: async () => ok({ id: "dry-run" }),
+								},
+							},
+						),
+					);
+					accepted += result.totals.accepted;
 				}
-				return valid;
+				return accepted;
 			},
 		},
 		{
@@ -370,14 +531,36 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 			fixtureSize: 1_000,
 			thresholdP95Ms: HR_LOCAL_BENCHMARK_THRESHOLDS_MS.large_tenant_isolation,
 			async run() {
-				const result = unwrap(
+				const orgA = unwrap(
+					await tenantStore.listEmployees({
+						organizationId: "org-large-a",
+						page: 1,
+						pageSize: 100,
+					}),
+				);
+				const orgB = unwrap(
 					await tenantStore.listEmployees({
 						organizationId: "org-large-b",
 						page: 1,
 						pageSize: 100,
 					}),
 				);
-				return result.totalCount + result.employees.length;
+				if (
+					orgA.employees.some(
+						(employee) => employee.organizationId !== "org-large-a",
+					) ||
+					orgB.employees.some(
+						(employee) => employee.organizationId !== "org-large-b",
+					)
+				) {
+					throw new Error("Employee list crossed the organization boundary");
+				}
+				return (
+					orgA.totalCount +
+					orgA.employees.length +
+					orgB.totalCount +
+					orgB.employees.length
+				);
 			},
 		},
 	];

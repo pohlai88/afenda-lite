@@ -67,6 +67,16 @@
 			],
 			"outputs": []
 		},
+		"test:stories": {
+			"dependsOn": ["^build"],
+			"cache": false,
+			"outputs": []
+		},
+		"test:visual": {
+			"dependsOn": ["build"],
+			"cache": false,
+			"outputs": ["playwright-report/**", "test-results/**"]
+		},
 		"test:parity": {
 			"dependsOn": ["^build"],
 			"cache": false,

@@ -91,6 +91,79 @@ export type RegisteredAddressId = z.infer<typeof registeredAddressIdSchema>;
 export const premiseIdSchema = uuidIdentifierSchema("PremiseId");
 export type PremiseId = z.infer<typeof premiseIdSchema>;
 
+export const governanceBodyIdSchema = uuidIdentifierSchema("GovernanceBodyId");
+export type GovernanceBodyId = z.infer<typeof governanceBodyIdSchema>;
+
+export const governanceMembershipIdSchema = uuidIdentifierSchema(
+	"GovernanceMembershipId",
+);
+export type GovernanceMembershipId = z.infer<
+	typeof governanceMembershipIdSchema
+>;
+
+export const statutoryOfficeIdSchema =
+	uuidIdentifierSchema("StatutoryOfficeId");
+export type StatutoryOfficeId = z.infer<typeof statutoryOfficeIdSchema>;
+
+export const officerAppointmentIdSchema = uuidIdentifierSchema(
+	"OfficerAppointmentId",
+);
+export type OfficerAppointmentId = z.infer<typeof officerAppointmentIdSchema>;
+
+export const officerQualificationIdSchema = uuidIdentifierSchema(
+	"OfficerQualificationId",
+);
+export type OfficerQualificationId = z.infer<
+	typeof officerQualificationIdSchema
+>;
+
+export const officerDeclarationIdSchema = uuidIdentifierSchema(
+	"OfficerDeclarationId",
+);
+export type OfficerDeclarationId = z.infer<typeof officerDeclarationIdSchema>;
+
+export const officerDisqualificationIdSchema = uuidIdentifierSchema(
+	"OfficerDisqualificationId",
+);
+export type OfficerDisqualificationId = z.infer<
+	typeof officerDisqualificationIdSchema
+>;
+
+export const officerConflictDisclosureIdSchema = uuidIdentifierSchema(
+	"OfficerConflictDisclosureId",
+);
+export type OfficerConflictDisclosureId = z.infer<
+	typeof officerConflictDisclosureIdSchema
+>;
+
+export const governanceMeetingIdSchema = uuidIdentifierSchema(
+	"GovernanceMeetingId",
+);
+export type GovernanceMeetingId = z.infer<typeof governanceMeetingIdSchema>;
+
+export const meetingNoticeIdSchema = uuidIdentifierSchema("MeetingNoticeId");
+export type MeetingNoticeId = z.infer<typeof meetingNoticeIdSchema>;
+
+export const meetingParticipantIdSchema = uuidIdentifierSchema(
+	"MeetingParticipantId",
+);
+export type MeetingParticipantId = z.infer<typeof meetingParticipantIdSchema>;
+
+export const meetingQuorumResultIdSchema = uuidIdentifierSchema(
+	"MeetingQuorumResultId",
+);
+export type MeetingQuorumResultId = z.infer<typeof meetingQuorumResultIdSchema>;
+
+export const meetingVoteIdSchema = uuidIdentifierSchema("MeetingVoteId");
+export type MeetingVoteId = z.infer<typeof meetingVoteIdSchema>;
+
+export const resolutionIdSchema = uuidIdentifierSchema("ResolutionId");
+export type ResolutionId = z.infer<typeof resolutionIdSchema>;
+
+export const resolutionActionIdSchema =
+	uuidIdentifierSchema("ResolutionActionId");
+export type ResolutionActionId = z.infer<typeof resolutionActionIdSchema>;
+
 export const correlationIdSchema = identifierSchema("CorrelationId");
 export type CorrelationId = z.infer<typeof correlationIdSchema>;
 

@@ -20,6 +20,19 @@ const boolString = z
 	.enum(["true", "false"])
 	.transform((value) => value === "true");
 
+const boundedIntString = (
+	minimum: number,
+	maximum: number,
+	defaultValue: number,
+) =>
+	z.coerce
+		.number()
+		.int()
+		.min(minimum)
+		.max(maximum)
+		.optional()
+		.default(defaultValue);
+
 const runtimeCtx = {
 	nodeEnv: process.env.NODE_ENV,
 	vercelEnv: process.env.VERCEL_ENV,
@@ -66,6 +79,15 @@ export const env = createEnv({
 		 * Fail closed when unset — scrape RH returns 404.
 		 */
 		METRICS_SCRAPE_TOKEN: z.string().min(16).optional(),
+
+		/** Vercel Cron bearer for the durable HR reliability worker. */
+		CRON_SECRET: z.string().min(32).optional(),
+		HR_RELIABILITY_ENABLED: boolString.optional().default(false),
+		HR_RELIABILITY_BATCH_SIZE: boundedIntString(1, 100, 25),
+		HR_RELIABILITY_CONCURRENCY: boundedIntString(1, 10, 4),
+		HR_RELIABILITY_PER_ORG_LIMIT: boundedIntString(1, 25, 5),
+		HR_RELIABILITY_LEASE_SECONDS: boundedIntString(60, 900, 120),
+		HR_RELIABILITY_TIME_BUDGET_MS: boundedIntString(1_000, 55_000, 45_000),
 
 		/**
 		 * Vercel AI Gateway API key for `@afenda/ai-the-machine`.
@@ -140,6 +162,14 @@ export const env = createEnv({
 
 		METRICS_SCRAPE_TOKEN: process.env.METRICS_SCRAPE_TOKEN,
 
+		CRON_SECRET: process.env.CRON_SECRET,
+		HR_RELIABILITY_ENABLED: process.env.HR_RELIABILITY_ENABLED,
+		HR_RELIABILITY_BATCH_SIZE: process.env.HR_RELIABILITY_BATCH_SIZE,
+		HR_RELIABILITY_CONCURRENCY: process.env.HR_RELIABILITY_CONCURRENCY,
+		HR_RELIABILITY_PER_ORG_LIMIT: process.env.HR_RELIABILITY_PER_ORG_LIMIT,
+		HR_RELIABILITY_LEASE_SECONDS: process.env.HR_RELIABILITY_LEASE_SECONDS,
+		HR_RELIABILITY_TIME_BUDGET_MS: process.env.HR_RELIABILITY_TIME_BUDGET_MS,
+
 		AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
 		AI_THE_MACHINE_MODEL: process.env.AI_THE_MACHINE_MODEL,
 
@@ -176,8 +206,32 @@ export const env = createEnv({
 		process.env.npm_lifecycle_event === "typecheck",
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((value, ctx) => {
+			if (
+				value.HR_RELIABILITY_PER_ORG_LIMIT > value.HR_RELIABILITY_BATCH_SIZE
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["HR_RELIABILITY_PER_ORG_LIMIT"],
+					message:
+						"HR reliability per-organization limit cannot exceed batch size.",
+				});
+			}
+			if (value.HR_RELIABILITY_CONCURRENCY > value.HR_RELIABILITY_BATCH_SIZE) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["HR_RELIABILITY_CONCURRENCY"],
+					message: "HR reliability concurrency cannot exceed batch size.",
+				});
+			}
 			if (!isProductionDeployment(runtimeCtx)) {
 				return;
+			}
+			if (value.CRON_SECRET === undefined) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["CRON_SECRET"],
+					message: "CRON_SECRET is required on production deployments.",
+				});
 			}
 			const localOnly = assertLocalOnlySecretsAbsentInProduction(
 				{

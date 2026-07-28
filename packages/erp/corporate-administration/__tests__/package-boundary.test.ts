@@ -18,9 +18,14 @@ const approvedDatabaseImportFiles = new Set([
 	"src/adapters/drizzle/errors.ts",
 	"src/adapters/drizzle/company.ts",
 	"src/adapters/drizzle/establishments.ts",
+	"src/adapters/drizzle/governance.ts",
 	"src/adapters/drizzle/idempotency.ts",
 	"src/adapters/drizzle/index.ts",
+	"src/adapters/drizzle/meetings.ts",
+	"src/adapters/drizzle/officer-compliance.ts",
+	"src/adapters/drizzle/officers.ts",
 	"src/adapters/drizzle/outbox.ts",
+	"src/adapters/drizzle/resolutions.ts",
 	"src/adapters/drizzle/transaction.ts",
 	"src/module.manifest.ts",
 ]);
@@ -243,13 +248,32 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		);
 	});
 
-	it("declares the CA-1.4 legal-company and establishment surface while remaining scaffolded", () => {
+	it("declares the CA-2.1 company, establishment and governance surface while remaining scaffolded", () => {
 		expect(corporateAdministrationModuleManifest).toMatchObject({
 			lifecycle: "scaffolded",
 			activationMode: "organization_toggle",
 		});
 		expect(corporateAdministrationModuleManifest.owns).toEqual({
-			aggregates: ["legal_company", "legal_establishment", "premise"],
+			aggregates: [
+				"legal_company",
+				"legal_establishment",
+				"premise",
+				"governance_body",
+				"governance_membership",
+				"statutory_office",
+				"officer_appointment",
+				"officer_qualification",
+				"officer_declaration",
+				"officer_disqualification",
+				"conflict_disclosure",
+				"governance_meeting",
+				"meeting_notice",
+				"meeting_participant",
+				"meeting_quorum_result",
+				"meeting_vote",
+				"resolution",
+				"resolution_action",
+			],
 			commandNamespace: "corporate-administration",
 			commands: [
 				"registerLegalCompanyDraft",
@@ -282,6 +306,41 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				"setRegisteredAddress",
 				"registerPremise",
 				"endPremise",
+				"createGovernanceBody",
+				"amendGovernanceBody",
+				"retireGovernanceBody",
+				"appointGovernanceMember",
+				"changeGovernanceMembership",
+				"endGovernanceMembership",
+				"defineStatutoryOffice",
+				"appointOfficer",
+				"amendOfficerAppointment",
+				"recordOfficerQualification",
+				"resignOfficer",
+				"removeOfficer",
+				"recordOfficerDeclaration",
+				"supersedeOfficerDeclaration",
+				"recordOfficerDisqualification",
+				"endOfficerDisqualification",
+				"discloseConflict",
+				"recordRecusal",
+				"scheduleGovernanceMeeting",
+				"issueMeetingNotice",
+				"recordNoticeDelivery",
+				"waiveNotice",
+				"recordMeetingParticipant",
+				"openMeeting",
+				"recordQuorum",
+				"adjournMeeting",
+				"closeMeeting",
+				"recordMeetingVote",
+				"adoptResolution",
+				"rejectResolution",
+				"recordWrittenResolution",
+				"supersedeResolution",
+				"assignResolutionAction",
+				"completeResolutionAction",
+				"recordMinutesDocument",
 			],
 			queryNamespace: "corporate-administration",
 			queries: [
@@ -303,6 +362,25 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				"listLegalEstablishmentsAsOf",
 				"findRegisteredAddressAsOf",
 				"listPremisesAsOf",
+				"getGovernanceBody",
+				"listGovernanceBodiesAsOf",
+				"listGovernanceMembershipsAsOf",
+				"listRequiredStatutoryOffices",
+				"listOfficersAsOf",
+				"getOfficerAppointment",
+				"getOfficerVacancyStatus",
+				"getOfficerEligibilityAsOf",
+				"listExpiringDeclarations",
+				"listActiveDisqualifications",
+				"listConflictsForMatter",
+				"getGovernanceMeeting",
+				"listGovernanceMeetings",
+				"getMeetingAttendance",
+				"getMeetingQuorumStatus",
+				"getResolution",
+				"listResolutionsAsOf",
+				"getResolutionExecutionStatus",
+				"listOverdueResolutionActions",
 			],
 		});
 		for (const runtimeOperation of [
@@ -337,6 +415,21 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"ca_establishment_status_history",
 			"ca_registered_address",
 			"ca_premise",
+			"ca_governance_body",
+			"ca_governance_membership",
+			"ca_statutory_office",
+			"ca_officer_appointment",
+			"ca_officer_qualification",
+			"ca_officer_declaration",
+			"ca_officer_disqualification",
+			"ca_conflict_disclosure",
+			"ca_governance_meeting",
+			"ca_meeting_notice",
+			"ca_meeting_participant",
+			"ca_meeting_quorum_result",
+			"ca_meeting_vote",
+			"ca_resolution",
+			"ca_resolution_action",
 		]);
 		expect(packageRoot.CORPORATE_ADMINISTRATION_MUTATION_TABLES).toEqual([
 			"ca_mutation_receipt",
@@ -352,6 +445,21 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"ca_establishment_status_history",
 			"ca_registered_address",
 			"ca_premise",
+			"ca_governance_body",
+			"ca_governance_membership",
+			"ca_statutory_office",
+			"ca_officer_appointment",
+			"ca_officer_qualification",
+			"ca_officer_declaration",
+			"ca_officer_disqualification",
+			"ca_conflict_disclosure",
+			"ca_governance_meeting",
+			"ca_meeting_notice",
+			"ca_meeting_participant",
+			"ca_meeting_quorum_result",
+			"ca_meeting_vote",
+			"ca_resolution",
+			"ca_resolution_action",
 		]);
 		for (const tableName of [
 			"platform_audit_log",
@@ -391,6 +499,40 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				"corporate_administration.registered_address.set.v1",
 				"corporate_administration.premise.registered.v1",
 				"corporate_administration.premise.ended.v1",
+				"corporate_administration.governance_body.created.v1",
+				"corporate_administration.governance_body.amended.v1",
+				"corporate_administration.governance_body.retired.v1",
+				"corporate_administration.governance_membership.appointed.v1",
+				"corporate_administration.governance_membership.changed.v1",
+				"corporate_administration.governance_membership.ended.v1",
+				"corporate_administration.statutory_office.defined.v1",
+				"corporate_administration.officer.appointed.v1",
+				"corporate_administration.officer.appointment_amended.v1",
+				"corporate_administration.officer.qualification_recorded.v1",
+				"corporate_administration.officer.resigned.v1",
+				"corporate_administration.officer.removed.v1",
+				"corporate_administration.officer.declaration_recorded.v1",
+				"corporate_administration.officer.declaration_superseded.v1",
+				"corporate_administration.officer.disqualified.v1",
+				"corporate_administration.officer.disqualification_ended.v1",
+				"corporate_administration.conflict.disclosed.v1",
+				"corporate_administration.conflict.recusal_recorded.v1",
+				"corporate_administration.governance_meeting.scheduled.v1",
+				"corporate_administration.meeting_notice.issued.v1",
+				"corporate_administration.meeting_notice.delivered.v1",
+				"corporate_administration.meeting_notice.waived.v1",
+				"corporate_administration.meeting_participant.recorded.v1",
+				"corporate_administration.governance_meeting.opened.v1",
+				"corporate_administration.governance_meeting.quorum_recorded.v1",
+				"corporate_administration.governance_meeting.adjourned.v1",
+				"corporate_administration.governance_meeting.closed.v1",
+				"corporate_administration.meeting_vote.recorded.v1",
+				"corporate_administration.resolution.adopted.v1",
+				"corporate_administration.resolution.rejected.v1",
+				"corporate_administration.resolution.superseded.v1",
+				"corporate_administration.resolution.minutes_recorded.v1",
+				"corporate_administration.resolution.action_assigned.v1",
+				"corporate_administration.resolution.action_completed.v1",
 			],
 			consumes: [],
 		});
@@ -400,6 +542,16 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				"corporate_administration.company.read",
 				"corporate_administration.company.manage",
 				"corporate_administration.establishment.manage",
+				"corporate_administration.governance.read",
+				"corporate_administration.governance.manage",
+				"corporate_administration.officer.read",
+				"corporate_administration.officer.manage",
+				"corporate_administration.officer_compliance.read",
+				"corporate_administration.officer_compliance.manage",
+				"corporate_administration.meeting.read",
+				"corporate_administration.meeting.manage",
+				"corporate_administration.resolution.read",
+				"corporate_administration.resolution.manage",
 			],
 		});
 		expect(corporateAdministrationModuleManifest.authorization).toEqual({
@@ -441,6 +593,46 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				setRegisteredAddress: "corporate_administration.establishment.manage",
 				registerPremise: "corporate_administration.establishment.manage",
 				endPremise: "corporate_administration.establishment.manage",
+				createGovernanceBody: "corporate_administration.governance.manage",
+				amendGovernanceBody: "corporate_administration.governance.manage",
+				retireGovernanceBody: "corporate_administration.governance.manage",
+				appointGovernanceMember: "corporate_administration.governance.manage",
+				changeGovernanceMembership:
+					"corporate_administration.governance.manage",
+				endGovernanceMembership: "corporate_administration.governance.manage",
+				defineStatutoryOffice: "corporate_administration.officer.manage",
+				appointOfficer: "corporate_administration.officer.manage",
+				amendOfficerAppointment: "corporate_administration.officer.manage",
+				recordOfficerQualification: "corporate_administration.officer.manage",
+				resignOfficer: "corporate_administration.officer.manage",
+				removeOfficer: "corporate_administration.officer.manage",
+				recordOfficerDeclaration:
+					"corporate_administration.officer_compliance.manage",
+				supersedeOfficerDeclaration:
+					"corporate_administration.officer_compliance.manage",
+				recordOfficerDisqualification:
+					"corporate_administration.officer_compliance.manage",
+				endOfficerDisqualification:
+					"corporate_administration.officer_compliance.manage",
+				discloseConflict: "corporate_administration.officer_compliance.manage",
+				recordRecusal: "corporate_administration.officer_compliance.manage",
+				scheduleGovernanceMeeting: "corporate_administration.meeting.manage",
+				issueMeetingNotice: "corporate_administration.meeting.manage",
+				recordNoticeDelivery: "corporate_administration.meeting.manage",
+				waiveNotice: "corporate_administration.meeting.manage",
+				recordMeetingParticipant: "corporate_administration.meeting.manage",
+				openMeeting: "corporate_administration.meeting.manage",
+				recordQuorum: "corporate_administration.meeting.manage",
+				adjournMeeting: "corporate_administration.meeting.manage",
+				closeMeeting: "corporate_administration.meeting.manage",
+				recordMeetingVote: "corporate_administration.resolution.manage",
+				adoptResolution: "corporate_administration.resolution.manage",
+				rejectResolution: "corporate_administration.resolution.manage",
+				recordWrittenResolution: "corporate_administration.resolution.manage",
+				supersedeResolution: "corporate_administration.resolution.manage",
+				assignResolutionAction: "corporate_administration.resolution.manage",
+				completeResolutionAction: "corporate_administration.resolution.manage",
+				recordMinutesDocument: "corporate_administration.resolution.manage",
 			},
 			queries: {
 				getLegalCompany: "corporate_administration.company.read",
@@ -463,6 +655,32 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				listLegalEstablishmentsAsOf: "corporate_administration.company.read",
 				findRegisteredAddressAsOf: "corporate_administration.company.read",
 				listPremisesAsOf: "corporate_administration.company.read",
+				getGovernanceBody: "corporate_administration.governance.read",
+				listGovernanceBodiesAsOf: "corporate_administration.governance.read",
+				listGovernanceMembershipsAsOf:
+					"corporate_administration.governance.read",
+				listRequiredStatutoryOffices: "corporate_administration.officer.read",
+				listOfficersAsOf: "corporate_administration.officer.read",
+				getOfficerAppointment: "corporate_administration.officer.read",
+				getOfficerVacancyStatus: "corporate_administration.officer.read",
+				getOfficerEligibilityAsOf:
+					"corporate_administration.officer_compliance.read",
+				listExpiringDeclarations:
+					"corporate_administration.officer_compliance.read",
+				listActiveDisqualifications:
+					"corporate_administration.officer_compliance.read",
+				listConflictsForMatter:
+					"corporate_administration.officer_compliance.read",
+				getGovernanceMeeting: "corporate_administration.meeting.read",
+				listGovernanceMeetings: "corporate_administration.meeting.read",
+				getMeetingAttendance: "corporate_administration.meeting.read",
+				getMeetingQuorumStatus: "corporate_administration.meeting.read",
+				getResolution: "corporate_administration.resolution.read",
+				listResolutionsAsOf: "corporate_administration.resolution.read",
+				getResolutionExecutionStatus:
+					"corporate_administration.resolution.read",
+				listOverdueResolutionActions:
+					"corporate_administration.resolution.read",
 			},
 		});
 		expect(corporateAdministrationModuleManifest.moduleDependencies).toEqual({
@@ -776,7 +994,6 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"legal-company",
 			"legal-establishment",
 			"officer",
-			"governance",
 			"capital",
 			"ownership",
 			"assets",
@@ -818,6 +1035,15 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"src/company/queries/list-company-names.ts",
 			"src/company/queries/list-legal-companies.ts",
 		];
+		const approvedGovernancePaths = [
+			"src/governance/commands/index.ts",
+			"src/governance/index.ts",
+			"src/governance/queries/index.ts",
+			"src/governance/rules.ts",
+			"src/governance/schemas.ts",
+			"src/governance/store.ts",
+			"src/governance/types.ts",
+		];
 		const findings = normalizedRelativeSourceFiles().flatMap((relativeFile) => {
 			const segments = relativeFile.split("/");
 			const isRootCommandOrQuery =
@@ -828,8 +1054,14 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				relativeFile.startsWith("src/company/queries/")
 					? !approvedCompanyPaths.includes(relativeFile)
 					: false;
+			const isUnexpectedGovernancePath = relativeFile.startsWith(
+				"src/governance/",
+			)
+				? !approvedGovernancePaths.includes(relativeFile)
+				: false;
 			return isRootCommandOrQuery ||
 				isUnexpectedCompanyCommandOrQuery ||
+				isUnexpectedGovernancePath ||
 				prohibitedExecutableSegments.some((segment) =>
 					segments.includes(segment),
 				)

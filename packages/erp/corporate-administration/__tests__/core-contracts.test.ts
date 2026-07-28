@@ -89,6 +89,41 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"setRegisteredAddress",
 			"registerPremise",
 			"endPremise",
+			"createGovernanceBody",
+			"amendGovernanceBody",
+			"retireGovernanceBody",
+			"appointGovernanceMember",
+			"changeGovernanceMembership",
+			"endGovernanceMembership",
+			"defineStatutoryOffice",
+			"appointOfficer",
+			"amendOfficerAppointment",
+			"recordOfficerQualification",
+			"resignOfficer",
+			"removeOfficer",
+			"recordOfficerDeclaration",
+			"supersedeOfficerDeclaration",
+			"recordOfficerDisqualification",
+			"endOfficerDisqualification",
+			"discloseConflict",
+			"recordRecusal",
+			"scheduleGovernanceMeeting",
+			"issueMeetingNotice",
+			"recordNoticeDelivery",
+			"waiveNotice",
+			"recordMeetingParticipant",
+			"openMeeting",
+			"recordQuorum",
+			"adjournMeeting",
+			"closeMeeting",
+			"recordMeetingVote",
+			"adoptResolution",
+			"rejectResolution",
+			"recordWrittenResolution",
+			"supersedeResolution",
+			"assignResolutionAction",
+			"completeResolutionAction",
+			"recordMinutesDocument",
 		]);
 		expect(CORPORATE_ADMINISTRATION_QUERY_IDS).toEqual([
 			"getLegalCompany",
@@ -109,6 +144,25 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"listLegalEstablishmentsAsOf",
 			"findRegisteredAddressAsOf",
 			"listPremisesAsOf",
+			"getGovernanceBody",
+			"listGovernanceBodiesAsOf",
+			"listGovernanceMembershipsAsOf",
+			"listRequiredStatutoryOffices",
+			"listOfficersAsOf",
+			"getOfficerAppointment",
+			"getOfficerVacancyStatus",
+			"getOfficerEligibilityAsOf",
+			"listExpiringDeclarations",
+			"listActiveDisqualifications",
+			"listConflictsForMatter",
+			"getGovernanceMeeting",
+			"listGovernanceMeetings",
+			"getMeetingAttendance",
+			"getMeetingQuorumStatus",
+			"getResolution",
+			"listResolutionsAsOf",
+			"getResolutionExecutionStatus",
+			"listOverdueResolutionActions",
 		]);
 		expectTypeOf<CorporateAdministrationCommandId>().toEqualTypeOf<
 			| "registerLegalCompanyDraft"
@@ -141,6 +195,41 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			| "setRegisteredAddress"
 			| "registerPremise"
 			| "endPremise"
+			| "createGovernanceBody"
+			| "amendGovernanceBody"
+			| "retireGovernanceBody"
+			| "appointGovernanceMember"
+			| "changeGovernanceMembership"
+			| "endGovernanceMembership"
+			| "defineStatutoryOffice"
+			| "appointOfficer"
+			| "amendOfficerAppointment"
+			| "recordOfficerQualification"
+			| "resignOfficer"
+			| "removeOfficer"
+			| "recordOfficerDeclaration"
+			| "supersedeOfficerDeclaration"
+			| "recordOfficerDisqualification"
+			| "endOfficerDisqualification"
+			| "discloseConflict"
+			| "recordRecusal"
+			| "scheduleGovernanceMeeting"
+			| "issueMeetingNotice"
+			| "recordNoticeDelivery"
+			| "waiveNotice"
+			| "recordMeetingParticipant"
+			| "openMeeting"
+			| "recordQuorum"
+			| "adjournMeeting"
+			| "closeMeeting"
+			| "recordMeetingVote"
+			| "adoptResolution"
+			| "rejectResolution"
+			| "recordWrittenResolution"
+			| "supersedeResolution"
+			| "assignResolutionAction"
+			| "completeResolutionAction"
+			| "recordMinutesDocument"
 		>();
 		expectTypeOf<CorporateAdministrationQueryId>().toEqualTypeOf<
 			| "getLegalCompany"
@@ -161,6 +250,25 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			| "listLegalEstablishmentsAsOf"
 			| "findRegisteredAddressAsOf"
 			| "listPremisesAsOf"
+			| "getGovernanceBody"
+			| "listGovernanceBodiesAsOf"
+			| "listGovernanceMembershipsAsOf"
+			| "listRequiredStatutoryOffices"
+			| "listOfficersAsOf"
+			| "getOfficerAppointment"
+			| "getOfficerVacancyStatus"
+			| "getOfficerEligibilityAsOf"
+			| "listExpiringDeclarations"
+			| "listActiveDisqualifications"
+			| "listConflictsForMatter"
+			| "getGovernanceMeeting"
+			| "listGovernanceMeetings"
+			| "getMeetingAttendance"
+			| "getMeetingQuorumStatus"
+			| "getResolution"
+			| "listResolutionsAsOf"
+			| "getResolutionExecutionStatus"
+			| "listOverdueResolutionActions"
 		>();
 	});
 
@@ -714,6 +822,16 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"corporate_administration.company.read",
 			"corporate_administration.company.manage",
 			"corporate_administration.establishment.manage",
+			"corporate_administration.governance.read",
+			"corporate_administration.governance.manage",
+			"corporate_administration.officer.read",
+			"corporate_administration.officer.manage",
+			"corporate_administration.officer_compliance.read",
+			"corporate_administration.officer_compliance.manage",
+			"corporate_administration.meeting.read",
+			"corporate_administration.meeting.manage",
+			"corporate_administration.resolution.read",
+			"corporate_administration.resolution.manage",
 		]);
 		expect(CORPORATE_ADMINISTRATION_ERROR_CODES).toHaveLength(21);
 		expect(new Set(CORPORATE_ADMINISTRATION_ERROR_CODES).size).toBe(21);

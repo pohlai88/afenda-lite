@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/nextjs/folders.md` |
 | Authority | **Scratch** — nextjs skill + disk `apps/web/**` |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-28 |
 
 ---
 
@@ -17,7 +17,7 @@
 | `modules/` | Domain + schemas | No Request/cookies in domain |
 | `proxy.ts` | Session redirect | Not `middleware.ts` |
 | `public/` | Static assets | Product art only |
-| `@afenda/ui-system` | UI primitives + tokens | Flat barrel + `styles.css` |
+| `@afenda/ui-system` | UI primitives + foundation CSS | Flat barrel + token-only `styles.css` + shared `base.css` |
 
 ### Route groups (no URL segment)
 
@@ -37,7 +37,7 @@
 | `middleware.ts` | Use `proxy.ts` |
 | Fat `page.tsx` | UI in `features/*` |
 | Root `components/` dump · banished `lib/` growth | Wrong homes |
-| Storybook · `/playground` prod routes | Retired / absent |
+| Legacy Storybook trees · `/playground` product routes | Retired / absent; the active greenfield `apps/storybook` catalog remains a separate local/static developer app |
 | `modules/declarations` · `modules/fft` · `/fft` product | Nuclear wipe — removed |
 | Product-import of `shadcn-studio/` scratch | Promote then prune |
 | Bypass `@afenda/ui-system` | Barrel only |

@@ -10,11 +10,31 @@ describe("Corporate Administration permissions", () => {
 			"corporate_administration.company.read",
 			"corporate_administration.company.manage",
 			"corporate_administration.establishment.manage",
+			"corporate_administration.governance.read",
+			"corporate_administration.governance.manage",
+			"corporate_administration.officer.read",
+			"corporate_administration.officer.manage",
+			"corporate_administration.officer_compliance.read",
+			"corporate_administration.officer_compliance.manage",
+			"corporate_administration.meeting.read",
+			"corporate_administration.meeting.manage",
+			"corporate_administration.resolution.read",
+			"corporate_administration.resolution.manage",
 		]);
 		expectTypeOf<CorporateAdministrationPermission>().toEqualTypeOf<
 			| "corporate_administration.company.read"
 			| "corporate_administration.company.manage"
 			| "corporate_administration.establishment.manage"
+			| "corporate_administration.governance.read"
+			| "corporate_administration.governance.manage"
+			| "corporate_administration.officer.read"
+			| "corporate_administration.officer.manage"
+			| "corporate_administration.officer_compliance.read"
+			| "corporate_administration.officer_compliance.manage"
+			| "corporate_administration.meeting.read"
+			| "corporate_administration.meeting.manage"
+			| "corporate_administration.resolution.read"
+			| "corporate_administration.resolution.manage"
 		>();
 	});
 });

@@ -1,7 +1,8 @@
 /**
  * UI boundary — proves `@afenda/ui-system` is the sole runtime door for UI in
  * @afenda/web: the flat barrel (`@afenda/ui-system`) and its stylesheet
- * (`@afenda/ui-system/styles.css`) are the only allowed specifiers, and no
+ * (`@afenda/ui-system/styles.css` and `@afenda/ui-system/base.css`) are the
+ * only allowed specifiers, and no
  * source deep-imports internal component paths or the retired `@afenda/ui`.
  * Studio DNA staging (`shadcn-studio/`) is excluded from product scans; product
  * routes/features must not import it (M-A1).
@@ -50,6 +51,7 @@ function isUnderDnaStaging(relativePath: string): boolean {
 const ALLOWED_SPECIFIERS = new Set([
 	"@afenda/ui-system",
 	"@afenda/ui-system/styles.css",
+	"@afenda/ui-system/base.css",
 ]);
 const UI_SYSTEM_PATTERN = /@afenda\/ui-system(?:\/[\w.\-/]+)?/g;
 const RETIRED_UI_PATTERN = /@afenda\/ui(?![\w-])(?:\/[\w.\-/]+)?/g;
@@ -78,6 +80,20 @@ describe("@afenda/web ui-system boundary", () => {
 			}
 		}
 		expect(offenders, `deep imports found: ${offenders}`).toEqual([]);
+	});
+
+	it("imports shared tokens and base rules in the governed order", () => {
+		const globals = readFileSync(path.join(webRoot, "globals.css"), "utf8");
+		const imports = [...globals.matchAll(/@import\s+["']([^"']+)["'];/g)].map(
+			(match) => match[1],
+		);
+
+		expect(imports.slice(0, 4)).toEqual([
+			"tailwindcss",
+			"tw-animate-css",
+			"@afenda/ui-system/styles.css",
+			"@afenda/ui-system/base.css",
+		]);
 	});
 
 	it("never references the retired @afenda/ui package", () => {

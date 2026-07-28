@@ -2,6 +2,7 @@
 
 export * from "./assignment-context-query";
 export * from "./bulk-checkpoint";
+export * from "./bulk-jobs";
 export * from "./compensation-benefits";
 export * from "./compliance";
 export * from "./compose";

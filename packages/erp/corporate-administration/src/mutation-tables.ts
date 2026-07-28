@@ -18,6 +18,21 @@ export const CORPORATE_ADMINISTRATION_MUTATION_TABLES = [
 	"ca_establishment_status_history",
 	"ca_registered_address",
 	"ca_premise",
+	"ca_governance_body",
+	"ca_governance_membership",
+	"ca_statutory_office",
+	"ca_officer_appointment",
+	"ca_officer_qualification",
+	"ca_officer_declaration",
+	"ca_officer_disqualification",
+	"ca_conflict_disclosure",
+	"ca_governance_meeting",
+	"ca_meeting_notice",
+	"ca_meeting_participant",
+	"ca_meeting_quorum_result",
+	"ca_meeting_vote",
+	"ca_resolution",
+	"ca_resolution_action",
 ] as const;
 
 export type CorporateAdministrationMutationTable =

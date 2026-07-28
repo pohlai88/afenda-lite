@@ -1,0 +1,6 @@
+/* biome-ignore-all lint/complexity/noImportantStyles: screenshot normalization must override component focus styles. */
+html:not([data-preserve-focus="true"]) *:focus,
+html:not([data-preserve-focus="true"]) *:focus-visible {
+	outline: none !important;
+	--tw-ring-shadow: 0 0 #0000 !important;
+}

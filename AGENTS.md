@@ -327,7 +327,15 @@ pnpm --filter @afenda/web dev   # :3000
 | `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | Local / MCP ops |
 | Shadcn Studio keys | Local tooling |
 
-**UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` (ADR-010 flat-barrel — Living ADR body dormant; farm `shadcn-ui` + `afenda-elite-ui-compose`). Owned shadcn `new-york` / Radix source in `packages/surfaces/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
+**UI design system:** import UI only via the flat barrel `@afenda/ui-system`; global consumers import token-only `@afenda/ui-system/styles.css` followed by shared semantic rendering defaults from `@afenda/ui-system/base.css` (ADR-010 flat-barrel — Living ADR body dormant; farm `shadcn-ui` + `afenda-elite-ui-compose`). Owned shadcn `new-york` / Radix source in `packages/surfaces/ui-system`; no gateway subpath, no public/runtime `*Contract` component layer, no external/paid registries. Internal build-time component governance under `src/metadata/contracts` must use `defineManifestContract()`; `contract.ts` remains the low-level type system and `catalog.ts` remains registration/lifecycle/evidence authority. Never export metadata contracts from the package barrel. The retired `@afenda/ui` playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
+
+### Button usage authority
+
+The metadata contract defines Button semantics. The private Button Storybook
+suite is the authoritative approved usage evidence. Before using Button in
+product code, inspect that suite and select a demonstrated ERP pattern. When no
+story matches, add and review the pattern in Storybook before or with product
+adoption; do not invent an unsupported pattern in feature code.
 
 **Editor (VS Code / Cursor):** product JS/TS/JSON/CSS → Biome only. SSOT: [`scripts/lib/editor-posture.mjs`](scripts/lib/editor-posture.mjs) · gate: `pnpm check:editor-biome`. Native `biome.lsp.bin` platform map + `biome.lsp.watcher.kind: none` + tsserver caps (`disableAutomaticTypeAcquisition`, `watchOptions.excludeDirectories` incl. `docs-V2`). Per-package *Initializing …/tsconfig.json* is normal once per package per session (37 package tsconfigs). Explorer: `excludeGitIgnore: false`; watcher excludes per SSOT (`docs-V2` watcher-only — still visible in explorer). User settings must not override workspace (global Biome paths, `excludeGitIgnore: true`). Hook: [`.cursor/hooks/no-editor-biome-drift.mjs`](.cursor/hooks/no-editor-biome-drift.mjs) · rule: [`.cursor/rules/editor-workspace-posture.mdc`](.cursor/rules/editor-workspace-posture.mdc) · Scratch: [docs-V2/lint](docs-V2/lint/README.md).
 
@@ -360,7 +368,7 @@ Ops: [docs-V2/auth](docs-V2/auth/README.md) · neon-auth-slice-map (Living RB-00
 
 ## Portal Atmosphere
 
-**Dormant** — do not remount. No `components/portal-atmosphere/`, no Storybook restore, no CSS invert heroes. Production auth shell: Studio login-page-02 + Neon on `/auth/*`. Bans: deprecation register · `/using-afenda-elite-skills`.
+**Dormant** — do not remount. No `components/portal-atmosphere/`, no legacy Storybook recovery, no CSS invert heroes. The active greenfield `apps/storybook` app catalogs `@afenda/ui-system` only and is never mounted into a product route. Production auth shell: Studio login-page-02 + Neon on `/auth/*`. Bans: deprecation register · `/using-afenda-elite-skills`.
 
 ## Testing & quality gates
 

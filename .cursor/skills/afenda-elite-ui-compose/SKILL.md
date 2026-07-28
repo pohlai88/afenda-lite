@@ -50,7 +50,7 @@ LOAD:
   reference.md  (recipes · F* · C* · UI-CAP · score rubric)
   ../shadcn-ui/SKILL.md  (when Studio DNA / CLI / components.json — Method A/B)
 SKIP:
-  required Living docs/architecture LOAD · beauty campaigns · Storybook / playground
+  required Living docs/architecture LOAD · beauty campaigns · Storybook as product runtime / playground
   private registries on product ui-system · forking frontend-ui-engineering
   parallel tokens / type scales · auth-surface as product kit
   product import from apps/web/shadcn-studio/** · apps/web/components/ui/**
@@ -111,6 +111,54 @@ Confirm values on disk; do not invent a second token file.
 13. Export names communicate role — ban exact `Panel`/`Container`/`Box`/`Item`/`Wrapper`/`View`. Flat barrel; no split on count alone (Risk D — ADR + measurable evidence only).
 14. `DataTable` = presentation + interaction only; feature owns fetch/URL/permissions/domain/server.
 15. **NO LOCAL CAPABILITY COMPENSATION** — stop; issue `UI-CAP-*`; upgrade `@afenda/ui-system` or supply product ports. Product-local compose of existing primitives OK when not duplicating reusable responsibility. Codes, template, promotion rule: [reference.md](reference.md).
+
+## Component contract authoring
+
+Internal component governance under
+`packages/surfaces/ui-system/src/metadata/contracts` uses the thin
+`manifest.contract.ts` gateway. This metadata is not a public/runtime
+`*Contract` component layer and must not be exported from package `src/index.ts`.
+
+```text
+inspect implementation + catalog
+  → inspect nearest golden contract
+  → defineManifestContract()
+  → componentOwns + consumerOwns
+  → semanticBoundaries (what presentation must not imply)
+  → actual variants/sizes + rules + accessibility + prohibited usage
+  → internal contracts barrel + catalog registration
+  → validation only when authorized
+```
+
+Authority order: TypeScript shape → `validateGovernance()` → source registry
+test → editor rule → edit hook. `contract.ts` owns low-level types;
+`manifest.contract.ts` stamps, normalizes, and freezes author input;
+`catalog.ts` owns registration, lifecycle, evidence, and implementation truth.
+Do not add a second catalogue, manifest registry, lifecycle, public contract API,
+dedicated contract agent, or semantic policy engine.
+
+### Storybook evidence lane
+
+The private `apps/storybook` catalogue is downstream evidence, not product
+runtime or semantic authority:
+
+```text
+catalogue → contract → Storybook usage → observable tests
+```
+
+Storybook startup tooling may read a validated, immutable projection of internal
+metadata. Browser stories render components only through `@afenda/ui-system` and
+must not import metadata or package source modules. Keep `Overview` as the stable
+visual baseline; use additional stories for focused usage, state, accessibility,
+and composition evidence. Storybook never mutates the catalogue or promotes
+component lifecycle.
+
+For Button composition, inspect `UI System/Forms/Button` before authoring
+product usage. The metadata contract defines Button semantics; the story suite
+is the approved usage evidence. Select a demonstrated variant, size, state,
+navigation, or composition pattern. If none fits, add and review Storybook
+evidence before or with product adoption instead of inventing a feature-local
+Button convention.
 
 ## SCALABILITY-FIRST (summary)
 

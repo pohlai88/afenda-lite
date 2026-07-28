@@ -573,6 +573,83 @@ describe("corporate-administration-lifecycle-position", () => {
 	});
 });
 
+describe("ui-contract-manifest", () => {
+	const canonicalContract = `import { defineManifestContract } from "./manifest.contract";
+
+export const exampleContract = defineManifestContract({
+	id: "ui.example.contract",
+	component: "ui.example",
+});
+`;
+
+	it("allows canonical writes and reconstructed replacements", () => {
+		const write = runHook("ui-contract-manifest.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "packages/surfaces/ui-system/src/metadata/contracts/example.contract.ts",
+				contents: canonicalContract,
+			},
+		});
+		assert.equal(write.permission, "allow");
+
+		const replace = runHook("ui-contract-manifest.mjs", {
+			tool_name: "StrReplace",
+			tool_input: {
+				path: "packages/surfaces/ui-system/src/metadata/contracts/badge.contract.ts",
+				old_string:
+					'import { defineManifestContract } from "./manifest.contract";',
+				new_string:
+					'import { defineManifestContract } from "./manifest.contract";',
+			},
+		});
+		assert.equal(replace.permission, "allow");
+	});
+
+	it("denies direct low-level factory use and missing manifest usage", () => {
+		for (const contents of [
+			'import { defineComponentContract } from "../contract";\nexport const x = defineComponentContract({});\n',
+			"export const x = {};\n",
+		]) {
+			const out = runHook("ui-contract-manifest.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "packages/surfaces/ui-system/src/metadata/contracts/example.contract.ts",
+					contents,
+				},
+			});
+			assert.equal(out.permission, "deny");
+		}
+	});
+
+	it("exempts the manifest and unrelated files", () => {
+		for (const filePath of [
+			"packages/surfaces/ui-system/src/metadata/contracts/manifest.contract.ts",
+			"packages/surfaces/ui-system/src/components/ui/button.tsx",
+		]) {
+			const out = runHook("ui-contract-manifest.mjs", {
+				tool_name: "Write",
+				tool_input: { path: filePath, contents: "export {};\n" },
+			});
+			assert.equal(out.permission, "allow");
+		}
+	});
+
+	it("soft-fails malformed input", () => {
+		const result = spawnSync(
+			process.execPath,
+			[path.join(hooksDir, "ui-contract-manifest.mjs")],
+			{
+				input: "{not-json",
+				encoding: "utf8",
+				cwd: path.resolve(hooksDir, "../.."),
+			},
+		);
+		assert.equal(result.status, 0);
+		const out = JSON.parse((result.stdout || "").trim() || "{}");
+		assert.equal(out.permission, "allow");
+	});
+});
+
 describe("smoke matrix — false-ban guards", () => {
 	it("git allows Target-overlapping and safe ops", () => {
 		for (const command of [
@@ -724,6 +801,7 @@ describe("smoke matrix — false-ban guards", () => {
 			"corporate-administration-source-placement.mjs",
 			"corporate-administration-dependency-policy.mjs",
 			"corporate-administration-lifecycle-position.mjs",
+			"ui-contract-manifest.mjs",
 			"git-no-auto-recover.mjs",
 			"focused-verification-lane.mjs",
 			"no-drizzle-baseline-migrate.mjs",

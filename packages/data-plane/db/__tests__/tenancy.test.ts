@@ -73,8 +73,8 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	});
 
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(245);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(245);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(260);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(260);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);
@@ -106,6 +106,23 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_registered_address");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_premise");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_governance_body");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_governance_membership");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_statutory_office");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_officer_appointment");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_officer_qualification");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_officer_declaration");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
+			"ca_officer_disqualification",
+		);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_conflict_disclosure");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_governance_meeting");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_meeting_notice");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_meeting_participant");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_meeting_quorum_result");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_meeting_vote");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_resolution");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("ca_resolution_action");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("platform_work_item");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
 			"platform_work_item_activity",

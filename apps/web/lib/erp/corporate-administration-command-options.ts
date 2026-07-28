@@ -39,18 +39,16 @@ import {
 	db,
 	eq,
 	mdParty,
+	mdPartyAddress,
 	refCountry,
+	refCurrency,
+	refLanguage,
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import { ok } from "@afenda/errors/result";
 import {
 	findSensitiveTaxRegistrationsByParty,
-	getPartyAddressById,
-	getRefCountryByCode,
-	getRefCurrencyByCode,
-	getRefLanguageByCode,
 	getSensitiveTaxRegistration,
-	listPartyAddresses,
 	listSensitiveTaxRegistrations,
 	normalizeTaxRegistrationNumber,
 } from "@afenda/master-data";
@@ -109,44 +107,32 @@ const partyReferences: CompanyPartyReferencePort = {
 };
 
 const referenceData: CompanyReferenceDataPort = {
-	validateLanguage: async (input) =>
-		getRefLanguageByCode(
-			{
-				organizationId: input.organizationId,
-				actorUserId: "system-ca-reference",
-				code: input.languageCode,
-			},
-			{ authorization: createMasterDataAuthorizationPort() },
-		).then((result) =>
-			result.ok
-				? ok(
-						result.data === null
-							? null
-							: { languageCode: result.data.code, active: result.data.active },
-					)
-				: result,
-		),
-	resolveLanguage: async (input) =>
-		getRefLanguageByCode(
-			{
-				organizationId: input.organizationId,
-				actorUserId: "system-ca-reference",
-				code: input.languageCode,
-			},
-			{ authorization: createMasterDataAuthorizationPort() },
-		).then((result) =>
-			result.ok
-				? ok(
-						result.data === null
-							? null
-							: {
-									code: result.data.code,
-									active: result.data.active,
-									displayName: result.data.name,
-								},
-					)
-				: result,
-		),
+	validateLanguage: async (input) => {
+		const rows = await db
+			.select({
+				code: refLanguage.code,
+				active: refLanguage.active,
+			})
+			.from(refLanguage)
+			.where(eq(refLanguage.code, input.languageCode))
+			.limit(1);
+		const row = rows[0];
+		return ok(
+			row === undefined ? null : { languageCode: row.code, active: row.active },
+		);
+	},
+	resolveLanguage: async (input) => {
+		const rows = await db
+			.select({
+				code: refLanguage.code,
+				active: refLanguage.active,
+				displayName: refLanguage.name,
+			})
+			.from(refLanguage)
+			.where(eq(refLanguage.code, input.languageCode))
+			.limit(1);
+		return ok(rows[0] ?? null);
+	},
 	validateSourceDocument: async (input) =>
 		ok({ sourceDocumentId: input.sourceDocumentId, active: true }),
 	resolveLegalForm: async (input) =>
@@ -168,50 +154,34 @@ const referenceData: CompanyReferenceDataPort = {
 				active: true,
 			},
 		]),
-	resolveCountry: async (input) =>
-		getRefCountryByCode(
-			{
-				organizationId: input.organizationId,
-				actorUserId: "system-ca-reference",
-				code: input.countryCode,
-			},
-			{ authorization: createMasterDataAuthorizationPort() },
-		).then((result) =>
-			result.ok
-				? ok(
-						result.data === null
-							? null
-							: {
-									code: result.data.code,
-									active: result.data.active,
-									displayName: result.data.name,
-								},
-					)
-				: result,
-		),
-	resolveCurrency: async (input) =>
-		getRefCurrencyByCode(
-			{
-				organizationId: input.organizationId,
-				actorUserId: "system-ca-reference",
-				code: input.currencyCode,
-			},
-			{ authorization: createMasterDataAuthorizationPort() },
-		).then((result) =>
-			result.ok
-				? ok(
-						result.data === null
-							? null
-							: {
-									code: result.data.code,
-									currencyCode: result.data.code,
-									active: result.data.active,
-									displayName: result.data.name,
-									effectiveDate: input.effectiveDate,
-								},
-					)
-				: result,
-		),
+	resolveCountry: async (input) => {
+		const rows = await db
+			.select({
+				code: refCountry.code,
+				active: refCountry.active,
+				displayName: refCountry.name,
+			})
+			.from(refCountry)
+			.where(eq(refCountry.code, input.countryCode))
+			.limit(1);
+		return ok(rows[0] ?? null);
+	},
+	resolveCurrency: async (input) => {
+		const rows = await db
+			.select({
+				code: refCurrency.code,
+				currencyCode: refCurrency.code,
+				active: refCurrency.active,
+				displayName: refCurrency.name,
+			})
+			.from(refCurrency)
+			.where(eq(refCurrency.code, input.currencyCode))
+			.limit(1);
+		const row = rows[0];
+		return ok(
+			row === undefined ? null : { ...row, effectiveDate: input.effectiveDate },
+		);
+	},
 	resolveIdentifierAuthority: async (input) =>
 		ok({
 			code: input.authorityCode,
@@ -252,41 +222,51 @@ const documentObjects: DocumentObjectPort = {
 
 const addressReferences: AddressReferencePort = {
 	async getPartyAddress(input) {
-		const result = await getPartyAddressById(
-			{
-				organizationId: input.organizationId,
-				actorUserId: "system-ca-address-reference",
-				partyId: input.partyId,
-				id: input.partyAddressId,
-			},
-			{ authorization: createMasterDataAuthorizationPort() },
-		);
-		if (!result.ok) return result;
-		if (result.data === null) return ok(null);
-		const countries = await db
-			.select({ code: refCountry.code })
-			.from(refCountry)
-			.where(eq(refCountry.id, result.data.countryId))
+		const rows = await db
+			.select({
+				organizationId: mdPartyAddress.organizationId,
+				partyId: mdPartyAddress.partyId,
+				id: mdPartyAddress.id,
+				line1: mdPartyAddress.line1,
+				line2: mdPartyAddress.line2,
+				city: mdPartyAddress.city,
+				administrativeArea: mdPartyAddress.administrativeArea,
+				postalCode: mdPartyAddress.postalCode,
+				status: mdPartyAddress.status,
+				archivedAt: mdPartyAddress.archivedAt,
+				effectiveFrom: mdPartyAddress.effectiveFrom,
+				effectiveTo: mdPartyAddress.effectiveTo,
+				countryCode: refCountry.code,
+			})
+			.from(mdPartyAddress)
+			.innerJoin(refCountry, eq(refCountry.id, mdPartyAddress.countryId))
+			.where(
+				and(
+					eq(mdPartyAddress.organizationId, input.organizationId),
+					eq(mdPartyAddress.partyId, input.partyId),
+					eq(mdPartyAddress.id, input.partyAddressId),
+				),
+			)
 			.limit(1);
-		const country = countries[0];
-		if (country === undefined) return ok(null);
-		const activeFrom = result.data.effectiveFrom?.toISOString().slice(0, 10);
-		const activeTo = result.data.effectiveTo?.toISOString().slice(0, 10);
+		const row = rows[0];
+		if (row === undefined) return ok(null);
+		const activeFrom = row.effectiveFrom?.toISOString().slice(0, 10);
+		const activeTo = row.effectiveTo?.toISOString().slice(0, 10);
 		return ok({
-			organizationId: organizationIdSchema.parse(result.data.organizationId),
-			partyId: result.data.partyId,
+			organizationId: organizationIdSchema.parse(row.organizationId),
+			partyId: row.partyId,
 			active:
-				result.data.status === "active" &&
-				result.data.archivedAt === null &&
+				row.status === "active" &&
+				row.archivedAt === null &&
 				(activeFrom === undefined || activeFrom <= input.asOf) &&
 				(activeTo === undefined || input.asOf < activeTo),
-			sourcePartyAddressId: result.data.id,
-			line1: result.data.line1,
-			line2: result.data.line2,
-			city: result.data.city,
-			region: result.data.administrativeArea,
-			postalCode: result.data.postalCode,
-			countryCode: country.code,
+			sourcePartyAddressId: row.id,
+			line1: row.line1,
+			line2: row.line2,
+			city: row.city,
+			region: row.administrativeArea,
+			postalCode: row.postalCode,
+			countryCode: row.countryCode,
 		});
 	},
 };
@@ -511,18 +491,24 @@ export async function listCorporateAdministrationPartyAddresses(input: {
 		label: string;
 	}[]
 > {
-	const result = await listPartyAddresses(
-		{
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			parentId: input.partyId,
-			page: 1,
-			pageSize: 100,
-		},
-		{ authorization: createMasterDataAuthorizationPort() },
-	);
-	if (!result.ok) return [];
-	return result.data.map((address) => ({
+	const rows = await db
+		.select({
+			id: mdPartyAddress.id,
+			line1: mdPartyAddress.line1,
+			city: mdPartyAddress.city,
+			postalCode: mdPartyAddress.postalCode,
+		})
+		.from(mdPartyAddress)
+		.where(
+			and(
+				eq(mdPartyAddress.organizationId, input.organizationId),
+				eq(mdPartyAddress.partyId, input.partyId),
+				eq(mdPartyAddress.status, "active"),
+			),
+		)
+		.orderBy(asc(mdPartyAddress.line1))
+		.limit(100);
+	return rows.map((address) => ({
 		id: address.id,
 		label: [address.line1, address.city, address.postalCode]
 			.filter((part) => part !== null && part.length > 0)

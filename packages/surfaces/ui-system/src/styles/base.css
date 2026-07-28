@@ -1,0 +1,33 @@
+/*
+ * Shared semantic base rendering.
+ *
+ * Imported by every Afenda UI consumer after Tailwind and token registration.
+ * Palette values remain owned by tokens.css.
+ */
+
+@layer base {
+	*,
+	::before,
+	::after,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--border);
+	}
+
+	html {
+		min-height: 100%;
+		background-color: var(--canvas);
+		color-scheme: light;
+	}
+
+	.dark {
+		color-scheme: dark;
+	}
+
+	body {
+		min-height: 100%;
+		margin: 0;
+		background-color: var(--canvas);
+		color: var(--foreground);
+	}
+}

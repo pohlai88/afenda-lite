@@ -22,18 +22,26 @@ const hasUseClient = (src: string) =>
  */
 const SERVER_SAFE = [
 	"alert",
+	"async-state",
 	"badge",
 	"breadcrumb",
+	"bulk-action-bar",
 	"button",
 	"button-group",
 	"card",
+	"change-diff",
 	"code",
+	"filter-bar",
 	"input",
 	"kbd",
 	"native-select",
 	"pagination",
+	"page-header",
 	"skeleton",
+	"stepper",
 	"textarea",
+	"timeline",
+	"toolbar",
 ] as const;
 
 const uiPrimitives = readdirSync(uiDir)

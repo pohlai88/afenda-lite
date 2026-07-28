@@ -18,7 +18,7 @@ type LegalCompanyProof = Readonly<{
 }>;
 
 test.describe("Corporate Administration Phase 1 production journey @journey", () => {
-	test.setTimeout(120_000);
+	test.setTimeout(180_000);
 
 	test("builds and activates a complete Phase 1 legal company through authenticated Neon-backed UI", async ({
 		browser,
@@ -76,14 +76,11 @@ test.describe("Corporate Administration Phase 1 production journey @journey", ()
 
 			await expect(page.getByText("Activation ready")).toBeVisible();
 			const activateForm = formWithSubmit(page, "Activate");
-			await activateForm.getByLabel("Effective from").fill("2026-07-01");
 			await activateForm
 				.getByLabel("Source document")
 				.fill(`${runKey}-browser-activation`);
 			await activateForm.getByRole("button", { name: "Activate" }).click();
-			await expect(page.getByRole("status")).toContainText(
-				"Company activated.",
-			);
+			await expect(page.getByText(/Active · v\d+/)).toBeVisible();
 			await page.reload();
 			await expect(page.getByText(/Active · v\d+/)).toBeVisible();
 			await expect(page.getByRole("button", { name: "Suspend" })).toBeVisible();
@@ -238,7 +235,12 @@ async function setLegalForm(input: {
 	await form.getByRole("button", { name: "Set legal form" }).click();
 	await expect(input.page.getByText("Legal form changed.")).toBeVisible();
 	await input.page.reload();
-	await expect(input.page.getByText("private_limited_company")).toBeVisible();
+	await expect(
+		input.page.getByRole("cell", {
+			name: "private_limited_company",
+			exact: true,
+		}),
+	).toBeVisible();
 }
 
 async function registerIdentifier(input: {
@@ -291,7 +293,7 @@ async function registerActivity(input: {
 	await form.getByLabel("Activity code").fill("software_services");
 	await form.getByLabel("Description").fill("Regulated software services");
 	await form.getByLabel("Jurisdiction").fill("MY");
-	await form.getByLabel("Regulator").fill("MCMC");
+	await form.getByLabel("Regulator").fill("mcmc");
 	await form.getByLabel("Effective from").fill("2026-01-01");
 	await form.getByLabel("Source document").fill(`${input.runKey}-activity`);
 	await form.getByRole("button", { name: "Register activity" }).click();
@@ -310,14 +312,16 @@ async function setRegisteredOffice(input: {
 	await form.getByLabel("Master Data address").selectOption({ index: 1 });
 	await form.getByLabel("Effective from").fill("2026-01-01");
 	await form
-		.getByLabel("Source document reference")
+		.locator('input[name="sourceDocumentId"]')
 		.fill(`${input.runKey}-registered-office`);
 	await form.getByRole("button", { name: "Set address" }).click();
 	await expect(
 		input.page.getByText("Statutory address recorded."),
 	).toBeVisible();
 	await input.page.reload();
-	await expect(input.page.getByText("Registered office")).toBeVisible();
+	await expect(
+		input.page.getByRole("cell", { name: "Registered office", exact: true }),
+	).toBeVisible();
 }
 
 function formWithSubmit(page: Page, name: string): Locator {

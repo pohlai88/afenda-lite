@@ -74,6 +74,22 @@ jobs:
       - name: Typecheck · unit test
         run: pnpm exec turbo run typecheck test --concurrency=50%
 
+      - name: Install Storybook Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Storybook catalog · browser · visual gate
+        run: pnpm check:storybook
+
+      - name: Upload Storybook visual report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-visual-report
+          path: |
+            apps/storybook/playwright-report/
+            apps/storybook/test-results/
+          retention-days: 14
+
       - name: HR Neon parity (serial)
         run: pnpm test:hr:parity
 
@@ -167,6 +183,16 @@ jobs:
 
       - name: Playwright @smoke (I4 adverse matrix)
         run: pnpm test:e2e:smoke
+
+      - name: Upload Playwright smoke evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-smoke-evidence
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
 
   # I5.5 — presence probe for required Actions secrets/vars (main only).
   # Does not call `gh secret list` (GITHUB_TOKEN cannot list names). Empty

@@ -7,21 +7,18 @@ import { cn } from "../../lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { Skeleton } from "./skeleton";
 
-const trendVariants = cva(
-	"inline-flex items-center gap-1 text-sm font-medium",
-	{
-		variants: {
-			trend: {
-				up: "text-success",
-				down: "text-destructive",
-				neutral: "text-muted-foreground",
-			},
-		},
-		defaultVariants: {
-			trend: "neutral",
+const trendVariants = cva("inline-flex items-center gap-1 text-sm font-bold", {
+	variants: {
+		trend: {
+			up: "text-success-subtle-foreground",
+			down: "text-destructive",
+			neutral: "text-muted-foreground",
 		},
 	},
-);
+	defaultVariants: {
+		trend: "neutral",
+	},
+});
 
 interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
 	title: string;

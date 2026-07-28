@@ -5,7 +5,8 @@ Agent entry: [`/using-afenda-elite-skills`](../.cursor/skills/using-afenda-elite
 Authorities: [AGENTS.md](../AGENTS.md) · [ARCH-028](../docs/architecture/ARCH-028-implementation-slices.md) · [deprecation register](../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
 - [ ] No restore of Collapse-banned roots (`app/`, `modules/`, `features/`, `components-V2/`) or wiped Collapse-era ops scripts from git
-- [ ] No closed journey / Portal Atmosphere / Guardian Auth / Storybook product restore unless explicitly reopened
+- [ ] No closed journey / Portal Atmosphere / Guardian Auth / legacy Storybook product restore; `apps/storybook` remains isolated from product routes
+- [ ] New or unusual Button usage identifies the approving `UI System/Forms/Button` story, or adds reviewed Storybook evidence with the product change
 - [ ] No invention of new bounded contexts beyond ARCH-006 without a controlled ADR
 - [ ] Skills: catalog status is `keep` / `extend` / approved `planned` — no Xerp fork, no `doc/` DOC-004 recreate
 - [ ] Docs changes cite DOC-001 / DOC-002 / DOC-003; no parallel SSOT under `doc/`

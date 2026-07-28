@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/nextjs/ui.md` |
 | Authority | **Scratch** — frontend-ui-engineering + disk `packages/surfaces/ui-system/**` · `apps/web/features/**` |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-28 |
 
 Product UI consumes the flat barrel only. Re-probe after barrel export changes.
 
@@ -15,9 +15,12 @@ Product UI consumes the flat barrel only. Re-probe after barrel export changes.
 | Need | Import |
 |------|--------|
 | Components | `import { … } from "@afenda/ui-system"` |
-| Tokens / base styles | `import "@afenda/ui-system/styles.css"` |
+| Semantic tokens | `import "@afenda/ui-system/styles.css"` |
+| Universal base rendering | `import "@afenda/ui-system/base.css"` after tokens |
 
 No deep `@afenda/ui-system/src/...`. No parallel UI package. No product import of Shadcn Studio DNA stage trees (`apps/web/shadcn-studio/**` is stage-only when present).
+
+Consumer global CSS order is Tailwind → animation CSS → `styles.css` → `base.css` → consumer-specific rules. `styles.css` remains token-only; `base.css` owns shared border, canvas, foreground, and color-scheme defaults.
 
 ---
 

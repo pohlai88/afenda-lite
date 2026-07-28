@@ -9,6 +9,7 @@ const webPkgJson = path.join(webRoot, "package.json");
 
 const SEMANTIC_CLASSES = [
 	"bg-primary",
+	"bg-background",
 	"bg-card",
 	"bg-canvas",
 	"bg-surface-raised",
@@ -76,5 +77,8 @@ describe("@afenda/web — Tailwind emit smoke (ADR-010 § D4)", () => {
 			missing,
 			`PostCSS compile did not emit package classes: ${missing.join(", ")}`,
 		).toEqual([]);
+		for (const elevation of ["raised", "overlay"] as const) {
+			expect(result.css).toContain(`shadow-\\(--shadow-${elevation}\\)`);
+		}
 	}, 30_000);
 });

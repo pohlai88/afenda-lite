@@ -7,6 +7,7 @@ import {
 	Button,
 	FormError,
 	FormField,
+	Input,
 	NativeSelect,
 	NativeSelectOption,
 	Spinner,
@@ -220,11 +221,7 @@ export function ChangeRequestPanel({
 									value={selectedReview.version}
 								/>
 								<FormField label="Reject note (optional)">
-									<input
-										name="reviewNote"
-										className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
-										maxLength={500}
-									/>
+									<Input name="reviewNote" maxLength={500} />
 								</FormField>
 								{!rejectPending && rejectState?.ok === false ? (
 									<FormError>{rejectState.message}</FormError>

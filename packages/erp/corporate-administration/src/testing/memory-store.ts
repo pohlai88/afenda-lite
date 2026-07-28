@@ -1,4 +1,9 @@
 export {
 	createMemoryCorporateAdministrationEstablishmentStore,
+	createMemoryCorporateAdministrationGovernanceStore,
 	createMemoryCorporateAdministrationLegalCompanyStore,
+	createMemoryCorporateAdministrationMeetingStore,
+	createMemoryCorporateAdministrationOfficerComplianceStore,
+	createMemoryCorporateAdministrationOfficerStore,
+	createMemoryCorporateAdministrationResolutionStore,
 } from "../adapters/memory";

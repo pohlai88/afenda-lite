@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/api/rest.md` |
 | Authority | **Scratch** — api-and-interface-design + Next.js MCP `get_routes` + disk `apps/web/app/api/**` |
-| Updated | 2026-07-20 |
+| Updated | 2026-07-28 |
 
 Only handlers that exist on disk / MCP. No contract-only path catalogue (would invent APIs without a consumer).
 
@@ -21,6 +21,7 @@ Only handlers that exist on disk / MCP. No contract-only path catalogue (would i
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned; not portal JSON; excluded from OpenAPI YAML |
 | GET | `/api/session/sync-cookies` | Session cookie mint / refresh | member session | Redirect + Set-Cookie; excluded from OpenAPI YAML |
 | GET | `/api/session/ensure-active-organization` | Active-org persistence | member session | Redirect / plain-text; excluded from OpenAPI YAML |
+| GET | `/api/cron/hr-reliability` | Claim and process bounded HR reliability work | bearer `CRON_SECRET` | Vercel Cron, Node.js, `HR_RELIABILITY_ENABLED` rollout gate, `no-store`; aggregate counts only; excluded from public OpenAPI YAML |
 
 Do not add dashboard list GETs under `/api` for same-origin UI — use RSC → domain.
 
@@ -66,6 +67,7 @@ Neon Auth callbacks              → /api/auth/[...path]
 Session cookie bridges           → /api/session/*
 Health probes                    → /api/health/*
 Prometheus scrape                → /api/metrics (bearer METRICS_SCRAPE_TOKEN)
+Internal scheduled workers       → /api/cron/* (bearer CRON_SECRET)
 The Machine chat stream          → /api/ai/chat (member session + AI Gateway)
 External / mobile REST later     → new RH only when a real consumer exists
 ```

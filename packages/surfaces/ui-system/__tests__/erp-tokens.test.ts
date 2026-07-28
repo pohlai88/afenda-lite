@@ -55,8 +55,8 @@ const lightValues: Record<(typeof promoted)[number], string> = {
 	"surface-sunken": "oklch(0.965 0 0)",
 	"surface-raised": "oklch(0.995 0 0)",
 	canvas: "oklch(0.94 0 0)",
-	"foreground-secondary": "oklch(0.45 0 0)",
-	"foreground-tertiary": "oklch(0.5 0 0)",
+	"foreground-secondary": "oklch(0.32 0 0)",
+	"foreground-tertiary": "oklch(0.38 0 0)",
 	"success-subtle": "oklch(0.95 0.03 160)",
 	"success-subtle-foreground": "oklch(0.38 0.1 160)",
 	"success-border": "oklch(0.74 0.1 160)",
@@ -83,7 +83,7 @@ const lightValues: Record<(typeof promoted)[number], string> = {
 	"destructive-hover": "oklch(0.52 0.22 27.325)",
 	"secondary-hover": "oklch(0.912 0 0)",
 	"sidebar-muted-foreground": "oklch(0.439 0 0)",
-	"ring-focus": "oklch(0.708 0 0 / 50%)",
+	"ring-focus": "oklch(0.439 0 0)",
 	"ring-destructive-focus": "oklch(0.577 0.245 27.325 / 20%)",
 	"ring-destructive-focus-strong": "oklch(0.577 0.245 27.325 / 40%)",
 	"kbd-tooltip-fill": "oklch(1 0 0 / 20%)",
@@ -93,8 +93,8 @@ const darkValues: Record<(typeof promoted)[number], string> = {
 	"surface-sunken": "oklch(0.17 0 0)",
 	"surface-raised": "oklch(0.23 0 0)",
 	canvas: "oklch(0.12 0 0)",
-	"foreground-secondary": "oklch(0.82 0 0)",
-	"foreground-tertiary": "oklch(0.78 0 0)",
+	"foreground-secondary": "oklch(0.95 0 0)",
+	"foreground-tertiary": "oklch(0.91 0 0)",
 	"success-subtle": "oklch(0.26 0.03 160)",
 	"success-subtle-foreground": "oklch(0.85 0.08 160)",
 	"success-border": "oklch(0.7 0.1 160)",
@@ -102,10 +102,10 @@ const darkValues: Record<(typeof promoted)[number], string> = {
 	"warning-subtle-foreground": "oklch(0.88 0.08 75)",
 	"warning-border": "oklch(0.73 0.07 75)",
 	"info-subtle": "oklch(0.26 0.03 230)",
-	"info-subtle-foreground": "oklch(0.85 0.08 230)",
+	"info-subtle-foreground": "oklch(0.851 0.08 230)",
 	"info-border": "oklch(0.72 0.05 230)",
 	"destructive-subtle": "oklch(0.26 0.04 25)",
-	"destructive-subtle-foreground": "oklch(0.85 0.1 25)",
+	"destructive-subtle-foreground": "oklch(0.89 0.1 25)",
 	"destructive-border": "oklch(0.73 0.05 25)",
 	"destructive-soft": "oklch(0.497 0.12 22.216)",
 	"primary-subtle": "oklch(0.22 0 0)",
@@ -121,11 +121,84 @@ const darkValues: Record<(typeof promoted)[number], string> = {
 	"destructive-hover": "oklch(0.465 0.11 22.216)",
 	"secondary-hover": "oklch(0.248 0 0)",
 	"sidebar-muted-foreground": "oklch(0.76 0 0)",
-	"ring-focus": "oklch(0.556 0 0 / 50%)",
+	"ring-focus": "oklch(0.87 0 0)",
 	"ring-destructive-focus": "oklch(0.704 0.191 22.216 / 20%)",
 	"ring-destructive-focus-strong": "oklch(0.704 0.191 22.216 / 40%)",
 	"kbd-tooltip-fill": "oklch(1 0 0 / 10%)",
 };
+
+const shadcnNeutralLight = {
+	background: "oklch(1 0 0)",
+	foreground: "oklch(0.145 0 0)",
+	card: "oklch(1 0 0)",
+	"card-foreground": "oklch(0.145 0 0)",
+	popover: "oklch(1 0 0)",
+	"popover-foreground": "oklch(0.145 0 0)",
+	primary: "oklch(0.205 0 0)",
+	"primary-foreground": "oklch(0.985 0 0)",
+	secondary: "oklch(0.97 0 0)",
+	"secondary-foreground": "oklch(0.205 0 0)",
+	muted: "oklch(0.97 0 0)",
+	"muted-foreground": "oklch(0.556 0 0)",
+	accent: "oklch(0.97 0 0)",
+	"accent-foreground": "oklch(0.205 0 0)",
+	destructive: "oklch(0.577 0.245 27.325)",
+	border: "oklch(0.922 0 0)",
+	input: "oklch(0.922 0 0)",
+	ring: "oklch(0.708 0 0)",
+	"chart-1": "oklch(0.646 0.222 41.116)",
+	"chart-2": "oklch(0.6 0.118 184.704)",
+	"chart-3": "oklch(0.398 0.07 227.392)",
+	"chart-4": "oklch(0.828 0.189 84.429)",
+	"chart-5": "oklch(0.769 0.188 70.08)",
+	sidebar: "oklch(0.985 0 0)",
+	"sidebar-foreground": "oklch(0.145 0 0)",
+	"sidebar-primary": "oklch(0.205 0 0)",
+	"sidebar-primary-foreground": "oklch(0.985 0 0)",
+	"sidebar-accent": "oklch(0.97 0 0)",
+	"sidebar-accent-foreground": "oklch(0.205 0 0)",
+	"sidebar-border": "oklch(0.922 0 0)",
+	"sidebar-ring": "oklch(0.708 0 0)",
+} as const;
+
+const shadcnNeutralDark = {
+	background: "oklch(0.145 0 0)",
+	foreground: "oklch(0.985 0 0)",
+	card: "oklch(0.205 0 0)",
+	"card-foreground": "oklch(0.985 0 0)",
+	popover: "oklch(0.205 0 0)",
+	"popover-foreground": "oklch(0.985 0 0)",
+	primary: "oklch(0.922 0 0)",
+	"primary-foreground": "oklch(0.205 0 0)",
+	secondary: "oklch(0.269 0 0)",
+	"secondary-foreground": "oklch(0.985 0 0)",
+	muted: "oklch(0.269 0 0)",
+	"muted-foreground": "oklch(0.708 0 0)",
+	accent: "oklch(0.269 0 0)",
+	"accent-foreground": "oklch(0.985 0 0)",
+	destructive: "oklch(0.704 0.191 22.216)",
+	border: "oklch(1 0 0 / 10%)",
+	input: "oklch(1 0 0 / 15%)",
+	ring: "oklch(0.556 0 0)",
+	"chart-1": "oklch(0.488 0.243 264.376)",
+	"chart-2": "oklch(0.696 0.17 162.48)",
+	"chart-3": "oklch(0.769 0.188 70.08)",
+	"chart-4": "oklch(0.627 0.265 303.9)",
+	"chart-5": "oklch(0.645 0.246 16.439)",
+	sidebar: "oklch(0.205 0 0)",
+	"sidebar-foreground": "oklch(0.985 0 0)",
+	"sidebar-primary": "oklch(0.488 0.243 264.376)",
+	"sidebar-primary-foreground": "oklch(0.985 0 0)",
+	"sidebar-accent": "oklch(0.269 0 0)",
+	"sidebar-accent-foreground": "oklch(0.985 0 0)",
+	"sidebar-border": "oklch(1 0 0 / 10%)",
+	"sidebar-ring": "oklch(0.556 0 0)",
+} as const;
+
+const accessibilityOverrides = {
+	light: { "muted-foreground": "oklch(0.439 0 0)" },
+	dark: { "muted-foreground": "oklch(0.87 0 0)" },
+} as const;
 
 function blockBetween(source: string, start: string, end: string): string {
 	const i = source.indexOf(start);
@@ -182,96 +255,39 @@ describe("@afenda/ui-system — ERP token families (UI-CAP-05)", () => {
 		expect(L(darkTer)).toBeGreaterThan(L(darkMuted));
 	});
 
-	it("keeps shadcn registry light slots unmodified (sample + counts)", () => {
-		expect(declaration(rootBlock, "background")).toBe("oklch(1 0 0)");
-		expect(declaration(rootBlock, "foreground")).toBe("oklch(0.145 0 0)");
-		expect(declaration(rootBlock, "muted")).toBe("oklch(0.97 0 0)");
-		expect(declaration(rootBlock, "sidebar")).toBe("oklch(0.985 0 0)");
-		expect(declaration(rootBlock, "radius")).toBe("0.625rem");
-		const registryLight = [
-			"background",
-			"foreground",
-			"card",
-			"card-foreground",
-			"popover",
-			"popover-foreground",
-			"primary",
-			"primary-foreground",
-			"secondary",
-			"secondary-foreground",
-			"muted",
-			"muted-foreground",
-			"accent",
-			"accent-foreground",
-			"destructive",
-			"border",
-			"input",
-			"ring",
-			"chart-1",
-			"chart-2",
-			"chart-3",
-			"chart-4",
-			"chart-5",
-			"radius",
-			"sidebar",
-			"sidebar-foreground",
-			"sidebar-primary",
-			"sidebar-primary-foreground",
-			"sidebar-accent",
-			"sidebar-accent-foreground",
-			"sidebar-border",
-			"sidebar-ring",
-		];
-		for (const name of registryLight) {
-			expect(declaration(rootBlock, name), name).toBeTruthy();
+	it("matches every shadcn neutral light slot except the audited override", () => {
+		for (const [name, upstream] of Object.entries(shadcnNeutralLight)) {
+			const expected =
+				name === "muted-foreground"
+					? accessibilityOverrides.light["muted-foreground"]
+					: upstream;
+			expect(declaration(rootBlock, name), name).toBe(expected);
 		}
-		expect(registryLight).toHaveLength(32);
+		expect(Object.keys(shadcnNeutralLight)).toHaveLength(31);
+		expect(declaration(rootBlock, "radius")).toBe("0.625rem");
 	});
 
-	it("keeps shadcn registry dark slots unmodified (sample + counts)", () => {
-		expect(declaration(darkBlock, "background")).toBe("oklch(0.145 0 0)");
-		expect(declaration(darkBlock, "foreground")).toBe("oklch(0.985 0 0)");
-		expect(declaration(darkBlock, "muted")).toBe("oklch(0.269 0 0)");
-		expect(declaration(darkBlock, "destructive")).toBe(
-			"oklch(0.704 0.191 22.216)",
-		);
-		const registryDark = [
-			"background",
-			"foreground",
-			"card",
-			"card-foreground",
-			"popover",
-			"popover-foreground",
-			"primary",
-			"primary-foreground",
-			"secondary",
-			"secondary-foreground",
-			"muted",
-			"muted-foreground",
-			"accent",
-			"accent-foreground",
-			"destructive",
-			"border",
-			"input",
-			"ring",
-			"chart-1",
-			"chart-2",
-			"chart-3",
-			"chart-4",
-			"chart-5",
-			"sidebar",
-			"sidebar-foreground",
-			"sidebar-primary",
-			"sidebar-primary-foreground",
-			"sidebar-accent",
-			"sidebar-accent-foreground",
-			"sidebar-border",
-			"sidebar-ring",
-		];
-		for (const name of registryDark) {
-			expect(declaration(darkBlock, name), name).toBeTruthy();
+	it("matches every shadcn neutral dark slot except the audited override", () => {
+		for (const [name, upstream] of Object.entries(shadcnNeutralDark)) {
+			const expected =
+				name === "muted-foreground"
+					? accessibilityOverrides.dark["muted-foreground"]
+					: upstream;
+			expect(declaration(darkBlock, name), name).toBe(expected);
 		}
-		expect(registryDark).toHaveLength(31);
+		expect(Object.keys(shadcnNeutralDark)).toHaveLength(31);
+	});
+
+	it("limits upstream shadcn divergence to muted-foreground", () => {
+		const lightDivergence = Object.entries(shadcnNeutralLight)
+			.filter(([name, upstream]) => declaration(rootBlock, name) !== upstream)
+			.map(([name]) => name);
+		const darkDivergence = Object.entries(shadcnNeutralDark)
+			.filter(([name, upstream]) => declaration(darkBlock, name) !== upstream)
+			.map(([name]) => name);
+
+		expect(lightDivergence).toEqual(["muted-foreground"]);
+		expect(darkDivergence).toEqual(["muted-foreground"]);
 	});
 
 	it("preserves radius ladder including 2xl/3xl/4xl", () => {

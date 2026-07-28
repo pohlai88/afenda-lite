@@ -34,6 +34,7 @@ export type HrEventFamily =
 	| "integration_event";
 export type HrParityAdapter = "memory" | "drizzle";
 export type HrConnector =
+	| "attendance"
 	| "payroll"
 	| "benefits"
 	| "identity"

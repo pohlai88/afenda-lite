@@ -213,7 +213,7 @@ Mutating RHs authenticate equivalently (cookie session).
 
 Inventory: [api-now.md](api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/api/rest.md).
 
-**api-now only:** `/api/health/*`, `/api/metrics`, `/api/ai/chat`, `/api/auth/[...path]`, `/api/session/*` (OpenAPI YAML = health + metrics; stream/auth/session excluded).  
+**api-now only:** `/api/health/*`, `/api/metrics`, `/api/ai/chat`, `/api/auth/[...path]`, `/api/session/*`, `/api/cron/hr-reliability` (OpenAPI YAML = health + metrics; stream/auth/session/internal cron excluded).
 **Do not** add same-origin list/read GETs under `/api` for dashboard — RSC → domain. Do **not** recreate wiped declaration-draft / FFT HTTP.
 
 ---

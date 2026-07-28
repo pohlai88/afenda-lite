@@ -22,8 +22,8 @@ import {
 	withHrSessionContext as withSessionContext,
 } from "@/app/actions/hr-mutation-context";
 import { mapPackageResult } from "@/app/actions/map-package-result";
+import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
 import {

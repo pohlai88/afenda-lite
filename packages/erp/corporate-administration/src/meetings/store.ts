@@ -1,0 +1,180 @@
+import type { Result } from "@afenda/errors/result";
+
+import type {
+	GovernanceBodyId,
+	GovernanceMeetingId,
+	GovernanceMembershipId,
+	LegalCompanyId,
+	MeetingNoticeId,
+	OrganizationId,
+	UserId,
+} from "../kernel/brands";
+import type { CanonicalInstant } from "../kernel/dates";
+import type { CorporateAdministrationTransactionContext } from "../ports";
+import type {
+	GovernanceMeeting,
+	GovernanceMeetingProcedureType,
+	GovernanceMeetingStatus,
+	MeetingNotice,
+	MeetingParticipant,
+	MeetingParticipantAttendanceStatus,
+	MeetingQuorumResult,
+	QuorumRuleSnapshot,
+} from "./types";
+
+type TransactionalWrite = Readonly<{
+	transaction?: CorporateAdministrationTransactionContext;
+}>;
+
+export type ScheduleGovernanceMeetingStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		governanceBodyId: GovernanceBodyId;
+		procedureType: GovernanceMeetingProcedureType;
+		title: string;
+		scheduledStartAt: Date;
+		scheduledEndAt: Date | null;
+		noticePeriodDays: number;
+		locationSummary: string | null;
+		remoteAccessSummary: string | null;
+		sourceDocumentId: string;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedBodyVersion: number;
+	}>;
+
+export type IssueMeetingNoticeStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		governanceMeetingId: GovernanceMeetingId;
+		recipientMembershipId: GovernanceMembershipId | null;
+		recipientPartyId: string | null;
+		issuedAt: Date;
+		deliveryMethod: string;
+		sourceDocumentId: string;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedMeetingVersion: number;
+	}>;
+
+export type RecordNoticeDeliveryStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		meetingNoticeId: MeetingNoticeId;
+		deliveredAt: Date;
+		sourceDocumentId: string;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedVersion: number;
+	}>;
+
+export type WaiveNoticeStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		meetingNoticeId: MeetingNoticeId;
+		waivedAt: Date;
+		waiverReason: string;
+		sourceDocumentId: string;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedVersion: number;
+	}>;
+
+export type RecordMeetingParticipantStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		governanceMeetingId: GovernanceMeetingId;
+		governanceMembershipId: GovernanceMembershipId;
+		participantPartyId: string | null;
+		attendanceStatus: MeetingParticipantAttendanceStatus;
+		representedByPartyId: string | null;
+		proxyDocumentId: string | null;
+		recusalReason: string | null;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedMeetingVersion: number;
+	}>;
+
+export type ChangeMeetingStatusStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		governanceMeetingId: GovernanceMeetingId;
+		status: GovernanceMeetingStatus;
+		openedAt?: Date;
+		adjournedAt?: Date;
+		adjournedTo?: Date;
+		closedAt?: Date;
+		noQuorumReason?: string | null;
+		sourceDocumentId: string;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedVersion: number;
+	}>;
+
+export type RecordQuorumStoreInput = TransactionalWrite &
+	Readonly<{
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		governanceMeetingId: GovernanceMeetingId;
+		ruleSnapshot: QuorumRuleSnapshot;
+		eligibleMemberCount: number;
+		presentMemberCount: number;
+		requiredPresentCount: number;
+		hasQuorum: boolean;
+		noQuorumReason: string | null;
+		sourceDocumentId: string;
+		recordedAt: CanonicalInstant;
+		recordedBy: UserId;
+		expectedMeetingVersion: number;
+	}>;
+
+export interface MeetingStore {
+	getGovernanceMeeting(input: {
+		organizationId: OrganizationId;
+		governanceMeetingId: GovernanceMeetingId;
+	}): Promise<Result<GovernanceMeeting | null>>;
+	listGovernanceMeetings(input: {
+		organizationId: OrganizationId;
+		legalCompanyId: LegalCompanyId;
+		governanceBodyId?: GovernanceBodyId;
+		status?: GovernanceMeetingStatus;
+	}): Promise<Result<readonly GovernanceMeeting[]>>;
+	scheduleGovernanceMeeting(
+		input: ScheduleGovernanceMeetingStoreInput,
+	): Promise<Result<GovernanceMeeting>>;
+	changeMeetingStatus(
+		input: ChangeMeetingStatusStoreInput,
+	): Promise<Result<GovernanceMeeting>>;
+	getMeetingNotice(input: {
+		organizationId: OrganizationId;
+		meetingNoticeId: MeetingNoticeId;
+	}): Promise<Result<MeetingNotice | null>>;
+	listMeetingNotices(input: {
+		organizationId: OrganizationId;
+		governanceMeetingId: GovernanceMeetingId;
+	}): Promise<Result<readonly MeetingNotice[]>>;
+	issueMeetingNotice(
+		input: IssueMeetingNoticeStoreInput,
+	): Promise<Result<MeetingNotice>>;
+	recordNoticeDelivery(
+		input: RecordNoticeDeliveryStoreInput,
+	): Promise<Result<MeetingNotice>>;
+	waiveNotice(input: WaiveNoticeStoreInput): Promise<Result<MeetingNotice>>;
+	listMeetingParticipants(input: {
+		organizationId: OrganizationId;
+		governanceMeetingId: GovernanceMeetingId;
+	}): Promise<Result<readonly MeetingParticipant[]>>;
+	recordMeetingParticipant(
+		input: RecordMeetingParticipantStoreInput,
+	): Promise<Result<MeetingParticipant>>;
+	getLatestQuorumResult(input: {
+		organizationId: OrganizationId;
+		governanceMeetingId: GovernanceMeetingId;
+	}): Promise<Result<MeetingQuorumResult | null>>;
+	recordQuorum(
+		input: RecordQuorumStoreInput,
+	): Promise<Result<MeetingQuorumResult>>;
+}

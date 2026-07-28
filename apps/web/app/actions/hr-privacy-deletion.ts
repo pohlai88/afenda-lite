@@ -4,15 +4,20 @@ import {
 	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
 	type HumanResourcesDeletionDecision,
 	humanResourcesEmployeeIdSchema,
+	recordHrPrivacyOperation,
 } from "@afenda/human-resources";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runHrPrivacyOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
 	evaluateHumanResourcesPrivacyDeletion,
 	executeApprovedHumanResourcesPrivacyDeletion,
 } from "@/lib/erp/human-resources-privacy-deletion";
+import {
+	classifyHrFailure,
+	createProductionHrObservabilityPorts,
+} from "@/modules/platform/observability/human-resources-observability";
 import {
 	type ActionResult,
 	actionFail,
@@ -62,13 +67,33 @@ export async function evaluateHumanResourcesPrivacyDeletionAction(
 		safeMessage: "Could not evaluate the privacy deletion request.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(deletionRequestSchema, input);
-			if (!parsed.success) return invalidDeletionRequest(parsed.details);
+			if (!parsed.success) {
+				await recordHrPrivacyOperation(
+					{
+						operation: "erase",
+						outcome: "failure",
+						failureReason: "validation",
+					},
+					createProductionHrObservabilityPorts(),
+				);
+				return invalidDeletionRequest(parsed.details);
+			}
 			const result = await evaluateHumanResourcesPrivacyDeletion({
 				...parsed.data,
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 				correlationId,
 			});
+			await recordHrPrivacyOperation(
+				result.ok
+					? { operation: "erase", outcome: "success" }
+					: {
+							operation: "erase",
+							outcome: "failure",
+							failureReason: classifyHrFailure(result.code),
+						},
+				createProductionHrObservabilityPorts(),
+			);
 			const mapped = mapPackageResult(result);
 			return mapped.ok ? { ok: true, data: { decision: mapped.data } } : mapped;
 		},
@@ -90,15 +115,34 @@ export async function executeApprovedHumanResourcesPrivacyDeletionAction(
 		safeMessage: "Could not execute the approved privacy deletion request.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(deletionRequestSchema, input);
-			if (!parsed.success) return invalidDeletionRequest(parsed.details);
-			return mapPackageResult(
-				await executeApprovedHumanResourcesPrivacyDeletion({
-					...parsed.data,
-					organizationId: session.orgId,
-					actorUserId: session.userId,
-					correlationId,
-				}),
+			if (!parsed.success) {
+				await recordHrPrivacyOperation(
+					{
+						operation: "erase",
+						outcome: "failure",
+						failureReason: "validation",
+					},
+					createProductionHrObservabilityPorts(),
+				);
+				return invalidDeletionRequest(parsed.details);
+			}
+			const result = await executeApprovedHumanResourcesPrivacyDeletion({
+				...parsed.data,
+				organizationId: session.orgId,
+				actorUserId: session.userId,
+				correlationId,
+			});
+			await recordHrPrivacyOperation(
+				result.ok
+					? { operation: "erase", outcome: "success" }
+					: {
+							operation: "erase",
+							outcome: "failure",
+							failureReason: classifyHrFailure(result.code),
+						},
+				createProductionHrObservabilityPorts(),
 			);
+			return mapPackageResult(result);
 		},
 	});
 }

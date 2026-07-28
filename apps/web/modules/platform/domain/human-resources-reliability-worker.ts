@@ -1,16 +1,13 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
+import { createEventDispatcher } from "@afenda/events";
 import {
-	createEventPublisher,
-	type EventPublisher,
-	PLATFORM_HUMAN_RESOURCES_RELIABILITY_WORK_REQUESTED_EVENT,
-} from "@afenda/events";
-import {
+	acknowledgeReliabilityWork,
 	checkpointConnectorCursor,
-	decidePartialOutage,
+	claimDueReliabilityWork,
 	executeReliabilityWork,
-	type HrConnector,
 	type HrObservabilityPorts,
-	type OutageDependency,
+	importAttendanceEvents,
+	type ReliabilityExecutionOutcome,
 	type ReliabilityExecutorPort,
 	type ReliabilityKernelPorts,
 	type ReliabilityStorePort,
@@ -25,95 +22,138 @@ import {
 	recoverConnectorCursor,
 	registerReliabilityWork,
 	replayDeadLetter as replayDeadLetterKernel,
+	resolveReliabilityOperation,
 } from "@afenda/human-resources";
 import { createDrizzleReliabilityStore } from "@afenda/human-resources/adapters/drizzle";
 
+import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
+import { processHumanResourcesBulkExportJob, processHumanResourcesBulkImportJob, purgeHumanResourcesBulkJob } from "@/lib/erp/human-resources-bulk-job-worker";
+import { publishPayrollDelivery } from "@/modules/platform/domain/human-resources-payroll-delivery";
+import { createHumanResourcesPlatformEventHandlers } from "@/modules/platform/domain/human-resources-platform-events";
+import { rebuildHumanResourcesEmployeeSearch } from "@/modules/platform/domain/human-resources-search-projection";
 import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
 } from "@/modules/platform/observability/human-resources-observability";
 
-export function createReliabilityEventExecutor(
-	publisher: Pick<EventPublisher, "publish"> = createEventPublisher(),
-	actorUserId = "system",
+export type ReliabilityOperationHandler = (
+	item: ReliabilityWorkItem,
+) => Promise<Result<ReliabilityExecutionOutcome>>;
+
+export type ReliabilityOperationHandlers = Readonly<
+	Record<string, ReliabilityOperationHandler>
+>;
+
+function reliabilityOperationKey(
+	item: Pick<ReliabilityWorkItem, "connector" | "operation">,
+) {
+	return `${item.connector}.${item.operation}`;
+}
+
+export function createProductionReliabilityOperationHandlers(): ReliabilityOperationHandlers {
+	return {
+		"bulk.resume-import": processHumanResourcesBulkImportJob,
+		"bulk.run-export": processHumanResourcesBulkExportJob,
+		"bulk.purge-import": purgeHumanResourcesBulkJob,
+		"bulk.purge-export": purgeHumanResourcesBulkJob,
+		"attendance.pull-events": async (item) => {
+			const imported = await importAttendanceEvents(
+				{
+					organizationId: item.organizationId,
+					actorUserId: "system",
+					correlationId: item.correlationId,
+					batchId: item.id,
+					sourceKey: item.targetId,
+				},
+				createHumanResourcesCommandOptions(),
+			);
+			return imported.ok
+				? ok({ kind: "acknowledged", receiptId: `attendance:${item.id}` })
+				: imported;
+		},
+		"payroll.publish-delivery": async (item) => {
+			const delivered = await publishPayrollDelivery({
+				organizationId: item.organizationId,
+				deliveryId: item.targetId,
+				actorUserId: "system",
+			});
+			if (!delivered.ok) return delivered;
+			if (delivered.data.producerReceiptId === null) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Payroll delivery did not return a receipt",
+				);
+			}
+			if (delivered.data.status === "acknowledged") {
+				return ok({
+					kind: "acknowledged",
+					receiptId: delivered.data.producerReceiptId,
+				});
+			}
+			return ok({
+				kind: "accepted",
+				receiptId: delivered.data.producerReceiptId,
+				acknowledgementDeadlineAt: new Date(Date.now() + 24 * 60 * 60 * 1_000),
+			});
+		},
+		"platform.dispatch-events": async (item) => {
+			const dispatched = await createEventDispatcher({
+				handlers: createHumanResourcesPlatformEventHandlers(),
+			}).dispatchPending({ organizationId: item.organizationId, limit: 25 });
+			if (!dispatched.ok) return dispatched;
+			if (dispatched.data.failed > 0) {
+				return fail(
+					"SERVICE_UNAVAILABLE",
+					"One or more platform events failed",
+				);
+			}
+			return ok({
+				kind: "acknowledged",
+				receiptId: `events:${item.id}:${dispatched.data.processed}`,
+			});
+		},
+		"search.rebuild-employee-index": async (item) => {
+			const rebuilt = await rebuildHumanResourcesEmployeeSearch({
+				organizationId: item.organizationId,
+				actorUserId: "system",
+				correlationId: item.correlationId,
+			});
+			return rebuilt.ok
+				? ok({
+						kind: "acknowledged",
+						receiptId: `search:${item.id}:${rebuilt.data.projected}:${rebuilt.data.pruned}`,
+					})
+				: rebuilt;
+		},
+	};
+}
+
+export function createReliabilityOperationExecutor(
+	handlers: ReliabilityOperationHandlers = createProductionReliabilityOperationHandlers(),
 ): ReliabilityExecutorPort {
 	return {
 		async execute(item) {
-			const published = await publisher.publish({
-				type: PLATFORM_HUMAN_RESOURCES_RELIABILITY_WORK_REQUESTED_EVENT,
-				sourceModule: "platform",
-				deduplicationKey: `reliability:${item.id}:${item.requestFingerprint}`,
-				organizationId: item.organizationId,
-				actorUserId,
-				correlationId: item.correlationId,
-				causationId: item.id,
-				payload: {
-					workItemId: item.id,
-					organizationId: item.organizationId,
-					connector: item.connector,
-					operation: item.operation,
-					requestFingerprint: item.requestFingerprint,
-					attempt: item.attemptCount + 1,
-				},
-				metadata: { integration: "human-resources-reliability" },
-			});
-			if (!published.ok) return published;
-			if (published.data.organizationId !== item.organizationId) {
-				return {
-					ok: false,
-					code: "INTERNAL_ERROR",
-					message: "Reliability executor returned another tenant",
-				};
-			}
-			return ok({ receiptId: published.data.id });
+			const handler = handlers[reliabilityOperationKey(item)];
+			return handler === undefined
+				? fail("VALIDATION_ERROR", "Reliability operation is not composed")
+				: handler(item);
 		},
 	};
 }
 
 export function createProductionReliabilityPorts(input?: {
-	publisher?: Pick<EventPublisher, "publish">;
-	actorUserId?: string;
+	handlers?: ReliabilityOperationHandlers;
 }): ReliabilityKernelPorts {
 	return {
 		store: createDrizzleReliabilityStore(),
 		clock: { now: () => new Date() },
-		executor: createReliabilityEventExecutor(
-			input?.publisher,
-			input?.actorUserId,
-		),
+		executor: createReliabilityOperationExecutor(input?.handlers),
 		failureClassifier: {
 			isRetryable: (failure) =>
 				failure.code === "INTERNAL_ERROR" ||
 				failure.code === "SERVICE_UNAVAILABLE",
 		},
 	};
-}
-
-function isObservableConnector(value: string): value is HrConnector {
-	switch (value) {
-		case "payroll":
-		case "benefits":
-		case "identity":
-		case "documents":
-		case "notifications":
-		case "search":
-			return true;
-		default:
-			return false;
-	}
-}
-
-async function observeDependencyHealth(
-	dependencies: readonly OutageDependency[],
-	observability: HrObservabilityPorts,
-): Promise<void> {
-	for (const dependency of dependencies) {
-		if (!isObservableConnector(dependency.name)) continue;
-		await recordHrConnectorHealth(
-			{ connector: dependency.name, health: dependency.health },
-			observability,
-		);
-	}
 }
 
 async function recordFailureSurface(
@@ -153,31 +193,12 @@ export async function processReliabilityWork(
 	input: {
 		organizationId: string;
 		workItemId: string;
-		dependencies?: readonly OutageDependency[];
+		leaseOwner: string;
 	},
 	ports: ReliabilityKernelPorts = createProductionReliabilityPorts(),
 	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
 ): Promise<Result<ReliabilityWorkItem>> {
 	const startedAt = Date.now();
-	const dependencies = input.dependencies ?? [];
-	await observeDependencyHealth(dependencies, observability);
-	const outage = decidePartialOutage(dependencies);
-	if (outage.action === "pause") {
-		await recordHrCommand(
-			{
-				area: "integration",
-				outcome: "failure",
-				durationMs: Date.now() - startedAt,
-				failureReason: "unavailable",
-			},
-			observability,
-		);
-		return {
-			ok: false,
-			code: "SERVICE_UNAVAILABLE",
-			message: "Required Human Resources integration is unavailable",
-		};
-	}
 	const found = await ports.store.getWorkItem(input);
 	if (!found.ok) return found;
 	if (found.data === null)
@@ -201,7 +222,122 @@ export async function processReliabilityWork(
 	);
 	if (failed)
 		await recordFailureSurface(found.data, failureCode, observability);
+	await recordHrConnectorHealth(
+		{
+			connector:
+				found.data.connector === "platform" || found.data.connector === "bulk"
+					? "notifications"
+					: found.data.connector,
+			health: failed ? "degraded" : "healthy",
+		},
+		observability,
+	);
 	return result;
+}
+
+export type ReliabilitySchedulerSummary = {
+	claimed: number;
+	succeeded: number;
+	awaitingAcknowledgement: number;
+	retried: number;
+	deadLettered: number;
+	failed: number;
+	timedOut: boolean;
+};
+
+export async function runProductionReliabilityScheduler(
+	input: {
+		workerId: string;
+		batchSize: number;
+		concurrency: number;
+		perOrganizationLimit: number;
+		leaseDurationMs: number;
+		timeBudgetMs: number;
+	},
+	ports: ReliabilityKernelPorts = createProductionReliabilityPorts(),
+	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
+): Promise<Result<ReliabilitySchedulerSummary>> {
+	const startedAt = Date.now();
+	const claimed = await claimDueReliabilityWork(
+		{
+			workerId: input.workerId,
+			now: ports.clock.now(),
+			leaseDurationMs: input.leaseDurationMs,
+			limit: input.batchSize,
+			perOrganizationLimit: input.perOrganizationLimit,
+		},
+		ports.store,
+	);
+	if (!claimed.ok) return claimed;
+	const claimedItems = claimed.data;
+	const summary: ReliabilitySchedulerSummary = {
+		claimed: claimedItems.length,
+		succeeded: 0,
+		awaitingAcknowledgement: 0,
+		retried: 0,
+		deadLettered: 0,
+		failed: 0,
+		timedOut: false,
+	};
+	let cursor = 0;
+	async function consume(): Promise<void> {
+		while (cursor < claimedItems.length) {
+			if (Date.now() - startedAt >= input.timeBudgetMs) {
+				summary.timedOut = true;
+				return;
+			}
+			const item = claimedItems[cursor];
+			cursor += 1;
+			if (item === undefined) return;
+			const result = await processReliabilityWork(
+				{
+					organizationId: item.organizationId,
+					workItemId: item.id,
+					leaseOwner: input.workerId,
+				},
+				ports,
+				observability,
+			);
+			if (!result.ok) {
+				summary.failed += 1;
+				continue;
+			}
+			switch (result.data.status) {
+				case "succeeded":
+					summary.succeeded += 1;
+					break;
+				case "awaiting_acknowledgement":
+					summary.awaitingAcknowledgement += 1;
+					break;
+				case "pending":
+					summary.retried += 1;
+					break;
+				case "dead_lettered":
+					summary.deadLettered += 1;
+					break;
+				case "processing":
+					summary.failed += 1;
+					break;
+			}
+		}
+	}
+	await Promise.all(
+		Array.from(
+			{ length: Math.min(input.concurrency, claimedItems.length) },
+			() => consume(),
+		),
+	);
+	return ok(summary);
+}
+
+export function acknowledgeProductionReliabilityWork(
+	input: Parameters<typeof acknowledgeReliabilityWork>[0],
+	ports: Pick<
+		ReliabilityKernelPorts,
+		"store" | "clock"
+	> = createProductionReliabilityPorts(),
+) {
+	return acknowledgeReliabilityWork(input, ports);
 }
 
 export function registerProductionReliabilityWork(
@@ -211,6 +347,20 @@ export function registerProductionReliabilityWork(
 		"store" | "clock"
 	> = createProductionReliabilityPorts(),
 ) {
+	const definition = resolveReliabilityOperation(input);
+	if (
+		definition === null ||
+		createProductionReliabilityOperationHandlers()[
+			`${definition.connector}.${definition.operation}`
+		] === undefined
+	) {
+		return Promise.resolve(
+			fail(
+				"VALIDATION_ERROR",
+				"Reliability operation is not composed for production",
+			),
+		);
+	}
 	return registerReliabilityWork(input, ports);
 }
 

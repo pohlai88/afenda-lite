@@ -1,8 +1,12 @@
+import { fail, ok, type Result } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
+import { HUMAN_RESOURCES_COMMAND_PERSON_CREATE } from "../src/module-ids";
 import {
 	createMemoryHrObservabilityRecorder,
 	type HrObservabilityPorts,
+	observeHrPrivacyOperationResult,
 	recordHrAuthorizationDenial,
 	recordHrBulkError,
 	recordHrCommand,
@@ -13,6 +17,7 @@ import {
 	recordHrPayrollDeliveryFailure,
 	recordHrPrivacyOperation,
 } from "../src/observability";
+import { runParsedAuthorizedCommand } from "../src/shared/domain-runner";
 
 function createHarness() {
 	const recorder = createMemoryHrObservabilityRecorder();
@@ -177,5 +182,111 @@ describe("HR observability vocabulary", () => {
 		for (const event of recorder.events) {
 			expect(Object.keys(event.attributes).length).toBeLessThanOrEqual(2);
 		}
+	});
+
+	it("observes privacy results without changing domain semantics", async () => {
+		const { recorder, ports } = createHarness();
+		const success: Result<{ reference: string }> = {
+			ok: true,
+			data: { reference: "subject-export" },
+		};
+		const failure: Result<never> = {
+			ok: false,
+			code: "FORBIDDEN",
+			message: "Denied",
+		};
+		expect(
+			await observeHrPrivacyOperationResult({
+				operation: "export",
+				observability: ports,
+				result: success,
+			}),
+		).toBe(success);
+		expect(
+			await observeHrPrivacyOperationResult({
+				operation: "erase",
+				observability: ports,
+				result: failure,
+			}),
+		).toBe(failure);
+		expect(recorder.metrics).toEqual([
+			expect.objectContaining({
+				name: "hr.privacy.operation.total",
+				labels: { operation: "export", outcome: "success" },
+			}),
+			expect.objectContaining({
+				name: "hr.privacy.operation.total",
+				labels: { operation: "erase", outcome: "failure" },
+			}),
+		]);
+		expect(recorder.events).toEqual([
+			expect.objectContaining({
+				name: "hr.privacy.operation.failed",
+				attributes: { operation: "erase", reason: "authorization" },
+			}),
+		]);
+	});
+
+	it("observes validation, dependency, and resource failures before authorization", async () => {
+		const { recorder, ports } = createHarness();
+		const schema = z.object({
+			organizationId: z.string().min(1),
+			actorUserId: z.string().min(1),
+			mode: z.enum(["dependency", "resource", "success"]),
+		});
+		const run = (input: unknown) =>
+			runParsedAuthorizedCommand(
+				input,
+				{ observability: ports },
+				{
+					command: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+					schema,
+					invalidMessage: "Invalid person input",
+					resolveDeps: (_options, data) =>
+						data.mode === "dependency"
+							? fail("SERVICE_UNAVAILABLE", "Dependency unavailable")
+							: ok({ dependency: true }),
+					resolveResource: (data) =>
+						data.mode === "resource"
+							? fail("NOT_FOUND", "Resource unavailable")
+							: undefined,
+					execute: async () => ok({ created: true }),
+				},
+			);
+
+		expect((await run({})).ok).toBe(false);
+		expect(
+			(
+				await run({
+					organizationId: "org-1",
+					actorUserId: "user-1",
+					mode: "dependency",
+				})
+			).ok,
+		).toBe(false);
+		expect(
+			(
+				await run({
+					organizationId: "org-1",
+					actorUserId: "user-1",
+					mode: "resource",
+				})
+			).ok,
+		).toBe(false);
+
+		expect(
+			recorder.metrics
+				.filter((metric) => metric.name === "hr.command.total")
+				.map((metric) => metric.labels),
+		).toEqual([
+			{ area: "workforce", outcome: "failure" },
+			{ area: "workforce", outcome: "failure" },
+			{ area: "workforce", outcome: "failure" },
+		]);
+		expect(
+			recorder.events
+				.filter((event) => event.name === "hr.command.failed")
+				.map((event) => event.attributes.reason),
+		).toEqual(["validation", "unavailable", "not_found"]);
 	});
 });

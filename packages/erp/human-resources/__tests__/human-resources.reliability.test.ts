@@ -2,10 +2,13 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 
 import {
+	acknowledgeReliabilityWork,
 	checkpointConnectorCursor,
+	claimDueReliabilityWork,
 	createMemoryReliabilityStore,
 	decidePartialOutage,
 	executeReliabilityWork,
+	type ReliabilityExecutionOutcome,
 	type ReliabilityKernelPorts,
 	type ReliabilityStorePort,
 	recoverConnectorCursor,
@@ -17,8 +20,8 @@ import {
 const ORGANIZATION_ID = "org-reliability";
 
 function createHarness(
-	outcomes: Result<{ receiptId: string | null }>[] = [
-		ok({ receiptId: "receipt-1" }),
+	outcomes: Result<ReliabilityExecutionOutcome>[] = [
+		ok({ kind: "acknowledged", receiptId: "receipt-1" }),
 	],
 ) {
 	let now = new Date("2026-01-01T00:00:00.000Z");
@@ -30,7 +33,10 @@ function createHarness(
 		executor: {
 			async execute() {
 				executions += 1;
-				return outcomes.shift() ?? ok({ receiptId: "receipt-replay" });
+				return (
+					outcomes.shift() ??
+					ok({ kind: "acknowledged", receiptId: "receipt-replay" })
+				);
 			},
 		},
 		failureClassifier: {
@@ -56,10 +62,42 @@ async function register(
 		{
 			organizationId: ORGANIZATION_ID,
 			connector: "payroll",
-			operation: "publish-handoff",
+			operation: "publish-delivery",
+			targetType: "payroll_delivery",
+			targetId: "delivery-1",
 			correlationId: "corr-1",
 			idempotencyKey,
 			requestFingerprint: `fingerprint-${idempotencyKey}`,
+		},
+		ports,
+	);
+}
+
+async function claimAndExecute(
+	ports: ReliabilityKernelPorts,
+	workItemId: string,
+	policy?: Parameters<typeof executeReliabilityWork>[0]["policy"],
+) {
+	const claimed = await claimDueReliabilityWork(
+		{
+			workerId: "worker-1",
+			now: ports.clock.now(),
+			leaseDurationMs: 120_000,
+			limit: 25,
+			perOrganizationLimit: 5,
+		},
+		ports.store,
+	);
+	if (!claimed.ok) return claimed;
+	const item = claimed.data.find((candidate) => candidate.id === workItemId);
+	if (item === undefined)
+		return fail("CONFLICT", "Reliability work was not due");
+	return executeReliabilityWork(
+		{
+			organizationId: item.organizationId,
+			workItemId: item.id,
+			leaseOwner: "worker-1",
+			policy,
 		},
 		ports,
 	);
@@ -81,7 +119,7 @@ describe("HR integration reliability kernel", () => {
 	it("retries only when due, then replays terminal success idempotently", async () => {
 		const harness = createHarness([
 			fail("INTERNAL_ERROR", "connector timeout"),
-			ok({ receiptId: "receipt-recovered" }),
+			ok({ kind: "acknowledged", receiptId: "receipt-recovered" }),
 		]);
 		const created = await register(harness.ports);
 		if (!created.ok) throw new Error(created.message);
@@ -91,13 +129,10 @@ describe("HR integration reliability kernel", () => {
 			maxDelayMs: 5_000,
 			multiplier: 2,
 		};
-		const retrying = await executeReliabilityWork(
-			{
-				organizationId: ORGANIZATION_ID,
-				workItemId: created.data.id,
-				policy,
-			},
+		const retrying = await claimAndExecute(
 			harness.ports,
+			created.data.id,
+			policy,
 		);
 		expect(retrying.ok).toBe(true);
 		if (!retrying.ok) return;
@@ -107,24 +142,14 @@ describe("HR integration reliability kernel", () => {
 			lastErrorCode: "INTERNAL_ERROR",
 		});
 		expect(
-			await executeReliabilityWork(
-				{
-					organizationId: ORGANIZATION_ID,
-					workItemId: created.data.id,
-					policy,
-				},
-				harness.ports,
-			),
+			await claimAndExecute(harness.ports, created.data.id, policy),
 		).toMatchObject({ ok: false, code: "CONFLICT" });
 
 		harness.advance(1_000);
-		const succeeded = await executeReliabilityWork(
-			{
-				organizationId: ORGANIZATION_ID,
-				workItemId: created.data.id,
-				policy,
-			},
+		const succeeded = await claimAndExecute(
 			harness.ports,
+			created.data.id,
+			policy,
 		);
 		expect(succeeded.ok).toBe(true);
 		if (!succeeded.ok) return;
@@ -138,6 +163,7 @@ describe("HR integration reliability kernel", () => {
 				{
 					organizationId: ORGANIZATION_ID,
 					workItemId: created.data.id,
+					leaseOwner: "worker-1",
 					policy,
 				},
 				harness.ports,
@@ -152,10 +178,7 @@ describe("HR integration reliability kernel", () => {
 		]);
 		const created = await register(harness.ports);
 		if (!created.ok) throw new Error(created.message);
-		const terminal = await executeReliabilityWork(
-			{ organizationId: ORGANIZATION_ID, workItemId: created.data.id },
-			harness.ports,
-		);
+		const terminal = await claimAndExecute(harness.ports, created.data.id);
 		expect(terminal.ok).toBe(true);
 		if (!terminal.ok) return;
 		expect(terminal.data).toMatchObject({
@@ -216,16 +239,17 @@ describe("HR integration reliability kernel", () => {
 				return durableStore.commitAttempt(input);
 			},
 		};
+		let now = new Date("2026-01-01T00:00:00.000Z");
 		const ports: ReliabilityKernelPorts = {
 			store,
-			clock: { now: () => new Date("2026-01-01T00:00:00.000Z") },
+			clock: { now: () => new Date(now) },
 			executor: {
 				async execute(item) {
 					executorCalls += 1;
 					const key = `${item.id}:${item.requestFingerprint}`;
 					const receiptId = externalReceipts.get(key) ?? "receipt-deduplicated";
 					externalReceipts.set(key, receiptId);
-					return ok({ receiptId });
+					return ok({ kind: "acknowledged", receiptId });
 				},
 			},
 			failureClassifier: { isRetryable: () => true },
@@ -234,22 +258,20 @@ describe("HR integration reliability kernel", () => {
 		expect(created.ok).toBe(true);
 		if (!created.ok) return;
 
-		const interrupted = await executeReliabilityWork(
-			{ organizationId: ORGANIZATION_ID, workItemId: created.data.id },
-			ports,
-		);
+		const interrupted = await claimAndExecute(ports, created.data.id);
 		expect(interrupted).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
 		expect(
 			await store.getWorkItem({
 				organizationId: ORGANIZATION_ID,
 				workItemId: created.data.id,
 			}),
-		).toMatchObject({ ok: true, data: { status: "pending", attemptCount: 0 } });
+		).toMatchObject({
+			ok: true,
+			data: { status: "processing", attemptCount: 0 },
+		});
 
-		const recovered = await executeReliabilityWork(
-			{ organizationId: ORGANIZATION_ID, workItemId: created.data.id },
-			ports,
-		);
+		now = new Date(now.getTime() + 120_001);
+		const recovered = await claimAndExecute(ports, created.data.id);
 		expect(recovered).toMatchObject({
 			ok: true,
 			data: {
@@ -260,6 +282,176 @@ describe("HR integration reliability kernel", () => {
 		});
 		expect(executorCalls).toBe(2);
 		expect(externalReceipts).toHaveLength(1);
+	});
+
+	it("holds accepted work until a matching acknowledgement arrives", async () => {
+		const deadline = new Date("2026-01-01T01:00:00.000Z");
+		const harness = createHarness([
+			ok({
+				kind: "accepted",
+				receiptId: "receipt-async",
+				acknowledgementDeadlineAt: deadline,
+			}),
+		]);
+		const created = await register(harness.ports, "idem-async");
+		if (!created.ok) throw new Error(created.message);
+		const accepted = await claimAndExecute(harness.ports, created.data.id);
+		expect(accepted).toMatchObject({
+			ok: true,
+			data: {
+				status: "awaiting_acknowledgement",
+				receiptId: "receipt-async",
+			},
+		});
+		if (!accepted.ok) return;
+		expect(
+			await acknowledgeReliabilityWork(
+				{
+					organizationId: ORGANIZATION_ID,
+					workItemId: created.data.id,
+					receiptId: "receipt-async",
+					expectedVersion: accepted.data.version - 1,
+					outcome: "acknowledged",
+				},
+				harness.ports,
+			),
+		).toMatchObject({ ok: false, code: "CONFLICT" });
+		expect(
+			await acknowledgeReliabilityWork(
+				{
+					organizationId: ORGANIZATION_ID,
+					workItemId: created.data.id,
+					receiptId: "wrong-receipt",
+					expectedVersion: accepted.data.version,
+					outcome: "acknowledged",
+				},
+				harness.ports,
+			),
+		).toMatchObject({ ok: false, code: "CONFLICT" });
+		const acknowledged = await acknowledgeReliabilityWork(
+			{
+				organizationId: ORGANIZATION_ID,
+				workItemId: created.data.id,
+				receiptId: "receipt-async",
+				expectedVersion: accepted.data.version,
+				outcome: "acknowledged",
+			},
+			harness.ports,
+		);
+		expect(acknowledged).toMatchObject({
+			ok: true,
+			data: { status: "succeeded" },
+		});
+		expect(
+			await acknowledgeReliabilityWork(
+				{
+					organizationId: ORGANIZATION_ID,
+					workItemId: created.data.id,
+					receiptId: "receipt-async",
+					expectedVersion: accepted.data.version,
+					outcome: "acknowledged",
+				},
+				harness.ports,
+			),
+		).toEqual(acknowledged);
+	});
+
+	it("reclaims work whose acknowledgement deadline expired", async () => {
+		const harness = createHarness([
+			ok({
+				kind: "accepted",
+				receiptId: "receipt-expiring",
+				acknowledgementDeadlineAt: new Date("2026-01-01T00:01:00.000Z"),
+			}),
+			ok({ kind: "acknowledged", receiptId: "receipt-reissued" }),
+		]);
+		const created = await register(harness.ports, "idem-expiring");
+		if (!created.ok) throw new Error(created.message);
+		expect(await claimAndExecute(harness.ports, created.data.id)).toMatchObject(
+			{
+				ok: true,
+				data: { status: "awaiting_acknowledgement" },
+			},
+		);
+		harness.advance(60_000);
+		expect(await claimAndExecute(harness.ports, created.data.id)).toMatchObject(
+			{
+				ok: true,
+				data: { status: "succeeded", receiptId: "receipt-reissued" },
+			},
+		);
+	});
+
+	it("rejects accepted outcomes without future acknowledgement evidence", async () => {
+		const harness = createHarness([
+			ok({
+				kind: "accepted",
+				receiptId: "receipt-invalid-deadline",
+				acknowledgementDeadlineAt: new Date("2026-01-01T00:00:00.000Z"),
+			}),
+		]);
+		const created = await register(harness.ports, "idem-invalid-ack");
+		if (!created.ok) throw new Error(created.message);
+		expect(await claimAndExecute(harness.ports, created.data.id)).toMatchObject(
+			{
+				ok: true,
+				data: {
+					status: "pending",
+					lastErrorCode: "INTERNAL_ERROR",
+					receiptId: null,
+				},
+			},
+		);
+	});
+
+	it("rejects unsupported work and claims due work fairly across tenants", async () => {
+		const harness = createHarness();
+		expect(
+			await registerReliabilityWork(
+				{
+					organizationId: ORGANIZATION_ID,
+					connector: "unknown",
+					operation: "publish",
+					targetType: "unknown",
+					targetId: "target-1",
+					correlationId: "corr-unsupported",
+					idempotencyKey: "idem-unsupported",
+					requestFingerprint: "fingerprint-unsupported",
+				},
+				harness.ports,
+			),
+		).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
+		for (const organizationId of ["org-a", "org-a", "org-b"]) {
+			await registerReliabilityWork(
+				{
+					organizationId,
+					connector: "search",
+					operation: "rebuild-employee-index",
+					targetType: "organization",
+					targetId: organizationId,
+					correlationId: `corr-${crypto.randomUUID()}`,
+					idempotencyKey: `idem-${crypto.randomUUID()}`,
+					requestFingerprint: `fingerprint-${crypto.randomUUID()}`,
+				},
+				harness.ports,
+			);
+		}
+		const claimed = await claimDueReliabilityWork(
+			{
+				workerId: "fair-worker",
+				now: harness.ports.clock.now(),
+				leaseDurationMs: 120_000,
+				limit: 3,
+				perOrganizationLimit: 1,
+			},
+			harness.ports.store,
+		);
+		expect(claimed.ok && claimed.data).toHaveLength(2);
+		if (claimed.ok) {
+			expect(new Set(claimed.data.map((item) => item.organizationId))).toEqual(
+				new Set(["org-a", "org-b"]),
+			);
+		}
 	});
 
 	it("recovers the last committed connector cursor with version CAS", async () => {

@@ -9,19 +9,28 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
-/**
- * Shared operator session + permission + internal-error envelope for
- * Server Actions. Caller stamps org/user from `session`.
- */
-export async function runOperatorPermissionAction<T>(input: {
+export type OperatorPermissionActionInput<T> = {
 	path: string;
 	permission: ProductPermissionCode;
 	safeMessage: string;
+	onPermissionDenied?: (input: {
+		session: Session;
+		correlationId: string;
+		permission: ProductPermissionCode;
+	}) => void | Promise<void>;
 	execute: (
 		session: Session,
 		correlationId: string,
 	) => Promise<ActionResult<T>>;
-}): Promise<ActionResult<T>> {
+};
+
+/**
+ * Shared operator session + permission + internal-error envelope for
+ * Server Actions. Caller stamps org/user from `session`.
+ */
+export async function runOperatorPermissionAction<T>(
+	input: OperatorPermissionActionInput<T>,
+): Promise<ActionResult<T>> {
 	const correlationId = createCorrelationId();
 	const session = await requireRole("operator");
 
@@ -30,6 +39,26 @@ export async function runOperatorPermissionAction<T>(input: {
 		input.permission,
 	);
 	if (permissionDenied) {
+		if (input.onPermissionDenied !== undefined) {
+			try {
+				await input.onPermissionDenied({
+					session,
+					correlationId,
+					permission: input.permission,
+				});
+			} catch {
+				// Denial telemetry is best-effort and cannot replace the governed failure.
+				logProductEvent({
+					level: "error",
+					event: "action.permission_denial_observer_error",
+					correlationId,
+					orgId: session.orgId,
+					actorUserId: session.userId,
+					path: input.path,
+					code: "INTERNAL_ERROR",
+				});
+			}
+		}
 		return permissionDenied;
 	}
 

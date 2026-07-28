@@ -4,7 +4,7 @@ import { queryDomainEvents, retryFailedDomainEvent } from "@afenda/events";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runHrIntegrationOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
 	type ActionResult,
 	actionFail,

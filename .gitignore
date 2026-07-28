@@ -18,8 +18,11 @@ yarn.lock
 coverage
 test-results/
 playwright-report/
+.playwright-cli/
 blob-report/
 playwright/.cache/
+apps/storybook/storybook-static/
+apps/storybook/debug-storybook.log
 
 # next.js / turbo / package builds
 .next/

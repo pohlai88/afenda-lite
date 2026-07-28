@@ -22,6 +22,7 @@ import {
 } from "../src/bulk";
 import {
 	checkpointConnectorCursor,
+	claimDueReliabilityWork,
 	createMemoryReliabilityStore,
 	executeReliabilityWork,
 	type ReliabilityKernelPorts,
@@ -95,8 +96,10 @@ async function exerciseBulk(store: BulkCheckpointPort<BulkOutput>) {
 	};
 }
 
-async function exerciseReliability(store: ReliabilityStorePort) {
-	const organizationId = `reliability-parity-${crypto.randomUUID()}`;
+async function exerciseReliability(
+	store: ReliabilityStorePort,
+	organizationId = `reliability-parity-${crypto.randomUUID()}`,
+) {
 	let now = new Date("2026-07-28T00:00:00.000Z");
 	const ports: ReliabilityKernelPorts = {
 		store,
@@ -110,7 +113,9 @@ async function exerciseReliability(store: ReliabilityStorePort) {
 		{
 			organizationId,
 			connector: "payroll",
-			operation: "publish",
+			operation: "publish-delivery",
+			targetType: "payroll_delivery",
+			targetId: "delivery-1",
 			correlationId: "corr-1",
 			idempotencyKey: "work-1",
 			requestFingerprint: "fingerprint-1",
@@ -118,8 +123,25 @@ async function exerciseReliability(store: ReliabilityStorePort) {
 		ports,
 	);
 	if (!created.ok) throw new Error(created.message);
+	const claimed = await claimDueReliabilityWork(
+		{
+			workerId: "parity-worker",
+			now,
+			leaseDurationMs: 120_000,
+			limit: 25,
+			perOrganizationLimit: 5,
+		},
+		store,
+	);
+	if (!claimed.ok || claimed.data.length !== 1) {
+		throw new Error("Reliability work was not claimed");
+	}
 	const terminal = await executeReliabilityWork(
-		{ organizationId, workItemId: created.data.id },
+		{
+			organizationId,
+			workItemId: created.data.id,
+			leaseOwner: "parity-worker",
+		},
 		ports,
 	);
 	if (!terminal.ok) throw new Error(terminal.message);
@@ -218,7 +240,7 @@ function assertReliability(
 ) {
 	expect(result.terminal).toMatchObject({
 		ok: true,
-		data: { status: "dead_lettered", version: 2, attemptCount: 1 },
+		data: { status: "dead_lettered", version: 3, attemptCount: 1 },
 	});
 	expect(result.deadLetter).toMatchObject({
 		ok: true,
@@ -249,10 +271,15 @@ describe("HR bulk and reliability store parity", () => {
 			const bulk = await exerciseBulk(
 				createDrizzleBulkCheckpointPort<BulkOutput>(),
 			);
-			const reliability = await exerciseReliability(
-				createDrizzleReliabilityStore(),
-			);
+			let reliability:
+				| Awaited<ReturnType<typeof exerciseReliability>>
+				| undefined;
+			const reliabilityOrganizationId = `reliability-parity-${crypto.randomUUID()}`;
 			try {
+				reliability = await exerciseReliability(
+					createDrizzleReliabilityStore(),
+					reliabilityOrganizationId,
+				);
 				assertBulk(bulk);
 				assertReliability(reliability);
 			} finally {
@@ -274,21 +301,18 @@ describe("HR bulk and reliability store parity", () => {
 					.where(
 						eq(
 							hrReliabilityDeadLetter.organizationId,
-							reliability.organizationId,
+							reliabilityOrganizationId,
 						),
 					);
 				await db
 					.delete(hrConnectorCursor)
 					.where(
-						eq(hrConnectorCursor.organizationId, reliability.organizationId),
+						eq(hrConnectorCursor.organizationId, reliabilityOrganizationId),
 					);
 				await db
 					.delete(hrReliabilityWorkItem)
 					.where(
-						eq(
-							hrReliabilityWorkItem.organizationId,
-							reliability.organizationId,
-						),
+						eq(hrReliabilityWorkItem.organizationId, reliabilityOrganizationId),
 					);
 			}
 		});

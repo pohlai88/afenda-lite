@@ -12,7 +12,7 @@ export default async function ClientWorkspaceHomePage() {
 	const modules = await resolveClientShellNav(session);
 
 	return (
-		<section className="flex min-h-dvh flex-col items-center gap-10 bg-gradient-to-b from-background via-background to-muted/40 px-6 py-16">
+		<section className="flex min-h-dvh flex-col items-center gap-10 px-6 py-16">
 			<div className="space-y-3 text-center">
 				<p className="text-2xl font-semibold tracking-tight text-foreground">
 					Afenda-Lite

@@ -92,6 +92,71 @@ tables:
     writeOwner: "@afenda/corporate-administration"
     kind: erp
 
+  - table: ca_company_status_history
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: legal_company
+  - table: ca_governance_body
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: governance_body
+  - table: ca_governance_membership
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: governance_body
+  - table: ca_statutory_office
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: statutory_office
+  - table: ca_officer_appointment
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: officer
+  - table: ca_officer_qualification
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: officer
+  - table: ca_officer_declaration
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: officer
+  - table: ca_officer_disqualification
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: officer
+  - table: ca_conflict_disclosure
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: officer
+  - table: ca_governance_meeting
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: governance_meeting
+  - table: ca_meeting_notice
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: governance_meeting
+  - table: ca_meeting_participant
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: governance_meeting
+  - table: ca_meeting_quorum_result
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: governance_meeting
+  - table: ca_meeting_vote
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: resolution
+  - table: ca_resolution
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: resolution
+  - table: ca_resolution_action
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: resolution
+
   - table: md_party
     writeOwner: "@afenda/master-data"
     kind: erp

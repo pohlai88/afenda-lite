@@ -1,0 +1,24 @@
+{
+	"extends": "@afenda/config/tsconfig/react-library.json",
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"rootDir": ".",
+		"types": ["node", "vitest/globals"]
+	},
+	"include": [
+		".storybook/**/*.ts",
+		".storybook/**/*.tsx",
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		"__tests__/**/*.ts",
+		"playwright.visual.config.ts",
+		"visual-tests/**/*.ts",
+		"vitest.*.config.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"storybook-static",
+		"test-results",
+		".storybook/storybook-evidence-loader.ts"
+	]
+}

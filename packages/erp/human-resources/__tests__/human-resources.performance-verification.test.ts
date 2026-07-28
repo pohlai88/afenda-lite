@@ -45,7 +45,7 @@ describe("HR local performance verification", () => {
 				{
 					name: "threshold_guard",
 					description: "Harness threshold failure control",
-					implementation: "representative_fixture",
+					implementation: "real_domain_kernel",
 					fixtureSize: 1,
 					thresholdP95Ms: Number.MIN_VALUE,
 					run: () => 1,
@@ -53,5 +53,16 @@ describe("HR local performance verification", () => {
 				{ warmupRuns: 0, sampleRuns: 3 },
 			),
 		).rejects.toThrow("exceeded");
+	});
+
+	it("uses only real HR package paths for Phase 13 workloads", async () => {
+		const workloads = await createHrLocalBenchmarkWorkloads();
+		expect(
+			workloads.every(
+				(workload) =>
+					workload.implementation === "real_memory_api" ||
+					workload.implementation === "real_domain_kernel",
+			),
+		).toBe(true);
 	});
 });

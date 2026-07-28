@@ -104,7 +104,7 @@ export function OperatorPlatformChrome({
 				</SidebarFooter>
 				<SidebarRail />
 			</Sidebar>
-			<SidebarInset className="bg-canvas">
+			<SidebarInset className="bg-background">
 				<header className="sticky top-0 z-50 border-b border-border bg-surface-raised">
 					<div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2 sm:px-6">
 						<SidebarTrigger className="-ml-1" />

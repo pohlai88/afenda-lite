@@ -4,6 +4,10 @@ import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 } from "../src/error-codes";
+import {
+	createMemoryHrObservabilityRecorder,
+	type HrObservabilityPorts,
+} from "../src/observability";
 import { HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION } from "../src/privacy";
 import {
 	anonymizeHumanResourcesSubject,
@@ -209,6 +213,73 @@ describe("human-resources privacy operations", () => {
 		}
 
 		expect(result.data.legalHoldId).toBe("test-hold");
+	});
+
+	it("emits shared command and privacy telemetry for legal-hold success", async () => {
+		const recorder = createMemoryHrObservabilityRecorder();
+		const observability: HrObservabilityPorts = {
+			recorder,
+			clock: { now: () => new Date("2026-01-01T00:00:00.000Z") },
+		};
+
+		const result = await placeHumanResourcesLegalHold(
+			{
+				...createValidPrivacyExportInput(),
+				holdReference: "case-telemetry",
+				classifications: DEFAULT_PRIVACY_CLASSIFICATIONS,
+			},
+			createHumanResourcesTestOptions({
+				privacy: createHumanResourcesTestPrivacyPort(),
+				observability,
+			}),
+		);
+
+		expect(result.ok).toBe(true);
+		expect(recorder.metrics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "hr.command.total",
+					labels: { area: "privacy", outcome: "success" },
+				}),
+				expect.objectContaining({
+					name: "hr.privacy.operation.total",
+					labels: { operation: "rectify", outcome: "success" },
+				}),
+			]),
+		);
+	});
+
+	it("emits denial and privacy telemetry for a forbidden privacy query", async () => {
+		const recorder = createMemoryHrObservabilityRecorder();
+		const observability: HrObservabilityPorts = {
+			recorder,
+			clock: { now: () => new Date("2026-01-01T00:00:00.000Z") },
+		};
+
+		const result = await exportHumanResourcesSubjectData(validExportInput, {
+			...createHumanResourcesTestOptions({
+				privacy: createHumanResourcesTestPrivacyPort(),
+				observability,
+			}),
+			authorization: createGrantingHumanResourcesAuthorization([]),
+		});
+
+		expect(result.ok).toBe(false);
+		expect(recorder.metrics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "hr.authorization.denial.total",
+					labels: { area: "privacy", reason: "permission_missing" },
+				}),
+				expect.objectContaining({
+					name: "hr.privacy.operation.total",
+					labels: { operation: "export", outcome: "failure" },
+				}),
+			]),
+		);
+		expect(
+			recorder.metrics.some((metric) => metric.name === "hr.command.total"),
+		).toBe(false);
 	});
 
 	it("anonymizes subject records when legal hold is inactive", async () => {
