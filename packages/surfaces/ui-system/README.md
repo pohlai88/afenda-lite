@@ -9,7 +9,8 @@ This README is for engineers who consume or maintain the package. Use it to choo
 | Need | Use |
 |------|-----|
 | React components and `cn` | `@afenda/ui-system` |
-| Design tokens and base theme | `@afenda/ui-system/styles.css` |
+| Design tokens and theme registration | `@afenda/ui-system/styles.css` |
+| Shared semantic rendering defaults | `@afenda/ui-system/base.css` |
 | Public export inventory | [`src/index.ts`](./src/index.ts) |
 | Token source | [`src/styles/tokens.css`](./src/styles/tokens.css) |
 | shadcn CLI configuration | [`components.json`](./components.json) |
@@ -80,13 +81,18 @@ These components are controlled presentation APIs. For example, `DataTable` can 
 import { Button, Card, Dialog, Input, Label, cn } from "@afenda/ui-system";
 ```
 
-Import the stylesheet once in the application's global stylesheet:
+Import the governed stylesheets once in the application's global stylesheet,
+after Tailwind and animation CSS:
 
 ```css
+@import "tailwindcss";
 @import "@afenda/ui-system/styles.css";
+@import "@afenda/ui-system/base.css";
 ```
 
-The current application entry is [`apps/web/globals.css`](../../../apps/web/globals.css). Do not import the stylesheet again from individual components.
+Keep consumer-specific CSS after those imports. The current application entry is
+[`apps/web/globals.css`](../../../apps/web/globals.css). Do not import either
+stylesheet again from individual components.
 
 ### Import boundary
 
@@ -94,6 +100,7 @@ The current application entry is [`apps/web/globals.css`](../../../apps/web/glob
 |---------|-------------|
 | `@afenda/ui-system` | Deep imports such as `@afenda/ui-system/src/...` |
 | `@afenda/ui-system/styles.css` | A second UI gateway or the retired `@afenda/ui` package |
+| `@afenda/ui-system/base.css` | Duplicated semantic base rules in consumer stylesheets |
 | Package-relative imports inside this package | Product imports from `apps/web/shadcn-studio/**` |
 
 [`apps/web/__tests__/ui-boundary.test.ts`](../../../apps/web/__tests__/ui-boundary.test.ts) enforces the two public specifiers and prevents product code from importing internal or staged sources.
@@ -113,13 +120,16 @@ The package is a Rank-2 Surfaces layer. It may consume client-safe platform code
 
 ## Use semantic color roles
 
-The theme starts with shadcn `new-york` and the neutral base palette. Afenda adds ERP status, business-surface, table-state, control, and focus roles to that foundation; these additions are not a separate theme.
+The theme uses the Afenda Mineral Calm foundation while retaining the owned
+shadcn `new-york` component architecture. Cool-porcelain and midnight-mineral
+surfaces, mineral-blue actions, ERP status, table-state, control, and focus roles
+belong to one semantic theme.
 
 | Intent | Token contract |
 |--------|----------------|
-| Standard surfaces and actions | shadcn `background`, `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, and sidebar pairs |
+| Standard surfaces and actions | Mineral Calm `canvas`, `background`, `card`, `surface-raised`, `popover`, `primary`, `secondary`, `muted`, `accent`, and sidebar pairs |
 | Secondary readable copy | `foreground-secondary` or `foreground-tertiary` |
-| Muted or helper copy | `muted-foreground`; neutral-600 in light mode and neutral-300 in dark mode are intentional accessibility overrides |
+| Muted or helper copy | `muted-foreground`; its light and dark values are locked by the APCA typography contract |
 | Chromatic decoration | `success`, `warning`, and `info` for icons, graphics, borders, or translucent decoration—not readable copy |
 | Status text | The matching `*-subtle-foreground` role |
 | Filled status UI | The complete `*-subtle`, `*-subtle-foreground`, and `*-border` triplet |
@@ -167,12 +177,13 @@ This gate type-checks and tests `@afenda/ui-system` and its `@afenda/web` consum
 
 ## Public API
 
-Only two package exports are public:
+Only three package exports are public:
 
 | Export | Provides |
 |--------|----------|
 | `@afenda/ui-system` | Flat React component barrel and `cn` |
 | `@afenda/ui-system/styles.css` | Semantic tokens and theme styles |
+| `@afenda/ui-system/base.css` | Token-independent border, document canvas, text, and color-scheme defaults |
 
 Common barrel categories include:
 
@@ -180,7 +191,7 @@ Common barrel categories include:
 |----------|----------|
 | Forms and controls | `Button`, `Input`, `Label`, `Select`, `Checkbox`, `FormField`, numeric inputs, `DateTimePicker`, `FileUpload` |
 | Display and layout | `Card`, `Badge`, `Table`, `DataTable`, `KeyValue`, `PageHeader`, `MasterDetail`, `TreeView` |
-| Overlays and menus | `Dialog`, `Sheet`, `Popover`, `DropdownMenu`, `Tooltip`, `Command` |
+| Overlays and menus | `Dialog`, `Sheet`, `Drawer`, `Popover`, `DropdownMenu`, `Menubar`, `Tooltip`, `Command` |
 | Navigation | `Breadcrumb`, `Tabs`, `Pagination`, `Sidebar` |
 | Feedback, workflow, and analytics | `Alert`, `AsyncState`, `StatusBadge`, `Stepper`, `Timeline`, `AuditTrail`, `ChangeDiff`, chart helpers, `MetricCard` |
 | Utility | `cn` |
@@ -194,7 +205,8 @@ The active greenfield component catalog lives in [`apps/storybook`](../../../app
 - A component existing in shadcn does not automatically make it product-owned; it becomes part of Afenda only after source review, barrel export, and tests.
 - Do not place feature policy in a reusable primitive. Pass state and content through a neutral component API and keep workflow decisions with the feature.
 - Do not bypass semantic tokens to fix contrast locally. Correct the role or pairing and extend the contrast matrix when necessary.
-- Do not add another stylesheet or theme source of truth. `@afenda/ui-system/styles.css` remains the sole exported stylesheet.
+- Do not add another token source of truth. `styles.css` owns values and
+  `base.css` owns token-independent rendering defaults.
 
 ## Authority and related guidance
 

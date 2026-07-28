@@ -21,7 +21,7 @@ The locked `erp-ui-v1` catalog is the registration authority. Contract files enr
 
 ## Keep the boundary intact
 
-Metadata is internal package tooling, not a browser or consumer API. The package exposes only `@afenda/ui-system` and `@afenda/ui-system/styles.css`; do not export metadata from [`../index.ts`](../index.ts) or add a metadata package subpath.
+Metadata is internal package tooling, not a browser or consumer API. The package exposes only `@afenda/ui-system`, `@afenda/ui-system/styles.css`, and `@afenda/ui-system/base.css`; do not export metadata from [`../index.ts`](../index.ts) or add a metadata package subpath.
 
 The private `apps/storybook` startup adapter is the only downstream visual-
 evidence exception: Node tooling validates this catalog and serializes a narrow,

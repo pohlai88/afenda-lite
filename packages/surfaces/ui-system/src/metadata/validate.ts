@@ -11,7 +11,7 @@ import type {
 } from "./contract";
 import { UI_COMPONENT_CONTRACT_STANDARD } from "./contracts/manifest.contract";
 
-const EXPECTED_PACKAGE_EXPORTS = [".", "./styles.css"] as const;
+const EXPECTED_PACKAGE_EXPORTS = [".", "./base.css", "./styles.css"] as const;
 const FORBIDDEN_IMPORTS = [
 	/from\s+["']apps\//,
 	/from\s+["']@\/|from\s+["']@afenda\//,

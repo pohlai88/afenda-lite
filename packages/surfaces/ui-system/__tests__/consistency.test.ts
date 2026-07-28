@@ -42,8 +42,26 @@ describe("@afenda/ui-system — public surface", () => {
 		exports: Record<string, unknown>;
 	};
 
-	it("exposes only the flat barrel and the stylesheet", () => {
-		expect(Object.keys(pkg.exports).sort()).toEqual([".", "./styles.css"]);
+	it("exposes only the flat barrel and governed stylesheets", () => {
+		expect(Object.keys(pkg.exports).sort()).toEqual([
+			".",
+			"./base.css",
+			"./styles.css",
+		]);
+	});
+
+	it("keeps tokens and shared rendering defaults in separate stylesheets", () => {
+		const tokens = read("src/styles/tokens.css");
+		const base = read("src/styles/base.css");
+
+		expect(tokens).not.toMatch(/@layer\s+base/);
+		expect(base).toContain("@layer base");
+		expect(base).toContain("border-color: var(--border)");
+		expect(base).toContain("background-color: var(--canvas)");
+		expect(base).toContain("color: var(--foreground)");
+		expect(base).toContain("color-scheme: light");
+		expect(base).toContain("color-scheme: dark");
+		expect(base).not.toMatch(/--(?:canvas|background|foreground):/);
 	});
 });
 
