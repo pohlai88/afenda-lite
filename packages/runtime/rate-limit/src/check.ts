@@ -1,4 +1,4 @@
-import { isProductionDeployment } from "@afenda/env";
+import { isProductionDeploymentNow } from "@afenda/env";
 
 import { createMemoryRateLimitStore } from "./memory-store";
 import { resolveRateLimitBackend } from "./resolve-store";
@@ -63,10 +63,7 @@ function memoryFallback(): RateLimitStore {
 }
 
 function isProductionRateLimitRuntime(): boolean {
-	return isProductionDeployment({
-		nodeEnv: process.env.NODE_ENV,
-		vercelEnv: process.env.VERCEL_ENV,
-	});
+	return isProductionDeploymentNow();
 }
 
 async function hitResolvedStore(

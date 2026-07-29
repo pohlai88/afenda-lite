@@ -405,6 +405,108 @@ test("fails public response bodies that expose internals", () => {
 	}
 });
 
+test("fails swallowed unknown catch fallbacks", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"packages/erp/orders/src/store.ts",
+			`
+				export function load() {
+					try {
+						return ["value"];
+					} catch (error) {
+						void error;
+						return [];
+					}
+				}
+			`,
+		);
+
+		const report = buildErrorsNormalizationReport({ root });
+
+		assert.equal(report.summary.status, "fail");
+		assert.equal(report.summary.swallowedUnknownCatch, 1);
+		assert.equal(report.swallowedUnknownCatch[0]?.auditCategory, "UNSAFE");
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("fails unsafe details passthrough and direct AppError UI exposure", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"apps/web/features/example/error-panel.tsx",
+			`
+				import type { AppError } from "@afenda/errors";
+				type Props = { error: AppError };
+				export function ErrorPanel(props: Props) {
+					return <p>{props.error.message}</p>;
+				}
+			`,
+		);
+		writeSource(
+			root,
+			"packages/erp/orders/src/store.ts",
+			`
+				import { fail } from "@afenda/errors/result";
+				export function map(error) {
+					return fail("INTERNAL_ERROR", "Failed", { details: error });
+				}
+			`,
+		);
+
+		const report = buildErrorsNormalizationReport({ root });
+
+		assert.equal(report.summary.status, "fail");
+		assert.equal(report.summary.directAppErrorUiExposure, 1);
+		assert.equal(report.summary.unsafeDetailsPassthrough, 1);
+		assert.equal(report.directAppErrorUiExposure[0]?.auditCategory, "UNSAFE");
+		assert.equal(report.unsafeDetailsPassthrough[0]?.auditCategory, "UNSAFE");
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("fails inconsistent mapping and classification drift", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"packages/erp/orders/src/errors.ts",
+			`
+				import { fail } from "@afenda/errors/result";
+				import { badRequest } from "@afenda/errors";
+				export const missing = fail("INTERNAL_ERROR", "Customer not found");
+				export const config = badRequest("DATABASE_URL is missing");
+			`,
+		);
+		writeSource(
+			root,
+			"packages/erp/orders/src/app-error.ts",
+			`
+				import { AppError } from "@afenda/errors";
+				export const defect = new AppError({
+					code: "INTERNAL_ERROR",
+					message: "Failed",
+					isOperational: true,
+				});
+			`,
+		);
+
+		const report = buildErrorsNormalizationReport({ root });
+
+		assert.equal(report.summary.status, "fail");
+		assert.equal(report.summary.inconsistentErrorMapping, 1);
+		assert.equal(report.summary.infrastructureClassificationDrift, 1);
+		assert.equal(report.summary.operationalClassificationDrift, 1);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test("strict mode fails unresolved review only in strict mode", () => {
 	const root = createFixture();
 	try {
@@ -455,6 +557,13 @@ test("formats CLI modes", () => {
 		postgresMappingDrift: [],
 		httpProjectionDrift: [],
 		infrastructureGuessing: [],
+		swallowedUnknownCatch: [],
+		unsafeDetailsPassthrough: [],
+		directAppErrorUiExposure: [],
+		inconsistentErrorMapping: [],
+		retryableMetadataDrift: [],
+		operationalClassificationDrift: [],
+		infrastructureClassificationDrift: [],
 		review: [],
 	});
 

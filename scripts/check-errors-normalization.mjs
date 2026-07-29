@@ -87,6 +87,20 @@ const LOCAL_RETRY_AFTER_READER_PATTERN =
 	/\bfunction\s+retryAfterSeconds\b|\bReflect\.get\s*\([^,]+,\s*["']retryAfter["']\s*\)/u;
 const INFRASTRUCTURE_GUESSING_PATTERN =
 	/\b(?:fromPostgresUnknown|postgresSqlState|hasPostgresSqlState)\b|["'][^"']*adapters\/postgres["']/u;
+const UNKNOWN_CATCH_SWALLOW_PATTERN =
+	/\bcatch\s*\(\s*(?:error|err|cause|caught|unknown)\s*\)\s*\{[\s\S]{0,240}\breturn\s+(?:null|false|\[\]|["'][^"']{0,120}["'])\s*;?/u;
+const UNSAFE_DETAILS_PASSTHROUGH_PATTERN =
+	/\{\s*details\s*:\s*(?:error|err|cause|caught)\b/u;
+const DIRECT_APP_ERROR_UI_PATTERN =
+	/(?:import(?:\s+type)?\s+\{[^}]*\bAppError\b[^}]*\}\s+from\s+["']@afenda\/errors["'][\s\S]{0,1200}\b(?:function|const)\s+[A-Z][A-Za-z0-9_]*|type\s+\w*Props\s*=\s*\{[\s\S]{0,400}\b(?:error|appError)\s*:\s*AppError\b)/u;
+const INCONSISTENT_ERROR_MAPPING_PATTERN =
+	/\b(?:fail|actionFail)\s*\(\s*(?:(?:["']INTERNAL_ERROR["']\s*,\s*["'][^"']*\b(?:not found|duplicate|already exists|conflict)\b[^"']*["'])|(?:["']NOT_FOUND["']\s*,\s*["'][^"']*\b(?:duplicate|already exists|invalid)\b[^"']*["'])|(?:["']CONFLICT["']\s*,\s*["'][^"']*\b(?:not found|missing|required|invalid syntax)\b[^"']*["'])|(?:["']VALIDATION_ERROR["']\s*,\s*["'][^"']*\b(?:not found|duplicate|already exists)\b[^"']*["']))/iu;
+const RETRYABLE_WITHOUT_METADATA_PATTERN =
+	/\b(?:new\s+AppError|serviceUnavailable)\s*\([\s\S]{0,240}\bretryable\s*:\s*true\b(?![\s\S]{0,240}\bdetails\s*:\s*\{[\s\S]{0,120}\bretryable\s*:\s*true\b)/u;
+const INTERNAL_ERROR_OPERATIONAL_PATTERN =
+	/\bnew\s+AppError\s*\(\s*\{[\s\S]{0,240}\bcode\s*:\s*["']INTERNAL_ERROR["'][\s\S]{0,240}\bisOperational\s*:\s*true\b/u;
+const INFRA_CONFIG_CALLER_ERROR_PATTERN =
+	/\b(?:badRequest|validationError|fail|actionFail)\s*\(\s*(?:(?:["']BAD_REQUEST["']|["']VALIDATION_ERROR["'])\s*,\s*)?["'][^"']*\b(?:DATABASE_URL|UPSTASH|NEON|APP_URL|configuration|environment|env var|credential|secret|token)\b[^"']*["']/iu;
 
 const CATEGORY_LABELS = {
 	canonical: "CANONICAL",
@@ -99,6 +113,13 @@ const CATEGORY_LABELS = {
 	postgresMappingDrift: "INCONSISTENT",
 	httpProjectionDrift: "INCONSISTENT",
 	infrastructureGuessing: "INCONSISTENT",
+	swallowedUnknownCatch: "UNSAFE",
+	unsafeDetailsPassthrough: "UNSAFE",
+	directAppErrorUiExposure: "UNSAFE",
+	inconsistentErrorMapping: "INCONSISTENT",
+	retryableMetadataDrift: "INCONSISTENT",
+	operationalClassificationDrift: "INCONSISTENT",
+	infrastructureClassificationDrift: "INCONSISTENT",
 	review: "REVIEW",
 };
 
@@ -193,6 +214,8 @@ function analyzeSource({ relativePath, content }) {
 		MANUAL_HTTP_ERROR_STATUS_PATTERN.test(content) ||
 		(HTTP_ERROR_BODY_PROJECTION_PATTERN.test(content) &&
 			HARDCODED_ERROR_STATUS_PATTERN.test(content));
+	const hasSwallowedUnknownCatch =
+		isRuntimeBoundary && UNKNOWN_CATCH_SWALLOW_PATTERN.test(content);
 	const hasCanonicalEvidence =
 		NORMALIZER_PATTERN.test(content) ||
 		POSTGRES_MAPPING_PATTERN.test(content) ||
@@ -222,6 +245,7 @@ function analyzeSource({ relativePath, content }) {
 		!hasRawErrorLeak &&
 		!hasManualSerialization &&
 		!hasHttpProjectionDrift &&
+		!hasSwallowedUnknownCatch &&
 		findings.length === 0
 	) {
 		return {
@@ -333,6 +357,72 @@ function analyzeSource({ relativePath, content }) {
 		);
 	}
 
+	if (hasSwallowedUnknownCatch) {
+		addFinding(
+			findings,
+			"swallowedUnknownCatch",
+			relativePath,
+			"unknown catch returns a silent fallback; normalize or map the failure explicitly",
+		);
+	}
+
+	if (isRuntimeBoundary && UNSAFE_DETAILS_PASSTHROUGH_PATTERN.test(content)) {
+		addFinding(
+			findings,
+			"unsafeDetailsPassthrough",
+			relativePath,
+			"raw error object is passed through details; sanitize or map stable details only",
+		);
+	}
+
+	if (
+		relativePath.endsWith(".tsx") &&
+		DIRECT_APP_ERROR_UI_PATTERN.test(content)
+	) {
+		addFinding(
+			findings,
+			"directAppErrorUiExposure",
+			relativePath,
+			"UI components must receive serialized/display-ready error state, not AppError instances",
+		);
+	}
+
+	if (isRuntimeBoundary && INCONSISTENT_ERROR_MAPPING_PATTERN.test(content)) {
+		addFinding(
+			findings,
+			"inconsistentErrorMapping",
+			relativePath,
+			"error code/message pairing looks inconsistent; use NOT_FOUND, CONFLICT, VALIDATION_ERROR, or INTERNAL_ERROR according to failure semantics",
+		);
+	}
+
+	if (isRuntimeBoundary && RETRYABLE_WITHOUT_METADATA_PATTERN.test(content)) {
+		addFinding(
+			findings,
+			"retryableMetadataDrift",
+			relativePath,
+			"retryable failure must preserve retryable metadata in safe details",
+		);
+	}
+
+	if (isRuntimeBoundary && INTERNAL_ERROR_OPERATIONAL_PATTERN.test(content)) {
+		addFinding(
+			findings,
+			"operationalClassificationDrift",
+			relativePath,
+			"internal defects must not be marked operational",
+		);
+	}
+
+	if (isRuntimeBoundary && INFRA_CONFIG_CALLER_ERROR_PATTERN.test(content)) {
+		addFinding(
+			findings,
+			"infrastructureClassificationDrift",
+			relativePath,
+			"infrastructure configuration failures must not be classified as caller errors",
+		);
+	}
+
 	if (findings.length === 0 && !hasCanonicalEvidence) {
 		addFinding(
 			findings,
@@ -374,6 +464,13 @@ function groupFindings(reports) {
 		postgresMappingDrift: [],
 		httpProjectionDrift: [],
 		infrastructureGuessing: [],
+		swallowedUnknownCatch: [],
+		unsafeDetailsPassthrough: [],
+		directAppErrorUiExposure: [],
+		inconsistentErrorMapping: [],
+		retryableMetadataDrift: [],
+		operationalClassificationDrift: [],
+		infrastructureClassificationDrift: [],
 		review: [],
 	};
 
@@ -404,6 +501,27 @@ function groupFindings(reports) {
 				case "infrastructureGuessing":
 					grouped.infrastructureGuessing.push(finding);
 					break;
+				case "swallowedUnknownCatch":
+					grouped.swallowedUnknownCatch.push(finding);
+					break;
+				case "unsafeDetailsPassthrough":
+					grouped.unsafeDetailsPassthrough.push(finding);
+					break;
+				case "directAppErrorUiExposure":
+					grouped.directAppErrorUiExposure.push(finding);
+					break;
+				case "inconsistentErrorMapping":
+					grouped.inconsistentErrorMapping.push(finding);
+					break;
+				case "retryableMetadataDrift":
+					grouped.retryableMetadataDrift.push(finding);
+					break;
+				case "operationalClassificationDrift":
+					grouped.operationalClassificationDrift.push(finding);
+					break;
+				case "infrastructureClassificationDrift":
+					grouped.infrastructureClassificationDrift.push(finding);
+					break;
 				case "review":
 					grouped.review.push(finding);
 					break;
@@ -430,7 +548,14 @@ export function buildErrorsNormalizationReport({
 		grouped.duplicateHelpers.length +
 		grouped.postgresMappingDrift.length +
 		grouped.httpProjectionDrift.length +
-		grouped.infrastructureGuessing.length;
+		grouped.infrastructureGuessing.length +
+		grouped.swallowedUnknownCatch.length +
+		grouped.unsafeDetailsPassthrough.length +
+		grouped.directAppErrorUiExposure.length +
+		grouped.inconsistentErrorMapping.length +
+		grouped.retryableMetadataDrift.length +
+		grouped.operationalClassificationDrift.length +
+		grouped.infrastructureClassificationDrift.length;
 	const strictFailure = strict && grouped.review.length > 0;
 	const status = unsafeCount > 0 || strictFailure ? "fail" : "ok";
 
@@ -449,6 +574,15 @@ export function buildErrorsNormalizationReport({
 			postgresMappingDrift: grouped.postgresMappingDrift.length,
 			httpProjectionDrift: grouped.httpProjectionDrift.length,
 			infrastructureGuessing: grouped.infrastructureGuessing.length,
+			swallowedUnknownCatch: grouped.swallowedUnknownCatch.length,
+			unsafeDetailsPassthrough: grouped.unsafeDetailsPassthrough.length,
+			directAppErrorUiExposure: grouped.directAppErrorUiExposure.length,
+			inconsistentErrorMapping: grouped.inconsistentErrorMapping.length,
+			retryableMetadataDrift: grouped.retryableMetadataDrift.length,
+			operationalClassificationDrift:
+				grouped.operationalClassificationDrift.length,
+			infrastructureClassificationDrift:
+				grouped.infrastructureClassificationDrift.length,
 			review: grouped.review.length,
 			strictFailure,
 		},
@@ -508,6 +642,41 @@ export function formatHumanReport(report) {
 		lines,
 		"INCONSISTENT infrastructure-guessing",
 		report.infrastructureGuessing,
+	);
+	appendFindings(
+		lines,
+		"UNSAFE swallowed-unknown-catch",
+		report.swallowedUnknownCatch,
+	);
+	appendFindings(
+		lines,
+		"UNSAFE unsafe-details-passthrough",
+		report.unsafeDetailsPassthrough,
+	);
+	appendFindings(
+		lines,
+		"UNSAFE direct-app-error-ui-exposure",
+		report.directAppErrorUiExposure,
+	);
+	appendFindings(
+		lines,
+		"INCONSISTENT error-mapping",
+		report.inconsistentErrorMapping,
+	);
+	appendFindings(
+		lines,
+		"INCONSISTENT retryable-metadata",
+		report.retryableMetadataDrift,
+	);
+	appendFindings(
+		lines,
+		"INCONSISTENT operational-classification",
+		report.operationalClassificationDrift,
+	);
+	appendFindings(
+		lines,
+		"INCONSISTENT infrastructure-classification",
+		report.infrastructureClassificationDrift,
 	);
 	appendFindings(lines, "REVIEW", report.review);
 	lines.push(

@@ -1,3 +1,9 @@
+/**
+ * @afenda/env
+ * Contract: ENV-WEB
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
@@ -51,6 +57,11 @@ const skipValidation =
 /** True for Vercel development, preview, and production runtimes. */
 export function isVercelRuntimeNow(): boolean {
 	return isVercelRuntime(runtimeCtx);
+}
+
+/** True when the current process is a production deployment. */
+export function isProductionDeploymentNow(): boolean {
+	return productionDeployment;
 }
 
 /**

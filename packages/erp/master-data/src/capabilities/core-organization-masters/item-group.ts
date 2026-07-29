@@ -308,7 +308,7 @@ export async function resolveItemGroupPath(
 		if (current.data === null) {
 			return path.length === 0
 				? ok(null)
-				: fail("CONFLICT", "Item group parent is missing", {
+				: fail("NOT_FOUND", "Item group parent is missing", {
 						reason: "MASTER_CROSS_ORG_REFERENCE",
 					} satisfies MasterFailureDetails);
 		}

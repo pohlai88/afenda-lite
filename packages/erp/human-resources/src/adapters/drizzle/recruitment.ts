@@ -3694,10 +3694,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			});
 			if (!application.ok) return application;
 			if (application.data === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Application for accepted offer not found",
-				);
+				return fail("NOT_FOUND", "Application for accepted offer not found");
 			}
 			const acceptedAt =
 				mappedOffer.data.respondedAt ?? mappedOffer.data.updatedAt;

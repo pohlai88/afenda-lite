@@ -100,7 +100,7 @@ export function buildPoConsumptionGuard(
 	for (const line of lines) {
 		if (line.purchaseOrderLineId === null) {
 			return fail(
-				"CONFLICT",
+				"VALIDATION_ERROR",
 				"Purchase order line id is required on purchase_order receipt lines",
 			);
 		}

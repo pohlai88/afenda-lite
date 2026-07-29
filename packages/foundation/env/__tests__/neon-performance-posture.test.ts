@@ -1,3 +1,9 @@
+/**
+ * @afenda/env
+ * Contract: ENV-NEON-PERFORMANCE-TESTS
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
 import { describe, expect, it } from "vitest";
 
 import { APPROVED_NEON_BRANCH_ID } from "../src/neon-contract";

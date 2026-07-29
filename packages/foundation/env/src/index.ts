@@ -1,3 +1,9 @@
+/**
+ * @afenda/env
+ * Contract: ENV-EXPORTS
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
 export {
 	APPROVED_APP_HOSTS,
 	APPROVED_NEON_BRANCH_ID,
@@ -76,4 +82,4 @@ export {
 	TARGET_SNAPSHOT_HOUR_UTC,
 	TARGET_SNAPSHOT_RETAIN_DAYS,
 } from "./neon-recovery-posture";
-export { env, isVercelRuntimeNow } from "./web";
+export { env, isProductionDeploymentNow, isVercelRuntimeNow } from "./web";

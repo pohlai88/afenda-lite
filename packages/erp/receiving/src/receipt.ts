@@ -327,7 +327,7 @@ export async function postGoodsReceipt(
 	if (receipt.data.sourceType === "purchase_order") {
 		if (receipt.data.sourceId === null) {
 			return fail(
-				"CONFLICT",
+				"VALIDATION_ERROR",
 				"Purchase order source id is required to post purchase_order receipts",
 			);
 		}
@@ -594,8 +594,8 @@ export async function reverseGoodsReceipt(
 			actorUserId: parsed.data.actorUserId,
 		});
 		return fail(
-			"CONFLICT",
-			"Goods receipt reversed but inventory movement was not found",
+			"INTERNAL_ERROR",
+			"Goods receipt reversed but inventory movement is missing",
 		);
 	}
 

@@ -84,7 +84,7 @@ export async function setCompanyLegalForm(
 	if (!sourceDocument.ok) return sourceDocument;
 	if (sourceDocument.data === null) {
 		return fail(
-			"VALIDATION_ERROR",
+			"NOT_FOUND",
 			"Corporate Administration source document was not found.",
 			corporateAdministrationErrorDetails(
 				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",

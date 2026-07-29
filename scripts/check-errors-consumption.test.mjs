@@ -240,3 +240,74 @@ test("fails forbidden direct errors imports in schema hosts", () => {
 		rmSync(root, { recursive: true, force: true });
 	}
 });
+
+test("fails unpublished @afenda/errors subpath imports", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"packages/erp/orders/src/index.ts",
+			'import { normalizeUnknown } from "@afenda/errors/core/normalize";\n',
+		);
+
+		const result = runCheck(root);
+
+		assert.equal(result.status, 1);
+		assert.match(
+			result.output,
+			/unpublished @afenda\/errors subpath import: @afenda\/errors\/core\/normalize/u,
+		);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("allows published @afenda/errors subpath imports", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"packages/erp/orders/src/index.ts",
+			[
+				'import type { Result } from "@afenda/errors/result";',
+				'import { httpErrorBody } from "@afenda/errors/http";',
+				'import { badRequest } from "@afenda/errors/common";',
+				'import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";',
+				"export const value: Result<string> = { ok: true, data: String(httpErrorBody) + String(badRequest) + String(fromPostgresUnknown) };",
+			].join("\n"),
+		);
+
+		const result = runCheck(root);
+
+		assert.equal(result.status, 0);
+		assert.match(result.output, /check-errors-consumption: ok/u);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("fails stale errors documentation patterns", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"docs-V2/api/errors.md",
+			[
+				"Import `asErrorCode` from `@afenda/errors/core/codes`.",
+				"At public service boundary, throw new Error when the operation fails.",
+				"Return `Response.json(error)` from a route handler.",
+			].join("\n"),
+		);
+
+		const result = runCheck(root);
+
+		assert.equal(result.status, 1);
+		assert.match(result.output, /STALE_DOCUMENTATION/u);
+		assert.match(result.output, /stale error brand or conversion helper/u);
+		assert.match(result.output, /obsolete internal @afenda\/errors import/u);
+		assert.match(result.output, /direct public serialization of raw error/u);
+		assert.match(result.output, /throwing raw Error across/u);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});

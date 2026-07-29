@@ -1,4 +1,4 @@
-import { env, isProductionDeployment } from "@afenda/env";
+import { env, isProductionDeploymentNow } from "@afenda/env";
 import {
 	type AppError,
 	forbidden,
@@ -89,10 +89,7 @@ function firstHeaderValue(value: string | null): string | undefined {
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
 
 function isVercelProductionRuntime(): boolean {
-	return isProductionDeployment({
-		nodeEnv: process.env.NODE_ENV,
-		vercelEnv: process.env.VERCEL_ENV,
-	});
+	return isProductionDeploymentNow();
 }
 
 function isLoopbackHostname(hostname: string): boolean {

@@ -1,4 +1,8 @@
 /**
+ * @afenda/env
+ * Contract: ENV-NEON-RECOVERY
+ * Protected: changes require local pre-edit token and compatibility checks.
+ *
  * Neon recovery posture targets and read-only API evaluation (N3).
  *
  * Living authority: RB-001 · ARCH-025 · ARCH-023.

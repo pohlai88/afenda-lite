@@ -31,7 +31,11 @@ import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
 
 Factories also re-export from `@afenda/errors/common` (same symbols as the root barrel).
 
-**Living consumers:** `@afenda/admin` (`Result` / `ok` / `fail` / `failFromUnknown`); `apps/web` re-exports codes/HTTP for Zod OpenAPI and sets `Retry-After` from `retryAfterSeconds` when `details.retryAfter` is a positive integer.
+**Living consumers:** every mandatory consumer is reported by
+`pnpm run check:errors-adoption -- --strict`. Current adopted methods include
+`Result<T>` boundaries, normalized catches, explicit PostgreSQL adapter mapping,
+shared persistence mappers, HTTP projection, and AppError factories. Do not
+maintain a hand-written consumer list in this README.
 
 ## Maintain
 

@@ -242,10 +242,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					});
 					if (!item.ok) return item;
 					if (item.data === null) {
-						return fail(
-							"INTERNAL_ERROR",
-							"Claimed reliability work was not found",
-						);
+						return fail("NOT_FOUND", "Claimed reliability work was not found");
 					}
 					items.push(item.data);
 				}

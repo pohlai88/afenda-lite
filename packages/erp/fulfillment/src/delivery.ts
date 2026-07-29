@@ -264,7 +264,7 @@ export async function addDeliveryLine(
 		}
 		if (!parsed.data.salesOrderLineId) {
 			return fail(
-				"CONFLICT",
+				"VALIDATION_ERROR",
 				"Sales order line ID is required when delivery is linked to a sales order",
 			);
 		}

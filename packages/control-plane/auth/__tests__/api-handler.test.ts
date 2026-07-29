@@ -8,6 +8,10 @@ const rateLimitMocks = vi.hoisted(() => ({
 	checkRateLimit: vi.fn(),
 }));
 
+const envMocks = vi.hoisted(() => ({
+	isProductionDeploymentNow: vi.fn(() => false),
+}));
+
 vi.mock("@neondatabase/auth/next/server", () => ({
 	createNeonAuth: () => ({
 		getSession: vi.fn(),
@@ -26,8 +30,7 @@ vi.mock("@afenda/env", () => ({
 		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
 		APP_URL: "https://www.nexuscanon.com",
 	},
-	isProductionDeployment: (ctx?: { nodeEnv?: string; vercelEnv?: string }) =>
-		ctx?.vercelEnv === "production",
+	isProductionDeploymentNow: envMocks.isProductionDeploymentNow,
 }));
 
 vi.mock("@afenda/rate-limit", async () => {
@@ -70,6 +73,7 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 			GET: handlerGet,
 			POST: handlerPost,
 		});
+		envMocks.isProductionDeploymentNow.mockReturnValue(false);
 	});
 
 	it("exports only GET and POST package-sourced wrappers", async () => {
@@ -158,7 +162,6 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 
 	it("allows POST from loopback Origin when not Vercel production", async () => {
 		handlerPost.mockResolvedValue(new Response(null, { status: 204 }));
-		vi.stubEnv("VERCEL_ENV", "");
 
 		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { POST } = createAuthApiHandlers();
@@ -169,11 +172,10 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 
 		expect(handlerPost).toHaveBeenCalledTimes(1);
 		expect(response.status).toBe(204);
-		vi.unstubAllEnvs();
 	});
 
 	it("rejects POST from loopback Origin on Vercel production", async () => {
-		vi.stubEnv("VERCEL_ENV", "production");
+		envMocks.isProductionDeploymentNow.mockReturnValue(true);
 
 		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
 			"../src/api-handler"
@@ -189,7 +191,6 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 
 		expect(handlerPost).not.toHaveBeenCalled();
 		expect(response.status).toBe(403);
-		vi.unstubAllEnvs();
 	});
 
 	it("allows POST without Origin when Host matches APP_URL", async () => {

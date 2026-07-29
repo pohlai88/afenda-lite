@@ -12,7 +12,7 @@ vi.mock("@afenda/env", () => ({
 		UPSTASH_REDIS_REST_URL: undefined,
 		UPSTASH_REDIS_REST_TOKEN: undefined,
 	},
-	isProductionDeployment: vi.fn(() => false),
+	isProductionDeploymentNow: vi.fn(() => false),
 }));
 
 describe("resolveCacheBackend", () => {
@@ -22,8 +22,8 @@ describe("resolveCacheBackend", () => {
 	});
 
 	it("uses L1-only when non-production and Upstash keys are missing", async () => {
-		const { isProductionDeployment } = await import("@afenda/env");
-		vi.mocked(isProductionDeployment).mockReturnValue(false);
+		const { isProductionDeploymentNow } = await import("@afenda/env");
+		vi.mocked(isProductionDeploymentNow).mockReturnValue(false);
 		resetResolvedCacheBackend();
 
 		const backend = resolveCacheBackend();
@@ -37,8 +37,8 @@ describe("resolveCacheBackend", () => {
 	});
 
 	it("fails closed when production has no Upstash keys", async () => {
-		const { isProductionDeployment } = await import("@afenda/env");
-		vi.mocked(isProductionDeployment).mockReturnValue(true);
+		const { isProductionDeploymentNow } = await import("@afenda/env");
+		vi.mocked(isProductionDeploymentNow).mockReturnValue(true);
 		resetResolvedCacheBackend();
 
 		const backend = resolveCacheBackend();
@@ -61,8 +61,8 @@ describe("resolveCacheBackend", () => {
 	});
 
 	it("allows explicit L1 inject without process resolve", async () => {
-		const { isProductionDeployment } = await import("@afenda/env");
-		vi.mocked(isProductionDeployment).mockReturnValue(true);
+		const { isProductionDeploymentNow } = await import("@afenda/env");
+		vi.mocked(isProductionDeploymentNow).mockReturnValue(true);
 		resetResolvedCacheBackend();
 
 		const cache = createCacheManager({ backend: "l1" });
@@ -72,15 +72,15 @@ describe("resolveCacheBackend", () => {
 	});
 
 	it("applies TTL overrides without bypassing fail-closed production", async () => {
-		const { isProductionDeployment } = await import("@afenda/env");
-		vi.mocked(isProductionDeployment).mockReturnValue(true);
+		const { isProductionDeploymentNow } = await import("@afenda/env");
+		vi.mocked(isProductionDeploymentNow).mockReturnValue(true);
 		resetResolvedCacheBackend();
 
 		expect(() => createCacheManager({ defaultTTL: 60 })).toThrowError(
 			expect.objectContaining({ code: "SERVICE_UNAVAILABLE" }),
 		);
 
-		vi.mocked(isProductionDeployment).mockReturnValue(false);
+		vi.mocked(isProductionDeploymentNow).mockReturnValue(false);
 		resetResolvedCacheBackend();
 		const cache = createCacheManager({ defaultTTL: 60, backend: "l1" });
 		await cache.set("k", "v");

@@ -1,3 +1,9 @@
+/**
+ * @afenda/env
+ * Contract: ENV-NEON-PRODUCT
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
 import { z } from "zod";
 
 /**

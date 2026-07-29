@@ -1,4 +1,8 @@
 /**
+ * @afenda/env
+ * Contract: ENV-NEON-PERFORMANCE
+ * Protected: changes require local pre-edit token and compatibility checks.
+ *
  * Neon DB performance posture targets and read-only API evaluation (N4).
  *
  * Living authority: ARCH-023 · RB-001 · ARCH-025.

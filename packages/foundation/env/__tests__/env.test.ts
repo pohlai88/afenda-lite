@@ -1,3 +1,9 @@
+/**
+ * @afenda/env
+ * Contract: ENV-TESTS
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -585,6 +591,16 @@ describe("@afenda/env createEnv export", () => {
 		expect(
 			barrel.scheduledSnapshotNameTimestamp("snapshot_2026-07-16T17:00:05Z"),
 		).toBe(Date.parse("2026-07-16T17:00:05Z"));
+	});
+
+	it("exports the current production deployment helper through the package barrel", async () => {
+		setValidProductionWebEnv();
+		process.env.NODE_ENV = "production";
+		delete process.env.VERCEL_ENV;
+
+		const barrel = await import("../src/index");
+
+		expect(barrel.isProductionDeploymentNow()).toBe(true);
 	});
 
 	it("does not evaluate docs environment from the product barrel", async () => {

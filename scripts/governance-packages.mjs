@@ -45,9 +45,13 @@ async function main() {
 		"governance:packages — validate:modules (catalog · edges · DAG · sole-mutator)",
 	);
 	await run("pnpm", ["validate:modules"]);
+	console.log(
+		"governance:packages — check:env-consumers (runtime env authority)",
+	);
+	await run("pnpm", ["check:env-consumers"]);
 	console.log("governance:packages OK");
 	console.log(
-		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests).",
+		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests) + check:env-consumers (runtime env authority).",
 	);
 	console.log(
 		"Also required for production eligibility: pnpm exec turbo run typecheck test",

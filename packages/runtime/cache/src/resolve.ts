@@ -1,4 +1,4 @@
-import { env, isProductionDeployment } from "@afenda/env";
+import { env, isProductionDeploymentNow } from "@afenda/env";
 import { Redis } from "@upstash/redis";
 
 import { CacheManager } from "./cache-manager";
@@ -37,9 +37,7 @@ function redisFromCredentials(credentials: {
 }
 
 function isProductionWithoutUpstash(): boolean {
-	return isProductionDeployment({
-		vercelEnv: process.env.VERCEL_ENV,
-	});
+	return isProductionDeploymentNow();
 }
 
 function pickConfig(

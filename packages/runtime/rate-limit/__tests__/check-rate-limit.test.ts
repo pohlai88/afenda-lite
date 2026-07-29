@@ -9,7 +9,7 @@ import {
 import { toRateLimitAppError } from "../src/to-app-error";
 
 const envMocks = vi.hoisted(() => ({
-	isProductionDeployment: vi.fn(() => false),
+	isProductionDeploymentNow: vi.fn(() => false),
 	env: {
 		UPSTASH_REDIS_REST_URL: undefined as string | undefined,
 		UPSTASH_REDIS_REST_TOKEN: undefined as string | undefined,
@@ -18,15 +18,14 @@ const envMocks = vi.hoisted(() => ({
 
 vi.mock("@afenda/env", () => ({
 	env: envMocks.env,
-	isProductionDeployment: (ctx?: unknown) =>
-		envMocks.isProductionDeployment(ctx),
+	isProductionDeploymentNow: () => envMocks.isProductionDeploymentNow(),
 }));
 
 describe("checkRateLimit (memory store)", () => {
 	afterEach(() => {
 		resetResolvedRateLimitBackend();
 		vi.unstubAllEnvs();
-		envMocks.isProductionDeployment.mockReturnValue(false);
+		envMocks.isProductionDeploymentNow.mockReturnValue(false);
 		envMocks.env.UPSTASH_REDIS_REST_URL = undefined;
 		envMocks.env.UPSTASH_REDIS_REST_TOKEN = undefined;
 	});
@@ -100,7 +99,7 @@ describe("checkRateLimit (memory store)", () => {
 	});
 
 	it("fails closed when production has no Upstash keys", async () => {
-		envMocks.isProductionDeployment.mockReturnValue(true);
+		envMocks.isProductionDeploymentNow.mockReturnValue(true);
 		resetResolvedRateLimitBackend();
 
 		const backend = resolveRateLimitBackend();
@@ -121,7 +120,7 @@ describe("checkRateLimit (memory store)", () => {
 	});
 
 	it("falls back to memory when the resolved store throws outside production", async () => {
-		envMocks.isProductionDeployment.mockReturnValue(false);
+		envMocks.isProductionDeploymentNow.mockReturnValue(false);
 		resetResolvedRateLimitBackend();
 
 		const backend = resolveRateLimitBackend();
@@ -142,7 +141,7 @@ describe("checkRateLimit (memory store)", () => {
 	});
 
 	it("fails closed when the resolved store throws in production", async () => {
-		envMocks.isProductionDeployment.mockReturnValue(true);
+		envMocks.isProductionDeploymentNow.mockReturnValue(true);
 		envMocks.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
 		envMocks.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
 		resetResolvedRateLimitBackend();

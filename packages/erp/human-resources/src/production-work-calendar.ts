@@ -123,7 +123,7 @@ async function resolveContext(
 	}
 	if (resolved.data.timezone.trim().length === 0) {
 		return fail(
-			"CONFLICT",
+			"VALIDATION_ERROR",
 			"Work calendar timezone is missing.",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
 		);

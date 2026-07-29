@@ -1232,7 +1232,7 @@ export class MemoryInventoryStore implements InventoryStore {
 	): Result<{ effects: BalanceEffect[]; consumedQuantity: number }> {
 		if (movement.warehouseId === null || movement.warehouseCode === null) {
 			return fail(
-				"CONFLICT",
+				"INTERNAL_ERROR",
 				"Issue movement missing warehouse for reservation consumption",
 				inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
 			);

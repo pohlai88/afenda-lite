@@ -1,4 +1,4 @@
-import { env, isProductionDeployment } from "@afenda/env";
+import { env, isProductionDeploymentNow } from "@afenda/env";
 
 import { createMemoryRateLimitStore } from "./memory-store";
 import type { RateLimitStore } from "./types";
@@ -51,11 +51,7 @@ export function resolveRateLimitBackend(): ResolvedBackend {
 		return cached;
 	}
 
-	if (
-		isProductionDeployment({
-			vercelEnv: process.env.VERCEL_ENV,
-		})
-	) {
+	if (isProductionDeploymentNow()) {
 		cached = { kind: "unavailable", service: "upstash_redis" };
 		return cached;
 	}

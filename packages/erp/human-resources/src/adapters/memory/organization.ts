@@ -378,7 +378,7 @@ export function createMemoryOrganizationMethods(
 			);
 			if (openSegment === null) {
 				return fail(
-					"CONFLICT",
+					"INTERNAL_ERROR",
 					"Department structure lineage is missing an open segment",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
@@ -786,7 +786,7 @@ export function createMemoryOrganizationMethods(
 			);
 			if (openSegment === null) {
 				return fail(
-					"CONFLICT",
+					"INTERNAL_ERROR",
 					"Job definition lineage is missing an open segment",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
@@ -1185,7 +1185,7 @@ export function createMemoryOrganizationMethods(
 			);
 			if (openSegment === null) {
 				return fail(
-					"CONFLICT",
+					"INTERNAL_ERROR",
 					"Position definition lineage is missing an open segment",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);

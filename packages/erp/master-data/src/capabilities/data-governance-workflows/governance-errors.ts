@@ -205,7 +205,7 @@ export function governanceRequestNotApproved(input: {
 	currentStatus: string;
 	entityId?: string;
 }): Result<never> {
-	return fail("CONFLICT", "Approved governance request is required", {
+	return fail("VALIDATION_ERROR", "Approved governance request is required", {
 		reason: "MASTER_CHANGE_REQUEST_INVALID",
 		governanceCode: "MASTER_DATA_GOVERNANCE_REQUEST_NOT_APPROVED",
 		operation: input.operation,

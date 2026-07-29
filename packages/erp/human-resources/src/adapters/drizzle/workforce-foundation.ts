@@ -945,7 +945,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				);
 				if (openSegment === undefined) {
 					return fail(
-						"CONFLICT",
+						"INTERNAL_ERROR",
 						"Person identity lineage is missing an open segment",
 						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 					);
@@ -2171,7 +2171,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			);
 			if (openSegment === undefined) {
 				return fail(
-					"CONFLICT",
+					"INTERNAL_ERROR",
 					"Worker classification lineage is missing an open segment",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);
@@ -2348,7 +2348,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			);
 			if (openSegment === undefined) {
 				return fail(
-					"CONFLICT",
+					"INTERNAL_ERROR",
 					"Worker classification lineage is missing an open segment",
 					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
 				);

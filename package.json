@@ -41,6 +41,8 @@
 		"test:errors-adoption": "node --test scripts/check-errors-adoption.test.mjs",
 		"check:errors-normalization": "node scripts/check-errors-normalization.mjs",
 		"test:errors-normalization": "node --test scripts/check-errors-normalization.test.mjs",
+		"check:env-consumers": "node scripts/check-env-consumers.mjs",
+		"test:env-consumers": "node --test scripts/check-env-consumers.test.mjs",
 		"check:tsconfig-no-baseurl": "node scripts/check-tsconfig-no-baseurl.mjs",
 		"check:editor-biome": "node scripts/check-editor-biome.mjs",
 		"check:ui-system": "pnpm --filter @afenda/ui-system lint && pnpm --filter @afenda/ui-system typecheck && pnpm --filter @afenda/ui-system metadata:check && pnpm --filter @afenda/ui-system test && pnpm --filter @afenda/web exec vitest run --config ../../testing/vitest.unit.config.ts --project web tailwind-emit && pnpm --filter @afenda/web typecheck",

@@ -53,7 +53,11 @@ import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
 
 Factories also re-export from `@afenda/errors/common` (same symbols as the root barrel).
 
-**Living consumers:** `@afenda/admin` (`Result` / `ok` / `fail` / `failFromUnknown`); `apps/web` re-exports codes/HTTP for Zod OpenAPI and sets `Retry-After` from `retryAfterSeconds` when `details.retryAfter` is a positive integer.
+**Living consumers:** every mandatory consumer is reported by
+`pnpm run check:errors-adoption -- --strict`. Current adopted methods include
+`Result<T>` boundaries, normalized catches, explicit PostgreSQL adapter mapping,
+shared persistence mappers, HTTP projection, and AppError factories. Do not
+maintain a hand-written consumer list in this README.
 
 ## Maintain
 
@@ -242,19 +246,26 @@ pnpm run check:errors-normalization -- --strict
 ```
 
 Non-strict mode fails confirmed unsafe drift. Strict mode additionally fails
-unresolved review findings. The checker reports:
+unresolved review findings. Every audit finding is classified with this
+repository vocabulary:
 
 ```text
-canonical
-partial
-manual-result-construction
-manual-serialization
-raw-error-leak
-duplicate-helper
-postgres-mapping-drift
-http-projection-drift
-review
+CANONICAL
+DOMAIN_LOCAL_ALLOWED
+COMPATIBILITY_ADAPTER
+EXEMPT
+DEAD
+DUPLICATE
+UNSAFE
+INCONSISTENT
+STALE_DOCUMENTATION
+REVIEW
 ```
+
+Only `CANONICAL`, `DOMAIN_LOCAL_ALLOWED`, `COMPATIBILITY_ADAPTER`, and
+documented `EXEMPT` classifications may remain at closure. `DUPLICATE`,
+`UNSAFE`, `INCONSISTENT`, `STALE_DOCUMENTATION`, `DEAD`, and unresolved
+`REVIEW` findings require cleanup, migration, or an explicit exemption.
 
 ## Exports
 

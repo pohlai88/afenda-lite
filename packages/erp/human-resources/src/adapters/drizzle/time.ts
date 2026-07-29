@@ -4358,7 +4358,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return conflict("Source reference already used with different data");
 			}
 			if (isPostgresForeignKeyViolation(error)) {
-				return fail("VALIDATION_ERROR", "Employee not found in organization");
+				return fail("NOT_FOUND", "Employee not found in organization");
 			}
 			return mapPersistenceFailure(error, "Failed to record attendance event");
 		}
