@@ -5,7 +5,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { fromPostgresUnknown } from "../src/adapters/postgres";
+import {
+	fromPostgresUnknown,
+	hasPostgresSqlState,
+	postgresSqlState,
+} from "../src/adapters/postgres";
 import { serializeAppError } from "../src/core/serialize";
 
 describe("fromPostgresUnknown", () => {
@@ -137,5 +141,13 @@ describe("fromPostgresUnknown", () => {
 	it("returns undefined when not a SQLSTATE shape", () => {
 		expect(fromPostgresUnknown(new Error("boom"))).toBeUndefined();
 		expect(fromPostgresUnknown({ code: "ENOENT" })).toBeUndefined();
+	});
+
+	it("exposes safe SQLSTATE discovery for boundary translators", () => {
+		expect(postgresSqlState({ sqlState: "40p01" })).toBe("40P01");
+		expect(postgresSqlState({ cause: { code: "23505" } })).toBe("23505");
+		expect(hasPostgresSqlState({ sqlstate: "23505" }, "23505")).toBe(true);
+		expect(hasPostgresSqlState({ sqlstate: "23505" }, "bad")).toBe(false);
+		expect(hasPostgresSqlState({ sqlstate: "23505" }, "40001")).toBe(false);
 	});
 });

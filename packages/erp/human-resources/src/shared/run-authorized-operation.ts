@@ -1,3 +1,4 @@
+import { normalizeUnknown } from "@afenda/errors";
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
@@ -143,7 +144,15 @@ function removeDeniedFields(
 			Reflect.deleteProperty(value, field);
 			continue;
 		}
-		removeDeniedFields(Reflect.get(value, field), deniedFields);
+		removeDeniedFields(readProperty(value, field), deniedFields);
+	}
+}
+
+function readProperty(value: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(value, key);
+	} catch {
+		return undefined;
 	}
 }
 
@@ -260,7 +269,7 @@ export async function runAuthorizedHumanResourcesOperation<
 			outcome: "failure",
 			failureReason: "unknown",
 		});
-		throw error;
+		throw normalizeUnknown(error, "Human Resources operation failed");
 	}
 }
 

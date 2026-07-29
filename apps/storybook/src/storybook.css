@@ -29,14 +29,6 @@
 	samp {
 		font-family: "Geist Mono Variable", ui-monospace, monospace;
 	}
-
-	[data-visual-test="true"] *,
-	[data-visual-test="true"] *::before,
-	[data-visual-test="true"] *::after {
-		animation-duration: 0ms;
-		caret-color: transparent;
-		transition-duration: 0ms;
-	}
 }
 
 /* Storybook generates these Docs blocks outside Afenda's component classes.

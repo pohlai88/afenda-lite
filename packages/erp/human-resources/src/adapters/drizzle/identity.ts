@@ -13,6 +13,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesEmployeeId } from "../../brands";
 import type { HumanResourcesEmployeeIdentity } from "../../identity-resolver";
+import { mapPersistenceFailure } from "../../shared/persistence-errors";
 import type { HumanResourcesIdentityStore } from "../../store/identity";
 
 export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
@@ -60,9 +61,10 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 				effectiveUntil: mapping.effectiveUntil,
 			});
 		} catch (error) {
-			return fail("INTERNAL_ERROR", "Failed to get user employee mapping", {
-				cause: error,
-			});
+			return mapPersistenceFailure(
+				error,
+				"Failed to get user employee mapping",
+			);
 		}
 	},
 
@@ -110,10 +112,9 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 			);
 			return ok(employeeIds);
 		} catch (error) {
-			return fail(
-				"INTERNAL_ERROR",
+			return mapPersistenceFailure(
+				error,
 				"Failed to get manager employees for user",
-				{ cause: error },
 			);
 		}
 	},
@@ -148,9 +149,10 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 
 			return ok({ id: created.id });
 		} catch (error) {
-			return fail("INTERNAL_ERROR", "Failed to create user employee mapping", {
-				cause: error,
-			});
+			return mapPersistenceFailure(
+				error,
+				"Failed to create user employee mapping",
+			);
 		}
 	},
 };

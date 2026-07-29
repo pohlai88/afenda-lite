@@ -23,9 +23,48 @@ Use the smallest reliable verification lane that covers the changed surface. Do 
    - editor/formatter posture -> `pnpm check:editor-biome`
 5. Treat root `pnpm test`, `pnpm check`, `pnpm build:check`, and broad Turbo gates as final CI-parity gates, not local diagnosis.
 
+## Test Execution Policy
+
+```text
+Change scope
+-> smallest relevant gate
+-> targeted package validation
+-> broader command only when justified
+```
+
+- Start with the command tied to the changed artifact, script, package, or spec.
+- Use discovery first when the relevant spec is unclear.
+- For `apps/web`, prefer `pnpm --filter @afenda/web lint`, `pnpm --filter @afenda/web typecheck`, and a targeted Vitest spec or pattern.
+- Do not run the full `@afenda/web` test suite by default for package-governance, checker, script, or narrow UI changes.
+- Do not run monorepo aggregate checks by default unless the changed dependency surface justifies them or the user explicitly asks.
+
 ## Timeout Rule
 
-If a broad root gate times out or fails without a narrow error, stop and report it as not proven. Do not retry with a longer timeout unless the user explicitly asks for that exact command or an operator sets `AFENDA_ALLOW_BROAD_VERIFY=1`.
+Do not use a timeout ladder.
+
+Choose one realistic timeout upfront when a broader command is justified. If a command times out once, stop the retry loop and diagnose: inspect the command scope, narrow to the relevant package/spec/project, and look for collection hangs or open handles.
+
+Do not restart the same broad command with a larger timeout unless the user explicitly approves that exact rerun after the timeout is reported. A silent or hanging test run is a test-health finding, not permission to keep increasing timeouts.
+
+## ERR-NORM Lane
+
+For errors-normalization or errors-governance work, use these gates before broader validation:
+
+```powershell
+pnpm run test:errors-normalization
+pnpm run check:errors-normalization
+pnpm run check:errors-normalization -- --strict
+pnpm run check:errors-consumption
+pnpm run check:errors-adoption -- --strict
+```
+
+Then run only the checks tied to directly touched packages:
+
+```powershell
+pnpm --filter <package> lint
+pnpm --filter <package> typecheck
+pnpm --filter <package> test
+```
 
 ## Command Examples
 
@@ -42,6 +81,7 @@ Affected consumer:
 ```powershell
 pnpm --filter @afenda/web typecheck
 pnpm --filter @afenda/web test -- organization-member-search
+pnpm exec vitest list --config testing/vitest.unit.config.ts --project web
 ```
 
 Architecture/register changes:

@@ -39,6 +39,7 @@ import {
 	deriveWorkforceActuals,
 	selectLatestSuccessionReadiness,
 } from "../../reporting";
+import { mapPersistenceFailure } from "../../shared/persistence-errors";
 import { annualizeCompensation } from "../memory/reporting";
 
 function dateOnly(value: Date): string {
@@ -569,8 +570,11 @@ export function createDrizzleHumanResourcesReportingSource(): HumanResourcesRepo
 					page: input.page,
 					pageSize: input.pageSize,
 				});
-			} catch {
-				return fail("INTERNAL_ERROR", "Human Resources reporting query failed");
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Human Resources reporting query failed",
+				);
 			}
 		},
 	};

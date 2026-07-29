@@ -1,5 +1,10 @@
-import { env } from "@afenda/env";
-import type { AppError } from "@afenda/errors";
+import { env, isProductionDeployment } from "@afenda/env";
+import {
+	type AppError,
+	forbidden,
+	internalError,
+	serializeAppError,
+} from "@afenda/errors";
 import {
 	ERROR_HTTP_STATUS,
 	httpErrorBody,
@@ -84,7 +89,10 @@ function firstHeaderValue(value: string | null): string | undefined {
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
 
 function isVercelProductionRuntime(): boolean {
-	return process.env.VERCEL_ENV === "production";
+	return isProductionDeployment({
+		nodeEnv: process.env.NODE_ENV,
+		vercelEnv: process.env.VERCEL_ENV,
+	});
 }
 
 function isLoopbackHostname(hostname: string): boolean {
@@ -178,9 +186,10 @@ function forbiddenResponse(
 	correlationId: string,
 	startTimeMs: number,
 ): Response {
-	return stampBffResponse(new Response(null, { status: 403 }), {
+	return appErrorResponse({
 		correlationId,
 		startTimeMs,
+		error: forbidden("Forbidden."),
 	});
 }
 
@@ -188,9 +197,10 @@ function safeInternalErrorResponse(
 	correlationId: string,
 	startTimeMs: number,
 ): Response {
-	return stampBffResponse(new Response(null, { status: 500 }), {
+	return appErrorResponse({
 		correlationId,
 		startTimeMs,
+		error: internalError("An unexpected error occurred"),
 	});
 }
 
@@ -200,7 +210,8 @@ function appErrorResponse(input: {
 	error: AppError;
 	quota?: RateLimitQuota;
 }): Response {
-	const retryAfter = retryAfterSeconds(input.error.details);
+	const serialized = serializeAppError(input.error);
+	const retryAfter = retryAfterSeconds(serialized.details);
 	const headers = new Headers({
 		"content-type": "application/json",
 		[AUTH_BFF_CORRELATION_HEADER]: input.correlationId,
@@ -216,10 +227,10 @@ function appErrorResponse(input: {
 	});
 	return new Response(
 		JSON.stringify(
-			httpErrorBody(input.error.code, input.error.message, input.error.details),
+			httpErrorBody(serialized.code, serialized.message, serialized.details),
 		),
 		{
-			status: ERROR_HTTP_STATUS[input.error.code],
+			status: ERROR_HTTP_STATUS[serialized.code],
 			headers,
 		},
 	);

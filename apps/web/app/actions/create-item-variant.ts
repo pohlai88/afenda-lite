@@ -14,6 +14,7 @@ import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
+	type ActionFailure,
 	type ActionResult,
 	actionFail,
 	actionFailInternal,
@@ -44,9 +45,7 @@ type AttributeValueInput =
 
 function parseAttributeValues(
 	formData: FormData,
-):
-	| { ok: true; values: AttributeValueInput[] }
-	| { ok: false; message: string } {
+): { ok: true; values: AttributeValueInput[] } | ActionFailure {
 	const rawIds = formData.getAll("attributeIds");
 	const attributeIds: string[] = [];
 	for (const raw of rawIds) {
@@ -55,15 +54,18 @@ function parseAttributeValues(
 		}
 		const parsedId = attributeIdSchema.safeParse(raw);
 		if (!parsedId.success) {
-			return { ok: false, message: "One or more attribute ids are invalid." };
+			return actionFail(
+				"VALIDATION_ERROR",
+				"One or more attribute ids are invalid.",
+			);
 		}
 		attributeIds.push(parsedId.data);
 	}
 	if (attributeIds.length === 0) {
-		return {
-			ok: false,
-			message: "Select a template with at least one attribute value.",
-		};
+		return actionFail(
+			"VALIDATION_ERROR",
+			"Select a template with at least one attribute value.",
+		);
 	}
 
 	const values: AttributeValueInput[] = [];
@@ -81,26 +83,27 @@ function parseAttributeValues(
 		const hasOption = optionId !== undefined;
 		const hasText = valueText !== undefined;
 		if (hasOption === hasText) {
-			return {
-				ok: false,
-				message:
-					"Each template attribute needs exactly one of option or text value.",
-			};
+			return actionFail(
+				"VALIDATION_ERROR",
+				"Each template attribute needs exactly one of option or text value.",
+			);
 		}
 		if (optionId !== undefined) {
 			const optionParsed = attributeIdSchema.safeParse(optionId);
 			if (!optionParsed.success) {
-				return { ok: false, message: "One or more option ids are invalid." };
+				return actionFail(
+					"VALIDATION_ERROR",
+					"One or more option ids are invalid.",
+				);
 			}
 			values.push({ attributeId, optionId: optionParsed.data });
 			continue;
 		}
 		if (valueText === undefined) {
-			return {
-				ok: false,
-				message:
-					"Each template attribute needs exactly one of option or text value.",
-			};
+			return actionFail(
+				"VALIDATION_ERROR",
+				"Each template attribute needs exactly one of option or text value.",
+			);
 		}
 		values.push({ attributeId, valueText });
 	}
@@ -136,7 +139,7 @@ export async function createItemVariantAction(
 
 	const attributeValues = parseAttributeValues(formData);
 	if (!attributeValues.ok) {
-		return actionFail("VALIDATION_ERROR", attributeValues.message);
+		return attributeValues;
 	}
 
 	const permissionDenied = await forbidUnlessPermission(

@@ -1,5 +1,6 @@
 import { db, sql } from "@afenda/db";
 import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
 
 import {
 	type HealthAggregate,
@@ -54,7 +55,8 @@ async function runBoundedProbe(
 			ok: true,
 			latencyMs: Math.round(performance.now() - started),
 		};
-	} catch {
+	} catch (error) {
+		void fromPostgresUnknown(error);
 		return {
 			ok: false,
 			latencyMs: Math.round(performance.now() - started),

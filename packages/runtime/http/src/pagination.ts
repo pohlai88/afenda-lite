@@ -11,7 +11,15 @@ export type PaginationParams = {
 };
 
 function hasUrlString(input: object): input is { readonly url: string } {
-	return "url" in input && typeof Reflect.get(input, "url") === "string";
+	return "url" in input && typeof readProperty(input, "url") === "string";
+}
+
+function readProperty(input: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(input, key);
+	} catch {
+		return undefined;
+	}
 }
 
 function asSearchParams(input: unknown): URLSearchParams {

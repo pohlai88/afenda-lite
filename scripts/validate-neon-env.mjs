@@ -448,17 +448,17 @@ if (!apiKey?.startsWith("napi_")) {
 						}
 					: null,
 			}));
-			const endpoint = selectBranchReadWriteEndpoint(endpoints, branchId);
-			if (!endpoint) {
+			const selection = selectBranchReadWriteEndpoint(endpoints, branchId);
+			if (!selection.ok) {
 				record(
 					check(
 						"N4 compute autoscaling / suspend",
 						false,
-						`no read_write endpoint for branch ${branchId}`,
+						formatNeonPerformanceIssues(selection.issues),
 					),
 				);
 			} else {
-				const compute = evaluateComputeAutoscaling(endpoint, {
+				const compute = evaluateComputeAutoscaling(selection.endpoint, {
 					expectedBranchId: branchId,
 				});
 				record(
@@ -470,7 +470,7 @@ if (!apiKey?.startsWith("napi_")) {
 							: formatNeonPerformanceIssues(compute.issues),
 					),
 				);
-				const pooledHost = evaluateEndpointPoolerHost(endpoint);
+				const pooledHost = evaluateEndpointPoolerHost(selection.endpoint);
 				record(
 					check(
 						"N4 endpoint pooled host",

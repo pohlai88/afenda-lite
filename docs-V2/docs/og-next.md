@@ -73,7 +73,7 @@ export const metadata: Metadata = {
 
 | Env | Role |
 |-----|------|
-| `DOCS_URL` | Public docs origin (default `http://localhost:3001`) — set https origin on the docs Vercel project |
+| `DOCS_URL` | Public docs origin (default `http://localhost:3001` outside production) — set https origin on the docs Vercel project; production rejects missing, HTTP, or localhost origins |
 | Never | Product `APP_URL` as docs `metadataBase` — [deploying.md](deploying.md) |
 
 ### `generateMetadata`

@@ -1,4 +1,5 @@
 import type { platformRoleAssignment } from "@afenda/db";
+import type { ResultFailure } from "@afenda/errors/result";
 
 import type { AssignOrgRoleCommand } from "@/modules/identity/schemas/assign-org-role";
 
@@ -15,11 +16,7 @@ export type AssignOrgRoleOk = {
 	reactivated: boolean;
 };
 
-export type AssignOrgRoleErr = {
-	ok: false;
-	code: "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST";
-	message: string;
-};
+export type AssignOrgRoleErr = ResultFailure;
 
 export type AssignOrgRoleResult = AssignOrgRoleOk | AssignOrgRoleErr;
 

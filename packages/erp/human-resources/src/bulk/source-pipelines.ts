@@ -126,13 +126,14 @@ type ExecutionContext = {
 };
 
 const retryableCodes = new Set(["INTERNAL_ERROR", "SERVICE_UNAVAILABLE"]);
+const BULK_ROW_COMMAND_FAILED_MESSAGE = "Bulk row command failed";
 
 function mapCommandResult(
 	result: Result<{ id: unknown }>,
 ): BulkRowExecutionResult<BulkCommandOutput> {
 	if (result.ok)
 		return { status: "applied", output: { id: String(result.data.id) } };
-	const issue = { code: result.code, message: result.message };
+	const issue = { code: result.code, message: BULK_ROW_COMMAND_FAILED_MESSAGE };
 	return retryableCodes.has(result.code)
 		? { status: "retryable_failure", issue }
 		: { status: "terminal_failure", issues: [issue] };

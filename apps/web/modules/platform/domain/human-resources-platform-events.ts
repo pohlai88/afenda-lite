@@ -1,4 +1,5 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { AppError } from "@afenda/errors";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	createEventPublisher,
 	type DomainEvent,
@@ -91,11 +92,10 @@ async function persistWorkItems(
 ): Promise<Result<HumanResourcesPersistedWorkItem[]>> {
 	if (facts.workItems.length === 0) return ok([]);
 	if (sink === null) {
-		return {
-			ok: false,
-			code: "SERVICE_UNAVAILABLE",
-			message: "Human Resources platform work-item sink is not composed",
-		};
+		return fail(
+			"SERVICE_UNAVAILABLE",
+			"Human Resources platform work-item sink is not composed",
+		);
 	}
 	const persisted: HumanResourcesPersistedWorkItem[] = [];
 	for (const workItem of facts.workItems) {
@@ -108,12 +108,10 @@ async function persistWorkItems(
 			result.data.organizationId !== workItem.organizationId ||
 			result.data.deduplicationKey !== workItem.deduplicationKey
 		) {
-			return {
-				ok: false,
-				code: "INTERNAL_ERROR",
-				message:
-					"Platform work-item sink returned mismatched persistence evidence",
-			};
+			return fail(
+				"INTERNAL_ERROR",
+				"Platform work-item sink returned mismatched persistence evidence",
+			);
 		}
 		persisted.push(result.data);
 	}
@@ -186,11 +184,10 @@ async function publishPlatformFacts(
 		const result = await publisher.publish(command);
 		if (!result.ok) return result;
 		if (result.data.organizationId !== event.organizationId) {
-			return {
-				ok: false,
-				code: "INTERNAL_ERROR",
-				message: "Platform event publisher returned another tenant",
-			};
+			return fail(
+				"INTERNAL_ERROR",
+				"Platform event publisher returned another tenant",
+			);
 		}
 		published.push(result.data);
 	}
@@ -305,7 +302,11 @@ export function createHumanResourcesPlatformEventHandlers(
 				workItemSink,
 			);
 			if (!result.ok) {
-				throw new Error(result.message);
+				throw new AppError({
+					code: result.code,
+					message: result.message,
+					details: result.details,
+				});
 			}
 		};
 	}

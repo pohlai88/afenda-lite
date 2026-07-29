@@ -230,7 +230,10 @@ export class DrizzleEventStore implements EventStore {
 
 			return mapRows(rows);
 		} catch (error) {
-			return failFromPersistence(error, "Failed to claim pending domain events");
+			return failFromPersistence(
+				error,
+				"Failed to claim pending domain events",
+			);
 		}
 	}
 

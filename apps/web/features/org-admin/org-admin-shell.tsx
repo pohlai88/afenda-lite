@@ -28,6 +28,9 @@ import { listOrganizationUsers } from "@/modules/identity/domain/organization-us
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
 
+const ORG_LIST_UNAVAILABLE_MESSAGE = "Organization list is unavailable.";
+const ORG_USAGE_UNAVAILABLE_MESSAGE = "Organization usage is unavailable.";
+
 function memberLabel(name: string, email: string): string {
 	return `${name} · ${email}`;
 }
@@ -123,7 +126,7 @@ async function loadOrgList(): Promise<OrgListLoadState> {
 		return {
 			status: "unavailable",
 			organizations: [],
-			message: result.message,
+			message: ORG_LIST_UNAVAILABLE_MESSAGE,
 		};
 	}
 	if (result.data.length === 0) {
@@ -146,7 +149,7 @@ async function loadUsage(
 ): Promise<UsageLoadState> {
 	const result = await getOrganizationUsageMetrics({ orgId, period });
 	if (!result.ok) {
-		return { status: "unavailable", message: result.message };
+		return { status: "unavailable", message: ORG_USAGE_UNAVAILABLE_MESSAGE };
 	}
 	return {
 		status: "ready",

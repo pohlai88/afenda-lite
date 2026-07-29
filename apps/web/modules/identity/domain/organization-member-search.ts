@@ -3,7 +3,7 @@
  * Neon Auth remains membership SSOT; index rows are derived.
  */
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { failFromUnknown, ok, type Result } from "@afenda/errors/result";
 import {
 	deleteSearchDocument,
 	listSearchDocumentIds,
@@ -62,11 +62,9 @@ export async function syncOrganizationMemberSearchIndex(
 	try {
 		users = await listOrganizationUsers(orgId);
 	} catch (error) {
-		return fail(
-			"INTERNAL_ERROR",
-			error instanceof Error
-				? error.message
-				: "Failed to list organization users for search sync",
+		return failFromUnknown(
+			error,
+			"Failed to list organization users for search sync",
 		);
 	}
 

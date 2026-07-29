@@ -1,4 +1,8 @@
-import { fail, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	postgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, type Result } from "@afenda/errors/result";
 
 import { corporateAdministrationErrorDetails } from "../../error-codes";
 
@@ -61,7 +65,10 @@ export function translateCorporateAdministrationInfrastructureError(
 	error: unknown,
 ): Result<never> | undefined {
 	const kind = classifyInfrastructureFailure(error);
-	if (kind === undefined) return undefined;
+	if (kind === undefined) {
+		const mapped = fromPostgresUnknown(error);
+		return mapped === undefined ? undefined : failFromAppError(mapped);
+	}
 
 	switch (kind) {
 		case "unique_constraint_conflict":
@@ -139,7 +146,7 @@ export function idempotencyConflictResult(): Result<never> {
 function classifyInfrastructureFailure(
 	error: unknown,
 ): CorporateAdministrationInfrastructureFailureKind | undefined {
-	const sqlState = readSqlState(error);
+	const sqlState = postgresSqlState(error);
 	if (sqlState !== undefined) {
 		if (sqlState === EXCLUSION_CONSTRAINT_SQLSTATE) {
 			return "effective_range_overlap";
@@ -169,24 +176,19 @@ function classifyInfrastructureFailure(
 	return undefined;
 }
 
-function readSqlState(value: unknown, depth = 0): string | undefined {
-	if (depth > 3 || value === null || value === undefined) return undefined;
-	if (typeof value !== "object") return undefined;
-	const record = value as Record<string, unknown>;
-	for (const key of ["code", "sqlState", "sqlstate"] as const) {
-		const candidate = record[key];
-		if (typeof candidate === "string" && /^[0-9A-Z]{5}$/.test(candidate)) {
-			return candidate;
-		}
-	}
-	return readSqlState(record.cause, depth + 1);
-}
-
 function readDriverCode(value: unknown, depth = 0): string | undefined {
 	if (depth > 3 || value === null || value === undefined) return undefined;
 	if (typeof value !== "object") return undefined;
 	const record = value as Record<string, unknown>;
-	const candidate = record.code;
+	const candidate = readProperty(record, "code");
 	if (typeof candidate === "string") return candidate;
-	return readDriverCode(record.cause, depth + 1);
+	return readDriverCode(readProperty(record, "cause"), depth + 1);
+}
+
+function readProperty(value: Record<string, unknown>, key: string): unknown {
+	try {
+		return value[key];
+	} catch {
+		return undefined;
+	}
 }

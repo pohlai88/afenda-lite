@@ -89,6 +89,7 @@ import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresForeignKeyViolation,
 	isPostgresUndefinedTable,
+	isPostgresUniqueConstraint,
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
@@ -196,6 +197,11 @@ import {
 	workCalendarFromSql,
 } from "./time-transactions";
 
+const ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE =
+	"Attendance import source reference lookup failed";
+const ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE =
+	"Attendance import row could not be recorded";
+
 function resolveImportBatchStatus(input: {
 	accepted: number;
 	skipped: number;
@@ -207,18 +213,9 @@ function resolveImportBatchStatus(input: {
 }
 
 function isAttendanceSourceRefUniqueViolation(error: unknown): boolean {
-	if (!isPostgresUniqueViolation(error)) return false;
-	const message =
-		error instanceof Error
-			? error.message
-			: typeof error === "object" &&
-					error !== null &&
-					"message" in error &&
-					typeof (error as { message: unknown }).message === "string"
-				? (error as { message: string }).message
-				: String(error);
-	return /hr_attendance_event_org_source_ref_uidx|source_reference/i.test(
-		message,
+	return isPostgresUniqueConstraint(
+		error,
+		/hr_attendance_event_org_source_ref_uidx|source_reference/i,
 	);
 }
 
@@ -4083,7 +4080,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: "STORE_ERROR",
-						errorMessage: existingByRef.message,
+						errorMessage: ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE,
 					});
 					continue;
 				}
@@ -4148,7 +4145,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: recorded.code,
-						errorMessage: recorded.message,
+						errorMessage: ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE,
 					};
 					rejected.push(rejection);
 					errorRows.push({

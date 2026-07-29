@@ -15,9 +15,9 @@ import { respond } from "./hook-policy.mjs";
 const ASK_BROAD_VERIFY = {
 	permission: "ask",
 	user_message:
-		"Broad root verification is gated. Use focused package checks first, or approve this one broad gate explicitly.",
+		"Broad verification is gated. Use focused package/spec checks first, or approve this one broad gate explicitly.",
 	agent_message:
-		"ASK: broad root verification command detected. Do not retry root pnpm test/check/build:check or broad turbo gates after timeout/failure. Use package-local lint/typecheck/test and relevant validators first. To intentionally run this broad gate, ask the user or set AFENDA_ALLOW_BROAD_VERIFY=1.",
+		"ASK: broad verification command detected. Do not retry root pnpm test/check/build:check, broad turbo gates, or full @afenda/web tests after timeout/failure. Use package-local lint/typecheck/test, targeted specs, and relevant validators first. To intentionally run this broad gate, ask the user or set AFENDA_ALLOW_BROAD_VERIFY=1.",
 };
 
 /**
@@ -52,6 +52,29 @@ function hasFocusedSelector(command) {
 		/\b--filter\b/i.test(c) ||
 		/\b--project\b/i.test(c) ||
 		/\b(test|vitest)\b[\s\S]*\s--\s+\S/i.test(c)
+	);
+}
+
+/**
+ * @param {string} command
+ */
+function hasExplicitTestTarget(command) {
+	const c = normalize(command);
+	return /\b(test|vitest)\b[\s\S]*\s--\s+\S/i.test(c);
+}
+
+/**
+ * @param {string} command
+ */
+function isBroadWebTest(command) {
+	const c = normalize(command);
+	if (!c || hasBroadVerifyOverride(c)) {
+		return false;
+	}
+
+	return (
+		/\bpnpm\s+--filter\s+@afenda\/web\s+test\b/i.test(c) &&
+		!hasExplicitTestTarget(c)
 	);
 }
 
@@ -95,7 +118,7 @@ try {
 	const payload = await readHookPayload();
 	const command = typeof payload.command === "string" ? payload.command : "";
 
-	if (isBroadRootVerify(command)) {
+	if (isBroadRootVerify(command) || isBroadWebTest(command)) {
 		respond(ASK_BROAD_VERIFY);
 		process.exit(0);
 	}

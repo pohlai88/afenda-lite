@@ -1,3 +1,4 @@
+import { normalizeUnknown } from "@afenda/errors";
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import { requireHumanResourcesPermission } from "../authorization";
@@ -355,6 +356,7 @@ function resolveDenyCodeFromError(
 	if (error instanceof HumanResourcesAuthorizationPolicyResolveError) {
 		return error.code;
 	}
+	normalizeUnknown(error, AUTHORIZATION_DENIED_MESSAGE);
 	return "policy_not_registered";
 }
 

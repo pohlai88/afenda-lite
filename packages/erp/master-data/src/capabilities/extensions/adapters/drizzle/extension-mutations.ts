@@ -29,7 +29,17 @@ import {
 	refUomDimension,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	hasPostgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../../../contracts/reasons";
 import type { MutationPorts } from "../../../../ports";
 import type {
@@ -134,25 +144,11 @@ function parsePartyRelationshipType(
 	return null;
 }
 
-function isUniqueViolation(error: unknown): boolean {
-	let current: unknown = error;
-	for (let depth = 0; depth < 4; depth += 1) {
-		if (
-			current === null ||
-			current === undefined ||
-			typeof current !== "object"
-		) {
-			return false;
-		}
-		const record = current as Record<string, unknown>;
-		for (const key of ["code", "sqlState", "sqlstate"] as const) {
-			if (record[key] === "23505") {
-				return true;
-			}
-		}
-		current = record.cause;
-	}
-	return false;
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
 }
 
 function mapWriteError(
@@ -161,12 +157,12 @@ function mapWriteError(
 	fallbackMessage: string,
 	reason: MasterFailureDetails["reason"] = "MASTER_CODE_CONFLICT",
 ): Result<never> {
-	if (isUniqueViolation(error)) {
+	if (hasPostgresSqlState(error, "23505")) {
 		return fail("CONFLICT", uniqueMessage, {
 			reason,
 		} satisfies MasterFailureDetails);
 	}
-	return failFromUnknown(error, fallbackMessage);
+	return failFromPersistence(error, fallbackMessage);
 }
 
 function fieldChangeJson(
@@ -562,7 +558,7 @@ export async function drizzleCountActivePartyRoles(
 			);
 		return ok(rows.length);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to count active party roles");
+		return failFromPersistence(error, "Failed to count active party roles");
 	}
 }
 
@@ -589,7 +585,7 @@ export async function drizzleListPartyRoles(
 			hasNextPage: rows.length > filter.pageSize,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list party roles");
+		return failFromPersistence(error, "Failed to list party roles");
 	}
 }
 
@@ -618,7 +614,7 @@ export async function drizzleListActivePartyRoles(
 			hasNextPage: rows.length > filter.pageSize,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list active party roles");
+		return failFromPersistence(error, "Failed to list active party roles");
 	}
 }
 
@@ -641,7 +637,7 @@ export async function drizzleGetPartyRoleById(
 			.limit(1);
 		return ok(row === undefined ? null : mapPartyRole(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to get party role");
+		return failFromPersistence(error, "Failed to get party role");
 	}
 }
 
@@ -685,7 +681,10 @@ export async function drizzleGetPartyRoleLifecycleContext(
 			activeRoleCount: activeRoleCount.data,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to get party role lifecycle context");
+		return failFromPersistence(
+			error,
+			"Failed to get party role lifecycle context",
+		);
 	}
 }
 
@@ -1686,7 +1685,7 @@ export async function drizzleListPartyAddresses(
 			.offset((filter.page - 1) * filter.pageSize);
 		return ok(rows.map(mapPartyAddress));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list party addresses");
+		return failFromPersistence(error, "Failed to list party addresses");
 	}
 }
 
@@ -1709,7 +1708,7 @@ export async function drizzleGetPartyAddressById(
 			.limit(1);
 		return ok(row ? mapPartyAddress(row) : null);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to get party address");
+		return failFromPersistence(error, "Failed to get party address");
 	}
 }
 
@@ -1735,7 +1734,7 @@ export async function drizzleGetPrimaryPartyAddress(
 			.limit(1);
 		return ok(row ? mapPartyAddress(row) : null);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to get primary party address");
+		return failFromPersistence(error, "Failed to get primary party address");
 	}
 }
 
@@ -1756,7 +1755,7 @@ export async function drizzleListPartyContacts(
 			.offset((filter.page - 1) * filter.pageSize);
 		return ok(rows.map(mapPartyContact));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list party contacts");
+		return failFromPersistence(error, "Failed to list party contacts");
 	}
 }
 
@@ -1786,7 +1785,7 @@ export async function drizzleGetPrimaryPartyContact(
 			.limit(1);
 		return ok(row ? mapPartyContact(row) : null);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to get primary party contact");
+		return failFromPersistence(error, "Failed to get primary party contact");
 	}
 }
 
@@ -2442,7 +2441,7 @@ export async function drizzleFindPartyByExternalId(
 			.limit(1);
 		return ok(party === undefined ? null : mapParty(party));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to find party by external id");
+		return failFromPersistence(error, "Failed to find party by external id");
 	}
 }
 
@@ -2643,7 +2642,7 @@ export async function drizzleListPartyRelationships(
 			hasNextPage: rows.length > filter.pageSize,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list party relationships");
+		return failFromPersistence(error, "Failed to list party relationships");
 	}
 }
 
@@ -2712,7 +2711,7 @@ export async function drizzleResolveItemUomCompatibilityContext(
 			alternateDimensionCode: alternate.dimensionCode,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to resolve item UoM context");
+		return failFromPersistence(error, "Failed to resolve item UoM context");
 	}
 }
 
@@ -2746,7 +2745,7 @@ export async function drizzleListItemUoms(
 			hasNextPage: rows.length > filter.pageSize,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list item UoMs");
+		return failFromPersistence(error, "Failed to list item UoMs");
 	}
 }
 
@@ -2775,7 +2774,10 @@ async function drizzleGetDefaultItemUom(
 		if (row === undefined) return ok(null);
 		return mapItemUomRow(row);
 	} catch (error) {
-		return failFromUnknown(error, `Failed to get default item ${usage} UoM`);
+		return failFromPersistence(
+			error,
+			`Failed to get default item ${usage} UoM`,
+		);
 	}
 }
 
@@ -2871,7 +2873,7 @@ export async function drizzleCreateItemUom(
 		});
 		if (!compatible.ok) return compatible;
 	} catch (error) {
-		return failFromUnknown(error, "Failed to validate item UoM");
+		return failFromPersistence(error, "Failed to validate item UoM");
 	}
 
 	const id = randomUUID();
@@ -3327,7 +3329,7 @@ export async function drizzleFindItemByBarcode(
 			.limit(1);
 		return ok(item === undefined ? null : mapItem(item));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to find item by barcode");
+		return failFromPersistence(error, "Failed to find item by barcode");
 	}
 }
 
@@ -3532,7 +3534,7 @@ export async function drizzleFindItemByExternalId(
 			.limit(1);
 		return ok(item === undefined ? null : mapItem(item));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to find item by external id");
+		return failFromPersistence(error, "Failed to find item by external id");
 	}
 }
 
@@ -3689,7 +3691,7 @@ export async function drizzleListItemAliases(
 			hasNextPage: rows.length > filter.pageSize,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list item aliases");
+		return failFromPersistence(error, "Failed to list item aliases");
 	}
 }
 
@@ -3738,7 +3740,7 @@ export async function drizzleListItemsByAlias(
 			hasNextPage: rows.length > filter.pageSize,
 		});
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list items by alias");
+		return failFromPersistence(error, "Failed to list items by alias");
 	}
 }
 
@@ -3918,6 +3920,9 @@ export async function drizzleFindWarehouseByExternalId(
 			.limit(1);
 		return ok(warehouse === undefined ? null : mapWarehouse(warehouse));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to find warehouse by external ID");
+		return failFromPersistence(
+			error,
+			"Failed to find warehouse by external ID",
+		);
 	}
 }

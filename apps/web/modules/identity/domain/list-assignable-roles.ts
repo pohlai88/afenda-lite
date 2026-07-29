@@ -1,4 +1,5 @@
 import { and, db, eq, isNull, platformRole, withOrg } from "@afenda/db";
+import { AppError } from "@afenda/errors";
 
 export type AssignableRole = typeof platformRole.$inferSelect;
 
@@ -14,7 +15,10 @@ export async function listAssignableRoles(
 ): Promise<AssignableRole[]> {
 	const trimmed = orgId.trim();
 	if (trimmed.length === 0) {
-		throw new Error("listAssignableRoles requires non-empty orgId");
+		throw new AppError({
+			code: "BAD_REQUEST",
+			message: "listAssignableRoles requires non-empty orgId",
+		});
 	}
 
 	const [templates, orgRoles] = await Promise.all([

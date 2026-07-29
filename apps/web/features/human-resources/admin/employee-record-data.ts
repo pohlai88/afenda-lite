@@ -1,4 +1,5 @@
 import type { Session } from "@afenda/auth";
+import { fail, type ResultFailure } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
@@ -93,7 +94,7 @@ export type EmployeeAdminRecordData = {
 
 export type EmployeeAdminRecordLoadResult =
 	| { ok: true; data: EmployeeAdminRecordData }
-	| { ok: false; code: string; message: string };
+	| ResultFailure;
 
 function packageContext(session: Session, correlationId: string) {
 	return {
@@ -105,16 +106,24 @@ function packageContext(session: Session, correlationId: string) {
 
 function eventEntityId(payload: unknown): string | null {
 	if (typeof payload !== "object" || payload === null) return null;
-	const value = Reflect.get(payload, "entityId");
+	const value = readProperty(payload, "entityId");
 	return typeof value === "string" ? value : null;
 }
 
 function eventEffectiveOn(payload: unknown, fallback: Date): string {
 	if (typeof payload === "object" && payload !== null) {
-		const value = Reflect.get(payload, "effectiveOn");
+		const value = readProperty(payload, "effectiveOn");
 		if (typeof value === "string") return value;
 	}
 	return fallback.toISOString().slice(0, 10);
+}
+
+function readProperty(value: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(value, key);
+	} catch {
+		return undefined;
+	}
 }
 
 async function lifecycleEvents(organizationId: string) {
@@ -224,11 +233,11 @@ export async function loadEmployeeAdminRecord(input: {
 		options,
 	);
 	if (!employeeResult.ok) {
-		return {
-			ok: false,
-			code: employeeResult.code,
-			message: employeeResult.message,
-		};
+		return fail(
+			employeeResult.code,
+			employeeResult.message,
+			employeeResult.details,
+		);
 	}
 
 	const [

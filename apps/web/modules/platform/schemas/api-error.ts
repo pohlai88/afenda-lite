@@ -15,7 +15,7 @@ import { z } from "@/modules/platform/schemas/openapi-zod";
  * Shared HTTP error vocabulary (API-002 · API-003 · OPEN-001).
  * Codes / HTTP body builders: `@afenda/errors` (+ `/http`).
  * Route Handler failures use bare `APIErrorBody` — never nested under `{ data }`.
- * Brand type `ApiErrorCodeBrand` stays on `@afenda/errors` — do not re-export unused.
+ * Deprecated compatibility helpers stay on `@afenda/errors` — do not re-export unused types.
  */
 
 export {

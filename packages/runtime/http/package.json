@@ -14,6 +14,9 @@
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project http"
 	},
+	"dependencies": {
+		"@afenda/errors": "workspace:*"
+	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
 		"@types/node": "catalog:",

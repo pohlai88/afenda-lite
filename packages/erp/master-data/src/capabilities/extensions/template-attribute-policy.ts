@@ -279,16 +279,18 @@ export function parseTemplateAttributeValidationRules(
 ): Result<ItemTemplateAttributeValidationRules> {
 	const parsed = validationRulesSchemaFor(dataType).safeParse(rawRules ?? {});
 	if (!parsed.success) {
+		const issues = parsed.error.issues.map((issue) => ({
+			path:
+				issue.path.length === 0
+					? "validationRules"
+					: `validationRules.${issue.path.join(".")}`,
+			message: issue.message,
+		}));
 		return fail("BAD_REQUEST", "Invalid template attribute validation rules", {
 			reason: "MASTER_VALIDATION_FAILED",
 			field: "validationRules",
-			issues: parsed.error.issues.map((issue) => ({
-				path:
-					issue.path.length === 0
-						? "validationRules"
-						: `validationRules.${issue.path.join(".")}`,
-				message: issue.message,
-			})),
+			issuePaths: issues.map((issue) => issue.path),
+			issues,
 		} satisfies MasterFailureDetails);
 	}
 	return ok(parsed.data);

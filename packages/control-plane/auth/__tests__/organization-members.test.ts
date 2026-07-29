@@ -103,9 +103,10 @@ describe("organization members adapter", () => {
 	describe("listOrgMembers", () => {
 		it("refuses a different organization id", async () => {
 			const { listOrgMembers } = await import("../src/organization-members");
-			await expect(listOrgMembers("org-other")).rejects.toThrow(
-				/refuses organization/,
-			);
+			await expect(listOrgMembers("org-other")).rejects.toMatchObject({
+				code: "FORBIDDEN",
+				message: "Organization is not in the active session",
+			});
 			expect(listMembersMock).not.toHaveBeenCalled();
 		});
 
@@ -165,9 +166,11 @@ describe("organization members adapter", () => {
 			});
 
 			const { listOrgMembers } = await import("../src/organization-members");
-			await expect(listOrgMembers("org-1")).rejects.toThrow(
-				/@afenda\/auth: organization listMembers failed/,
-			);
+			await expect(listOrgMembers("org-1")).rejects.toMatchObject({
+				code: "SERVICE_UNAVAILABLE",
+				message: "A required service is temporarily unavailable.",
+				details: { service: "neon-auth" },
+			});
 			await expect(listOrgMembers("org-1")).rejects.not.toThrow(/xyz/);
 		});
 	});
@@ -220,10 +223,29 @@ describe("organization members adapter", () => {
 
 		it("refuses cross-org lookup", async () => {
 			const { findOrgMember } = await import("../src/organization-members");
-			await expect(findOrgMember("org-other", "u-1")).rejects.toThrow(
-				/refuses organization/,
-			);
+			await expect(findOrgMember("org-other", "u-1")).rejects.toMatchObject({
+				code: "FORBIDDEN",
+				message: "Organization is not in the active session",
+			});
 			expect(listMembersMock).not.toHaveBeenCalled();
+		});
+
+		it("throws a canonical failure without Neon message leakage", async () => {
+			listMembersMock.mockResolvedValue({
+				data: null,
+				error: {
+					message: "secret token xyz leaked",
+					code: "FORBIDDEN",
+				},
+			});
+
+			const { findOrgMember } = await import("../src/organization-members");
+			await expect(findOrgMember("org-1", "u-1")).rejects.toMatchObject({
+				code: "SERVICE_UNAVAILABLE",
+				message: "A required service is temporarily unavailable.",
+				details: { service: "neon-auth" },
+			});
+			await expect(findOrgMember("org-1", "u-1")).rejects.not.toThrow(/xyz/);
 		});
 	});
 });

@@ -50,4 +50,13 @@ describe("jsonError Retry-After", () => {
 			),
 		).toBeNull();
 	});
+
+	it("preserves caller-provided headers", () => {
+		const response = jsonError("UNAUTHORIZED", "Unauthorized", undefined, {
+			headers: { "Cache-Control": "no-store" },
+		});
+
+		expect(response.status).toBe(401);
+		expect(response.headers.get("Cache-Control")).toBe("no-store");
+	});
 });

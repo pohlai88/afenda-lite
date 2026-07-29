@@ -11,7 +11,17 @@ import {
 	purchaseOrderLine,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	postgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import {
 	PURCHASING_ERROR_CODE_CONFLICT,
@@ -41,6 +51,13 @@ import {
 	type PurchaseOrderLine,
 	type PurchaseOrderStatus,
 } from "./types";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 type OrderSqlRow = {
 	id: string;
@@ -276,23 +293,44 @@ function valueSnapshotJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-function writeErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+const SQLSTATE_UNIQUE_VIOLATION = "23505";
+
+function readErrorStringProperty(
+	error: unknown,
+	key: PropertyKey,
+): string | undefined {
+	if (typeof error !== "object" || error === null) {
+		return undefined;
+	}
+	try {
+		const value = Reflect.get(error, key);
+		return typeof value === "string" ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function readConstraintName(error: unknown): string {
+	return (
+		readErrorStringProperty(error, "constraint") ??
+		readErrorStringProperty(error, "constraint_name") ??
+		""
+	);
 }
 
 function isUniqueViolation(error: unknown): boolean {
-	return /unique|duplicate/i.test(writeErrorMessage(error));
+	return postgresSqlState(error) === SQLSTATE_UNIQUE_VIOLATION;
 }
 
 function isCreateIdempotencyConflict(error: unknown): boolean {
 	return /purchase_order_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		writeErrorMessage(error),
+		readConstraintName(error),
 	);
 }
 
 function isLineIdempotencyConflict(error: unknown): boolean {
 	return /purchase_order_line_org_order_idempotency_uidx|line_idempotency_key/i.test(
-		writeErrorMessage(error),
+		readConstraintName(error),
 	);
 }
 
@@ -304,7 +342,7 @@ function mapWriteError(
 	if (isUniqueViolation(error)) {
 		return fail("CONFLICT", conflictMessage);
 	}
-	return failFromUnknown(error, fallbackMessage);
+	return failFromPersistence(error, fallbackMessage);
 }
 
 export class DrizzlePurchasingStore implements PurchasingStore {
@@ -403,7 +441,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					purchasingErrorDetails(PURCHASING_ERROR_CODE_CONFLICT),
 				);
 			}
-			return failFromUnknown(error, "Failed to create purchase order");
+			return failFromPersistence(error, "Failed to create purchase order");
 		}
 	}
 
@@ -1076,7 +1114,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load purchase order");
+			return failFromPersistence(error, "Failed to load purchase order");
 		}
 	}
 
@@ -1115,7 +1153,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to load purchase order by create idempotency key",
 			);
@@ -1171,7 +1209,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list purchase orders");
+			return failFromPersistence(error, "Failed to list purchase orders");
 		}
 	}
 }

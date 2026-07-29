@@ -8,7 +8,17 @@ import {
 	mdChangeRequest,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	hasPostgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import type { MutationPorts } from "../../ports";
 import type {
@@ -22,6 +32,13 @@ import type {
 	ChangeRequestListFilter,
 	ChangeRequestReviewRecord,
 } from "../core-organization-masters/store";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 type ChangeRequestSqlRow = {
 	id: string;
@@ -111,11 +128,6 @@ function eventPayloadJson(input: {
 	return JSON.stringify(input);
 }
 
-function isUniqueViolation(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
-	return /unique|duplicate key/i.test(message);
-}
-
 export async function drizzleGetChangeRequestById(
 	organizationId: string,
 	id: string,
@@ -158,7 +170,7 @@ export async function drizzleGetChangeRequestById(
 			}),
 		);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to load change request");
+		return failFromPersistence(error, "Failed to load change request");
 	}
 }
 
@@ -208,7 +220,7 @@ export async function drizzleListChangeRequests(
 			),
 		);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list change requests");
+		return failFromPersistence(error, "Failed to list change requests");
 	}
 }
 
@@ -287,12 +299,12 @@ export async function drizzleCreateChangeRequest(
 		}
 		return ok(mapChangeRequestSqlRow(row));
 	} catch (error) {
-		if (isUniqueViolation(error)) {
+		if (hasPostgresSqlState(error, "23505")) {
 			return fail("CONFLICT", "Change request code already exists", {
 				reason: "MASTER_CODE_CONFLICT",
 			} satisfies MasterFailureDetails);
 		}
-		return failFromUnknown(error, "Failed to create change request");
+		return failFromPersistence(error, "Failed to create change request");
 	}
 }
 
@@ -401,6 +413,6 @@ export async function drizzleTransitionChangeRequest(
 		}
 		return ok(mapChangeRequestSqlRow(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to transition change request");
+		return failFromPersistence(error, "Failed to transition change request");
 	}
 }

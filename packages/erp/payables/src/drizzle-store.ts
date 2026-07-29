@@ -15,7 +15,14 @@ import {
 	supplierInvoiceLine,
 	threeWayMatchResult,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import type {
 	PayablesStore,
@@ -27,6 +34,13 @@ import type {
 	SupplierInvoiceStatus,
 	ThreeWayMatchResult,
 } from "./model";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 function invoiceStatus(value: string): SupplierInvoiceStatus {
 	if (
@@ -238,7 +252,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				"Created supplier invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create supplier invoice");
+			return failFromPersistence(error, "Failed to create supplier invoice");
 		}
 	}
 
@@ -298,7 +312,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				? fail("INTERNAL_ERROR", "Created supplier invoice line missing")
 				: ok(mapLine(line));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to add supplier invoice line");
+			return failFromPersistence(error, "Failed to add supplier invoice line");
 		}
 	}
 
@@ -376,7 +390,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				"Matched supplier invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to match supplier invoice");
+			return failFromPersistence(error, "Failed to match supplier invoice");
 		}
 	}
 
@@ -449,7 +463,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				"Posted supplier invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to post supplier invoice");
+			return failFromPersistence(error, "Failed to post supplier invoice");
 		}
 	}
 
@@ -513,7 +527,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 				matchResult: null,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create supplier credit note");
+			return failFromPersistence(
+				error,
+				"Failed to create supplier credit note",
+			);
 		}
 	}
 
@@ -568,7 +585,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 						createdAt: row.created_at,
 					});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to add supplier credit note line");
+			return failFromPersistence(
+				error,
+				"Failed to add supplier credit note line",
+			);
 		}
 	}
 
@@ -680,7 +700,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				matchResult: null,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to post supplier credit note");
+			return failFromPersistence(error, "Failed to post supplier credit note");
 		}
 	}
 
@@ -785,7 +805,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				matchResult: null,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to issue supplier credit note");
+			return failFromPersistence(error, "Failed to issue supplier credit note");
 		}
 	}
 
@@ -908,7 +928,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				createdAt: row.created_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to apply supplier payment");
+			return failFromPersistence(error, "Failed to apply supplier payment");
 		}
 	}
 
@@ -987,7 +1007,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				? fail("INTERNAL_ERROR", "Created supplier credit allocation missing")
 				: ok(mapAllocation(allocation));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to apply supplier credit");
+			return failFromPersistence(error, "Failed to apply supplier credit");
 		}
 	}
 
@@ -1084,7 +1104,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to reverse supplier allocations");
+			return failFromPersistence(
+				error,
+				"Failed to reverse supplier allocations",
+			);
 		}
 	}
 
@@ -1133,7 +1156,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				"Cancelled supplier invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to cancel supplier invoice");
+			return failFromPersistence(error, "Failed to cancel supplier invoice");
 		}
 	}
 
@@ -1198,7 +1221,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load supplier invoice");
+			return failFromPersistence(error, "Failed to load supplier invoice");
 		}
 	}
 
@@ -1279,7 +1302,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list supplier invoices");
+			return failFromPersistence(error, "Failed to list supplier invoices");
 		}
 	}
 
@@ -1346,7 +1369,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load supplier balance");
+			return failFromPersistence(error, "Failed to load supplier balance");
 		}
 	}
 }

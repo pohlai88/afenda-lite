@@ -9,7 +9,14 @@ import {
 	platformRbacAudit,
 } from "@afenda/db";
 
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import {
 	type DeleteRbacAuditInput,
@@ -23,6 +30,13 @@ import {
 	rbacAuditRowSchema,
 	recordRbacAuditCommandSchema,
 } from "./schemas/audit";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 function parseAuditRow(row: {
 	id: string;
@@ -134,7 +148,7 @@ export async function listRbacAudit(
 
 		return ok(page);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list RBAC audit rows");
+		return failFromPersistence(error, "Failed to list RBAC audit rows");
 	}
 }
 
@@ -179,7 +193,7 @@ export async function recordRbacAudit(
 
 		return ok(parseAuditRow(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to record RBAC audit row");
+		return failFromPersistence(error, "Failed to record RBAC audit row");
 	}
 }
 
@@ -215,6 +229,6 @@ export async function deleteRbacAuditRow(
 		}
 		return ok(parseAuditRow(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to delete RBAC audit row");
+		return failFromPersistence(error, "Failed to delete RBAC audit row");
 	}
 }

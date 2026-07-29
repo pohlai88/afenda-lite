@@ -27,6 +27,21 @@ describe("auth-failure taxonomy", () => {
 		});
 	});
 
+	it("fails closed when Neon probe getters throw", () => {
+		const hostile = Object.defineProperty({}, "message", {
+			get() {
+				throw new Error("unsafe message getter");
+			},
+		});
+
+		expect(() => failFromNeonOrgProbe(hostile, "safe fallback")).not.toThrow();
+		expect(failFromNeonOrgProbe(hostile, "safe fallback")).toEqual({
+			ok: false,
+			code: "INTERNAL_ERROR",
+			message: "safe fallback",
+		});
+	});
+
 	it("maps invite HTTP status to closed codes", () => {
 		expect(failFromInviteHttpStatus(403)).toEqual({
 			ok: false,

@@ -7,7 +7,14 @@ import {
 	platformWorkItem,
 	platformWorkItemActivity,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 export type PlatformWorkItemKind =
 	| "approval"
@@ -246,6 +253,16 @@ function mapActivityRow(
 	});
 }
 
+function mapPlatformWorkItemPersistenceFailure(
+	error: unknown,
+	fallbackMessage: string,
+): Result<never> {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
+
 export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 	const items = new Map<string, PlatformWorkItem>();
 	const idsByDedupe = new Map<string, string>();
@@ -432,8 +449,11 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 						],
 					});
 				return mapped;
-			} catch {
-				return fail("INTERNAL_ERROR", "Platform work-item persistence failed");
+			} catch (error) {
+				return mapPlatformWorkItemPersistenceFailure(
+					error,
+					"Platform work-item persistence failed",
+				);
 			}
 		},
 		async find(input) {
@@ -449,8 +469,11 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 					)
 					.limit(1);
 				return rows[0] === undefined ? ok(null) : mapRow(rows[0]);
-			} catch {
-				return fail("INTERNAL_ERROR", "Platform work-item query failed");
+			} catch (error) {
+				return mapPlatformWorkItemPersistenceFailure(
+					error,
+					"Platform work-item query failed",
+				);
 			}
 		},
 		async transition(input) {
@@ -502,8 +525,11 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 					reason: input.reason,
 				});
 				return mapped;
-			} catch {
-				return fail("INTERNAL_ERROR", "Platform work-item transition failed");
+			} catch (error) {
+				return mapPlatformWorkItemPersistenceFailure(
+					error,
+					"Platform work-item transition failed",
+				);
 			}
 		},
 		async listActivity(input) {
@@ -525,9 +551,9 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 					mapped.push(item.data);
 				}
 				return ok(mapped);
-			} catch {
-				return fail(
-					"INTERNAL_ERROR",
+			} catch (error) {
+				return mapPlatformWorkItemPersistenceFailure(
+					error,
 					"Platform work-item activity query failed",
 				);
 			}

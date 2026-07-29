@@ -153,7 +153,7 @@ function denyCodeFromDetails(
 	details: unknown,
 ): HumanResourcesAuthorizationDenyCode | undefined {
 	if (details === null || typeof details !== "object") return undefined;
-	const value = Reflect.get(details, "denyCode");
+	const value = readProperty(details, "denyCode");
 	switch (value) {
 		case "permission_denied":
 		case "cross_tenant":
@@ -165,6 +165,14 @@ function denyCodeFromDetails(
 			return value;
 		default:
 			return undefined;
+	}
+}
+
+function readProperty(value: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(value, key);
+	} catch {
+		return undefined;
 	}
 }
 

@@ -1,3 +1,4 @@
+import { type AppError, serializeAppError } from "@afenda/errors";
 import { retryAfterSeconds } from "@afenda/errors/http";
 import { applyRetryAfterHeader } from "@afenda/http";
 import { NextResponse } from "next/server";
@@ -28,9 +29,10 @@ export function jsonError(
 	code: ApiErrorCode,
 	message: string,
 	details?: unknown,
+	init?: { headers?: HeadersInit },
 ): NextResponse<APIErrorBody> {
 	const retryAfter = retryAfterSeconds(details);
-	const headers = new Headers();
+	const headers = new Headers(init?.headers);
 	if (retryAfter !== undefined) {
 		applyRetryAfterHeader(headers, retryAfter);
 	}
@@ -38,4 +40,17 @@ export function jsonError(
 		status: API_ERROR_HTTP_STATUS[code],
 		headers,
 	});
+}
+
+export function jsonAppError(
+	error: AppError,
+	init?: { headers?: HeadersInit },
+): NextResponse<APIErrorBody> {
+	const serialized = serializeAppError(error);
+	return jsonError(
+		serialized.code,
+		serialized.message,
+		serialized.details,
+		init,
+	);
 }

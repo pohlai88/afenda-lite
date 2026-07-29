@@ -82,9 +82,12 @@
 	/* ERP interaction, data-grid, and decision states */
 	--color-primary-hover: var(--primary-hover);
 	--color-primary-subtle: var(--primary-subtle);
+	--color-primary-track: var(--primary-track);
 	--color-secondary-hover: var(--secondary-hover);
 	--color-accent-hover: var(--accent-hover);
+	--color-accent-fill-hover: var(--accent-fill-hover);
 	--color-destructive-hover: var(--destructive-hover);
+	--color-destructive-soft: var(--destructive-soft);
 	--color-control-fill: var(--control-fill);
 	--color-control-fill-hover: var(--control-fill-hover);
 	--color-control-fill-strong: var(--control-fill-strong);
@@ -102,16 +105,19 @@
 	--color-focus-outline: var(--focus-outline);
 	--color-focus-separator: var(--focus-separator);
 	--color-ring-destructive: var(--ring-destructive);
+	--color-ring-destructive-focus: var(--ring-destructive-focus);
+	--color-ring-destructive-focus-strong: var(--ring-destructive-focus-strong);
+	--color-kbd-tooltip-fill: var(--kbd-tooltip-fill);
 	--color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
 
 	/* Radius contract */
-	--radius-sm: calc(var(--radius) - 4px);
-	--radius-md: calc(var(--radius) - 2px);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
+	--radius-xl: calc(var(--radius) * 1.4);
 	--radius-2xl: calc(var(--radius) + 8px);
 	--radius-3xl: calc(var(--radius) + 12px);
-	--radius-4xl: calc(var(--radius) + 16px);
+	--radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
@@ -165,24 +171,24 @@
 	/* ERP: status colors are not action colors */
 	--success: oklch(0.527 0.154 150.069);
 	--success-foreground: oklch(0.985 0 0);
-	--success-subtle: oklch(0.962 0.044 156.743);
-	--success-subtle-foreground: oklch(0.393 0.095 152.535);
+	--success-subtle: oklch(1 0 0);
+	--success-subtle-foreground: oklch(0.145 0 0);
 	--success-border: oklch(0.792 0.142 152.535);
 
-	--warning: oklch(0.666 0.179 58.318);
+	--warning: oklch(0.76 0.12 80);
 	--warning-foreground: oklch(0.205 0 0);
-	--warning-subtle: oklch(0.973 0.071 103.193);
-	--warning-subtle-foreground: oklch(0.421 0.095 57.708);
+	--warning-subtle: oklch(1 0 0);
+	--warning-subtle-foreground: oklch(0.145 0 0);
 	--warning-border: oklch(0.828 0.189 84.429);
 
 	--info: oklch(0.546 0.245 262.881);
 	--info-foreground: oklch(0.985 0 0);
-	--info-subtle: oklch(0.951 0.026 236.824);
-	--info-subtle-foreground: oklch(0.379 0.146 265.522);
+	--info-subtle: oklch(1 0 0);
+	--info-subtle-foreground: oklch(0.145 0 0);
 	--info-border: oklch(0.809 0.105 251.813);
 
-	--destructive-subtle: oklch(0.971 0.013 17.38);
-	--destructive-subtle-foreground: oklch(0.444 0.177 26.899);
+	--destructive-subtle: oklch(1 0 0);
+	--destructive-subtle-foreground: oklch(0.145 0 0);
 	--destructive-border: oklch(0.808 0.114 19.571);
 
 	--neutral-subtle: var(--muted);
@@ -192,9 +198,12 @@
 	/* ERP: explicit interaction roles */
 	--primary-hover: oklch(0.269 0 0);
 	--primary-subtle: oklch(0.97 0 0);
+	--primary-track: oklch(0.922 0 0);
 	--secondary-hover: oklch(0.922 0 0);
 	--accent-hover: oklch(0.922 0 0);
+	--accent-fill-hover: var(--accent-hover);
 	--destructive-hover: oklch(0.505 0.213 27.518);
+	--destructive-soft: var(--destructive);
 	--control-fill: oklch(1 0 0);
 	--control-fill-hover: oklch(0.985 0 0);
 	--control-fill-strong: oklch(0.97 0 0);
@@ -204,8 +213,11 @@
 	/* Focus is interaction state, never status color. */
 	--focus-outline: oklch(0.38 0 0 / 88%);
 	--focus-separator: oklch(1 0 0 / 96%);
-	--ring-focus: var(--focus-outline);
-	--ring-destructive: var(--focus-outline);
+	--ring-focus: oklch(0.48 0 0);
+	--ring-destructive: oklch(0.577 0.245 27.325 / 35%);
+	--ring-destructive-focus: oklch(0.577 0.245 27.325 / 20%);
+	--ring-destructive-focus-strong: oklch(0.577 0.245 27.325 / 40%);
+	--kbd-tooltip-fill: oklch(1 0 0 / 20%);
 
 	/* ERP: dense records, ledgers, approvals, and totals */
 	--table-header: oklch(0.97 0 0);
@@ -291,31 +303,31 @@
 	--surface-raised: oklch(0.205 0 0);
 	--surface-overlay: oklch(0.235 0 0);
 	--foreground-secondary: oklch(0.87 0 0);
-	--foreground-tertiary: oklch(0.78 0 0);
+	--foreground-tertiary: oklch(0.855 0 0);
 	--foreground-disabled: oklch(0.556 0 0);
 
 	/* ERP: status colors are not action colors */
-	--success: oklch(0.696 0.17 162.48);
+	--success: oklch(0.75 0.12 155);
 	--success-foreground: oklch(0.145 0 0);
-	--success-subtle: oklch(0.262 0.051 172.552);
-	--success-subtle-foreground: oklch(0.845 0.143 164.978);
-	--success-border: oklch(0.596 0.145 163.225);
+	--success-subtle: oklch(0.205 0 0);
+	--success-subtle-foreground: oklch(1 0 0);
+	--success-border: oklch(0.68 0.08 155);
 
-	--warning: oklch(0.769 0.188 70.08);
+	--warning: oklch(0.76 0.12 80);
 	--warning-foreground: oklch(0.205 0 0);
-	--warning-subtle: oklch(0.279 0.077 45.635);
-	--warning-subtle-foreground: oklch(0.879 0.169 91.605);
-	--warning-border: oklch(0.666 0.179 58.318);
+	--warning-subtle: oklch(0.205 0 0);
+	--warning-subtle-foreground: oklch(1 0 0);
+	--warning-border: oklch(0.68 0.08 80);
 
-	--info: oklch(0.707 0.165 254.624);
+	--info: oklch(0.75 0.12 245);
 	--info-foreground: oklch(0.145 0 0);
-	--info-subtle: oklch(0.282 0.091 267.935);
-	--info-subtle-foreground: oklch(0.809 0.105 251.813);
-	--info-border: oklch(0.623 0.214 259.815);
+	--info-subtle: oklch(0.205 0 0);
+	--info-subtle-foreground: oklch(1 0 0);
+	--info-border: oklch(0.68 0.08 245);
 
-	--destructive-subtle: oklch(0.258 0.092 26.042);
-	--destructive-subtle-foreground: oklch(0.808 0.114 19.571);
-	--destructive-border: oklch(0.637 0.237 25.331);
+	--destructive-subtle: oklch(0.205 0 0);
+	--destructive-subtle-foreground: oklch(1 0 0);
+	--destructive-border: oklch(0.68 0.08 25);
 
 	--neutral-subtle: var(--muted);
 	--neutral-subtle-foreground: var(--muted-foreground);
@@ -324,9 +336,12 @@
 	/* ERP: explicit interaction roles */
 	--primary-hover: oklch(0.87 0 0);
 	--primary-subtle: oklch(0.269 0 0);
+	--primary-track: oklch(0.32 0 0);
 	--secondary-hover: oklch(0.32 0 0);
 	--accent-hover: oklch(0.32 0 0);
+	--accent-fill-hover: var(--accent-hover);
 	--destructive-hover: oklch(0.637 0.237 25.331);
+	--destructive-soft: oklch(0.497 0.12 25);
 	--control-fill: oklch(0.205 0 0);
 	--control-fill-hover: oklch(0.235 0 0);
 	--control-fill-strong: oklch(0.269 0 0);
@@ -336,8 +351,11 @@
 	/* Focus is interaction state, never status color. */
 	--focus-outline: oklch(0.88 0 0 / 92%);
 	--focus-separator: oklch(0.145 0 0 / 96%);
-	--ring-focus: var(--focus-outline);
-	--ring-destructive: var(--focus-outline);
+	--ring-focus: oklch(0.72 0 0);
+	--ring-destructive: oklch(0.704 0.191 22.216 / 45%);
+	--ring-destructive-focus: oklch(0.704 0.191 22.216 / 20%);
+	--ring-destructive-focus-strong: oklch(0.704 0.191 22.216 / 40%);
+	--kbd-tooltip-fill: oklch(1 0 0 / 10%);
 
 	/* ERP: dense records, ledgers, approvals, and totals */
 	--table-header: oklch(0.205 0 0);
@@ -356,6 +374,26 @@
 		0 4px 12px oklch(0 0 0 / 30%), 0 22px 56px -22px oklch(0 0 0 / 44%);
 	--shadow-dialog:
 		0 10px 28px -14px oklch(0 0 0 / 38%), 0 36px 96px -28px oklch(0 0 0 / 56%);
+
+	/* ERP: density */
+	--control-height-xs: 1.75rem;
+	--control-height-sm: 2rem;
+	--control-height: 2.25rem;
+	--control-height-lg: 2.5rem;
+	--table-row-height-compact: 2.25rem;
+	--table-row-height: 2.75rem;
+	--table-row-height-comfortable: 3.25rem;
+	--field-gap: 1rem;
+	--section-gap: 2rem;
+
+	/* ERP: motion */
+	--duration-instant: 0ms;
+	--duration-fast: 150ms;
+	--duration-normal: 250ms;
+	--duration-slow: 350ms;
+	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-enter: cubic-bezier(0, 0, 0.2, 1);
+	--ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 /*

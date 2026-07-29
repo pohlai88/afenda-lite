@@ -39,6 +39,11 @@ import {
 } from "@/lib/erp/corporate-administration-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
+const LEGAL_COMPANY_LIFECYCLE_UNAVAILABLE_MESSAGE =
+	"Company lifecycle data is unavailable.";
+const LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE =
+	"Company identity data is unavailable.";
+
 type CorporateAdministrationShellProps = {
 	surface: "admin" | "client";
 };
@@ -276,7 +281,7 @@ async function loadLegalCompanyLifecycle(input: {
 		},
 	);
 	if (!completeness.ok) {
-		return { ok: false, message: completeness.message };
+		return { ok: false, message: LEGAL_COMPANY_LIFECYCLE_UNAVAILABLE_MESSAGE };
 	}
 	return {
 		ok: true,
@@ -493,7 +498,7 @@ async function loadLegalCompanyIdentity(input: {
 		activities,
 	].find((result) => !result.ok);
 	if (failed !== undefined && !failed.ok) {
-		return { ok: false, message: failed.message };
+		return { ok: false, message: LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE };
 	}
 	if (
 		!names.ok ||
@@ -502,7 +507,7 @@ async function loadLegalCompanyIdentity(input: {
 		!financialYear.ok ||
 		!activities.ok
 	) {
-		return { ok: false, message: "Company identity data is unavailable." };
+		return { ok: false, message: LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE };
 	}
 
 	return {

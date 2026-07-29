@@ -600,14 +600,16 @@ function calculateStatutory(input: {
 				amount: result.employeeAmount,
 			});
 		} catch (error) {
-			const message =
-				error instanceof Error ? error.message : "Statutory calculation failed";
+			const isUnknownCalculator =
+				error instanceof RangeError &&
+				error.message.startsWith("Unknown statutory calculator");
+			const message = isUnknownCalculator
+				? error.message
+				: "Statutory calculation failed";
 			addException(input.ctx, {
-				exceptionCode:
-					error instanceof RangeError &&
-					message.startsWith("Unknown statutory calculator")
-						? UNKNOWN_CALCULATOR_CODE
-						: STATUTORY_CALCULATION_FAILED_CODE,
+				exceptionCode: isUnknownCalculator
+					? UNKNOWN_CALCULATOR_CODE
+					: STATUTORY_CALCULATION_FAILED_CODE,
 				message,
 				sourceRef: rule.code,
 			});

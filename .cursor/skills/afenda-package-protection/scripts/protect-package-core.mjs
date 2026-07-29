@@ -22,6 +22,8 @@ const INCLUDED_EXTENSIONS = new Set([
 	".css",
 ]);
 const INCLUDED_DIRECTORIES = new Set(["src", "__tests__", "test"]);
+const HEADER_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
+const HEADER_SCAN_LINES = 8;
 
 export function resolvePackageRoot(inputPath = ".") {
 	const resolved = path.resolve(process.cwd(), inputPath);
@@ -124,6 +126,58 @@ async function collectFiles(packageRoot, directory) {
 async function hashFile(filePath) {
 	const content = await readFile(filePath);
 	return createHash("sha256").update(content).digest("hex");
+}
+
+function shouldRequireProtectionHeader(packageRoot, filePath) {
+	const relativePath = path.relative(packageRoot, filePath).replaceAll(path.sep, "/");
+	const topLevel = relativePath.split("/")[0];
+	return (
+		INCLUDED_DIRECTORIES.has(topLevel) &&
+		HEADER_EXTENSIONS.has(path.extname(filePath))
+	);
+}
+
+async function readPackageName(packageRoot) {
+	const packageJsonPath = path.join(packageRoot, "package.json");
+	const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
+	if (typeof packageJson.name !== "string" || packageJson.name.trim().length === 0) {
+		throw new Error(`${path.relative(repoRoot, packageJsonPath)} must define a package name.`);
+	}
+	return packageJson.name;
+}
+
+function hasProtectionHeader(content, packageName) {
+	const header = content.split(/\r?\n/u).slice(0, HEADER_SCAN_LINES).join("\n");
+	return (
+		header.startsWith("/**") &&
+		header.includes(`* ${packageName}`) &&
+		header.includes("* Contract:") &&
+		header.includes("* Protected:")
+	);
+}
+
+export async function assertProtectedHeaders(packageRoot) {
+	const packageName = await readPackageName(packageRoot);
+	const files = (await collectFiles(packageRoot, packageRoot)).filter((file) =>
+		shouldRequireProtectionHeader(packageRoot, file),
+	);
+	const missing = [];
+
+	for (const file of files) {
+		const content = await readFile(file, "utf8");
+		if (!hasProtectionHeader(content, packageName)) {
+			missing.push(path.relative(repoRoot, file).replaceAll(path.sep, "/"));
+		}
+	}
+
+	if (missing.length > 0) {
+		throw new Error(
+			[
+				`${path.relative(repoRoot, packageRoot)} has protected source files without the required header:`,
+				...missing.map((file) => `- ${file}`),
+			].join("\n"),
+		);
+	}
 }
 
 export async function packageProtectionHash(packageRoot) {

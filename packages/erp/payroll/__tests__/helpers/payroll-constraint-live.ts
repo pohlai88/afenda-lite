@@ -9,6 +9,8 @@ import {
 	sql,
 } from "@afenda/db";
 
+export { postgresSqlState } from "@afenda/errors/adapters/postgres";
+
 export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
 	const rows = await db.execute(sql`
 		SELECT 1
@@ -32,24 +34,6 @@ export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
 		LIMIT 1
 	`);
 	return (runColumns.rows as unknown[]).length > 0;
-}
-
-export function postgresSqlState(error: unknown): string | undefined {
-	let current: unknown = error;
-	while (current !== null && typeof current === "object") {
-		if (
-			"code" in current &&
-			typeof (current as { code: unknown }).code === "string"
-		) {
-			const code = (current as { code: string }).code;
-			if (/^23\d{3}$/.test(code)) {
-				return code;
-			}
-		}
-		current =
-			"cause" in current ? (current as { cause: unknown }).cause : undefined;
-	}
-	return undefined;
 }
 
 export type PayrollConstraintSeed = {

@@ -11,7 +11,7 @@ import {
 	canReachAiGateway,
 	createWebTheMachine,
 } from "@/modules/platform/ai/create-web-machine";
-import { jsonError } from "@/modules/platform/api/json-response";
+import { jsonAppError, jsonError } from "@/modules/platform/api/json-response";
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
 
 export const maxDuration = 30;
@@ -69,7 +69,7 @@ export const POST = createPlatformRouteHandler(
 		});
 		if (!limit.ok) {
 			const error = toRateLimitAppError(limit);
-			const response = jsonError(error.code, error.message, error.details);
+			const response = jsonAppError(error);
 			if (limit.reason === "rate_limited") {
 				applyRateLimitHeaders(response.headers, {
 					limit: limit.quota.limit,

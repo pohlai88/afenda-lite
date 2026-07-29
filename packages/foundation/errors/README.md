@@ -135,6 +135,22 @@ Do not import `@afenda/errors` directly inside:
 These layers MUST expose local outcomes or receive display-ready state from
 their caller.
 
+### Private and Domain-Local Failures
+
+Private helpers, entities, value objects, predicates, and domain-internal
+workflows MAY use local failure shapes when the failure does not leave that
+private/domain scope:
+
+- local `Error`
+- boolean or predicate result
+- domain-specific `reason` union
+- domain-local discriminated outcome
+
+These outcomes MUST be mapped to `@afenda/errors` before crossing any package,
+infrastructure, worker, job, HTTP, or public-client boundary. Do not import
+`@afenda/errors` into pure domain objects just to satisfy a boundary contract;
+adapt at the command, query, repository, job, or transport edge instead.
+
 ### Boundary Rule
 
 ```text
@@ -176,6 +192,54 @@ pnpm run check:errors-consumption
 
 Package protection detects unauthorized drift. Consumption enforcement governs
 who must use `@afenda/errors`; the two controls are intentionally separate.
+
+### Normalization Enforcement
+
+Adoption answers **who consumes** `@afenda/errors`. Normalization answers
+whether consumers use the kernel through the same approved flow:
+
+```text
+Local/domain failure
+-> explicit boundary mapping
+-> AppError or Result<T>
+-> safe serialization
+-> HTTP projection only at BFF / transport boundaries
+```
+
+Repository consumers MUST normalize unknown failures with `normalizeUnknown` or
+`failFromUnknown`, convert existing `AppError` values with `failFromAppError`,
+map PostgreSQL failures explicitly with `fromPostgresUnknown`, serialize public
+`AppError` values with `serializeAppError` or HTTP helpers, and project HTTP
+failures through `ERROR_HTTP_STATUS`, `httpErrorBody`, and `retryAfterSeconds`.
+
+The normalization gate is separate from the adoption gate:
+
+```bash
+pnpm run check:errors-normalization
+pnpm run check:errors-normalization -- --strict
+```
+
+Non-strict mode fails confirmed unsafe drift. Strict mode additionally fails
+unresolved review findings. Every audit finding is classified with this
+repository vocabulary:
+
+```text
+CANONICAL
+DOMAIN_LOCAL_ALLOWED
+COMPATIBILITY_ADAPTER
+EXEMPT
+DEAD
+DUPLICATE
+UNSAFE
+INCONSISTENT
+STALE_DOCUMENTATION
+REVIEW
+```
+
+Only `CANONICAL`, `DOMAIN_LOCAL_ALLOWED`, `COMPATIBILITY_ADAPTER`, and
+documented `EXEMPT` classifications may remain at closure. `DUPLICATE`,
+`UNSAFE`, `INCONSISTENT`, `STALE_DOCUMENTATION`, `DEAD`, and unresolved
+`REVIEW` findings require cleanup, migration, or an explicit exemption.
 
 ## Exports
 

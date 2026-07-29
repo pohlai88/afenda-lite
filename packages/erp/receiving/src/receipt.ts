@@ -60,6 +60,11 @@ import type {
 	ReceivingDiscrepancy,
 } from "./types";
 
+const RECEIPT_INVENTORY_POST_FAILED_MESSAGE =
+	"Goods receipt posted but inventory stock movement failed";
+const RECEIPT_INVENTORY_REVERSE_FAILED_MESSAGE =
+	"Goods receipt reversed but inventory compensation failed";
+
 async function postReceiptInventoryMovement(
 	receipt: GoodsReceipt,
 	actorUserId: string,
@@ -439,12 +444,12 @@ export async function postGoodsReceipt(
 			receiptId: posted.data.id,
 			status: "failed",
 			inventoryMovementId: null,
-			errorMessage: inventoryPosted.message,
+			errorMessage: RECEIPT_INVENTORY_POST_FAILED_MESSAGE,
 			actorUserId: parsed.data.actorUserId,
 		});
 		return fail(
 			inventoryPosted.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
-			`Goods receipt posted but inventory stock movement failed: ${inventoryPosted.message}`,
+			RECEIPT_INVENTORY_POST_FAILED_MESSAGE,
 			inventoryPosted.details,
 		);
 	}
@@ -612,12 +617,12 @@ export async function reverseGoodsReceipt(
 			receiptId: reversed.data.id,
 			status: "failed",
 			inventoryMovementId: null,
-			errorMessage: inventoryReversed.message,
+			errorMessage: RECEIPT_INVENTORY_REVERSE_FAILED_MESSAGE,
 			actorUserId: parsed.data.actorUserId,
 		});
 		return fail(
 			inventoryReversed.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
-			`Goods receipt reversed but inventory compensation failed: ${inventoryReversed.message}`,
+			RECEIPT_INVENTORY_REVERSE_FAILED_MESSAGE,
 			inventoryReversed.details,
 		);
 	}

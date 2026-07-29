@@ -12,7 +12,14 @@ import {
 	or,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import { z } from "zod";
 
 import {
@@ -42,6 +49,13 @@ import type {
 	OrganizationDimensionOptions,
 	OrganizationDimensionStore,
 } from "./organization-dimension-store";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 // 1. Constants and domain types
 
@@ -303,13 +317,9 @@ async function loadOrganizationDimensionVersion(
 			.limit(1);
 		return ok(row ?? null);
 	} catch (error) {
-		return fail(
-			"INTERNAL_ERROR",
+		return failFromPersistence(
+			error,
 			"Failed to inspect organization dimension version",
-			{
-				reason: "MASTER_PERSISTENCE_FAILURE",
-				cause: error instanceof Error ? error.message : "unknown",
-			},
 		);
 	}
 }
@@ -515,13 +525,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				}
 				return ok(mapDimension(row));
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to create organization dimension",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},
@@ -657,13 +663,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				}
 				return ok(mapDimension(row));
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to update organization dimension",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},
@@ -753,13 +755,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				}
 				return ok(mapDimension(row));
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to transition organization dimension",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},
@@ -777,10 +775,10 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					.limit(1);
 				return ok(row === undefined ? null : mapDimension(row));
 			} catch (error) {
-				return fail("INTERNAL_ERROR", "Failed to get organization dimension", {
-					reason: "MASTER_PERSISTENCE_FAILURE",
-					cause: error instanceof Error ? error.message : "unknown",
-				});
+				return failFromPersistence(
+					error,
+					"Failed to get organization dimension",
+				);
 			}
 		},
 		async getByCode(input) {
@@ -809,13 +807,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				const row = rows[0];
 				return ok(row === undefined ? null : mapDimension(row));
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to get organization dimension by code",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},
@@ -851,13 +845,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					.offset(offset);
 				return ok({ items: rows.map(mapDimension), total: rows.length });
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to list organization dimensions",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},
@@ -884,13 +874,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					);
 				return ok(rows.map(mapDimension));
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to resolve organization dimension",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},
@@ -917,13 +903,9 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					);
 				return ok(rows.map(mapDimension));
 			} catch (error) {
-				return fail(
-					"INTERNAL_ERROR",
+				return failFromPersistence(
+					error,
 					"Failed to resolve organization dimension by id",
-					{
-						reason: "MASTER_PERSISTENCE_FAILURE",
-						cause: error instanceof Error ? error.message : "unknown",
-					},
 				);
 			}
 		},

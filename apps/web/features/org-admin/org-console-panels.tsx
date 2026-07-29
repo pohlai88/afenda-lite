@@ -154,16 +154,16 @@ function readProvisionPartialFailure(details: unknown): {
 	if (typeof details !== "object" || details === null) {
 		return null;
 	}
-	const disposition = Reflect.get(details, "disposition");
-	const organization = Reflect.get(details, "organization");
+	const disposition = readProperty(details, "disposition");
+	const organization = readProperty(details, "organization");
 	if (typeof disposition !== "string") {
 		return null;
 	}
 	if (typeof organization !== "object" || organization === null) {
 		return null;
 	}
-	const organizationId = Reflect.get(organization, "id");
-	const organizationSlug = Reflect.get(organization, "slug");
+	const organizationId = readProperty(organization, "id");
+	const organizationSlug = readProperty(organization, "slug");
 	if (
 		typeof organizationId !== "string" ||
 		typeof organizationSlug !== "string"
@@ -171,6 +171,14 @@ function readProvisionPartialFailure(details: unknown): {
 		return null;
 	}
 	return { disposition, organizationId, organizationSlug };
+}
+
+function readProperty(value: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(value, key);
+	} catch {
+		return undefined;
+	}
 }
 
 function ProvisionOrganizationSheet() {

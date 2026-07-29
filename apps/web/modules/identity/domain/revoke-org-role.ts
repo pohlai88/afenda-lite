@@ -1,4 +1,5 @@
 import type { platformRoleAssignment } from "@afenda/db";
+import type { ResultFailure } from "@afenda/errors/result";
 
 export type RevokeOrgRoleInput = {
 	orgId: string;
@@ -10,11 +11,7 @@ export type RevokeOrgRoleOk = {
 	assignment: typeof platformRoleAssignment.$inferSelect;
 };
 
-export type RevokeOrgRoleErr = {
-	ok: false;
-	code: "NOT_FOUND";
-	message: string;
-};
+export type RevokeOrgRoleErr = ResultFailure;
 
 export type RevokeOrgRoleResult = RevokeOrgRoleOk | RevokeOrgRoleErr;
 

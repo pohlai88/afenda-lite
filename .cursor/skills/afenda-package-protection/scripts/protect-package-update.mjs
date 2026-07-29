@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
 	assertEditToken,
+	assertProtectedHeaders,
 	packageProtectionHash,
 	protectionFilePathFor,
 	repoRoot,
@@ -12,6 +13,8 @@ async function main() {
 	await assertEditToken();
 
 	const packageRoot = resolvePackageRoot(process.argv[2]);
+	await assertProtectedHeaders(packageRoot);
+
 	const protectionFilePath = protectionFilePathFor(packageRoot);
 	const hash = await packageProtectionHash(packageRoot);
 

@@ -23,6 +23,7 @@
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project openapi"
 	},
 	"dependencies": {
+		"@afenda/errors": "workspace:*",
 		"@asteasolutions/zod-to-openapi": "^8.5.0",
 		"yaml": "^2.9.0",
 		"zod": "catalog:"

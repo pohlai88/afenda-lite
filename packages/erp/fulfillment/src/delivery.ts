@@ -52,6 +52,9 @@ import type {
 	ProofOfDelivery,
 } from "./types";
 
+const DELIVERY_INVENTORY_POST_FAILED_MESSAGE =
+	"Delivery posted but inventory stock movement failed";
+
 async function postDeliveryInventoryMovement(
 	delivery: Delivery,
 	actorUserId: string,
@@ -653,7 +656,7 @@ export async function postDelivery(
 	if (!inventoryPosted.ok) {
 		return fail(
 			inventoryPosted.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
-			`Delivery posted but inventory stock movement failed: ${inventoryPosted.message}`,
+			DELIVERY_INVENTORY_POST_FAILED_MESSAGE,
 			inventoryPosted.details,
 		);
 	}

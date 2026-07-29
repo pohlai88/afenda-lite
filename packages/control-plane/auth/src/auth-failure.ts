@@ -7,19 +7,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
+function readStringProperty(value: unknown, key: PropertyKey): string {
+	if (!isRecord(value)) {
+		return "";
+	}
+	try {
+		const property = Reflect.get(value, key);
+		return typeof property === "string" ? property : "";
+	} catch {
+		return "";
+	}
+}
+
 /** Safe message probe from Neon SDK / fetch-shaped errors — never returned as public text. */
 export function neonErrorProbe(error: unknown): string {
-	if (
-		isRecord(error) &&
-		typeof error.message === "string" &&
-		error.message.trim().length > 0
-	) {
-		return error.message.trim();
-	}
 	if (error instanceof Error && error.message.trim().length > 0) {
 		return error.message.trim();
 	}
-	return "";
+	return readStringProperty(error, "message").trim();
 }
 
 /**

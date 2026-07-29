@@ -2,6 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 
 import { env } from "@afenda/env";
 
+import { jsonError } from "@/modules/platform/api/json-response";
 import { runProductionReliabilityScheduler } from "@/modules/platform/domain/human-resources-reliability-worker";
 
 export const runtime = "nodejs";
@@ -21,10 +22,9 @@ function authorized(request: Request): boolean {
 
 export async function GET(request: Request): Promise<Response> {
 	if (!authorized(request)) {
-		return Response.json(
-			{ error: { code: "UNAUTHORIZED", message: "Unauthorized" } },
-			{ status: 401, headers: responseHeaders },
-		);
+		return jsonError("UNAUTHORIZED", "Unauthorized", undefined, {
+			headers: responseHeaders,
+		});
 	}
 	if (!env.HR_RELIABILITY_ENABLED) {
 		return Response.json(
@@ -51,14 +51,11 @@ export async function GET(request: Request): Promise<Response> {
 		timeBudgetMs: env.HR_RELIABILITY_TIME_BUDGET_MS,
 	});
 	if (!result.ok) {
-		return Response.json(
-			{
-				error: {
-					code: result.code,
-					message: "Human Resources reliability processing failed.",
-				},
-			},
-			{ status: 500, headers: responseHeaders },
+		return jsonError(
+			result.code,
+			"Human Resources reliability processing failed.",
+			undefined,
+			{ headers: responseHeaders },
 		);
 	}
 	return Response.json({ data: result.data }, { headers: responseHeaders });

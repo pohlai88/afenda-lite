@@ -54,6 +54,15 @@ function normalize(code: string): string {
 	return code.toUpperCase().replace(/[\s-]+/g, "");
 }
 
+function failInvalidAccountingInput(error: z.ZodError): Result<never> {
+	return fail("VALIDATION_ERROR", "Invalid accounting input", {
+		fieldErrors: error.flatten().fieldErrors,
+	});
+}
+
+const ACCOUNTING_POSTING_FAILED_EXCEPTION_MESSAGE =
+	"Accounting posting failed for source event";
+
 function resolveOpts(options: AccountingCommandOptions | undefined): Result<{
 	store: NonNullable<AccountingCommandOptions["store"]>;
 	authorization: NonNullable<AccountingCommandOptions["authorization"]>;
@@ -84,7 +93,7 @@ export async function createChartOfAccounts(
 	options?: AccountingCommandOptions,
 ): Promise<Result<ChartOfAccounts>> {
 	const parsed = CreateChartOfAccountsInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -124,7 +133,7 @@ export async function createLedgerAccount(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount>> {
 	const parsed = CreateLedgerAccountInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -169,7 +178,7 @@ export async function updateLedgerAccount(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount>> {
 	const parsed = UpdateLedgerAccountInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -209,7 +218,7 @@ export async function deactivateLedgerAccount(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount>> {
 	const parsed = DeactivateLedgerAccountInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -244,7 +253,7 @@ export async function listLedgerAccounts(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccount[]>> {
 	const parsed = ListLedgerAccountsInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -279,7 +288,7 @@ export async function mapAccountRole(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountRoleMapping>> {
 	const parsed = MapAccountRoleInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -325,7 +334,7 @@ export async function upsertPostingProfile(
 	options?: AccountingCommandOptions,
 ): Promise<Result<import("./model").PostingProfile>> {
 	const parsed = UpsertPostingProfileInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -378,7 +387,7 @@ export async function createDraftJournal(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = CreateDraftJournalInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -421,7 +430,7 @@ export async function addJournalLine(
 	options?: AccountingCommandOptions,
 ): Promise<Result<JournalLine>> {
 	const parsed = AddJournalLineInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -479,7 +488,7 @@ export async function postJournal(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = PostJournalInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -518,7 +527,7 @@ export async function reverseJournal(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = ReverseJournalInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -558,7 +567,7 @@ export async function openAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = OpenAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -596,7 +605,7 @@ export async function softCloseAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = SoftCloseAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -633,7 +642,7 @@ export async function closeAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = CloseAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -671,7 +680,7 @@ export async function reopenAccountingPeriod(
 	options?: AccountingCommandOptions,
 ): Promise<Result<AccountingPeriod>> {
 	const parsed = ReopenAccountingPeriodInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -715,7 +724,7 @@ export async function postFinancialSourceEvent(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal>> {
 	const parsed = PostFinancialSourceEventInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -921,7 +930,7 @@ export async function postFinancialSourceEvent(
 			sourceEventVersion: d.sourceEventVersion,
 			postingRuleCode: d.postingRuleCode,
 			reasonCode: "POST_FAILED",
-			message: postResult.message,
+			message: ACCOUNTING_POSTING_FAILED_EXCEPTION_MESSAGE,
 			payload: d,
 			actorUserId: d.actorUserId,
 		});
@@ -955,7 +964,7 @@ export async function getJournalById(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal | null>> {
 	const parsed = GetJournalByIdInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -990,7 +999,7 @@ export async function listJournals(
 	options?: AccountingCommandOptions,
 ): Promise<Result<Journal[]>> {
 	const parsed = ListJournalsInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -1025,7 +1034,7 @@ export async function getTrialBalance(
 	options?: AccountingCommandOptions,
 ): Promise<Result<TrialBalanceRow[]>> {
 	const parsed = GetTrialBalanceInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -1058,7 +1067,7 @@ export async function getLedgerAccountActivity(
 	options?: AccountingCommandOptions,
 ): Promise<Result<LedgerAccountActivityRow[]>> {
 	const parsed = GetLedgerAccountActivityInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -1094,7 +1103,7 @@ export async function getSourcePostingTrace(
 	options?: AccountingCommandOptions,
 ): Promise<Result<SourcePostingTrace[]>> {
 	const parsed = GetSourcePostingTraceInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -1129,7 +1138,7 @@ export async function listPostingExceptions(
 	options?: AccountingCommandOptions,
 ): Promise<Result<PostingException[]>> {
 	const parsed = ListPostingExceptionsInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;
@@ -1164,7 +1173,7 @@ export async function resolvePostingException(
 	options?: AccountingCommandOptions,
 ): Promise<Result<PostingException>> {
 	const parsed = ResolvePostingExceptionInput.safeParse(input);
-	if (!parsed.success) return fail("VALIDATION_ERROR", parsed.error.message);
+	if (!parsed.success) return failInvalidAccountingInput(parsed.error);
 
 	const opts = resolveOpts(options);
 	if (!opts.ok) return opts;

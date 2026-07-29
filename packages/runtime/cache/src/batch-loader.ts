@@ -4,6 +4,14 @@ type QueueItem<K, V> = {
 	reject: (error: Error) => void;
 };
 
+const BATCH_LOAD_FAILED_MESSAGE = "Batch load failed";
+
+function normalizeBatchLoadError(error: unknown): Error {
+	return error instanceof Error
+		? error
+		: new Error(BATCH_LOAD_FAILED_MESSAGE, { cause: error });
+}
+
 /**
  * Batches and deduplicates individual loads into one batchFn call (N+1 guard).
  */
@@ -53,7 +61,7 @@ export class BatchLoader<K, V> {
 				item.resolve(results.get(item.key) ?? null);
 			}
 		} catch (error) {
-			const err = error instanceof Error ? error : new Error(String(error));
+			const err = normalizeBatchLoadError(error);
 			for (const item of batch) {
 				item.reject(err);
 			}

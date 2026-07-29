@@ -16,6 +16,7 @@ import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
 	actionFail,
+	actionFailFromAppError,
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
@@ -90,7 +91,7 @@ export async function signInAction(
 			path: AUTH_SIGN_IN_PATH,
 			code: error.code,
 		});
-		return actionFail(error.code, error.message, error.details);
+		return actionFailFromAppError(error);
 	}
 
 	const parsed = parseSchema(signInSchema, {

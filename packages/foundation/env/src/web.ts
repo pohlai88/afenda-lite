@@ -5,7 +5,8 @@ import {
 	approvedNeonBranchIdSchema,
 	approvedNeonOrgIdSchema,
 	approvedNeonProjectIdSchema,
-	assertLocalOnlySecretsAbsentInProduction,
+	assertLocalOnlyConfigAbsentInProduction,
+	assertPairedSecretConfig,
 	assertPlaygroundLocalOnly,
 	formatNeonContractIssues,
 	isProductionDeployment,
@@ -33,21 +34,31 @@ const boundedIntString = (
 		.optional()
 		.default(defaultValue);
 
+const nonEmptyOptionalString = z.string().trim().min(1).optional();
+
 const runtimeCtx = {
 	nodeEnv: process.env.NODE_ENV,
 	vercelEnv: process.env.VERCEL_ENV,
-};
+} as const;
 
-/** True when running on a Vercel deployment (preview / production / vercel-dev). */
+const productionDeployment = isProductionDeployment(runtimeCtx);
+
+const skipValidation =
+	!productionDeployment &&
+	(process.env.SKIP_ENV_VALIDATION === "true" ||
+		process.env.npm_lifecycle_event === "typecheck");
+
+/** True for Vercel development, preview, and production runtimes. */
 export function isVercelRuntimeNow(): boolean {
 	return isVercelRuntime(runtimeCtx);
 }
 
 /**
- * Typed Next.js env for `@afenda/web` (ARCH-027 / T3 createEnv + N1 Neon contract).
- * Product code: `import { env } from '@afenda/env'` — never raw process.env for app config.
+ * Typed Next.js environment contract for `@afenda/web`.
+ *
+ * Product code: `import { env } from "@afenda/env"` — never raw
+ * `process.env` for app configuration.
  */
-
 export const env = createEnv({
 	server: {
 		DATABASE_URL: productDatabaseUrlSchema,
@@ -58,29 +69,23 @@ export const env = createEnv({
 		NEON_ORG_ID: approvedNeonOrgIdSchema.optional(),
 		NEON_PROJECT_ID: approvedNeonProjectIdSchema.optional(),
 		NEON_BRANCH_ID: approvedNeonBranchIdSchema.optional(),
-		NEON_API_KEY: z.string().min(1).optional(),
+		NEON_API_KEY: nonEmptyOptionalString,
 
-		PORTAL_ORG_SLUG: z.string().min(1).optional(),
-		PORTAL_ORG_NAME: z.string().min(1).optional(),
+		PORTAL_ORG_SLUG: nonEmptyOptionalString,
+		PORTAL_ORG_NAME: nonEmptyOptionalString,
 		PORTAL_ORG_SWITCHER_ENABLED: boolString.optional().default(false),
-		PORTAL_ORGANIZATION_ID: z.string().min(1).optional(),
-		E2E_ORGANIZATION_ID: z.string().min(1).optional(),
+		PORTAL_ORGANIZATION_ID: nonEmptyOptionalString,
+		E2E_ORGANIZATION_ID: nonEmptyOptionalString,
 
 		GUARDIAN_AUTH_SHELL: boolString.optional().default(true),
 
-		RESEND_API_KEY: z.string().min(1).optional(),
+		RESEND_API_KEY: nonEmptyOptionalString,
 
-		/** Upstash Redis REST — required on Vercel production for shared rate limits. */
 		UPSTASH_REDIS_REST_URL: z.url().optional(),
-		UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+		UPSTASH_REDIS_REST_TOKEN: nonEmptyOptionalString,
 
-		/**
-		 * Bearer token for `GET /api/metrics` Prometheus scrape.
-		 * Fail closed when unset — scrape RH returns 404.
-		 */
 		METRICS_SCRAPE_TOKEN: z.string().min(16).optional(),
 
-		/** Vercel Cron bearer for the durable HR reliability worker. */
 		CRON_SECRET: z.string().min(32).optional(),
 		HR_RELIABILITY_ENABLED: boolString.optional().default(false),
 		HR_RELIABILITY_BATCH_SIZE: boundedIntString(1, 100, 25),
@@ -89,15 +94,16 @@ export const env = createEnv({
 		HR_RELIABILITY_LEASE_SECONDS: boundedIntString(60, 900, 120),
 		HR_RELIABILITY_TIME_BUDGET_MS: boundedIntString(1_000, 55_000, 45_000),
 
-		/**
-		 * Vercel AI Gateway API key for `@afenda/ai-the-machine`.
-		 * Local: required for chat RH. On Vercel, OIDC may apply when unset.
-		 */
-		AI_GATEWAY_API_KEY: z.string().min(1).optional(),
-		/** AI Gateway model id (`provider/model`). */
-		AI_THE_MACHINE_MODEL: z.string().min(1).optional(),
+		AI_GATEWAY_API_KEY: nonEmptyOptionalString,
+		AI_THE_MACHINE_MODEL: z
+			.string()
+			.trim()
+			.regex(
+				/^[^/\s]+\/[^/\s]+$/,
+				"AI_THE_MACHINE_MODEL must use provider/model format.",
+			)
+			.optional(),
 
-		/** Optional HTTP attendance connector base URL for HR Time import pulls. */
 		HR_ATTENDANCE_CONNECTOR_BASE_URL: z.url().optional(),
 
 		PLAYGROUND_ENABLED: boolString
@@ -112,28 +118,30 @@ export const env = createEnv({
 					});
 				}
 			}),
-		PLAYGROUND_SURVEY_ID: z.string().min(1).optional(),
-		PLAYGROUND_ASSIGNMENT_ID: z.string().min(1).optional(),
-		PLAYGROUND_SURVEY_SLUG: z.string().min(1).optional(),
+		PLAYGROUND_SURVEY_ID: nonEmptyOptionalString,
+		PLAYGROUND_ASSIGNMENT_ID: nonEmptyOptionalString,
+		PLAYGROUND_SURVEY_SLUG: nonEmptyOptionalString,
 
 		SHARED_ADMIN_EMAIL: z.email().optional(),
-		SHARED_ADMIN_NAME: z.string().min(1).optional(),
-		SHARED_ADMIN_PASSWORD: z.string().min(1).optional(),
+		SHARED_ADMIN_NAME: nonEmptyOptionalString,
+		SHARED_ADMIN_PASSWORD: nonEmptyOptionalString,
 		PREVIEW_CLIENT_EMAIL: z.email().optional(),
-		PREVIEW_CLIENT_NAME: z.string().min(1).optional(),
-		PREVIEW_CLIENT_PASSWORD: z.string().min(1).optional(),
-		CLIENT_DEFAULT_PASSWORD: z.string().min(1).optional(),
+		PREVIEW_CLIENT_NAME: nonEmptyOptionalString,
+		PREVIEW_CLIENT_PASSWORD: nonEmptyOptionalString,
+		CLIENT_DEFAULT_PASSWORD: nonEmptyOptionalString,
+		E2E_FACTORY_PASSWORD: nonEmptyOptionalString,
+		E2E_FACTORY_HASH_TEMPLATE_EMAIL: z.email().optional(),
 		E2E_OPERATOR_EMAIL: z.email().optional(),
-		E2E_OPERATOR_PASSWORD: z.string().min(1).optional(),
+		E2E_OPERATOR_PASSWORD: nonEmptyOptionalString,
 		E2E_CLIENT_EMAIL: z.email().optional(),
-		E2E_CLIENT_PASSWORD: z.string().min(1).optional(),
-		E2E_SURVEY_SLUG: z.string().min(1).optional(),
-		E2E_INVITE_TOKEN: z.string().min(1).optional(),
+		E2E_CLIENT_PASSWORD: nonEmptyOptionalString,
+		E2E_INVITEE_EMAIL: z.email().optional(),
+		E2E_INVITEE_PASSWORD: nonEmptyOptionalString,
+		E2E_SURVEY_SLUG: nonEmptyOptionalString,
+		E2E_INVITE_TOKEN: nonEmptyOptionalString,
 
-		SHADCN_STUDIO_EMAIL: z.string().min(1).optional(),
-		SHADCN_STUDIO_API_KEY: z.string().min(1).optional(),
-		LICENSE_KEY: z.string().min(1).optional(),
-		EMAIL: z.string().min(1).optional(),
+		SHADCN_STUDIO_EMAIL: z.email().optional(),
+		SHADCN_STUDIO_API_KEY: nonEmptyOptionalString,
 	},
 	client: {},
 	runtimeEnv: {
@@ -188,22 +196,23 @@ export const env = createEnv({
 		PREVIEW_CLIENT_NAME: process.env.PREVIEW_CLIENT_NAME,
 		PREVIEW_CLIENT_PASSWORD: process.env.PREVIEW_CLIENT_PASSWORD,
 		CLIENT_DEFAULT_PASSWORD: process.env.CLIENT_DEFAULT_PASSWORD,
+		E2E_FACTORY_PASSWORD: process.env.E2E_FACTORY_PASSWORD,
+		E2E_FACTORY_HASH_TEMPLATE_EMAIL:
+			process.env.E2E_FACTORY_HASH_TEMPLATE_EMAIL,
 		E2E_OPERATOR_EMAIL: process.env.E2E_OPERATOR_EMAIL,
 		E2E_OPERATOR_PASSWORD: process.env.E2E_OPERATOR_PASSWORD,
 		E2E_CLIENT_EMAIL: process.env.E2E_CLIENT_EMAIL,
 		E2E_CLIENT_PASSWORD: process.env.E2E_CLIENT_PASSWORD,
+		E2E_INVITEE_EMAIL: process.env.E2E_INVITEE_EMAIL,
+		E2E_INVITEE_PASSWORD: process.env.E2E_INVITEE_PASSWORD,
 		E2E_SURVEY_SLUG: process.env.E2E_SURVEY_SLUG,
 		E2E_INVITE_TOKEN: process.env.E2E_INVITE_TOKEN,
 
 		SHADCN_STUDIO_EMAIL: process.env.SHADCN_STUDIO_EMAIL,
 		SHADCN_STUDIO_API_KEY: process.env.SHADCN_STUDIO_API_KEY,
-		LICENSE_KEY: process.env.LICENSE_KEY,
-		EMAIL: process.env.EMAIL,
 	},
 	emptyStringAsUndefined: true,
-	skipValidation:
-		process.env.SKIP_ENV_VALIDATION === "true" ||
-		process.env.npm_lifecycle_event === "typecheck",
+	skipValidation,
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((value, ctx) => {
 			if (
@@ -223,31 +232,198 @@ export const env = createEnv({
 					message: "HR reliability concurrency cannot exceed batch size.",
 				});
 			}
-			if (!isProductionDeployment(runtimeCtx)) {
+
+			const upstashResult = assertPairedSecretConfig({
+				leftName: "UPSTASH_REDIS_REST_URL",
+				leftValue: value.UPSTASH_REDIS_REST_URL,
+				rightName: "UPSTASH_REDIS_REST_TOKEN",
+				rightValue: value.UPSTASH_REDIS_REST_TOKEN,
+			});
+			if (!upstashResult.ok) {
+				ctx.addIssue({
+					code: "custom",
+					path: [
+						value.UPSTASH_REDIS_REST_URL === undefined
+							? "UPSTASH_REDIS_REST_URL"
+							: "UPSTASH_REDIS_REST_TOKEN",
+					],
+					message: formatNeonContractIssues(upstashResult.issues),
+				});
+			}
+
+			const portalIdentityPresent = value.PORTAL_ORGANIZATION_ID !== undefined;
+			const portalDescriptionPresent =
+				value.PORTAL_ORG_SLUG !== undefined ||
+				value.PORTAL_ORG_NAME !== undefined;
+			if (value.PORTAL_ORG_SWITCHER_ENABLED && !portalIdentityPresent) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["PORTAL_ORGANIZATION_ID"],
+					message:
+						"PORTAL_ORGANIZATION_ID is required when PORTAL_ORG_SWITCHER_ENABLED=true.",
+				});
+			}
+			if (portalDescriptionPresent && !portalIdentityPresent) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["PORTAL_ORGANIZATION_ID"],
+					message:
+						"PORTAL_ORGANIZATION_ID is required when portal organization metadata is configured.",
+				});
+			}
+
+			if (
+				value.PLAYGROUND_ENABLED &&
+				value.PLAYGROUND_SURVEY_ID === undefined &&
+				value.PLAYGROUND_ASSIGNMENT_ID === undefined &&
+				value.PLAYGROUND_SURVEY_SLUG === undefined
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["PLAYGROUND_ENABLED"],
+					message:
+						"At least one playground survey or assignment target is required when PLAYGROUND_ENABLED=true.",
+				});
+			}
+
+			const pairedConfigs = [
+				{
+					result: assertPairedSecretConfig({
+						leftName: "PREVIEW_CLIENT_EMAIL",
+						leftValue: value.PREVIEW_CLIENT_EMAIL,
+						rightName: "PREVIEW_CLIENT_PASSWORD",
+						rightValue: value.PREVIEW_CLIENT_PASSWORD,
+					}),
+					path: "PREVIEW_CLIENT_EMAIL",
+				},
+				{
+					result: assertPairedSecretConfig({
+						leftName: "E2E_OPERATOR_EMAIL",
+						leftValue: value.E2E_OPERATOR_EMAIL,
+						rightName: "E2E_OPERATOR_PASSWORD",
+						rightValue: value.E2E_OPERATOR_PASSWORD,
+					}),
+					path: "E2E_OPERATOR_EMAIL",
+				},
+				{
+					result: assertPairedSecretConfig({
+						leftName: "E2E_CLIENT_EMAIL",
+						leftValue: value.E2E_CLIENT_EMAIL,
+						rightName: "E2E_CLIENT_PASSWORD",
+						rightValue: value.E2E_CLIENT_PASSWORD,
+					}),
+					path: "E2E_CLIENT_EMAIL",
+				},
+				{
+					result: assertPairedSecretConfig({
+						leftName: "E2E_INVITEE_EMAIL",
+						leftValue: value.E2E_INVITEE_EMAIL,
+						rightName: "E2E_INVITEE_PASSWORD",
+						rightValue: value.E2E_INVITEE_PASSWORD,
+					}),
+					path: "E2E_INVITEE_EMAIL",
+				},
+				{
+					result: assertPairedSecretConfig({
+						leftName: "SHADCN_STUDIO_EMAIL",
+						leftValue: value.SHADCN_STUDIO_EMAIL,
+						rightName: "SHADCN_STUDIO_API_KEY",
+						rightValue: value.SHADCN_STUDIO_API_KEY,
+					}),
+					path: "SHADCN_STUDIO_EMAIL",
+				},
+			] as const;
+			for (const config of pairedConfigs) {
+				if (!config.result.ok) {
+					ctx.addIssue({
+						code: "custom",
+						path: [config.path],
+						message: formatNeonContractIssues(config.result.issues),
+					});
+				}
+			}
+
+			if (!productionDeployment) {
 				return;
 			}
-			if (value.CRON_SECRET === undefined) {
+
+			if (value.NEON_ORG_ID === undefined) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["NEON_ORG_ID"],
+					message: "NEON_ORG_ID is required on production deployments.",
+				});
+			}
+			if (value.NEON_PROJECT_ID === undefined) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["NEON_PROJECT_ID"],
+					message: "NEON_PROJECT_ID is required on production deployments.",
+				});
+			}
+			if (value.NEON_BRANCH_ID === undefined) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["NEON_BRANCH_ID"],
+					message: "NEON_BRANCH_ID is required on production deployments.",
+				});
+			}
+			if (upstashResult.ok && value.UPSTASH_REDIS_REST_URL === undefined) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["UPSTASH_REDIS_REST_URL"],
+					message:
+						"UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required on production deployments.",
+				});
+			}
+			if (value.HR_RELIABILITY_ENABLED && value.CRON_SECRET === undefined) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["CRON_SECRET"],
-					message: "CRON_SECRET is required on production deployments.",
+					message:
+						"CRON_SECRET is required in production when HR_RELIABILITY_ENABLED=true.",
 				});
 			}
-			const localOnly = assertLocalOnlySecretsAbsentInProduction(
+
+			const localOnlyResult = assertLocalOnlyConfigAbsentInProduction(
 				{
+					NEON_API_KEY: value.NEON_API_KEY,
+					PLAYGROUND_ENABLED: value.PLAYGROUND_ENABLED,
+					PLAYGROUND_SURVEY_ID: value.PLAYGROUND_SURVEY_ID,
+					PLAYGROUND_ASSIGNMENT_ID: value.PLAYGROUND_ASSIGNMENT_ID,
+					PLAYGROUND_SURVEY_SLUG: value.PLAYGROUND_SURVEY_SLUG,
+					SHARED_ADMIN_EMAIL: value.SHARED_ADMIN_EMAIL,
+					SHARED_ADMIN_NAME: value.SHARED_ADMIN_NAME,
 					SHARED_ADMIN_PASSWORD: value.SHARED_ADMIN_PASSWORD,
+					PREVIEW_CLIENT_EMAIL: value.PREVIEW_CLIENT_EMAIL,
+					PREVIEW_CLIENT_NAME: value.PREVIEW_CLIENT_NAME,
 					PREVIEW_CLIENT_PASSWORD: value.PREVIEW_CLIENT_PASSWORD,
 					CLIENT_DEFAULT_PASSWORD: value.CLIENT_DEFAULT_PASSWORD,
+					E2E_ORGANIZATION_ID: value.E2E_ORGANIZATION_ID,
+					E2E_FACTORY_PASSWORD: value.E2E_FACTORY_PASSWORD,
+					E2E_FACTORY_HASH_TEMPLATE_EMAIL:
+						value.E2E_FACTORY_HASH_TEMPLATE_EMAIL,
+					E2E_OPERATOR_EMAIL: value.E2E_OPERATOR_EMAIL,
 					E2E_OPERATOR_PASSWORD: value.E2E_OPERATOR_PASSWORD,
+					E2E_CLIENT_EMAIL: value.E2E_CLIENT_EMAIL,
 					E2E_CLIENT_PASSWORD: value.E2E_CLIENT_PASSWORD,
+					E2E_INVITEE_EMAIL: value.E2E_INVITEE_EMAIL,
+					E2E_INVITEE_PASSWORD: value.E2E_INVITEE_PASSWORD,
+					E2E_SURVEY_SLUG: value.E2E_SURVEY_SLUG,
+					E2E_INVITE_TOKEN: value.E2E_INVITE_TOKEN,
+					SHADCN_STUDIO_EMAIL: value.SHADCN_STUDIO_EMAIL,
+					SHADCN_STUDIO_API_KEY: value.SHADCN_STUDIO_API_KEY,
 				},
 				runtimeCtx,
 			);
-			if (!localOnly.ok) {
-				ctx.addIssue({
-					code: "custom",
-					message: formatNeonContractIssues(localOnly.issues),
-				});
+			if (!localOnlyResult.ok) {
+				for (const issue of localOnlyResult.issues) {
+					ctx.addIssue({
+						code: "custom",
+						path: [issue.variable],
+						message: issue.message,
+					});
+				}
 			}
 		}),
 });

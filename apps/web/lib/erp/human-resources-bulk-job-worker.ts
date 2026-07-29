@@ -4,6 +4,7 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	assignmentBulkRowSchema,
 	attendanceBulkRowSchema,
+	type BulkBatchStatus,
 	compensationBulkRowSchema,
 	createBulkReliabilityWorkItem,
 	createHumanResourcesBulkExportArtifactChunk,
@@ -11,6 +12,7 @@ import {
 	EXPORT_ARTIFACT_RETENTION_MS,
 	employeeBulkRowSchema,
 	type HumanResourcesBulkImportJob,
+	type HumanResourcesBulkJobStatus,
 	importPayloadPurgeAt,
 	learningAssignmentBulkRowSchema,
 	leaveEntitlementBulkRowSchema,
@@ -130,6 +132,20 @@ async function runImport(
 	}
 }
 
+function bulkBatchStatusToJobStatus(
+	status: "dry_run_completed" | BulkBatchStatus,
+): HumanResourcesBulkJobStatus {
+	switch (status) {
+		case "completed":
+		case "completed_with_rejections":
+			return status;
+		case "checkpointed":
+		case "dry_run_completed":
+		case "retryable_failed":
+			return "running";
+	}
+}
+
 export async function processHumanResourcesBulkImportJob(
 	item: ReliabilityWorkItem,
 ): Promise<Result<ReliabilityExecutionOutcome>> {
@@ -191,6 +207,7 @@ export async function processHumanResourcesBulkImportJob(
 	const terminal =
 		result.data.status === "completed" ||
 		result.data.status === "completed_with_rejections";
+	const nextStatus = bulkBatchStatusToJobStatus(result.data.status);
 	const successor = terminal
 		? null
 		: createBulkReliabilityWorkItem({
@@ -221,7 +238,7 @@ export async function processHumanResourcesBulkImportJob(
 		expectedVersion: job.version,
 		job: {
 			...job,
-			status: terminal ? result.data.status : "running",
+			status: nextStatus,
 			version: job.version + 1,
 			checkpointVersion: result.data.checkpointVersion,
 			lastErrorCode: null,

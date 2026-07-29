@@ -15,6 +15,8 @@ import {
 
 const DEFAULT_MAX_ATTEMPTS = 3;
 const MAX_MAX_ATTEMPTS = 10;
+const PAYROLL_DELIVERY_PUBLISH_FAILED_MESSAGE =
+	"Payroll delivery publish failed";
 
 function canonicalize(value: unknown): unknown {
 	if (Array.isArray(value)) return value.map(canonicalize);
@@ -204,7 +206,7 @@ export async function deliverPayrollHandoff(
 				status: attempt >= current.maxAttempts ? "failed" : "pending",
 				attemptCount: attempt,
 				lastAttemptAt: now,
-				lastError: published.message,
+				lastError: PAYROLL_DELIVERY_PUBLISH_FAILED_MESSAGE,
 				version: current.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,

@@ -6,6 +6,7 @@ import {
 	renderPrometheusText,
 } from "@afenda/metrics/node";
 
+import { jsonError } from "@/modules/platform/api/json-response";
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
 
 // Explicitly declare Node runtime for Prometheus metrics
@@ -35,18 +36,22 @@ export const GET = createPlatformRouteHandler(
 	async (request) => {
 		const configured = env.METRICS_SCRAPE_TOKEN;
 		if (configured === undefined) {
-			return new Response(null, { status: 404 });
+			return jsonError("NOT_FOUND", "Metrics endpoint is not available.");
 		}
 
 		const provided = extractBearerToken(request.headers.get("Authorization"));
 		if (provided === null || !tokensEqual(configured, provided)) {
-			return new Response(null, {
-				status: 401,
-				headers: {
-					"WWW-Authenticate": 'Bearer realm="metrics"',
-					"Cache-Control": "no-store",
+			return jsonError(
+				"UNAUTHORIZED",
+				"Metrics authentication is required.",
+				undefined,
+				{
+					headers: {
+						"WWW-Authenticate": 'Bearer realm="metrics"',
+						"Cache-Control": "no-store",
+					},
 				},
-			});
+			);
 		}
 
 		const body = await renderPrometheusText();

@@ -1,4 +1,5 @@
 import type { Session } from "@afenda/auth";
+import { AppError } from "@afenda/errors";
 import {
 	getEmployeeProfile,
 	getHeadcountAvailability,
@@ -57,7 +58,11 @@ export async function loadManagerWorkspace(
 	const errors: string[] = [];
 	const scopeResult = await resolveManagerScope(session, asOf);
 	if (!scopeResult.ok) {
-		throw new Error("Manager reporting scope could not be resolved.");
+		throw new AppError({
+			code: scopeResult.code,
+			message: scopeResult.message,
+			details: scopeResult.details,
+		});
 	}
 	const scope = scopeResult.data;
 

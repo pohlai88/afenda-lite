@@ -14,7 +14,17 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	postgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import {
 	RECEIVING_ERROR_IDEMPOTENCY_CONFLICT,
@@ -52,6 +62,13 @@ import {
 	type ReceivingDiscrepancyStatus,
 	type ReceivingDiscrepancyType,
 } from "./types";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 type TxIdRow = { id: string };
 
@@ -182,19 +199,54 @@ function json(value: unknown): string {
 	return JSON.stringify(value);
 }
 
+const SQLSTATE_UNIQUE_VIOLATION = "23505";
+const SQLSTATE_FOREIGN_KEY_VIOLATION = "23503";
+
+function readErrorStringProperty(
+	error: unknown,
+	key: PropertyKey,
+): string | undefined {
+	if (typeof error !== "object" || error === null) {
+		return undefined;
+	}
+	try {
+		const value = Reflect.get(error, key);
+		return typeof value === "string" ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function readConstraintName(error: unknown): string {
+	return (
+		readErrorStringProperty(error, "constraint") ??
+		readErrorStringProperty(error, "constraint_name") ??
+		""
+	);
+}
+
+function isConstraintViolation(error: unknown): boolean {
+	const sqlState = postgresSqlState(error);
+	return (
+		sqlState === SQLSTATE_UNIQUE_VIOLATION ||
+		sqlState === SQLSTATE_FOREIGN_KEY_VIOLATION
+	);
+}
+
 function writeError(
 	error: unknown,
 	conflictMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	const message = error instanceof Error ? error.message : String(error);
-	return /unique|duplicate|foreign key/i.test(message)
+	return isConstraintViolation(error)
 		? fail("CONFLICT", conflictMessage)
-		: failFromUnknown(error, fallbackMessage);
+		: failFromPersistence(error, fallbackMessage);
 }
 
-function writeErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+function isIdempotencyConflict(error: unknown, key: string): boolean {
+	return postgresSqlState(error) === SQLSTATE_UNIQUE_VIOLATION
+		? readConstraintName(error).includes(key)
+		: false;
 }
 
 async function hydrateReceipts(
@@ -341,7 +393,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				"Created goods receipt missing",
 			);
 		} catch (error) {
-			if (/create_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "create_idempotency")) {
 				const existing = await this.getReceiptByCreateIdempotencyKey(
 					record.organizationId,
 					record.createIdempotencyKey,
@@ -471,7 +523,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				? fail("INTERNAL_ERROR", "Created goods receipt line missing")
 				: ok(mapLine(line));
 		} catch (error) {
-			if (/line_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "line_idempotency")) {
 				const again = await this.getReceiptById(
 					record.organizationId,
 					record.receiptId,
@@ -673,7 +725,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				"Posted goods receipt missing",
 			);
 		} catch (error) {
-			if (/post_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "post_idempotency")) {
 				const again = await this.getReceiptById(
 					record.organizationId,
 					record.receiptId,
@@ -791,7 +843,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				"Cancelled goods receipt missing",
 			);
 		} catch (error) {
-			if (/cancel_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "cancel_idempotency")) {
 				const again = await this.getReceiptById(
 					record.organizationId,
 					record.receiptId,
@@ -993,7 +1045,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				"Reversed goods receipt missing",
 			);
 		} catch (error) {
-			if (/reverse_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "reverse_idempotency")) {
 				const [again] = await db
 					.select()
 					.from(goodsReceipt)
@@ -1164,7 +1216,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				? fail("INTERNAL_ERROR", "Created receiving discrepancy missing")
 				: ok(mapDiscrepancy(row));
 		} catch (error) {
-			if (/record_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "record_idempotency")) {
 				const again = await this.getReceiptById(
 					record.organizationId,
 					record.receiptId,
@@ -1296,7 +1348,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				? fail("INTERNAL_ERROR", "Resolved receiving discrepancy missing")
 				: ok(mapDiscrepancy(row));
 		} catch (error) {
-			if (/resolve_idempotency/i.test(writeErrorMessage(error))) {
+			if (isIdempotencyConflict(error, "resolve_idempotency")) {
 				const [row] = await db
 					.select()
 					.from(receivingDiscrepancy)
@@ -1375,7 +1427,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to sum posted accepted quantities by purchase order lines",
 			);
@@ -1401,7 +1453,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			const [hydrated] = await hydrateReceipts(organizationId, [header]);
 			return ok(hydrated ?? null);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load goods receipt");
+			return failFromPersistence(error, "Failed to load goods receipt");
 		}
 	}
 
@@ -1424,7 +1476,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			const [hydrated] = await hydrateReceipts(organizationId, [header]);
 			return ok(hydrated ?? null);
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to load goods receipt by create idempotency key",
 			);
@@ -1453,7 +1505,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				.offset((filter.page - 1) * filter.pageSize);
 			return ok(await hydrateReceipts(filter.organizationId, headers));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list goods receipts");
+			return failFromPersistence(error, "Failed to list goods receipts");
 		}
 	}
 
@@ -1479,7 +1531,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				.offset((filter.page - 1) * filter.pageSize);
 			return ok(await hydrateReceipts(filter.organizationId, headers));
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to list goods receipt inventory exceptions",
 			);

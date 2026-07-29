@@ -1378,6 +1378,10 @@ importers:
         version: 5.9.3
 
   packages/runtime/http:
+    dependencies:
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
@@ -1423,6 +1427,9 @@ importers:
 
   packages/runtime/openapi:
     dependencies:
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
       '@asteasolutions/zod-to-openapi':
         specifier: ^8.5.0
         version: 8.5.0(zod@4.4.3)

@@ -14,7 +14,17 @@ import {
 	stockMovementLine,
 	stockReservation,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	postgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import {
 	INVENTORY_ERROR_CODE_CONFLICT,
@@ -66,6 +76,13 @@ import {
 	type StockReservation,
 	type StockReservationStatus,
 } from "./types";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 type TxIdRow = { id: string };
 
@@ -349,36 +366,62 @@ function json(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-function writeErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+const SQLSTATE_UNIQUE_VIOLATION = "23505";
+const SQLSTATE_DIVISION_BY_ZERO = "22012";
+
+function readErrorStringProperty(
+	error: unknown,
+	key: PropertyKey,
+): string | undefined {
+	if (typeof error !== "object" || error === null) {
+		return undefined;
+	}
+	try {
+		const value = Reflect.get(error, key);
+		return typeof value === "string" ? value : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function readConstraintName(error: unknown): string {
+	return (
+		readErrorStringProperty(error, "constraint") ??
+		readErrorStringProperty(error, "constraint_name") ??
+		""
+	);
 }
 
 function isUniqueViolation(error: unknown): boolean {
-	return /unique|duplicate/i.test(writeErrorMessage(error));
+	return postgresSqlState(error) === SQLSTATE_UNIQUE_VIOLATION;
 }
 
 function isCreateMovementIdempotencyConflict(error: unknown): boolean {
 	return /stock_movement_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		writeErrorMessage(error),
+		readConstraintName(error),
 	);
 }
 
 function isLineIdempotencyConflict(error: unknown): boolean {
 	return /stock_movement_line_org_movement_idempotency_uidx|line_idempotency_key/i.test(
-		writeErrorMessage(error),
+		readConstraintName(error),
 	);
 }
 
 function isSourceEventConflict(error: unknown): boolean {
 	return /stock_movement_org_source_event_uidx|source_event_id/i.test(
-		writeErrorMessage(error),
+		readConstraintName(error),
 	);
 }
 
 function isReservationCreateIdempotencyConflict(error: unknown): boolean {
 	return /stock_reservation_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		writeErrorMessage(error),
+		readConstraintName(error),
 	);
+}
+
+function isDivisionByZero(error: unknown): boolean {
+	return postgresSqlState(error) === SQLSTATE_DIVISION_BY_ZERO;
 }
 
 function fieldChangeJson(
@@ -518,7 +561,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load stock movement lines");
+			return failFromPersistence(error, "Failed to load stock movement lines");
 		}
 	}
 
@@ -564,7 +607,10 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.limit(1);
 			return ok(row?.ledgerSequence ?? 0);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load inventory ledger sequence");
+			return failFromPersistence(
+				error,
+				"Failed to load inventory ledger sequence",
+			);
 		}
 	}
 
@@ -730,7 +776,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					inventoryErrorDetails(INVENTORY_ERROR_CODE_CONFLICT),
 				);
 			}
-			return failFromUnknown(error, "Failed to create stock movement");
+			return failFromPersistence(error, "Failed to create stock movement");
 		}
 	}
 
@@ -865,7 +911,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (isUniqueViolation(error)) {
 				return fail("CONFLICT", "Stock movement line conflict");
 			}
-			return failFromUnknown(error, "Failed to add stock movement line");
+			return failFromPersistence(error, "Failed to add stock movement line");
 		}
 	}
 
@@ -1237,8 +1283,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				"Posted stock movement missing after write",
 			);
 		} catch (error) {
-			const message = writeErrorMessage(error);
-			if (/division by zero/i.test(message)) {
+			if (isDivisionByZero(error)) {
 				return fail(
 					"CONFLICT",
 					"Insufficient available stock for movement post",
@@ -1248,7 +1293,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (isUniqueViolation(error)) {
 				return fail("CONFLICT", "Stock movement post conflict");
 			}
-			return failFromUnknown(error, "Failed to post stock movement");
+			return failFromPersistence(error, "Failed to post stock movement");
 		}
 	}
 
@@ -1398,7 +1443,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (isUniqueViolation(error)) {
 				return fail("CONFLICT", "Stock movement cancel conflict");
 			}
-			return failFromUnknown(error, "Failed to cancel stock movement");
+			return failFromPersistence(error, "Failed to cancel stock movement");
 		}
 	}
 
@@ -1582,8 +1627,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					return ok(replay.data);
 				}
 			}
-			const message = writeErrorMessage(error);
-			if (/division by zero/i.test(message)) {
+			if (isDivisionByZero(error)) {
 				return fail(
 					"CONFLICT",
 					"Insufficient available stock",
@@ -1597,7 +1641,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					inventoryErrorDetails(INVENTORY_ERROR_CODE_CONFLICT),
 				);
 			}
-			return failFromUnknown(error, "Failed to reserve stock");
+			return failFromPersistence(error, "Failed to reserve stock");
 		}
 	}
 
@@ -1827,8 +1871,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				"Terminated stock reservation missing after write",
 			);
 		} catch (error) {
-			const message = writeErrorMessage(error);
-			if (/division by zero/i.test(message)) {
+			if (isDivisionByZero(error)) {
 				return fail(
 					"CONFLICT",
 					"Insufficient reserved stock",
@@ -1838,7 +1881,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			if (isUniqueViolation(error)) {
 				return fail("CONFLICT", "Stock reservation release conflict");
 			}
-			return failFromUnknown(error, "Failed to release stock reservation");
+			return failFromPersistence(error, "Failed to release stock reservation");
 		}
 	}
 
@@ -1862,7 +1905,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			}
 			return this.loadMovementByHeader(header);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load stock movement");
+			return failFromPersistence(error, "Failed to load stock movement");
 		}
 	}
 
@@ -1886,7 +1929,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			}
 			return this.loadMovementByHeader(header);
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to load stock movement by create idempotency key",
 			);
@@ -1949,7 +1992,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list stock movements");
+			return failFromPersistence(error, "Failed to list stock movements");
 		}
 	}
 
@@ -1978,7 +2021,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.offset((filter.page - 1) * filter.pageSize);
 			return ok(rows.map((row) => mapReservation(row)));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list stock reservations");
+			return failFromPersistence(error, "Failed to list stock reservations");
 		}
 	}
 
@@ -2023,7 +2066,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load stock availability");
+			return failFromPersistence(error, "Failed to load stock availability");
 		}
 	}
 
@@ -2044,7 +2087,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.limit(1);
 			return ok(row === undefined ? null : mapReservation(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load stock reservation");
+			return failFromPersistence(error, "Failed to load stock reservation");
 		}
 	}
 
@@ -2065,7 +2108,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.limit(1);
 			return ok(row === undefined ? null : mapReservation(row));
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to load stock reservation by create idempotency key",
 			);
@@ -2102,7 +2145,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list stock ledger entries");
+			return failFromPersistence(error, "Failed to list stock ledger entries");
 		}
 	}
 
@@ -2115,7 +2158,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.orderBy(asc(stockBalance.warehouseCode), asc(stockBalance.itemCode));
 			return ok(rows.map((row) => mapBalance(row)));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list stock balances");
+			return failFromPersistence(error, "Failed to list stock balances");
 		}
 	}
 
@@ -2153,7 +2196,10 @@ export class DrizzleInventoryStore implements InventoryStore {
 					})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list active stock reservations");
+			return failFromPersistence(
+				error,
+				"Failed to list active stock reservations",
+			);
 		}
 	}
 }

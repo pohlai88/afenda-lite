@@ -12,8 +12,13 @@ type ValidationIssue = {
 };
 
 function issuePaths(result: { ok: false; details?: unknown }): string[] {
-	const details = result.details as { issues?: readonly ValidationIssue[] };
-	return (details.issues ?? []).map((issue) => issue.path);
+	const details = result.details as {
+		issuePaths?: readonly string[];
+		issues?: readonly ValidationIssue[];
+	};
+	return (
+		details.issuePaths ?? (details.issues ?? []).map((issue) => issue.path)
+	);
 }
 
 describe("template attribute validation policy", () => {

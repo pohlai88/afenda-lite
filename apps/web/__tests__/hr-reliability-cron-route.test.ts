@@ -58,6 +58,10 @@ describe("HR reliability cron route", () => {
 			}),
 		);
 		expect(response.status).toBe(401);
+		expect(response.headers.get("Cache-Control")).toBe("no-store");
+		await expect(response.json()).resolves.toEqual({
+			error: { code: "UNAUTHORIZED", message: "Unauthorized" },
+		});
 		expect(state.run).not.toHaveBeenCalled();
 	});
 

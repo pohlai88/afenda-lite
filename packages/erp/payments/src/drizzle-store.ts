@@ -11,7 +11,14 @@ import {
 	paymentReversal,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import {
 	PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
@@ -43,6 +50,13 @@ import {
 	PAYMENT_PURPOSES,
 	PAYMENT_STATUSES,
 } from "./model";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 function parseEnum<T extends string>(
 	value: string,
@@ -253,7 +267,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			}
 			return ok(mapAccount(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create payment account");
+			return failFromPersistence(error, "Failed to create payment account");
 		}
 	}
 
@@ -268,7 +282,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				.orderBy(desc(paymentAccount.updatedAt), desc(paymentAccount.id));
 			return ok(rows.map(mapAccount));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list payment accounts");
+			return failFromPersistence(error, "Failed to list payment accounts");
 		}
 	}
 
@@ -337,7 +351,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			}
 			return reload(this, record.organizationId, id, "Created payment missing");
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create payment");
+			return failFromPersistence(error, "Failed to create payment");
 		}
 	}
 
@@ -465,7 +479,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				updatedAt: row.updated_at,
 			});
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to add payment application instruction",
 			);
@@ -533,7 +547,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				"Posted payment missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to post payment");
+			return failFromPersistence(error, "Failed to post payment");
 		}
 	}
 
@@ -609,7 +623,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				"Reversed payment missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to reverse payment");
+			return failFromPersistence(error, "Failed to reverse payment");
 		}
 	}
 
@@ -722,7 +736,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			}
 			return ok({ outgoing: outgoing.data, incoming: incoming.data });
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create payment transfer");
+			return failFromPersistence(error, "Failed to create payment transfer");
 		}
 	}
 
@@ -815,7 +829,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			}
 			return reload(this, record.organizationId, id, "Posted refund missing");
 		} catch (error) {
-			return failFromUnknown(error, "Failed to post refund");
+			return failFromPersistence(error, "Failed to post refund");
 		}
 	}
 
@@ -915,7 +929,10 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				updatedAt: row.updated_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to apply application instruction");
+			return failFromPersistence(
+				error,
+				"Failed to apply application instruction",
+			);
 		}
 	}
 
@@ -1013,7 +1030,10 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				updatedAt: row.updated_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to reject application instruction");
+			return failFromPersistence(
+				error,
+				"Failed to reject application instruction",
+			);
 		}
 	}
 
@@ -1059,7 +1079,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load payment");
+			return failFromPersistence(error, "Failed to load payment");
 		}
 	}
 
@@ -1094,7 +1114,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			}
 			return ok(payments);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list payments");
+			return failFromPersistence(error, "Failed to list payments");
 		}
 	}
 
@@ -1152,7 +1172,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				availableToApply: String(posted - intended - refunded),
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load payment availability");
+			return failFromPersistence(error, "Failed to load payment availability");
 		}
 	}
 }

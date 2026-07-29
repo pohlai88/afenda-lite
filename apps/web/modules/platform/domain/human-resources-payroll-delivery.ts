@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	createEventPublisher,
 	type EventPublisher,
@@ -46,11 +46,10 @@ export function createPayrollDeliveryEventProducer(
 				return published;
 			}
 			if (published.data.organizationId !== input.organizationId) {
-				return {
-					ok: false,
-					code: "INTERNAL_ERROR",
-					message: "Payroll delivery publisher returned another tenant",
-				};
+				return fail(
+					"INTERNAL_ERROR",
+					"Payroll delivery publisher returned another tenant",
+				);
 			}
 			return ok({ receiptId: published.data.id });
 		},
@@ -82,11 +81,7 @@ export async function publishPayrollDelivery(
 	const found = await composed.store.getById(input);
 	if (!found.ok) return found;
 	if (found.data === null)
-		return {
-			ok: false,
-			code: "NOT_FOUND",
-			message: "Payroll delivery not found",
-		};
+		return fail("NOT_FOUND", "Payroll delivery not found");
 	return deliverPayrollHandoffWorkflow(
 		{ ...input, correlationId: found.data.correlationId },
 		composed,
@@ -108,11 +103,7 @@ export async function recordPayrollDeliveryFeedback(
 	const found = await composed.store.getById(input);
 	if (!found.ok) return found;
 	if (found.data === null)
-		return {
-			ok: false,
-			code: "NOT_FOUND",
-			message: "Payroll delivery not found",
-		};
+		return fail("NOT_FOUND", "Payroll delivery not found");
 	return recordPayrollDeliveryFeedbackWorkflow(
 		{ ...input, correlationId: found.data.correlationId },
 		composed,

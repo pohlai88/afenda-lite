@@ -98,5 +98,8 @@ describe("payroll calculation validation", () => {
 		expect(
 			output.exceptions.some((e) => e.exceptionCode === "UNKNOWN_CALCULATOR"),
 		).toBe(true);
+		expect(output.exceptions[0]?.message).toBe(
+			"Unknown statutory calculator: unknown.calculator",
+		);
 	});
 });

@@ -1,3 +1,4 @@
+import { internalError } from "@afenda/errors";
 import {
 	convertToModelMessages,
 	generateText,
@@ -69,7 +70,7 @@ export function createMachineEngine(
 		if (assistant === undefined) {
 			const general = assistants.get("general");
 			if (general === undefined) {
-				throw new Error("The Machine general assistant is not registered");
+				throw internalError("The Machine general assistant is not registered");
 			}
 			return general;
 		}

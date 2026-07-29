@@ -1,138 +1,175 @@
 /**
- * Neon DB performance posture targets + read-only API evaluation (N4).
- * Living authority: ARCH-023 · RB-001 · ARCH-025.
- * Does not raise CU, change suspend/retention/connection limits, or mutate schema.
+ * Neon DB performance posture targets and read-only API evaluation (N4).
  *
- * Branch id mirrors `APPROVED_NEON_BRANCH_ID` in neon-contract (kept local so
- * `validate-neon-env` can strip-types-load this file without nested ESM resolution).
+ * Living authority: ARCH-023 · RB-001 · ARCH-025.
+ *
+ * This module evaluates evidence only. It does not change compute size,
+ * autoscaling, suspend behavior, connection limits, retention, or schema.
+ *
+ * The production branch ID mirrors `APPROVED_NEON_BRANCH_ID` from
+ * `neon-contract.ts`. It remains local so `validate:neon-env` can load this
+ * module without nested ESM resolution.
  */
 
-/** Must stay equal to `APPROVED_NEON_BRANCH_ID` (enforced in tests). */
+/** Must equal `APPROVED_NEON_BRANCH_ID`; enforced by package tests. */
 export const PERFORMANCE_PROD_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
 
-/** Autoscaling min CU — measure latency before any raise (RB-001 · ARCH-023). */
+/** Autoscaling minimum CU. Raise only with measured evidence. */
 export const TARGET_AUTOSCALING_MIN_CU = 0.25 as const;
 
-/** Autoscaling max CU — spike headroom; do not raise without evidence. */
+/** Autoscaling maximum CU for bounded spike headroom. */
 export const TARGET_AUTOSCALING_MAX_CU = 2 as const;
 
-/** Scale-to-zero off for user-facing prod (`suspend_timeout_seconds=0`). */
+/** User-facing production must not scale to zero. */
 export const TARGET_SUSPEND_TIMEOUT_SECONDS = 0 as const;
 
 /**
- * Single-probe `SELECT 1` latency ceiling for validate:neon-env (ms).
- * Baseline recording only — not a soak/load SLA. Fail closed on probe error;
- * warn-class threshold for unexpected cold-path blowups.
+ * Maximum acceptable latency for a single `SELECT 1` validation probe.
+ *
+ * This is a deployment guardrail, not a workload SLA or soak-test result.
  */
 export const MAX_SELECT1_LATENCY_MS = 5_000 as const;
 
-/** Alert when total active + idle sessions consume this share of max_connections. */
+/**
+ * Connection-pressure guardrail as a percentage of `max_connections`.
+ *
+ * The check fails when usage meets or exceeds this threshold.
+ */
 export const MAX_CONNECTION_USAGE_PERCENT = 80 as const;
 
-export type NeonPerformanceIssue = {
+export type NeonPerformanceIssue = Readonly<{
 	check: string;
 	message: string;
-};
+}>;
 
-export type NeonPerformanceCheckResult = {
+export type NeonPerformanceCheckResult = Readonly<{
 	ok: boolean;
-	issues: NeonPerformanceIssue[];
+	issues: readonly NeonPerformanceIssue[];
 	detail: string;
-};
+}>;
 
-export type NeonEndpointComputeInput = {
+export type NeonEndpointComputeInput = Readonly<{
 	id?: string | null;
 	branch_id?: string | null;
 	type?: string | null;
 	autoscaling_limit_min_cu?: number | null;
 	autoscaling_limit_max_cu?: number | null;
 	suspend_timeout_seconds?: number | null;
-	/** Non-pooled compute host (never logged). */
+	/** Direct compute hostname returned by Neon. Never returned in details. */
 	host?: string | null;
-	/** Pooled hostname when present (Neon Proxy `-pooler` host). */
-	hosts?: {
+	/** Explicit pooled hostname evidence returned by Neon. */
+	hosts?: Readonly<{
 		read_write_pooled_host?: string | null;
-	} | null;
-};
+	}> | null;
+}>;
 
 export function formatNeonPerformanceIssues(
-	issues: NeonPerformanceIssue[],
+	issues: readonly NeonPerformanceIssue[],
 ): string {
 	return issues.map((issue) => `${issue.check}: ${issue.message}`).join("; ");
 }
 
-/**
- * Derive pooled host evidence without requiring a secret-bearing URL.
- * Prefer API `hosts.read_write_pooled_host`; else insert `-pooler` into `host`.
- */
-export function resolvePooledHostEvidence(
-	endpoint: NeonEndpointComputeInput,
-): string | null {
-	const fromHosts = endpoint.hosts?.read_write_pooled_host;
-	if (fromHosts != null && fromHosts.length > 0) {
-		return fromHosts;
-	}
-	const host = endpoint.host;
-	if (host == null || host.length === 0) {
-		return null;
-	}
-	if (host.includes("-pooler")) {
-		return host;
-	}
-	const dot = host.indexOf(".");
-	if (dot <= 0) {
-		return null;
-	}
-	return `${host.slice(0, dot)}-pooler${host.slice(dot)}`;
+function normalizeHostname(hostname: string): string {
+	return hostname.trim().toLowerCase().replace(/\.$/, "");
+}
+
+function isPoolerHostname(hostname: string): boolean {
+	const normalized = normalizeHostname(hostname);
+	return normalized.split(".").some((label) => label.endsWith("-pooler"));
+}
+
+function isFiniteNonNegativeNumber(
+	value: number | null | undefined,
+): value is number {
+	return (
+		value !== null &&
+		value !== undefined &&
+		Number.isFinite(value) &&
+		value >= 0
+	);
+}
+
+function isFinitePositiveNumber(
+	value: number | null | undefined,
+): value is number {
+	return (
+		value !== null && value !== undefined && Number.isFinite(value) && value > 0
+	);
+}
+
+function isNonNegativeInteger(
+	value: number | null | undefined,
+): value is number {
+	return isFiniteNonNegativeNumber(value) && Number.isInteger(value);
 }
 
 function cuEqual(actual: number | null | undefined, expected: number): boolean {
-	if (actual == null || Number.isNaN(actual)) {
+	if (
+		!isFiniteNonNegativeNumber(actual) ||
+		!isFiniteNonNegativeNumber(expected)
+	) {
 		return false;
 	}
 	return Math.abs(actual - expected) < 1e-9;
 }
 
 /**
- * Evaluate default read-write endpoint compute posture for the production branch.
- * Does not mutate Neon settings.
+ * Return explicit pooled-host evidence supplied by Neon.
+ *
+ * This intentionally does not derive a pooled hostname from a direct host.
  */
+export function resolvePooledHostEvidence(
+	endpoint: NeonEndpointComputeInput,
+): string | null {
+	const pooledHost = endpoint.hosts?.read_write_pooled_host;
+	if (
+		pooledHost === null ||
+		pooledHost === undefined ||
+		pooledHost.trim().length === 0
+	) {
+		return null;
+	}
+	return normalizeHostname(pooledHost);
+}
+
 export function evaluateComputeAutoscaling(
 	endpoint: NeonEndpointComputeInput,
-	options: { expectedBranchId?: string } = {},
+	options: Readonly<{ expectedBranchId?: string }> = {},
 ): NeonPerformanceCheckResult {
 	const expectedBranchId =
 		options.expectedBranchId ?? PERFORMANCE_PROD_BRANCH_ID;
 	const issues: NeonPerformanceIssue[] = [];
 
+	if (expectedBranchId.trim().length === 0) {
+		issues.push({
+			check: "expected_branch_id",
+			message: "expected branch ID must not be empty",
+		});
+	}
 	if (endpoint.branch_id !== expectedBranchId) {
 		issues.push({
 			check: "endpoint.branch_id",
 			message: `expected ${expectedBranchId}, got ${String(endpoint.branch_id)}`,
 		});
 	}
-
-	if (endpoint.type != null && endpoint.type !== "read_write") {
+	if (endpoint.type !== "read_write") {
 		issues.push({
 			check: "endpoint.type",
 			message: `expected read_write, got ${String(endpoint.type)}`,
 		});
 	}
-
 	if (!cuEqual(endpoint.autoscaling_limit_min_cu, TARGET_AUTOSCALING_MIN_CU)) {
 		issues.push({
 			check: "autoscaling_limit_min_cu",
 			message: `expected ${TARGET_AUTOSCALING_MIN_CU}, got ${String(endpoint.autoscaling_limit_min_cu)}`,
 		});
 	}
-
 	if (!cuEqual(endpoint.autoscaling_limit_max_cu, TARGET_AUTOSCALING_MAX_CU)) {
 		issues.push({
 			check: "autoscaling_limit_max_cu",
 			message: `expected ${TARGET_AUTOSCALING_MAX_CU}, got ${String(endpoint.autoscaling_limit_max_cu)}`,
 		});
 	}
-
 	if (endpoint.suspend_timeout_seconds !== TARGET_SUSPEND_TIMEOUT_SECONDS) {
 		issues.push({
 			check: "suspend_timeout_seconds",
@@ -140,28 +177,31 @@ export function evaluateComputeAutoscaling(
 		});
 	}
 
-	const detail = `endpoint=${endpoint.id ?? "unknown"} min_cu=${String(endpoint.autoscaling_limit_min_cu)} max_cu=${String(endpoint.autoscaling_limit_max_cu)} suspend_s=${String(endpoint.suspend_timeout_seconds)}`;
+	const detail =
+		`branch_match=${String(endpoint.branch_id === expectedBranchId)} ` +
+		`type=${endpoint.type ?? "unknown"} ` +
+		`min_cu=${String(endpoint.autoscaling_limit_min_cu)} ` +
+		`max_cu=${String(endpoint.autoscaling_limit_max_cu)} ` +
+		`suspend_s=${String(endpoint.suspend_timeout_seconds)}`;
 
-	if (issues.length > 0) {
-		return { ok: false, issues, detail };
-	}
-	return { ok: true, issues: [], detail };
+	return { ok: issues.length === 0, issues, detail };
 }
 
 /**
- * Confirm Neon exposes a pooled host for the endpoint (ops evidence).
- * Product fail-closed pooler remains `DATABASE_URL` containing `-pooler`.
- * Never returns the hostname in `detail` (redaction).
+ * Confirm that Neon explicitly exposes a pooled read-write hostname.
+ *
+ * The hostname itself is never returned in result detail.
  */
 export function evaluateEndpointPoolerHost(
 	endpoint: NeonEndpointComputeInput,
 ): NeonPerformanceCheckResult {
-	const pooled = resolvePooledHostEvidence(endpoint);
-	if (pooled?.includes("-pooler")) {
+	const pooledHost = resolvePooledHostEvidence(endpoint);
+	if (pooledHost !== null && isPoolerHostname(pooledHost)) {
 		return {
 			ok: true,
 			issues: [],
-			detail: "pooled host evidence present (host redacted)",
+			detail:
+				"explicit pooled read-write host evidence present (hostname redacted)",
 		};
 	}
 	return {
@@ -169,42 +209,113 @@ export function evaluateEndpointPoolerHost(
 		issues: [
 			{
 				check: "hosts.read_write_pooled_host",
-				message: "expected pooled host containing -pooler",
+				message:
+					"expected explicit Neon pooled read-write host evidence with a hostname label ending in '-pooler'",
 			},
 		],
-		detail: "pooled host missing or not pooler-shaped",
+		detail: "explicit pooled read-write host evidence is missing or invalid",
 	};
 }
 
-/**
- * Pick the default read-write endpoint for a branch from a Neon endpoints list.
- */
+export type BranchReadWriteEndpointSelection =
+	| Readonly<{
+			ok: true;
+			endpoint: NeonEndpointComputeInput;
+			issues: readonly [];
+	  }>
+	| Readonly<{
+			ok: false;
+			endpoint: null;
+			issues: readonly NeonPerformanceIssue[];
+	  }>;
+
 export function selectBranchReadWriteEndpoint(
-	endpoints: NeonEndpointComputeInput[],
+	endpoints: readonly NeonEndpointComputeInput[],
 	expectedBranchId: string = PERFORMANCE_PROD_BRANCH_ID,
-): NeonEndpointComputeInput | null {
-	const forBranch = endpoints.filter(
-		(ep) => ep.branch_id === expectedBranchId && ep.type === "read_write",
+): BranchReadWriteEndpointSelection {
+	if (expectedBranchId.trim().length === 0) {
+		return {
+			ok: false,
+			endpoint: null,
+			issues: [
+				{
+					check: "expected_branch_id",
+					message: "expected branch ID must not be empty",
+				},
+			],
+		};
+	}
+
+	const matches = endpoints.filter(
+		(endpoint) =>
+			endpoint.branch_id === expectedBranchId && endpoint.type === "read_write",
 	);
-	return forBranch[0] ?? null;
+	if (matches.length === 0) {
+		return {
+			ok: false,
+			endpoint: null,
+			issues: [
+				{
+					check: "endpoint.selection",
+					message: `no read_write endpoint found for branch ${expectedBranchId}`,
+				},
+			],
+		};
+	}
+	if (matches.length > 1) {
+		return {
+			ok: false,
+			endpoint: null,
+			issues: [
+				{
+					check: "endpoint.selection",
+					message: `expected exactly one read_write endpoint for branch ${expectedBranchId}, found ${matches.length}`,
+				},
+			],
+		};
+	}
+
+	const endpoint = matches[0];
+	if (endpoint === undefined) {
+		return {
+			ok: false,
+			endpoint: null,
+			issues: [
+				{
+					check: "endpoint.selection",
+					message: "endpoint selection produced no result",
+				},
+			],
+		};
+	}
+	return { ok: true, endpoint, issues: [] };
 }
 
-/**
- * Evaluate a single timed SELECT 1 probe (ms). Connection failure → not ok.
- * Values above MAX_SELECT1_LATENCY_MS fail (guardrail, not soak SLA).
- */
 export function evaluateSelect1Latency(
 	latencyMs: number | null | undefined,
-	options: { maxMs?: number } = {},
+	options: Readonly<{ maxMs?: number }> = {},
 ): NeonPerformanceCheckResult {
 	const maxMs = options.maxMs ?? MAX_SELECT1_LATENCY_MS;
-	if (latencyMs == null || Number.isNaN(latencyMs) || latencyMs < 0) {
+	if (!isFinitePositiveNumber(maxMs)) {
+		return {
+			ok: false,
+			issues: [
+				{
+					check: "select1.max_latency_ms",
+					message:
+						"maximum latency threshold must be a finite number greater than zero",
+				},
+			],
+			detail: "latency threshold invalid",
+		};
+	}
+	if (!isFiniteNonNegativeNumber(latencyMs)) {
 		return {
 			ok: false,
 			issues: [
 				{
 					check: "select1.latency_ms",
-					message: "probe missing or invalid — cannot record baseline",
+					message: "probe result is missing, non-finite, or negative",
 				},
 			],
 			detail: "latency probe unavailable",
@@ -219,66 +330,94 @@ export function evaluateSelect1Latency(
 					message: `probe ${latencyMs}ms exceeds ${maxMs}ms guardrail`,
 				},
 			],
-			detail: `latencyMs=${latencyMs} (above ${maxMs}ms)`,
+			detail: `latencyMs=${Math.round(latencyMs)} thresholdMs=${maxMs} status=above_guardrail`,
 		};
 	}
 	return {
 		ok: true,
 		issues: [],
-		detail: `latencyMs=${Math.round(latencyMs)} (single SELECT 1; not a soak)`,
+		detail: `latencyMs=${Math.round(latencyMs)} thresholdMs=${maxMs} probe=single_select_1`,
 	};
 }
 
-/**
- * Evaluate a read-only pg_stat_activity snapshot against max_connections.
- * The monitor records aggregate counts only — never users, queries, or tenants.
- */
+export type NeonConnectionPressureInput = Readonly<{
+	maxConnections?: number | null;
+	activeConnections?: number | null;
+	idleConnections?: number | null;
+}>;
+
 export function evaluateConnectionPressure(
-	input: {
-		maxConnections?: number | null;
-		activeConnections?: number | null;
-		idleConnections?: number | null;
-	},
-	options: { maxUsagePercent?: number } = {},
+	input: NeonConnectionPressureInput,
+	options: Readonly<{ maxUsagePercent?: number }> = {},
 ): NeonPerformanceCheckResult {
 	const maxUsagePercent =
 		options.maxUsagePercent ?? MAX_CONNECTION_USAGE_PERCENT;
-	const { maxConnections, activeConnections, idleConnections } = input;
-	const values = [maxConnections, activeConnections, idleConnections];
-
 	if (
-		values.some(
-			(value) =>
-				value == null ||
-				!Number.isFinite(value) ||
-				value < 0 ||
-				!Number.isInteger(value),
-		) ||
-		maxConnections === 0
+		!Number.isFinite(maxUsagePercent) ||
+		maxUsagePercent <= 0 ||
+		maxUsagePercent > 100
+	) {
+		return {
+			ok: false,
+			issues: [
+				{
+					check: "connections.max_usage_percent",
+					message:
+						"usage threshold must be greater than zero and no greater than 100",
+				},
+			],
+			detail: "connection-pressure threshold invalid",
+		};
+	}
+
+	const { maxConnections, activeConnections, idleConnections } = input;
+	if (
+		!isNonNegativeInteger(maxConnections) ||
+		maxConnections === 0 ||
+		!isNonNegativeInteger(activeConnections) ||
+		!isNonNegativeInteger(idleConnections)
 	) {
 		return {
 			ok: false,
 			issues: [
 				{
 					check: "connections.pressure",
-					message: "connection snapshot missing or invalid",
+					message:
+						"connection snapshot must contain positive max_connections and non-negative integer active and idle counts",
 				},
 			],
 			detail: "connection pressure unavailable",
 		};
 	}
 
-	const used = (activeConnections ?? 0) + (idleConnections ?? 0);
-	const usagePercent = (used / (maxConnections ?? 1)) * 100;
-	const detail = `connections=${used}/${maxConnections} active=${activeConnections} idle=${idleConnections} usage=${usagePercent.toFixed(1)}%`;
+	const used = activeConnections + idleConnections;
+	const usagePercent = (used / maxConnections) * 100;
+	const detail =
+		`connections=${used}/${maxConnections} ` +
+		`active=${activeConnections} ` +
+		`idle=${idleConnections} ` +
+		`usage=${usagePercent.toFixed(1)}% ` +
+		`threshold=${maxUsagePercent}%`;
 
+	if (used > maxConnections) {
+		return {
+			ok: false,
+			issues: [
+				{
+					check: "connections.snapshot_consistency",
+					message: `observed ${used} active and idle sessions exceeds max_connections=${maxConnections}`,
+				},
+			],
+			detail,
+		};
+	}
 	if (usagePercent >= maxUsagePercent) {
 		return {
 			ok: false,
 			issues: [
 				{
 					check: "connections.pressure",
-					message: `usage ${usagePercent.toFixed(1)}% meets or exceeds ${maxUsagePercent}% guardrail`,
+					message: `usage ${usagePercent.toFixed(1)}% meets or exceeds the ${maxUsagePercent}% guardrail`,
 				},
 			],
 			detail,

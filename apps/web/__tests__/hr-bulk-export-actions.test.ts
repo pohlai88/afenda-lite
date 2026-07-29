@@ -23,28 +23,33 @@ const authMocks = vi.hoisted(() => ({ requireRole: vi.fn() }));
 const permissionMocks = vi.hoisted(() => ({
 	forbidUnlessPermission: vi.fn(),
 }));
-const workerMocks = vi.hoisted(() => ({ runExport: vi.fn() }));
+const queueMocks = vi.hoisted(() => ({ enqueueExport: vi.fn() }));
 
 vi.mock("@afenda/auth", () => ({ requireRole: authMocks.requireRole }));
+vi.mock("@afenda/human-resources", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@afenda/human-resources")>();
+	return {
+		...actual,
+		enqueueHumanResourcesBulkExport: queueMocks.enqueueExport,
+	};
+});
+vi.mock("@afenda/human-resources/adapters/drizzle", async (importOriginal) => {
+	const actual =
+		await importOriginal<
+			typeof import("@afenda/human-resources/adapters/drizzle")
+		>();
+	return {
+		...actual,
+		createDrizzleHumanResourcesBulkJobStore: () => ({ kind: "test-store" }),
+	};
+});
 vi.mock("@afenda/http", () => ({
 	createCorrelationId: () => "corr-hr-export-test",
 }));
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,
 }));
-vi.mock(
-	"@/lib/erp/human-resources-bulk-export-worker",
-	async (importOriginal) => {
-		const actual =
-			await importOriginal<
-				typeof import("@/lib/erp/human-resources-bulk-export-worker")
-			>();
-		return {
-			...actual,
-			runHumanResourcesBulkExportWorker: workerMocks.runExport,
-		};
-	},
-);
 
 import { runHumanResourcesBulkExportAction } from "../app/actions/hr-bulk-export";
 
@@ -53,14 +58,21 @@ describe("HR bulk export composition", () => {
 		vi.clearAllMocks();
 		authMocks.requireRole.mockResolvedValue(operatorSession);
 		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
-		workerMocks.runExport.mockResolvedValue({
+		queueMocks.enqueueExport.mockResolvedValue({
 			ok: true,
 			data: {
+				id: "job-hr-export-attendance",
 				organizationId: operatorSession.orgId,
 				exportType: "attendance",
-				fields: ["workDate"],
-				rows: [],
-				privacyEvidenceId: "evidence-1",
+				idempotencyKey: "export-attendance-window",
+				status: "queued",
+				requestedFields: ["workDate"],
+				dateFrom: "2026-07-01",
+				dateTo: "2026-07-28",
+				effectiveOn: null,
+				createdBy: operatorSession.userId,
+				createdAt: new Date("2026-07-28T00:00:00.000Z"),
+				updatedAt: new Date("2026-07-28T00:00:00.000Z"),
 			},
 		});
 	});
@@ -89,11 +101,12 @@ describe("HR bulk export composition", () => {
 
 		const result = await runHumanResourcesBulkExportAction({
 			exportType: "compensation",
+			idempotencyKey: "export-denied-compensation",
 			requestedFields: ["annualizedAmount"],
 		});
 
 		expect(result.ok).toBe(false);
-		expect(workerMocks.runExport).not.toHaveBeenCalled();
+		expect(queueMocks.enqueueExport).not.toHaveBeenCalled();
 		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
 			operatorSession,
 			"human-resources.compensation.read",
@@ -103,21 +116,27 @@ describe("HR bulk export composition", () => {
 	it("stamps tenant, actor, and correlation and never accepts a client permission", async () => {
 		const result = await runHumanResourcesBulkExportAction({
 			exportType: "attendance",
+			idempotencyKey: "export-attendance-window",
 			requestedFields: ["workDate"],
 			dateFrom: "2026-07-01",
 			dateTo: "2026-07-28",
 		});
 
 		expect(result.ok).toBe(true);
-		expect(workerMocks.runExport).toHaveBeenCalledWith({
-			organizationId: operatorSession.orgId,
-			actorUserId: operatorSession.userId,
-			correlationId: "corr-hr-export-test",
-			exportType: "attendance",
-			requestedFields: ["workDate"],
-			dateFrom: "2026-07-01",
-			dateTo: "2026-07-28",
-		});
+		expect(queueMocks.enqueueExport).toHaveBeenCalledWith(
+			{
+				organizationId: operatorSession.orgId,
+				actorUserId: operatorSession.userId,
+				correlationId: "corr-hr-export-test",
+				exportType: "attendance",
+				idempotencyKey: "export-attendance-window",
+				requestedFields: ["workDate"],
+				dateFrom: "2026-07-01",
+				dateTo: "2026-07-28",
+				requiredPermission: "human-resources.time.attendance.read",
+			},
+			{ kind: "test-store" },
+		);
 	});
 
 	it("rejects fields outside the definition before reading or recording evidence", async () => {

@@ -18,7 +18,7 @@ import {
 } from "../modules/platform/schemas/api-error";
 import { emailSchema, parseSchema } from "../modules/platform/schemas/common";
 
-describe("ActionResult + error brands (I2.1)", () => {
+describe("ActionResult + shared error codes (I2.1)", () => {
 	it("discriminates success and failure via ok", () => {
 		const ok = actionOk({ email: "a@b.co" });
 		const fail = actionFail("FORBIDDEN", "Not allowed.");
@@ -50,7 +50,7 @@ describe("ActionResult + error brands (I2.1)", () => {
 		expect(actionFieldMessage(actionOk({ id: "1" }), "email")).toBeUndefined();
 	});
 
-	it("maps shared ApiErrorCode brands to HTTP status", () => {
+	it("maps shared ApiErrorCode values to HTTP status", () => {
 		expect(API_ERROR_HTTP_STATUS.UNAUTHORIZED).toBe(401);
 		expect(API_ERROR_HTTP_STATUS.VALIDATION_ERROR).toBe(422);
 		expect(API_ERROR_HTTP_STATUS.RATE_LIMITED).toBe(429);

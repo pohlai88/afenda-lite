@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { AppError } from "@afenda/errors";
 import { ok, type Result } from "@afenda/errors/result";
 import {
 	type ApprovedPayrollHandoff,
@@ -51,7 +52,13 @@ const mutationMeta = {
 };
 
 function unwrap<T>(result: Result<T>): T {
-	if (!result.ok) throw new Error(result.message);
+	if (!result.ok) {
+		throw new AppError({
+			code: result.code,
+			message: result.message,
+			details: result.details,
+		});
+	}
 	return result.data;
 }
 

@@ -1,3 +1,5 @@
+import { forbidden, serviceUnavailable } from "@afenda/errors";
+
 import { getNeonAuth } from "./neon-auth";
 import type { NeonOrgRole } from "./roles";
 import { getSession } from "./session";
@@ -105,9 +107,7 @@ export function normalizeOrgMembers(data: unknown): OrgMember[] {
 
 function assertActiveSessionOrg(organizationId: string, sessionOrgId: string) {
 	if (sessionOrgId !== organizationId) {
-		throw new Error(
-			"@afenda/auth: listOrgMembers refuses organization other than the active session org",
-		);
+		throw forbidden("Organization is not in the active session");
 	}
 }
 
@@ -125,7 +125,7 @@ async function fetchOrgMemberPage(
 	});
 
 	if (error) {
-		throw new Error("@afenda/auth: organization listMembers failed");
+		throw serviceUnavailable("neon-auth");
 	}
 
 	const members = normalizeOrgMembers(data);
@@ -200,7 +200,7 @@ export async function findOrgMember(
 	});
 
 	if (error) {
-		throw new Error("@afenda/auth: organization listMembers failed");
+		throw serviceUnavailable("neon-auth");
 	}
 
 	const members = normalizeOrgMembers(data);

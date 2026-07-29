@@ -10,17 +10,30 @@ export type CredentialAuthResult =
 	| { ok: true }
 	| { ok: false; message: string; code?: string };
 
-function toFailure(error: {
-	message?: string | null;
-	code?: string | null;
-}): CredentialAuthResult {
-	const message =
-		typeof error.message === "string" && error.message.trim().length > 0
-			? error.message.trim()
-			: "Authentication failed.";
+const AUTHENTICATION_FAILED_MESSAGE = "Invalid email or password.";
+const SIGN_OUT_FAILED_MESSAGE = "Sign out failed.";
+
+function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function readStringProperty(value: unknown, key: PropertyKey): string {
+	if (!isRecord(value)) {
+		return "";
+	}
+	try {
+		const property = Reflect.get(value, key);
+		return typeof property === "string" ? property.trim() : "";
+	} catch {
+		return "";
+	}
+}
+
+function toFailure(error: unknown, message: string): CredentialAuthResult {
+	const rawCode = readStringProperty(error, "code");
 	const code =
-		typeof error.code === "string" && error.code.trim().length > 0
-			? error.code.trim()
+		rawCode.length > 0 && /^[A-Z0-9_.:-]+$/u.test(rawCode)
+			? rawCode
 			: undefined;
 	return code === undefined
 		? { ok: false, message }
@@ -37,7 +50,7 @@ export async function signInWithEmail(input: {
 		password: input.password,
 	});
 	if (error) {
-		return toFailure(error);
+		return toFailure(error, AUTHENTICATION_FAILED_MESSAGE);
 	}
 	return { ok: true };
 }
@@ -46,7 +59,7 @@ export async function signInWithEmail(input: {
 export async function signOutSession(): Promise<CredentialAuthResult> {
 	const { error } = await getNeonAuth().signOut();
 	if (error) {
-		return toFailure(error);
+		return toFailure(error, SIGN_OUT_FAILED_MESSAGE);
 	}
 	return { ok: true };
 }

@@ -94,7 +94,19 @@ export async function inviteOrgMemberAction(
 			userAgent: attribution.userAgent,
 		});
 		if (!audit.ok) {
-			throw new Error(audit.message);
+			logProductEvent({
+				level: "error",
+				event: "action.internal_error",
+				correlationId,
+				orgId: session.orgId,
+				actorUserId: session.userId,
+				path: "inviteOrgMemberAction.audit",
+				code: audit.code,
+			});
+			return actionFailInternal(
+				"Invitation could not be audited. It was not sent. Try again or contact an admin.",
+				correlationId,
+			);
 		}
 		auditId = audit.data.id;
 	} catch {

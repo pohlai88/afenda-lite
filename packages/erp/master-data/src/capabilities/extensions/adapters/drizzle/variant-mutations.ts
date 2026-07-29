@@ -32,7 +32,17 @@ import {
 	runNeonHttpTransaction,
 	tenantEntityPredicate,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	hasPostgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import type { MasterFailureDetails } from "../../../../contracts/reasons";
 import type { MutationPorts } from "../../../../ports";
 import type {
@@ -79,25 +89,11 @@ import type {
 	ListItemVariantsFilter,
 } from "../../template-store";
 
-function isUniqueViolation(error: unknown): boolean {
-	let current: unknown = error;
-	for (let depth = 0; depth < 4; depth += 1) {
-		if (
-			current === null ||
-			current === undefined ||
-			typeof current !== "object"
-		) {
-			return false;
-		}
-		const record = current as Record<string, unknown>;
-		for (const key of ["code", "sqlState", "sqlstate"] as const) {
-			if (record[key] === "23505") {
-				return true;
-			}
-		}
-		current = record.cause;
-	}
-	return false;
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
 }
 
 function mapWriteError(
@@ -105,12 +101,12 @@ function mapWriteError(
 	uniqueMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	if (isUniqueViolation(error)) {
+	if (hasPostgresSqlState(error, "23505")) {
 		return fail("CONFLICT", uniqueMessage, {
 			reason: "MASTER_CODE_CONFLICT",
 		} satisfies MasterFailureDetails);
 	}
-	return failFromUnknown(error, fallbackMessage);
+	return failFromPersistence(error, fallbackMessage);
 }
 
 function fieldChangeJson(
@@ -467,7 +463,7 @@ async function loadVariantValues(
 		}
 		return ok(byVariant);
 	} catch (error) {
-		return failFromUnknown(
+		return failFromPersistence(
 			error,
 			"Failed to load item variant attribute values",
 		);
@@ -491,7 +487,7 @@ export async function drizzleGetItemTemplateById(
 			.limit(1);
 		return ok(row === undefined ? null : mapItemTemplate(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to load item template");
+		return failFromPersistence(error, "Failed to load item template");
 	}
 }
 
@@ -513,7 +509,7 @@ export async function drizzleGetItemTemplateByCode(
 			.limit(1);
 		return ok(row === undefined ? null : mapItemTemplate(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to load item template by code");
+		return failFromPersistence(error, "Failed to load item template by code");
 	}
 }
 
@@ -536,7 +532,7 @@ export async function drizzleListItemTemplates(
 			.offset((filter.page - 1) * filter.pageSize);
 		return ok(rows.map(mapItemTemplate));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list item templates");
+		return failFromPersistence(error, "Failed to list item templates");
 	}
 }
 
@@ -921,7 +917,10 @@ export async function drizzleListItemTemplateAttributes(
 			);
 		return ok(rows.map(mapItemTemplateAttribute));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list item template attributes");
+		return failFromPersistence(
+			error,
+			"Failed to list item template attributes",
+		);
 	}
 }
 
@@ -961,7 +960,7 @@ export async function drizzleGetItemTemplateAttributeContextById(
 			template: mapItemTemplate(row.template),
 		});
 	} catch (error) {
-		return failFromUnknown(
+		return failFromPersistence(
 			error,
 			"Failed to get item template attribute context",
 		);
@@ -989,7 +988,7 @@ export async function drizzleListItemTemplateAttributeOptions(
 			);
 		return ok(rows.map(mapItemTemplateAttributeOption));
 	} catch (error) {
-		return failFromUnknown(
+		return failFromPersistence(
 			error,
 			"Failed to list item template attribute options",
 		);
@@ -1032,7 +1031,7 @@ export async function drizzleListItemTemplateAttributeOptionsByTemplate(
 			);
 		return ok(rows.map(mapItemTemplateAttributeOption));
 	} catch (error) {
-		return failFromUnknown(
+		return failFromPersistence(
 			error,
 			"Failed to list item template attribute options",
 		);
@@ -1074,7 +1073,7 @@ export async function drizzleAddItemTemplateAttribute(
 			);
 		}
 	} catch (error) {
-		return failFromUnknown(error, "Failed to validate item template");
+		return failFromPersistence(error, "Failed to validate item template");
 	}
 
 	const id = randomUUID();
@@ -1240,7 +1239,7 @@ export async function drizzleAddItemTemplateAttributeOption(
 			);
 		}
 	} catch (error) {
-		return failFromUnknown(
+		return failFromPersistence(
 			error,
 			"Failed to validate template attribute option",
 		);
@@ -1386,7 +1385,7 @@ export async function drizzleGetItemVariantById(
 			),
 		);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to load item variant");
+		return failFromPersistence(error, "Failed to load item variant");
 	}
 }
 
@@ -1437,7 +1436,7 @@ export async function drizzleListItemVariantsByTemplate(
 			),
 		);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list item variants");
+		return failFromPersistence(error, "Failed to list item variants");
 	}
 }
 
@@ -1497,7 +1496,7 @@ export async function drizzleCreateItemVariant(
 			} satisfies MasterFailureDetails);
 		}
 	} catch (error) {
-		return failFromUnknown(error, "Failed to validate item variant create");
+		return failFromPersistence(error, "Failed to validate item variant create");
 	}
 
 	const itemId = randomUUID();
@@ -1971,7 +1970,10 @@ export async function drizzleRetireItemVariantMembership(
 		);
 		return ok({ retired: rows[0] !== undefined });
 	} catch (error) {
-		return failFromUnknown(error, "Failed to retire item variant membership");
+		return failFromPersistence(
+			error,
+			"Failed to retire item variant membership",
+		);
 	}
 }
 
@@ -2284,7 +2286,7 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 		}
 		return ok(mapItemFromSql(row));
 	} catch (error) {
-		return failFromUnknown(error, "Failed to transition item");
+		return failFromPersistence(error, "Failed to transition item");
 	}
 }
 

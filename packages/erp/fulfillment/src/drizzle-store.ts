@@ -13,7 +13,17 @@ import {
 	proofOfDelivery,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	fromPostgresUnknown,
+	postgresSqlState,
+} from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import {
 	FULFILLMENT_DELIVERY_CANCELLED_EVENT,
 	FULFILLMENT_DELIVERY_CLOSED_EVENT,
@@ -47,6 +57,13 @@ import {
 	type DeliveryStatus,
 	type ProofOfDelivery,
 } from "./types";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 type TxIdRow = { id: string };
 
@@ -188,15 +205,25 @@ function json(value: unknown): string {
 	return JSON.stringify(value);
 }
 
+const SQLSTATE_UNIQUE_VIOLATION = "23505";
+const SQLSTATE_FOREIGN_KEY_VIOLATION = "23503";
+
+function isConstraintViolation(error: unknown): boolean {
+	const sqlState = postgresSqlState(error);
+	return (
+		sqlState === SQLSTATE_UNIQUE_VIOLATION ||
+		sqlState === SQLSTATE_FOREIGN_KEY_VIOLATION
+	);
+}
+
 function writeError(
 	error: unknown,
 	conflictMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	const message = error instanceof Error ? error.message : String(error);
-	return /unique|duplicate|foreign key/i.test(message)
+	return isConstraintViolation(error)
 		? fail("CONFLICT", conflictMessage)
-		: failFromUnknown(error, fallbackMessage);
+		: failFromPersistence(error, fallbackMessage);
 }
 
 function payload(
@@ -890,7 +917,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load delivery");
+			return failFromPersistence(error, "Failed to load delivery");
 		}
 	}
 
@@ -987,7 +1014,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list deliveries");
+			return failFromPersistence(error, "Failed to list deliveries");
 		}
 	}
 
@@ -1107,7 +1134,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			const total = (result.rows[0] as { total: string })?.total ?? "0";
 			return ok(String(total));
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to sum posted quantity for sales order line",
 			);

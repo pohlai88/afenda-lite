@@ -1,4 +1,5 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { fail, failFromAppError, type Result } from "@afenda/errors/result";
 
 import {
 	PAYROLL_ERROR_CONFLICT,
@@ -14,23 +15,38 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function writeErrorMessage(error: unknown): string {
-	if (isRecord(error) && typeof error.message === "string") {
-		return error.message;
+function readProperty(value: unknown, key: PropertyKey): unknown {
+	if (!isRecord(value)) {
+		return undefined;
 	}
-	return error instanceof Error ? error.message : String(error);
+	try {
+		return Reflect.get(value, key);
+	} catch {
+		return undefined;
+	}
 }
 
 export function isPostgresUniqueViolation(error: unknown): boolean {
-	return isRecord(error) && error.code === "23505";
+	return postgresErrorCode(error) === "23505";
 }
 
 export function isPostgresCheckViolation(error: unknown): boolean {
-	return isRecord(error) && error.code === "23514";
+	return postgresErrorCode(error) === "23514";
 }
 
 export function isPostgresForeignKeyViolation(error: unknown): boolean {
-	return isRecord(error) && error.code === "23503";
+	return postgresErrorCode(error) === "23503";
+}
+
+function postgresErrorCode(error: unknown): string | undefined {
+	const code = readProperty(error, "code");
+	return typeof code === "string" ? code.toUpperCase() : undefined;
+}
+
+function postgresConstraintName(error: unknown): string {
+	const constraint =
+		readProperty(error, "constraint") ?? readProperty(error, "constraint_name");
+	return typeof constraint === "string" ? constraint : "";
 }
 
 export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
@@ -38,7 +54,7 @@ export function isCreateIdempotencyUniqueViolation(error: unknown): boolean {
 		return false;
 	}
 	return /_org_create_idempotency_uidx|create_idempotency_key/i.test(
-		writeErrorMessage(error),
+		postgresConstraintName(error),
 	);
 }
 
@@ -46,7 +62,7 @@ export function isPayrollRunIdentityUniqueViolation(error: unknown): boolean {
 	if (!isPostgresUniqueViolation(error)) {
 		return false;
 	}
-	return /payroll_run_org_identity_uidx/i.test(writeErrorMessage(error));
+	return /payroll_run_org_identity_uidx/i.test(postgresConstraintName(error));
 }
 
 export function mapPersistenceFailure(
@@ -74,6 +90,12 @@ export function mapPersistenceFailure(
 			payrollErrorDetails(PAYROLL_ERROR_DUPLICATE),
 		);
 	}
+
+	const mapped = fromPostgresUnknown(error);
+	if (mapped !== undefined) {
+		return failFromAppError(mapped);
+	}
+
 	return fail(
 		"INTERNAL_ERROR",
 		fallbackMessage,

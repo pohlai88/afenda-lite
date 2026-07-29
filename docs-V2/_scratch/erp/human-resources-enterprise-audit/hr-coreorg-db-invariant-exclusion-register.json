@@ -338,6 +338,10 @@
 				"hr_bulk_import_checkpoint",
 				"hr_bulk_import_audit",
 				"hr_bulk_import_error_artifact",
+				"hr_bulk_import_job",
+				"hr_bulk_import_job_row",
+				"hr_bulk_export_job",
+				"hr_bulk_export_artifact_chunk",
 				"hr_reliability_work_item",
 				"hr_reliability_dead_letter",
 				"hr_connector_cursor"

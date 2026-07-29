@@ -21,6 +21,9 @@ import type {
 	ReliabilityWorkItem,
 } from "./types";
 
+const RELIABILITY_EXECUTION_FAILED_MESSAGE =
+	"Reliability work execution failed";
+
 export type ReliabilityKernelPorts = {
 	store: ReliabilityStorePort;
 	clock: ReliabilityClockPort;
@@ -197,7 +200,7 @@ export async function executeReliabilityWork(
 				requestFingerprint: current.requestFingerprint,
 				attemptCount,
 				errorCode: executionResult.code,
-				errorMessage: executionResult.message,
+				errorMessage: RELIABILITY_EXECUTION_FAILED_MESSAGE,
 				failedAt: now,
 				replayedByWorkItemId: null,
 			}
@@ -215,7 +218,7 @@ export async function executeReliabilityWork(
 				: new Date(now.getTime() + retryDelayMs(policy, attemptCount)),
 			lastAttemptAt: now,
 			lastErrorCode: executionResult.code,
-			lastErrorMessage: executionResult.message,
+			lastErrorMessage: RELIABILITY_EXECUTION_FAILED_MESSAGE,
 			receiptId: null,
 			acknowledgementDeadlineAt: null,
 			leaseOwner: null,

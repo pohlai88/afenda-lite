@@ -52,8 +52,16 @@ function hasReferenceStatusFilter(input: unknown): boolean {
 		typeof input === "object" &&
 		input !== null &&
 		"status" in input &&
-		Reflect.get(input, "status") !== undefined
+		readProperty(input, "status") !== undefined
 	);
+}
+
+function readProperty(input: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(input, key);
+	} catch {
+		return undefined;
+	}
 }
 
 export async function readRefCountry(

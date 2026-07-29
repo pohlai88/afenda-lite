@@ -1,6 +1,6 @@
-export const RETRY_AFTER_HEADER = "Retry-After" as const;
+import { retryAfterSeconds as readRetryAfterSeconds } from "@afenda/errors/http";
 
-const MIN_RETRY_AFTER_SECONDS = 1;
+export const RETRY_AFTER_HEADER = "Retry-After" as const;
 
 /**
  * Attach a positive Retry-After value (seconds) onto Fetch Headers.
@@ -10,11 +10,9 @@ export function applyRetryAfterHeader(
 	headers: Headers,
 	retryAfterSeconds: number,
 ): void {
-	if (
-		!Number.isFinite(retryAfterSeconds) ||
-		retryAfterSeconds < MIN_RETRY_AFTER_SECONDS
-	) {
+	const seconds = readRetryAfterSeconds({ retryAfter: retryAfterSeconds });
+	if (seconds === undefined) {
 		return;
 	}
-	headers.set(RETRY_AFTER_HEADER, String(Math.floor(retryAfterSeconds)));
+	headers.set(RETRY_AFTER_HEADER, String(seconds));
 }

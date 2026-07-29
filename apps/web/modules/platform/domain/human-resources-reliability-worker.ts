@@ -25,9 +25,12 @@ import {
 	resolveReliabilityOperation,
 } from "@afenda/human-resources";
 import { createDrizzleReliabilityStore } from "@afenda/human-resources/adapters/drizzle";
-
+import {
+	processHumanResourcesBulkExportJob,
+	processHumanResourcesBulkImportJob,
+	purgeHumanResourcesBulkJob,
+} from "@/lib/erp/human-resources-bulk-job-worker";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import { processHumanResourcesBulkExportJob, processHumanResourcesBulkImportJob, purgeHumanResourcesBulkJob } from "@/lib/erp/human-resources-bulk-job-worker";
 import { publishPayrollDelivery } from "@/modules/platform/domain/human-resources-payroll-delivery";
 import { createHumanResourcesPlatformEventHandlers } from "@/modules/platform/domain/human-resources-platform-events";
 import { rebuildHumanResourcesEmployeeSearch } from "@/modules/platform/domain/human-resources-search-projection";
@@ -202,11 +205,7 @@ export async function processReliabilityWork(
 	const found = await ports.store.getWorkItem(input);
 	if (!found.ok) return found;
 	if (found.data === null)
-		return {
-			ok: false,
-			code: "NOT_FOUND",
-			message: "Reliability work item not found",
-		};
+		return fail("NOT_FOUND", "Reliability work item not found");
 	const result = await executeReliabilityWork(input, ports);
 	const failureCode = result.ok ? result.data.lastErrorCode : result.code;
 	const failed = failureCode !== null;

@@ -150,7 +150,7 @@ Until then: no `Dockerfile` under `apps/docs`.
 
 | Key | Role |
 |-----|------|
-| `DOCS_URL` | Public docs origin for Next `metadataBase` / OG / RSS absolute links — default `http://localhost:3001`; set https origin on the docs Vercel project ([og-next.md](og-next.md) · [rss.md](rss.md)) |
+| `DOCS_URL` | Public docs origin for Next `metadataBase` / OG / RSS absolute links — default `http://localhost:3001` outside production; production requires an explicit https origin on the docs Vercel project ([og-next.md](og-next.md) · [rss.md](rss.md)) |
 | `VERCEL_DEEP_CLONE` | **Required on docs Vercel** — set `true` so fumadocs-mdx `lastModified` (git) can resolve RSS item dates — [rss.md](rss.md) |
 | `GITHUB_APP_ID` · `GITHUB_APP_PRIVATE_KEY` | Optional at boot — required on feedback submit ([feedback.md](feedback.md)) · ops opened |
 | Never | `DATABASE_URL` · Neon Auth · `CRON_SECRET` · product `APP_URL` as docs secret store / `metadataBase` |

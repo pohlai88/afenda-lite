@@ -11,7 +11,14 @@ import {
 	ledgerPosting,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import { z } from "zod";
 
 import type {
@@ -36,6 +43,13 @@ import type {
 	SourcePostingTrace,
 	TrialBalanceRow,
 } from "./model";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 const postingProfileLineSqlSchema = z.object({
 	id: z.string().uuid(),
@@ -372,7 +386,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Created accounting period missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to open accounting period");
+			return failFromPersistence(error, "Failed to open accounting period");
 		}
 	}
 
@@ -401,7 +415,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Soft-closed accounting period missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to soft-close accounting period");
+			return failFromPersistence(
+				error,
+				"Failed to soft-close accounting period",
+			);
 		}
 	}
 
@@ -430,7 +447,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Closed accounting period missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to close accounting period");
+			return failFromPersistence(error, "Failed to close accounting period");
 		}
 	}
 
@@ -461,7 +478,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Reopened accounting period missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to reopen accounting period");
+			return failFromPersistence(error, "Failed to reopen accounting period");
 		}
 	}
 
@@ -495,7 +512,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Created journal missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create journal");
+			return failFromPersistence(error, "Failed to create journal");
 		}
 	}
 
@@ -564,7 +581,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				createdAt: row.created_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to add journal line");
+			return failFromPersistence(error, "Failed to add journal line");
 		}
 	}
 
@@ -642,7 +659,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Posted journal missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to post journal");
+			return failFromPersistence(error, "Failed to post journal");
 		}
 	}
 
@@ -751,7 +768,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				"Reversal journal missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to reverse journal");
+			return failFromPersistence(error, "Failed to reverse journal");
 		}
 	}
 
@@ -792,7 +809,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				mapJournal(header, lines.map(mapLine), postings.map(mapPosting)),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load journal");
+			return failFromPersistence(error, "Failed to load journal");
 		}
 	}
 
@@ -827,7 +844,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			}
 			return ok(journals);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list journals");
+			return failFromPersistence(error, "Failed to list journals");
 		}
 	}
 
@@ -870,7 +887,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to calculate trial balance");
+			return failFromPersistence(error, "Failed to calculate trial balance");
 		}
 	}
 
@@ -902,7 +919,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				updatedAt: new Date(),
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create chart of accounts");
+			return failFromPersistence(error, "Failed to create chart of accounts");
 		}
 	}
 
@@ -946,7 +963,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				updatedAt: now,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create ledger account");
+			return failFromPersistence(error, "Failed to create ledger account");
 		}
 	}
 
@@ -971,7 +988,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			if (row === undefined) return fail("CONFLICT", "Version mismatch");
 			return ok(mapLedgerAccountSql(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to update ledger account");
+			return failFromPersistence(error, "Failed to update ledger account");
 		}
 	}
 
@@ -995,7 +1012,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			if (row === undefined) return fail("CONFLICT", "Deactivation conflict");
 			return ok(mapLedgerAccountSql(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to deactivate ledger account");
+			return failFromPersistence(error, "Failed to deactivate ledger account");
 		}
 	}
 
@@ -1019,7 +1036,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			);
 			return ok(rows.map(mapLedgerAccountSql));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list ledger accounts");
+			return failFromPersistence(error, "Failed to list ledger accounts");
 		}
 	}
 
@@ -1042,7 +1059,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			const row = rows[0];
 			return ok(row === undefined ? null : mapLedgerAccountSql(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to resolve ledger account");
+			return failFromPersistence(error, "Failed to resolve ledger account");
 		}
 	}
 
@@ -1068,7 +1085,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				return fail("INTERNAL_ERROR", "Upsert returned nothing");
 			return ok(mapAccountRoleSql(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to map account role");
+			return failFromPersistence(error, "Failed to map account role");
 		}
 	}
 
@@ -1090,7 +1107,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			const row = rows[0];
 			return ok(row === undefined ? null : mapAccountRoleSql(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to resolve account role");
+			return failFromPersistence(error, "Failed to resolve account role");
 		}
 	}
 
@@ -1176,7 +1193,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				updatedAt: now,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to upsert posting profile");
+			return failFromPersistence(error, "Failed to upsert posting profile");
 		}
 	}
 
@@ -1243,7 +1260,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				updatedAt: r.updated_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to get active posting profile");
+			return failFromPersistence(error, "Failed to get active posting profile");
 		}
 	}
 
@@ -1269,7 +1286,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			const row = rows[0];
 			return ok(row === undefined ? null : mapSourcePostingLinkSql(row));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to find source posting link");
+			return failFromPersistence(error, "Failed to find source posting link");
 		}
 	}
 
@@ -1308,7 +1325,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				createdAt: new Date(),
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create source posting link");
+			return failFromPersistence(error, "Failed to create source posting link");
 		}
 	}
 
@@ -1356,7 +1373,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				updatedAt: now,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create posting exception");
+			return failFromPersistence(error, "Failed to create posting exception");
 		}
 	}
 
@@ -1424,7 +1441,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list posting exceptions");
+			return failFromPersistence(error, "Failed to list posting exceptions");
 		}
 	}
 
@@ -1492,7 +1509,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				updatedAt: r.updated_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to resolve posting exception");
+			return failFromPersistence(error, "Failed to resolve posting exception");
 		}
 	}
 
@@ -1560,7 +1577,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			}
 			return ok(traces);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to get source posting trace");
+			return failFromPersistence(error, "Failed to get source posting trace");
 		}
 	}
 
@@ -1610,7 +1627,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to get ledger account activity");
+			return failFromPersistence(
+				error,
+				"Failed to get ledger account activity",
+			);
 		}
 	}
 }

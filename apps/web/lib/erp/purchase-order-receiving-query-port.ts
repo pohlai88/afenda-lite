@@ -9,12 +9,25 @@ import {
 	purchaseOrderLine,
 	sql,
 } from "@afenda/db";
-import { failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import type {
 	PurchaseOrderReceivingQueryPort,
 	PurchaseOrderReceivingSnapshot,
 	PurchaseOrderReceivingStatus,
 } from "@afenda/receiving";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 function asReceivingStatus(status: string): PurchaseOrderReceivingStatus {
 	switch (status) {
@@ -130,7 +143,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 					}),
 				});
 			} catch (error) {
-				return failFromUnknown(
+				return failFromPersistence(
 					error,
 					"Failed to load purchase order receiving snapshot",
 				);

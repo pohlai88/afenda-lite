@@ -1,18 +1,22 @@
--- Legacy Sales rows are intentionally not preserved by this rebuild.
+-- Legacy Sales rows are preserved under *_legacy_20260728 tables by this rebuild.
 DROP INDEX IF EXISTS "md_payment_term_org_id_idx";
 --> statement-breakpoint
 ALTER TABLE "md_payment_term" ADD CONSTRAINT "md_payment_term_org_id_uidx" UNIQUE ("organization_id", "id");
 --> statement-breakpoint
-DROP TABLE IF EXISTS "sales_return_authorization_line" CASCADE;
-DROP TABLE IF EXISTS "sales_return_authorization" CASCADE;
-DROP TABLE IF EXISTS "sales_order_hold" CASCADE;
-DROP TABLE IF EXISTS "sales_order_schedule" CASCADE;
-DROP TABLE IF EXISTS "sales_order_line" CASCADE;
-DROP TABLE IF EXISTS "sales_order" CASCADE;
-DROP TABLE IF EXISTS "sales_quotation_line" CASCADE;
-DROP TABLE IF EXISTS "sales_quotation" CASCADE;
-DROP TABLE IF EXISTS "sales_price_book_entry" CASCADE;
-DROP TABLE IF EXISTS "sales_price_book" CASCADE;
+ALTER INDEX IF EXISTS "sales_order_org_status_idx" RENAME TO "sales_order_legacy_20260728_org_status_idx";
+ALTER INDEX IF EXISTS "sales_order_org_party_idx" RENAME TO "sales_order_legacy_20260728_org_party_idx";
+ALTER INDEX IF EXISTS "sales_order_line_org_item_idx" RENAME TO "sales_order_line_legacy_20260728_org_item_idx";
+ALTER TABLE IF EXISTS "sales_invoice" DROP CONSTRAINT IF EXISTS "sales_invoice_sales_order_id_sales_order_id_fk";
+ALTER TABLE IF EXISTS "sales_return_authorization_line" RENAME TO "sales_return_authorization_line_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_return_authorization" RENAME TO "sales_return_authorization_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_order_hold" RENAME TO "sales_order_hold_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_order_schedule" RENAME TO "sales_order_schedule_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_order_line" RENAME TO "sales_order_line_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_order" RENAME TO "sales_order_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_quotation_line" RENAME TO "sales_quotation_line_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_quotation" RENAME TO "sales_quotation_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_price_book_entry" RENAME TO "sales_price_book_entry_legacy_20260728";
+ALTER TABLE IF EXISTS "sales_price_book" RENAME TO "sales_price_book_legacy_20260728";
 --> statement-breakpoint
 CREATE TABLE "sales_order" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

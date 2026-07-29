@@ -20,6 +20,7 @@ import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
 	actionFail,
+	actionFailFromAppError,
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 
@@ -93,7 +94,7 @@ export async function devLoginAction(
 	});
 	if (!limit.ok) {
 		const error = toRateLimitAppError(limit);
-		return actionFail(error.code, error.message, error.details);
+		return actionFailFromAppError(error);
 	}
 
 	const result = await signInWithEmail({

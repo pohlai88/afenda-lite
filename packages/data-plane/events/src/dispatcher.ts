@@ -1,3 +1,4 @@
+import { normalizeUnknown } from "@afenda/errors";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import { resolveEventStore } from "./resolve-store";
 import { eventDispatchOptionsSchema } from "./schemas";
@@ -22,10 +23,7 @@ export type EventDispatcher = {
 };
 
 function errorMessage(error: unknown): string {
-	if (error instanceof Error && error.message.trim().length > 0) {
-		return error.message;
-	}
-	return "Domain event handler failed";
+	return normalizeUnknown(error, "Domain event handler failed").message;
 }
 
 export function createEventDispatcher(

@@ -38,7 +38,7 @@ import {
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
-	isPostgresUniqueViolation,
+	isPostgresUniqueConstraint,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import {
@@ -63,16 +63,6 @@ import { computeLineAvailability } from "../../workforce-planning/availability";
 import { computeWorkforcePlanVarianceLine } from "../../workforce-planning/variance";
 
 type WorkforcePlanVarianceLine = WorkforcePlanVariance["lines"][number];
-
-function uniqueConstraintMessage(error: unknown): string {
-	if (typeof error === "object" && error !== null && "message" in error) {
-		const message = (error as { message: unknown }).message;
-		if (typeof message === "string") {
-			return message;
-		}
-	}
-	return error instanceof Error ? error.message : String(error);
-}
 
 type HeadcountPlanSqlRow = {
 	id: string;
@@ -704,11 +694,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					return conflict("Idempotency key already used with different data");
 				}
 			}
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_headcount_plan_org_code_uidx/i.test(message)) {
-					return conflict("Headcount plan code already exists");
-				}
+			if (
+				isPostgresUniqueConstraint(error, /hr_headcount_plan_org_code_uidx/i)
+			) {
+				return conflict("Headcount plan code already exists");
 			}
 			return mapPersistenceFailure(error, "Failed to create headcount plan");
 		}
@@ -929,13 +918,15 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			}
 			return mapHeadcountPlanSql(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_headcount_plan_org_scope_period_approved_uidx/i.test(message)) {
-					return conflict(
-						"An approved headcount plan already exists for this scope and period",
-					);
-				}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_headcount_plan_org_scope_period_approved_uidx/i,
+				)
+			) {
+				return conflict(
+					"An approved headcount plan already exists for this scope and period",
+				);
 			}
 			return mapPersistenceFailure(
 				error,
@@ -1053,11 +1044,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					return conflict("Idempotency key already used with different data");
 				}
 			}
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_headcount_plan_org_code_uidx/i.test(message)) {
-					return conflict("Headcount plan code already exists");
-				}
+			if (
+				isPostgresUniqueConstraint(error, /hr_headcount_plan_org_code_uidx/i)
+			) {
+				return conflict("Headcount plan code already exists");
 			}
 			return mapPersistenceFailure(error, "Failed to supersede headcount plan");
 		}
@@ -1626,15 +1616,15 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					return conflict("Idempotency key already used with different data");
 				}
 			}
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (
-					/hr_headcount_reservation_org_requisition_active_uidx/i.test(message)
-				) {
-					return conflict(
-						"Requisition already has an active headcount reservation",
-					);
-				}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_headcount_reservation_org_requisition_active_uidx/i,
+				)
+			) {
+				return conflict(
+					"Requisition already has an active headcount reservation",
+				);
 			}
 			return mapPersistenceFailure(error, "Failed to reserve headcount");
 		}

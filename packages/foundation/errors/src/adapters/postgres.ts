@@ -90,7 +90,10 @@ function readProperty(record: Record<string, unknown>, key: string): unknown {
 	}
 }
 
-function readSqlState(value: unknown, depth = 0): string | undefined {
+export function postgresSqlState(
+	value: unknown,
+	depth = 0,
+): string | undefined {
 	if (depth > MAX_CAUSE_DEPTH || typeof value !== "object" || value === null) {
 		return undefined;
 	}
@@ -105,7 +108,15 @@ function readSqlState(value: unknown, depth = 0): string | undefined {
 			return normalized;
 		}
 	}
-	return readSqlState(readProperty(record, "cause"), depth + 1);
+	return postgresSqlState(readProperty(record, "cause"), depth + 1);
+}
+
+export function hasPostgresSqlState(error: unknown, expected: string): boolean {
+	const normalizedExpected = expected.toUpperCase();
+	return (
+		SQLSTATE_PATTERN.test(normalizedExpected) &&
+		postgresSqlState(error) === normalizedExpected
+	);
 }
 
 /**
@@ -117,7 +128,7 @@ function readSqlState(value: unknown, depth = 0): string | undefined {
  * the public details projection.
  */
 export function fromPostgresUnknown(error: unknown): AppError | undefined {
-	const sqlState = readSqlState(error);
+	const sqlState = postgresSqlState(error);
 	if (sqlState === undefined) {
 		return undefined;
 	}

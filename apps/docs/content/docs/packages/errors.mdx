@@ -58,12 +58,203 @@ Factories also re-export from `@afenda/errors/common` (same symbols as the root 
 ## Maintain
 
 ```bash
+pnpm --filter @afenda/errors protect:check
 pnpm --filter @afenda/errors lint
 pnpm --filter @afenda/errors typecheck
 pnpm --filter @afenda/errors test
 ```
 
 Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+## Protection
+
+This package is protected after review. Every TypeScript source and test file
+must carry the package header:
+
+```ts
+/**
+ * @afenda/errors
+ * Contract: afenda.errors/v1
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+```
+
+Before editing, run:
+
+```bash
+pnpm --filter @afenda/errors protect:check
+```
+
+If the check fails, inspect the diff before changing anything else. For an
+intentional edit, keep the local unlock token in `.env.local`:
+
+```text
+AFENDA_PROTECTED_EDIT_TOKEN=<local-only-token>
+```
+
+After the change passes lint, typecheck, and tests, refresh the package hash:
+
+```bash
+pnpm --filter @afenda/errors protect:update
+pnpm --filter @afenda/errors protect:check
+```
+
+The committed `.protected.sha256` detects package drift. The token only permits
+refreshing that hash; it does not bypass review, tests, or compatibility
+validation.
+
+## Consumption Mandate
+
+`@afenda/errors` is the authoritative cross-boundary error kernel for the Afenda
+monorepo.
+
+Every failure crossing an Afenda package, infrastructure, job, or HTTP boundary
+MUST be represented using `@afenda/errors`. Failures contained entirely within a
+private function, pure utility, entity, or domain module MAY use local `Error`
+objects, predicates, or domain-specific outcome unions.
+
+### MUST Use `@afenda/errors`
+
+Use `@afenda/errors` for:
+
+- public package commands, queries, services, and facades
+- cross-package orchestration
+- infrastructure adapters that catch external failures
+- PostgreSQL error mapping through `@afenda/errors/adapters/postgres`
+- BFF, REST, RPC, server-action, and HTTP response boundaries
+- jobs, workers, retries, dead-letter paths, audit output, and monitoring-facing
+  failures
+- OpenAPI and API-contract error-code, status, and body definitions
+
+### MUST NOT Reimplement
+
+Do not create competing shared implementations of:
+
+- `AppError`
+- `Result<T>`
+- `ERROR_CODES`
+- `ERROR_HTTP_STATUS`
+- `httpErrorBody`
+- `retryAfterSeconds`
+- PostgreSQL SQLSTATE mapping
+- shared unknown-error normalization
+
+Domain-specific `reason` unions are allowed, but they MUST be mapped to
+`@afenda/errors` before crossing a package, infrastructure, job, or transport
+boundary.
+
+### MUST NOT Import Directly
+
+Do not import `@afenda/errors` directly inside:
+
+- pure domain entities
+- value objects
+- low-level pure utilities
+- Drizzle schemas
+- migrations
+- reusable UI primitives
+
+These layers MUST expose local outcomes or receive display-ready state from
+their caller.
+
+### Private and Domain-Local Failures
+
+Private helpers, entities, value objects, predicates, and domain-internal
+workflows MAY use local failure shapes when the failure does not leave that
+private/domain scope:
+
+- local `Error`
+- boolean or predicate result
+- domain-specific `reason` union
+- domain-local discriminated outcome
+
+These outcomes MUST be mapped to `@afenda/errors` before crossing any package,
+infrastructure, worker, job, HTTP, or public-client boundary. Do not import
+`@afenda/errors` into pure domain objects just to satisfy a boundary contract;
+adapt at the command, query, repository, job, or transport edge instead.
+
+### Boundary Rule
+
+```text
+Failure stays inside one private module
+-> local Error, predicate, or domain outcome is allowed
+
+Failure crosses a package boundary
+-> use Result<T> or AppError
+
+Failure crosses an infrastructure boundary
+-> use explicit adapter mapping
+
+Failure crosses an HTTP boundary
+-> use @afenda/errors/http
+
+Failure reaches a public client
+-> serialize only; never expose Error, cause, stack, SQL, or driver data
+```
+
+### Consumption Enforcement
+
+Repository governance MUST verify:
+
+- no competing shared error-code registry
+- no competing shared `Result<T>` implementation
+- no duplicate HTTP error-status map
+- no raw `Error.message` in public responses
+- no direct serialization of `Error` or `AppError`
+- no automatic infrastructure guessing inside `normalizeUnknown`
+- no domain-specific codes added to the shared kernel
+- PostgreSQL failures are mapped only at explicit adapter boundaries
+- public package operations use an approved cross-boundary failure contract
+
+Run the current repository check with:
+
+```bash
+pnpm run check:errors-consumption
+```
+
+Package protection detects unauthorized drift. Consumption enforcement governs
+who must use `@afenda/errors`; the two controls are intentionally separate.
+
+### Normalization Enforcement
+
+Adoption answers **who consumes** `@afenda/errors`. Normalization answers
+whether consumers use the kernel through the same approved flow:
+
+```text
+Local/domain failure
+-> explicit boundary mapping
+-> AppError or Result<T>
+-> safe serialization
+-> HTTP projection only at BFF / transport boundaries
+```
+
+Repository consumers MUST normalize unknown failures with `normalizeUnknown` or
+`failFromUnknown`, convert existing `AppError` values with `failFromAppError`,
+map PostgreSQL failures explicitly with `fromPostgresUnknown`, serialize public
+`AppError` values with `serializeAppError` or HTTP helpers, and project HTTP
+failures through `ERROR_HTTP_STATUS`, `httpErrorBody`, and `retryAfterSeconds`.
+
+The normalization gate is separate from the adoption gate:
+
+```bash
+pnpm run check:errors-normalization
+pnpm run check:errors-normalization -- --strict
+```
+
+Non-strict mode fails confirmed unsafe drift. Strict mode additionally fails
+unresolved review findings. The checker reports:
+
+```text
+canonical
+partial
+manual-result-construction
+manual-serialization
+raw-error-leak
+duplicate-helper
+postgres-mapping-drift
+http-projection-drift
+review
+```
 
 ## Exports
 

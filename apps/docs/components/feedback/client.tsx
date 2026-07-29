@@ -46,8 +46,8 @@ const blockFeedbackResult = z.extend(blockFeedback, {
   response: actionResponse,
 });
 
-function feedbackActionErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to send feedback';
+function feedbackActionErrorMessage(_error: unknown): string {
+  return 'Failed to send feedback';
 }
 
 function FeedbackThanksActions({

@@ -2,7 +2,9 @@ import {
 	type ResultFailure as ActionFailure,
 	type Result as ActionResult,
 	fail as actionFail,
+	failFromAppError as actionFailFromAppError,
 	ok as actionOk,
+	failFromUnknown,
 } from "@afenda/errors/result";
 
 /**
@@ -14,7 +16,7 @@ import {
 
 export type { ActionFailure, ActionResult };
 
-export { actionFail, actionOk };
+export { actionFail, actionFailFromAppError, actionOk };
 
 /**
  * API-007 — unexpected Action failure with safe client correlation reference.
@@ -27,6 +29,19 @@ export function actionFailInternal(
 	return actionFail("INTERNAL_ERROR", message, { correlationId });
 }
 
+/**
+ * API-007 — normalize an unexpected Action failure before projecting it to the
+ * public ActionResult shape. The raw error is never exposed to clients.
+ */
+export function actionFailFromUnknown(
+	error: unknown,
+	message: string,
+	correlationId: string,
+): ActionFailure {
+	const failure = failFromUnknown(error, message);
+	return actionFail(failure.code, failure.message, { correlationId });
+}
+
 function firstFieldError(details: unknown, field: string): string | undefined {
 	if (typeof details !== "object" || details === null) {
 		return undefined;
@@ -34,16 +49,24 @@ function firstFieldError(details: unknown, field: string): string | undefined {
 	if (!("fieldErrors" in details)) {
 		return undefined;
 	}
-	const fieldErrors = Reflect.get(details, "fieldErrors");
+	const fieldErrors = readProperty(details, "fieldErrors");
 	if (typeof fieldErrors !== "object" || fieldErrors === null) {
 		return undefined;
 	}
-	const messages = Reflect.get(fieldErrors, field);
+	const messages = readProperty(fieldErrors, field);
 	if (!Array.isArray(messages)) {
 		return undefined;
 	}
 	const first = messages[0];
 	return typeof first === "string" ? first : undefined;
+}
+
+function readProperty(value: object, key: PropertyKey): unknown {
+	try {
+		return Reflect.get(value, key);
+	} catch {
+		return undefined;
+	}
 }
 
 /**

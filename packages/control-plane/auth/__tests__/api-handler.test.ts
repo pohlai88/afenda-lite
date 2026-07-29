@@ -26,7 +26,8 @@ vi.mock("@afenda/env", () => ({
 		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
 		APP_URL: "https://www.nexuscanon.com",
 	},
-	isProductionDeployment: () => false,
+	isProductionDeployment: (ctx?: { nodeEnv?: string; vercelEnv?: string }) =>
+		ctx?.vercelEnv === "production",
 }));
 
 vi.mock("@afenda/rate-limit", async () => {
@@ -133,7 +134,12 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
 		);
-		expect(await response.text()).toBe("");
+		await expect(response.json()).resolves.toEqual({
+			error: {
+				code: "FORBIDDEN",
+				message: "Forbidden.",
+			},
+		});
 	});
 
 	it("allows POST when Origin matches APP_URL", async () => {
@@ -278,7 +284,12 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		);
 
 		expect(response.status).toBe(500);
-		expect(await response.text()).toBe("");
+		await expect(response.json()).resolves.toEqual({
+			error: {
+				code: "INTERNAL_ERROR",
+				message: "An unexpected error occurred",
+			},
+		});
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
 		);

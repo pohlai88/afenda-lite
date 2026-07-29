@@ -6,7 +6,14 @@ import {
 	persistActiveOrganization,
 } from "@afenda/auth";
 import { db, inArray, max, platformRbacAudit } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import {
 	type CreatedOrganization,
@@ -23,6 +30,13 @@ import {
 	provisionOrganizationInputSchema,
 	provisionOrganizationResultSchema,
 } from "./schemas/org";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 async function loadLastActivityByOrgId(
 	orgIds: readonly string[],
@@ -73,7 +87,7 @@ export async function listOrganizations(): Promise<
 		);
 		return ok(parsed);
 	} catch (error) {
-		return failFromUnknown(error, "Failed to list organizations");
+		return failFromPersistence(error, "Failed to list organizations");
 	}
 }
 

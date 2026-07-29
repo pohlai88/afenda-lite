@@ -46,6 +46,16 @@ import { hashImportPayload, hashImportRow } from "./import-idempotency";
 import type { ImportBatchStatus } from "./import-types";
 
 export const MAX_IMPORT_BATCH_SIZE = 100 as const;
+const IMPORT_EXTERNAL_ID_LOOKUP_FAILED_MESSAGE =
+	"External id lookup failed for import row";
+const IMPORT_EXTERNAL_ID_AUTHORIZATION_FAILED_MESSAGE =
+	"External id creation is not authorized for import row";
+const IMPORT_TARGET_LOOKUP_FAILED_MESSAGE =
+	"Existing import target lookup failed";
+const IMPORT_TARGET_CREATE_FAILED_MESSAGE =
+	"Import row could not create target";
+const IMPORT_TARGET_UPDATE_FAILED_MESSAGE =
+	"Import row could not update target";
 
 export const IMPORT_MODES = [
 	"create_only",
@@ -810,7 +820,7 @@ async function upsertPartiesByCodeBody(
 					rowIndex: entry.rowIndex,
 					code: entry.code,
 					outcome: "rejected",
-					message: existingByExt.message,
+					message: IMPORT_EXTERNAL_ID_LOOKUP_FAILED_MESSAGE,
 				});
 				continue;
 			}
@@ -839,7 +849,7 @@ async function upsertPartiesByCodeBody(
 				rowIndex: entry.rowIndex,
 				code: entry.code,
 				outcome: "rejected",
-				message: existing.message,
+				message: IMPORT_TARGET_LOOKUP_FAILED_MESSAGE,
 			});
 			continue;
 		}
@@ -895,7 +905,7 @@ async function upsertPartiesByCodeBody(
 						rowIndex: entry.rowIndex,
 						code: entry.code,
 						outcome: "rejected",
-						message: externalIdAuthorized.message,
+						message: IMPORT_EXTERNAL_ID_AUTHORIZATION_FAILED_MESSAGE,
 					});
 					continue;
 				}
@@ -929,7 +939,7 @@ async function upsertPartiesByCodeBody(
 					rowIndex: entry.rowIndex,
 					code: entry.code,
 					outcome: "rejected",
-					message: created.message,
+					message: IMPORT_TARGET_CREATE_FAILED_MESSAGE,
 					reason: (created.details as MasterFailureDetails | undefined)?.reason,
 				});
 				continue;
@@ -1032,7 +1042,7 @@ async function upsertPartiesByCodeBody(
 				code: entry.code,
 				outcome: reason === "MASTER_VERSION_CONFLICT" ? "conflict" : "rejected",
 				entityId: current.id,
-				message: updated.message,
+				message: IMPORT_TARGET_UPDATE_FAILED_MESSAGE,
 				reason,
 			});
 			continue;
@@ -1225,7 +1235,7 @@ async function upsertByCodeGenericBody<
 				rowIndex: entry.rowIndex,
 				code: entry.code,
 				outcome: "rejected",
-				message: existing.message,
+				message: IMPORT_TARGET_LOOKUP_FAILED_MESSAGE,
 			});
 			continue;
 		}
@@ -1264,7 +1274,7 @@ async function upsertByCodeGenericBody<
 					rowIndex: entry.rowIndex,
 					code: entry.code,
 					outcome: "rejected",
-					message: created.message,
+					message: IMPORT_TARGET_CREATE_FAILED_MESSAGE,
 				});
 				continue;
 			}
@@ -1352,7 +1362,7 @@ async function upsertByCodeGenericBody<
 				code: entry.code,
 				outcome: reason === "MASTER_VERSION_CONFLICT" ? "conflict" : "rejected",
 				entityId: current.id,
-				message: updated.message,
+				message: IMPORT_TARGET_UPDATE_FAILED_MESSAGE,
 				reason,
 			});
 			continue;

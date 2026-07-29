@@ -96,10 +96,9 @@ describe("@afenda/admin usage metrics", () => {
 	});
 
 	it("maps active-org mismatch to FORBIDDEN", async () => {
+		const { forbidden } = await import("@afenda/errors");
 		listOrgMembers.mockRejectedValue(
-			new Error(
-				"@afenda/auth: listOrgMembers refuses organization other than the active session org",
-			),
+			forbidden("Organization is not in the active session"),
 		);
 		const { getOrganizationUsageMetrics } = await import("../src/usage");
 		await expect(

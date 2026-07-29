@@ -118,6 +118,10 @@ type BulkWorkerRequest<
 	entityType: Entity;
 };
 
+type BulkActionResult =
+	| { mode: "dry_run"; result: BulkImportResult<BulkCommandOutput> }
+	| { mode: "queued"; job: HumanResourcesBulkImportJob };
+
 async function runBulkAction<
 	Row,
 	Entity extends HumanResourcesBulkEntityType,
@@ -130,13 +134,8 @@ async function runBulkAction<
 	worker: (
 		request: BulkWorkerRequest<Row, Entity>,
 	) => Promise<Result<BulkImportResult<BulkCommandOutput>>>;
-}): Promise<
-	ActionResult<
-		| { mode: "dry_run"; result: BulkImportResult<BulkCommandOutput> }
-		| { mode: "queued"; job: HumanResourcesBulkImportJob }
-	>
-> {
-	return runOperatorPermissionAction({
+}): Promise<ActionResult<BulkActionResult>> {
+	return runOperatorPermissionAction<BulkActionResult>({
 		path: input.path,
 		permission: input.permission,
 		safeMessage: "Could not run the Human Resources bulk operation.",
@@ -180,7 +179,7 @@ async function runBulkAction<
 			if (!result.ok) {
 				await recordHrBulkError(
 					{
-						stage: parsed.data.mode === "commit" ? "commit" : "validate",
+						stage: "validate",
 						reason: classifyHrFailure(result.code),
 					},
 					createProductionHrObservabilityPorts(),

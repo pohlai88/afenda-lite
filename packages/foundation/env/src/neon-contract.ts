@@ -13,69 +13,125 @@ export const APPROVED_NEON_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
 export const PRODUCTION_APP_ORIGIN = "https://www.nexuscanon.com" as const;
 export const PRODUCTION_APP_HOST = new URL(PRODUCTION_APP_ORIGIN).hostname;
 
-/** Legacy Vercel project host — approved for non-production APP_URL only. */
+/** Legacy Vercel project host — approved only outside production. */
 export const LEGACY_VERCEL_APP_HOST = "afenda-lite.vercel.app" as const;
 
-/** Approved APP_URL hostnames for local / non-Vercel-production runtimes (PL-S9). */
+/** Approved APP_URL hostnames outside production. */
 export const APPROVED_APP_HOSTS = [
 	"localhost",
 	"127.0.0.1",
+	"::1",
+	"[::1]",
 	PRODUCTION_APP_HOST,
 	LEGACY_VERCEL_APP_HOST,
 ] as const;
 
 /**
- * Baseline drizzle migrate on the production Neon branch is prohibited (N2 / ARCH-025).
- * Identified by the env gate; enforcement lives in `@afenda/db` db-migrate-guard.
+ * Baseline Drizzle migration on the production Neon branch is prohibited.
+ * Enforcement belongs to `@afenda/db` through its migration guard.
  */
 export const PRODUCTION_BASELINE_MIGRATE_PROHIBITED = true as const;
 
 export type NeonEnvClass =
 	| "required-product"
+	| "required-production-ops"
 	| "server-secret"
 	| "public-safe"
 	| "optional-ops"
 	| "local-only";
 
-/** Classification map for ops docs / audits (no secret values). */
+/** Classification map for operator documentation and audits. */
 export const NEON_ENV_CLASSIFICATION = {
 	DATABASE_URL: "required-product",
 	NEON_AUTH_BASE_URL: "required-product",
 	NEON_AUTH_COOKIE_SECRET: "server-secret",
 	APP_URL: "required-product",
-	NEON_ORG_ID: "optional-ops",
-	NEON_PROJECT_ID: "optional-ops",
-	NEON_BRANCH_ID: "optional-ops",
-	NEON_API_KEY: "optional-ops",
+	NEON_ORG_ID: "required-production-ops",
+	NEON_PROJECT_ID: "required-production-ops",
+	NEON_BRANCH_ID: "required-production-ops",
+	NEON_API_KEY: "local-only",
+	UPSTASH_REDIS_REST_URL: "required-product",
+	UPSTASH_REDIS_REST_TOKEN: "server-secret",
+	PORTAL_ORG_SLUG: "optional-ops",
+	PORTAL_ORG_NAME: "optional-ops",
+	PORTAL_ORG_SWITCHER_ENABLED: "optional-ops",
+	PORTAL_ORGANIZATION_ID: "optional-ops",
+	GUARDIAN_AUTH_SHELL: "optional-ops",
+	RESEND_API_KEY: "server-secret",
+	METRICS_SCRAPE_TOKEN: "server-secret",
+	CRON_SECRET: "server-secret",
+	HR_RELIABILITY_ENABLED: "optional-ops",
+	HR_RELIABILITY_BATCH_SIZE: "optional-ops",
+	HR_RELIABILITY_CONCURRENCY: "optional-ops",
+	HR_RELIABILITY_PER_ORG_LIMIT: "optional-ops",
+	HR_RELIABILITY_LEASE_SECONDS: "optional-ops",
+	HR_RELIABILITY_TIME_BUDGET_MS: "optional-ops",
+	AI_GATEWAY_API_KEY: "server-secret",
+	AI_THE_MACHINE_MODEL: "optional-ops",
+	HR_ATTENDANCE_CONNECTOR_BASE_URL: "optional-ops",
+	PLAYGROUND_ENABLED: "local-only",
+	PLAYGROUND_SURVEY_ID: "local-only",
+	PLAYGROUND_ASSIGNMENT_ID: "local-only",
+	PLAYGROUND_SURVEY_SLUG: "local-only",
+	SHARED_ADMIN_EMAIL: "local-only",
+	SHARED_ADMIN_NAME: "local-only",
 	SHARED_ADMIN_PASSWORD: "local-only",
+	PREVIEW_CLIENT_EMAIL: "local-only",
+	PREVIEW_CLIENT_NAME: "local-only",
 	PREVIEW_CLIENT_PASSWORD: "local-only",
 	CLIENT_DEFAULT_PASSWORD: "local-only",
-	PLAYGROUND_ENABLED: "local-only",
+	E2E_ORGANIZATION_ID: "local-only",
+	E2E_FACTORY_PASSWORD: "local-only",
+	E2E_FACTORY_HASH_TEMPLATE_EMAIL: "local-only",
+	E2E_OPERATOR_EMAIL: "local-only",
+	E2E_OPERATOR_PASSWORD: "local-only",
+	E2E_CLIENT_EMAIL: "local-only",
+	E2E_CLIENT_PASSWORD: "local-only",
+	E2E_INVITEE_EMAIL: "local-only",
+	E2E_INVITEE_PASSWORD: "local-only",
+	E2E_SURVEY_SLUG: "local-only",
+	E2E_INVITE_TOKEN: "local-only",
+	SHADCN_STUDIO_EMAIL: "local-only",
+	SHADCN_STUDIO_API_KEY: "local-only",
 } as const satisfies Record<string, NeonEnvClass>;
 
-export type NeonContractIssue = {
+export type NeonContractIssue = Readonly<{
 	variable: string;
 	message: string;
-};
+}>;
 
-export type NeonContractResult = {
+export type NeonContractResult = Readonly<{
 	ok: boolean;
-	issues: NeonContractIssue[];
-};
+	issues: readonly NeonContractIssue[];
+}>;
 
-export type NeonRuntimeContext = {
+export type NeonRuntimeContext = Readonly<{
 	nodeEnv?: string;
 	vercelEnv?: string;
-};
+}>;
 
-/** Vercel production deployment (not merely `next build` locally). */
+/**
+ * Production runtime.
+ *
+ * Recognized Vercel environments are authoritative. Unexpected values fall
+ * back to NODE_ENV so malformed VERCEL_ENV cannot disable production hard
+ * stops.
+ */
 export function isProductionDeployment(ctx: NeonRuntimeContext = {}): boolean {
-	return ctx.vercelEnv === "production";
+	switch (ctx.vercelEnv) {
+		case "production":
+			return true;
+		case "preview":
+		case "development":
+			return false;
+		default:
+			return ctx.nodeEnv === "production";
+	}
 }
 
 /**
- * Any Vercel runtime (preview / production) where AI Gateway OIDC may apply.
- * Local `next dev` without VERCEL_ENV is false.
+ * Any Vercel runtime where platform-issued identity such as AI Gateway OIDC
+ * may be available.
  */
 export function isVercelRuntime(ctx: NeonRuntimeContext = {}): boolean {
 	return (
@@ -89,9 +145,33 @@ export function redactEnvValue(_value: string | undefined): string {
 	return "[redacted]";
 }
 
+function normalizeHostname(hostname: string): string {
+	return hostname.trim().toLowerCase().replace(/\.$/, "");
+}
+
+function isLocalHostname(hostname: string): boolean {
+	const normalized = normalizeHostname(hostname);
+	return (
+		normalized === "localhost" ||
+		normalized === "127.0.0.1" ||
+		normalized === "::1" ||
+		normalized === "[::1]"
+	);
+}
+
+function isPoolerHostname(hostname: string): boolean {
+	return normalizeHostname(hostname)
+		.split(".")
+		.some((label) => label.endsWith("-pooler"));
+}
+
 export function isNeonPoolerDatabaseUrl(databaseUrl: string): boolean {
 	try {
-		return new URL(databaseUrl).hostname.includes("-pooler");
+		const parsed = new URL(databaseUrl);
+		return (
+			(parsed.protocol === "postgresql:" || parsed.protocol === "postgres:") &&
+			isPoolerHostname(parsed.hostname)
+		);
 	} catch {
 		return false;
 	}
@@ -106,27 +186,30 @@ export function assertProductDatabaseUrl(
 		if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") {
 			issues.push({
 				variable: "DATABASE_URL",
-				message: "must be a postgres URL (postgresql: or postgres:)",
+				message: "must use the postgres: or postgresql: protocol",
 			});
 		}
-		if (!parsed.hostname.includes("-pooler")) {
+		if (!isPoolerHostname(parsed.hostname)) {
 			issues.push({
 				variable: "DATABASE_URL",
 				message:
-					"must use Neon -pooler host for product runtime (ARCH-023); migrations may use a direct endpoint outside this contract",
+					"must use a Neon pooled endpoint for product runtime; migration tooling must use its separately governed direct endpoint",
 			});
 		}
 	} catch {
 		issues.push({
 			variable: "DATABASE_URL",
-			message: "must be a valid URL",
+			message: "must be a valid PostgreSQL URL",
 		});
 	}
 	return { ok: issues.length === 0, issues };
 }
 
 export function isApprovedAppHost(hostname: string): boolean {
-	return (APPROVED_APP_HOSTS as readonly string[]).includes(hostname);
+	const normalized = normalizeHostname(hostname);
+	return (APPROVED_APP_HOSTS as readonly string[]).some(
+		(host) => normalizeHostname(host) === normalized,
+	);
 }
 
 export function assertAppUrl(
@@ -136,15 +219,48 @@ export function assertAppUrl(
 	const issues: NeonContractIssue[] = [];
 	try {
 		const parsed = new URL(appUrl);
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			issues.push({
+				variable: "APP_URL",
+				message: "must use the http: or https: protocol",
+			});
+		}
+		if (
+			!isProductionDeployment(ctx) &&
+			!isLocalHostname(parsed.hostname) &&
+			parsed.protocol !== "https:"
+		) {
+			issues.push({
+				variable: "APP_URL",
+				message: "must use https: for non-local application hosts",
+			});
+		}
+		if (parsed.username || parsed.password) {
+			issues.push({
+				variable: "APP_URL",
+				message: "must not contain embedded credentials",
+			});
+		}
+		if (parsed.pathname !== "/" && parsed.pathname !== "") {
+			issues.push({
+				variable: "APP_URL",
+				message: "must be an application origin without a path",
+			});
+		}
+		if (parsed.search || parsed.hash) {
+			issues.push({
+				variable: "APP_URL",
+				message: "must not contain query parameters or a fragment",
+			});
+		}
 		if (isProductionDeployment(ctx)) {
 			if (parsed.protocol !== "https:") {
 				issues.push({
 					variable: "APP_URL",
-					message:
-						"must use https: on Vercel production (VERCEL_ENV=production)",
+					message: "must use https: in production",
 				});
 			}
-			if (parsed.origin !== new URL(PRODUCTION_APP_ORIGIN).origin) {
+			if (parsed.origin !== PRODUCTION_APP_ORIGIN) {
 				issues.push({
 					variable: "APP_URL",
 					message: `must equal approved production origin ${PRODUCTION_APP_ORIGIN}`,
@@ -153,7 +269,9 @@ export function assertAppUrl(
 		} else if (!isApprovedAppHost(parsed.hostname)) {
 			issues.push({
 				variable: "APP_URL",
-				message: `hostname must be an approved local or production host (${APPROVED_APP_HOSTS.join(", ")})`,
+				message:
+					`hostname must be one of the approved development, preview, or production hosts: ` +
+					APPROVED_APP_HOSTS.join(", "),
 			});
 		}
 	} catch {
@@ -175,10 +293,22 @@ export function assertNeonAuthBaseUrl(baseUrl: string): NeonContractResult {
 				message: "must use https:",
 			});
 		}
+		if (parsed.username || parsed.password) {
+			issues.push({
+				variable: "NEON_AUTH_BASE_URL",
+				message: "must not contain embedded credentials",
+			});
+		}
+		if (parsed.search || parsed.hash) {
+			issues.push({
+				variable: "NEON_AUTH_BASE_URL",
+				message: "must not contain query parameters or a fragment",
+			});
+		}
 	} catch {
 		issues.push({
 			variable: "NEON_AUTH_BASE_URL",
-			message: "must be a valid URL",
+			message: "must be a valid HTTPS URL",
 		});
 	}
 	return { ok: issues.length === 0, issues };
@@ -192,19 +322,70 @@ export function assertCookieSecret(secret: string): NeonContractResult {
 			message: "must be at least 32 characters",
 		});
 	}
+	if (secret.trim() !== secret) {
+		issues.push({
+			variable: "NEON_AUTH_COOKIE_SECRET",
+			message: "must not contain leading or trailing whitespace",
+		});
+	}
 	return { ok: issues.length === 0, issues };
+}
+
+export function assertPairedSecretConfig(
+	input: Readonly<{
+		leftName: string;
+		leftValue?: string;
+		rightName: string;
+		rightValue?: string;
+	}>,
+): NeonContractResult {
+	const leftPresent = input.leftValue !== undefined;
+	const rightPresent = input.rightValue !== undefined;
+	if (leftPresent === rightPresent) {
+		return { ok: true, issues: [] };
+	}
+
+	return {
+		ok: false,
+		issues: [
+			{
+				variable: `${input.leftName}/${input.rightName}`,
+				message: "must be configured together or both left unset",
+			},
+		],
+	};
 }
 
 export function assertNeonCloudIds(input: {
 	orgId?: string;
 	projectId?: string;
 	branchId?: string;
+	requireAll?: boolean;
 }): NeonContractResult {
 	const issues: NeonContractIssue[] = [];
+	const requireAll = input.requireAll === true;
+	if (requireAll && input.orgId === undefined) {
+		issues.push({
+			variable: "NEON_ORG_ID",
+			message: "is required for production environment verification",
+		});
+	}
+	if (requireAll && input.projectId === undefined) {
+		issues.push({
+			variable: "NEON_PROJECT_ID",
+			message: "is required for production environment verification",
+		});
+	}
+	if (requireAll && input.branchId === undefined) {
+		issues.push({
+			variable: "NEON_BRANCH_ID",
+			message: "is required for production environment verification",
+		});
+	}
 	if (input.orgId !== undefined && input.orgId !== APPROVED_NEON_ORG_ID) {
 		issues.push({
 			variable: "NEON_ORG_ID",
-			message: `must equal approved org ${APPROVED_NEON_ORG_ID}`,
+			message: `must equal approved organization ${APPROVED_NEON_ORG_ID}`,
 		});
 	}
 	if (
@@ -222,43 +403,68 @@ export function assertNeonCloudIds(input: {
 	) {
 		issues.push({
 			variable: "NEON_BRANCH_ID",
-			message: `must equal approved production branch ${APPROVED_NEON_BRANCH_ID} (single-branch policy)`,
+			message: `must equal approved production branch ${APPROVED_NEON_BRANCH_ID}`,
 		});
 	}
 	return { ok: issues.length === 0, issues };
 }
 
-const LOCAL_ONLY_PASSWORD_KEYS = [
+export const LOCAL_ONLY_PRODUCT_ENV_KEYS = [
+	"NEON_API_KEY",
+	"PLAYGROUND_ENABLED",
+	"PLAYGROUND_SURVEY_ID",
+	"PLAYGROUND_ASSIGNMENT_ID",
+	"PLAYGROUND_SURVEY_SLUG",
+	"SHARED_ADMIN_EMAIL",
+	"SHARED_ADMIN_NAME",
 	"SHARED_ADMIN_PASSWORD",
+	"PREVIEW_CLIENT_EMAIL",
+	"PREVIEW_CLIENT_NAME",
 	"PREVIEW_CLIENT_PASSWORD",
 	"CLIENT_DEFAULT_PASSWORD",
+	"E2E_ORGANIZATION_ID",
+	"E2E_FACTORY_PASSWORD",
+	"E2E_FACTORY_HASH_TEMPLATE_EMAIL",
+	"E2E_OPERATOR_EMAIL",
 	"E2E_OPERATOR_PASSWORD",
+	"E2E_CLIENT_EMAIL",
 	"E2E_CLIENT_PASSWORD",
+	"E2E_INVITEE_EMAIL",
+	"E2E_INVITEE_PASSWORD",
+	"E2E_SURVEY_SLUG",
+	"E2E_INVITE_TOKEN",
+	"SHADCN_STUDIO_EMAIL",
+	"SHADCN_STUDIO_API_KEY",
 ] as const;
 
-/**
- * Dev / E2E autofill secrets must not be present on Vercel production.
- * Gated on VERCEL_ENV so local `next build` with `.env.local` still works.
- */
-export function assertLocalOnlySecretsAbsentInProduction(
-	values: Partial<Record<(typeof LOCAL_ONLY_PASSWORD_KEYS)[number], string>>,
+export type LocalOnlyProductEnvKey =
+	(typeof LOCAL_ONLY_PRODUCT_ENV_KEYS)[number];
+
+export function assertLocalOnlyConfigAbsentInProduction(
+	values: Partial<Record<LocalOnlyProductEnvKey, unknown>>,
 	ctx: NeonRuntimeContext = {},
 ): NeonContractResult {
 	const issues: NeonContractIssue[] = [];
 	if (!isProductionDeployment(ctx)) {
 		return { ok: true, issues };
 	}
-	for (const key of LOCAL_ONLY_PASSWORD_KEYS) {
-		if (values[key]) {
+	for (const key of LOCAL_ONLY_PRODUCT_ENV_KEYS) {
+		const value = values[key];
+		const present =
+			value !== undefined && value !== null && value !== false && value !== "";
+		if (present) {
 			issues.push({
 				variable: key,
 				message:
-					"must be unset on Vercel production (local/E2E autofill only; never sync)",
+					"must be unset in production because it is restricted to local development, E2E, or operator tooling",
 			});
 		}
 	}
 	return { ok: issues.length === 0, issues };
 }
+
+export const assertLocalOnlySecretsAbsentInProduction =
+	assertLocalOnlyConfigAbsentInProduction;
 
 export function assertPlaygroundLocalOnly(
 	playgroundEnabled: boolean | undefined,
@@ -268,28 +474,50 @@ export function assertPlaygroundLocalOnly(
 	if (isProductionDeployment(ctx) && playgroundEnabled === true) {
 		issues.push({
 			variable: "PLAYGROUND_ENABLED",
-			message: "must not be true on Vercel production (ARCH-027 local-only)",
+			message: "must not be enabled in production",
 		});
 	}
 	return { ok: issues.length === 0, issues };
 }
 
-export type ProdBranchMigratePostureResult = NeonContractResult & {
-	detail: string;
-};
+export type ProdBranchMigratePostureResult = NeonContractResult &
+	Readonly<{
+		baselineMigrateAllowed: boolean;
+		detail: string;
+	}>;
 
 /**
- * Identify the production-branch baseline-migrate prohibition (PL-S9 / N2).
- * Does not run drizzle; never logs DATABASE_URL or other secrets.
- * Branch id mismatches reuse `assertNeonCloudIds` (single error message).
+ * Identify the production-branch baseline migration prohibition.
+ *
+ * A missing branch ID is not accepted as evidence that the migration target
+ * is safe.
  */
-export function evaluateProdBranchBaselineMigratePosture(input: {
-	branchId?: string;
-}): ProdBranchMigratePostureResult {
+export function evaluateProdBranchBaselineMigratePosture(
+	input: Readonly<{
+		branchId?: string;
+	}>,
+): ProdBranchMigratePostureResult {
+	if (input.branchId === undefined) {
+		const issues: NeonContractIssue[] = [
+			{
+				variable: "NEON_BRANCH_ID",
+				message:
+					"is required before production branch migration posture can be evaluated",
+			},
+		];
+		return {
+			ok: false,
+			baselineMigrateAllowed: false,
+			issues,
+			detail: formatNeonContractIssues(issues),
+		};
+	}
+
 	const cloud = assertNeonCloudIds({ branchId: input.branchId });
 	if (!cloud.ok) {
 		return {
 			ok: false,
+			baselineMigrateAllowed: false,
 			issues: cloud.issues,
 			detail: formatNeonContractIssues(cloud.issues),
 		};
@@ -297,12 +525,15 @@ export function evaluateProdBranchBaselineMigratePosture(input: {
 
 	return {
 		ok: true,
+		baselineMigrateAllowed: false,
 		issues: [],
-		detail: `prohibited on ${APPROVED_NEON_BRANCH_ID} — use @afenda/db db-migrate-guard (never apply sole 0000 without AFENDA_ALLOW_BASELINE_MIGRATE)`,
+		detail:
+			`production branch identity confirmed; baseline migration ` +
+			`is prohibited on ${APPROVED_NEON_BRANCH_ID}`,
 	};
 }
 
-export type NeonProductEnvInput = {
+export type NeonProductEnvInput = Readonly<{
 	DATABASE_URL?: string;
 	NEON_AUTH_BASE_URL?: string;
 	NEON_AUTH_COOKIE_SECRET?: string;
@@ -310,13 +541,34 @@ export type NeonProductEnvInput = {
 	NEON_ORG_ID?: string;
 	NEON_PROJECT_ID?: string;
 	NEON_BRANCH_ID?: string;
+	NEON_API_KEY?: string;
+	PLAYGROUND_SURVEY_ID?: string;
+	PLAYGROUND_ASSIGNMENT_ID?: string;
+	PLAYGROUND_SURVEY_SLUG?: string;
+	SHARED_ADMIN_EMAIL?: string;
+	SHARED_ADMIN_NAME?: string;
 	SHARED_ADMIN_PASSWORD?: string;
+	PREVIEW_CLIENT_EMAIL?: string;
+	PREVIEW_CLIENT_NAME?: string;
 	PREVIEW_CLIENT_PASSWORD?: string;
 	CLIENT_DEFAULT_PASSWORD?: string;
+	E2E_ORGANIZATION_ID?: string;
+	E2E_FACTORY_PASSWORD?: string;
+	E2E_FACTORY_HASH_TEMPLATE_EMAIL?: string;
+	E2E_OPERATOR_EMAIL?: string;
 	E2E_OPERATOR_PASSWORD?: string;
+	E2E_CLIENT_EMAIL?: string;
 	E2E_CLIENT_PASSWORD?: string;
+	E2E_INVITEE_EMAIL?: string;
+	E2E_INVITEE_PASSWORD?: string;
+	E2E_SURVEY_SLUG?: string;
+	E2E_INVITE_TOKEN?: string;
+	SHADCN_STUDIO_EMAIL?: string;
+	SHADCN_STUDIO_API_KEY?: string;
 	PLAYGROUND_ENABLED?: boolean;
-};
+	UPSTASH_REDIS_REST_URL?: string;
+	UPSTASH_REDIS_REST_TOKEN?: string;
+}>;
 
 /** Full product Neon contract — issues never include secret values. */
 export function evaluateNeonProductEnv(
@@ -324,20 +576,21 @@ export function evaluateNeonProductEnv(
 	ctx: NeonRuntimeContext = {},
 ): NeonContractResult {
 	const issues: NeonContractIssue[] = [];
+	const production = isProductionDeployment(ctx);
 
-	if (!input.DATABASE_URL) {
+	if (input.DATABASE_URL === undefined) {
 		issues.push({ variable: "DATABASE_URL", message: "is required" });
 	} else {
 		issues.push(...assertProductDatabaseUrl(input.DATABASE_URL).issues);
 	}
 
-	if (!input.NEON_AUTH_BASE_URL) {
+	if (input.NEON_AUTH_BASE_URL === undefined) {
 		issues.push({ variable: "NEON_AUTH_BASE_URL", message: "is required" });
 	} else {
 		issues.push(...assertNeonAuthBaseUrl(input.NEON_AUTH_BASE_URL).issues);
 	}
 
-	if (!input.NEON_AUTH_COOKIE_SECRET) {
+	if (input.NEON_AUTH_COOKIE_SECRET === undefined) {
 		issues.push({
 			variable: "NEON_AUTH_COOKIE_SECRET",
 			message: "is required",
@@ -346,7 +599,7 @@ export function evaluateNeonProductEnv(
 		issues.push(...assertCookieSecret(input.NEON_AUTH_COOKIE_SECRET).issues);
 	}
 
-	if (!input.APP_URL) {
+	if (input.APP_URL === undefined) {
 		issues.push({ variable: "APP_URL", message: "is required" });
 	} else {
 		issues.push(...assertAppUrl(input.APP_URL, ctx).issues);
@@ -357,17 +610,38 @@ export function evaluateNeonProductEnv(
 			orgId: input.NEON_ORG_ID,
 			projectId: input.NEON_PROJECT_ID,
 			branchId: input.NEON_BRANCH_ID,
+			requireAll: production,
 		}).issues,
 	);
 
 	issues.push(
-		...assertLocalOnlySecretsAbsentInProduction(
+		...assertLocalOnlyConfigAbsentInProduction(
 			{
+				NEON_API_KEY: input.NEON_API_KEY,
+				PLAYGROUND_ENABLED: input.PLAYGROUND_ENABLED,
+				PLAYGROUND_SURVEY_ID: input.PLAYGROUND_SURVEY_ID,
+				PLAYGROUND_ASSIGNMENT_ID: input.PLAYGROUND_ASSIGNMENT_ID,
+				PLAYGROUND_SURVEY_SLUG: input.PLAYGROUND_SURVEY_SLUG,
+				SHARED_ADMIN_EMAIL: input.SHARED_ADMIN_EMAIL,
+				SHARED_ADMIN_NAME: input.SHARED_ADMIN_NAME,
 				SHARED_ADMIN_PASSWORD: input.SHARED_ADMIN_PASSWORD,
+				PREVIEW_CLIENT_EMAIL: input.PREVIEW_CLIENT_EMAIL,
+				PREVIEW_CLIENT_NAME: input.PREVIEW_CLIENT_NAME,
 				PREVIEW_CLIENT_PASSWORD: input.PREVIEW_CLIENT_PASSWORD,
 				CLIENT_DEFAULT_PASSWORD: input.CLIENT_DEFAULT_PASSWORD,
+				E2E_ORGANIZATION_ID: input.E2E_ORGANIZATION_ID,
+				E2E_FACTORY_PASSWORD: input.E2E_FACTORY_PASSWORD,
+				E2E_FACTORY_HASH_TEMPLATE_EMAIL: input.E2E_FACTORY_HASH_TEMPLATE_EMAIL,
+				E2E_OPERATOR_EMAIL: input.E2E_OPERATOR_EMAIL,
 				E2E_OPERATOR_PASSWORD: input.E2E_OPERATOR_PASSWORD,
+				E2E_CLIENT_EMAIL: input.E2E_CLIENT_EMAIL,
 				E2E_CLIENT_PASSWORD: input.E2E_CLIENT_PASSWORD,
+				E2E_INVITEE_EMAIL: input.E2E_INVITEE_EMAIL,
+				E2E_INVITEE_PASSWORD: input.E2E_INVITEE_PASSWORD,
+				E2E_SURVEY_SLUG: input.E2E_SURVEY_SLUG,
+				E2E_INVITE_TOKEN: input.E2E_INVITE_TOKEN,
+				SHADCN_STUDIO_EMAIL: input.SHADCN_STUDIO_EMAIL,
+				SHADCN_STUDIO_API_KEY: input.SHADCN_STUDIO_API_KEY,
 			},
 			ctx,
 		).issues,
@@ -377,10 +651,28 @@ export function evaluateNeonProductEnv(
 		...assertPlaygroundLocalOnly(input.PLAYGROUND_ENABLED, ctx).issues,
 	);
 
+	const upstashPair = assertPairedSecretConfig({
+		leftName: "UPSTASH_REDIS_REST_URL",
+		leftValue: input.UPSTASH_REDIS_REST_URL,
+		rightName: "UPSTASH_REDIS_REST_TOKEN",
+		rightValue: input.UPSTASH_REDIS_REST_TOKEN,
+	});
+	if (!upstashPair.ok) {
+		issues.push(...upstashPair.issues);
+	} else if (production && input.UPSTASH_REDIS_REST_URL === undefined) {
+		issues.push({
+			variable: "UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN",
+			message:
+				"are required in production for distributed cache and rate-limit infrastructure",
+		});
+	}
+
 	return { ok: issues.length === 0, issues };
 }
 
-export function formatNeonContractIssues(issues: NeonContractIssue[]): string {
+export function formatNeonContractIssues(
+	issues: readonly NeonContractIssue[],
+): string {
 	return issues
 		.map((issue) => `${issue.variable}: ${issue.message}`)
 		.join("; ");
@@ -391,23 +683,26 @@ export const productDatabaseUrlSchema = z
 	.url()
 	.refine((value) => assertProductDatabaseUrl(value).ok, {
 		message:
-			"DATABASE_URL must be a postgres URL on a Neon -pooler host (ARCH-023)",
+			"DATABASE_URL must use a PostgreSQL protocol and a Neon pooled endpoint",
 	});
 
 export const neonAuthBaseUrlSchema = z
 	.url()
 	.refine((value) => assertNeonAuthBaseUrl(value).ok, {
-		message: "NEON_AUTH_BASE_URL must be an https URL",
+		message: "NEON_AUTH_BASE_URL must be a valid HTTPS URL",
 	});
 
 export const neonAuthCookieSecretSchema = z
 	.string()
-	.min(32, "NEON_AUTH_COOKIE_SECRET must be at least 32 characters");
+	.min(32, "NEON_AUTH_COOKIE_SECRET must be at least 32 characters")
+	.refine((value) => value.trim() === value, {
+		message: "NEON_AUTH_COOKIE_SECRET must not contain surrounding whitespace",
+	});
 
 export function productAppUrlSchema(ctx: NeonRuntimeContext = {}) {
 	return z.url().refine((value) => assertAppUrl(value, ctx).ok, {
 		message:
-			"APP_URL must be a valid URL on an approved host; on Vercel production it must equal the approved production origin",
+			"APP_URL must be an approved application origin; production must use the exact approved HTTPS origin",
 	});
 }
 

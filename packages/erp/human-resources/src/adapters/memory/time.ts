@@ -165,6 +165,11 @@ import type {
 import type { CoreMemoryState } from "./core";
 import { idempotencyMapKey } from "./shared";
 
+const ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE =
+	"Attendance import source reference lookup failed";
+const ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE =
+	"Attendance import row could not be recorded";
+
 function sourceReferenceMapKey(
 	organizationId: string,
 	source: string,
@@ -2355,7 +2360,7 @@ export function createMemoryTimeMethods(
 						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: "STORE_ERROR",
-						errorMessage: existingByRef.message,
+						errorMessage: ATTENDANCE_IMPORT_LOOKUP_FAILED_MESSAGE,
 					});
 					continue;
 				}
@@ -2420,7 +2425,7 @@ export function createMemoryTimeMethods(
 						rowIndex: outcomeRowIndex,
 						sourceReference: row.sourceReference,
 						errorCode: recorded.code,
-						errorMessage: recorded.message,
+						errorMessage: ATTENDANCE_IMPORT_RECORD_FAILED_MESSAGE,
 					};
 					rejected.push(rejection);
 					state.attendanceImportErrors.push({

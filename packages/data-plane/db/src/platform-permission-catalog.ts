@@ -26,31 +26,6 @@ const RETIRED_CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
 		true,
 	],
 	[
-		"corporate_administration.governance.read",
-		"Read corporate governance records",
-		false,
-	],
-	[
-		"corporate_administration.governance.manage",
-		"Manage corporate governance records",
-		true,
-	],
-	[
-		"corporate_administration.officer.manage",
-		"Manage corporate officers",
-		true,
-	],
-	[
-		"corporate_administration.meeting.manage",
-		"Manage corporate meetings",
-		true,
-	],
-	[
-		"corporate_administration.resolution.manage",
-		"Manage corporate resolutions",
-		true,
-	],
-	[
 		"corporate_administration.authority.read",
 		"Read corporate authority policies",
 		false,

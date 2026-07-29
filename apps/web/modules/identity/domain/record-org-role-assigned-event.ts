@@ -2,6 +2,7 @@
  * Identity adapter — org role assign → `@afenda/events` outbox → IN_APP inbox handler.
  */
 
+import { AppError } from "@afenda/errors";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	createEventDispatcher,
@@ -12,6 +13,11 @@ import {
 } from "@afenda/events";
 
 import { recordOrgRoleAssignedNotification } from "./record-org-role-assigned-notification";
+
+const ORG_ROLE_NOTIFICATION_FAILED_MESSAGE =
+	"Organization role assignment notification failed";
+const ORG_ROLE_EVENT_HANDLER_FAILED_MESSAGE =
+	"Organization role assignment event handler failed";
 
 export type RecordOrgRoleAssignedEventInput = {
 	organizationId: string;
@@ -64,9 +70,12 @@ export async function recordOrgRoleAssignedEvent(
 					event.payload,
 				);
 				if (!parsed.success) {
-					throw new Error(
-						"identity.org_role.assigned payload missing required fields",
-					);
+					throw new AppError({
+						code: "INTERNAL_ERROR",
+						message:
+							"identity.org_role.assigned payload missing required fields",
+						isOperational: false,
+					});
 				}
 
 				const notification = await recordOrgRoleAssignedNotification({
@@ -80,7 +89,11 @@ export async function recordOrgRoleAssignedEvent(
 				});
 
 				if (!notification.ok) {
-					throw new Error(notification.message);
+					throw new AppError({
+						code: notification.code,
+						message: ORG_ROLE_NOTIFICATION_FAILED_MESSAGE,
+						details: notification.details,
+					});
 				}
 				notificationId = notification.data.id;
 			},
@@ -94,11 +107,7 @@ export async function recordOrgRoleAssignedEvent(
 	}
 
 	if (dispatch.data.failed > 0) {
-		const failed = dispatch.data.events.find((row) => row.status === "failed");
-		return fail(
-			"INTERNAL_ERROR",
-			failed?.lastError ?? "Domain event handler failed",
-		);
+		return fail("INTERNAL_ERROR", ORG_ROLE_EVENT_HANDLER_FAILED_MESSAGE);
 	}
 
 	const processed = dispatch.data.events.find(

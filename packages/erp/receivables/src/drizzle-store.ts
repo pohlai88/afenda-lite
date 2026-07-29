@@ -14,7 +14,14 @@ import {
 	salesInvoice,
 	salesInvoiceLine,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import type { InvoiceCreateRecord, ReceivablesStore } from "./store";
 import type {
@@ -26,6 +33,13 @@ import type {
 	SalesInvoiceLine,
 	SalesInvoiceStatus,
 } from "./types";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 function asStatus(value: string): SalesInvoiceStatus {
 	if (
@@ -221,7 +235,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				return fail("CONFLICT", "Sales invoice create conflict");
 			return reload(this, record.organizationId, id, "Created invoice missing");
 		} catch (error) {
-			return failFromUnknown(error, "Failed to create sales invoice");
+			return failFromPersistence(error, "Failed to create sales invoice");
 		}
 	}
 
@@ -291,7 +305,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				? fail("INTERNAL_ERROR", "Created invoice line missing")
 				: ok(mapLine(line));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to add sales invoice line");
+			return failFromPersistence(error, "Failed to add sales invoice line");
 		}
 	}
 
@@ -382,7 +396,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				"Posted invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to post sales invoice");
+			return failFromPersistence(error, "Failed to post sales invoice");
 		}
 	}
 
@@ -480,7 +494,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				? fail("INTERNAL_ERROR", "Issued credit note missing")
 				: ok(mapCredit(credit));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to issue credit note");
+			return failFromPersistence(error, "Failed to issue credit note");
 		}
 	}
 
@@ -573,7 +587,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				? fail("INTERNAL_ERROR", "Created receipt application missing")
 				: ok(mapAllocation(allocation));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to apply customer receipt");
+			return failFromPersistence(error, "Failed to apply customer receipt");
 		}
 	}
 
@@ -652,7 +666,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				? fail("INTERNAL_ERROR", "Reversed receipt application missing")
 				: ok(mapAllocation(allocation));
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to reverse customer receipt application",
 			);
@@ -692,7 +706,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			}
 			return ok(reversed);
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to reverse customer receipt applications",
 			);
@@ -750,7 +764,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				"Cancelled invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to cancel draft sales invoice");
+			return failFromPersistence(error, "Failed to cancel draft sales invoice");
 		}
 	}
 
@@ -815,7 +829,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				"Closed invoice missing",
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to close sales invoice");
+			return failFromPersistence(error, "Failed to close sales invoice");
 		}
 	}
 
@@ -878,7 +892,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load sales invoice");
+			return failFromPersistence(error, "Failed to load sales invoice");
 		}
 	}
 
@@ -961,7 +975,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list sales invoices");
+			return failFromPersistence(error, "Failed to list sales invoices");
 		}
 	}
 
@@ -994,7 +1008,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				})),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to load customer balance");
+			return failFromPersistence(error, "Failed to load customer balance");
 		}
 	}
 
@@ -1083,7 +1097,10 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				String(lines.reduce((sum, line) => sum + Number(line.quantity), 0)),
 			);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to sum posted invoice quantity");
+			return failFromPersistence(
+				error,
+				"Failed to sum posted invoice quantity",
+			);
 		}
 	}
 
@@ -1178,7 +1195,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				})),
 			});
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Failed to load receivables reconciliation facts",
 			);

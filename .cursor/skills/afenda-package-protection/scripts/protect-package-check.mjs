@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
+	assertProtectedHeaders,
 	packageProtectionHash,
 	protectionFilePathFor,
 	repoRoot,
@@ -10,6 +11,8 @@ import {
 async function main() {
 	const packageRoot = resolvePackageRoot(process.argv[2]);
 	const protectionFilePath = protectionFilePathFor(packageRoot);
+	await assertProtectedHeaders(packageRoot);
+
 	const actual = await readFile(protectionFilePath, "utf8").catch(() => undefined);
 	const expected = await packageProtectionHash(packageRoot);
 

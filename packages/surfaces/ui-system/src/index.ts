@@ -6,7 +6,27 @@
  * directive in their own source file, which is preserved across this re-export.
  */
 
+export { CommandMenu } from "./app-shell/command-menu";
+export { NotificationDropdown } from "./app-shell/notificaiton-dropdown";
+export { ProfileDropdown } from "./app-shell/profile-dropdown";
 // Display / layout primitives
+export {
+	AppShell,
+	type AppShellProps,
+} from "./blocks/app-shell-block/app-shell";
+export {
+	APPLICATION_SHELL_SETTINGS_COOKIE,
+	type ApplicationShellSettings,
+	type AppShellColorMode,
+	DEFAULT_APPLICATION_SHELL_SETTINGS,
+	isApplicationShellSettings,
+	parseApplicationShellSettings,
+} from "./blocks/app-shell-block/application-shell-settings";
+export {
+	AppShellThemeProvider,
+	AppShellThemeProvider as ApplicationShellSettingsProvider,
+} from "./blocks/app-shell-block/application-shell-settings-provider";
+export { ActivityDialog } from "./blocks/app-shell-block/shared/dialog-activity";
 export * from "./components/ui/accordion";
 export * from "./components/ui/alert";
 export * from "./components/ui/alert-dialog";

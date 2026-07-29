@@ -95,7 +95,7 @@ describe("Corporate Administration scaffold boundary", () => {
 		expect(columns.createdAt.notNull).toBe(true);
 	});
 
-	it("does not ship a Corporate Administration business migration", () => {
+	it("ships only governed Corporate Administration business migrations", () => {
 		const migrationNames = readdirSync(path.join(packageRoot, "drizzle"));
 		expect(
 			migrationNames.filter((name) =>
@@ -103,7 +103,10 @@ describe("Corporate Administration scaffold boundary", () => {
 					name,
 				),
 			),
-		).toEqual([]);
+		).toEqual([
+			"0034_ca_governance_bodies_memberships.sql",
+			"0037_ca_governance_meetings.sql",
+		]);
 	});
 
 	it("registers only governed Corporate Administration permissions", () => {
@@ -116,6 +119,16 @@ describe("Corporate Administration scaffold boundary", () => {
 			"corporate_administration.company.read",
 			"corporate_administration.company.manage",
 			"corporate_administration.establishment.manage",
+			"corporate_administration.governance.read",
+			"corporate_administration.governance.manage",
+			"corporate_administration.officer.read",
+			"corporate_administration.officer.manage",
+			"corporate_administration.officer_compliance.read",
+			"corporate_administration.officer_compliance.manage",
+			"corporate_administration.meeting.read",
+			"corporate_administration.meeting.manage",
+			"corporate_administration.resolution.read",
+			"corporate_administration.resolution.manage",
 		]);
 
 		const livingRows = PLATFORM_PERMISSION_V1.filter(
@@ -139,6 +152,16 @@ describe("Corporate Administration scaffold boundary", () => {
 				"corporate_administration.company.manage",
 				"corporate_administration.company.read",
 				"corporate_administration.establishment.manage",
+				"corporate_administration.governance.manage",
+				"corporate_administration.governance.read",
+				"corporate_administration.meeting.manage",
+				"corporate_administration.meeting.read",
+				"corporate_administration.officer.manage",
+				"corporate_administration.officer.read",
+				"corporate_administration.officer_compliance.manage",
+				"corporate_administration.officer_compliance.read",
+				"corporate_administration.resolution.manage",
+				"corporate_administration.resolution.read",
 			].toSorted(),
 		);
 	});

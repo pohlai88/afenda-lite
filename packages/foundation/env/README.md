@@ -48,8 +48,8 @@ Schema home: `packages/foundation/env/src/web.ts` (product) · `packages/foundat
 
 | Path | Role |
 |------|------|
-| `@afenda/env` | `env` (web T3 schema) + Neon contract / performance / recovery helpers + `docsEnv` re-export |
-| `@afenda/env/docs` | `docsEnv` only — site origin + optional GitHub App feedback keys; avoids loading web Neon secrets |
+| `@afenda/env` | `env` (web T3 schema) + Neon contract / performance / recovery helpers; does not export or evaluate `docsEnv` |
+| `@afenda/env/docs` | `docsEnv` only — site origin + optional GitHub App feedback keys; avoids loading web Neon schema |
 
 **Runtime deps:** `@t3-oss/env-nextjs` · `zod`. No workspace `@afenda/*` runtime deps (env leaf).
 

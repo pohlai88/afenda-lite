@@ -83,8 +83,14 @@ export function seedItem(
 	return {
 		...baseMaster(organizationId, id, code, `Item ${code}`, status),
 		itemType: "stock",
+		description: null,
 		baseUomId,
 		itemGroupId: "00000000-0000-4000-8000-000000000099",
+		trackingPolicy: "none",
+		sellable: true,
+		purchasable: true,
+		stocked: true,
+		serviceIndicator: false,
 	};
 }
 
@@ -98,6 +104,12 @@ export function seedWarehouse(
 		...baseMaster(organizationId, id, code, `Warehouse ${code}`, status),
 		locationType: "warehouse",
 		parentId: null,
+		addressCountryId: null,
+		addressLine1: null,
+		addressLine2: null,
+		addressCity: null,
+		addressRegion: null,
+		addressPostalCode: null,
 	};
 }
 

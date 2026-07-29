@@ -124,9 +124,7 @@ describe("portal-chrome (N16)", () => {
 	});
 
 	it("keeps authenticated workspaces on background and embeds segment states", () => {
-		const shellBlock = uiSource(
-			"blocks/app-shell-block/application-shell-block.tsx",
-		);
+		const shellBlock = uiSource("blocks/app-shell-block/app-shell.tsx");
 		const clientHome = source("app/(client)/client/(workspace)/page.tsx");
 		expect(shellBlock).toContain("<SidebarInset");
 		expect(shellBlock).toContain('className="bg-background"');
@@ -174,9 +172,7 @@ describe("portal-chrome (N16)", () => {
 		const chrome = source(
 			"features/portal-chrome/operator-platform-chrome.tsx",
 		);
-		const shellBlock = uiSource(
-			"blocks/app-shell-block/application-shell-block.tsx",
-		);
+		const shellBlock = uiSource("blocks/app-shell-block/app-shell.tsx");
 		const settings = uiSource(
 			"blocks/app-shell-block/application-shell-settings.ts",
 		);

@@ -23,9 +23,11 @@ import { assertExpectedVersion } from "../src/shared/concurrency";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isEmployeeNumberUniqueViolation,
+	isPostgresUniqueConstraint,
 	isPostgresUniqueViolation,
 	mapEmployeeNumberDuplicate,
 	mapPersistenceFailure,
+	postgresErrorMessage,
 } from "../src/shared/persistence-errors";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -163,11 +165,16 @@ describe("@afenda/human-resources kernel", () => {
 	it("normalizes drizzle unique violations without leaking SQL", () => {
 		const numberConflict = {
 			code: "23505",
-			message:
-				'duplicate key value violates unique constraint "hr_employee_org_normalized_number_uidx"',
+			constraint: "hr_employee_org_normalized_number_uidx",
 		};
 		expect(isPostgresUniqueViolation(numberConflict)).toBe(true);
 		expect(isEmployeeNumberUniqueViolation(numberConflict)).toBe(true);
+		expect(
+			isPostgresUniqueConstraint(
+				numberConflict,
+				/hr_employee_org_normalized_number_uidx/i,
+			),
+		).toBe(true);
 		expect(isCreateIdempotencyUniqueViolation(numberConflict)).toBe(false);
 
 		const mapped = mapEmployeeNumberDuplicate();
@@ -182,10 +189,16 @@ describe("@afenda/human-resources kernel", () => {
 
 		const idempotencyConflict = {
 			code: "23505",
-			message:
-				'duplicate key value violates unique constraint "hr_employee_org_create_idempotency_uidx"',
+			constraint_name: "hr_employee_org_create_idempotency_uidx",
 		};
 		expect(isCreateIdempotencyUniqueViolation(idempotencyConflict)).toBe(true);
+		expect(
+			isCreateIdempotencyUniqueViolation({
+				code: "23505",
+				message:
+					'duplicate key value violates unique constraint "hr_employee_org_create_idempotency_uidx"',
+			}),
+		).toBe(false);
 
 		const unknown = mapPersistenceFailure(
 			new Error("relation hr_employee does not exist"),
@@ -200,6 +213,38 @@ describe("@afenda/human-resources kernel", () => {
 			expect(unknown.message).toBe("Failed to create employee");
 			expect(unknown.message).not.toMatch(/relation|does not exist/i);
 		}
+
+		const hostile = Object.defineProperties(
+			{},
+			{
+				code: {
+					get() {
+						throw new Error("unsafe code getter");
+					},
+				},
+				message: {
+					get() {
+						throw new Error("unsafe message getter");
+					},
+				},
+			},
+		);
+		expect(() => isPostgresUniqueViolation(hostile)).not.toThrow();
+		expect(() =>
+			mapPersistenceFailure(hostile, "Failed to create employee"),
+		).not.toThrow();
+		expect(postgresErrorMessage(hostile)).toBe("");
+		expect(
+			isPostgresUniqueConstraint(
+				{
+					cause: {
+						code: "23505",
+						constraint: "hr_attendance_event_org_source_ref_uidx",
+					},
+				},
+				/hr_attendance_event_org_source_ref_uidx/i,
+			),
+		).toBe(true);
 	});
 
 	it("exports the mission error-code catalog", () => {

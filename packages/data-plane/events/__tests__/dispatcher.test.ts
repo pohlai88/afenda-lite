@@ -80,7 +80,7 @@ describe("@afenda/events dispatcher", () => {
 		expect(summary.failed).toBe(1);
 		expect(summary.processed).toBe(0);
 		expect(store.all()[0]?.status).toBe("failed");
-		expect(store.all()[0]?.lastError).toBe("handler boom");
+		expect(store.all()[0]?.lastError).toBe("Domain event handler failed");
 		expect(store.all()[0]?.attempts).toBe(1);
 	});
 

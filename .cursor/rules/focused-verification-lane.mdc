@@ -16,8 +16,57 @@ Use [afenda-focused-verification](../skills/afenda-focused-verification/SKILL.md
 - Do not retry root-wide commands after timeout/failure as an edit-loop tactic.
 - Treat `pnpm test`, `pnpm check`, `pnpm build:check`, and broad `turbo run lint typecheck test build` as final CI-parity gates only.
 
+## Test execution policy
+
+```text
+Change scope
+-> smallest relevant gate
+-> targeted package validation
+-> broader command only when justified
+```
+
+- Start with the command tied to the changed artifact, script, package, or spec.
+- Use discovery first when the relevant spec is unclear, for example `pnpm exec vitest list --config testing/vitest.unit.config.ts --project web`.
+- For `apps/web`, prefer `pnpm --filter @afenda/web lint`, `pnpm --filter @afenda/web typecheck`, and a targeted Vitest spec or pattern.
+- Do not run the full `@afenda/web` test suite by default for package-governance, checker, script, or narrow UI changes.
+- Do not run monorepo aggregate checks by default unless the changed dependency surface justifies them or the user explicitly asks.
+
+## Long-command rule
+
+- Do not use a timeout ladder.
+- Choose one realistic timeout upfront when a broader command is justified.
+- If a command times out once, stop the retry loop and diagnose: inspect the command scope, narrow to the relevant package/spec/project, and look for collection hangs or open handles.
+- Do not restart the same broad command with a larger timeout unless the user explicitly approves that exact rerun after the timeout is reported.
+- Treat silent or hanging tests as a test-health finding, not as permission to keep increasing timeouts.
+
+## ERR-NORM lane
+
+For errors-normalization or errors-governance work, use these gates before broader validation:
+
+```powershell
+pnpm run test:errors-normalization
+pnpm run check:errors-normalization
+pnpm run check:errors-normalization -- --strict
+pnpm run check:errors-consumption
+pnpm run check:errors-adoption -- --strict
+```
+
+Then run only the checks tied to directly touched packages:
+
+```powershell
+pnpm --filter <package> lint
+pnpm --filter <package> typecheck
+pnpm --filter <package> test
+```
+
+Not required by default:
+
+- full `@afenda/web` test suite
+- unrelated monorepo-wide aggregate tests
+- repeated retries with larger timeouts
+
 ## Hook
 
-`beforeShellExecution` -> `.cursor/hooks/focused-verification-lane.mjs` asks before broad root verification commands unless `AFENDA_ALLOW_BROAD_VERIFY=1` is present in the environment or command.
+`beforeShellExecution` -> `.cursor/hooks/focused-verification-lane.mjs` asks before broad root verification commands and broad full-web test commands unless `AFENDA_ALLOW_BROAD_VERIFY=1` is present in the environment or command.
 
 Do not rename, split, or wrap commands to bypass the hook. If a broad gate is required, state why and ask the user before running it.

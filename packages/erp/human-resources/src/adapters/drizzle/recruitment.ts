@@ -63,7 +63,7 @@ import {
 } from "../../shared/domain-guards";
 import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 import {
-	isPostgresUniqueViolation,
+	isPostgresUniqueConstraint,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import {
@@ -914,16 +914,6 @@ function buildOfferAcceptanceHandoff(input: {
 	};
 }
 
-function uniqueConstraintMessage(error: unknown): string {
-	if (typeof error === "object" && error !== null && "message" in error) {
-		const message = (error as { message: unknown }).message;
-		if (typeof message === "string") {
-			return message;
-		}
-	}
-	return error instanceof Error ? error.message : String(error);
-}
-
 function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
@@ -1244,25 +1234,29 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapRequisitionSqlRow(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_job_requisition_org_create_idempotency_uidx/i.test(message)) {
-					const existing = await this.findRequisitionByIdempotencyKey({
-						organizationId: record.organizationId,
-						idempotencyKey: record.createIdempotencyKey,
-					});
-					if (!existing.ok) return existing;
-					if (existing.data !== null) {
-						return ok(existing.data.requisition);
-					}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_job_requisition_org_create_idempotency_uidx/i,
+				)
+			) {
+				const existing = await this.findRequisitionByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!existing.ok) return existing;
+				if (existing.data !== null) {
+					return ok(existing.data.requisition);
 				}
-				if (/hr_job_requisition_org_code_uidx/i.test(message)) {
-					return fail(
-						"CONFLICT",
-						"Requisition with this code already exists",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-					);
-				}
+			}
+			if (
+				isPostgresUniqueConstraint(error, /hr_job_requisition_org_code_uidx/i)
+			) {
+				return fail(
+					"CONFLICT",
+					"Requisition with this code already exists",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+				);
 			}
 			return mapPersistenceFailure(error, "Failed to create requisition");
 		}
@@ -1889,25 +1883,32 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapCandidateSqlRow(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_candidate_org_create_idempotency_uidx/i.test(message)) {
-					const existing = await this.findCandidateByIdempotencyKey({
-						organizationId: record.organizationId,
-						idempotencyKey: record.createIdempotencyKey,
-					});
-					if (!existing.ok) return existing;
-					if (existing.data !== null) {
-						return ok(existing.data.candidate);
-					}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_candidate_org_create_idempotency_uidx/i,
+				)
+			) {
+				const existing = await this.findCandidateByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.createIdempotencyKey,
+				});
+				if (!existing.ok) return existing;
+				if (existing.data !== null) {
+					return ok(existing.data.candidate);
 				}
-				if (/hr_candidate_org_normalized_email_uidx/i.test(message)) {
-					return fail(
-						"CONFLICT",
-						"Candidate with this email already exists",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-					);
-				}
+			}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_candidate_org_normalized_email_uidx/i,
+				)
+			) {
+				return fail(
+					"CONFLICT",
+					"Candidate with this email already exists",
+					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+				);
 			}
 			return mapPersistenceFailure(error, "Failed to create candidate");
 		}
@@ -2741,17 +2742,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapApplicationSqlRow(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (
-					/hr_candidate_application_org_candidate_requisition_open_uidx/i.test(
-						message,
-					)
-				) {
-					return conflict(
-						"An active application already exists for this candidate and requisition",
-					);
-				}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_candidate_application_org_candidate_requisition_open_uidx/i,
+				)
+			) {
+				return conflict(
+					"An active application already exists for this candidate and requisition",
+				);
 			}
 			return mapPersistenceFailure(error, "Failed to create application");
 		}
@@ -2882,17 +2881,15 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapApplicationSqlRow(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (
-					/hr_candidate_application_org_candidate_requisition_open_uidx/i.test(
-						message,
-					)
-				) {
-					return conflict(
-						"An active application already exists for this candidate and requisition",
-					);
-				}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_candidate_application_org_candidate_requisition_open_uidx/i,
+				)
+			) {
+				return conflict(
+					"An active application already exists for this candidate and requisition",
+				);
 			}
 			return mapPersistenceFailure(
 				error,
@@ -3604,11 +3601,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapInterviewEvaluationSqlRow(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_interview_evaluation_org_interview_uidx/i.test(message)) {
-					return conflict("Interview evaluation already recorded");
-				}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_interview_evaluation_org_interview_uidx/i,
+				)
+			) {
+				return conflict("Interview evaluation already recorded");
 			}
 			return mapPersistenceFailure(
 				error,
@@ -3815,15 +3814,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 			return mapOfferSqlRow(row);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (
-					/hr_employment_offer_org_application_draft_issued_uidx/i.test(message)
-				) {
-					return conflict(
-						"An active offer already exists for this application",
-					);
-				}
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_employment_offer_org_application_draft_issued_uidx/i,
+				)
+			) {
+				return conflict("An active offer already exists for this application");
 			}
 			return mapPersistenceFailure(error, "Failed to create offer");
 		}
@@ -4417,20 +4414,22 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				}),
 			);
 		} catch (error) {
-			if (isPostgresUniqueViolation(error)) {
-				const message = uniqueConstraintMessage(error);
-				if (/hr_employment_offer_org_accept_idempotency_uidx/i.test(message)) {
-					const idempotent = await this.findOfferByAcceptIdempotencyKey({
-						organizationId: input.organizationId,
-						idempotencyKey: input.idempotencyKey,
+			if (
+				isPostgresUniqueConstraint(
+					error,
+					/hr_employment_offer_org_accept_idempotency_uidx/i,
+				)
+			) {
+				const idempotent = await this.findOfferByAcceptIdempotencyKey({
+					organizationId: input.organizationId,
+					idempotencyKey: input.idempotencyKey,
+				});
+				if (!idempotent.ok) return idempotent;
+				if (idempotent.data !== null) {
+					return ok({
+						...idempotent.data.handoff,
+						correlationId: meta.correlationId,
 					});
-					if (!idempotent.ok) return idempotent;
-					if (idempotent.data !== null) {
-						return ok({
-							...idempotent.data.handoff,
-							correlationId: meta.correlationId,
-						});
-					}
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to accept offer");

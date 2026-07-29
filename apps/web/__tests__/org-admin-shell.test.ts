@@ -221,7 +221,10 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 		expect(shell).toContain("MetricGrid");
 		expect(shell).toContain("listOrganizations");
 		expect(shell).toContain('from "@afenda/admin/usage"');
-		expect(chrome).toContain('<SidebarInset className="bg-background">');
+		expect(chrome).toContain('AppShell } from "@afenda/ui-system"');
+		expect(chrome).toContain("<AppShell");
+		expect(chrome).toContain("mainContentId={MAIN_CONTENT_ID}");
+		expect(chrome).toContain("navigationItems={navItems}");
 		expect(shell).not.toMatch(/from ["']@afenda\/db["']/);
 	});
 

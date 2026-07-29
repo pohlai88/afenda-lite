@@ -262,7 +262,10 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok(rows.length);
 		} catch (error) {
-			return failFromPersistence(error, "Failed to mark all notifications read");
+			return failFromPersistence(
+				error,
+				"Failed to mark all notifications read",
+			);
 		}
 	}
 
@@ -321,7 +324,10 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok(rows.length);
 		} catch (error) {
-			return failFromPersistence(error, "Failed to purge expired notifications");
+			return failFromPersistence(
+				error,
+				"Failed to purge expired notifications",
+			);
 		}
 	}
 }

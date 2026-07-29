@@ -56,7 +56,7 @@ Standing boundary for the active official docs app — not a backlog.
 | # | Rule | Why |
 |---|------|-----|
 | 1 | No `DATABASE_URL` · Neon Auth · `CRON_SECRET` on the docs project | Docs site ≠ product runtime — secrets stay on `@afenda/web` / Vercel product |
-| 2 | Docs env only via `@afenda/env/docs` (`docsEnv`) | `DOCS_URL` (default `http://localhost:3001`) · optional `GITHUB_APP_*` for feedback — never raw `process.env` · keys in root `.env.example` |
+| 2 | Docs env only via `@afenda/env/docs` (`docsEnv`) | `DOCS_URL` (default `http://localhost:3001` outside production; explicit https origin required in production) · optional paired `GITHUB_APP_*` for feedback — never raw `process.env` · keys in root `.env.example` |
 | 3 | No product Swagger / Scalar under `apps/web` | API UI lives in `@afenda/docs` via `fumadocs-openapi` |
 | 4 | OpenAPI machine file stays at [`../api/OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml) | Zod → `pnpm openapi:generate` → `pnpm check:openapi` remains SSOT — never hand-edit YAML to “pass”; fix Zod/source then regenerate |
 | 5 | One document id string across `createOpenAPI`, MDX `document=`, and `generate:openapi-docs` | Shared in [`apps/docs/lib/openapi-document-id.ts`](../../apps/docs/lib/openapi-document-id.ts) |

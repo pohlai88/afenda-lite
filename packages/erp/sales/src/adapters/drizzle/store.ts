@@ -18,7 +18,14 @@ import {
 	salesReturnAuthorization,
 	salesReturnAuthorizationLine,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import {
 	itemIdSchema,
 	partyIdSchema,
@@ -51,6 +58,13 @@ import type {
 	SalesQuotation,
 	SalesQuotationLine,
 } from "../../types";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 type EvidenceSeed = Omit<MutationEvidence, "entityId" | "version">;
 type SqlValue = string | number | boolean | Date | null;
@@ -391,7 +405,7 @@ async function atomicInsert(
 		);
 		return ok(undefined);
 	} catch (error) {
-		return failFromUnknown(error, "Could not persist Sales mutation");
+		return failFromPersistence(error, "Could not persist Sales mutation");
 	}
 }
 async function atomicUpdate(
@@ -425,7 +439,10 @@ async function atomicUpdate(
 		]);
 		return ok(undefined);
 	} catch (error) {
-		return failFromUnknown(error, "Could not persist versioned Sales mutation");
+		return failFromPersistence(
+			error,
+			"Could not persist versioned Sales mutation",
+		);
 	}
 }
 
@@ -654,7 +671,7 @@ export class DrizzleSalesStore implements SalesStore {
 				...mutationQueries(sql, "SELECT 1", [], evidence, id, 1).slice(1),
 			]);
 		} catch (error) {
-			return failFromUnknown(error, "Could not persist quotation line");
+			return failFromPersistence(error, "Could not persist quotation line");
 		}
 		const rows = await db
 			.select()
@@ -828,7 +845,7 @@ export class DrizzleSalesStore implements SalesStore {
 				...mutationQueries(sql, "SELECT 1", [], evidence, id, 1).slice(1),
 			]);
 		} catch (error) {
-			return failFromUnknown(
+			return failFromPersistence(
 				error,
 				"Could not add sales-order line atomically",
 			);
@@ -924,7 +941,7 @@ export class DrizzleSalesStore implements SalesStore {
 				).slice(1),
 			]);
 		} catch (error) {
-			return failFromUnknown(error, "Could not release Sales order");
+			return failFromPersistence(error, "Could not release Sales order");
 		}
 		return this.getOrderRequired(input.organizationId, input.id);
 	}
@@ -1097,7 +1114,10 @@ export class DrizzleSalesStore implements SalesStore {
 				).slice(1),
 			]);
 		} catch (error) {
-			return failFromUnknown(error, "Could not record fulfillment atomically");
+			return failFromPersistence(
+				error,
+				"Could not record fulfillment atomically",
+			);
 		}
 		return this.getOrderRequired(input.organizationId, input.orderId);
 	}
@@ -1170,7 +1190,7 @@ export class DrizzleSalesStore implements SalesStore {
 				...mutationQueries(sql, "SELECT 1", [], evidence, id, 1).slice(1),
 			]);
 		} catch (error) {
-			return failFromUnknown(error, "Could not persist return line");
+			return failFromPersistence(error, "Could not persist return line");
 		}
 		const rows = await db
 			.select()

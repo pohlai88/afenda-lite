@@ -49,6 +49,21 @@ describe("BatchLoader", () => {
 		expect(batchFn).toHaveBeenCalledTimes(1);
 		expect(batchFn.mock.calls[0]?.[0]).toEqual(["a", "b"]);
 	});
+
+	it("rejects non-error failures with a stable message and preserved cause", async () => {
+		const source = { message: "password=secret" };
+		const loader = new BatchLoader<string, string>(
+			async () => {
+				throw source;
+			},
+			{ batchDelayMs: 0 },
+		);
+
+		await expect(loader.load("a")).rejects.toMatchObject({
+			message: "Batch load failed",
+			cause: source,
+		});
+	});
 });
 
 describe("CacheKeys / CacheTTL", () => {

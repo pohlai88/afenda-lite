@@ -10,11 +10,24 @@ import {
 	supplierInvoice,
 	supplierInvoiceLine,
 } from "@afenda/db";
-import { failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 import type {
 	PurchaseOrderCommitmentQueryPort,
 	PurchaseOrderCommitmentStatus,
 } from "@afenda/purchasing";
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
 
 /**
  * Composition-root SQL adapter — purchasing package only sees the port interface.
@@ -105,7 +118,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 					hasPostedSupplierInvoice: invoiceHeaders.length > 0,
 				});
 			} catch (error) {
-				return failFromUnknown(
+				return failFromPersistence(
 					error,
 					"Failed to load purchase order commitment status",
 				);
