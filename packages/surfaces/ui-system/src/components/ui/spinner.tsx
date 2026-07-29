@@ -17,7 +17,7 @@ const spinnerVariants = cva(
 			variant: {
 				default: "text-primary",
 				secondary: "text-muted-foreground",
-				destructive: "text-destructive",
+				destructive: "text-destructive-subtle-foreground",
 			},
 		},
 		defaultVariants: {

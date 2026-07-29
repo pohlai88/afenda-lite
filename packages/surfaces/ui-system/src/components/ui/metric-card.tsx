@@ -11,7 +11,7 @@ const trendVariants = cva("inline-flex items-center gap-1 text-sm font-bold", {
 	variants: {
 		trend: {
 			up: "text-success-subtle-foreground",
-			down: "text-destructive",
+			down: "text-destructive-subtle-foreground",
 			neutral: "text-muted-foreground",
 		},
 	},

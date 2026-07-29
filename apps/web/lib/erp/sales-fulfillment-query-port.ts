@@ -1,3 +1,4 @@
+import { ok } from "@afenda/errors/result";
 import type { SalesFulfillmentQueryPort } from "@afenda/fulfillment";
 import { getFulfillableSalesOrder } from "@afenda/sales";
 
@@ -7,7 +8,38 @@ import { createSalesCommandOptions } from "@/lib/erp/sales-command-options";
 export function createSalesFulfillmentQueryPort(): SalesFulfillmentQueryPort {
 	return {
 		async getFulfillableSalesOrder(input) {
-			return getFulfillableSalesOrder(input, createSalesCommandOptions());
+			const result = await getFulfillableSalesOrder(
+				{
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: `fulfillment:${input.organizationId}:${input.salesOrderId}`,
+					id: input.salesOrderId,
+				},
+				createSalesCommandOptions(),
+			);
+			if (!result.ok) return result;
+			if (!result.data) return ok(null);
+			const { order, lines } = result.data;
+			return ok({
+				status: order.status,
+				version: order.version,
+				customerPartyId: order.customer.partyId,
+				customerPartyCode: order.customer.code,
+				customerPartyName: order.customer.name,
+				shipToSnapshot: order.customer.shipToAddress
+					? {
+							name: order.customer.name,
+							addressLines: [order.customer.shipToAddress],
+							countryCode: "",
+						}
+					: null,
+				lines: lines.map((line) => ({
+					salesOrderLineId: line.id,
+					itemId: line.item.itemId,
+					uomId: line.item.baseUomId,
+					orderedQuantity: line.quantity,
+				})),
+			});
 		},
 	};
 }

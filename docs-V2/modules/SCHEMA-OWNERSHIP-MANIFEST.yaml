@@ -239,6 +239,30 @@ tables:
   - table: sales_order_line
     writeOwner: "@afenda/sales"
     kind: erp
+  - table: sales_order_schedule
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_order_hold
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_price_book
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_price_book_entry
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_quotation
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_quotation_line
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_return_authorization
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_return_authorization_line
+    writeOwner: "@afenda/sales"
+    kind: erp
 
   - table: purchase_order
     writeOwner: "@afenda/purchasing"

@@ -8,7 +8,7 @@ import { cn } from "../../lib/utils";
 const formErrorVariants = cva("flex items-start gap-2 text-sm font-bold", {
 	variants: {
 		variant: {
-			default: "text-destructive",
+			default: "text-destructive-subtle-foreground",
 			warning: "text-warning-subtle-foreground",
 			info: "text-info-subtle-foreground",
 		},

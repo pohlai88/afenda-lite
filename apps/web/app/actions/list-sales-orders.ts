@@ -39,7 +39,7 @@ export async function listSalesOrdersAction(input?: {
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return { ok: true, data: { orders: mapped.data } };
+			return { ok: true, data: { orders: mapped.data.items } };
 		},
 	});
 }

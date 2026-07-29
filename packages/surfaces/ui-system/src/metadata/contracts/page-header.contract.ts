@@ -4,7 +4,7 @@ export const pageHeaderContract = defineManifestContract({
 	id: "ui.page-header.contract",
 	component: "ui.page-header",
 	purpose:
-		"Provides page, section, and record identity with scope-appropriate description, metadata, status, and actions.",
+		"Provides page, section, and record identity with scope-appropriate description, metadata, status, and actions for ERP workspaces.",
 	ownership: {
 		componentOwns: [
 			"Scope-aware header composition, visual hierarchy, metadata placement, and action layout.",

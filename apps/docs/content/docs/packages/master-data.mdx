@@ -33,6 +33,23 @@ Use this package from Platform and app server code when creating or mutating org
 
 **UoM is platform-only:** `ref_uom_dimension` → `ref_uom`; `md_item.base_uom_id` → `ref_uom`; item packaging conversions in `md_item_uom`. There is no org-scoped `md_uom`.
 
+## Feature map
+
+| Capability | What the package provides |
+|------------|---------------------------|
+| Platform references | Typed, read-only country, currency, language, time-zone, UoM-dimension, and UoM queries; active-reference and UoM-compatibility policies |
+| Organization dimensions | Tenant-scoped dimensions, hierarchy and effective-date resolution, lifecycle commands, and optimistic concurrency |
+| Party master | Party identity, controlled roles, addresses, contacts, external IDs, relationships, duplicate warnings, governed activation, and canonical merge resolution |
+| Item master | Hierarchical item groups, items, operational profiles, UoM conversions, barcodes, aliases, external IDs, and deterministic lookup helpers |
+| Commercial masters | Warehouses and external IDs, payment-term rules, masked/sensitive tax-registration projections, and lifecycle management |
+| Templates and variants | Item templates, typed attributes and options, variant-defining signatures, SKU-backed variants, and configuration queries |
+| Data governance | Change requests, approval/application separation, bounded imports, mutable-field allowlists, actor segregation, duplicate review, and party merge |
+| Lifecycle governance | Shared lifecycle families, explicit transitions, reason policy, dependency evidence, historical availability, canonical identity, and version CAS |
+| Integration projections | Atomic audit/outbox evidence, versioned domain-event envelopes, asynchronous search projection, rebuild, and reconciliation |
+| Security and tenancy | Explicit command/query permissions, separate sensitive-read grants, organization-scoped predicates, tenant-safe not-found behavior, and composite tenant constraints |
+| Production persistence | Drizzle stores and transaction contracts that commit authoritative state, audit facts, and outbox records as one unit |
+| Testing | Memory organization-dimension adapter, memory/Drizzle parity contracts, tenant/concurrency/rollback tests, and published completion requirements |
+
 ## Consume
 
 Workspace dependency — import from the root barrel:
@@ -66,7 +83,7 @@ Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on ever
 | Extensions | `md_party_role` · `md_party_address` · `md_party_contact` · `md_party_external_id` · `md_party_relationship` · `md_item_uom` · `md_item_barcode` · `md_item_external_id` · `md_item_alias` · `md_warehouse_external_id` · `md_item_template_attribute` · `md_item_template_attribute_option` · `md_item_variant_attribute_value` |
 | Governance | `md_change_request` · `md_import_batch` |
 
-Out of scope: BOM / stock qty / CoA, transactional modules (ARCH-006 lives in `@afenda/sales` and siblings).
+Out of scope: BOM, stock quantities, chart-of-accounts balances, prices, transactional documents, and warehouse execution. Those concerns remain with the owning ERP packages such as `@afenda/sales`, `@afenda/inventory`, and `@afenda/accounting`.
 
 ## Store / ports
 
@@ -280,6 +297,122 @@ Sensitive reads are separate operations and grants. `master_data.tax_registratio
 | `@afenda/master-data/testing/organization-dimensions` | Organization-dimension testing store helpers |
 
 Never re-exports raw Drizzle tables or `db` / `eq`.
+
+## Public callable API
+
+The tables below enumerate every callable exported by the root barrel at the time of this review: **337 root callables**. Names are grouped by their implementation source so commands, queries, policies, normalizers, and integration helpers remain distinguishable. [`src/index.ts`](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/master-data/src/index.ts) and `package.json#exports` are the compiler source of truth for the complete symbol surface, including types, schemas, constants, and manifests.
+
+### Kernel and core organization masters
+
+| Source | Callable exports |
+|--------|------------------|
+| `authorization.ts` | `requireMasterCommandPermission` · `requireMasterQueryPermission` |
+| `core-master-errors.ts` | `coreMasterDependencyBlocked` · `coreMasterNotFound` |
+| `core-master-policy.ts` | `evaluateItemTemplateUsability` · `evaluateItemUsability` · `evaluateItemVariantUsability` · `evaluateMasterStatus` · `evaluatePartyUsability` · `evaluatePaymentTermUsability` · `evaluateTaxRegistrationUsability` · `evaluateWarehouseUsability` |
+| `dependency.ts` | `createEmptyDependencyInspector` · `createUnavailableDependencyInspector` |
+| `item-group.ts` | `activateItemGroup` · `createItemGroup` · `existsItemGroupByCode` · `getItemGroupByCode` · `getItemGroupById` · `inactiveItemGroup` · `listActiveItemGroups` · `listItemGroups` · `listItemGroupsByStatus` · `listItemGroupsUpdatedSince` · `resolveItemGroupPath` · `retireItemGroup` · `updateItemGroup` |
+| `item-template-variant.ts` | `activateItemTemplate` · `archiveItemTemplate` · `createItemTemplate` · `createItemVariant` · `getItemTemplateByCode` · `getItemTemplateById` · `getItemVariantById` · `inactiveItemTemplate` · `listItemTemplates` · `listItemVariantsByTemplate` · `retireItemTemplate` · `retireItemVariant` · `updateItemTemplate` |
+| `item.ts` | `activateItem` · `archiveItem` · `createItem` · `existsItemByCode` · `getItemByCode` · `getItemById` · `inactiveItem` · `listActiveItems` · `listItems` · `listItemsByGroup` · `listItemsByStatus` · `listItemsUpdatedSince` · `restoreItem` · `retireItem` · `suspendItem` · `updateItem` |
+| `lifecycle.ts` | `assertLifecycleTransition` · `assertRestoreTransition` · `assertTaxRegistrationLifecycleTransition` |
+| `normalized-code.ts` | `normalizeEmail` · `normalizeExternalIdValue` · `normalizeMasterCode` · `normalizePhone` · `normalizeSearchText` |
+| `organization-dimension.ts` | `activateOrganizationDimension` · `archiveOrganizationDimension` · `createDrizzleOrganizationDimensionStore` · `createOrganizationDimension` · `deactivateOrganizationDimension` · `getOrganizationDimensionByCode` · `getOrganizationDimensionById` · `getOrganizationDimensionEffective` · `listOrganizationDimensions` · `resolveOrganizationDimensionsAsOf` · `updateOrganizationDimension` |
+| `party.ts` | `activateParty` · `archiveParty` · `blockParty` · `createParty` · `existsPartyByCode` · `findPartyByTaxRegistration` · `getParty` · `getPartyByCode` · `getPartyById` · `inactiveParty` · `listActiveParties` · `listParties` · `listPartiesByRole` · `listPartiesByStatus` · `listPartiesUpdatedSince` · `restoreParty` · `retireParty` · `searchParties` · `suspendParty` · `updateParty` |
+| `payment-term.ts` | `activatePaymentTerm` · `createPaymentTerm` · `existsPaymentTermByCode` · `getPaymentTermByCode` · `getPaymentTermById` · `inactivePaymentTerm` · `listActivePaymentTerms` · `listPaymentTerms` · `listPaymentTermsByStatus` · `listPaymentTermsUpdatedSince` · `retirePaymentTerm` · `updatePaymentTerm` |
+| `tax-registration-number.ts` | `maskTaxRegistrationNumber` · `normalizeTaxRegistrationNumber` · `projectTaxRegistrationLifecycleStatus` · `toSensitiveTaxRegistrationProjection` · `toTaxRegistrationProjection` |
+| `tax-registration.ts` | `activateTaxRegistration` · `archiveTaxRegistration` · `blockTaxRegistration` · `createTaxRegistration` · `findSensitiveTaxRegistrationsByParty` · `findTaxRegistrationsByParty` · `getSensitiveTaxRegistration` · `getTaxRegistration` · `listSensitiveTaxRegistrations` · `listTaxRegistrations` · `listTaxRegistrationsUpdatedSince` · `restoreTaxRegistration` · `retireTaxRegistration` · `revokeTaxRegistration` · `updateTaxRegistration` |
+| `validity-overlap.ts` | `isInvalidValidityRange` · `validityRangesOverlap` |
+| `variant-signature.ts` | `buildCombinationKey` · `normalizeAttributeValueText` |
+| `version-cas.ts` | `assertExpectedVersion` · `nextMasterVersion` |
+| `warehouse.ts` | `activateWarehouse` · `archiveWarehouse` · `createWarehouse` · `existsWarehouseByCode` · `getWarehouseByCode` · `getWarehouseById` · `inactiveWarehouse` · `listActiveWarehouses` · `listWarehouses` · `listWarehousesByStatus` · `listWarehousesUpdatedSince` · `moveWarehouse` · `retireWarehouse` · `suspendWarehouse` · `updateWarehouse` |
+| `contracts/reasons.ts` | `masterDataErrorCodeForFailureDetails` · `masterDataErrorCodeForReason` |
+| `production-ports.ts` | `createProductionMutationPorts` · `createSqlAuditFactPort` · `createSqlOutboxPort` |
+| `resolve-store.ts` | `resolveMasterDataStore` |
+
+### Data-governance workflows
+
+| Source | Callable exports |
+|--------|------------------|
+| `change-request-commands.ts` | `approveChangeRequest` · `assertApprovedChangeRequestForApply` · `getChangeRequestById` · `listChangeRequests` · `rejectChangeRequest` · `requireChangeRequestId` · `submitChangeRequest` |
+| `import-bulk-commands.ts` | `upsertItemGroupsByCode` · `upsertItemsByCode` · `upsertPartiesByCode` · `upsertWarehousesByCode` · `validatePartyImportBatch` |
+| `merge-commands.ts` | `findPartyDuplicateWarnings` · `mergeParties` · `resolveCanonicalPartyId` |
+
+### Extensions
+
+| Source | Callable exports |
+|--------|------------------|
+| `contact-normalization.ts` | `normalizePartyContactValue` |
+| `extension-lifecycle.ts` | `assertExtensionTransitionReason` · `assertStandardChildLifecycleStatus` · `isStandardChildLifecycleStatus` · `parseStandardChildLifecycleStatus` · `resolveExtensionLifecycleTransition` |
+| `extension-version-cas.ts` | `assertExpectedExtensionVersion` · `nextExtensionVersion` |
+| `external-id-normalization.ts` | `normalizeExternalId` · `normalizeExternalIdQualifier` · `normalizePartyExternalId` |
+| `item-alias-policy.ts` | `normalizeItemAlias` · `normalizeItemAliasSource` |
+| `item-aliases.ts` | `createItemAlias` · `findItemByAlias` · `listItemAliases` · `listItemsByAlias` |
+| `item-barcode-policy.ts` | `normalizeBarcode` · `normalizeBarcodePackQuantity` |
+| `item-barcodes.ts` | `createItemBarcode` · `findItemByBarcode` |
+| `item-external-ids.ts` | `createItemExternalId` · `findItemByExternalId` |
+| `item-uom-policy.ts` | `assertItemUomCompatibility` · `normalizeItemUomConversionFactor` |
+| `item-uoms.ts` | `createItemUom` · `getDefaultItemPurchaseUom` · `getDefaultItemSalesUom` · `listItemUoms` |
+| `party-addresses.ts` | `createPartyAddress` · `getPartyAddressById` · `getPrimaryPartyAddress` · `listPartyAddresses` · `updatePartyAddress` |
+| `party-contacts.ts` | `createPartyContact` · `getPrimaryPartyContact` · `getSensitivePrimaryPartyContact` · `listPartyContacts` · `listSensitivePartyContacts` · `updatePartyContact` · `updatePartyContactVerification` |
+| `party-external-ids.ts` | `createPartyExternalId` · `findPartyByExternalId` |
+| `party-relationships.ts` | `createPartyRelationship` · `listPartyRelationships` |
+| `party-roles.ts` | `activatePartyRole` · `archivePartyRole` · `createPartyRole` · `deactivatePartyRole` · `getPartyRole` · `getPartyRoleById` · `listActivePartyRoles` · `listPartyRoles` · `retirePartyRole` · `updatePartyRole` |
+| `primary-record-policy.ts` | `isSameNullablePrimaryScope` |
+| `template-attributes.ts` | `addItemTemplateAttribute` · `listItemTemplateAttributes` · `listTemplateAttributes` |
+| `template-options.ts` | `addItemTemplateAttributeOption` · `listItemTemplateAttributeOptions` · `listTemplateAttributeOptions` |
+| `variant-attribute-values.ts` | `getVariantConfiguration` · `listVariantAttributeValues` |
+| `warehouse-external-ids.ts` | `createWarehouseExternalId` · `findWarehouseByExternalId` |
+
+### Integration projections
+
+| Source | Callable exports |
+|--------|------------------|
+| `aggregate-types.ts` | `isMasterDataAggregateType` |
+| `audit-facts.ts` | `defineMasterDataAuditFact` · `defineMutationCommit` |
+| `build-pending-outbox-record.ts` | `buildPendingOutboxRecord` |
+| `event-envelope.ts` | `defineMasterDataEventEnvelope` |
+| `event-types.ts` | `expectedAggregateTypeForEvent` · `isMasterDataEventType` |
+| `outbox-record.ts` | `canTransitionOutboxStatus` · `defineMasterDataOutboxRecord` |
+| `projection-errors.ts` | `integrationOutboxWriteFailed` · `integrationProjectionInvalid` · `integrationTransactionFailed` |
+| `projection-policy.ts` | `decideProjectionVersion` · `searchActionForMasterStatus` · `shouldApplyProjection` |
+| `search-document.ts` | `defineMasterSearchDocument` |
+| `search-rebuild.ts` | `defineSearchRebuildCheckpoint` · `defineSearchRebuildPlan` |
+| `search-reconciliation.ts` | `defineSearchReconciliationMismatch` |
+| `search-projector-commands.ts` | `projectMasterRoot` · `rebuildMasterDataSearchIndex` · `searchMasterDataDocuments` · `shouldIndexMasterStatus` · `syncMasterRootProjection` |
+
+### Lifecycle governance
+
+| Source | Callable exports |
+|--------|------------------|
+| `approved-apply-policy.ts` | `approvedApplyAttemptGate` |
+| `availability-policy.ts` | `evaluateLifecycleAvailability` |
+| `canonical-identity.ts` | `resolveCanonicalIdentity` · `resolveCanonicalIdentityWithLineage` |
+| `dependency-policy.ts` | `dependencyResult` |
+| `effective-date-policy.ts` | `assertEffectiveDatedLifecycleCoherence` · `evaluateEffectiveDatedAvailability` |
+| `lifecycle-errors.ts` | `lifecycleAlreadyMerged` · `lifecycleControlledFieldMutationForbidden` · `lifecycleEffectiveDateIncoherent` · `lifecycleExplicitStateRequired` · `lifecycleInvalidExpectedVersion` · `lifecycleMergeCycle` · `lifecycleReasonRequired` · `lifecycleTransitionNotAllowed` · `lifecycleVersionConflict` |
+| `lifecycle-policy.ts` | `assertLifecycleReason` · `assertNoLifecycleControlledFieldMutation` · `decideAuthoritativeLifecycleTransition` · `decideLifecycleTransition` · `defineLifecyclePolicy` · `resolveAuthoritativeLifecycleState` |
+| `lifecycle-reasons.ts` | `lifecycleReason` |
+| `merge-policy.ts` | `assertDistinctMergeParticipants` · `assertMergeParticipants` |
+| `types.ts` | `toStandardLifecycleState` |
+| `version-cas.ts` | `assertLifecycleExpectedVersion` · `nextLifecycleVersion` · `resolveTenantScopedCasMiss` |
+
+### Platform references
+
+| Source | Callable exports |
+|--------|------------------|
+| `legacy-queries.ts` | `getRefCountryByCode` · `getRefCurrencyByCode` · `getRefLanguageByCode` · `getRefTimeZoneByIana` · `getRefUomByCode` · `getRefUomById` · `getRefUomDimensionByCode` · `listRefUoms` |
+| `policies.ts` | `resolveActiveCountry` · `resolveActiveCurrency` · `resolveActiveLanguage` · `resolveActiveTimeZone` · `resolveActiveUom` · `resolveUomDimension` · `validateItemUomCompatibility` |
+| `queries.ts` | `getRefCountry` · `getRefCurrency` · `getRefLanguage` · `getRefTimeZone` · `getRefUom` · `getRefUomDimension` · `listRefCountries` · `listRefCurrencies` · `listRefLanguages` · `listRefTimeZones` · `listRefUomDimensions` · `readRefCountries` · `readRefCountry` · `readRefCountryByCode` · `readRefCurrencies` · `readRefCurrency` · `readRefCurrencyByCode` · `readRefLanguage` · `readRefLanguageByCode` · `readRefLanguages` · `readRefTimeZone` · `readRefTimeZoneByCode` · `readRefTimeZones` · `readRefUom` · `readRefUomByCode` · `readRefUomDimension` · `readRefUomDimensionByCode` · `readRefUomDimensions` · `readRefUoms` · `readRefUomsByDimension` |
+| `reference-errors.ts` | `failInactiveReference` · `failInvalidReference` · `failReferenceDimensionMismatch` · `failReferenceNotFound` |
+
+### Subpath-only callables
+
+| Import path | Callable exports not provided by that subpath's type/manifest-only surfaces |
+|-------------|--------------------------------------------------------------------------|
+| `@afenda/master-data/adapters/drizzle` | `buildPendingOutboxRecord` · `createDrizzleMasterDataStore` · `createDrizzlePlatformReferenceStore` · `prepareDrizzleAuditWrite` |
+| `@afenda/master-data/platform-references` | The 42 reference queries, policies, and error helpers listed above; this subpath also exports `MemoryPlatformReferenceStore` and the `PlatformReferenceStore` type |
+| `@afenda/master-data/lifecycle-governance` | The 29 lifecycle-governance callables listed above |
+| `@afenda/master-data/testing/organization-dimensions` | `createMemoryOrganizationDimensionStore` |
+| `@afenda/master-data/module-manifest` | No callables; exports the module manifest |
 
 ## Ownership
 

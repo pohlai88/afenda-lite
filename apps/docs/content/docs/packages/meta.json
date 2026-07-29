@@ -36,6 +36,7 @@
 		"search",
 		"security",
 		"testing",
+		"ui-blocks",
 		"ui-system"
 	]
 }

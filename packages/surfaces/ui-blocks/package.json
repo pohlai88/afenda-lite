@@ -1,0 +1,35 @@
+{
+	"name": "@afenda/ui-blocks",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./app-shell-blocks/navigation-sidebar": {
+			"types": "./app-shell-blocks/navigation-sidebar/dropdown-user-sidebar.tsx",
+			"default": "./app-shell-blocks/navigation-sidebar/dropdown-user-sidebar.tsx"
+		},
+		"./app-shell-blocks/navigation-sidebar/dropdown-user-sidebar": {
+			"types": "./app-shell-blocks/navigation-sidebar/dropdown-user-sidebar.tsx",
+			"default": "./app-shell-blocks/navigation-sidebar/dropdown-user-sidebar.tsx"
+		}
+	},
+	"scripts": {
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit -p tsconfig.json"
+	},
+	"dependencies": {
+		"@afenda/ui-system": "workspace:*"
+	},
+	"peerDependencies": {
+		"react": ">=19.0.0",
+		"react-dom": ">=19.0.0"
+	},
+	"devDependencies": {
+		"@afenda/config": "workspace:*",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"typescript": "catalog:"
+	}
+}

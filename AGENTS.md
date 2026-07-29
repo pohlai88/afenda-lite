@@ -62,6 +62,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | `shadcn-ui` + ADR-010 owned-source (`pnpm --filter @afenda/ui-system ui:add` → relative → barrel → tests) |
 | Shadcn Studio DNA / Pro blocks / DNA forwarder | `shadcn-ui` — Method A → `apps/web/shadcn-studio`; Method B MCP; machine SSOT [`dna-ledger.json`](.cursor/skills/shadcn-ui/dna-ledger.json); promote → prune; never product-import DNA; Afenda install registry deferred; no ui-system registries without ADR-010 reopen |
 | Product UI compose / handroll fix / visual consistency | `afenda-elite-ui-compose` (SCALABILITY-FIRST / UI-CAP-*; then `frontend-ui-engineering` for a11y/state/responsive method only) |
+| `apps/storybook` ERP stories ↔ metadata contracts sync | `afenda-erp-storybook-stories` (+ `storybook-story-writing` CSF3 · `technical-writing` internal-guide for clauses); exemplars: StatusBadge + Button + Card; product pages stay ui-compose |
 | React composition / compound / provider API | `afenda-elite-react-composition` (after ui-compose classifies capability; vendor composition patterns = progressive only) |
 | React runtime / perf (waterfalls · rerenders · bundle · hydration) | `afenda-elite-react-best-practices` (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor RBP = progressive only) |
 | UI in app routes / FE scaffold | `afenda-elite-frontend-scaffold` (consume `@afenda/ui-system` barrel) |

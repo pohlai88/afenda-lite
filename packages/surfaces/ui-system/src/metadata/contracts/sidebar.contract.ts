@@ -4,7 +4,7 @@ export const sidebarContract = defineManifestContract({
 	id: "ui.sidebar.contract",
 	component: "ui.sidebar",
 	purpose:
-		"Provides responsive workspace navigation with expandable groups, menu actions, and collapsed presentation.",
+		"Provides responsive ERP workspace navigation with expandable groups, menu actions, and collapsed presentation — destinations owned by feature composition.",
 	ownership: {
 		componentOwns: [
 			"Sidebar layout, responsive drawer behavior, expanded state, navigation composition, menu presentation, and preference callbacks.",
@@ -16,6 +16,7 @@ export const sidebarContract = defineManifestContract({
 	semanticBoundaries: [
 		"Active styling does not determine route authorization or domain selection.",
 		"Collapsed presentation does not make navigation destinations unavailable.",
+		"SidebarProvider must not hold business workflow state.",
 	],
 	approvedVariants: {
 		sidebar: {
@@ -69,6 +70,8 @@ export const sidebarContract = defineManifestContract({
 		"Derive active navigation from the current route rather than local click state.",
 		"Keep group labels and item order stable across expanded and collapsed modes.",
 		"Hide unauthorized destinations through feature-owned navigation composition.",
+		"Provide meaningful names for icon-only collapsed items.",
+		"Compose product destinations in the app shell — never inside the reusable sidebar source.",
 	],
 	accessibility: [
 		"Provide a labelled navigation landmark and meaningful names for icon-only collapsed items.",
@@ -79,5 +82,7 @@ export const sidebarContract = defineManifestContract({
 		"Do not place business workflow state inside SidebarProvider.",
 		"Do not use active styling as authorization evidence.",
 		"Do not add product navigation directly inside the reusable component source.",
+		"Do not treat collapsed icons without accessible names as complete destinations.",
+		"Do not use Sidebar as a substitute for in-page section navigation such as Tabs.",
 	],
 });

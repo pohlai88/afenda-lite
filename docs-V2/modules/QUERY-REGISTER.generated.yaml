@@ -1045,11 +1045,35 @@ queries:
   - id: receiving.inventory.exceptions
     moduleId: receiving
     permission: receiving.receipt.read
+  - id: sales.pricing.calculate
+    moduleId: sales
+    permission: sales.pricing.read
+  - id: sales.pricing.price_book.get
+    moduleId: sales
+    permission: sales.pricing.read
+  - id: sales.pricing.price_book.list
+    moduleId: sales
+    permission: sales.pricing.read
+  - id: sales.quotation.get
+    moduleId: sales
+    permission: sales.quotation.read
+  - id: sales.quotation.list
+    moduleId: sales
+    permission: sales.quotation.read
   - id: sales.order.get
     moduleId: sales
     permission: sales.order.read
   - id: sales.order.list
     moduleId: sales
     permission: sales.order.list
+  - id: sales.order.fulfillable
+    moduleId: sales
+    permission: sales.order.read
+  - id: sales.return.get
+    moduleId: sales
+    permission: sales.return.read
+  - id: sales.return.list
+    moduleId: sales
+    permission: sales.return.read
 source: on-disk-module-manifests
 version: phase-2/2026-07-20

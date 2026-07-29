@@ -1,22 +1,47 @@
-/** Sales command / query IDs — package authority for MODULE registers. */
-
-export const SALES_COMMAND_CREATE = "sales.order.create" as const;
-export const SALES_COMMAND_LINE_ADD = "sales.order.line.add" as const;
-export const SALES_COMMAND_POST = "sales.order.post" as const;
-export const SALES_COMMAND_CANCEL = "sales.order.cancel" as const;
-
 export const SALES_COMMAND_IDS = [
-	SALES_COMMAND_CREATE,
-	SALES_COMMAND_LINE_ADD,
-	SALES_COMMAND_POST,
-	SALES_COMMAND_CANCEL,
+	"sales.pricing.price_book.create",
+	"sales.pricing.price_book.entry.add",
+	"sales.pricing.price_book.activate",
+	"sales.quotation.create",
+	"sales.quotation.line.add",
+	"sales.quotation.submit",
+	"sales.quotation.approve",
+	"sales.quotation.send",
+	"sales.quotation.accept",
+	"sales.quotation.expire",
+	"sales.quotation.reject",
+	"sales.quotation.cancel",
+	"sales.quotation.convert",
+	"sales.order.create",
+	"sales.order.line.add",
+	"sales.order.submit",
+	"sales.order.approve",
+	"sales.order.post",
+	"sales.order.release",
+	"sales.order.hold.place",
+	"sales.order.hold.resolve",
+	"sales.order.fulfillment.record",
+	"sales.order.cancel",
+	"sales.order.close",
+	"sales.return.create",
+	"sales.return.line.add",
+	"sales.return.submit",
+	"sales.return.approve",
+	"sales.return.reject",
+	"sales.return.cancel",
+	"sales.return.close",
 ] as const;
-
+export const SALES_QUERY_IDS = [
+	"sales.pricing.calculate",
+	"sales.pricing.price_book.get",
+	"sales.pricing.price_book.list",
+	"sales.quotation.get",
+	"sales.quotation.list",
+	"sales.order.get",
+	"sales.order.list",
+	"sales.order.fulfillable",
+	"sales.return.get",
+	"sales.return.list",
+] as const;
 export type SalesCommandId = (typeof SALES_COMMAND_IDS)[number];
-
-export const SALES_QUERY_GET = "sales.order.get" as const;
-export const SALES_QUERY_LIST = "sales.order.list" as const;
-
-export const SALES_QUERY_IDS = [SALES_QUERY_GET, SALES_QUERY_LIST] as const;
-
 export type SalesQueryId = (typeof SALES_QUERY_IDS)[number];

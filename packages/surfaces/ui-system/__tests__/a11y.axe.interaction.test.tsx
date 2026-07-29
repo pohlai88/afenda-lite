@@ -1,4 +1,5 @@
 import {
+	ActivityDialog,
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -8,8 +9,10 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	AlertDialogTrigger,
+	AppShell,
 	Button,
 	Combobox,
+	CommandMenu,
 	DataTable,
 	DatePicker,
 	Dialog,
@@ -31,6 +34,7 @@ import {
 	MenubarItem,
 	MenubarMenu,
 	MenubarTrigger,
+	NotificationDropdown,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -43,9 +47,13 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@afenda/ui-system";
-import { render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
-import { describe, expect, it } from "vitest";
+import type { ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+afterEach(cleanup);
 
 async function expectNoA11yViolations(container: HTMLElement) {
 	const results = await axe.run(container, {
@@ -61,6 +69,125 @@ async function expectNoA11yViolations(container: HTMLElement) {
 }
 
 describe("@afenda/ui-system — axe a11y suite", () => {
+	it("AppShell exposes governed workspace landmarks without axe violations", async () => {
+		function TestLink({
+			children,
+			href,
+		}: Readonly<{ children: ReactNode; href: string }>) {
+			return <a href={href}>{children}</a>;
+		}
+
+		const { container } = render(
+			<AppShell
+				header={{ title: "Dashboard" }}
+				themeConfig={{ brand: { name: "Afenda", homeHref: "/" } }}
+				navConfig={{
+					currentPath: "/dashboard",
+					linkComponent: TestLink,
+					sections: [
+						{
+							id: "workspace",
+							label: "Workspace",
+							items: [
+								{
+									kind: "link",
+									id: "dashboard",
+									label: "Dashboard",
+									href: "/dashboard",
+								},
+							],
+						},
+					],
+				}}
+				showScrollToTop={false}
+			>
+				<h1>Dashboard workspace</h1>
+			</AppShell>,
+		);
+
+		expect(screen.getByRole("main")).toContainElement(
+			screen.getByRole("heading", { level: 1, name: "Dashboard workspace" }),
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("CommandMenu opens from the keyboard and runs a consumer command", async () => {
+		const user = userEvent.setup();
+		const onCommand = vi.fn();
+		render(
+			<CommandMenu
+				groups={[
+					{
+						id: "finance",
+						label: "Finance",
+						commands: [{ id: "open-payables", label: "Open payables" }],
+					},
+				]}
+				onCommand={onCommand}
+			/>,
+		);
+
+		await user.keyboard("{Control>}k{/Control}");
+		const dialog = await screen.findByRole("dialog", { name: "Command menu" });
+		await expectNoA11yViolations(dialog);
+		await user.click(screen.getByRole("option", { name: "Open payables" }));
+		expect(onCommand).toHaveBeenCalledWith("open-payables");
+	});
+
+	it("NotificationDropdown supports explicit decisions without axe violations", async () => {
+		const user = userEvent.setup();
+		const onDecision = vi.fn();
+		render(
+			<NotificationDropdown
+				trigger={<Button type="button">Open notifications</Button>}
+				notifications={[
+					{
+						id: "notification-1",
+						category: "inbox",
+						actor: { name: "Aisha Rahman", initials: "AR" },
+						title: "requested approval for payment batch PAY-2048",
+						occurredAt: "12 minutes ago",
+						read: false,
+						detail: { kind: "decision" },
+					},
+				]}
+				onDecision={onDecision}
+			/>,
+		);
+		await user.click(
+			screen.getByRole("button", { name: "Open notifications" }),
+		);
+		const dialog = await screen.findByRole("dialog", { name: "Notifications" });
+		await expectNoA11yViolations(dialog);
+		await user.click(screen.getByRole("button", { name: "Accept" }));
+		expect(onDecision).toHaveBeenCalledWith("notification-1", "accept");
+	});
+
+	it("open ActivityDialog exposes named ERP activity without axe violations", async () => {
+		const user = userEvent.setup();
+		render(
+			<ActivityDialog
+				trigger={<Button type="button">Open activity</Button>}
+				activities={[
+					{
+						kind: "attachment",
+						id: "activity-1",
+						actor: { name: "Aisha Rahman", initials: "AR" },
+						summary: "attached the reconciliation evidence",
+						occurredAt: "18 minutes ago",
+						fileName: "bank-reconciliation.pdf",
+					},
+				]}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Open activity" }));
+		const dialog = await screen.findByRole("dialog", { name: "Activity" });
+		expect(dialog).toHaveTextContent("Aisha Rahman");
+		expect(dialog).toHaveTextContent("bank-reconciliation.pdf");
+		await expectNoA11yViolations(dialog);
+	});
+
 	it("Dialog trigger and closed tree have no serious violations", async () => {
 		const { container } = render(
 			<Dialog>
@@ -120,8 +247,9 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		await expectNoA11yViolations(container);
 	});
 
-	it("Drawer trigger tree has no serious violations", async () => {
-		const { container } = render(
+	it("open Drawer portal has no serious violations", async () => {
+		const user = userEvent.setup();
+		render(
 			<Drawer>
 				<DrawerTrigger asChild>
 					<Button type="button">Open quick filters</Button>
@@ -132,13 +260,18 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 				</DrawerContent>
 			</Drawer>,
 		);
-		await expectNoA11yViolations(container);
+		await user.click(
+			screen.getByRole("button", { name: "Open quick filters" }),
+		);
+		const dialog = await screen.findByRole("dialog", { name: "Quick filters" });
+		expect(dialog).toBeInTheDocument();
+		await expectNoA11yViolations(dialog);
 	});
 
-	it("Menubar command tree has no serious violations", async () => {
-		const { container } = render(
-			<Menubar>
-				<MenubarMenu>
+	it("open Menubar portal has no serious violations", async () => {
+		render(
+			<Menubar defaultValue="file">
+				<MenubarMenu value="file">
 					<MenubarTrigger>File</MenubarTrigger>
 					<MenubarContent>
 						<MenubarItem>Open record</MenubarItem>
@@ -147,7 +280,9 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 				</MenubarMenu>
 			</Menubar>,
 		);
-		await expectNoA11yViolations(container);
+		const menu = await screen.findByRole("menu");
+		expect(menu).toBeInTheDocument();
+		await expectNoA11yViolations(menu);
 	});
 
 	it("FormField with Input has no serious violations", async () => {

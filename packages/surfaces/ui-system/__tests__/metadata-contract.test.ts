@@ -393,6 +393,32 @@ describe("UI system metadata contract", () => {
 		expect(accordion.governance?.evidence).toBeUndefined();
 	});
 
+	it("promotes Storybook-integrated contracts to approved governance", () => {
+		const approvedComponentIds = [
+			"ui.slider",
+			"ui.sonner",
+			"ui.spinner",
+			"ui.status-badge",
+			"ui.stepper",
+		] as const;
+
+		for (const componentId of approvedComponentIds) {
+			const component = UI_SYSTEM_CATALOG.components.find(
+				(entry) => entry.id === componentId,
+			);
+			if (!component) throw new Error(`${componentId} metadata is missing.`);
+
+			expect(component.lifecycle).toBe("approved");
+			expect(component.governance).toMatchObject({
+				lifecycle: "approved",
+				contract: {
+					id: `${componentId}.contract`,
+					component: componentId,
+				},
+			});
+		}
+	});
+
 	it("detects governance contract drift", () => {
 		const component = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.button",

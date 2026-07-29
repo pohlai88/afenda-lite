@@ -1,8 +1,19 @@
+/**
+ * @afenda/errors
+ * Contract: afenda.errors/v1
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
 import { describe, expect, it } from "vitest";
 
-import { rateLimited, serviceUnavailable } from "../src/common/index";
+import {
+	badRequest,
+	internalError,
+	rateLimited,
+	serviceUnavailable,
+} from "../src/common/index";
 import {
 	clampRetryAfterSeconds,
+	MAX_RETRY_AFTER_SECONDS,
 	MIN_RETRY_AFTER_SECONDS,
 	retryAfterSeconds,
 } from "../src/core/retry-after";
@@ -36,6 +47,36 @@ describe("rateLimited / serviceUnavailable", () => {
 	it("serviceUnavailable falls back when empty", () => {
 		expect(serviceUnavailable("   ").details).toEqual({ service: "service" });
 	});
+
+	it("serviceUnavailable defaults to generic service", () => {
+		expect(serviceUnavailable().details).toEqual({ service: "service" });
+	});
+
+	it("serviceUnavailable falls back for non-string runtime input", () => {
+		expect(serviceUnavailable(123).details).toEqual({ service: "service" });
+	});
+
+	it("sanitizes unsafe details at factory construction", () => {
+		const error = badRequest("Invalid request", {
+			field: "email",
+			password: "secret",
+			stack: "Error: boom",
+			sql: "SELECT * FROM users",
+			nested: {
+				token: "secret",
+				reason: "required",
+			},
+		});
+		expect(error.details).toEqual({
+			field: "email",
+			nested: { reason: "required" },
+		});
+	});
+
+	it("drops non-record details at factory construction", () => {
+		expect(internalError("Failure", "unsafe string").details).toBeUndefined();
+		expect(internalError("Failure", ["unsafe"]).details).toBeUndefined();
+	});
 });
 
 describe("retryAfterSeconds / clampRetryAfterSeconds", () => {
@@ -50,5 +91,41 @@ describe("retryAfterSeconds / clampRetryAfterSeconds", () => {
 		expect(clampRetryAfterSeconds(30.9)).toBe(30);
 		expect(clampRetryAfterSeconds(0)).toBe(MIN_RETRY_AFTER_SECONDS);
 		expect(clampRetryAfterSeconds(Number.NaN)).toBe(MIN_RETRY_AFTER_SECONDS);
+	});
+
+	it("clampRetryAfterSeconds enforces maximum", () => {
+		expect(clampRetryAfterSeconds(MAX_RETRY_AFTER_SECONDS + 1)).toBe(
+			MAX_RETRY_AFTER_SECONDS,
+		);
+	});
+
+	it("retryAfterSeconds rejects values above maximum", () => {
+		expect(
+			retryAfterSeconds({ retryAfter: MAX_RETRY_AFTER_SECONDS + 1 }),
+		).toBeUndefined();
+		expect(retryAfterSeconds({ retryAfter: MAX_RETRY_AFTER_SECONDS })).toBe(
+			MAX_RETRY_AFTER_SECONDS,
+		);
+	});
+
+	it("retryAfterSeconds fails closed when retryAfter cannot be read", () => {
+		const throwingGetter = Object.defineProperty({}, "retryAfter", {
+			get() {
+				throw new Error("getter failure");
+			},
+		});
+		const throwingProxy = new Proxy(
+			{},
+			{
+				get() {
+					throw new Error("proxy failure");
+				},
+			},
+		);
+
+		expect(() => retryAfterSeconds(throwingGetter)).not.toThrow();
+		expect(retryAfterSeconds(throwingGetter)).toBeUndefined();
+		expect(() => retryAfterSeconds(throwingProxy)).not.toThrow();
+		expect(retryAfterSeconds(throwingProxy)).toBeUndefined();
 	});
 });

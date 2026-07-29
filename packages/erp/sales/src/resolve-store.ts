@@ -1,14 +1,5 @@
-import { createDrizzleSalesStore } from "./drizzle-store";
-import type { SalesStore } from "./store";
-
-let cached: SalesStore | undefined;
-
+import { createDrizzleSalesStore } from "./adapters/drizzle/store";
+import type { SalesStore } from "./ports";
 export function resolveSalesStore(store?: SalesStore): SalesStore {
-	if (store !== undefined) {
-		return store;
-	}
-	if (cached === undefined) {
-		cached = createDrizzleSalesStore();
-	}
-	return cached;
+	return store ?? createDrizzleSalesStore();
 }

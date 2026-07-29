@@ -4,10 +4,10 @@ export const toggleGroupContract = defineManifestContract({
 	id: "ui.toggle-group.contract",
 	component: "ui.toggle-group",
 	purpose:
-		"Groups related toggle controls for single or multiple transient selections.",
+		"Groups related toggle controls for single or multiple transient ERP selections — invoice view density, alignment, or formatting — without owning persistence or authorization.",
 	ownership: {
 		componentOwns: [
-			"Toggle-group interaction, single or multiple selection mechanics, item composition, and keyboard focus.",
+			"Toggle-group interaction, single or multiple selection mechanics, item composition, shared variant/size context, and keyboard focus.",
 		],
 		consumerOwns: [
 			"Selection meaning, controlled values, labels, validation, authorization, and persistence.",
@@ -16,11 +16,15 @@ export const toggleGroupContract = defineManifestContract({
 	semanticBoundaries: [
 		"Pressed presentation does not prove that a domain setting was persisted.",
 		"Group mode does not determine whether selected values are mutually exclusive in the domain.",
+		"This contract governs ToggleGroup and ToggleGroupItem as one selection family.",
 	],
 	approvedVariants: {
 		default: {
 			meaning: "Unbounded toggle-group treatment.",
 			allowedWhen: ["Peer choices are clear without persistent item borders."],
+			prohibitedWhen: [
+				"Peer choices need a visible bounded control surface — use outline.",
+			],
 		},
 		outline: {
 			meaning: "Outlined toggle-group treatment.",
@@ -45,6 +49,7 @@ export const toggleGroupContract = defineManifestContract({
 		"Use ToggleGroup for compact peer view or formatting choices.",
 		"Choose single or multiple mode from the actual selection model.",
 		"Keep every item label or accessible name distinct.",
+		"Do not mix consequential commands into the group — use Toolbar Buttons instead.",
 	],
 	accessibility: [
 		"Provide an accessible group label when purpose is not apparent.",
@@ -55,5 +60,6 @@ export const toggleGroupContract = defineManifestContract({
 		"Do not use ToggleGroup for consequential commands.",
 		"Do not conceal persistence failures behind pressed state.",
 		"Do not mix unrelated choices in one group.",
+		"Do not encode lifecycle or approval in group chrome — use StatusBadge on the record.",
 	],
 });

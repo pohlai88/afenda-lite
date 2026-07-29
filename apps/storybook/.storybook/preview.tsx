@@ -25,9 +25,7 @@ function AfendaThemeBoundary({
 	}, [theme]);
 
 	return (
-		<div className="min-h-screen bg-background p-6 font-sans text-foreground">
-			{children}
-		</div>
+		<div className="min-h-screen bg-background p-6 font-sans">{children}</div>
 	);
 }
 

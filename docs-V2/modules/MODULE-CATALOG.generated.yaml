@@ -235,7 +235,10 @@ modules:
     packageName: "@afenda/receiving"
   - activationMode: organization_toggle
     aggregates:
+      - sales_price_book
+      - sales_quotation
       - sales_order
+      - sales_return_authorization
     band: R1-F
     category: commercial
     id: sales

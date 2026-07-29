@@ -1,20 +1,37 @@
 import { getTableColumns } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
-import { salesOrder, salesOrderLine } from "../src/schema/sales";
+import {
+	salesOrder,
+	salesOrderHold,
+	salesOrderLine,
+	salesOrderSchedule,
+	salesPriceBook,
+	salesPriceBookEntry,
+	salesQuotation,
+	salesQuotationLine,
+	salesReturnAuthorization,
+	salesReturnAuthorizationLine,
+} from "../src/schema/sales";
 
 describe("@afenda/db sales schema", () => {
-	it("defines sales_order / sales_order_line with hard organization_id", () => {
-		const orderCols = getTableColumns(salesOrder);
-		const lineCols = getTableColumns(salesOrderLine);
-		expect(orderCols.organizationId.notNull).toBe(true);
-		expect(lineCols.organizationId.notNull).toBe(true);
-		expect(orderCols.partyId).toBeDefined();
-		expect(orderCols.partyCode).toBeDefined();
-		expect(orderCols.partyName).toBeDefined();
-		expect(lineCols.itemId).toBeDefined();
-		expect(lineCols.itemCode).toBeDefined();
-		expect(lineCols.baseUomCode).toBeDefined();
+	it("defines every Sales table as a hard tenant root", () => {
+		for (const table of [
+			salesPriceBook,
+			salesPriceBookEntry,
+			salesQuotation,
+			salesQuotationLine,
+			salesOrder,
+			salesOrderLine,
+			salesOrderSchedule,
+			salesOrderHold,
+			salesReturnAuthorization,
+			salesReturnAuthorizationLine,
+		]) {
+			expect(getTableColumns(table).organizationId.notNull).toBe(true);
+		}
+		expect(getTableColumns(salesOrder).customerSnapshot).toBeDefined();
+		expect(getTableColumns(salesOrderLine).itemSnapshot).toBeDefined();
 	});
 
 	it("does not define shadow customer tables", async () => {

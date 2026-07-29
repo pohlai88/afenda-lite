@@ -916,22 +916,64 @@ permissions:
   - code: receiving.discrepancy.resolve
     moduleId: receiving
     namespace: receiving
-  - code: sales.order.create
+  - code: sales.pricing.read
     moduleId: sales
     namespace: sales
-  - code: sales.order.update
+  - code: sales.pricing.manage
     moduleId: sales
     namespace: sales
-  - code: sales.order.post
+  - code: sales.quotation.read
     moduleId: sales
     namespace: sales
-  - code: sales.order.cancel
+  - code: sales.quotation.create
+    moduleId: sales
+    namespace: sales
+  - code: sales.quotation.update
+    moduleId: sales
+    namespace: sales
+  - code: sales.quotation.approve
     moduleId: sales
     namespace: sales
   - code: sales.order.read
     moduleId: sales
     namespace: sales
   - code: sales.order.list
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.create
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.update
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.approve
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.post
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.release
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.hold
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.cancel
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.close
+    moduleId: sales
+    namespace: sales
+  - code: sales.return.read
+    moduleId: sales
+    namespace: sales
+  - code: sales.return.create
+    moduleId: sales
+    namespace: sales
+  - code: sales.return.approve
+    moduleId: sales
+    namespace: sales
+  - code: sales.return.cancel
     moduleId: sales
     namespace: sales
 source: on-disk-module-manifests

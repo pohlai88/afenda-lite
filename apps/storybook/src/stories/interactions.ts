@@ -12,6 +12,8 @@ export type InteractiveComponent =
 	| "dropdown-menu"
 	| "drawer"
 	| "file-upload"
+	| "input"
+	| "input-group"
 	| "menubar"
 	| "popover"
 	| "select"
@@ -38,21 +40,23 @@ export function interactionFor(component: InteractiveComponent) {
 		switch (component) {
 			case "accordion":
 				await userEvent.click(
-					canvas.getByRole("button", { name: "Is it accessible?" }),
+					canvas.getByRole("button", { name: "Closed until requested" }),
 				);
 				await expect(
-					canvas.getByText(/Keyboard and screen-reader/),
+					canvas.getByText(/Secondary explanatory detail remains collapsed/),
 				).toBeVisible();
 				break;
 			case "alert-dialog":
 				await userEvent.click(
-					canvas.getByRole("button", { name: "Delete record" }),
+					canvas.getByRole("button", { name: "Open delete confirmation" }),
 				);
 				await expect(page.getByRole("alertdialog")).toHaveAttribute(
 					"data-state",
 					"open",
 				);
-				await userEvent.click(page.getByRole("button", { name: "Cancel" }));
+				await userEvent.click(
+					page.getByRole("button", { name: "Keep invoice" }),
+				);
 				await waitFor(() =>
 					expect(page.queryByRole("alertdialog")).not.toBeInTheDocument(),
 				);
@@ -63,17 +67,26 @@ export function interactionFor(component: InteractiveComponent) {
 				await expect(checkbox).not.toBeChecked();
 				break;
 			}
-			case "collapsible":
-				await userEvent.click(
-					canvas.getByRole("button", { name: "Toggle details" }),
+			case "collapsible": {
+				const trigger = canvas.getByRole("button", { name: "Toggle details" });
+				const content = canvas.getByText(
+					/Additional audit evidence appears here/,
 				);
-				await expect(
-					canvas.queryByText("Additional audit evidence appears here."),
-				).not.toBeInTheDocument();
+
+				await expect(trigger).toHaveAttribute("aria-expanded", "true");
+				await expect(content).toBeVisible();
+
+				await userEvent.click(trigger);
+				await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+				await userEvent.click(trigger);
+				await expect(trigger).toHaveAttribute("aria-expanded", "true");
+				await expect(content).toBeVisible();
 				break;
+			}
 			case "combobox":
 				await userEvent.click(canvas.getByRole("combobox", { name: "Module" }));
-				await expect(page.getByRole("listbox")).toBeVisible();
+				await waitFor(() => expect(page.getByRole("listbox")).toBeVisible());
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(page.queryByRole("listbox")).not.toBeInTheDocument(),
@@ -93,28 +106,35 @@ export function interactionFor(component: InteractiveComponent) {
 					expect(page.queryByRole("menu")).not.toBeInTheDocument(),
 				);
 				break;
-			case "context-menu":
+			case "context-menu": {
+				const target = canvas.getByText("Right-click this region");
+				target.focus();
+				await expect(target).toHaveFocus();
 				await userEvent.pointer({
 					keys: "[MouseRight]",
-					target: canvas.getByText("Right-click this region"),
+					target,
 				});
-				await expect(page.getByRole("menu")).toBeVisible();
+				await waitFor(() => expect(page.getByRole("menu")).toBeVisible());
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(page.queryByRole("menu")).not.toBeInTheDocument(),
 				);
+				await expect(target).toHaveFocus();
 				break;
+			}
 			case "dialog":
 				await userEvent.click(
-					canvas.getByRole("button", { name: "Edit profile" }),
+					canvas.getByRole("button", { name: "Edit supplier contact" }),
 				);
-				await expect(
-					page.getByRole("dialog", { name: "Edit profile" }),
-				).toBeVisible();
+				await waitFor(() =>
+					expect(
+						page.getByRole("dialog", { name: "Edit finance contact" }),
+					).toBeVisible(),
+				);
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(
-						page.queryByRole("dialog", { name: "Edit profile" }),
+						page.queryByRole("dialog", { name: "Edit finance contact" }),
 					).not.toBeInTheDocument(),
 				);
 				break;
@@ -122,7 +142,7 @@ export function interactionFor(component: InteractiveComponent) {
 				await userEvent.click(
 					canvas.getByRole("button", { name: "Open menu" }),
 				);
-				await expect(page.getByRole("menu")).toBeVisible();
+				await waitFor(() => expect(page.getByRole("menu")).toBeVisible());
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(page.queryByRole("menu")).not.toBeInTheDocument(),
@@ -132,9 +152,11 @@ export function interactionFor(component: InteractiveComponent) {
 				await userEvent.click(
 					canvas.getByRole("button", { name: "Review posting batch" }),
 				);
-				await expect(
-					page.getByRole("dialog", { name: "Review posting batch" }),
-				).toBeVisible();
+				await waitFor(() =>
+					expect(
+						page.getByRole("dialog", { name: "Review posting batch" }),
+					).toBeVisible(),
+				);
 				await userEvent.click(page.getByRole("button", { name: "Cancel" }));
 				await waitFor(() =>
 					expect(
@@ -156,10 +178,43 @@ export function interactionFor(component: InteractiveComponent) {
 				await expect(canvas.getByText("approval-evidence.pdf")).toBeVisible();
 				break;
 			}
+			case "input": {
+				const editable = canvas.getByLabelText("Editable reference");
+				await userEvent.click(editable);
+				await expect(editable).toHaveFocus();
+				await expect(
+					canvas.getByLabelText("Approved reference"),
+				).toHaveAttribute("readonly");
+				await expect(
+					canvas.getByLabelText("Unavailable integration reference"),
+				).toBeDisabled();
+				await expect(canvas.getByLabelText("Tax identifier")).toHaveAttribute(
+					"aria-invalid",
+					"true",
+				);
+				break;
+			}
+			case "input-group": {
+				const editable = canvas.getByLabelText("Editable amount");
+				await userEvent.click(editable);
+				await expect(editable).toHaveFocus();
+				await expect(
+					canvas.getByLabelText("Invalid tax identifier"),
+				).toHaveAttribute("aria-invalid", "true");
+				await expect(
+					canvas.getByLabelText("Locked remittance reference"),
+				).toBeDisabled();
+				await expect(
+					canvas.getByRole("button", {
+						name: "Copy locked remittance reference",
+					}),
+				).toBeDisabled();
+				break;
+			}
 			case "menubar": {
 				await userEvent.click(canvas.getByRole("menuitem", { name: "Record" }));
 				const menu = page.getByRole("menu");
-				await expect(menu).toBeVisible();
+				await waitFor(() => expect(menu).toBeVisible());
 				await expect(
 					page.getByRole("menuitem", { name: "Delete posted record" }),
 				).toHaveAttribute("data-disabled");
@@ -181,7 +236,9 @@ export function interactionFor(component: InteractiveComponent) {
 				await userEvent.click(
 					canvas.getByRole("button", { name: "Open details" }),
 				);
-				await expect(page.getByText("Posting details")).toBeVisible();
+				await waitFor(() =>
+					expect(page.getByText("Posting details")).toBeVisible(),
+				);
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(page.queryByText("Posting details")).not.toBeInTheDocument(),
@@ -189,9 +246,9 @@ export function interactionFor(component: InteractiveComponent) {
 				break;
 			case "select":
 				await userEvent.click(canvas.getByRole("combobox", { name: "Module" }));
-				await expect(
-					page.getByRole("option", { name: "Inventory" }),
-				).toBeVisible();
+				await waitFor(() =>
+					expect(page.getByRole("option", { name: "Inventory" })).toBeVisible(),
+				);
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(
@@ -214,21 +271,25 @@ export function interactionFor(component: InteractiveComponent) {
 				).toHaveValue("");
 				break;
 			case "sheet":
-				await userEvent.click(canvas.getByRole("button", { name: "right" }));
-				await expect(
-					page.getByRole("dialog", { name: "right sheet" }),
-				).toBeVisible();
+				await userEvent.click(
+					canvas.getByRole("button", { name: "Inspect invoice" }),
+				);
+				await waitFor(() =>
+					expect(
+						page.getByRole("dialog", { name: "Invoice INV-1048" }),
+					).toBeVisible(),
+				);
 				await userEvent.keyboard("{Escape}");
 				await waitFor(() =>
 					expect(
-						page.queryByRole("dialog", { name: "right sheet" }),
+						page.queryByRole("dialog", { name: "Invoice INV-1048" }),
 					).not.toBeInTheDocument(),
 				);
 				break;
 			case "switch": {
-				const control = requiredElement(canvas.getAllByRole("switch")[1]);
+				const control = requiredElement(canvas.getAllByRole("switch")[0]);
 				await userEvent.click(control);
-				await expect(control).toBeChecked();
+				await expect(control).not.toBeChecked();
 				break;
 			}
 			case "tabs":
@@ -247,9 +308,11 @@ export function interactionFor(component: InteractiveComponent) {
 				await userEvent.hover(
 					canvas.getByRole("button", { name: "Notifications" }),
 				);
-				await expect(
-					requiredElement(page.getAllByRole("tooltip")[0]),
-				).toBeVisible();
+				await waitFor(() =>
+					expect(
+						requiredElement(page.getAllByRole("tooltip")[0]),
+					).toBeVisible(),
+				);
 				break;
 			case "tree-view":
 				await userEvent.click(

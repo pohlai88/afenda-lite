@@ -43,7 +43,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 						htmlFor={id}
 						className={
 							required
-								? "after:content-['*'] after:ml-0.5 after:text-destructive"
+								? "after:content-['*'] after:ml-0.5 after:text-destructive-subtle-foreground"
 								: undefined
 						}
 					>

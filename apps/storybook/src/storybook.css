@@ -1,11 +1,12 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "@afenda/ui-system/styles.css";
 @import "@afenda/ui-system/base.css";
 @import "@fontsource-variable/geist/wght.css";
 @import "@fontsource-variable/geist-mono/wght.css";
 
-@source "../../../packages/surfaces/ui-system/src";
+@source "../../../packages/surfaces/ui-system/src/components";
+@source "../.storybook/preview.tsx";
 @source "./stories";
 
 @theme inline {

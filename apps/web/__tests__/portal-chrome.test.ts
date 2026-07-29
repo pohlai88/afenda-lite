@@ -18,6 +18,10 @@ import {
 } from "../features/portal-chrome/resolve-shell-access";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const uiSystemRoot = path.join(
+	webRoot,
+	"../../packages/surfaces/ui-system/src",
+);
 
 vi.mock("@/modules/identity/domain/has-permission", () => ({
 	hasPermission: vi.fn(),
@@ -35,6 +39,10 @@ const session = {
 
 function source(relativePath: string): string {
 	return readFileSync(path.join(webRoot, relativePath), "utf8");
+}
+
+function uiSource(relativePath: string): string {
+	return readFileSync(path.join(uiSystemRoot, relativePath), "utf8");
 }
 
 describe("portal-chrome (N16)", () => {
@@ -116,11 +124,12 @@ describe("portal-chrome (N16)", () => {
 	});
 
 	it("keeps authenticated workspaces on background and embeds segment states", () => {
-		const chrome = source(
-			"features/portal-chrome/operator-platform-chrome.tsx",
+		const shellBlock = uiSource(
+			"blocks/app-shell-block/application-shell-block.tsx",
 		);
 		const clientHome = source("app/(client)/client/(workspace)/page.tsx");
-		expect(chrome).toContain('<SidebarInset className="bg-background">');
+		expect(shellBlock).toContain("<SidebarInset");
+		expect(shellBlock).toContain('className="bg-background"');
 		expect(clientHome).not.toContain("bg-gradient-to-b");
 
 		for (const relativePath of [
@@ -145,18 +154,51 @@ describe("portal-chrome (N16)", () => {
 		expect(shell).toContain("SIDEBAR_COOKIE_NAME");
 		expect(shell).toContain("cookies()");
 		expect(shell).toContain("defaultSidebarOpen");
-		expect(chrome).toContain("defaultOpen={defaultSidebarOpen}");
+		expect(chrome).toContain("defaultSidebarOpen={defaultSidebarOpen}");
 	});
 
 	it("promotes shell-01 header DNA without locale/social/CDN chrome", () => {
 		const chrome = source(
 			"features/portal-chrome/operator-platform-chrome.tsx",
 		);
-		expect(chrome).toContain("Breadcrumb");
-		expect(chrome).toContain("SidebarTrigger");
-		expect(chrome).toContain("bg-surface-raised");
+		const header = uiSource("blocks/app-shell-block/header.tsx");
+		expect(header).toContain("Breadcrumb");
+		expect(header).toContain("SidebarTrigger");
+		expect(header).toContain("rounded-xl border bg-card");
 		expect(chrome).not.toMatch(/LanguageDropdown|dropdown-language/i);
 		expect(chrome).not.toMatch(/FacebookIcon|cdn\.shadcnstudio/i);
 		expect(chrome).not.toMatch(/shadcn-studio/);
+	});
+
+	it("adopts the archived app-shell customizer without archive runtime imports", () => {
+		const chrome = source(
+			"features/portal-chrome/operator-platform-chrome.tsx",
+		);
+		const shellBlock = uiSource(
+			"blocks/app-shell-block/application-shell-block.tsx",
+		);
+		const settings = uiSource(
+			"blocks/app-shell-block/application-shell-settings.ts",
+		);
+		const provider = uiSource(
+			"blocks/app-shell-block/application-shell-settings-provider.tsx",
+		);
+		const customizer = uiSource("blocks/app-shell-block/theme-customiser.tsx");
+		const header = uiSource("blocks/app-shell-block/header.tsx");
+
+		expect(chrome).toContain("AppShell");
+		expect(header).toContain("ThemeCustomiser");
+		expect(header).toContain("rounded-xl border bg-card");
+		expect(customizer).toContain("Color mode");
+		expect(customizer).toContain("Content layout");
+		expect(customizer).toContain("Sidebar variant");
+		expect(customizer).toContain("Sidebar collapse");
+		expect(settings).toContain("isApplicationShellSettings");
+		expect(provider).toContain("document.cookie");
+		expect(provider).not.toContain("localStorage");
+
+		for (const body of [chrome, shellBlock, settings, provider, customizer]) {
+			expect(body).not.toMatch(/_reference|shadcn-pro-dashboard|shadcn-studio/);
+		}
 	});
 });

@@ -102,6 +102,12 @@ function candidateContractGovernance(
 	return defineComponentGovernance({ lifecycle: "candidate", contract });
 }
 
+function approvedContractGovernance(
+	contract: GovernedComponentContract,
+): ComponentGovernance {
+	return defineComponentGovernance({ lifecycle: "approved", contract });
+}
+
 export const componentGovernanceById: Readonly<
 	Partial<Record<UiComponentMetadata["id"], ComponentGovernance>>
 > = {
@@ -166,11 +172,11 @@ export const componentGovernanceById: Readonly<
 	"ui.sidebar-cookie": candidateContractGovernance(sidebarCookieContract),
 	"ui.sidebar": candidateContractGovernance(sidebarContract),
 	"ui.skeleton": candidateContractGovernance(skeletonContract),
-	"ui.slider": candidateContractGovernance(sliderContract),
-	"ui.sonner": candidateContractGovernance(sonnerContract),
-	"ui.spinner": candidateContractGovernance(spinnerContract),
-	"ui.status-badge": candidateContractGovernance(statusBadgeContract),
-	"ui.stepper": candidateContractGovernance(stepperContract),
+	"ui.slider": approvedContractGovernance(sliderContract),
+	"ui.sonner": approvedContractGovernance(sonnerContract),
+	"ui.spinner": approvedContractGovernance(spinnerContract),
+	"ui.status-badge": approvedContractGovernance(statusBadgeContract),
+	"ui.stepper": approvedContractGovernance(stepperContract),
 	"ui.switch": candidateContractGovernance(switchContract),
 	"ui.table": candidateContractGovernance(tableContract),
 	"ui.tabs": candidateContractGovernance(tabsContract),
@@ -441,6 +447,7 @@ const components = [
 		id: "ui.calendar",
 		sourceModule: "src/components/ui/calendar.tsx",
 		publicExports: ["Calendar", "CalendarProps"],
+		variants: ["single", "range"],
 		layer: "primitive",
 		family: "forms",
 		renderMode: "client",
@@ -587,6 +594,7 @@ const components = [
 			"DateRangePickerProps",
 			"DateRangeValue",
 		],
+		variants: ["single", "range"],
 		layer: "compound",
 		family: "forms",
 		renderMode: "client",
@@ -1175,6 +1183,7 @@ const components = [
 		id: "ui.async-state",
 		sourceModule: "src/components/ui/async-state.tsx",
 		publicExports: ["AsyncState"],
+		variants: ["loading", "empty", "filtered-empty", "error", "ready"],
 		layer: "compound",
 		family: "feedback",
 		renderMode: "server-compatible",
@@ -1251,6 +1260,7 @@ const components = [
 			"FileUploadProps",
 			"UiAttachment",
 		],
+		variants: ["single", "multiple"],
 		layer: "compound",
 		family: "forms",
 		renderMode: "client",

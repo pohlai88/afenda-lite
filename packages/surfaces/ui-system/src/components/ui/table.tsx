@@ -10,6 +10,9 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
 			data-slot="table-container"
 			className="relative w-full overflow-x-auto"
 		>
+			<button type="button" className="sr-only">
+				Focus table for horizontal scrolling
+			</button>
 			<table
 				data-slot="table"
 				className={cn("w-full caption-bottom text-sm", className)}

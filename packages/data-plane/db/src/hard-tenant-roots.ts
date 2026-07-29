@@ -284,7 +284,18 @@ import {
 	goodsReceiptLine,
 	receivingDiscrepancy,
 } from "./schema/receiving";
-import { salesOrder, salesOrderLine } from "./schema/sales";
+import {
+	salesOrder,
+	salesOrderHold,
+	salesOrderLine,
+	salesOrderSchedule,
+	salesPriceBook,
+	salesPriceBookEntry,
+	salesQuotation,
+	salesQuotationLine,
+	salesReturnAuthorization,
+	salesReturnAuthorizationLine,
+} from "./schema/sales";
 
 /** SQL table names for null-org audits (RB-001 §3.4 · ARCH-023). */
 export const HARD_TENANT_ROOT_TABLE_NAMES = [
@@ -351,6 +362,14 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"md_import_batch_row",
 	"sales_order",
 	"sales_order_line",
+	"sales_order_schedule",
+	"sales_order_hold",
+	"sales_price_book",
+	"sales_price_book_entry",
+	"sales_quotation",
+	"sales_quotation_line",
+	"sales_return_authorization",
+	"sales_return_authorization_line",
 	"purchase_order",
 	"purchase_order_line",
 	"sales_invoice",
@@ -618,6 +637,14 @@ export const HARD_TENANT_ROOT_TABLES = {
 	mdImportBatchRow,
 	salesOrder,
 	salesOrderLine,
+	salesOrderSchedule,
+	salesOrderHold,
+	salesPriceBook,
+	salesPriceBookEntry,
+	salesQuotation,
+	salesQuotationLine,
+	salesReturnAuthorization,
+	salesReturnAuthorizationLine,
 	purchaseOrder,
 	purchaseOrderLine,
 	salesInvoice,

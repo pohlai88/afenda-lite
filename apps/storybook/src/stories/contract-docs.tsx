@@ -134,6 +134,18 @@ function ApprovedApiTable({
 	);
 }
 
+/** Meta `parameters` factory for Storybook Docs (`parameters.docs.page`). */
+export function contractDocsParameters(
+	evidence: StorybookContractEvidence,
+	title: string,
+) {
+	return {
+		docs: {
+			page: () => <ContractDocsPage evidence={evidence} title={title} />,
+		},
+	} as const;
+}
+
 export function ContractDocsPage({
 	evidence,
 	title,

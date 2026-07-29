@@ -1,0 +1,26 @@
+export const SALES_REQUIRED_TEST_EVIDENCE = [
+	"package-kernel",
+	"schemas-and-money",
+	"authorization-and-manifest",
+	"commercial-pricing",
+	"quotation-lifecycle",
+	"order-lifecycle",
+	"holds-and-release",
+	"returns",
+	"tenant-isolation",
+	"version-concurrency",
+	"idempotency",
+	"atomic-audit-outbox",
+	"memory-drizzle-parity",
+	"database-constraints",
+	"web-consumer-contract",
+] as const;
+export const SALES_COMPLETION_COMMANDS = [
+	"pnpm --filter @afenda/sales lint",
+	"pnpm --filter @afenda/sales typecheck",
+	"pnpm --filter @afenda/sales test",
+	"pnpm --filter @afenda/db test -- -t sales",
+	"pnpm --filter @afenda/events test -- -t sales",
+	"pnpm validate:modules",
+	"pnpm audit:tenancy-nulls",
+] as const;

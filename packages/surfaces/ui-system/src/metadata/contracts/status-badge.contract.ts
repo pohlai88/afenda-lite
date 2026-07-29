@@ -4,7 +4,7 @@ export const statusBadgeContract = defineManifestContract({
 	id: "ui.status-badge.contract",
 	component: "ui.status-badge",
 	purpose:
-		"Presents one authoritative lifecycle, approval, health, availability, or operational state with consistent text, icon, and status styling.",
+		"Presents one authoritative ERP lifecycle, approval, health, availability, or operational state — Posted, Awaiting approval, Posting failed — with consistent text, icon, and status styling.",
 	ownership: {
 		componentOwns: [
 			"Consistent status presentation, approved visual states, sizing, iconography, and accessible status semantics.",
@@ -17,6 +17,7 @@ export const statusBadgeContract = defineManifestContract({
 		"Status styling does not derive or prove authoritative domain state.",
 		"Visual severity does not determine workflow priority, remediation, or escalation policy.",
 		"Status presentation does not determine whether a transition should be announced again.",
+		"StatusBadge does not own Badge taxonomy, Stepper workflow chrome, or toast outcome claims.",
 	],
 	approvedVariants: {
 		success: {

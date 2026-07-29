@@ -1,0 +1,4 @@
+interface:
+  display_name: "Afenda Package Protection"
+  short_description: "Protect completed package edits"
+  default_prompt: "Use $afenda-package-protection to add a pre-edit token and hash check to a completed package."

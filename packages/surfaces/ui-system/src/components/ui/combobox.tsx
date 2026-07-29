@@ -163,7 +163,7 @@ function Combobox(props: ComboboxProps) {
 					aria-describedby={ariaDescribedBy}
 					disabled={disabled}
 					className={cn(
-						"h-auto min-h-[var(--control-height)] w-full justify-between",
+						"h-auto min-h-(--control-height) w-full justify-between",
 						selectedOptions.length === 0 && "text-muted-foreground",
 						className,
 					)}
@@ -192,7 +192,7 @@ function Combobox(props: ComboboxProps) {
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
-				className="w-[var(--radix-popover-trigger-width)] p-0"
+				className="w-(--radix-popover-trigger-width) p-0"
 				align="start"
 			>
 				<Command shouldFilter={false}>

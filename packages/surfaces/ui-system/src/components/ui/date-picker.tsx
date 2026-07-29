@@ -46,7 +46,7 @@ function DatePicker({
 					aria-expanded={open}
 					aria-haspopup="dialog"
 					className={cn(
-						"h-[var(--control-height)] w-full justify-start text-left font-normal",
+						"h-(--control-height) w-full justify-start text-left font-normal",
 						!value && "text-muted-foreground",
 						className,
 					)}
@@ -114,7 +114,7 @@ function DateRangePicker({
 					aria-expanded={open}
 					aria-haspopup="dialog"
 					className={cn(
-						"h-[var(--control-height)] w-full justify-start text-left font-normal",
+						"h-(--control-height) w-full justify-start text-left font-normal",
 						!value?.from && "text-muted-foreground",
 						className,
 					)}

@@ -1795,17 +1795,98 @@ commands:
   - id: receiving.discrepancy.resolve
     moduleId: receiving
     permission: receiving.discrepancy.resolve
+  - id: sales.pricing.price_book.create
+    moduleId: sales
+    permission: sales.pricing.manage
+  - id: sales.pricing.price_book.entry.add
+    moduleId: sales
+    permission: sales.pricing.manage
+  - id: sales.pricing.price_book.activate
+    moduleId: sales
+    permission: sales.pricing.manage
+  - id: sales.quotation.create
+    moduleId: sales
+    permission: sales.quotation.create
+  - id: sales.quotation.line.add
+    moduleId: sales
+    permission: sales.quotation.update
+  - id: sales.quotation.submit
+    moduleId: sales
+    permission: sales.quotation.update
+  - id: sales.quotation.approve
+    moduleId: sales
+    permission: sales.quotation.approve
+  - id: sales.quotation.send
+    moduleId: sales
+    permission: sales.quotation.update
+  - id: sales.quotation.accept
+    moduleId: sales
+    permission: sales.quotation.update
+  - id: sales.quotation.expire
+    moduleId: sales
+    permission: sales.quotation.update
+  - id: sales.quotation.reject
+    moduleId: sales
+    permission: sales.quotation.approve
+  - id: sales.quotation.cancel
+    moduleId: sales
+    permission: sales.quotation.update
+  - id: sales.quotation.convert
+    moduleId: sales
+    permission: sales.order.create
   - id: sales.order.create
     moduleId: sales
     permission: sales.order.create
   - id: sales.order.line.add
     moduleId: sales
     permission: sales.order.update
+  - id: sales.order.submit
+    moduleId: sales
+    permission: sales.order.update
+  - id: sales.order.approve
+    moduleId: sales
+    permission: sales.order.approve
   - id: sales.order.post
     moduleId: sales
     permission: sales.order.post
+  - id: sales.order.release
+    moduleId: sales
+    permission: sales.order.release
+  - id: sales.order.hold.place
+    moduleId: sales
+    permission: sales.order.hold
+  - id: sales.order.hold.resolve
+    moduleId: sales
+    permission: sales.order.hold
+  - id: sales.order.fulfillment.record
+    moduleId: sales
+    permission: sales.order.update
   - id: sales.order.cancel
     moduleId: sales
     permission: sales.order.cancel
+  - id: sales.order.close
+    moduleId: sales
+    permission: sales.order.close
+  - id: sales.return.create
+    moduleId: sales
+    permission: sales.return.create
+  - id: sales.return.line.add
+    moduleId: sales
+    permission: sales.return.create
+  - id: sales.return.submit
+    moduleId: sales
+    permission: sales.return.create
+  - id: sales.return.approve
+    moduleId: sales
+    permission: sales.return.approve
+  - id: sales.return.reject
+    moduleId: sales
+    permission: sales.return.approve
+  - id: sales.return.cancel
+    moduleId: sales
+    permission: sales.return.cancel
+  - id: sales.return.close
+    moduleId: sales
+    permission: sales.return.approve
 source: on-disk-module-manifests
 version: phase-2/2026-07-20

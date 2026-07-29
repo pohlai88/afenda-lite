@@ -4,19 +4,20 @@ export const buttonContract = defineManifestContract({
 	id: "ui.button.contract",
 	component: "ui.button",
 	purpose:
-		"Provides semantic action triggers for ERP commands and workflow decisions.",
+		"Provides semantic action triggers for ERP commands and workflow decisions — preserving predictable hierarchy, keyboard operation, visible focus, and contrast — while keeping authorization and confirmation policy in feature code.",
 	ownership: {
 		componentOwns: [
-			"Action-trigger presentation, approved visual variants, sizing, and native interaction semantics.",
+			"Action-trigger presentation, approved visual variants, sizing, native interaction semantics, and focus treatment across conflicting surfaces.",
 		],
 		consumerOwns: [
-			"Authorization, visibility, confirmation policy, command execution, retry policy, and outcome handling.",
+			"Authorization, visibility, confirmation policy, command execution, pending composition, retry policy, and outcome handling.",
 		],
 	},
 	semanticBoundaries: [
 		"Visual emphasis does not determine whether an action is authorized.",
 		"Destructive styling does not determine whether confirmation is required.",
 		"Pending presentation does not determine retry or idempotency policy.",
+		"Variant and size communicate local emphasis only — they never grant workflow authority.",
 	],
 	approvedVariants: {
 		default: {
@@ -135,16 +136,18 @@ export const buttonContract = defineManifestContract({
 		"Prefer one visually dominant primary action within each independent decision context, such as a page header, form footer, dialog, or workflow panel.",
 		"Multiple primary actions in the same decision context require genuinely equivalent workflow importance.",
 		"Set an explicit button type inside forms so non-submit actions cannot trigger accidental submission.",
-		"Icon-only buttons require a programmatic accessible name; a tooltip may supplement but must not be the sole naming mechanism.",
+		"Icon-only buttons require a programmatic accessible name; nearby visible context may supplement compact icon sizes; a tooltip may supplement but must not be the sole naming mechanism.",
 		"Use disabled only when the reason is apparent or explained by nearby interface content.",
 		"Do not use disabled state as a substitute for authorization or feature-availability policy; feature code decides whether an unavailable action is hidden, disabled with explanation, or replaced with guidance.",
 		"When aria-disabled is used instead of native disabled, prevent activation while preserving the intended focus and explanation behavior.",
-		"Feature code determines when an action is pending; Button must prevent activation while pending and preserve enough of the action label to identify the running command.",
+		"Feature code determines when an action is pending; compose Spinner and aria-busy in the consumer — Button must prevent activation while pending and preserve enough of the action label to identify the running command.",
 		"Button text should describe the action outcome rather than use vague labels such as OK or Yes.",
+		"Reserve destructive for difficult-to-recover harm — never for approval, authority, or ordinary finality.",
+		"For URL navigation, use asChild with a semantic anchor or framework Link that has a real destination.",
 	],
 	accessibility: [
 		"Preserve native button semantics unless asChild delegates to another semantically appropriate interactive element.",
-		"Keep visible keyboard focus treatment intact.",
+		"Keep visible keyboard focus treatment intact across primary, destructive, and sunken surfaces without adopting status colour as the focus cue.",
 		"Do not rely on color alone for destructive meaning.",
 		"Icon-only controls must expose an accessible name through visible text, aria-label, or an equivalent labelled relationship.",
 		"Disabled and pending states must remain distinguishable without relying only on reduced opacity.",
@@ -153,7 +156,7 @@ export const buttonContract = defineManifestContract({
 	],
 	prohibitedUsage: [
 		"Do not use the link variant for data mutations.",
-		"Do not use the destructive variant for ordinary emphasis, importance, finality, or privileged workflow actions.",
+		"Do not use the destructive variant for ordinary emphasis, importance, finality, approval, or privileged workflow actions.",
 		"Do not render a native button for URL navigation; use Button asChild with a semantic anchor or framework Link.",
 		"Do not use asChild to delegate Button styling to a non-interactive element.",
 		"Do not hide critical actions behind icon-only controls without a clear labelling strategy.",

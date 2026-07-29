@@ -4,7 +4,7 @@ export const savedViewSelectContract = defineManifestContract({
 	id: "ui.saved-view-select.contract",
 	component: "ui.saved-view-select",
 	purpose:
-		"Provides selection of a previously saved collection-view configuration.",
+		"Lets operators choose a previously saved ERP collection-view configuration such as overdue invoices or owned-by-me without rebuilding filters each time.",
 	ownership: {
 		componentOwns: [
 			"Saved-view option presentation, controlled selection, and accessible select interaction.",
@@ -16,11 +16,13 @@ export const savedViewSelectContract = defineManifestContract({
 	semanticBoundaries: [
 		"Selecting a saved view does not determine whether its filters remain authorized or valid.",
 		"Default presentation does not establish organization-wide or user-wide persistence policy.",
+		"SavedViewSelect does not own ColumnVisibilityMenu density or FilterBar criteria storage.",
 	],
 	rules: [
 		"Use stable saved-view identifiers and distinguish personal, shared, and default meaning in feature data.",
 		"Revalidate saved criteria when permissions or available fields change.",
 		"Represent missing, stale, or inaccessible saved views explicitly.",
+		"Keep required identity columns and authorization checks outside the selector.",
 	],
 	accessibility: [
 		"Provide a clear label describing which collection view will change.",

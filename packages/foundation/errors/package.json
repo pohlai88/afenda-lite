@@ -26,6 +26,8 @@
 		}
 	},
 	"scripts": {
+		"protect:check": "node ../../../.cursor/skills/afenda-package-protection/scripts/protect-package-check.mjs .",
+		"protect:update": "node ../../../.cursor/skills/afenda-package-protection/scripts/protect-package-update.mjs .",
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project errors"

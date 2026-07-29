@@ -1,5 +1,13 @@
+/**
+ * @afenda/errors
+ * Contract: afenda.errors/v1
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
+import type { AppError } from "../core/app-error";
 import type { ErrorCode } from "../core/codes";
 import { normalizeUnknown } from "../core/normalize";
+import { type SafeDetails, sanitizeErrorDetails } from "../core/safe-details";
 import { serializeAppError } from "../core/serialize";
 
 export type ResultSuccess<T> = {
@@ -11,7 +19,7 @@ export type ResultFailure = {
 	ok: false;
 	code: ErrorCode;
 	message: string;
-	details?: unknown;
+	details?: SafeDetails;
 };
 
 export type Result<T> = ResultSuccess<T> | ResultFailure;
@@ -25,9 +33,15 @@ export function fail(
 	message: string,
 	details?: unknown,
 ): ResultFailure {
-	return details === undefined
+	const safeDetails = sanitizeErrorDetails(details);
+	return safeDetails === undefined
 		? { ok: false, code, message }
-		: { ok: false, code, message, details };
+		: { ok: false, code, message, details: safeDetails };
+}
+
+export function failFromAppError(error: AppError): ResultFailure {
+	const serialized = serializeAppError(error);
+	return fail(serialized.code, serialized.message, serialized.details);
 }
 
 /**
@@ -35,7 +49,7 @@ export function fail(
  */
 export function failFromUnknown(
 	error: unknown,
-	fallbackMessage: string,
+	fallbackMessage: unknown,
 ): ResultFailure {
 	const appError = normalizeUnknown(error, fallbackMessage);
 	const serialized = serializeAppError(appError);

@@ -1,13 +1,4 @@
-export {
-	createMemorySalesStore,
-	MemorySalesStore,
-} from "../memory-store";
-export type { MasterLookupPort, MutationPorts } from "../ports";
-export type {
-	OrderCancelRecord,
-	OrderCreateRecord,
-	OrderLineCreateRecord,
-	OrderListFilter,
-	OrderPostRecord,
-	SalesStore,
-} from "../store";
+export { createMemorySalesStore, MemorySalesStore } from "./memory-sales-store";
+export function allowAllSalesAuthorization() {
+	return { can: async () => true as const };
+}

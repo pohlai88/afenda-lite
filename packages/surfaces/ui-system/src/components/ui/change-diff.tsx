@@ -27,7 +27,7 @@ function ChangeDiffRow({
 			<div className="text-sm font-medium">{label}</div>
 			<div
 				className={cn(
-					"rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground",
+					"rounded-md bg-muted px-3 py-2 text-sm text-foreground",
 					changed && "line-through",
 				)}
 			>
@@ -39,7 +39,7 @@ function ChangeDiffRow({
 					"rounded-md px-3 py-2 text-sm",
 					changed
 						? "bg-info-subtle text-info-subtle-foreground"
-						: "bg-muted text-muted-foreground",
+						: "bg-muted text-foreground",
 				)}
 			>
 				<span className="sr-only">New value: </span>

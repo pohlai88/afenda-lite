@@ -4,19 +4,21 @@ export const dataTableContract = defineManifestContract({
 	id: "ui.data-table.contract",
 	component: "ui.data-table",
 	purpose:
-		"Provides controlled ERP tabular presentation for sorting, filtering, pagination, selection, row actions, and asynchronous collection states.",
+		"Provides controlled ERP tabular presentation for sorting, filtering, pagination, selection, row actions, bulkActions, density, and asynchronous collection states — without owning fetch, authorization, or domain eligibility.",
 	ownership: {
 		componentOwns: [
-			"Controlled tabular presentation, interaction mechanics, density, and collection-state rendering.",
+			"Controlled tabular presentation, interaction mechanics, density (comfortable | compact), empty/loading/error presentation, selection chrome, and bulkActions composition slot.",
 		],
 		consumerOwns: [
-			"Data fetching, stable row identity, authorization, eligibility, URL state, persistence, and domain policy.",
+			"Data fetching, stable row identity, authorization, eligibility, URL state, persistence, column render policy, and domain vocabulary including StatusBadge mapping.",
 		],
 	},
 	semanticBoundaries: [
 		"Selection presentation does not prove authorization or domain eligibility.",
 		"Sorting, filtering, and pagination state does not define server query policy.",
 		"An empty presentation does not determine whether the collection is truly empty, filtered, restricted, or unavailable.",
+		"bulkActions are composed entry points — they do not grant permission or imply atomic success.",
+		"StatusBadge in cells owns lifecycle presentation; Badge owns taxonomy — DataTable does not invent status semantics.",
 	],
 	approvedVariants: {
 		comfortable: {
@@ -52,7 +54,8 @@ export const dataTableContract = defineManifestContract({
 		"Use one consistent row identity key that remains stable across sorting, filtering, pagination, and refreshes.",
 		"Preserve user-visible state when asynchronous refreshes return equivalent data.",
 		"Filtered-empty state must be distinguishable from a genuinely empty collection.",
-		"Empty-state and toolbar actions must connect to real feature behavior; omit actions when the required route, command, or permission is unavailable.",
+		"Empty-state, error, and toolbar actions must connect to real feature behavior; omit actions when the required route, command, or permission is unavailable.",
+		"Keep numeric amounts in domain-safe units until the presentation column formats currency.",
 	],
 	accessibility: [
 		"Use semantic table structure when the content represents tabular relationships.",
@@ -77,5 +80,6 @@ export const dataTableContract = defineManifestContract({
 		"Do not silently omit columns or values when the user needs an explanation for unavailable or restricted data.",
 		"Do not use a table when the content has no meaningful row-and-column relationship.",
 		"Do not allow selection state to persist against records that are no longer present or eligible.",
+		"Do not store pre-formatted currency strings as sortable source data.",
 	],
 });

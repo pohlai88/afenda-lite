@@ -4,10 +4,10 @@ export const metricCardContract = defineManifestContract({
 	id: "ui.metric-card.contract",
 	component: "ui.metric-card",
 	purpose:
-		"Displays a scannable KPI value with optional comparison, trend, and supporting context.",
+		"Displays a scannable ERP KPI value — open receivables, collection rate, overdue balance — with optional comparison, trend, and supporting context. Trend reports numerical direction only, never business sentiment.",
 	ownership: {
 		componentOwns: [
-			"KPI presentation, approved directional treatments, comparison context, and consistent metric hierarchy.",
+			"KPI presentation, approved directional treatments, comparison context, loading skeleton, and consistent metric hierarchy.",
 		],
 		consumerOwns: [
 			"Calculation logic, source integrity, comparison basis, business sentiment, thresholds, permissions, and freshness policy.",
@@ -17,6 +17,7 @@ export const metricCardContract = defineManifestContract({
 		"Upward movement does not imply favorable business performance.",
 		"Downward movement does not imply unfavorable business performance.",
 		"Metric presentation does not establish the calculation as authoritative, current, or comparable.",
+		"MetricCard does not own StatusBadge lifecycle, Chart series, or FilterBar criteria.",
 	],
 	approvedVariants: {
 		up: {
@@ -64,6 +65,7 @@ export const metricCardContract = defineManifestContract({
 		"Use consistent units, precision, and formatting for comparable metrics.",
 		"Feature code owns calculation logic, thresholds, targets, permissions, and data freshness policy.",
 		"Show stale, partial, estimated, or unavailable data explicitly when relevant.",
+		"Distinguish measured zero (MYR 0.00) from unavailable (—).",
 	],
 	accessibility: [
 		"Metric title, value, unit, and comparison meaning must remain understandable without the trend icon or color.",
@@ -82,5 +84,6 @@ export const metricCardContract = defineManifestContract({
 		"Do not place unrelated actions, filters, or form controls inside metric cards.",
 		"Do not present decorative numbers as governed KPIs.",
 		"Do not hide missing, stale, estimated, or incomplete data behind a neutral trend.",
+		"Do not replace a measured zero with a dash.",
 	],
 });

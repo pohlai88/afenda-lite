@@ -42,6 +42,7 @@
 		"react-day-picker": "^10.0.1",
 		"react-resizable-panels": "catalog:",
 		"recharts": "catalog:",
+		"shadcn": "catalog:",
 		"sonner": "catalog:",
 		"tailwind-merge": "catalog:",
 		"vaul": "catalog:"
@@ -62,7 +63,6 @@
 		"culori": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
-		"shadcn": "catalog:",
 		"tailwindcss": "catalog:",
 		"tsx": "catalog:",
 		"typescript": "catalog:"

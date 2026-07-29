@@ -78,6 +78,14 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"md_import_batch_row",
 	"sales_order",
 	"sales_order_line",
+	"sales_order_schedule",
+	"sales_order_hold",
+	"sales_price_book",
+	"sales_price_book_entry",
+	"sales_quotation",
+	"sales_quotation_line",
+	"sales_return_authorization",
+	"sales_return_authorization_line",
 	"purchase_order",
 	"purchase_order_line",
 	"sales_invoice",
@@ -424,6 +432,22 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM sales_order WHERE organization_id IS NULL`,
 	sales_order_line: () =>
 		sql`SELECT count(*)::int AS null_count FROM sales_order_line WHERE organization_id IS NULL`,
+	sales_order_schedule: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_order_schedule WHERE organization_id IS NULL`,
+	sales_order_hold: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_order_hold WHERE organization_id IS NULL`,
+	sales_price_book: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_price_book WHERE organization_id IS NULL`,
+	sales_price_book_entry: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_price_book_entry WHERE organization_id IS NULL`,
+	sales_quotation: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_quotation WHERE organization_id IS NULL`,
+	sales_quotation_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_quotation_line WHERE organization_id IS NULL`,
+	sales_return_authorization: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_return_authorization WHERE organization_id IS NULL`,
+	sales_return_authorization_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_return_authorization_line WHERE organization_id IS NULL`,
 	purchase_order: () =>
 		sql`SELECT count(*)::int AS null_count FROM purchase_order WHERE organization_id IS NULL`,
 	purchase_order_line: () =>

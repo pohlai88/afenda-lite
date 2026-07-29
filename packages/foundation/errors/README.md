@@ -12,13 +12,20 @@ Workspace dependency — import by export path:
 import {
   AppError,
   ERROR_CODES,
+  type SafeDetails,
   normalizeUnknown,
+  sanitizeErrorDetails,
   serializeAppError,
   rateLimited,
   serviceUnavailable,
 } from "@afenda/errors";
-import { ok, fail, failFromUnknown, type Result } from "@afenda/errors/result";
-import { ERROR_HTTP_STATUS, httpErrorBody, retryAfterSeconds } from "@afenda/errors/http";
+import { ok, fail, failFromAppError, failFromUnknown, type Result } from "@afenda/errors/result";
+import {
+  ERROR_HTTP_STATUS,
+  MAX_RETRY_AFTER_SECONDS,
+  httpErrorBody,
+  retryAfterSeconds,
+} from "@afenda/errors/http";
 import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
 ```
 
@@ -29,6 +36,7 @@ Factories also re-export from `@afenda/errors/common` (same symbols as the root 
 ## Maintain
 
 ```bash
+pnpm --filter @afenda/errors protect:check
 pnpm --filter @afenda/errors lint
 pnpm --filter @afenda/errors typecheck
 pnpm --filter @afenda/errors test
@@ -36,17 +44,159 @@ pnpm --filter @afenda/errors test
 
 Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
+## Protection
+
+This package is protected after review. Every TypeScript source and test file
+must carry the package header:
+
+```ts
+/**
+ * @afenda/errors
+ * Contract: afenda.errors/v1
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+```
+
+Before editing, run:
+
+```bash
+pnpm --filter @afenda/errors protect:check
+```
+
+If the check fails, inspect the diff before changing anything else. For an
+intentional edit, keep the local unlock token in `.env.local`:
+
+```text
+AFENDA_PROTECTED_EDIT_TOKEN=<local-only-token>
+```
+
+After the change passes lint, typecheck, and tests, refresh the package hash:
+
+```bash
+pnpm --filter @afenda/errors protect:update
+pnpm --filter @afenda/errors protect:check
+```
+
+The committed `.protected.sha256` detects package drift. The token only permits
+refreshing that hash; it does not bypass review, tests, or compatibility
+validation.
+
+## Consumption Mandate
+
+`@afenda/errors` is the authoritative cross-boundary error kernel for the Afenda
+monorepo.
+
+Every failure crossing an Afenda package, infrastructure, job, or HTTP boundary
+MUST be represented using `@afenda/errors`. Failures contained entirely within a
+private function, pure utility, entity, or domain module MAY use local `Error`
+objects, predicates, or domain-specific outcome unions.
+
+### MUST Use `@afenda/errors`
+
+Use `@afenda/errors` for:
+
+- public package commands, queries, services, and facades
+- cross-package orchestration
+- infrastructure adapters that catch external failures
+- PostgreSQL error mapping through `@afenda/errors/adapters/postgres`
+- BFF, REST, RPC, server-action, and HTTP response boundaries
+- jobs, workers, retries, dead-letter paths, audit output, and monitoring-facing
+  failures
+- OpenAPI and API-contract error-code, status, and body definitions
+
+### MUST NOT Reimplement
+
+Do not create competing shared implementations of:
+
+- `AppError`
+- `Result<T>`
+- `ERROR_CODES`
+- `ERROR_HTTP_STATUS`
+- `httpErrorBody`
+- `retryAfterSeconds`
+- PostgreSQL SQLSTATE mapping
+- shared unknown-error normalization
+
+Domain-specific `reason` unions are allowed, but they MUST be mapped to
+`@afenda/errors` before crossing a package, infrastructure, job, or transport
+boundary.
+
+### MUST NOT Import Directly
+
+Do not import `@afenda/errors` directly inside:
+
+- pure domain entities
+- value objects
+- low-level pure utilities
+- Drizzle schemas
+- migrations
+- reusable UI primitives
+
+These layers MUST expose local outcomes or receive display-ready state from
+their caller.
+
+### Boundary Rule
+
+```text
+Failure stays inside one private module
+-> local Error, predicate, or domain outcome is allowed
+
+Failure crosses a package boundary
+-> use Result<T> or AppError
+
+Failure crosses an infrastructure boundary
+-> use explicit adapter mapping
+
+Failure crosses an HTTP boundary
+-> use @afenda/errors/http
+
+Failure reaches a public client
+-> serialize only; never expose Error, cause, stack, SQL, or driver data
+```
+
+### Consumption Enforcement
+
+Repository governance MUST verify:
+
+- no competing shared error-code registry
+- no competing shared `Result<T>` implementation
+- no duplicate HTTP error-status map
+- no raw `Error.message` in public responses
+- no direct serialization of `Error` or `AppError`
+- no automatic infrastructure guessing inside `normalizeUnknown`
+- no domain-specific codes added to the shared kernel
+- PostgreSQL failures are mapped only at explicit adapter boundaries
+- public package operations use an approved cross-boundary failure contract
+
+Run the current repository check with:
+
+```bash
+pnpm run check:errors-consumption
+```
+
+Package protection detects unauthorized drift. Consumption enforcement governs
+who must use `@afenda/errors`; the two controls are intentionally separate.
+
 ## Exports
 
 | Path | Role |
 |------|------|
-| `@afenda/errors` | `AppError`, `ERROR_CODES` / `ErrorCode` (+ `ApiErrorCode` aliases), normalize, serialize, common factories |
-| `@afenda/errors/result` | `Result` / `ok` / `fail` / `failFromUnknown` (same wire as ActionResult) |
-| `@afenda/errors/http` | `ERROR_HTTP_STATUS`, `httpErrorBody`, `retryAfterSeconds` — no `NextResponse` |
+| `@afenda/errors` | `AppError`, `ERROR_CODES` / `ErrorCode` (+ `ApiErrorCode` aliases), `SafeDetails`, sanitize, normalize, serialize, common factories |
+| `@afenda/errors/result` | `Result` / `ok` / `fail` / `failFromAppError` / `failFromUnknown` (same wire as ActionResult; safe details only) |
+| `@afenda/errors/http` | `ERROR_HTTP_STATUS`, `httpErrorBody`, bounded Retry-After helpers — no `NextResponse` |
 | `@afenda/errors/common` | Factories only (`badRequest` … `rateLimited` · `serviceUnavailable`) |
 | `@afenda/errors/adapters/postgres` | SQLSTATE → `AppError` duck-map — no `pg` / Drizzle / Prisma |
 
-Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503). Rate-limit / outage **policy** lives in consumers; this package owns vocabulary, factories, and safe `details` only.
+Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503). Retry-After values are bounded from 1 second to `MAX_RETRY_AFTER_SECONDS` (24 hours). Rate-limit / outage **policy** lives in consumers; this package owns vocabulary, factories, and safe `details` only.
+
+Postgres SQLSTATE mapping is explicit adapter-boundary behavior:
+
+```ts
+const mapped = fromPostgresUnknown(error);
+return mapped ? failFromAppError(mapped) : failFromUnknown(error, "Save failed");
+```
+
+`normalizeUnknown` stays infrastructure-agnostic; it does not guess SQLSTATE, Redis, HTTP, or filesystem error sources.
 
 ## Ownership
 

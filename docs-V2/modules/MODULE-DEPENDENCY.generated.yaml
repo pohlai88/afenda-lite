@@ -115,10 +115,12 @@ modules:
   - id: sales
     optionalIntegratesWith:
       - moduleId: inventory
-        style: events
+        style: ports
       - moduleId: fulfillment
-        style: events
+        style: ports
       - moduleId: receivables
+        style: ports
+      - moduleId: accounting
         style: events
     required:
       - master-data

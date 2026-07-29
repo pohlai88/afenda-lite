@@ -64,9 +64,9 @@ export function CreateSalesOrderForm({ canCreate }: CreateSalesOrderFormProps) {
 				<Alert role="status">
 					<AlertTitle>Order created</AlertTitle>
 					<AlertDescription>
-						{state.data.order.code} · party {state.data.order.partyCode} (
-						{state.data.order.partyName}) · {state.data.order.currencyCode} ·
-						draft.
+						{state.data.order.code} · party {state.data.order.customer.code} (
+						{state.data.order.customer.name}) · {state.data.order.currencyCode}{" "}
+						· draft.
 					</AlertDescription>
 				</Alert>
 			) : null}

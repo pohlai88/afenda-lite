@@ -509,7 +509,7 @@ export const mdPaymentTerm = pgTable(
 			.defaultNow(),
 	},
 	(t) => [
-		index("md_payment_term_org_id_idx").on(t.organizationId, t.id),
+		unique("md_payment_term_org_id_uidx").on(t.organizationId, t.id),
 		index("md_payment_term_org_status_idx").on(t.organizationId, t.status),
 		index("md_payment_term_currency_restriction_idx").on(
 			t.currencyRestrictionId,

@@ -1,0 +1,48 @@
+# @afenda/ui-blocks
+
+`@afenda/ui-blocks` hosts application-shell block components composed from `@afenda/ui-system`.
+
+Use this package when a reusable product shell pattern is larger than a primitive but still belongs in the surfaces layer. Consumers import declared subpaths only; do not deep-import source files or bypass the `@afenda/ui-system` primitive barrel.
+
+This package is private workspace code. Its package governance status is determined by the repository catalog and `pnpm governance:packages`, not by this README.
+
+## Consume
+
+```tsx
+import { DropdownUserSidebar } from "@afenda/ui-blocks/app-shell-blocks/navigation-sidebar";
+```
+
+Available exports are declared in [package.json](./package.json):
+
+| Export | Provides |
+|--------|----------|
+| `@afenda/ui-blocks/app-shell-blocks/navigation-sidebar` | `DropdownUserSidebar` |
+| `@afenda/ui-blocks/app-shell-blocks/navigation-sidebar/dropdown-user-sidebar` | `DropdownUserSidebar` |
+
+## Maintain
+
+**Engines:** Node.js `24.x` and pnpm `>=10.33.4` from the root [package.json](../../../package.json).
+
+```bash
+pnpm --filter @afenda/ui-blocks lint
+pnpm --filter @afenda/ui-blocks typecheck
+```
+
+Add tests with the block behavior they protect; do not add empty scripts to match another package. If this package becomes a governed catalog entry, update the package catalog, workspace edge register, package index README, and package governance checks in the same mission.
+
+## Boundaries
+
+- Compose only from `@afenda/ui-system` and browser-safe React dependencies.
+- Keep app-specific data loading, authorization, routing, and server actions in `apps/web`.
+- Import through declared package exports; never use `@afenda/ui-blocks/...` paths that are absent from `exports`.
+- Keep `@afenda/ui-system` as the primitive source. Do not revive `@afenda/ui`.
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Surfaces category | [packages/surfaces](../README.md) |
+| Package catalog and layer DAG | [packages](../../README.md) |
+| UI primitive source | [@afenda/ui-system](../ui-system/README.md) |
+| Workspace edge governance | [WORKSPACE-EDGE-REGISTER.yaml](../../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml) |
+| Package governance | [PACKAGE-GOVERNANCE.md](../../../docs-V2/modules/PACKAGE-GOVERNANCE.md) |

@@ -4,19 +4,20 @@ export const inputContract = defineManifestContract({
 	id: "ui.input.contract",
 	component: "ui.input",
 	purpose:
-		"Provides a single-line browser-native input primitive for textual and scalar ERP data entry.",
+		"Provides a single-line browser-native input for textual and scalar ERP data entry — supplier references, emails, and search terms — without owning field labelling, parsing, validation, or persistence.",
 	ownership: {
 		componentOwns: [
-			"Native single-line input rendering, browser input semantics, primitive value entry, and accessibility-attribute forwarding.",
+			"Native single-line input rendering, browser input semantics, primitive value entry, focus and invalid chrome, and accessibility-attribute forwarding.",
 		],
 		consumerOwns: [
-			"Labelling composition, parsing, normalization, validation, authorization, persistence, and domain meaning.",
+			"Labelling via FormField or Field, parsing, normalization, validation, authorization, persistence, and domain meaning.",
 		],
 	},
 	semanticBoundaries: [
 		"The selected HTML input type does not define domain parsing or validation policy.",
 		"Invalid presentation does not determine whether the current value is authoritative or persisted.",
 		"Read-only or disabled presentation does not determine authorization or submission policy.",
+		"Input does not replace Textarea for multiline content, Select/Combobox for bounded choice, or NumericInput/DatePicker for governed scalar domains.",
 	],
 	rules: [
 		"Use Input within a labelled field composition such as FormField or Field.",
@@ -28,6 +29,7 @@ export const inputContract = defineManifestContract({
 		"Use disabled only when the control must not participate in interaction or form submission.",
 		"Preserve the user's entered value when validation fails.",
 		"Placeholder text may provide an example or format hint but must not replace the field label.",
+		"Prefer Card + FormField composition for supplier identity, ledger search, and similar ERP entry workbenches.",
 	],
 	accessibility: [
 		"Every input must have an associated visible label or equivalent accessible name.",

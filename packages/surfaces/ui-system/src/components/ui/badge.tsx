@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "../../lib/utils";
 
 const badgeVariants = cva(
-	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring-focus aria-invalid:border-destructive aria-invalid:ring-ring-destructive-focus dark:aria-invalid:ring-ring-destructive-focus-strong [&>svg]:pointer-events-none [&>svg]:size-3",
+	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[1.5px] focus-visible:ring-ring-focus aria-invalid:border-destructive aria-invalid:ring-ring-destructive-focus dark:aria-invalid:ring-ring-destructive-focus-strong [&>svg]:pointer-events-none [&>svg]:size-3",
 	{
 		variants: {
 			variant: {
@@ -14,7 +14,7 @@ const badgeVariants = cva(
 				secondary:
 					"bg-secondary text-secondary-foreground [a&]:hover:bg-secondary-hover",
 				destructive:
-					"bg-destructive text-white focus-visible:ring-ring-destructive-focus dark:bg-destructive-soft dark:focus-visible:ring-ring-destructive-focus-strong [a&]:hover:bg-destructive-hover",
+					"bg-destructive text-destructive-foreground focus-visible:ring-ring-destructive-focus dark:bg-destructive-soft dark:focus-visible:ring-ring-destructive-focus-strong [a&]:hover:bg-destructive-hover",
 				outline:
 					"border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
 				ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",

@@ -70,8 +70,8 @@ export function AddSalesOrderLineForm({
 				<Alert role="status">
 					<AlertTitle>Line added</AlertTitle>
 					<AlertDescription>
-						Line {state.data.line.lineNo} · {state.data.line.itemCode} ×{" "}
-						{state.data.line.quantity} {state.data.line.baseUomCode} @{" "}
+						Line {state.data.line.lineNo} · {state.data.line.item.code} ×{" "}
+						{state.data.line.quantity} {state.data.line.item.baseUomCode} @{" "}
 						{state.data.line.unitPrice} = {state.data.line.lineAmount}.
 					</AlertDescription>
 				</Alert>

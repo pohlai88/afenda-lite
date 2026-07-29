@@ -78,7 +78,7 @@ export async function SalesShell({ surface }: SalesShellProps) {
 			),
 		]);
 
-	const orders = ordersResult.ok ? ordersResult.data : [];
+	const orders = ordersResult.ok ? ordersResult.data.items : [];
 	const parties = partiesResult.ok ? partiesResult.data : [];
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const terms = termsResult.ok ? termsResult.data : [];
@@ -122,12 +122,11 @@ export async function SalesShell({ surface }: SalesShellProps) {
 										{order.code} · {order.status} · v{order.version}
 									</div>
 									<div className="text-muted-foreground">
-										id <Code>{order.id}</Code> · party {order.partyCode} (
-										{order.partyName}) · {order.currencyCode}
-										{order.documentTotal ? ` ${order.documentTotal}` : ""} ·{" "}
-										{order.lines.length} line(s)
-										{order.paymentTermCode
-											? ` · ${order.paymentTermCode} / net ${order.netDays}`
+										id <Code>{order.id}</Code> · party {order.customer.code} (
+										{order.customer.name}) · {order.currencyCode}
+										{order.documentTotal ? ` ${order.documentTotal}` : ""}
+										{order.customer.paymentTermCode
+											? ` · ${order.customer.paymentTermCode} / net ${order.customer.netDays}`
 											: ""}
 									</div>
 								</li>

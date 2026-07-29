@@ -1,3 +1,9 @@
+/**
+ * @afenda/errors
+ * Contract: afenda.errors/v1
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
+
 export {
 	badRequest,
 	conflict,
@@ -28,6 +34,12 @@ export {
 	isErrorCode,
 } from "./core/codes";
 export { normalizeUnknown } from "./core/normalize";
+export {
+	type SafeDetailScalar,
+	type SafeDetails,
+	type SafeDetailValue,
+	sanitizeErrorDetails,
+} from "./core/safe-details";
 export {
 	type SerializedAppError,
 	serializeAppError,

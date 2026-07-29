@@ -15,6 +15,7 @@ type StoryIndex = {
 type Theme = "light" | "dark";
 
 async function openStory(page: Page, storyId: string, theme: Theme) {
+	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(
 		`/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&globals=theme:${theme}`,
 	);
@@ -44,12 +45,12 @@ test("all tagged UI-system stories match canonical screenshots @visual", async (
 		)
 		.sort((left, right) => left.id.localeCompare(right.id));
 
-	expect(stories).toHaveLength(75);
+	expect(stories).toHaveLength(74);
 
 	for (const story of stories) {
 		for (const theme of ["light", "dark"] as const) {
 			await test.step(`${story.id} · ${theme}`, async () => {
-				const root = await openStory(page, story.id, theme);
+				await openStory(page, story.id, theme);
 				await page.keyboard.press("Escape");
 				await page.keyboard.press("Escape");
 				await page.mouse.move(0, 0);
@@ -59,7 +60,7 @@ test("all tagged UI-system stories match canonical screenshots @visual", async (
 					}
 				});
 				await page.waitForTimeout(100);
-				await expect(root).toHaveScreenshot(`${story.id}-${theme}.png`);
+				await expect(page).toHaveScreenshot(`${story.id}-${theme}.png`);
 			});
 		}
 	}
@@ -71,13 +72,13 @@ test("open Drawer and Menubar portals preserve themed elevation @visual", async 
 	test.setTimeout(120_000);
 	const overlays = [
 		{
-			storyId: "ui-system-overlays-drawer--overview",
+			storyId: "ui-system-drawer--overview",
 			trigger: { role: "button" as const, name: "Review posting batch" },
 			openRole: "dialog" as const,
 			openName: "Review posting batch",
 		},
 		{
-			storyId: "ui-system-navigation-menubar--overview",
+			storyId: "ui-system-menubar--overview",
 			trigger: { role: "menuitem" as const, name: "Record" },
 			openRole: "menu" as const,
 			openName: undefined,
@@ -120,29 +121,25 @@ test("Button governed states and compositions remain visually explicit @visual",
 	for (const theme of ["light", "dark"] as const) {
 		for (const evidence of staticEvidence) {
 			await test.step(`${evidence.label} · ${theme}`, async () => {
-				const root = await openStory(
-					page,
-					`ui-system-forms-button--${evidence.story}`,
-					theme,
-				);
-				await expect(root).toHaveScreenshot(
-					`ui-system-forms-button--${evidence.label}-${theme}.png`,
+				await openStory(page, `ui-system-button--${evidence.story}`, theme);
+				await expect(page).toHaveScreenshot(
+					`ui-system-button--${evidence.label}-${theme}.png`,
 				);
 			});
 		}
 
 		await test.step(`hover and active · ${theme}`, async () => {
-			await openStory(page, "ui-system-forms-button--variants", theme);
+			await openStory(page, "ui-system-button--variants", theme);
 			const primary = page.getByRole("button", {
 				name: "Submit for approval",
 			});
 			await primary.hover();
 			await expect(primary).toHaveScreenshot(
-				`ui-system-forms-button--hover-${theme}.png`,
+				`ui-system-button--hover-${theme}.png`,
 			);
 			await page.mouse.down();
 			await expect(primary).toHaveScreenshot(
-				`ui-system-forms-button--active-${theme}.png`,
+				`ui-system-button--active-${theme}.png`,
 			);
 			await page.mouse.up();
 		});
@@ -150,7 +147,7 @@ test("Button governed states and compositions remain visually explicit @visual",
 		await test.step(`focus visible · ${theme}`, async () => {
 			await openStory(
 				page,
-				"ui-system-forms-button--states-and-accessibility",
+				"ui-system-button--states-and-accessibility",
 				theme,
 			);
 			await page.locator("html").evaluate((element) => {
@@ -160,7 +157,7 @@ test("Button governed states and compositions remain visually explicit @visual",
 			await approve.focus();
 			await expect(approve).toBeFocused();
 			await expect(approve).toHaveScreenshot(
-				`ui-system-forms-button--focus-visible-${theme}.png`,
+				`ui-system-button--focus-visible-${theme}.png`,
 			);
 		});
 	}
@@ -169,7 +166,7 @@ test("Button governed states and compositions remain visually explicit @visual",
 test("Button Docs preserve governed typography and accessibility", async ({
 	page,
 }) => {
-	await page.goto("/iframe.html?id=ui-system-forms-button--docs&viewMode=docs");
+	await page.goto("/iframe.html?id=ui-system-button--docs&viewMode=docs");
 	const docs = page.locator(".afenda-contract-docs");
 	await expect(docs).toBeVisible();
 	await page.evaluate(() => document.fonts.ready);

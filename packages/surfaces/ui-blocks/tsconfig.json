@@ -1,0 +1,8 @@
+{
+	"extends": "@afenda/config/tsconfig/react-library.json",
+	"compilerOptions": {
+		"rootDir": "."
+	},
+	"include": ["app-shell-blocks/**/*.ts", "app-shell-blocks/**/*.tsx"],
+	"exclude": ["node_modules", "dist"]
+}

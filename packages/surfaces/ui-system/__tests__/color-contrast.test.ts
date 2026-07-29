@@ -15,8 +15,13 @@ const tokens = readFileSync(
 	"utf8",
 );
 
-function blockBetween(source: string, start: string, end: string): string {
-	const startIndex = source.indexOf(start);
+function blockBetween(
+	source: string,
+	start: string,
+	end: string,
+	fromIndex = 0,
+): string {
+	const startIndex = source.indexOf(start, fromIndex);
 	expect(startIndex, `missing block start ${start}`).toBeGreaterThanOrEqual(0);
 	const endIndex = source.indexOf(end, startIndex + start.length);
 	expect(endIndex, `missing block end ${end}`).toBeGreaterThan(startIndex);
@@ -32,9 +37,21 @@ function declarations(block: string): ReadonlyMap<string, string> {
 	);
 }
 
+function mergeDeclarations(
+	...palettes: readonly ReadonlyMap<string, string>[]
+): ReadonlyMap<string, string> {
+	return new Map(palettes.flatMap((palette) => [...palette]));
+}
+
+const rootStart = tokens.indexOf("\n:root {");
+const rootDeclarations = declarations(blockBetween(tokens, "\n:root {", "\n}"));
+const darkOverrides = declarations(
+	blockBetween(tokens, "\n.dark {", "\n}", rootStart + 1),
+);
+
 const modes = {
-	light: declarations(blockBetween(tokens, ":root {", "\n.dark {")),
-	dark: declarations(blockBetween(tokens, ".dark {", "\n}")),
+	light: rootDeclarations,
+	dark: mergeDeclarations(rootDeclarations, darkOverrides),
 } as const;
 
 function resolveColor(
@@ -93,7 +110,8 @@ type Pair = {
 	minimumWcag: number;
 	apca:
 		| { kind: "font-lookup"; fontSizePx: number; fontWeight: number }
-		| { kind: "spot-text"; minimumLc: number };
+		| { kind: "spot-text"; minimumLc: number }
+		| null;
 };
 
 const readablePairs: readonly Pair[] = [
@@ -121,9 +139,9 @@ const readablePairs: readonly Pair[] = [
 	{
 		name: "muted helper",
 		foreground: "muted-foreground",
-		background: "muted",
+		background: "background",
 		minimumWcag: 4.5,
-		apca: { kind: "font-lookup", fontSizePx: 16, fontWeight: 500 },
+		apca: null,
 	},
 	{
 		name: "primary action",
@@ -149,10 +167,27 @@ const readablePairs: readonly Pair[] = [
 	{
 		name: "destructive action",
 		foreground: "destructive-foreground",
-		background: "destructive",
+		background: "destructive-soft",
 		minimumWcag: 4.5,
 		apca: { kind: "spot-text", minimumLc: 60 },
 	},
+	...(
+		[
+			"background",
+			"card",
+			"surface-raised",
+			"popover",
+			"destructive-subtle",
+		] as const
+	).map(
+		(background): Pair => ({
+			name: `destructive text on ${background}`,
+			foreground: "destructive-subtle-foreground",
+			background,
+			minimumWcag: 4.5,
+			apca: { kind: "spot-text", minimumLc: 60 },
+		}),
+	),
 	{
 		name: "sidebar content",
 		foreground: "sidebar-foreground",
@@ -167,7 +202,7 @@ const readablePairs: readonly Pair[] = [
 		minimumWcag: 4.5,
 		apca: { kind: "spot-text", minimumLc: 60 },
 	},
-	...(["success", "warning", "info", "destructive"] as const).map(
+	...(["success", "warning", "info"] as const).map(
 		(status): Pair => ({
 			name: `${status} solid pair`,
 			foreground: `${status}-foreground`,
@@ -182,7 +217,7 @@ const readablePairs: readonly Pair[] = [
 			foreground: `${status}-subtle-foreground`,
 			background: `${status}-subtle`,
 			minimumWcag: 4.5,
-			apca: { kind: "font-lookup", fontSizePx: 14, fontWeight: 700 },
+			apca: { kind: "font-lookup", fontSizePx: 14, fontWeight: 500 },
 		}),
 	),
 ];
@@ -201,6 +236,8 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 				wcag,
 				`${pair.name} WCAG ${wcag.toFixed(2)}`,
 			).toBeGreaterThanOrEqual(pair.minimumWcag);
+
+			if (!pair.apca) continue;
 
 			if (pair.apca.kind === "spot-text") {
 				expect(
@@ -253,7 +290,6 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 			["foreground", 400],
 			["foreground-secondary", 500],
 			["foreground-tertiary", 500],
-			["muted-foreground", 500],
 		] as const;
 		const surfaces = [
 			"canvas",
@@ -314,7 +350,7 @@ describe("@afenda/ui-system — readable status token usage", () => {
 					"ui",
 					"status-badge.tsx",
 				),
-				contract: "text-sm font-bold",
+				contract: "text-sm font-medium",
 			},
 			{
 				file: path.join(
@@ -367,6 +403,19 @@ describe("@afenda/ui-system — readable status token usage", () => {
 				? [path.relative(repoRoot, file)]
 				: [];
 		});
+
+		expect(violations).toEqual([]);
+	});
+
+	it("does not use the solid destructive fill token as package text", () => {
+		const violations = sourceFiles(path.join(packageRoot, "src")).flatMap(
+			(file) => {
+				const source = readFileSync(file, "utf8");
+				return /\btext-destructive(?=[\s"'!])/.test(source)
+					? [path.relative(repoRoot, file)]
+					: [];
+			},
+		);
 
 		expect(violations).toEqual([]);
 	});

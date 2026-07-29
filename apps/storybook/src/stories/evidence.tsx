@@ -20,14 +20,21 @@ export function evidenceDescription(
 
 export function StorySection({
 	title,
+	description,
 	children,
 }: {
 	title: string;
+	description?: string;
 	children: ReactNode;
 }) {
 	return (
 		<section className="grid gap-3">
-			<h2 className="text-lg font-medium">{title}</h2>
+			<div className="grid gap-1">
+				<h2 className="text-lg font-medium">{title}</h2>
+				{description ? (
+					<p className="text-sm text-foreground-secondary">{description}</p>
+				) : null}
+			</div>
 			{children}
 		</section>
 	);

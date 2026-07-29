@@ -35,6 +35,7 @@
 		"check:docs-naming": "node scripts/check-docs-naming.mjs",
 		"check:docs-trunk-ban": "node scripts/check-docs-trunk-ban.mjs",
 		"check:readme": "node scripts/check-readme.mjs",
+		"check:errors-consumption": "node scripts/check-errors-consumption.mjs",
 		"check:tsconfig-no-baseurl": "node scripts/check-tsconfig-no-baseurl.mjs",
 		"check:editor-biome": "node scripts/check-editor-biome.mjs",
 		"check:ui-system": "pnpm --filter @afenda/ui-system lint && pnpm --filter @afenda/ui-system typecheck && pnpm --filter @afenda/ui-system metadata:check && pnpm --filter @afenda/ui-system test && pnpm --filter @afenda/web exec vitest run --config ../../testing/vitest.unit.config.ts --project web tailwind-emit && pnpm --filter @afenda/web typecheck",

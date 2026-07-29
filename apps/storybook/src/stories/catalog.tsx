@@ -286,7 +286,6 @@ function Frame({
 }) {
 	return (
 		<div
-			data-visual-test="true"
 			className={
 				wide
 					? "w-[min(1200px,calc(100vw-4rem))]"
@@ -321,15 +320,35 @@ function DatePickerDemo() {
 
 function DataTableDemo() {
 	const rows: Array<Record<string, unknown>> = [
-		{ id: "INV-1042", customer: "Northwind", total: "$4,800" },
-		{ id: "INV-1043", customer: "Contoso", total: "$2,150" },
+		{
+			id: "INV-1042",
+			supplier: "Northwind Trading",
+			amount: "MYR 18,420",
+			status: "Approved",
+		},
+		{
+			id: "INV-1043",
+			supplier: "Contoso Logistics",
+			amount: "MYR 7,900",
+			status: "Pending",
+		},
 	];
 	return (
 		<DataTable
 			columns={[
 				{ key: "id", title: "Invoice", sortable: true },
-				{ key: "customer", title: "Customer", filterable: true },
-				{ key: "total", title: "Total" },
+				{ key: "supplier", title: "Supplier", filterable: true },
+				{ key: "amount", title: "Amount" },
+				{
+					key: "status",
+					title: "Status",
+					render: (value) => (
+						<StatusBadge
+							status={value === "Approved" ? "success" : "pending"}
+							label={String(value)}
+						/>
+					),
+				},
 			]}
 			data={rows}
 			getRowId={(row) => String(row.id)}
@@ -395,16 +414,18 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 					<div className="grid gap-3">
 						<Alert>
 							<CheckIcon />
-							<AlertTitle>Ready</AlertTitle>
+							<AlertTitle>Ledger ready for review</AlertTitle>
 							<AlertDescription>
-								The ledger is ready for review.
+								All July 2026 journals passed validation. Posting can proceed
+								after approval.
 							</AlertDescription>
 						</Alert>
 						<Alert variant="destructive">
 							<BellIcon />
-							<AlertTitle>Action required</AlertTitle>
+							<AlertTitle>Period locked</AlertTitle>
 							<AlertDescription>
-								Resolve the validation errors before posting.
+								July 2026 is closed. Resolve the out-of-balance journal before
+								posting to August.
 							</AlertDescription>
 						</Alert>
 					</div>
@@ -650,21 +671,31 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 				<Frame>
 					<Dialog>
 						<DialogTrigger asChild>
-							<Button>Edit profile</Button>
+							<Button>Edit supplier contact</Button>
 						</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
-								<DialogTitle>Edit profile</DialogTitle>
+								<DialogTitle>Edit supplier contact</DialogTitle>
 								<DialogDescription>
-									Update the display name for this workspace.
+									Update the finance contact for Northwind Trading Sdn. Bhd.
 								</DialogDescription>
 							</DialogHeader>
-							<Input aria-label="Display name" defaultValue="Afenda Operator" />
+							<div className="grid gap-4">
+								<FormField label="Contact name" required>
+									<Input defaultValue="Aisha Rahman" />
+								</FormField>
+								<FormField label="Email address" required>
+									<Input
+										type="email"
+										defaultValue="finance@northwind.example"
+									/>
+								</FormField>
+							</div>
 							<DialogFooter>
 								<DialogClose asChild>
 									<Button variant="outline">Cancel</Button>
 								</DialogClose>
-								<Button>Save</Button>
+								<Button>Save contact</Button>
 							</DialogFooter>
 						</DialogContent>
 					</Dialog>
@@ -1094,16 +1125,47 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 								</SheetTrigger>
 								<SheetContent side={side}>
 									<SheetHeader>
-										<SheetTitle>{side} sheet</SheetTitle>
+										<SheetTitle>
+											{side === "right" ? "Invoice INV-1048" : `${side} sheet`}
+										</SheetTitle>
 										<SheetDescription>
-											Responsive supporting content.
+											{side === "right"
+												? "Northwind Trading · awaiting finance approval."
+												: "Supporting ERP panel layout."}
 										</SheetDescription>
 									</SheetHeader>
-									<div className="p-4">Sheet body</div>
+									<div className="grid gap-3 p-4">
+										{side === "right" ? (
+											<>
+												<KeyValue
+													label="Amount"
+													value="MYR 18,420.00"
+													orientation="horizontal"
+													size="sm"
+												/>
+												<KeyValue
+													label="Due date"
+													value="15 Aug 2026"
+													orientation="horizontal"
+													size="sm"
+												/>
+												<StatusBadge
+													status="pending"
+													label="Awaiting approval"
+												/>
+											</>
+										) : (
+											<p className="text-sm text-muted-foreground">
+												Use the right-side inspector for record detail. Other
+												sides remain available for rare layout needs.
+											</p>
+										)}
+									</div>
 									<SheetFooter>
 										<SheetClose asChild>
-											<Button>Close</Button>
+											<Button variant="outline">Close</Button>
 										</SheetClose>
+										{side === "right" ? <Button>Approve invoice</Button> : null}
 									</SheetFooter>
 								</SheetContent>
 							</Sheet>
@@ -1237,19 +1299,13 @@ export function ComponentShowcase({ component }: { component: ComponentKey }) {
 		case "status-badge":
 			return (
 				<Frame>
-					<div className="grid gap-3">
-						{CVA_COVERAGE["status-badge"].status.map((status) => (
-							<Matrix key={status}>
-								{CVA_COVERAGE["status-badge"].size.map((size) => (
-									<StatusBadge
-										key={`${status}-${size}`}
-										status={status}
-										size={size}
-										label={`${status} ${size}`}
-									/>
-								))}
-							</Matrix>
-						))}
+					<div className="flex flex-wrap gap-3">
+						<StatusBadge status="success" label="Posted" />
+						<StatusBadge status="pending" label="Awaiting approval" />
+						<StatusBadge status="error" label="Posting failed" />
+						<StatusBadge status="warning" label="Evidence incomplete" />
+						<StatusBadge status="inactive" label="Archived" />
+						<StatusBadge status="active" label="Active" />
 					</div>
 				</Frame>
 			);

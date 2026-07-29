@@ -63,10 +63,9 @@ export function PostSalesOrderForm({ canPost }: PostSalesOrderFormProps) {
 				<Alert role="status">
 					<AlertTitle>Order posted</AlertTitle>
 					<AlertDescription>
-						{state.data.order.code} · party {state.data.order.partyCode} ·{" "}
-						{state.data.order.currencyCode}{" "}
-						{state.data.order.documentTotal ?? "0"} ·{" "}
-						{state.data.order.lines.length} line(s) frozen.
+						{state.data.order.code} · party {state.data.order.customer.code} ·{" "}
+						{state.data.order.currencyCode} {state.data.order.documentTotal} ·
+						released.
 					</AlertDescription>
 				</Alert>
 			) : null}

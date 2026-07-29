@@ -1,47 +1,36 @@
-import type { MasterAuthorizationPort } from "@afenda/master-data";
-
 import type { SalesAuthorizationPort } from "./authorization";
-import { createMasterDataLookupPort } from "./master-lookup";
-import type { MasterLookupPort, MutationPorts } from "./ports";
-import { createProductionMutationPorts } from "./production-ports";
+import type {
+	AvailabilityCheckPort,
+	ClockPort,
+	CreditCheckPort,
+	MasterDataSnapshotPort,
+	SalesStore,
+	TaxCalculationPort,
+} from "./ports";
+import { createSystemClock } from "./production-ports";
 import { resolveSalesStore } from "./resolve-store";
-import type { SalesStore } from "./store";
 
 export type SalesCommandOptions = {
 	store?: SalesStore;
-	ports?: MutationPorts;
-	masters?: MasterLookupPort;
-	/** Composition-root injected — never import `@afenda/admin` here. */
 	authorization?: SalesAuthorizationPort;
-	/** Forwarded to master-data public lookups (read permission). */
-	masterAuthorization?: MasterAuthorizationPort;
+	masterData?: MasterDataSnapshotPort;
+	tax?: TaxCalculationPort;
+	credit?: CreditCheckPort;
+	availability?: AvailabilityCheckPort;
+	clock?: ClockPort;
 };
-
-export function resolvePorts(ports?: MutationPorts): MutationPorts {
-	return ports ?? createProductionMutationPorts();
-}
-
-export function resolveStore(store?: SalesStore): SalesStore {
-	return resolveSalesStore(store);
-}
-
-export function resolveMasters(
-	masters?: MasterLookupPort,
-	masterAuthorization?: MasterAuthorizationPort,
-): MasterLookupPort {
-	return masters ?? createMasterDataLookupPort(masterAuthorization);
-}
-
-export function resolveCommandDeps(options: SalesCommandOptions = {}): {
-	store: SalesStore;
-	ports: MutationPorts;
-	masters: MasterLookupPort;
-	authorization: SalesAuthorizationPort | undefined;
-} {
+export type SalesQueryOptions = Pick<
+	SalesCommandOptions,
+	"store" | "authorization" | "clock"
+>;
+export function resolveSalesDeps(options: SalesCommandOptions = {}) {
 	return {
-		store: resolveStore(options.store),
-		ports: resolvePorts(options.ports),
-		masters: resolveMasters(options.masters, options.masterAuthorization),
+		store: resolveSalesStore(options.store),
 		authorization: options.authorization,
+		masterData: options.masterData,
+		tax: options.tax,
+		credit: options.credit,
+		availability: options.availability,
+		clock: options.clock ?? createSystemClock(),
 	};
 }

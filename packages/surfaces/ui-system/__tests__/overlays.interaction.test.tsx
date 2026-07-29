@@ -29,6 +29,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	Drawer,
+	DrawerClose,
 	DrawerContent,
 	DrawerDescription,
 	DrawerTitle,
@@ -127,9 +128,9 @@ describe("Sheet — keyboard/focus smoke", () => {
 });
 
 describe("Drawer — keyboard/focus and portal smoke", () => {
-	it("opens in a portal, closes on Escape, and restores trigger focus", async () => {
+	it("opens in a portal, contains focus, closes on Escape, and restores trigger focus", async () => {
 		const user = userEvent.setup();
-		render(
+		const { container } = render(
 			<Drawer>
 				<DrawerTrigger>Open quick filters</DrawerTrigger>
 				<DrawerContent>
@@ -138,6 +139,7 @@ describe("Drawer — keyboard/focus and portal smoke", () => {
 						Limit the records shown in this workspace.
 					</DrawerDescription>
 					<button type="button">Apply filters</button>
+					<DrawerClose>Cancel filters</DrawerClose>
 				</DrawerContent>
 			</Drawer>,
 		);
@@ -145,7 +147,17 @@ describe("Drawer — keyboard/focus and portal smoke", () => {
 		const trigger = screen.getByRole("button", { name: "Open quick filters" });
 		await user.click(trigger);
 		const drawer = await screen.findByRole("dialog", { name: "Quick filters" });
-		expect(document.body).toContainElement(drawer);
+		expect(container.contains(drawer)).toBe(false);
+
+		const apply = screen.getByRole("button", { name: "Apply filters" });
+		const cancel = screen.getByRole("button", { name: "Cancel filters" });
+		apply.focus();
+		await user.tab();
+		expect(cancel).toHaveFocus();
+		await user.tab();
+		await waitFor(() =>
+			expect(drawer).toContainElement(document.activeElement as HTMLElement),
+		);
 
 		await user.keyboard("{Escape}");
 		await waitFor(() =>
@@ -153,12 +165,32 @@ describe("Drawer — keyboard/focus and portal smoke", () => {
 		);
 		expect(trigger).toHaveFocus();
 	});
+
+	it("does not open from a disabled trigger", async () => {
+		const user = userEvent.setup();
+		render(
+			<Drawer>
+				<DrawerTrigger disabled>Unavailable filters</DrawerTrigger>
+				<DrawerContent>
+					<DrawerTitle>Unavailable filters</DrawerTitle>
+					<DrawerDescription>Filters are locked.</DrawerDescription>
+				</DrawerContent>
+			</Drawer>,
+		);
+
+		const trigger = screen.getByRole("button", {
+			name: "Unavailable filters",
+		});
+		expect(trigger).toBeDisabled();
+		await user.click(trigger);
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	});
 });
 
 describe("Menubar — keyboard, disabled state, and portal smoke", () => {
 	it("navigates enabled commands, skips disabled commands, and restores focus", async () => {
 		const user = userEvent.setup();
-		render(
+		const { container } = render(
 			<Menubar>
 				<MenubarMenu>
 					<MenubarTrigger>File</MenubarTrigger>
@@ -174,10 +206,11 @@ describe("Menubar — keyboard, disabled state, and portal smoke", () => {
 		const trigger = screen.getByRole("menuitem", { name: "File" });
 		await user.click(trigger);
 		const menu = await screen.findByRole("menu");
-		expect(document.body).toContainElement(menu);
+		expect(container.contains(menu)).toBe(false);
 		expect(
 			screen.getByRole("menuitem", { name: "Restricted command" }),
 		).toHaveAttribute("data-disabled");
+		await user.keyboard("{ArrowDown}");
 		expect(screen.getByRole("menuitem", { name: "Open record" })).toHaveFocus();
 
 		await user.keyboard("{ArrowDown}");

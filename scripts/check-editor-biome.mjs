@@ -11,6 +11,7 @@ import path from "node:path";
 import {
 	BIOME_FORMATTER_LANGUAGES,
 	BIOME_LSP_BIN_PLATFORM_MAP,
+	BUILTIN_CSS_FORMATTER_LANGUAGES,
 	deepEqual,
 	expectSetting,
 	FORBIDDEN_SETTING_KEYS,
@@ -197,6 +198,21 @@ function checkFormatters(settings) {
 			] !== "biomejs.biome"
 		) {
 			errors.push(`[${lang}].editor.defaultFormatter must be "biomejs.biome"`);
+		}
+	}
+
+	for (const lang of BUILTIN_CSS_FORMATTER_LANGUAGES) {
+		const block = settings[`[${lang}]`];
+		if (
+			!block ||
+			typeof block !== "object" ||
+			/** @type {Record<string, unknown>} */ (block)[
+				"editor.defaultFormatter"
+			] !== "vscode.css-language-features"
+		) {
+			errors.push(
+				`[${lang}].editor.defaultFormatter must be "vscode.css-language-features"`,
+			);
 		}
 	}
 

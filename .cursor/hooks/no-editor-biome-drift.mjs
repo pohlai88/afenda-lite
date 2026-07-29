@@ -7,6 +7,8 @@ import {
 	FORBIDDEN_SETTING_KEYS,
 	NODE_WRAPPER_LSP_BIN,
 	PRETTIER_DISABLE_LANGUAGES,
+	BUILTIN_CSS_FORMATTER_LANGUAGES,
+	BIOME_FORMATTER_LANGUAGES,
 	REQUIRED_SCALAR_SETTINGS,
 	WATCHER_EXCLUDE_PATTERNS,
 } from "../../scripts/lib/editor-posture.mjs";
@@ -93,13 +95,7 @@ function findDrift(text) {
 		reasons.push("tailwindCSS.files.exclude is required");
 	}
 
-	const biomeLangs = [
-		"typescript",
-		"typescriptreact",
-		"javascript",
-		"javascriptreact",
-	];
-	for (const lang of biomeLangs) {
+	for (const lang of BIOME_FORMATTER_LANGUAGES) {
 		const blockRe = new RegExp(
 			`\\["${lang}"\\][\\s\\S]*?"editor\\.defaultFormatter"\\s*:\\s*"([^"]+)"`,
 		);
@@ -107,6 +103,18 @@ function findDrift(text) {
 		if (match && match[1] !== "biomejs.biome") {
 			reasons.push(
 				`[${lang}].editor.defaultFormatter must be "biomejs.biome" (found "${match[1]}")`,
+			);
+		}
+	}
+
+	for (const lang of BUILTIN_CSS_FORMATTER_LANGUAGES) {
+		const blockRe = new RegExp(
+			`\\["${lang}"\\][\\s\\S]*?"editor\\.defaultFormatter"\\s*:\\s*"([^"]+)"`,
+		);
+		const match = text.match(blockRe);
+		if (match && match[1] !== "vscode.css-language-features") {
+			reasons.push(
+				`[${lang}].editor.defaultFormatter must be "vscode.css-language-features" (found "${match[1]}")`,
 			);
 		}
 	}

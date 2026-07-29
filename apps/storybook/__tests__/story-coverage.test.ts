@@ -62,6 +62,26 @@ const standardBenchmarkExports = [
 	"Composition",
 	"DoAndDoNot",
 ] as const;
+const cardStoryExports = [
+	"Overview",
+	"SemanticUsage",
+	"AdaptiveLayout",
+	"StatesAndAccessibility",
+	"Composition",
+	"DoAndDoNot",
+] as const;
+const dataTableStoryExports = [
+	"Overview",
+	"SemanticUsage",
+	"ControlledUsage",
+	"AuthorizationAndEligibility",
+	"AdaptiveLayout",
+	"VariantsAndSizes",
+	"StatesAndAccessibility",
+	"EmptyAndFilteredStates",
+	"Composition",
+	"DoAndDoNot",
+] as const;
 const buttonStoryExports = [
 	"Composition",
 	"DoAndDoNot",
@@ -72,10 +92,16 @@ const buttonStoryExports = [
 	"StatesAndAccessibility",
 	"Variants",
 ] as const;
-const foundationStories: ReadonlySet<string> = new Set([
-	"mineral-calm-foundation",
-	"tokens",
-]);
+const statusBadgeStoryExports = [
+	"Composition",
+	"DoAndDoNot",
+	"Overview",
+	"Usage",
+	"Sizes",
+	"StatesAndAccessibility",
+	"Variants",
+] as const;
+const foundationStories: ReadonlySet<string> = new Set(["app-shell", "tokens"]);
 
 function moduleNames(directory: string, suffix: string): string[] {
 	return fs
@@ -317,6 +343,21 @@ describe("Storybook UI-system coverage", () => {
 		expect(allStories).toEqual(expect.arrayContaining([...foundationStories]));
 	});
 
+	it("keeps every suite flat under the UI System root", () => {
+		const titles = moduleNames(storyRoot, ".stories.tsx").map((story) => {
+			const text = fs.readFileSync(
+				path.join(storyRoot, `${story}.stories.tsx`),
+				"utf8",
+			);
+			const title = text.match(/title:\s*"(UI System\/[^"]+)"/)?.[1];
+			if (!title) throw new Error(`Missing UI System title for ${story}.`);
+			expect(title.split("/")).toHaveLength(2);
+			return title;
+		});
+
+		expect(new Set(titles).size).toBe(titles.length);
+	});
+
 	it("uses the public UI-system barrel and required story tags", () => {
 		for (const story of moduleNames(storyRoot, ".stories.tsx")) {
 			const text = fs.readFileSync(
@@ -418,6 +459,10 @@ describe("Storybook UI-system coverage", () => {
 		expect(contractDocs).not.toContain("<ArgTypes />");
 		expect(contractDocs).not.toContain('title="Props reference"');
 		expect(contractDocs).toContain("<Source code={publicImport}");
+		expect(contractDocs).toContain("export function contractDocsParameters");
+		expect(contractDocs).toContain(
+			"page: () => <ContractDocsPage evidence={evidence} title={title} />",
+		);
 		expect(stylesheet).not.toContain(".afenda-docs");
 		expect(stylesheet).not.toContain("border-color: var(--border)");
 		expect(stylesheet).not.toContain("background: var(--background)");
@@ -433,19 +478,14 @@ describe("Storybook UI-system coverage", () => {
 		);
 		expect(tokens).toContain("text-2xl font-semibold tracking-tight");
 		expect(tokens).not.toContain("text-3xl font-bold tracking-tight");
-		const mineralCalm = fs.readFileSync(
-			path.join(storyRoot, "mineral-calm-foundation.stories.tsx"),
-			"utf8",
-		);
-		expect(mineralCalm.match(/tags: \["visual"\]/g)).toHaveLength(2);
 		const visualSpec = fs.readFileSync(
 			path.join(appRoot, "visual-tests/storybook.visual.spec.ts"),
 			"utf8",
 		);
-		expect(visualSpec).toContain("expect(stories).toHaveLength(75)");
-		expect(visualSpec).toContain('"ui-system-overlays-drawer--overview"');
-		expect(visualSpec).toContain('"ui-system-navigation-menubar--overview"');
-		expect(visualSpec).toContain("ui-system-forms-button--focus-visible-");
+		expect(visualSpec).toContain("expect(stories).toHaveLength(74)");
+		expect(visualSpec).toContain('"ui-system-drawer--overview"');
+		expect(visualSpec).toContain('"ui-system-menubar--overview"');
+		expect(visualSpec).toContain("ui-system-button--focus-visible-");
 	});
 
 	it("projects validated immutable contract evidence for every visual component", async () => {
@@ -536,6 +576,21 @@ describe("Storybook UI-system coverage", () => {
 		);
 	});
 
+	it("wires contractEvidence for every public component story", async () => {
+		const evidence = await createStorybookEvidence();
+		for (const component of publicComponentNames()) {
+			const text = fs.readFileSync(
+				path.join(storyRoot, `${component}.stories.tsx`),
+				"utf8",
+			);
+			expect(text).toContain(`contractEvidence("ui.${component}")`);
+			expect(evidence[`ui.${component}`]).toBeDefined();
+			expect(text).toContain("contractDocsParameters(evidence,");
+			expect(text).toContain('from "./contract-docs"');
+			expect(text).not.toMatch(/\/metadata(?:\/|")/);
+		}
+	});
+
 	it("enforces the Phase 1 evidence shape on benchmark suites only", async () => {
 		const evidence = await createStorybookEvidence();
 		for (const component of benchmarkComponents) {
@@ -549,12 +604,21 @@ describe("Storybook UI-system coverage", () => {
 
 			expect(text).toContain(`contractEvidence("ui.${component}")`);
 			const requiredExports =
-				component === "button" ? buttonStoryExports : standardBenchmarkExports;
+				component === "button"
+					? buttonStoryExports
+					: component === "status-badge"
+						? statusBadgeStoryExports
+						: component === "card"
+							? cardStoryExports
+							: component === "data-table"
+								? dataTableStoryExports
+								: standardBenchmarkExports;
 			for (const storyExport of requiredExports) {
 				expect(text).toContain(`export const ${storyExport}`);
 			}
 			if (
 				component !== "button" &&
+				component !== "status-badge" &&
 				(componentEvidence.variants.length > 0 ||
 					componentEvidence.sizes.length > 0)
 			) {
@@ -584,7 +648,7 @@ describe("Storybook UI-system coverage", () => {
 		expect([...stories.keys()].sort()).toEqual([...buttonStoryExports]);
 		expect(namedExportNames(source)).toEqual([...buttonStoryExports]);
 		expect(source.text).toContain('contractEvidence("ui.button")');
-		expect(source.text).toContain('title: "UI System/Forms/Button"');
+		expect(source.text).toContain('title: "UI System/Button"');
 		expect(source.text).not.toContain('from "./catalog"');
 		expect(source.text).not.toContain('from "./interactions"');
 		expect(source.text).not.toMatch(/@afenda\/ui-system\//);
@@ -616,7 +680,7 @@ describe("Storybook UI-system coverage", () => {
 			"title",
 		);
 		expect(metaTags).toEqual(["autodocs", "test"]);
-		expect(title).toBe("UI System/Forms/Button");
+		expect(title).toBe("UI System/Button");
 
 		for (const [name, story] of stories) {
 			const storyTags = stringArrayProperty(story, "tags");
@@ -629,14 +693,22 @@ describe("Storybook UI-system coverage", () => {
 			.toLowerCase()
 			.replaceAll(/[^a-z0-9]+/g, "-")
 			.replace(/^-|-$/g, "");
-		expect(`${titleId}--overview`).toBe("ui-system-forms-button--overview");
+		expect(`${titleId}--overview`).toBe("ui-system-button--overview");
 
 		const variants = stories.get("Variants");
 		const sizes = stories.get("Sizes");
 		const semanticUsage = stories.get("SemanticUsage");
 		const states = stories.get("StatesAndAccessibility");
 		const navigation = stories.get("Navigation");
-		if (!variants || !sizes || !semanticUsage || !states || !navigation) {
+		const composition = stories.get("Composition");
+		if (
+			!variants ||
+			!sizes ||
+			!semanticUsage ||
+			!states ||
+			!navigation ||
+			!composition
+		) {
 			throw new Error("Button governance stories are incomplete.");
 		}
 
@@ -644,13 +716,20 @@ describe("Storybook UI-system coverage", () => {
 			[...evidence.variants].sort(),
 		);
 		expect(buttonAxisValues(sizes, "size")).toEqual([...evidence.sizes].sort());
-		for (const story of [semanticUsage, states, navigation]) {
+		for (const story of [semanticUsage, states, navigation, composition]) {
 			expect(objectProperty(story, "play")).toBeDefined();
 		}
 		expect(containsJsxAttribute(navigation, "Button", "asChild")).toBe(true);
 		expect(
 			containsJsxAttribute(navigation, "a", "href", "/suppliers/SUP-1042"),
 		).toBe(true);
+		expect(source.text).toContain('include: ["variant", "size", "disabled"]');
+		expect(source.text).toContain("ButtonOperationalOverview");
+		expect(source.text).not.toContain("Geist Variable");
+		expect(source.text).toContain("shadow-none");
+		expect(source.text).toContain("Focus remains distinct across surfaces");
+		expect(source.text).toContain("Save supplier");
+		expect(source.text).toContain("Supplier changes are being saved.");
 	});
 
 	it("declares every CVA axis and option without stale entries", () => {

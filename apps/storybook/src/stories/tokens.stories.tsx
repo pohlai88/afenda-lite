@@ -1,13 +1,16 @@
 import {
+	Badge,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
 	Separator,
+	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { CSSProperties, ReactNode } from "react";
+import { StorySection } from "./evidence";
 
 type ColorRole = Readonly<{
 	name: string;
@@ -156,9 +159,35 @@ function ColorGrid({ roles }: { roles: readonly ColorRole[] }) {
 						} satisfies CSSProperties
 					}
 				>
-					<p className="font-semibold">{role.name}</p>
-					<code className="mt-5 block text-xs">{role.background}</code>
-					<code className="block text-xs">{role.foreground}</code>
+					<p
+						className={
+							role.foreground === "--muted-foreground"
+								? "text-xl font-bold"
+								: "font-semibold"
+						}
+					>
+						{role.name}
+					</p>
+					<code
+						className="mt-5 block text-xs"
+						style={
+							role.foreground === "--muted-foreground"
+								? { color: "var(--foreground)" }
+								: undefined
+						}
+					>
+						{role.background}
+					</code>
+					<code
+						className="block text-xs"
+						style={
+							role.foreground === "--muted-foreground"
+								? { color: "var(--foreground)" }
+								: undefined
+						}
+					>
+						{role.foreground}
+					</code>
 					{role.border ? (
 						<code className="block text-xs">{role.border}</code>
 					) : null}
@@ -168,28 +197,31 @@ function ColorGrid({ roles }: { roles: readonly ColorRole[] }) {
 	);
 }
 
-function TokenSection({
-	title,
-	description,
-	children,
-}: {
+type WorkbenchSectionProps = Readonly<{
+	id: string;
 	title: string;
 	description: string;
 	children: ReactNode;
-}) {
+}>;
+
+function WorkbenchSection({
+	id,
+	title,
+	description,
+	children,
+}: WorkbenchSectionProps) {
 	return (
-		<section
-			className="space-y-4"
-			aria-labelledby={`tokens-${title.toLowerCase().replaceAll(" ", "-")}`}
-		>
-			<div>
+		<section className="grid gap-4" aria-labelledby={id}>
+			<div className="grid gap-1">
 				<h2
-					className="text-lg font-medium"
-					id={`tokens-${title.toLowerCase().replaceAll(" ", "-")}`}
+					className="text-base font-semibold tracking-tight text-foreground"
+					id={id}
 				>
 					{title}
 				</h2>
-				<p className="text-sm text-muted-foreground">{description}</p>
+				<p className="max-w-5xl text-sm leading-5 text-foreground-secondary">
+					{description}
+				</p>
 			</div>
 			{children}
 		</section>
@@ -199,50 +231,85 @@ function TokenSection({
 function TokensOverview() {
 	return (
 		<main
-			className="mx-auto w-full max-w-6xl space-y-8"
+			className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-6 sm:px-6 lg:px-8"
 			aria-labelledby="token-page-title"
 		>
-			<header className="space-y-2">
-				<p className="text-sm font-medium text-muted-foreground">
-					Afenda UI foundation
-				</p>
-				<h1
-					className="text-2xl font-semibold tracking-tight"
-					id="token-page-title"
-				>
-					Semantic design tokens
-				</h1>
-				<p className="max-w-3xl text-sm text-muted-foreground">
-					Every sample resolves the active CSS custom property from tokens.css.
-					Switch the Storybook theme to verify the governed light and dark
-					values.
-				</p>
+			<header className="grid gap-5 border-b pb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+				<div className="grid gap-2">
+					<p className="text-sm font-medium text-foreground-secondary">
+						Afenda UI foundation
+					</p>
+					<div className="grid gap-1">
+						<h1
+							className="text-2xl font-semibold tracking-tight"
+							id="token-page-title"
+						>
+							Semantic design tokens
+						</h1>
+						<p className="max-w-5xl text-sm leading-6 text-foreground-secondary">
+							Every sample resolves the active CSS custom property from
+							tokens.css. Switch the Storybook theme to verify the governed
+							light and dark values. Prefer semantic roles over inventing
+							feature-owned hex.
+						</p>
+					</div>
+				</div>
+				<dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-card p-4">
+					<div className="grid gap-1">
+						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							Theme source
+						</dt>
+						<dd className="text-sm">tokens.css</dd>
+					</div>
+					<div className="grid gap-1">
+						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							Verification
+						</dt>
+						<dd className="text-sm">Light and dark</dd>
+					</div>
+					<div className="grid gap-1">
+						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							Scope
+						</dt>
+						<dd className="text-sm">Foundation roles</dd>
+					</div>
+					<div className="grid gap-1">
+						<dt className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+							Use
+						</dt>
+						<dd className="text-sm">Semantic components</dd>
+					</div>
+				</dl>
 			</header>
 
 			<Separator />
 
-			<TokenSection
+			<WorkbenchSection
+				id="foundation-roles"
 				title="Foundation roles"
 				description="Neutral surfaces and action emphasis used across standard component composition."
 			>
 				<ColorGrid roles={foundationRoles} />
-			</TokenSection>
+			</WorkbenchSection>
 
-			<TokenSection
+			<WorkbenchSection
+				id="status-roles"
 				title="ERP status roles"
 				description="Complete background, readable foreground, and border triplets for lifecycle and outcome communication."
 			>
 				<ColorGrid roles={statusRoles} />
-			</TokenSection>
+			</WorkbenchSection>
 
-			<TokenSection
+			<WorkbenchSection
+				id="business-surfaces"
 				title="Business surfaces"
 				description="Workspace depth, collection rows, and control affordances without feature-owned color invention."
 			>
 				<ColorGrid roles={surfaceRoles} />
-			</TokenSection>
+			</WorkbenchSection>
 
-			<TokenSection
+			<WorkbenchSection
+				id="chart-sequence"
 				title="Chart sequence"
 				description="Ordered categorical accents; chart meaning and accessible labels remain consumer-owned."
 			>
@@ -257,20 +324,21 @@ function TokensOverview() {
 							<span className="block text-xs font-medium">
 								Series {index + 1}
 							</span>
-							<code className="block text-[0.6875rem] text-muted-foreground">
+							<code className="block text-[0.6875rem] text-foreground-secondary">
 								{token}
 							</code>
 						</li>
 					))}
 				</ol>
-			</TokenSection>
+			</WorkbenchSection>
 
-			<TokenSection
+			<WorkbenchSection
+				id="density-and-elevation"
 				title="Density and elevation"
 				description="Shared control rhythm, table density, radius, and elevation primitives."
 			>
 				<div className="grid gap-4 lg:grid-cols-2">
-					<Card>
+					<Card className="shadow-none">
 						<CardHeader>
 							<CardTitle>Governed heights</CardTitle>
 							<CardDescription>
@@ -285,7 +353,9 @@ function TokensOverview() {
 									style={{ height: variable(token) }}
 								>
 									<span className="text-sm font-medium">{name}</span>
-									<code className="text-xs text-muted-foreground">{token}</code>
+									<code className="text-xs text-foreground-secondary">
+										{token}
+									</code>
 								</div>
 							))}
 						</CardContent>
@@ -310,9 +380,10 @@ function TokensOverview() {
 						))}
 					</div>
 				</div>
-			</TokenSection>
+			</WorkbenchSection>
 
-			<TokenSection
+			<WorkbenchSection
+				id="motion"
 				title="Motion"
 				description="Hover the track to compare governed durations using the standard easing curve."
 			>
@@ -336,20 +407,20 @@ function TokensOverview() {
 						</div>
 					))}
 				</div>
-			</TokenSection>
+			</WorkbenchSection>
 		</main>
 	);
 }
 
 const meta = {
-	title: "UI System/Foundation/Tokens",
+	title: "UI System/Tokens",
 	component: TokensOverview,
 	tags: ["autodocs", "test"],
 	parameters: {
 		docs: {
 			description: {
 				component:
-					"Visual evidence for the semantic color, density, elevation, radius, and motion roles owned by the UI-system public stylesheet.",
+					"Visual evidence for the semantic color, density, elevation, radius, and motion roles owned by the UI-system public stylesheet. Foundation suite — not a component contract surface.",
 			},
 		},
 	},
@@ -358,4 +429,194 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Overview: Story = {};
+export const Overview: Story = {
+	tags: ["visual"],
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"One foundation workbench: semantic token roles resolve from tokens.css. Switch Storybook theme to verify light and dark governed values.",
+			},
+		},
+	},
+	render: () => (
+		<div className="min-h-screen bg-canvas text-foreground">
+			<TokensOverview />
+		</div>
+	),
+};
+
+export const Usage: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Maps token families to ERP meaning: foundation surfaces, status triplets, and business depth — without inventing feature hex.",
+			},
+		},
+	},
+	render: () => (
+		<div className="grid w-full max-w-5xl gap-8">
+			<StorySection title="Foundation · canvas and card">
+				<ColorGrid roles={foundationRoles.slice(0, 3)} />
+			</StorySection>
+			<StorySection title="Status · outcome triplets">
+				<ColorGrid roles={statusRoles} />
+			</StorySection>
+			<StorySection title="Business surfaces">
+				<ColorGrid roles={surfaceRoles} />
+			</StorySection>
+		</div>
+	),
+};
+
+export const ControlledUsage: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Consume tokens via CSS variables or Tailwind semantic utilities from the UI-system stylesheet — never hardcode parallel hex in features.",
+			},
+		},
+	},
+	render: () => (
+		<div className="grid w-full max-w-md gap-3">
+			<div
+				className="rounded-lg border p-4"
+				style={{
+					backgroundColor: "var(--card)",
+					color: "var(--card-foreground)",
+					borderColor: "var(--border)",
+				}}
+			>
+				<p className="font-medium">Raised card sample</p>
+				<code className="mt-2 block text-xs text-foreground-secondary">
+					var(--card) · var(--card-foreground)
+				</code>
+			</div>
+			<p className="text-sm text-foreground-secondary">
+				Prefer `bg-card`, `text-foreground-secondary`, and status utilities from
+				`@afenda/ui-system` styles.
+			</p>
+		</div>
+	),
+};
+
+export const StatesAndAccessibility: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Status roles ship background, foreground, and border together so severity is not color-only. Verify contrast in both themes.",
+			},
+		},
+	},
+	render: () => <ColorGrid roles={statusRoles} />,
+};
+
+export const VariantsAndSizes: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Density inventory: control and table heights, elevation/radius pairs, and motion durations — not decorative one-offs.",
+			},
+		},
+	},
+	render: () => (
+		<div className="grid w-full max-w-5xl gap-6">
+			<div className="grid gap-2">
+				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+					Heights
+				</p>
+				{sizeTokens.map(({ name, token }) => (
+					<div
+						className="flex items-center justify-between rounded-md border bg-control-fill px-3"
+						key={token}
+						style={{ height: variable(token) }}
+					>
+						<span className="text-sm font-medium">{name}</span>
+						<code className="text-xs text-foreground-secondary">{token}</code>
+					</div>
+				))}
+			</div>
+			<div className="grid gap-2">
+				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+					Motion
+				</p>
+				{durationTokens.map((duration) => (
+					<code key={duration} className="text-sm">
+						{duration}
+					</code>
+				))}
+			</div>
+		</div>
+	),
+};
+
+export const Composition: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Compose token-backed Card chrome with Badge taxonomy and StatusBadge lifecycle — tokens stay in the stylesheet, meaning stays on components.",
+			},
+		},
+	},
+	render: () => (
+		<Card className="w-full max-w-md shadow-none">
+			<CardHeader>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="grid gap-1">
+						<CardTitle>Token-backed surface</CardTitle>
+						<CardDescription>bg-card · border · foreground</CardDescription>
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge variant="outline">Foundation</Badge>
+						<StatusBadge status="success" label="Contrast ready" />
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent className="text-sm text-foreground-secondary">
+				StatusBadge consumes status tokens. Do not invent a parallel success hex
+				in feature CSS.
+			</CardContent>
+		</Card>
+	),
+};
+
+export const DoAndDoNot: Story = {
+	parameters: {
+		docs: {
+			description: {
+				story:
+					"Do consume semantic roles from tokens.css. Do not invent feature-owned hex or drop status foreground/border pairs.",
+			},
+		},
+	},
+	render: () => (
+		<div className="grid max-w-5xl gap-6 sm:grid-cols-2">
+			<StorySection title="Do: semantic status triplet">
+				<div
+					className="rounded-lg border p-4"
+					style={{
+						backgroundColor: "var(--success-subtle)",
+						color: "var(--success-subtle-foreground)",
+						borderColor: "var(--success-border)",
+					}}
+				>
+					<p className="font-medium">Posted batch ready</p>
+					<code className="mt-2 block text-xs">
+						--success-subtle · foreground · border
+					</code>
+				</div>
+			</StorySection>
+			<StorySection title="Do not: invent feature hex">
+				<p className="text-sm text-foreground-secondary">
+					Do not hardcode `#22c55e` in product CSS, or use background-only color
+					to mean success without a readable foreground pair.
+				</p>
+			</StorySection>
+		</div>
+	),
+};

@@ -21,31 +21,41 @@ collections, catalogue mutation, or a public metadata subpath.
 For component evidence suites, `Overview` is the sole tagged
 visual-regression story. Additional stories provide usage, states and
 accessibility, composition, and approved variant/size evidence without
-silently multiplying the component overview inventory. The Mineral Calm
-foundation suite owns two representative tagged baselines: `SurfaceHierarchy`
-and `OperationalWorkspace`.
+silently multiplying the component overview inventory.
 Badge, Button, Card, DataTable, FormField, Input, MetricCard, PageHeader, and
 StatusBadge are the Phase 1 benchmark set. The other suites retain the central
 scenario infrastructure until they are migrated component by component;
 transitional checks do not pretend they already satisfy strict evidence parity.
 Storybook evidence never promotes component lifecycle automatically.
 
-The tagged inventory is 75 stories: one `Overview` for each of the 73 public
-component modules plus the two Mineral Calm foundation stories. Drawer and
-Menubar include behavioral play evidence and targeted open-portal screenshot
-tests.
+The tagged inventory is 73 stories: one `Overview` for each of the 73 public
+component modules. Drawer and Menubar include behavioral play evidence and
+targeted open-portal screenshot tests.
 The Button lane separately records variants, sizes, disabled and pending states,
 navigation, composition, hover, active, and focus-visible evidence.
 
 ## Foundation parity
 
-Storybook loads Tailwind, animation utilities, `@afenda/ui-system/styles.css`,
-and `@afenda/ui-system/base.css` before Storybook-owned Geist font rules. The
-workspace decorator is explicitly `bg-background`; the shared base stylesheet
-owns document canvas, body margin, foreground, and default border behavior.
-The theme decorator applies `light` or `dark` to the iframe document element and
-restores its prior classes on cleanup so portalled overlays inherit the same
-tokens as their trigger.
+`src/storybook.css` is the sole runtime stylesheet. It matches the live ERP's
+governed import stack—Tailwind, `tw-animate-css`, UI-system tokens, then
+UI-system base rules—before loading Storybook-owned Geist Sans and Mono fonts.
+Tailwind automatic discovery is disabled with `source(none)` and the stylesheet
+allowlists exactly three runtime sources: UI-system components, the preview
+decorator, and stories. Story files and helpers never import CSS themselves,
+and Storybook never imports `apps/web/globals.css` or UI-system source modules.
+
+The UI-system package owns semantic tokens and shared canvas, foreground, and
+border behavior. Tailwind Preflight owns browser resets. Storybook owns its
+consumer typography mapping and a narrow, scoped bridge for typography emitted
+by the Storybook Docs addon. The workspace decorator supplies only layout,
+canvas, and padding utilities; inherited base styles supply typography and
+foreground color. The theme decorator applies `light` or `dark` to the iframe
+document element and restores its prior classes on cleanup so portalled overlays
+inherit the same tokens as their trigger.
+
+Runtime CSS preserves live ERP motion. Screenshot-only focus, animation, and
+caret normalization belongs to Playwright through the visual configuration's
+`stylePath`; it is never mounted by the preview, stories, or helpers.
 
 ### Button governance benchmark
 

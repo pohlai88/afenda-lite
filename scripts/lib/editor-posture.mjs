@@ -119,8 +119,9 @@ export const BIOME_FORMATTER_LANGUAGES = [
 	"typescriptreact",
 	"json",
 	"jsonc",
-	"css",
 ];
+
+export const BUILTIN_CSS_FORMATTER_LANGUAGES = ["css"];
 
 /** Prettier must not claim product languages — Biome owns format + lint. */
 export const PRETTIER_DISABLE_LANGUAGES = [

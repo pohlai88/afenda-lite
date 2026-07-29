@@ -407,6 +407,9 @@ importers:
       recharts:
         specifier: 'catalog:'
         version: 3.10.1(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react-is@17.0.2)(react@19.2.7)(redux@5.0.1)
+      sonner:
+        specifier: 'catalog:'
+        version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       tw-animate-css:
         specifier: 'catalog:'
         version: 1.4.0
@@ -691,7 +694,7 @@ importers:
         version: link:../../runtime/rate-limit
       '@neondatabase/auth':
         specifier: 'catalog:'
-        version: 0.4.2-beta(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(better-call@1.1.8(zod@4.4.3))(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(nanostores@1.4.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
+        version: 0.4.2-beta(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
       server-only:
         specifier: 0.0.1
         version: 0.0.1
@@ -1505,6 +1508,31 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/surfaces/ui-blocks:
+    dependencies:
+      '@afenda/ui-system':
+        specifier: workspace:*
+        version: link:../ui-system
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.9
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.9)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.7(react@19.2.7)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/surfaces/ui-system:
     dependencies:
       '@tanstack/react-table':
@@ -1540,6 +1568,9 @@ importers:
       recharts:
         specifier: 'catalog:'
         version: 3.10.1(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react-is@17.0.2)(react@19.2.7)(redux@5.0.1)
+      shadcn:
+        specifier: 'catalog:'
+        version: 4.13.0(typescript@5.9.3)
       sonner:
         specifier: 'catalog:'
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1580,9 +1611,6 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
-      shadcn:
-        specifier: 'catalog:'
-        version: 4.13.0(typescript@5.9.3)
       tailwindcss:
         specifier: 'catalog:'
         version: 4.2.1
@@ -11305,7 +11333,7 @@ snapshots:
       - vitest
       - vue
 
-  '@neondatabase/auth-ui@0.2.1-beta(a03668ea84d6f9b25c75ec82b8072408)':
+  '@neondatabase/auth-ui@0.2.1-beta(bffa8ff747ddca81448b444743af7ad2)':
     dependencies:
       '@better-auth/passkey': 1.4.18(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.18(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10))(better-call@1.1.8(zod@4.4.3))(nanostores@1.4.0)
       '@captchafox/react': 1.13.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -11313,7 +11341,7 @@ snapshots:
       '@hcaptcha/react-hcaptcha': 1.17.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@hookform/resolvers': 5.4.0(react-hook-form@7.81.0(react@19.2.7))
       '@marsidev/react-turnstile': 1.5.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@neondatabase/auth': 0.4.2-beta(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(better-call@1.1.8(zod@4.4.3))(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(nanostores@1.4.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
+      '@neondatabase/auth': 0.4.2-beta(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
       '@radix-ui/react-avatar': 1.2.2(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-checkbox': 1.3.7(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-context': 1.2.0(@types/react@19.2.9)(react@19.2.7)
@@ -11377,10 +11405,10 @@ snapshots:
       - vitest
       - vue
 
-  '@neondatabase/auth@0.4.2-beta(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(better-call@1.1.8(zod@4.4.3))(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(nanostores@1.4.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)':
+  '@neondatabase/auth@0.4.2-beta(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)':
     dependencies:
       '@better-fetch/fetch': 1.1.21
-      '@neondatabase/auth-ui': 0.2.1-beta(a03668ea84d6f9b25c75ec82b8072408)
+      '@neondatabase/auth-ui': 0.2.1-beta(bffa8ff747ddca81448b444743af7ad2)
       '@supabase/auth-js': 2.79.0
       better-auth: 1.4.18(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
       jose: 6.1.2

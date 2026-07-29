@@ -1,21 +1,19 @@
 # `packages/`
 
-Workspace home for **`@afenda/*`** libraries consumed by `apps/web` and (narrowly) `apps/docs`. Rank-1 Platform (with **bands**) and Rank-2 Surfaces packages live here; Application code stays under `apps/*`.
+`packages/` is the workspace home for private **`@afenda/*`** libraries consumed by `apps/web` and, where explicitly declared, `apps/docs`.
 
-Import by package name only (`@afenda/<name>` or a declared `exports` subpath). Packages never import `apps/*`. Layer DAG and ERP governance: [docs-V2/monorepo](../docs-V2/monorepo/README.md) · [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) · [WORKSPACE-EDGE-REGISTER.yaml](../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml) · [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
+This folder provides the reusable platform, data-plane, ERP, intelligence, and surface packages behind Afenda-Lite. Applications stay under `apps/*`; package code stays under `packages/<category>/<name>/`.
 
-For engineers extending Platform or Surfaces; each package README is the consume / maintain entry. Agent checkout posture: [AGENTS.md](../AGENTS.md).
+Use this README when you need to find a package, confirm the allowed import shape, or run package-level maintenance gates. Engineers extending a specific library should then move to that package README or its `src/index.ts`.
 
-**Catalog version:** `packages-catalog/2026-07-26`
-**Layout state:** Phase 1–3 complete; one-level category nesting active (`packages/<category>/<name>`).  
-**ERP promotion state:** Phase 4 complete; Corporate Administration CA-0.3 remains scaffolded with runtime contracts and no domain capability.
-**Current roadmap:** See [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) (next governed delivery area: Phase 1 legal-company registry).
-**Production evidence:** Catalog status is valid only for the repository commit whose package-governance gate passes. See [docs-V2/monorepo](../docs-V2/monorepo/README.md) § Phase status.  
-**Last disk verification:** `pnpm governance:packages` OK · `2026-07-26` working tree (stamp commit SHA after merge).
+Import by package name only: `@afenda/<name>` or a declared `exports` subpath. Packages never import `apps/*`; dependency direction is governed by [docs-V2/monorepo](../docs-V2/monorepo/README.md), [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md), [WORKSPACE-EDGE-REGISTER.yaml](../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml), and [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
 
-Package identity remains `@afenda/<name>` regardless of its physical category folder. Category nesting does not change package names or consumer imports. Categories are not packages — do not publish `@afenda/foundation`, `@afenda/erp`, etc. All packages are workspace-private unless a package manifest explicitly declares an approved publication policy.
+**Layout state:** one-level category nesting is active: `packages/<category>/<name>/`.
+**Package identity:** physical category folders do not change package names or consumer imports.
+**Publication posture:** packages are workspace-private unless a package manifest explicitly declares an approved publication policy.
+**Production evidence:** catalog claims are valid for a candidate commit only after `pnpm governance:packages` passes.
 
-Band identifiers are stable classification labels, not numeric dependency levels. Rank 1E is reserved. Rank 1X identifies constrained intelligence capabilities and does not grant lateral or unrestricted imports.
+Categories are not packages; do not publish or import `@afenda/foundation`, `@afenda/erp`, or similar category names. Band identifiers classify responsibilities; they do not grant dependency rights. Rank 1E is reserved. Rank 1X identifies constrained intelligence capabilities and does not allow lateral or unrestricted imports.
 
 ## Layers
 
@@ -54,6 +52,8 @@ Same-band imports are allowed only when listed in the edge register. One data-pl
 | [`@afenda/ui-system`](./surfaces/ui-system/README.md) | Browser/SSR | Active | Owned-source shadcn/Radix primitives + semantic tokens (flat barrel) |
 | [`@afenda/emails`](./surfaces/emails/README.md) | Node (React Email) | Active | React Email templates for app-owned mail composition |
 
+Unregistered package folders are not governed catalog entries until they are added to the module catalog, workspace edge register, and package governance checks in the same mission.
+
 ### Platform Foundation — Rank 1A — [`foundation/`](./foundation/README.md)
 
 | Package | Runtime | Status | Role |
@@ -75,7 +75,7 @@ Same-band imports are allowed only when listed in the edge register. One data-pl
 | [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Universal | `.` | Active | Sliding-window abuse limiter (Upstash; memory = local/test only) |
 | [`@afenda/cache`](./runtime/cache/README.md) | Universal | `.` | Active | L1 process + Upstash Redis L2 (fail closed in production without Upstash) |
 
-**Runtime-specific subpath exports:** Packages with Node-only dependencies (e.g., `prom-client`, `pino`, `node:fs`) expose runtime-specific subpaths to prevent accidental bundling into Edge/Vercel Functions. Pattern: `/core` (types), `/node` (Node implementation), `/edge` (Edge-safe emit), `/testing` (test utilities). See `@afenda/logger` for reference implementation; `@afenda/metrics` migration planned ([docs-V2/_scratch/runtime-subpath-exports-audit.md](../docs-V2/_scratch/runtime-subpath-exports-audit.md)).
+**Runtime-specific subpath exports:** packages with Node-only dependencies, such as `prom-client`, `pino`, or `node:fs`, expose runtime-specific subpaths to prevent accidental bundling into Edge/Vercel Functions. Pattern: `/core` for types, `/node` for Node implementation, `/edge` for Edge-safe emit, and `/testing` for test utilities. See `@afenda/logger` for a reference implementation.
 
 Memory adapters for rate-limit and cache are test and local-development only unless a deployment explicitly declares degraded single-instance operation. Production must fail closed or report a startup error when the required distributed backend is unavailable. Cache may fail open for availability only where designed; authorization, idempotency, and rate limiting must not depend on an unsafe local fallback.
 
@@ -152,7 +152,7 @@ import { Button } from "@afenda/ui-system";
 
 ## Maintain
 
-**Engines:** Node.js `24.x` · pnpm `>=10.33.4` (root `package.json`).
+**Engines:** Node.js `24.x` · pnpm `>=10.33.4` from the root `package.json`.
 
 ```bash
 pnpm --filter @afenda/<name> lint
@@ -161,9 +161,9 @@ pnpm --filter @afenda/<name> test
 pnpm --filter @afenda/<name> build   # when the package defines a build script
 ```
 
-Most `@afenda/*` packages are TypeScript source consumed via workspace — `typecheck` is the compile gate when no `build` script exists. Persistence packages may add `test:contract` / integration suites as needed; do not invent empty scripts.
+Most `@afenda/*` packages are TypeScript source consumed via workspace. `typecheck` is the compile gate when no `build` script exists. Persistence packages may define contract or integration suites; do not add empty scripts just to match a template.
 
-Add / rename packages only with a DAG update in [docs-V2/monorepo](../docs-V2/monorepo/README.md), a WORKSPACE-EDGE-REGISTER row, catalog entry here, and `CATALOG_EXPECTED_PACKAGES` in `scripts/validate-modules/checks.mjs`. Place new packages under the matching category folder; keep package identity `@afenda/<name>`.
+Add or rename packages only with the matching DAG update in [docs-V2/monorepo](../docs-V2/monorepo/README.md), a `WORKSPACE-EDGE-REGISTER.yaml` row, a catalog entry here, and `CATALOG_EXPECTED_PACKAGES` in `scripts/validate-modules/checks.mjs`. Place new packages under the matching category folder; keep package identity `@afenda/<name>`.
 
 ## Production gate
 
@@ -185,7 +185,7 @@ pnpm exec turbo run typecheck test
 - ERP authorization-port presence
 - generated register drift check
 
-The README describes intended architecture; passing evidence is the production approval. Record **Last disk verification** above after a green gate at HEAD.
+The README describes intended architecture; passing evidence is the production approval.
 
 ## Authority
 
@@ -200,7 +200,7 @@ The README describes intended architecture; passing evidence is the production a
 | Repo quickstart | [README.md](../README.md) |
 | Agent checkout | [AGENTS.md](../AGENTS.md) |
 
-## Historical program evidence
+## Historical Evidence
 
 The following material records how the package-governance program was executed. It is informative and non-normative:
 

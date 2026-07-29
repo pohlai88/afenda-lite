@@ -82,7 +82,6 @@ export async function addSalesOrderLineAction(
 					quantity: parsed.data.quantity,
 					unitPrice: parsed.data.unitPrice,
 					discountAmount: parsed.data.discountAmount,
-					taxClassification: parsed.data.taxClassification,
 				},
 				createSalesCommandOptions(),
 			);

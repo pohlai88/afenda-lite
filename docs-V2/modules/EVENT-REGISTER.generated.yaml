@@ -986,16 +986,103 @@ events:
     id: receiving.discrepancy.resolved.v1
     moduleId: receiving
   - direction: emits
+    id: sales.price_book.created.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.price_book.entry_added.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.price_book.activated.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.created.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.line_added.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.submitted.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.approved.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.sent.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.accepted.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.expired.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.rejected.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.cancelled.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.quotation.converted.v1
+    moduleId: sales
+  - direction: emits
     id: sales.order.created.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.created_from_quotation.v1
     moduleId: sales
   - direction: emits
     id: sales.order.line_added.v1
     moduleId: sales
   - direction: emits
+    id: sales.order.submitted.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.approved.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.confirmed.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.released.v1
+    moduleId: sales
+  - direction: emits
     id: sales.order.posted.v1
     moduleId: sales
   - direction: emits
+    id: sales.order.hold_placed.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.hold_resolved.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.fulfillment_recorded.v1
+    moduleId: sales
+  - direction: emits
     id: sales.order.cancelled.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.closed.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.created.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.line_added.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.submitted.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.approved.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.rejected.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.cancelled.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.return.closed.v1
     moduleId: sales
 source: on-disk-module-manifests
 version: phase-2/2026-07-20

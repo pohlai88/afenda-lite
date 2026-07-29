@@ -94,7 +94,7 @@ describe("@afenda/ui-system — ERP status/table chrome (UI-CAP-05 consume)", ()
 			"border-info-border bg-info-subtle text-info-subtle-foreground",
 		);
 		expect(statusBadge).toContain(
-			'inactive: "border-border bg-muted text-muted-foreground"',
+			'inactive: "border-border bg-muted text-foreground-secondary"',
 		);
 		for (const cls of opacityChrome) {
 			expect(statusBadge, cls).not.toContain(cls);
@@ -204,7 +204,7 @@ describe("@afenda/ui-system — ERP status/table chrome (UI-CAP-05 consume)", ()
 			"dark:data-[state=unchecked]:bg-control-fill-strong",
 		);
 		expect(readUi("alert.tsx")).toContain(
-			"*:data-[slot=alert-description]:text-destructive",
+			"*:data-[slot=alert-description]:text-destructive-subtle-foreground",
 		);
 		expect(readUi("alert.tsx")).not.toContain("text-destructive/90");
 		expect(readUi("sidebar.tsx")).toContain("text-sidebar-muted-foreground");

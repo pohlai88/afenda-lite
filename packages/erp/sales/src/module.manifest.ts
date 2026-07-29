@@ -1,30 +1,11 @@
 import type { AfendaModuleManifest } from "@afenda/db/module-manifest";
+import { SALES_EVENT_IDS } from "@afenda/events/schemas";
 import {
-	SALES_ORDER_CANCELLED_EVENT,
-	SALES_ORDER_CREATED_EVENT,
-	SALES_ORDER_LINE_ADDED_EVENT,
-	SALES_ORDER_POSTED_EVENT,
-} from "@afenda/events/schemas";
-
-import {
-	SALES_COMMAND_CANCEL,
-	SALES_COMMAND_CREATE,
-	SALES_COMMAND_IDS,
-	SALES_COMMAND_LINE_ADD,
-	SALES_COMMAND_POST,
-	SALES_QUERY_GET,
-	SALES_QUERY_IDS,
-	SALES_QUERY_LIST,
-} from "./module-ids";
-import {
-	SALES_PERMISSION_CODES,
-	SALES_PERMISSION_ORDER_CANCEL,
-	SALES_PERMISSION_ORDER_CREATE,
-	SALES_PERMISSION_ORDER_LIST,
-	SALES_PERMISSION_ORDER_POST,
-	SALES_PERMISSION_ORDER_READ,
-	SALES_PERMISSION_ORDER_UPDATE,
-} from "./permissions";
+	SALES_COMMAND_PERMISSION,
+	SALES_QUERY_PERMISSION,
+} from "./authorization";
+import { SALES_COMMAND_IDS, SALES_QUERY_IDS } from "./module-ids";
+import { SALES_PERMISSION_CODES } from "./permissions";
 
 export const salesModuleManifest = {
 	id: "sales",
@@ -34,48 +15,43 @@ export const salesModuleManifest = {
 	lifecycle: "active",
 	activationMode: "organization_toggle",
 	owns: {
-		aggregates: ["sales_order"],
-		commandNamespace: "sales.order",
+		aggregates: [
+			"sales_price_book",
+			"sales_quotation",
+			"sales_order",
+			"sales_return_authorization",
+		],
+		commandNamespace: "sales",
 		commands: [...SALES_COMMAND_IDS],
-		queryNamespace: "sales.order",
+		queryNamespace: "sales",
 		queries: [...SALES_QUERY_IDS],
 	},
 	persistence: {
 		schemaOwner: "@afenda/db",
-		mutationTables: ["sales_order", "sales_order_line"],
-	},
-	events: {
-		namespace: "sales.order",
-		emits: [
-			SALES_ORDER_CREATED_EVENT,
-			SALES_ORDER_LINE_ADDED_EVENT,
-			SALES_ORDER_POSTED_EVENT,
-			SALES_ORDER_CANCELLED_EVENT,
+		mutationTables: [
+			"sales_price_book",
+			"sales_price_book_entry",
+			"sales_quotation",
+			"sales_quotation_line",
+			"sales_order",
+			"sales_order_line",
+			"sales_order_schedule",
+			"sales_order_hold",
+			"sales_return_authorization",
+			"sales_return_authorization_line",
 		],
-		consumes: [],
 	},
-	permissions: {
-		namespace: "sales",
-		codes: [...SALES_PERMISSION_CODES],
-	},
+	events: { namespace: "sales", emits: [...SALES_EVENT_IDS], consumes: [] },
+	permissions: { namespace: "sales", codes: [...SALES_PERMISSION_CODES] },
 	authorization: {
-		commands: {
-			[SALES_COMMAND_CREATE]: SALES_PERMISSION_ORDER_CREATE,
-			[SALES_COMMAND_LINE_ADD]: SALES_PERMISSION_ORDER_UPDATE,
-			[SALES_COMMAND_POST]: SALES_PERMISSION_ORDER_POST,
-			[SALES_COMMAND_CANCEL]: SALES_PERMISSION_ORDER_CANCEL,
-		},
-		queries: {
-			[SALES_QUERY_GET]: SALES_PERMISSION_ORDER_READ,
-			[SALES_QUERY_LIST]: SALES_PERMISSION_ORDER_LIST,
-		},
+		commands: SALES_COMMAND_PERMISSION,
+		queries: SALES_QUERY_PERMISSION,
 	},
-	moduleDependencies: {
-		required: ["master-data"],
-	},
+	moduleDependencies: { required: ["master-data"] },
 	optionalIntegratesWith: [
-		{ moduleId: "inventory", style: "events" },
-		{ moduleId: "fulfillment", style: "events" },
-		{ moduleId: "receivables", style: "events" },
+		{ moduleId: "inventory", style: "ports" },
+		{ moduleId: "fulfillment", style: "ports" },
+		{ moduleId: "receivables", style: "ports" },
+		{ moduleId: "accounting", style: "events" },
 	],
 } as const satisfies AfendaModuleManifest;

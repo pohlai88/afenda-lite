@@ -13,7 +13,8 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 
 const statusBadgeVariants = cva(
-	"inline-flex w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-full border px-2 py-1 text-sm font-bold whitespace-nowrap transition-colors",
+	// font-medium matches Badge weight; text-sm keeps APCA-readable status labels.
+	"inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-sm font-medium whitespace-nowrap transition-colors [&_svg]:pointer-events-none [&_svg]:size-3",
 	{
 		variants: {
 			status: {
@@ -25,13 +26,13 @@ const statusBadgeVariants = cva(
 					"border-destructive-border bg-destructive-subtle text-destructive-subtle-foreground",
 				warning:
 					"border-warning-border bg-warning-subtle text-warning-subtle-foreground",
-				inactive: "border-border bg-muted text-muted-foreground",
+				inactive: "border-border bg-muted text-foreground-secondary",
 				active: "border-info-border bg-info-subtle text-info-subtle-foreground",
 			},
 			size: {
-				sm: "px-1.5 py-0.5 text-sm",
-				md: "px-2 py-1 text-sm",
-				lg: "px-3 py-1.5 text-sm",
+				sm: "gap-1 px-1.5 py-0.5 text-xs",
+				md: "gap-1 px-2 py-0.5 text-sm",
+				lg: "gap-1.5 px-2.5 py-1 text-sm",
 			},
 		},
 		defaultVariants: {
@@ -81,9 +82,7 @@ const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
 				aria-label={`Status: ${content}`}
 				{...props}
 			>
-				{showIcon && IconComponent && (
-					<IconComponent className="h-3 w-3" aria-hidden="true" />
-				)}
+				{showIcon && IconComponent && <IconComponent aria-hidden="true" />}
 				{content}
 			</span>
 		);

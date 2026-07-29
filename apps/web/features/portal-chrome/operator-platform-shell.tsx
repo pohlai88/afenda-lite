@@ -1,5 +1,9 @@
 import { getSession } from "@afenda/auth";
-import { SIDEBAR_COOKIE_NAME } from "@afenda/ui-system";
+import {
+	APPLICATION_SHELL_SETTINGS_COOKIE,
+	parseApplicationShellSettings,
+	SIDEBAR_COOKIE_NAME,
+} from "@afenda/ui-system";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
@@ -22,10 +26,14 @@ export async function OperatorPlatformShell({
 	const navItems = await resolveOperatorShellNav(session);
 	const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value;
 	const defaultSidebarOpen = sidebarCookie !== "false";
+	const initialSettings = parseApplicationShellSettings(
+		cookieStore.get(APPLICATION_SHELL_SETTINGS_COOKIE)?.value,
+	);
 
 	return (
 		<OperatorPlatformChrome
 			defaultSidebarOpen={defaultSidebarOpen}
+			initialSettings={initialSettings}
 			navItems={navItems}
 			orgId={session.orgId}
 		>

@@ -1,31 +1,40 @@
-import { fromPostgresUnknown } from "../adapters/postgres";
+/**
+ * @afenda/errors
+ * Contract: afenda.errors/v1
+ * Protected: changes require local pre-edit token and compatibility checks.
+ */
 import { AppError, isAppError } from "./app-error";
 
 const DEFAULT_INTERNAL_MESSAGE = "An unexpected error occurred";
 
+function normalizeFallbackMessage(message: unknown): string {
+	if (typeof message !== "string") {
+		return DEFAULT_INTERNAL_MESSAGE;
+	}
+	const normalized = message.trim();
+	return normalized.length > 0 ? normalized : DEFAULT_INTERNAL_MESSAGE;
+}
+
 /**
- * Normalize unknown failures into AppError.
- * Non-AppError values never promote raw Error.message to the public message.
+ * Normalizes an unknown failure into an AppError.
+ *
+ * Existing AppError instances are preserved. Other values are converted into a
+ * non-operational INTERNAL_ERROR without exposing their raw messages.
+ *
+ * Infrastructure-specific interpretation, such as PostgreSQL SQLSTATE mapping,
+ * must occur before calling this function.
  */
 export function normalizeUnknown(
 	error: unknown,
-	fallbackMessage: string = DEFAULT_INTERNAL_MESSAGE,
+	fallbackMessage: unknown = DEFAULT_INTERNAL_MESSAGE,
 ): AppError {
 	if (isAppError(error)) {
 		return error;
 	}
 
-	const fromPg = fromPostgresUnknown(error);
-	if (fromPg !== undefined) {
-		return fromPg;
-	}
-
 	return new AppError({
 		code: "INTERNAL_ERROR",
-		message:
-			fallbackMessage.trim().length > 0
-				? fallbackMessage.trim()
-				: DEFAULT_INTERNAL_MESSAGE,
+		message: normalizeFallbackMessage(fallbackMessage),
 		isOperational: false,
 		cause: error,
 	});

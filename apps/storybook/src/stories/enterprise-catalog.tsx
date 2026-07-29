@@ -1,24 +1,13 @@
 import {
-	AsyncState,
-	AttachmentList,
 	Badge,
-	BulkActionBar,
 	Button,
-	ChangeDiff,
-	ChangeDiffRow,
-	ChartContainer,
-	ChartLegend,
-	ChartLegendContent,
-	ChartTooltip,
-	ChartTooltipContent,
-	ColumnVisibilityMenu,
-	DateTimePicker,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 	EntityHeader,
-	FileUpload,
-	FilterBar,
-	FilterBarActions,
-	FilterBarGroup,
-	Input,
+	Label,
 	MasterDetail,
 	MasterDetailPrimary,
 	MasterDetailSecondary,
@@ -35,6 +24,7 @@ import {
 	ResizablePanelGroup,
 	SavedViewSelect,
 	SearchField,
+	StatusBadge,
 	Stepper,
 	StepperStep,
 	Timeline,
@@ -43,396 +33,188 @@ import {
 	ToolbarGroup,
 	ToolbarSeparator,
 	TreeView,
-	type UiAttachment,
 } from "@afenda/ui-system";
-import { CheckIcon, FileClockIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, FileClockIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import {
+	contractEvidence,
+	evidenceDescription,
+	StorySection,
+} from "./evidence";
 
-export type EnterpriseComponentKey =
-	| "async-state"
-	| "bulk-action-bar"
-	| "change-diff"
-	| "chart"
-	| "column-visibility-menu"
-	| "date-time-picker"
-	| "file-upload"
-	| "filter-bar"
-	| "master-detail"
-	| "numeric-input"
-	| "page-header"
-	| "resizable"
-	| "saved-view-select"
-	| "search-field"
-	| "stepper"
-	| "timeline"
-	| "toolbar"
-	| "tree-view";
+/**
+ * Storybook showcase keys still backed by this helper.
+ * Each key maps to the owning ui-system metadata contract id.
+ */
+export const ENTERPRISE_SHOWCASE_CONTRACTS = {
+	"master-detail": "ui.master-detail",
+	"numeric-input": "ui.numeric-input",
+	"page-header": "ui.page-header",
+	resizable: "ui.resizable",
+	"saved-view-select": "ui.saved-view-select",
+	"search-field": "ui.search-field",
+	stepper: "ui.stepper",
+	timeline: "ui.timeline",
+	toolbar: "ui.toolbar",
+	"tree-view": "ui.tree-view",
+} as const;
 
-const box = "rounded-lg border bg-card p-4 text-card-foreground";
+export type EnterpriseComponentKey = keyof typeof ENTERPRISE_SHOWCASE_CONTRACTS;
+
+function ShowcaseFrame({
+	component,
+	children,
+}: {
+	component: EnterpriseComponentKey;
+	children: React.ReactNode;
+}) {
+	const evidence = contractEvidence(ENTERPRISE_SHOWCASE_CONTRACTS[component]);
+
+	return (
+		<div className="grid w-full gap-4">
+			<div className="grid gap-1 rounded-lg border bg-muted/30 px-4 py-3">
+				<p className="text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
+					Contract · {evidence.contractId}
+				</p>
+				<p className="text-sm leading-5 text-foreground-secondary">
+					{evidenceDescription(evidence)}
+				</p>
+			</div>
+			{children}
+		</div>
+	);
+}
 
 function StoryGrid({ children }: { children: React.ReactNode }) {
 	return <div className="grid gap-6 xl:grid-cols-2">{children}</div>;
 }
 
-function Example({
-	label,
-	children,
-}: {
-	label: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<section className="space-y-3">
-			<h2 className="text-sm font-semibold text-muted-foreground">{label}</h2>
-			{children}
-		</section>
-	);
-}
-
-function AsyncStateShowcase() {
-	return (
-		<StoryGrid>
-			<Example label="Loading">
-				<div className={box}>
-					<AsyncState state="loading" label="Loading invoices" />
-				</div>
-			</Example>
-			<Example label="Empty">
-				<AsyncState
-					state="empty"
-					title="No invoices"
-					description="Create the first invoice for this customer."
-					action={<Button size="sm">Create invoice</Button>}
-				/>
-			</Example>
-			<Example label="Filtered empty">
-				<AsyncState
-					state="filtered-empty"
-					title="No matching invoices"
-					description="Clear filters to see all records."
-					action={
-						<Button size="sm" variant="outline">
-							Clear filters
-						</Button>
-					}
-				/>
-			</Example>
-			<Example label="Error">
-				<AsyncState
-					state="error"
-					title="Invoices unavailable"
-					description="The ledger service did not respond."
-					action={
-						<Button size="sm" variant="destructive">
-							Retry
-						</Button>
-					}
-				/>
-			</Example>
-			<Example label="Ready">
-				<AsyncState state="ready">
-					<div className={box}>Invoice INV-1048 is ready for review.</div>
-				</AsyncState>
-			</Example>
-		</StoryGrid>
-	);
-}
-
-function BulkActionBarShowcase() {
-	return (
-		<div className="space-y-6">
-			<Example label="Populated selection">
-				<BulkActionBar
-					selectedCount={3}
-					aria-label="3 selected bulk actions"
-					actions={
-						<>
-							<Button size="sm" variant="outline">
-								Export
-							</Button>
-							<Button size="sm" variant="destructive">
-								<Trash2Icon />
-								Delete
-							</Button>
-						</>
-					}
-				/>
-			</Example>
-			<Example label="Long responsive actions">
-				<BulkActionBar
-					selectedCount={128}
-					aria-label="128 selected bulk actions"
-					selectionLabel={(count) =>
-						`${count} supplier records selected across the current filtered result`
-					}
-					actions={
-						<>
-							<Button size="sm" variant="outline">
-								Assign owner
-							</Button>
-							<Button size="sm">Approve selected records</Button>
-						</>
-					}
-				/>
-			</Example>
-			<p className="text-sm text-muted-foreground">
-				The bar is intentionally absent when the selected count is zero.
-			</p>
-		</div>
-	);
-}
-
-function ChangeDiffShowcase() {
-	return (
-		<ChangeDiff>
-			<ChangeDiffRow
-				label="Supplier name"
-				before="Northwind Trading"
-				after="Northwind Trading Sdn. Bhd."
-			/>
-			<ChangeDiffRow
-				label="Payment terms"
-				before="Net 30"
-				after="Net 30"
-				changed={false}
-			/>
-			<ChangeDiffRow
-				label="Internal note with long content"
-				before="Use the legacy remittance address until the banking verification has completed."
-				after="Banking verification complete. Use the registered Kuala Lumpur remittance address for all future settlements."
-			/>
-		</ChangeDiff>
-	);
-}
-
-const chartData = [
-	{ month: "Jan", invoiced: 186, paid: 120 },
-	{ month: "Feb", invoiced: 305, paid: 248 },
-	{ month: "Mar", invoiced: 237, paid: 201 },
-	{ month: "Apr", invoiced: 273, paid: 265 },
-];
-
-function ChartShowcase() {
-	return (
-		<div className={box}>
-			<div className="mb-4">
-				<h2 className="font-semibold">Receivables by month</h2>
-				<p className="text-sm text-muted-foreground">
-					Invoiced and paid amounts, MYR thousands
-				</p>
-			</div>
-			<ChartContainer
-				className="h-72 w-full"
-				config={{
-					invoiced: { label: "Invoiced", color: "var(--chart-1)" },
-					paid: { label: "Paid", color: "var(--chart-2)" },
-				}}
-			>
-				<BarChart accessibilityLayer data={chartData}>
-					<CartesianGrid vertical={false} />
-					<XAxis dataKey="month" tickLine={false} axisLine={false} />
-					<ChartTooltip content={<ChartTooltipContent />} />
-					<ChartLegend content={<ChartLegendContent />} />
-					<Bar dataKey="invoiced" fill="var(--color-invoiced)" radius={4} />
-					<Bar dataKey="paid" fill="var(--color-paid)" radius={4} />
-				</BarChart>
-			</ChartContainer>
-		</div>
-	);
-}
-
-function ColumnVisibilityShowcase() {
-	const [columns, setColumns] = React.useState([
-		{ id: "invoice", label: "Invoice", visible: true },
-		{ id: "customer", label: "Customer", visible: true },
-		{ id: "amount", label: "Amount", visible: true, disabled: true },
-		{ id: "due", label: "Due date", visible: false },
-	]);
-	return (
-		<div className="flex justify-end rounded-lg border p-4">
-			<ColumnVisibilityMenu
-				columns={columns}
-				onVisibilityChange={(id, visible) =>
-					setColumns((current) =>
-						current.map((column) =>
-							column.id === id ? { ...column, visible } : column,
-						),
-					)
-				}
-			/>
-		</div>
-	);
-}
-
-function DateTimePickerShowcase() {
-	return (
-		<StoryGrid>
-			<DateTimePicker
-				label="Posting date"
-				description="Dates use the organization time zone."
-				defaultValue="2026-07-28T09:30"
-			/>
-			<DateTimePicker
-				label="Approval deadline"
-				defaultValue="2026-07-20T17:00"
-				error="Deadline must be in the future."
-				aria-invalid
-			/>
-			<DateTimePicker
-				label="Locked period"
-				defaultValue="2026-06-30T23:59"
-				disabled
-			/>
-		</StoryGrid>
-	);
-}
-
-function FileUploadShowcase() {
-	const [attachments, setAttachments] = React.useState<UiAttachment[]>([
-		{ id: "invoice", name: "invoice-1048.pdf", size: 248320, href: "#invoice" },
-	]);
-	return (
-		<StoryGrid>
-			<FileUpload
-				label="Supporting documents"
-				description="PDF, PNG, or XLSX up to 10 MB"
-				accept=".pdf,.png,.xlsx"
-				multiple
-				onFilesSelected={(files) =>
-					setAttachments((current) => [
-						...current,
-						...files.map((file, index) => ({
-							id: `${file.name}-${index}`,
-							name: file.name,
-							size: file.size,
-						})),
-					])
-				}
-			/>
-			<AttachmentList
-				attachments={attachments}
-				onRemove={(id) =>
-					setAttachments((current) =>
-						current.filter((attachment) => attachment.id !== id),
-					)
-				}
-			/>
-		</StoryGrid>
-	);
-}
-
-function FilterBarShowcase() {
-	return (
-		<FilterBar>
-			<FilterBarGroup>
-				<label
-					htmlFor="supplier-filter"
-					className="grid min-w-44 gap-1 text-sm font-medium"
-				>
-					Supplier
-					<Input id="supplier-filter" placeholder="Search suppliers" />
-				</label>
-				<label
-					htmlFor="status-filter"
-					className="grid min-w-36 gap-1 text-sm font-medium"
-				>
-					Status
-					<Input id="status-filter" value="Open" readOnly />
-				</label>
-			</FilterBarGroup>
-			<FilterBarActions>
-				<Button variant="ghost">Reset</Button>
-				<Button>Apply filters</Button>
-			</FilterBarActions>
-		</FilterBar>
-	);
-}
-
 function MasterDetailShowcase() {
 	return (
-		<MasterDetail>
-			<MasterDetailPrimary>
-				<div className="h-full space-y-2 bg-muted/40 p-3">
-					<h2 className="font-semibold">Invoices</h2>
-					{[1048, 1049, 1050].map((id) => (
-						<Button
-							key={id}
-							className="w-full justify-start"
-							variant={id === 1048 ? "secondary" : "ghost"}
-						>
-							INV-{id}
-						</Button>
-					))}
+		<Card className="shadow-none">
+			<CardHeader>
+				<div className="flex flex-wrap items-center gap-2">
+					<Badge variant="outline">Receivables</Badge>
+					<StatusBadge size="sm" status="active" label="Operational" />
 				</div>
-			</MasterDetailPrimary>
-			<MasterDetailSecondary>
-				<div className="h-full p-5">
-					<Badge>Approved</Badge>
-					<h2 className="mt-3 text-xl font-semibold">INV-1048</h2>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Northwind Trading · MYR 18,420.00
-					</p>
-				</div>
-			</MasterDetailSecondary>
-		</MasterDetail>
+				<CardTitle>Invoice master-detail</CardTitle>
+				<CardDescription>
+					Primary list selects INV-1048 · secondary shows record facts
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<MasterDetail className="min-h-72 rounded-lg border">
+					<MasterDetailPrimary>
+						<div className="grid h-full gap-2 bg-muted/40 p-3">
+							<p className="text-sm font-medium text-foreground">
+								Open invoices
+							</p>
+							{[1048, 1049, 1050].map((id) => (
+								<Button
+									key={id}
+									type="button"
+									className="w-full justify-start"
+									variant={id === 1048 ? "secondary" : "ghost"}
+								>
+									INV-{id}
+								</Button>
+							))}
+						</div>
+					</MasterDetailPrimary>
+					<MasterDetailSecondary>
+						<div className="grid h-full gap-3 p-5">
+							<div className="flex flex-wrap items-center gap-2">
+								<span className="font-mono text-sm text-foreground-tertiary">
+									INV-1048
+								</span>
+								<StatusBadge
+									size="sm"
+									status="pending"
+									label="Awaiting approval"
+								/>
+							</div>
+							<h2 className="text-xl font-semibold tracking-tight">
+								Northwind Trading Sdn. Bhd.
+							</h2>
+							<p className="text-sm text-foreground-secondary">
+								MYR 18,420.00 · Due 15 Aug 2026 · Owner Aisha Rahman
+							</p>
+						</div>
+					</MasterDetailSecondary>
+				</MasterDetail>
+			</CardContent>
+		</Card>
 	);
 }
 
 function NumericInputShowcase() {
 	return (
 		<StoryGrid>
-			<Example label="Number">
-				<NumberInput defaultValue="42" aria-label="Number" />
-			</Example>
-			<Example label="Money">
-				<MoneyInput
-					currency="MYR"
-					defaultValue="18420.50"
-					aria-label="Amount"
-				/>
-			</Example>
-			<Example label="Quantity">
-				<QuantityInput unit="units" defaultValue="120" aria-label="Quantity" />
-			</Example>
-			<Example label="Percent">
-				<PercentInput defaultValue="8" aria-label="Tax rate" />
-			</Example>
-			<Example label="Invalid">
-				<MoneyInput
-					currency="MYR"
-					defaultValue="-10"
-					aria-label="Invalid amount"
-					aria-invalid
-				/>
-			</Example>
-			<Example label="Disabled">
-				<QuantityInput
-					unit="units"
-					defaultValue="25"
-					aria-label="Locked quantity"
-					disabled
-				/>
-			</Example>
+			<StorySection title="Quantity and money">
+				<div className="grid gap-4 rounded-lg border p-4">
+					<div className="grid gap-2">
+						<Label htmlFor="qty">Ordered quantity</Label>
+						<QuantityInput
+							id="qty"
+							unit="units"
+							defaultValue="120"
+							aria-label="Quantity"
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="amount">Invoice amount</Label>
+						<MoneyInput
+							id="amount"
+							currency="MYR"
+							defaultValue="18420.50"
+							aria-label="Amount"
+						/>
+					</div>
+				</div>
+			</StorySection>
+			<StorySection title="Rate, count, and invalid">
+				<div className="grid gap-4 rounded-lg border p-4">
+					<div className="grid gap-2">
+						<Label htmlFor="tax">Tax rate</Label>
+						<PercentInput id="tax" defaultValue="8" aria-label="Tax rate" />
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="lines">Line count</Label>
+						<NumberInput id="lines" defaultValue="42" aria-label="Number" />
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="invalid-amount">Invalid amount</Label>
+						<MoneyInput
+							id="invalid-amount"
+							currency="MYR"
+							defaultValue="-10"
+							aria-label="Invalid amount"
+							aria-invalid
+						/>
+					</div>
+				</div>
+			</StorySection>
 		</StoryGrid>
 	);
 }
 
 function PageHeaderShowcase() {
 	return (
-		<div className="space-y-10">
+		<div className="grid gap-8">
 			<PageHeader role="group" aria-label="Collection page header">
-				<div>
+				<div className="grid gap-2">
 					<PageHeaderHeading>Accounts receivable</PageHeaderHeading>
 					<PageHeaderDescription>
 						Monitor invoices, allocations, and overdue balances across every
-						legal entity.
+						legal entity in org-fragrant-lake.
 					</PageHeaderDescription>
 				</div>
 				<PageHeaderActions>
-					<Button variant="outline">Export</Button>
-					<Button>
-						<PlusIcon />
+					<Button type="button" variant="outline">
+						Export
+					</Button>
+					<Button type="button">
+						<PlusIcon aria-hidden="true" />
 						New invoice
 					</Button>
 				</PageHeaderActions>
@@ -441,7 +223,9 @@ function PageHeaderShowcase() {
 				role="group"
 				aria-label="Invoice entity header"
 				title="INV-1048"
-				status={<Badge>Approved</Badge>}
+				status={
+					<StatusBadge size="sm" status="pending" label="Awaiting approval" />
+				}
 				description="Northwind Trading Sdn. Bhd."
 				metadata={
 					<>
@@ -450,7 +234,11 @@ function PageHeaderShowcase() {
 						<span>Owner Aisha Rahman</span>
 					</>
 				}
-				actions={<Button variant="outline">More actions</Button>}
+				actions={
+					<Button type="button" variant="outline">
+						More actions
+					</Button>
+				}
 			/>
 		</div>
 	);
@@ -459,42 +247,52 @@ function PageHeaderShowcase() {
 function ResizableShowcase() {
 	return (
 		<StoryGrid>
-			<Example label="Horizontal">
+			<StorySection title="Invoice list · detail">
 				<ResizablePanelGroup
 					orientation="horizontal"
 					className="h-64 rounded-lg border"
 				>
 					<ResizablePanel defaultSize="35%">
-						<div className="flex h-full items-center justify-center bg-muted/40">
-							<Button variant="ghost">Master</Button>
+						<div className="flex h-full flex-col justify-center gap-2 bg-muted/40 p-4">
+							<p className="text-sm font-medium">Open invoices</p>
+							<p className="text-sm text-foreground-secondary">Master pane</p>
 						</div>
 					</ResizablePanel>
 					<ResizableHandle withHandle />
 					<ResizablePanel defaultSize="65%">
-						<div className="flex h-full items-center justify-center">
-							<Button variant="ghost">Detail</Button>
+						<div className="flex h-full flex-col justify-center gap-2 p-4">
+							<p className="text-sm font-medium">INV-1048</p>
+							<p className="text-sm text-foreground-secondary">
+								Detail pane · Northwind Trading
+							</p>
 						</div>
 					</ResizablePanel>
 				</ResizablePanelGroup>
-			</Example>
-			<Example label="Vertical">
+			</StorySection>
+			<StorySection title="Document preview · evidence">
 				<ResizablePanelGroup
 					orientation="vertical"
 					className="h-64 rounded-lg border"
 				>
 					<ResizablePanel defaultSize="55%">
-						<div className="flex h-full items-center justify-center">
-							<Button variant="ghost">Preview</Button>
+						<div className="flex h-full flex-col justify-center gap-2 p-4">
+							<p className="text-sm font-medium">Document preview</p>
+							<p className="text-sm text-foreground-secondary">
+								invoice-1048.pdf
+							</p>
 						</div>
 					</ResizablePanel>
 					<ResizableHandle withHandle />
 					<ResizablePanel defaultSize="45%">
-						<div className="flex h-full items-center justify-center bg-muted/40">
-							<Button variant="ghost">Evidence</Button>
+						<div className="flex h-full flex-col justify-center gap-2 bg-muted/40 p-4">
+							<p className="text-sm font-medium">Evidence notes</p>
+							<p className="text-sm text-foreground-secondary">
+								Bank letter matched remittance account
+							</p>
 						</div>
 					</ResizablePanel>
 				</ResizablePanelGroup>
-			</Example>
+			</StorySection>
 		</StoryGrid>
 	);
 }
@@ -506,118 +304,185 @@ function SavedViewShowcase() {
 		{ id: "mine", label: "Owned by me" },
 		{ id: "archived", label: "Archived", disabled: true },
 	];
+
 	return (
-		<div className="flex flex-wrap gap-4">
-			<SavedViewSelect value={value} views={views} onValueChange={setValue} />
-			<SavedViewSelect
-				views={views}
-				onValueChange={setValue}
-				placeholder="Choose a saved view"
-			/>
-			<SavedViewSelect
-				value="overdue"
-				views={views}
-				onValueChange={setValue}
-				disabled
-			/>
-		</div>
+		<StoryGrid>
+			<StorySection title="Active saved view">
+				<div className="rounded-lg border p-4">
+					<SavedViewSelect
+						value={value}
+						views={views}
+						onValueChange={setValue}
+					/>
+				</div>
+			</StorySection>
+			<StorySection title="Placeholder and disabled">
+				<div className="grid gap-4 rounded-lg border p-4">
+					<SavedViewSelect
+						views={views}
+						onValueChange={setValue}
+						placeholder="Choose a saved view"
+					/>
+					<SavedViewSelect
+						value="overdue"
+						views={views}
+						onValueChange={setValue}
+						disabled
+					/>
+				</div>
+			</StorySection>
+		</StoryGrid>
 	);
 }
 
 function SearchFieldShowcase() {
 	const [value, setValue] = React.useState("Northwind");
+
 	return (
-		<StoryGrid>
-			<SearchField
-				value={value}
-				onChange={(event) => setValue(event.target.value)}
-				onClear={() => setValue("")}
-				aria-label="Search suppliers"
-			/>
-			<SearchField placeholder="Empty search" aria-label="Empty search" />
-			<SearchField
-				value="Locked query"
-				readOnly
-				aria-label="Read-only search"
-			/>
-		</StoryGrid>
+		<Card className="shadow-none">
+			<CardHeader>
+				<CardTitle>Supplier directory search</CardTitle>
+				<CardDescription>
+					Controlled query for the preferred-supplier collection
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="grid gap-4">
+				<div className="grid gap-2">
+					<Label htmlFor="supplier-search">Suppliers</Label>
+					<SearchField
+						id="supplier-search"
+						value={value}
+						onChange={(event) => setValue(event.target.value)}
+						onClear={() => setValue("")}
+						aria-label="Search suppliers"
+						placeholder="Search suppliers"
+					/>
+				</div>
+				<SearchField placeholder="Empty search" aria-label="Empty search" />
+				<SearchField
+					value="Locked query"
+					readOnly
+					aria-label="Read-only search"
+				/>
+			</CardContent>
+		</Card>
 	);
 }
 
 function StepperShowcase() {
 	return (
-		<Stepper>
-			<StepperStep
-				status="complete"
-				title="Draft"
-				description="Created 26 Jul"
-			/>
-			<StepperStep
-				status="complete"
-				title="Validated"
-				description="All checks passed"
-			/>
-			<StepperStep
-				status="current"
-				title="Approval"
-				description="Finance review"
-			/>
-			<StepperStep
-				status="error"
-				title="Posting"
-				description="Period is locked"
-			/>
-			<StepperStep status="upcoming" title="Settlement" />
-		</Stepper>
+		<Card className="shadow-none">
+			<CardHeader>
+				<div className="flex flex-wrap items-center gap-2">
+					<Badge variant="outline">Invoice workflow</Badge>
+					<StatusBadge size="sm" status="pending" label="In approval" />
+				</div>
+				<CardTitle>INV-1048 posting path</CardTitle>
+				<CardDescription>
+					Stepper shows workflow stage — not StatusBadge lifecycle authority
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Stepper>
+					<StepperStep
+						status="complete"
+						title="Draft"
+						description="Created 26 Jul"
+					/>
+					<StepperStep
+						status="complete"
+						title="Validated"
+						description="All checks passed"
+					/>
+					<StepperStep
+						status="current"
+						title="Approval"
+						description="Finance review"
+					/>
+					<StepperStep
+						status="error"
+						title="Posting"
+						description="Period is locked"
+					/>
+					<StepperStep status="upcoming" title="Settlement" />
+				</Stepper>
+			</CardContent>
+		</Card>
 	);
 }
 
 function TimelineShowcase() {
 	return (
-		<Timeline>
-			<TimelineEntry
-				title="Invoice approved"
-				timestamp="09:42"
-				description="Aisha Rahman approved INV-1048."
-				icon={<CheckIcon className="size-3" />}
-			/>
-			<TimelineEntry
-				title="Evidence attached"
-				timestamp="09:18"
-				description="invoice-1048.pdf was added to the record."
-				icon={<FileClockIcon className="size-3" />}
-			/>
-			<TimelineEntry
-				title="Draft created"
-				timestamp="Yesterday"
-				description="Created from purchase order PO-8841 with a deliberately longer audit description that remains readable on narrow screens."
-			/>
-		</Timeline>
+		<Card className="shadow-none">
+			<CardHeader>
+				<CardTitle>INV-1048 audit timeline</CardTitle>
+				<CardDescription>
+					Chronological operator events for finance-control review
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Timeline>
+					<TimelineEntry
+						title="Invoice approved"
+						timestamp="09:42"
+						description="Aisha Rahman approved INV-1048 for posting."
+						icon={<CheckIcon className="size-3" />}
+					/>
+					<TimelineEntry
+						title="Evidence attached"
+						timestamp="09:18"
+						description="invoice-1048.pdf was added to the record."
+						icon={<FileClockIcon className="size-3" />}
+					/>
+					<TimelineEntry
+						title="Draft created"
+						timestamp="Yesterday"
+						description="Created from purchase order PO-8841 with a deliberately longer audit description that remains readable on narrow screens."
+					/>
+				</Timeline>
+			</CardContent>
+		</Card>
 	);
 }
 
 function ToolbarShowcase() {
 	return (
-		<Toolbar aria-label="Invoice actions">
-			<ToolbarGroup>
-				<Button size="sm" variant="ghost">
-					Edit
-				</Button>
-				<Button size="sm" variant="ghost">
-					Duplicate
-				</Button>
-				<ToolbarSeparator />
-				<Button size="sm" variant="ghost">
-					Archive
-				</Button>
-			</ToolbarGroup>
-			<ToolbarGroup>
-				<Button size="sm" variant="outline">
-					Export
-				</Button>
-				<Button size="sm">Approve</Button>
-			</ToolbarGroup>
-		</Toolbar>
+		<Card className="shadow-none">
+			<CardHeader>
+				<div className="flex flex-wrap items-center gap-2">
+					<Badge variant="outline">Invoice</Badge>
+					<StatusBadge size="sm" status="pending" label="Awaiting approval" />
+				</div>
+				<CardTitle>INV-1048 action toolbar</CardTitle>
+				<CardDescription>
+					Secondary tools stay in the toolbar · Approve remains primary
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Toolbar aria-label="Invoice actions">
+					<ToolbarGroup>
+						<Button type="button" size="sm" variant="ghost">
+							Edit
+						</Button>
+						<Button type="button" size="sm" variant="ghost">
+							Duplicate
+						</Button>
+						<ToolbarSeparator />
+						<Button type="button" size="sm" variant="ghost">
+							Archive
+						</Button>
+					</ToolbarGroup>
+					<ToolbarGroup>
+						<Button type="button" size="sm" variant="outline">
+							Export
+						</Button>
+						<Button type="button" size="sm">
+							Approve
+						</Button>
+					</ToolbarGroup>
+				</Toolbar>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -641,12 +506,23 @@ function TreeViewShowcase() {
 		},
 	];
 	const [selectedId, setSelectedId] = React.useState("receivables");
+
 	return (
-		<TreeView
-			nodes={nodes}
-			selectedId={selectedId}
-			onSelect={(node) => setSelectedId(node.id)}
-		/>
+		<Card className="shadow-none">
+			<CardHeader>
+				<CardTitle>Module navigation tree</CardTitle>
+				<CardDescription>
+					Expand Finance to reach Receivables and Payables destinations
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<TreeView
+					nodes={nodes}
+					selectedId={selectedId}
+					onSelect={(node) => setSelectedId(node.id)}
+				/>
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -655,42 +531,43 @@ export function EnterpriseComponentShowcase({
 }: {
 	component: EnterpriseComponentKey;
 }) {
+	let body: React.ReactNode;
 	switch (component) {
-		case "async-state":
-			return <AsyncStateShowcase />;
-		case "bulk-action-bar":
-			return <BulkActionBarShowcase />;
-		case "change-diff":
-			return <ChangeDiffShowcase />;
-		case "chart":
-			return <ChartShowcase />;
-		case "column-visibility-menu":
-			return <ColumnVisibilityShowcase />;
-		case "date-time-picker":
-			return <DateTimePickerShowcase />;
-		case "file-upload":
-			return <FileUploadShowcase />;
-		case "filter-bar":
-			return <FilterBarShowcase />;
 		case "master-detail":
-			return <MasterDetailShowcase />;
+			body = <MasterDetailShowcase />;
+			break;
 		case "numeric-input":
-			return <NumericInputShowcase />;
+			body = <NumericInputShowcase />;
+			break;
 		case "page-header":
-			return <PageHeaderShowcase />;
+			body = <PageHeaderShowcase />;
+			break;
 		case "resizable":
-			return <ResizableShowcase />;
+			body = <ResizableShowcase />;
+			break;
 		case "saved-view-select":
-			return <SavedViewShowcase />;
+			body = <SavedViewShowcase />;
+			break;
 		case "search-field":
-			return <SearchFieldShowcase />;
+			body = <SearchFieldShowcase />;
+			break;
 		case "stepper":
-			return <StepperShowcase />;
+			body = <StepperShowcase />;
+			break;
 		case "timeline":
-			return <TimelineShowcase />;
+			body = <TimelineShowcase />;
+			break;
 		case "toolbar":
-			return <ToolbarShowcase />;
+			body = <ToolbarShowcase />;
+			break;
 		case "tree-view":
-			return <TreeViewShowcase />;
+			body = <TreeViewShowcase />;
+			break;
+		default: {
+			const _exhaustive: never = component;
+			return _exhaustive;
+		}
 	}
+
+	return <ShowcaseFrame component={component}>{body}</ShowcaseFrame>;
 }

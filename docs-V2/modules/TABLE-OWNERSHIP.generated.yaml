@@ -1012,9 +1012,41 @@ tables:
   - moduleId: sales
     packageName: "@afenda/sales"
     schemaOwner: "@afenda/db"
+    table: sales_price_book
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_price_book_entry
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_quotation
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_quotation_line
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
     table: sales_order
   - moduleId: sales
     packageName: "@afenda/sales"
     schemaOwner: "@afenda/db"
     table: sales_order_line
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_order_schedule
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_order_hold
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_return_authorization
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_return_authorization_line
 version: phase-2/2026-07-20
