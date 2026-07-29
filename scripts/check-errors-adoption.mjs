@@ -357,7 +357,6 @@ function auditCategoryForStatus(status, classification) {
 			return classification === "must-consume" ? "REVIEW" : "EXEMPT";
 		case "VIOLATION":
 			return "UNSAFE";
-		case "REVIEW":
 		default:
 			return "REVIEW";
 	}

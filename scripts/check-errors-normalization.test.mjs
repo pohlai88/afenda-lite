@@ -238,14 +238,8 @@ test("fails manual serialization and local HTTP projection drift", () => {
 		assert.equal(report.summary.status, "fail");
 		assert.equal(report.summary.manualSerialization, 1);
 		assert.equal(report.summary.httpProjectionDrift, 1);
-		assert.equal(
-			report.manualSerialization[0]?.auditCategory,
-			"UNSAFE",
-		);
-		assert.equal(
-			report.httpProjectionDrift[0]?.auditCategory,
-			"INCONSISTENT",
-		);
+		assert.equal(report.manualSerialization[0]?.auditCategory, "UNSAFE");
+		assert.equal(report.httpProjectionDrift[0]?.auditCategory, "INCONSISTENT");
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

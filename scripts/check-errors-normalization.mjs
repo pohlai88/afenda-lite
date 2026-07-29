@@ -482,7 +482,11 @@ export function formatHumanReport(report) {
 		"INCONSISTENT manual-result-construction",
 		report.manualResultConstruction,
 	);
-	appendFindings(lines, "UNSAFE manual-serialization", report.manualSerialization);
+	appendFindings(
+		lines,
+		"UNSAFE manual-serialization",
+		report.manualSerialization,
+	);
 	appendFindings(
 		lines,
 		"INCONSISTENT canonical-serialization-drift",
