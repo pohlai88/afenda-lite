@@ -10,7 +10,14 @@ import {
 	platformNotification,
 	sql,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import { mapNotificationRow } from "./map-row";
 import type { NotificationStore } from "./store";
@@ -57,6 +64,13 @@ function mapRows(
 		entries.push(mapped.data);
 	}
 	return ok(entries);
+}
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
 }
 
 export class DrizzleNotificationStore implements NotificationStore {
@@ -135,7 +149,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to write notification");
+			return failFromPersistence(error, "Failed to write notification");
 		}
 	}
 
@@ -166,7 +180,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return mapRows(rows);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list notifications");
+			return failFromPersistence(error, "Failed to list notifications");
 		}
 	}
 
@@ -192,7 +206,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok(Number(row?.value ?? 0));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to count unread notifications");
+			return failFromPersistence(error, "Failed to count unread notifications");
 		}
 	}
 
@@ -221,7 +235,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			}
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to mark notification read");
+			return failFromPersistence(error, "Failed to mark notification read");
 		}
 	}
 
@@ -248,7 +262,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok(rows.length);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to mark all notifications read");
+			return failFromPersistence(error, "Failed to mark all notifications read");
 		}
 	}
 
@@ -265,7 +279,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok({ deleted: rows.length > 0 });
 		} catch (error) {
-			return failFromUnknown(error, "Failed to delete notification");
+			return failFromPersistence(error, "Failed to delete notification");
 		}
 	}
 
@@ -307,7 +321,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 
 			return ok(rows.length);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to purge expired notifications");
+			return failFromPersistence(error, "Failed to purge expired notifications");
 		}
 	}
 }

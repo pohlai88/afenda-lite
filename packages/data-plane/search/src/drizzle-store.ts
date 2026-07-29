@@ -1,5 +1,12 @@
 import { and, db, desc, eq, platformSearchDocument, sql } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import { mapSearchDocumentRow, mapSearchHitRow } from "./map-row";
 import { sanitizeSearchMetadata } from "./sanitize";
@@ -49,6 +56,13 @@ function mapDocument(
 	return ok(mapped.data);
 }
 
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
+
 export class DrizzleSearchStore implements SearchStore {
 	async upsert(input: SearchUpsertInput): Promise<Result<SearchDocument>> {
 		try {
@@ -93,7 +107,7 @@ export class DrizzleSearchStore implements SearchStore {
 			}
 			return mapDocument(row);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to upsert search document");
+			return failFromPersistence(error, "Failed to upsert search document");
 		}
 	}
 
@@ -128,7 +142,7 @@ export class DrizzleSearchStore implements SearchStore {
 
 			return ok({ deleted: deleted.length > 0 });
 		} catch (error) {
-			return failFromUnknown(error, "Failed to delete search document");
+			return failFromPersistence(error, "Failed to delete search document");
 		}
 	}
 
@@ -146,7 +160,7 @@ export class DrizzleSearchStore implements SearchStore {
 
 			return ok(rows.map((row) => row.documentId));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to list search document ids");
+			return failFromPersistence(error, "Failed to list search document ids");
 		}
 	}
 
@@ -199,7 +213,7 @@ export class DrizzleSearchStore implements SearchStore {
 			}
 			return ok(hits);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to search documents");
+			return failFromPersistence(error, "Failed to search documents");
 		}
 	}
 }

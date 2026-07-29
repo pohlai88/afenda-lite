@@ -9,7 +9,14 @@ import {
 	lte,
 	platformAuditLog,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import { auditEntriesToCsv } from "./csv";
 import { mapAuditLogRow } from "./map-row";
@@ -78,6 +85,13 @@ function mapRows(
 	return ok(entries);
 }
 
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
+}
+
 export class DrizzleAuditStore implements AuditStore {
 	async write(entry: AuditWriteInput): Promise<Result<AuditEntry>> {
 		try {
@@ -115,7 +129,7 @@ export class DrizzleAuditStore implements AuditStore {
 
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to write audit entry");
+			return failFromPersistence(error, "Failed to write audit entry");
 		}
 	}
 
@@ -134,7 +148,7 @@ export class DrizzleAuditStore implements AuditStore {
 
 			return mapRows(rows);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to query audit log");
+			return failFromPersistence(error, "Failed to query audit log");
 		}
 	}
 
@@ -148,7 +162,7 @@ export class DrizzleAuditStore implements AuditStore {
 
 			return ok(Number(totalRow?.value ?? 0));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to count audit entries");
+			return failFromPersistence(error, "Failed to count audit entries");
 		}
 	}
 
@@ -173,7 +187,7 @@ export class DrizzleAuditStore implements AuditStore {
 
 			return ok(auditEntriesToCsv(mapped.data));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to export audit log");
+			return failFromPersistence(error, "Failed to export audit log");
 		}
 	}
 
@@ -194,7 +208,7 @@ export class DrizzleAuditStore implements AuditStore {
 
 			return ok(deleted.length);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to purge audit entries");
+			return failFromPersistence(error, "Failed to purge audit entries");
 		}
 	}
 }

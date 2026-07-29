@@ -11,7 +11,14 @@ import {
 	platformDomainEvent,
 	sql,
 } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
+import {
+	fail,
+	failFromAppError,
+	failFromUnknown,
+	ok,
+	type Result,
+} from "@afenda/errors/result";
 
 import { mapDomainEventRow } from "./map-row";
 import type { EventStore } from "./store";
@@ -41,6 +48,13 @@ function mapRows(
 		entries.push(mapped.data);
 	}
 	return ok(entries);
+}
+
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	const mapped = fromPostgresUnknown(error);
+	return mapped === undefined
+		? failFromUnknown(error, fallbackMessage)
+		: failFromAppError(mapped);
 }
 
 function buildFilterWhere(options: DomainEventQueryOptions) {
@@ -137,7 +151,7 @@ export class DrizzleEventStore implements EventStore {
 
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to append domain event");
+			return failFromPersistence(error, "Failed to append domain event");
 		}
 	}
 
@@ -164,7 +178,7 @@ export class DrizzleEventStore implements EventStore {
 
 			return mapRows(rows);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to query domain events");
+			return failFromPersistence(error, "Failed to query domain events");
 		}
 	}
 
@@ -185,7 +199,7 @@ export class DrizzleEventStore implements EventStore {
 
 			return ok(Number(row?.value ?? 0));
 		} catch (error) {
-			return failFromUnknown(error, "Failed to count domain events");
+			return failFromPersistence(error, "Failed to count domain events");
 		}
 	}
 
@@ -216,7 +230,7 @@ export class DrizzleEventStore implements EventStore {
 
 			return mapRows(rows);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to claim pending domain events");
+			return failFromPersistence(error, "Failed to claim pending domain events");
 		}
 	}
 
@@ -253,7 +267,10 @@ export class DrizzleEventStore implements EventStore {
 			}
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to mark domain event processed");
+			return failFromPersistence(
+				error,
+				"Failed to mark domain event processed",
+			);
 		}
 	}
 
@@ -289,7 +306,7 @@ export class DrizzleEventStore implements EventStore {
 			}
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to mark domain event failed");
+			return failFromPersistence(error, "Failed to mark domain event failed");
 		}
 	}
 
@@ -326,7 +343,7 @@ export class DrizzleEventStore implements EventStore {
 			}
 			return ok(mapped.data);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to requeue domain event");
+			return failFromPersistence(error, "Failed to requeue domain event");
 		}
 	}
 
@@ -353,7 +370,10 @@ export class DrizzleEventStore implements EventStore {
 
 			return ok(rows.length);
 		} catch (error) {
-			return failFromUnknown(error, "Failed to purge processed domain events");
+			return failFromPersistence(
+				error,
+				"Failed to purge processed domain events",
+			);
 		}
 	}
 }
