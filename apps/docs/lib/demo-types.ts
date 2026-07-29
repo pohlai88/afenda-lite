@@ -3,15 +3,15 @@
  * Annotations: docs-V2/docs/typescript.md
  */
 export type DocsProjectRule = {
-	readonly name: string;
-	readonly enforced: boolean;
-	readonly notes?: string;
 	/**
 	 * Hidden from AutoTypeTable via @internal.
 	 *
 	 * @internal
 	 */
 	readonly cacheKey?: string;
+	readonly enforced: boolean;
+	readonly name: string;
+	readonly notes?: string;
 	/**
 	 * Simplified type label in the table.
 	 *

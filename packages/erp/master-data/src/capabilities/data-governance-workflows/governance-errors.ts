@@ -49,34 +49,34 @@ export type ImportValidationFailureFinding = Readonly<{
 export type GovernanceFailureDetails = MasterFailureDetails &
 	Readonly<{
 		governanceCode: GovernanceFailureCode;
-		entityType?: string;
-		entityId?: string;
-		organizationId?: string;
-		operation?: string;
-		currentStatus?: string;
-		targetStatus?: string;
-		requiredPermission?: GovernancePermission;
-		requiredReason?: string;
-		versionKind?: GovernanceVersionKind;
-		expectedVersion?: number;
-		actualVersion?: number;
-		fields?: readonly string[];
-		policyId?: string;
+		entityType?: string | undefined;
+		entityId?: string | undefined;
+		organizationId?: string | undefined;
+		operation?: string | undefined;
+		currentStatus?: string | undefined;
+		targetStatus?: string | undefined;
+		requiredPermission?: GovernancePermission | undefined;
+		requiredReason?: string | undefined;
+		versionKind?: GovernanceVersionKind | undefined;
+		expectedVersion?: number | undefined;
+		actualVersion?: number | undefined;
+		fields?: readonly string[] | undefined;
+		policyId?: string | undefined;
 		expected?: unknown;
 		actual?: unknown;
-		requestId?: string;
-		mergeRequestId?: string;
-		duplicateWarningId?: string;
-		conflictId?: string;
-		conflictIds?: readonly string[];
-		conflictArea?: string;
-		sourceEntityId?: string;
-		targetEntityId?: string;
-		validationReason?: string;
-		errorCount?: number;
-		warningCount?: number;
-		warningAcknowledgementRequired?: boolean;
-		findings?: readonly ImportValidationFailureFinding[];
+		requestId?: string | undefined;
+		mergeRequestId?: string | undefined;
+		duplicateWarningId?: string | undefined;
+		conflictId?: string | undefined;
+		conflictIds?: readonly string[] | undefined;
+		conflictArea?: string | undefined;
+		sourceEntityId?: string | undefined;
+		targetEntityId?: string | undefined;
+		validationReason?: string | undefined;
+		errorCount?: number | undefined;
+		warningCount?: number | undefined;
+		warningAcknowledgementRequired?: boolean | undefined;
+		findings?: readonly ImportValidationFailureFinding[] | undefined;
 	}>;
 
 export function governanceInvalidTransition(input: {
@@ -107,7 +107,7 @@ export function governanceReasonRequired(input: {
 
 export function governancePermissionRequired(input: {
 	requiredPermission: GovernancePermission;
-	operation?: string;
+	operation?: string | undefined;
 }): Result<never> {
 	return fail("FORBIDDEN", "Missing required governance permission", {
 		reason: "MASTER_PERMISSION_DENIED",
@@ -119,7 +119,7 @@ export function governancePermissionRequired(input: {
 
 export function governanceAuthorizationUnavailable(input: {
 	requiredPermission: GovernancePermission;
-	operation?: string;
+	operation?: string | undefined;
 }): Result<never> {
 	return fail(
 		"INTERNAL_ERROR",
@@ -150,7 +150,7 @@ export function governanceVersionConflict(input: {
 	expectedVersion: number;
 	actualVersion: number;
 	versionKind: GovernanceVersionKind;
-	entityId?: string;
+	entityId?: string | undefined;
 }): Result<never> {
 	const governanceCodeByVersionKind = {
 		proposal: "MASTER_DATA_GOVERNANCE_PROPOSAL_VERSION_CONFLICT",
@@ -173,7 +173,7 @@ export function governanceVersionConflict(input: {
 export function governanceFieldsForbidden(input: {
 	policyId: string;
 	fields: readonly string[];
-	operation?: string;
+	operation?: string | undefined;
 }): Result<never> {
 	return fail("BAD_REQUEST", "Governance policy forbids one or more fields", {
 		reason: "MASTER_VALIDATION_FAILED",
@@ -188,7 +188,7 @@ export function governancePolicyMismatch(input: {
 	policyId: string;
 	expected: unknown;
 	actual: unknown;
-	operation?: string;
+	operation?: string | undefined;
 }): Result<never> {
 	return fail("CONFLICT", "Governance policy does not match request context", {
 		reason: "MASTER_INVALID_STATE",
@@ -203,7 +203,7 @@ export function governancePolicyMismatch(input: {
 export function governanceRequestNotApproved(input: {
 	operation: string;
 	currentStatus: string;
-	entityId?: string;
+	entityId?: string | undefined;
 }): Result<never> {
 	return fail("VALIDATION_ERROR", "Approved governance request is required", {
 		reason: "MASTER_CHANGE_REQUEST_INVALID",
@@ -217,7 +217,7 @@ export function governanceRequestNotApproved(input: {
 
 export function governanceRequestExpired(input: {
 	operation: string;
-	entityId?: string;
+	entityId?: string | undefined;
 }): Result<never> {
 	return fail("CONFLICT", "Governance request is expired", {
 		reason: "MASTER_INVALID_STATE",
@@ -243,9 +243,9 @@ export function governanceDuplicateApply(input: {
 
 export function governanceMergeNotAuthorized(input: {
 	operation: string;
-	organizationId?: string;
-	requestId?: string;
-	duplicateWarningId?: string;
+	organizationId?: string | undefined;
+	requestId?: string | undefined;
+	duplicateWarningId?: string | undefined;
 	sourceEntityId: string;
 	targetEntityId: string;
 }): Result<never> {
@@ -264,8 +264,8 @@ export function governanceMergeNotAuthorized(input: {
 export function governanceDuplicateWarningInvalid(input: {
 	operation: string;
 	validationReason: string;
-	entityId?: string;
-	fields?: readonly string[];
+	entityId?: string | undefined;
+	fields?: readonly string[] | undefined;
 }): Result<never> {
 	return fail("BAD_REQUEST", "Duplicate warning record is invalid", {
 		reason: "MASTER_VALIDATION_FAILED",
@@ -280,7 +280,7 @@ export function governanceDuplicateWarningInvalid(input: {
 
 export function governanceMergeConflictInvalid(input: {
 	operation: string;
-	mergeRequestId?: string;
+	mergeRequestId?: string | undefined;
 	conflictId: string;
 	area: string;
 	field: string;
@@ -319,7 +319,7 @@ export function importValidationFailed(input: {
 	entityId: string;
 	errorCount: number;
 	warningCount: number;
-	warningAcknowledgementRequired?: boolean;
+	warningAcknowledgementRequired?: boolean | undefined;
 	findings: readonly ImportValidationFailureFinding[];
 }): Result<never> {
 	const warningOnly =

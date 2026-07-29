@@ -189,22 +189,22 @@ export type HumanResourcesLeaveStore = {
 		input: {
 			organizationId: string;
 			policyId: HumanResourcesLeavePolicyId;
-			name?: string;
-			paid?: boolean;
-			sensitive?: boolean;
-			allowsNegativeBalance?: boolean;
-			allowSelfApproval?: boolean;
-			allowsPartialDay?: boolean;
-			accrualBasis?: LeavePolicyAccrualBasis;
-			accrualFrequency?: LeavePolicyAccrualFrequency | null;
-			accrualQuantityPerPeriod?: string | null;
-			carryForwardEnabled?: boolean;
-			carryForwardMaxQuantity?: string | null;
-			entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule;
-			entitlementExpiryDays?: number | null;
-			effectiveTo?: string | null;
-			minTenureDays?: number | null;
-			allowedEmploymentStatuses?: EmploymentStatus[];
+			name?: string | undefined;
+			paid?: boolean | undefined;
+			sensitive?: boolean | undefined;
+			allowsNegativeBalance?: boolean | undefined;
+			allowSelfApproval?: boolean | undefined;
+			allowsPartialDay?: boolean | undefined;
+			accrualBasis?: LeavePolicyAccrualBasis | undefined;
+			accrualFrequency?: LeavePolicyAccrualFrequency | null | undefined;
+			accrualQuantityPerPeriod?: string | null | undefined;
+			carryForwardEnabled?: boolean | undefined;
+			carryForwardMaxQuantity?: string | null | undefined;
+			entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule | undefined;
+			entitlementExpiryDays?: number | null | undefined;
+			effectiveTo?: string | null | undefined;
+			minTenureDays?: number | null | undefined;
+			allowedEmploymentStatuses?: EmploymentStatus[] | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -269,7 +269,7 @@ export type HumanResourcesLeaveStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: LeavePolicyStatus;
+		status?: LeavePolicyStatus | undefined;
 	}): Promise<Result<LeavePolicyListPage>>;
 	// Leave Entitlement
 	getLeaveEntitlementById(input: {
@@ -330,9 +330,9 @@ export type HumanResourcesLeaveStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
-		employmentId?: HumanResourcesEmploymentId;
-		policyId?: HumanResourcesLeavePolicyId;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		employmentId?: HumanResourcesEmploymentId | undefined;
+		policyId?: HumanResourcesLeavePolicyId | undefined;
 	}): Promise<Result<LeaveEntitlementListPage>>;
 
 	listPostedLeaveAdjustments(input: {
@@ -363,8 +363,8 @@ export type HumanResourcesLeaveStore = {
 	listOverlappingLeaveSegments(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
-		excludeRequestId?: HumanResourcesLeaveRequestId;
-		includeDraft?: boolean;
+		excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
+		includeDraft?: boolean | undefined;
 	}): Promise<Result<LeaveRequestSegment[]>>;
 
 	createDraftLeaveRequest(
@@ -453,8 +453,8 @@ export type HumanResourcesLeaveStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
-		status?: LeaveRequestStatus;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		status?: LeaveRequestStatus | undefined;
 	}): Promise<Result<LeaveRequestListPage>>;
 
 	listPendingApprovalLeaveRequests(input: {

@@ -5,8 +5,8 @@ import { ReservationLifecycleForm } from "@/features/inventory/reservation-lifec
 
 type ReleaseReservationFormProps = {
 	canRelease: boolean;
-	defaultReservationId?: string;
-	defaultExpectedVersion?: number;
+	defaultReservationId?: string | undefined;
+	defaultExpectedVersion?: number | undefined;
 };
 
 /**

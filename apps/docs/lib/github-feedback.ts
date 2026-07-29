@@ -3,8 +3,8 @@ import { App, type Octokit } from "octokit";
 import {
 	type ActionResponse,
 	type BlockFeedback,
-	type PageFeedback,
 	blockFeedback,
+	type PageFeedback,
 	pageFeedback,
 } from "@/components/feedback/schema";
 
@@ -29,7 +29,7 @@ function requireAppCredentials(): {
 } {
 	const appId = docsEnv.GITHUB_APP_ID;
 	const privateKey = docsEnv.GITHUB_APP_PRIVATE_KEY;
-	if (!appId || !privateKey) {
+	if (!(appId && privateKey)) {
 		throw new Error(MISSING_CREDENTIALS_MESSAGE);
 	}
 	return { appId, privateKey };
@@ -64,13 +64,13 @@ async function getOctokit(): Promise<Octokit> {
 }
 
 interface RepositoryInfo {
-	id: string;
 	discussionCategories: {
 		nodes: {
 			id: string;
 			name: string;
 		}[];
 	};
+	id: string;
 }
 
 let cachedDestination: RepositoryInfo | undefined;
@@ -107,7 +107,7 @@ export async function onPageFeedbackAction(
 	const parsed = pageFeedback.parse(feedback);
 	const url = new URL(parsed.url);
 
-	return createDiscussionThread(
+	return await createDiscussionThread(
 		url.pathname,
 		`[${parsed.opinion}] ${parsed.message}\n\n> Forwarded from user feedback.`,
 	);
@@ -121,7 +121,7 @@ export async function onBlockFeedbackAction(
 	const url = new URL(parsed.url);
 	url.hash = parsed.blockId;
 
-	return createDiscussionThread(
+	return await createDiscussionThread(
 		url.pathname,
 		`> ${parsed.blockBody}\n\n${parsed.message}\n\n> [Forwarded from user feedback](${url.href}).`,
 	);

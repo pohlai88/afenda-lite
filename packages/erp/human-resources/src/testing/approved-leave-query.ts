@@ -7,8 +7,8 @@ import type { WorkCalendarLookupPort } from "../time/work-calendar";
 /** Test/composition helper — store-backed approved leave query for Time. */
 export function createStoreApprovedLeaveQuery(input: {
 	store: HumanResourcesStore;
-	lookup?: WorkCalendarLookupPort;
-	defaultTimezone?: string;
+	lookup?: WorkCalendarLookupPort | undefined;
+	defaultTimezone?: string | undefined;
 }): ApprovedLeaveQueryPort {
 	return createProductionApprovedLeaveQuery({
 		store: input.store,

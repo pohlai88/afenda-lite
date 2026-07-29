@@ -69,10 +69,10 @@ export function planLeaveMutationOutboxEventType(input: {
 	actorUserId: string;
 	aggregateId: string;
 	audit: HumanResourcesMutationOutcome["audit"];
-	eventType?: HumanResourcesEventType;
-	eventEntityId?: string;
-	eventEntityType?: string;
-	conditionalEventSuppressed?: boolean;
+	eventType?: HumanResourcesEventType | undefined;
+	eventEntityId?: string | undefined;
+	eventEntityType?: string | undefined;
+	conditionalEventSuppressed?: boolean | undefined;
 }): OutboxFactInput["type"] | undefined {
 	return planCommandMutationOutboxEventType(input);
 }
@@ -84,10 +84,10 @@ export function planRecruitmentMutationOutboxEventType(input: {
 	actorUserId: string;
 	aggregateId: string;
 	audit: HumanResourcesMutationOutcome["audit"];
-	eventType?: HumanResourcesEventType;
-	eventEntityId?: string;
-	eventEntityType?: string;
-	conditionalEventSuppressed?: boolean;
+	eventType?: HumanResourcesEventType | undefined;
+	eventEntityId?: string | undefined;
+	eventEntityType?: string | undefined;
+	conditionalEventSuppressed?: boolean | undefined;
 }): OutboxFactInput["type"] | undefined {
 	return planCommandMutationOutboxEventType(input);
 }
@@ -99,10 +99,10 @@ export function planCommandMutationOutboxEventType(input: {
 	actorUserId: string;
 	aggregateId: string;
 	audit: HumanResourcesMutationOutcome["audit"];
-	eventType?: HumanResourcesEventType;
-	eventEntityId?: string;
-	eventEntityType?: string;
-	conditionalEventSuppressed?: boolean;
+	eventType?: HumanResourcesEventType | undefined;
+	eventEntityId?: string | undefined;
+	eventEntityType?: string | undefined;
+	conditionalEventSuppressed?: boolean | undefined;
 }): OutboxFactInput["type"] | undefined {
 	return plannedOutboxEventType(planCommandMutationOutcome(input));
 }
@@ -164,10 +164,10 @@ function planCommandMutationOutcome(input: {
 	actorUserId: string;
 	aggregateId: string;
 	audit: HumanResourcesMutationOutcome["audit"];
-	eventType?: HumanResourcesEventType;
-	eventEntityId?: string;
-	eventEntityType?: string;
-	conditionalEventSuppressed?: boolean;
+	eventType?: HumanResourcesEventType | undefined;
+	eventEntityId?: string | undefined;
+	eventEntityType?: string | undefined;
+	conditionalEventSuppressed?: boolean | undefined;
 }): PlannedHumanResourcesMutationOutcome {
 	const definition = getHumanResourcesMutationEmission(input.commandId);
 	const executionMeta = attachMutationExecutionContext(input.meta, {

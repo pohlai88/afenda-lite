@@ -26,6 +26,9 @@ import {
 	ok,
 	type Result,
 } from "@afenda/errors/result";
+
+const SQL_IDENTIFIER_PATTERN = /^[a-z_]+$/u;
+
 import {
 	itemIdSchema,
 	partyIdSchema,
@@ -341,8 +344,9 @@ function mapReturnLine(
 }
 
 function quoteIdentifier(identifier: string): string {
-	if (!/^[a-z_]+$/u.test(identifier))
+	if (!SQL_IDENTIFIER_PATTERN.test(identifier)) {
 		throw new Error("Invalid internal SQL identifier");
+	}
 	return `"${identifier}"`;
 }
 function mutationQueries(
@@ -472,7 +476,9 @@ export class DrizzleSalesStore implements SalesStore {
 			evidence,
 			id,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getBookRequired(input.organizationId, id);
 	}
 	async addPriceBookEntry(
@@ -500,7 +506,9 @@ export class DrizzleSalesStore implements SalesStore {
 			evidence,
 			id,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		const rows = await db
 			.select()
 			.from(salesPriceBookEntry)
@@ -532,8 +540,9 @@ export class DrizzleSalesStore implements SalesStore {
 		const conditions = [
 			eq(salesPriceBook.organizationId, input.organizationId),
 		];
-		if (input.cursor)
+		if (input.cursor) {
 			conditions.push(drizzleSql`${salesPriceBook.id} > ${input.cursor}`);
+		}
 		const rows = await db
 			.select()
 			.from(salesPriceBook)
@@ -556,7 +565,9 @@ export class DrizzleSalesStore implements SalesStore {
 			{ status: input.status, updated_by: input.actorUserId },
 			evidence,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getBookRequired(input.organizationId, input.id);
 	}
 	async findPriceEntries(input: Parameters<SalesStore["findPriceEntries"]>[0]) {
@@ -627,7 +638,9 @@ export class DrizzleSalesStore implements SalesStore {
 			evidence,
 			id,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getQuotationRequired(input.organizationId, id);
 	}
 	async addQuotationLine(
@@ -703,7 +716,9 @@ export class DrizzleSalesStore implements SalesStore {
 			},
 			evidence,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getQuotationRequired(input.organizationId, input.id);
 	}
 	async getQuotation(input: Parameters<SalesStore["getQuotation"]>[0]) {
@@ -739,8 +754,9 @@ export class DrizzleSalesStore implements SalesStore {
 		const conditions = [
 			eq(salesQuotation.organizationId, input.organizationId),
 		];
-		if (input.cursor)
+		if (input.cursor) {
 			conditions.push(drizzleSql`${salesQuotation.id} > ${input.cursor}`);
+		}
 		const rows = await db
 			.select()
 			.from(salesQuotation)
@@ -781,7 +797,9 @@ export class DrizzleSalesStore implements SalesStore {
 			evidence,
 			id,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getOrderRequired(input.organizationId, id);
 	}
 	async addOrderLine(
@@ -872,10 +890,18 @@ export class DrizzleSalesStore implements SalesStore {
 			status: input.status,
 			updated_by: input.actorUserId,
 		};
-		if (input.status === "confirmed") values.confirmed_at = input.at;
-		if (input.status === "released") values.released_at = input.at;
-		if (input.status === "cancelled") values.cancelled_at = input.at;
-		if (input.status === "closed") values.closed_at = input.at;
+		if (input.status === "confirmed") {
+			values.confirmed_at = input.at;
+		}
+		if (input.status === "released") {
+			values.released_at = input.at;
+		}
+		if (input.status === "cancelled") {
+			values.cancelled_at = input.at;
+		}
+		if (input.status === "closed") {
+			values.closed_at = input.at;
+		}
 		const written = await atomicUpdate(
 			"sales_order",
 			input.id,
@@ -884,7 +910,9 @@ export class DrizzleSalesStore implements SalesStore {
 			values,
 			evidence,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getOrderRequired(input.organizationId, input.id);
 	}
 	async releaseOrder(
@@ -898,13 +926,19 @@ export class DrizzleSalesStore implements SalesStore {
 		const subtotal = await addDecimals(
 			lines.data.map((line) => line.lineAmount),
 		);
-		if (!subtotal.ok) return subtotal;
+		if (!subtotal.ok) {
+			return subtotal;
+		}
 		const discount = await addDecimals(
 			lines.data.map((line) => line.discountAmount),
 		);
-		if (!discount.ok) return discount;
+		if (!discount.ok) {
+			return discount;
+		}
 		const document = await addDecimals([subtotal.data, input.taxTotal]);
-		if (!document.ok) return document;
+		if (!document.ok) {
+			return document;
+		}
 		try {
 			await runNeonHttpTransaction((sql) => [
 				sql.query(
@@ -960,9 +994,12 @@ export class DrizzleSalesStore implements SalesStore {
 	}
 	async listOrders(input: Parameters<SalesStore["listOrders"]>[0]) {
 		const conditions = [eq(salesOrder.organizationId, input.organizationId)];
-		if (input.status) conditions.push(eq(salesOrder.status, input.status));
-		if (input.cursor)
+		if (input.status) {
+			conditions.push(eq(salesOrder.status, input.status));
+		}
+		if (input.cursor) {
 			conditions.push(drizzleSql`${salesOrder.id} > ${input.cursor}`);
+		}
 		const rows = await db
 			.select()
 			.from(salesOrder)
@@ -1023,7 +1060,9 @@ export class DrizzleSalesStore implements SalesStore {
 			evidence,
 			id,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getHold(input.organizationId, id);
 	}
 	async resolveHold(
@@ -1031,7 +1070,9 @@ export class DrizzleSalesStore implements SalesStore {
 		evidence: EvidenceSeed,
 	) {
 		const current = await this.getHold(input.organizationId, input.id);
-		if (!current.ok) return current;
+		if (!current.ok) {
+			return current;
+		}
 		const written = await atomicUpdate(
 			"sales_order_hold",
 			input.id,
@@ -1045,7 +1086,9 @@ export class DrizzleSalesStore implements SalesStore {
 			},
 			evidence,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getHold(input.organizationId, input.id);
 	}
 	async listOpenHolds(input: Parameters<SalesStore["listOpenHolds"]>[0]) {
@@ -1076,15 +1119,20 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.limit(1);
-		const line = lineRows[0];
-		if (!line) return fail("NOT_FOUND", "Sales-order line not found");
+		const [line] = lineRows;
+		if (!line) {
+			return fail("NOT_FOUND", "Sales-order line not found");
+		}
 		const next = await addDecimals([
 			line.fulfilledQuantity,
 			input.fulfilledQuantity,
 		]);
-		if (!next.ok) return next;
-		if (Number(next.data) > Number(line.quantity))
+		if (!next.ok) {
+			return next;
+		}
+		if (Number(next.data) > Number(line.quantity)) {
 			return fail("CONFLICT", "Fulfilled quantity exceeds ordered quantity");
+		}
 		try {
 			await runNeonHttpTransaction((sql) => [
 				sql.query(
@@ -1144,7 +1192,9 @@ export class DrizzleSalesStore implements SalesStore {
 			evidence,
 			id,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getReturn(input.organizationId, id);
 	}
 	async addReturnLine(
@@ -1227,10 +1277,11 @@ export class DrizzleSalesStore implements SalesStore {
 		const conditions = [
 			eq(salesReturnAuthorization.organizationId, input.organizationId),
 		];
-		if (input.cursor)
+		if (input.cursor) {
 			conditions.push(
 				drizzleSql`${salesReturnAuthorization.id} > ${input.cursor}`,
 			);
+		}
 		const rows = await db
 			.select()
 			.from(salesReturnAuthorization)
@@ -1269,7 +1320,9 @@ export class DrizzleSalesStore implements SalesStore {
 			{ status: input.status, updated_by: input.actorUserId },
 			evidence,
 		);
-		if (!written.ok) return written;
+		if (!written.ok) {
+			return written;
+		}
 		return this.getReturn(input.organizationId, input.id);
 	}
 

@@ -10,7 +10,7 @@ export type WorkCalendarSegmentInput = {
 	startDate: string;
 	endDate: string;
 	unit: LeaveUnit;
-	partialDay?: DayPortion;
+	partialDay?: DayPortion | undefined;
 };
 
 export type WorkCalendarSegment = {

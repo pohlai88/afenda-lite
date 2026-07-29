@@ -65,11 +65,15 @@ function failFromPersistence(error: unknown, fallbackMessage: string) {
 		: failFromAppError(mapped);
 }
 
-type TxIdRow = { id: string };
+interface TxIdRow {
+	id: string;
+}
 
 function parseStatus(value: string): DeliveryStatus {
 	const found = DELIVERY_STATUSES.find((candidate) => candidate === value);
-	if (found === undefined) throw new Error(`Invalid delivery.status: ${value}`);
+	if (found === undefined) {
+		throw new Error(`Invalid delivery.status: ${value}`);
+	}
 	return found;
 }
 
@@ -260,7 +264,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		message: string,
 	): Promise<Result<Delivery>> {
 		const result = await this.getDeliveryById(organizationId, id);
-		if (!result.ok) return result;
+		if (!result.ok) {
+			return result;
+		}
 		return result.data === null
 			? fail("INTERNAL_ERROR", message)
 			: ok(result.data);
@@ -330,8 +336,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					SELECT mutated.id FROM mutated, audited, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("INTERNAL_ERROR", "Delivery create returned no row");
+			}
 			return this.reload(record.organizationId, id, "Created delivery missing");
 		} catch (error) {
 			return writeError(
@@ -393,8 +400,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					SELECT mutated.id FROM mutated, audited
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Delivery line add conflict");
+			}
 			const [row] = await db
 				.select()
 				.from(deliveryLine)
@@ -417,7 +425,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		}
 	}
 
-	async startPicking(
+	startPicking(
 		record: DeliveryStateRecord,
 		_ports: MutationPorts,
 		meta: MutationMeta,
@@ -434,17 +442,27 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			record.organizationId,
 			record.deliveryId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail("NOT_FOUND", "Delivery not found");
+		}
 		const line = existing.data.lines.find(
 			(row) => row.id === record.deliveryLineId,
 		);
-		if (line === undefined) return fail("NOT_FOUND", "Delivery line not found");
+		if (line === undefined) {
+			return fail("NOT_FOUND", "Delivery line not found");
+		}
 		const total = existing.data.picks
 			.filter((row) => row.deliveryLineId === line.id)
 			.reduce((sum, row) => sum + Number(row.quantityPicked), 0);
-		if (total + Number(record.quantityPicked) > Number(line.quantityToDeliver))
+		if (
+			total + Number(record.quantityPicked) >
+			Number(line.quantityToDeliver)
+		) {
 			return fail("CONFLICT", "Picked quantity exceeds quantity to deliver");
+		}
 		const id = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -515,8 +533,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					SELECT mutated.id FROM mutated, audited, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Delivery pick confirmation conflict");
+			}
 			const [row] = await db
 				.select()
 				.from(deliveryPick)
@@ -548,21 +567,27 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			record.organizationId,
 			record.deliveryId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail("NOT_FOUND", "Delivery not found");
+		}
 		if (
 			existing.data.packIdempotencyKey !== null &&
 			existing.data.packIdempotencyKey === record.idempotencyKey
 		) {
-			const last = existing.data.packs[existing.data.packs.length - 1];
+			const last = existing.data.packs.at(-1);
 			return last === undefined
 				? fail("INTERNAL_ERROR", "Packed delivery missing pack row")
 				: ok(last);
 		}
-		if (existing.data.status !== "picking")
+		if (existing.data.status !== "picking") {
 			return fail("CONFLICT", "Packing requires picking status");
-		if (existing.data.version !== record.expectedVersion)
+		}
+		if (existing.data.version !== record.expectedVersion) {
 			return fail("CONFLICT", "Delivery version conflict");
+		}
 		for (const line of existing.data.lines) {
 			const picked = existing.data.picks
 				.filter((row) => row.deliveryLineId === line.id)
@@ -632,8 +657,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					SELECT mutated.id FROM mutated, audited, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Delivery pack confirmation conflict");
+			}
 			const [row] = await db
 				.select()
 				.from(deliveryPack)
@@ -656,7 +682,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		}
 	}
 
-	async postDelivery(
+	postDelivery(
 		record: DeliveryStateRecord,
 		_ports: MutationPorts,
 		meta: MutationMeta,
@@ -680,8 +706,12 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			record.organizationId,
 			record.deliveryId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail("NOT_FOUND", "Delivery not found");
+		}
 		if (
 			existing.data.podIdempotencyKey !== null &&
 			existing.data.podIdempotencyKey === record.idempotencyKey &&
@@ -689,12 +719,15 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		) {
 			return ok(existing.data.proofOfDelivery);
 		}
-		if (existing.data.proofOfDelivery !== null)
+		if (existing.data.proofOfDelivery !== null) {
 			return fail("CONFLICT", "Proof of delivery already exists");
-		if (existing.data.status !== "posted")
+		}
+		if (existing.data.status !== "posted") {
 			return fail("CONFLICT", "Proof of delivery requires posted status");
-		if (existing.data.version !== record.expectedVersion)
+		}
+		if (existing.data.version !== record.expectedVersion) {
 			return fail("CONFLICT", "Delivery version conflict");
+		}
 		const advances = record.outcome === "delivered";
 		const nextStatus = advances ? "delivered" : "posted";
 		const id = randomUUID();
@@ -772,8 +805,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					WHERE ${advances} = false OR EXISTS (SELECT 1 FROM completed_outboxed)
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Proof of delivery record conflict");
+			}
 			const [row] = await db
 				.select()
 				.from(proofOfDelivery)
@@ -805,16 +839,21 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			record.organizationId,
 			record.deliveryId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail("NOT_FOUND", "Delivery not found");
+		}
 		if (
 			existing.data.cancelIdempotencyKey !== null &&
 			existing.data.cancelIdempotencyKey === record.idempotencyKey
 		) {
 			return ok(existing.data);
 		}
-		if (!["draft", "picking", "packed"].includes(existing.data.status))
+		if (!["draft", "picking", "packed"].includes(existing.data.status)) {
 			return fail("CONFLICT", "Delivery cannot be cancelled after posting");
+		}
 		return this.transition(
 			record,
 			meta,
@@ -834,8 +873,12 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			record.organizationId,
 			record.deliveryId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail("NOT_FOUND", "Delivery not found");
+		}
 		if (
 			existing.data.closeIdempotencyKey !== null &&
 			existing.data.closeIdempotencyKey === record.idempotencyKey
@@ -864,7 +907,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					and(eq(delivery.organizationId, organizationId), eq(delivery.id, id)),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [lines, picks, packs, proofs] = await Promise.all([
 				db
 					.select()
@@ -926,19 +971,22 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<Delivery[]>> {
 		try {
 			const conditions = [eq(delivery.organizationId, filter.organizationId)];
-			if (filter.status !== undefined)
+			if (filter.status !== undefined) {
 				conditions.push(eq(delivery.status, filter.status));
-			if (filter.warehouseId !== undefined)
+			}
+			if (filter.warehouseId !== undefined) {
 				conditions.push(eq(delivery.warehouseId, filter.warehouseId));
-			if (filter.salesOrderId !== undefined)
+			}
+			if (filter.salesOrderId !== undefined) {
 				conditions.push(eq(delivery.salesOrderId, filter.salesOrderId));
+			}
 			const sort = filter.sort ?? "created_at";
-			const primaryOrder =
-				sort === "code"
-					? desc(delivery.code)
-					: sort === "status"
-						? desc(delivery.status)
-						: desc(delivery.createdAt);
+			let primaryOrder = desc(delivery.createdAt);
+			if (sort === "code") {
+				primaryOrder = desc(delivery.code);
+			} else if (sort === "status") {
+				primaryOrder = desc(delivery.status);
+			}
 			const headers = await db
 				.select()
 				.from(delivery)
@@ -946,7 +994,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				.orderBy(primaryOrder, desc(delivery.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			if (headers.length === 0) return ok([]);
+			if (headers.length === 0) {
+				return ok([]);
+			}
 			const ids = headers.map((row) => row.id);
 			const [lines, picks, packs, proofs] = await Promise.all([
 				db
@@ -991,8 +1041,11 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				const values = new Map<string, T[]>();
 				for (const row of rows) {
 					const bucket = values.get(row.deliveryId);
-					if (bucket === undefined) values.set(row.deliveryId, [row]);
-					else bucket.push(row);
+					if (bucket === undefined) {
+						values.set(row.deliveryId, [row]);
+					} else {
+						bucket.push(row);
+					}
 				}
 				return values;
 			};
@@ -1030,14 +1083,21 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			record.organizationId,
 			record.deliveryId,
 		);
-		if (!existing.ok) return existing;
-		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
-		if (existing.data.status !== from)
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail("NOT_FOUND", "Delivery not found");
+		}
+		if (existing.data.status !== from) {
 			return fail("CONFLICT", `Delivery must be ${from}`);
-		if (requireLines && existing.data.lines.length === 0)
+		}
+		if (requireLines && existing.data.lines.length === 0) {
 			return fail("CONFLICT", "Picking requires at least one delivery line");
-		if (existing.data.version !== record.expectedVersion)
+		}
+		if (existing.data.version !== record.expectedVersion) {
 			return fail("CONFLICT", "Delivery version conflict");
+		}
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -1102,8 +1162,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						OR EXISTS (SELECT 1 FROM outboxed)
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Delivery transition conflict");
+			}
 			return this.reload(
 				record.organizationId,
 				record.deliveryId,
@@ -1131,8 +1192,8 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					AND dl.sales_order_line_id = ${salesOrderLineId}
 					AND d.status IN ('posted', 'delivered', 'closed')
 			`);
-			const total = (result.rows[0] as { total: string })?.total ?? "0";
-			return ok(String(total));
+			const [row] = result.rows;
+			return ok(String(row?.total ?? "0"));
 		} catch (error) {
 			return failFromPersistence(
 				error,

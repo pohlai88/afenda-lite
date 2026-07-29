@@ -109,7 +109,7 @@ function SupplierMasterForm() {
 								fieldId="supplier-tax-registration"
 								label="Tax registration number"
 								description="Enter the identifier issued by the tax authority."
-								error={taxError}
+								{...(taxError === undefined ? {} : { error: taxError })}
 								required
 							>
 								<FormInput

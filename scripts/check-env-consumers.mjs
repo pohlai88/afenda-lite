@@ -38,6 +38,11 @@ const LEGACY_ENV_ALIAS_PATTERN =
 	/\b(?:POSTGRES_URL|POSTGRES_PRISMA_URL|NEON_DATABASE_URL|NEXTAUTH_URL|AUTH_URL|PUBLIC_APP_URL|REDIS_URL|UPSTASH_URL)\b/u;
 const DOCS_PRODUCT_ENV_IMPORT_PATTERN =
 	/from\s+["']@afenda\/env["']|import\s*\(\s*["']@afenda\/env["']\s*\)/u;
+const TEST_FILE_PATTERN = /\.(?:test|spec)\.[cm]?[jt]sx?$/u;
+const FRAMEWORK_CONFIG_PATTERN =
+	/(?:^|\/)(?:next|playwright(?:\.[\w-]+)?|vitest(?:\.[\w-]+)?|vercel|drizzle)\.config\.[cm]?[jt]s$/u;
+const LINE_BREAK_PATTERN = /\r?\n/u;
+const WINDOWS_SEPARATOR_PATTERN = /\\/g;
 const ALLOWED_TRACKED_ENV_FILES = new Set([".env.example"]);
 
 const APPROVED_RUNTIME_PROCESS_ENV_EXCEPTIONS = new Map([
@@ -56,7 +61,7 @@ const APPROVED_RUNTIME_PROCESS_ENV_EXCEPTIONS = new Map([
 ]);
 
 function normalizedRelative(root, pathname) {
-	return relative(root, pathname).replace(/\\/g, "/");
+	return relative(root, pathname).replace(WINDOWS_SEPARATOR_PATTERN, "/");
 }
 
 function extensionFor(name) {
@@ -74,15 +79,13 @@ function isTestLikePath(relativePath) {
 		relativePath.includes("/test/") ||
 		relativePath.includes("/tests/") ||
 		relativePath.includes("/testing/") ||
-		/\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(relativePath)
+		TEST_FILE_PATTERN.test(relativePath)
 	);
 }
 
 function isFrameworkBootstrap(relativePath) {
 	return (
-		/(?:^|\/)(?:next|playwright(?:\.[\w-]+)?|vitest(?:\.[\w-]+)?|vercel|drizzle)\.config\.[cm]?[jt]s$/u.test(
-			relativePath,
-		) ||
+		FRAMEWORK_CONFIG_PATTERN.test(relativePath) ||
 		relativePath.endsWith("/next.config.mjs") ||
 		relativePath.endsWith("/next.config.ts")
 	);
@@ -93,11 +96,15 @@ function isEnvAuthority(relativePath) {
 }
 
 function isOperatorTooling(relativePath) {
-	return relativePath.startsWith("scripts/") || relativePath.includes("/scripts/");
+	return (
+		relativePath.startsWith("scripts/") || relativePath.includes("/scripts/")
+	);
 }
 
 function isRuntimePackageOrApp(relativePath) {
-	return relativePath.startsWith("apps/") || relativePath.startsWith("packages/");
+	return (
+		relativePath.startsWith("apps/") || relativePath.startsWith("packages/")
+	);
 }
 
 function exceptionReason(relativePath) {
@@ -125,7 +132,9 @@ function walk(directory, root, files = []) {
 	}
 
 	for (const name of entries) {
-		if (SKIP_DIR.has(name)) continue;
+		if (SKIP_DIR.has(name)) {
+			continue;
+		}
 
 		const fullPath = join(directory, name);
 		let stats;
@@ -161,13 +170,14 @@ function processEnvMatches(content) {
 function stripComments(content) {
 	return content
 		.replace(/\/\*[\s\S]*?\*\//gu, (match) => " ".repeat(match.length))
-		.replace(/(^|[^:])\/\/.*$/gmu, (match, prefix) =>
-			`${prefix}${" ".repeat(match.length - prefix.length)}`,
+		.replace(
+			/(^|[^:])\/\/.*$/gmu,
+			(match, prefix) => `${prefix}${" ".repeat(match.length - prefix.length)}`,
 		);
 }
 
 function lineNumberFor(content, index) {
-	return content.slice(0, index).split(/\r?\n/u).length;
+	return content.slice(0, index).split(LINE_BREAK_PATTERN).length;
 }
 
 function addFinding(findings, finding) {
@@ -180,7 +190,9 @@ function analyzeFile({ relativePath, content }) {
 	const envMatches = processEnvMatches(content);
 
 	for (const match of envMatches) {
-		if (allowedReason !== undefined) continue;
+		if (allowedReason !== undefined) {
+			continue;
+		}
 		if (isRuntimePackageOrApp(relativePath)) {
 			addFinding(findings, {
 				category: "RAW_PROCESS_ENV",
@@ -246,7 +258,10 @@ function analyzeFile({ relativePath, content }) {
 		addFinding(findings, {
 			category: "DOCS_PRODUCT_ENV_IMPORT",
 			file: relativePath,
-			line: lineNumberFor(content, content.search(DOCS_PRODUCT_ENV_IMPORT_PATTERN)),
+			line: lineNumberFor(
+				content,
+				content.search(DOCS_PRODUCT_ENV_IMPORT_PATTERN),
+			),
 			variable: "@afenda/env",
 			message: "docs app must import docsEnv from @afenda/env/docs only",
 		});
@@ -269,7 +284,9 @@ function listTrackedFiles(root) {
 		return [];
 	}
 
-	return result.stdout.split(/\r?\n/u).filter((line) => line.length > 0);
+	return result.stdout
+		.split(LINE_BREAK_PATTERN)
+		.filter((line) => line.length > 0);
 }
 
 function analyzeTrackedEnvFiles(root) {
@@ -284,7 +301,8 @@ function analyzeTrackedEnvFiles(root) {
 			file,
 			line: 1,
 			variable: ".env",
-			message: "only .env.example may be committed; local env files must stay ignored",
+			message:
+				"only .env.example may be committed; local env files must stay ignored",
 		}));
 }
 

@@ -134,7 +134,10 @@ export type OfferCreateRecord = {
 	applicationId: HumanResourcesApplicationId;
 	termsSummary: string;
 	expiresOn: string;
-	compensationProposalId?: HumanResourcesCompensationProposalId | null;
+	compensationProposalId?:
+		| HumanResourcesCompensationProposalId
+		| null
+		| undefined;
 	createdBy: string;
 };
 
@@ -165,11 +168,11 @@ export type HumanResourcesRecruitmentStore = {
 		input: {
 			organizationId: string;
 			requisitionId: HumanResourcesRequisitionId;
-			title?: string;
-			jobId?: HumanResourcesJobId | null;
-			positionId?: HumanResourcesPositionId | null;
-			departmentId?: HumanResourcesDepartmentId | null;
-			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null;
+			title?: string | undefined;
+			jobId?: HumanResourcesJobId | null | undefined;
+			positionId?: HumanResourcesPositionId | null | undefined;
+			departmentId?: HumanResourcesDepartmentId | null | undefined;
+			hiringManagerEmployeeId?: HumanResourcesEmployeeId | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -196,7 +199,7 @@ export type HumanResourcesRecruitmentStore = {
 			status: RequisitionStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			emitApprovedEvent?: boolean;
+			emitApprovedEvent?: boolean | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -206,7 +209,7 @@ export type HumanResourcesRecruitmentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: RequisitionStatus;
+		status?: RequisitionStatus | undefined;
 	}): Promise<Result<RequisitionListPage>>;
 	// Candidate
 	findCandidateByIdempotencyKey(input: {
@@ -234,8 +237,8 @@ export type HumanResourcesRecruitmentStore = {
 		input: {
 			organizationId: string;
 			candidateId: HumanResourcesCandidateId;
-			displayName?: string;
-			phone?: string | null;
+			displayName?: string | undefined;
+			phone?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -282,15 +285,15 @@ export type HumanResourcesRecruitmentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CandidateStatus;
-		retentionDueAsOf?: string;
-		query?: string;
+		status?: CandidateStatus | undefined;
+		retentionDueAsOf?: string | undefined;
+		query?: string | undefined;
 	}): Promise<Result<CandidateListPage>>;
 
 	detectCandidateDuplicates(input: {
 		organizationId: string;
-		email?: string;
-		displayName?: string;
+		email?: string | undefined;
+		displayName?: string | undefined;
 	}): Promise<Result<readonly CandidateDuplicateMatch[]>>;
 	// Application
 	getApplicationById(input: {
@@ -317,8 +320,8 @@ export type HumanResourcesRecruitmentStore = {
 			status: ApplicationStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			reason?: string | null;
-			reasonCode?: string | null;
+			reason?: string | null | undefined;
+			reasonCode?: string | null | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -330,8 +333,8 @@ export type HumanResourcesRecruitmentStore = {
 			applicationId: HumanResourcesApplicationId;
 			expectedVersion: number;
 			actorUserId: string;
-			reason?: string | null;
-			reasonCode?: string | null;
+			reason?: string | null | undefined;
+			reasonCode?: string | null | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -350,9 +353,9 @@ export type HumanResourcesRecruitmentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: ApplicationStatus;
-		candidateId?: HumanResourcesCandidateId;
-		requisitionId?: HumanResourcesRequisitionId;
+		status?: ApplicationStatus | undefined;
+		candidateId?: HumanResourcesCandidateId | undefined;
+		requisitionId?: HumanResourcesRequisitionId | undefined;
 	}): Promise<Result<ApplicationListPage>>;
 	// Interview
 	getInterviewById(input: {
@@ -393,7 +396,7 @@ export type HumanResourcesRecruitmentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		applicationId?: HumanResourcesApplicationId;
+		applicationId?: HumanResourcesApplicationId | undefined;
 	}): Promise<Result<InterviewListPage>>;
 	// Interview evaluation
 	getInterviewEvaluationByInterviewId(input: {
@@ -432,9 +435,12 @@ export type HumanResourcesRecruitmentStore = {
 		input: {
 			organizationId: string;
 			offerId: HumanResourcesOfferId;
-			termsSummary?: string;
-			expiresOn?: string;
-			compensationProposalId?: HumanResourcesCompensationProposalId | null;
+			termsSummary?: string | undefined;
+			expiresOn?: string | undefined;
+			compensationProposalId?:
+				| HumanResourcesCompensationProposalId
+				| null
+				| undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -449,7 +455,7 @@ export type HumanResourcesRecruitmentStore = {
 			status: OfferStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			asOfDate?: string;
+			asOfDate?: string | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -473,7 +479,7 @@ export type HumanResourcesRecruitmentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: OfferStatus;
-		applicationId?: HumanResourcesApplicationId;
+		status?: OfferStatus | undefined;
+		applicationId?: HumanResourcesApplicationId | undefined;
 	}): Promise<Result<OfferListPage>>;
 };

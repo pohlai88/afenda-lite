@@ -135,9 +135,9 @@ export type AssignmentCreateRecord = {
 	organizationDimensions: HumanResourcesOrganizationDimensions;
 	managerEmployeeIdSnapshot: HumanResourcesEmployeeId | null;
 	workCalendarIdSnapshot: HumanResourcesWorkCalendarId | null;
-	predecessorAssignmentId?: HumanResourcesAssignmentId | null;
-	successorAssignmentId?: HumanResourcesAssignmentId | null;
-	transferMovementId?: HumanResourcesEmploymentMovementId | null;
+	predecessorAssignmentId?: HumanResourcesAssignmentId | null | undefined;
+	successorAssignmentId?: HumanResourcesAssignmentId | null | undefined;
+	transferMovementId?: HumanResourcesEmploymentMovementId | null | undefined;
 	startsOn: string;
 	endsOn: string | null;
 	createdBy: string;
@@ -200,9 +200,9 @@ export type HumanResourcesCoreStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeNumberPrefix?: string;
-		legalNamePrefix?: string;
-		employmentStatus?: EmploymentStatus;
+		employeeNumberPrefix?: string | undefined;
+		legalNamePrefix?: string | undefined;
+		employmentStatus?: EmploymentStatus | undefined;
 	}): Promise<Result<EmployeeListPage>>;
 	// Employment
 	getEmploymentById(input: {
@@ -253,10 +253,10 @@ export type HumanResourcesCoreStore = {
 		input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
-			status?: EmploymentStatus;
-			startsOn?: string;
-			endsOn?: string | null;
-			lifecycleEffectiveOn?: string;
+			status?: EmploymentStatus | undefined;
+			startsOn?: string | undefined;
+			endsOn?: string | null | undefined;
+			lifecycleEffectiveOn?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -268,12 +268,12 @@ export type HumanResourcesCoreStore = {
 		input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
-			status?: EmploymentStatus;
-			startsOn?: string;
-			endsOn?: string | null;
+			status?: EmploymentStatus | undefined;
+			startsOn?: string | undefined;
+			endsOn?: string | null | undefined;
 			reason: string;
 			evidenceReference: string | null;
-			effectiveOn?: string;
+			effectiveOn?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -326,9 +326,9 @@ export type HumanResourcesCoreStore = {
 		input: {
 			organizationId: string;
 			employmentContractId: HumanResourcesEmploymentContractId;
-			referenceCode?: string;
-			startsOn?: string;
-			endsOn?: string | null;
+			referenceCode?: string | undefined;
+			startsOn?: string | undefined;
+			endsOn?: string | null | undefined;
 			reasonCode: string;
 			sourceReference: string;
 			expectedVersion: number;
@@ -377,11 +377,11 @@ export type HumanResourcesCoreStore = {
 		input: {
 			organizationId: string;
 			departmentId: HumanResourcesDepartmentId;
-			name?: string;
-			parentDepartmentId?: HumanResourcesDepartmentId | null;
+			name?: string | undefined;
+			parentDepartmentId?: HumanResourcesDepartmentId | null | undefined;
 			effectiveOn: string;
 			reasonCode: string;
-			evidenceRef?: string;
+			evidenceRef?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -411,8 +411,8 @@ export type HumanResourcesCoreStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: DepartmentStatus;
-		parentDepartmentId?: HumanResourcesDepartmentId | null;
+		status?: DepartmentStatus | undefined;
+		parentDepartmentId?: HumanResourcesDepartmentId | null | undefined;
 	}): Promise<Result<{ departments: Department[]; totalCount: number }>>;
 
 	listAllDepartments(input: {
@@ -442,7 +442,7 @@ export type HumanResourcesCoreStore = {
 			title: string;
 			effectiveOn: string;
 			reasonCode: string;
-			evidenceRef?: string;
+			evidenceRef?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -472,7 +472,7 @@ export type HumanResourcesCoreStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: JobStatus;
+		status?: JobStatus | undefined;
 	}): Promise<Result<{ jobs: Job[]; totalCount: number }>>;
 	// Position
 	getPositionById(input: {
@@ -495,12 +495,12 @@ export type HumanResourcesCoreStore = {
 		input: {
 			organizationId: string;
 			positionId: HumanResourcesPositionId;
-			title?: string;
-			departmentId?: HumanResourcesDepartmentId;
-			jobId?: HumanResourcesJobId;
+			title?: string | undefined;
+			departmentId?: HumanResourcesDepartmentId | undefined;
+			jobId?: HumanResourcesJobId | undefined;
 			effectiveOn: string;
 			reasonCode: string;
-			evidenceRef?: string;
+			evidenceRef?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -530,9 +530,9 @@ export type HumanResourcesCoreStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: string;
-		departmentId?: HumanResourcesDepartmentId;
-		jobId?: HumanResourcesJobId;
+		status?: string | undefined;
+		departmentId?: HumanResourcesDepartmentId | undefined;
+		jobId?: HumanResourcesJobId | undefined;
 	}): Promise<Result<{ positions: Position[]; totalCount: number }>>;
 
 	countOpenAssignmentsForPosition(input: {

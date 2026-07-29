@@ -16,7 +16,7 @@ export async function getEmployeeComplianceSummary(
 			return store.getEmployeeComplianceSummary({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
-				asOf: data.asOf,
+				...(data.asOf === undefined ? {} : { asOf: data.asOf }),
 			});
 		},
 	});

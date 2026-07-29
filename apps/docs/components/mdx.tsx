@@ -23,11 +23,18 @@ import { TypeTable } from "@/components/type-table";
 import { docsTypeGenerator } from "@/lib/docs-typescript";
 
 function MdxZoomImage(props: ComponentProps<"img">) {
-	const { src, alt, ...rest } = props;
+	const { src, alt, sizes, ...rest } = props;
 	if (typeof src !== "string") {
 		return <img alt={alt ?? ""} src={src} {...rest} />;
 	}
-	return <ImageZoom src={src} alt={alt ?? ""} {...rest} />;
+	return (
+		<ImageZoom
+			alt={alt ?? ""}
+			src={src}
+			{...(sizes === undefined ? {} : { sizes })}
+			{...rest}
+		/>
+	);
 }
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {

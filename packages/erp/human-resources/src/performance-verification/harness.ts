@@ -40,10 +40,15 @@ function percentile(sorted: readonly number[], ratio: number): number {
 
 export async function runLocalBenchmark(
 	workload: LocalBenchmarkWorkload,
-	options: { warmupRuns?: number; sampleRuns?: number } = {},
+	options: {
+		warmupRuns?: number;
+		sampleRuns?: number;
+		enforceThreshold?: boolean;
+	} = {},
 ): Promise<LocalBenchmarkEvidence> {
 	const warmupRuns = options.warmupRuns ?? 2;
 	const sampleRuns = options.sampleRuns ?? 7;
+	const enforceThreshold = options.enforceThreshold ?? true;
 	if (warmupRuns < 0 || !Number.isInteger(warmupRuns)) {
 		throw new Error("Benchmark warmup runs must be a non-negative integer");
 	}
@@ -88,7 +93,7 @@ export async function runLocalBenchmark(
 		checksum,
 		passed: p95Ms <= workload.thresholdP95Ms,
 	};
-	if (!evidence.passed) {
+	if (enforceThreshold && !evidence.passed) {
 		throw new Error(
 			`Local benchmark ${workload.name} p95 ${p95Ms.toFixed(3)}ms exceeded ${workload.thresholdP95Ms}ms`,
 		);

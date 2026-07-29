@@ -305,7 +305,7 @@ export function createHumanResourcesPlatformEventHandlers(
 				throw new AppError({
 					code: result.code,
 					message: result.message,
-					details: result.details,
+					...(result.details === undefined ? {} : { details: result.details }),
 				});
 			}
 		};

@@ -30,7 +30,7 @@ export type DomainEvent<T = unknown> = {
 	id: string;
 	type: string;
 	sourceModule: EventSourceModule;
-	deduplicationKey?: string | null;
+	deduplicationKey?: string | null | undefined;
 	occurredAt: Date;
 	correlationId: string;
 	causationId: string | null;
@@ -59,13 +59,13 @@ export type DomainEventWriteInput = {
 
 export type DomainEventQueryFilter = {
 	organizationId: string;
-	id?: string;
-	type?: string;
-	sourceModule?: EventSourceModule;
-	status?: EventStatus;
-	correlationId?: string;
-	from?: Date;
-	to?: Date;
+	id?: string | undefined;
+	type?: string | undefined;
+	sourceModule?: EventSourceModule | undefined;
+	status?: EventStatus | undefined;
+	correlationId?: string | undefined;
+	from?: Date | undefined;
+	to?: Date | undefined;
 };
 
 export type DomainEventQueryOptions = DomainEventQueryFilter & {
@@ -74,7 +74,7 @@ export type DomainEventQueryOptions = DomainEventQueryFilter & {
 };
 
 export type DomainEventClaimOptions = {
-	organizationId?: string;
+	organizationId?: string | undefined;
 	limit: number;
 };
 

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockedEnv = vi.hoisted(() => ({
-	PORTAL_ORGANIZATION_ID: undefined as string | undefined,
 	PORTAL_ORG_SLUG: undefined as string | undefined,
+	PORTAL_ORGANIZATION_ID: undefined as string | undefined,
 }));
 
 vi.mock("@afenda/env", () => ({

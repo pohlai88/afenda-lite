@@ -147,7 +147,10 @@ function decimalFractionLength(value: string): number {
 function validateDecimalBoundFit(
 	field: "minimum" | "maximum",
 	value: string | undefined,
-	rules: { precision?: number; scale?: number },
+	rules: {
+		precision?: number | undefined;
+		scale?: number | undefined;
+	},
 	ctx: z.RefinementCtx,
 ): void {
 	if (value === undefined) return;

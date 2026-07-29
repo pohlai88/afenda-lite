@@ -30,8 +30,9 @@ import { salesPageRequestSchema } from "../../pagination";
 import type { SalesOrder, SalesQuotationStatus } from "../../types";
 import { salesEvidence } from "../integration-projections/evidence";
 
+const ZERO_DECIMAL_PATTERN = /^0(?:\.0+)?$/u;
 const positiveDecimal = nonNegativeDecimalAmountSchema.refine(
-	(value) => value !== "0" && !/^0(?:\.0+)?$/u.test(value),
+	(value) => value !== "0" && !ZERO_DECIMAL_PATTERN.test(value),
 );
 export const createSalesQuotationInputSchema =
 	salesMutationContextSchema.extend({
@@ -76,28 +77,35 @@ export async function createDraftSalesQuotation(
 	options: SalesCommandOptions = {},
 ) {
 	const parsed = createSalesQuotationInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid sales quotation",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.quotation.create",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	const master = required(deps.masterData, "Master-data snapshot");
-	if (!master.ok) return master;
+	if (!master.ok) {
+		return master;
+	}
 	const customer = await master.data.resolveCustomer({
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		partyId: parsed.data.partyId,
 		paymentTermId: parsed.data.paymentTermId,
 	});
-	if (!customer.ok) return customer;
+	if (!customer.ok) {
+		return customer;
+	}
 	return deps.store.createQuotation(
 		{
 			organizationId: parsed.data.organizationId,
@@ -129,34 +137,45 @@ export async function addSalesQuotationLine(
 	options: SalesCommandOptions = {},
 ) {
 	const parsed = addSalesQuotationLineInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid quotation line",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.quotation.line.add",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	const master = required(deps.masterData, "Master-data snapshot");
-	if (!master.ok) return master;
+	if (!master.ok) {
+		return master;
+	}
 	const item = await master.data.resolveItem({
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		itemId: parsed.data.itemId,
 		requestedUomId: parsed.data.requestedUomId,
 	});
-	if (!item.ok) return item;
+	if (!item.ok) {
+		return item;
+	}
 	const discount = parsed.data.discountAmount ?? "0";
 	const tax = parsed.data.taxAmount ?? "0";
 	const gross = multiplyDecimal(parsed.data.quantity, parsed.data.unitPrice);
-	if (!gross.ok) return gross;
+	if (!gross.ok) {
+		return gross;
+	}
 	const total = addDecimals([gross.data, `-${discount}`, tax]);
-	if (!total.ok) return total;
+	if (!total.ok) {
+		return total;
+	}
 	return deps.store.addQuotationLine(
 		{
 			organizationId: parsed.data.organizationId,
@@ -185,19 +204,22 @@ export async function getSalesQuotation(
 	options: SalesQueryOptions = {},
 ) {
 	const parsed = getSalesQuotationInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid quotation ID",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.quotation.get",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.getQuotation({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.id,
@@ -209,19 +231,22 @@ export async function listSalesQuotations(
 	options: SalesQueryOptions = {},
 ) {
 	const parsed = listSalesQuotationsInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter valid quotation filters",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.quotation.list",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.listQuotations(parsed.data);
 }
 async function transition(
@@ -238,19 +263,22 @@ async function transition(
 	options: SalesCommandOptions,
 ) {
 	const parsed = quotationTransitionInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid quotation transition",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command,
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.transitionQuotation(
 		{
 			organizationId: parsed.data.organizationId,
@@ -304,29 +332,37 @@ export async function convertSalesQuotationToOrder(
 	const parsed = quotationTransitionInputSchema
 		.extend({ orderCode: z.string().trim().min(1).max(64) })
 		.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid quotation conversion",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.quotation.convert",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	const quotation = await deps.store.getQuotation({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.quotationId,
 	});
-	if (!quotation.ok) return quotation;
-	if (!quotation.data) return fail("NOT_FOUND", "Sales quotation not found");
-	if (quotation.data.status !== "accepted")
+	if (!quotation.ok) {
+		return quotation;
+	}
+	if (!quotation.data) {
+		return fail("NOT_FOUND", "Sales quotation not found");
+	}
+	if (quotation.data.status !== "accepted") {
 		return fail("CONFLICT", "Only accepted quotations can be converted", {
 			reason: "SALES_INVALID_STATE",
 		});
+	}
 	const order = await deps.store.createOrder(
 		{
 			organizationId: parsed.data.organizationId,
@@ -351,7 +387,9 @@ export async function convertSalesQuotationToOrder(
 			action: "CREATE",
 		}),
 	);
-	if (!order.ok) return order;
+	if (!order.ok) {
+		return order;
+	}
 	const transitioned = await deps.store.transitionQuotation(
 		{
 			organizationId: parsed.data.organizationId,
@@ -369,6 +407,8 @@ export async function convertSalesQuotationToOrder(
 			action: "UPDATE",
 		}),
 	);
-	if (!transitioned.ok) return transitioned;
+	if (!transitioned.ok) {
+		return transitioned;
+	}
 	return order;
 }

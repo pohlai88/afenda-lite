@@ -23,7 +23,7 @@ export type CollectHumanResourcesSubjectDataInput = {
 	subjectEmployeeId: HumanResourcesEmployeeId;
 	correlationId: string;
 	store: HumanResourcesStore;
-	generatedAt?: string;
+	generatedAt?: string | undefined;
 };
 
 function exportRecord(

@@ -2,7 +2,6 @@ import { createOpenAPI, type OpenAPIOptions } from "fumadocs-openapi/server";
 import {
 	OPENAPI_DOCUMENT_ID,
 	OPENAPI_DOCUMENT_PATH,
-	type OpenApiDocumentId,
 } from "./openapi-document-id";
 
 /**
@@ -17,7 +16,7 @@ export {
 	OPENAPI_DOCUMENT_ID,
 	OPENAPI_DOCUMENT_PATH,
 	type OpenApiDocumentId,
-};
+} from "./openapi-document-id";
 
 const openApiServerOptions = {
 	input: {

@@ -95,7 +95,7 @@ test("open Drawer and Menubar portals preserve themed elevation @visual", async 
 					})
 					.click();
 				const openSurface = page.getByRole(overlay.openRole, {
-					name: overlay.openName,
+					...(overlay.openName === undefined ? {} : { name: overlay.openName }),
 				});
 				await expect(openSurface).toBeVisible();
 				await expect(page).toHaveScreenshot(

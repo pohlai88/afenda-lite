@@ -2009,7 +2009,9 @@ export async function validateAttendanceImportAction(
 				}
 				const result = await attendanceSource.previewEvents({
 					organizationId: session.orgId,
-					cursor: parsed.data.cursor,
+					...(parsed.data.cursor === undefined
+						? {}
+						: { cursor: parsed.data.cursor }),
 				});
 				const mapped = mapPackageResult(result);
 				if (!mapped.ok) return mapped;

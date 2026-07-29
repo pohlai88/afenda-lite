@@ -279,13 +279,16 @@ interface ComponentDefinition {
 
 function defineComponent(definition: ComponentDefinition): UiComponentMetadata {
 	const governance = getComponentGovernance(definition.id);
+	const { sizes, tokenFamilies, variants, ...required } = definition;
 
 	return {
-		...definition,
+		...required,
 		name: definition.id,
 		qualityProfiles: [definition.qualityProfile],
 		requiredStates: statesByProfile[definition.qualityProfile],
-		tokenFamilies: definition.tokenFamilies ?? ["core-surface", "focus"],
+		tokenFamilies: tokenFamilies ?? ["core-surface", "focus"],
+		...(variants === undefined ? {} : { variants }),
+		...(sizes === undefined ? {} : { sizes }),
 		evidence: evidenceByProfile[definition.qualityProfile],
 		governance,
 		lifecycle: governance.lifecycle,

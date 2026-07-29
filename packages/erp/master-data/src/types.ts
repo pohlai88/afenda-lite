@@ -603,15 +603,17 @@ export type ActivatePartyChangePayload = {
 export type MergePartiesChangePayload = {
 	sourcePartyId: string;
 	targetPartyId: string;
-	fieldDecisions?: {
-		name?: "source" | "target";
-		legalName?: "source" | "target";
-		tradingName?: "source" | "target";
-		registrationNumber?: "source" | "target";
-		registrationCountryId?: "source" | "target";
-		preferredLanguageId?: "source" | "target";
-		defaultCurrencyId?: "source" | "target";
-	};
+	fieldDecisions?:
+		| {
+				name?: "source" | "target" | undefined;
+				legalName?: "source" | "target" | undefined;
+				tradingName?: "source" | "target" | undefined;
+				registrationNumber?: "source" | "target" | undefined;
+				registrationCountryId?: "source" | "target" | undefined;
+				preferredLanguageId?: "source" | "target" | undefined;
+				defaultCurrencyId?: "source" | "target" | undefined;
+		  }
+		| undefined;
 };
 
 export type ChangeRequestPayload =

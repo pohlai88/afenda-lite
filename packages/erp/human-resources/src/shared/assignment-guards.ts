@@ -33,7 +33,7 @@ function assignmentOutsideEmploymentRange(message: string): Result<never> {
 }
 
 export function assertNoAssignmentOverlap(input: {
-	candidateAssignmentId?: string;
+	candidateAssignmentId?: string | undefined;
 	candidateStartsOn: string;
 	candidateEndsOn: string | null;
 	existing: readonly {

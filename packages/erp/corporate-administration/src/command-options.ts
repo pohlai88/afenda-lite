@@ -33,7 +33,7 @@ export type CorporateAdministrationExecutionContext = Readonly<{
 export type CorporateAdministrationCommandOptions =
 	CorporateAdministrationExecutionContext &
 		Readonly<{
-			causationId?: CausationId;
+			causationId?: CausationId | undefined;
 			idempotencyKey: IdempotencyKey;
 		}>;
 

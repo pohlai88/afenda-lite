@@ -43,7 +43,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!quotation.ok) throw new Error(quotation.message);
+		if (!quotation.ok) {
+			throw new Error(quotation.message);
+		}
 		const fetched = await getSalesQuotation(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -84,7 +86,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!submitted.ok) throw new Error(submitted.message);
+		if (!submitted.ok) {
+			throw new Error(submitted.message);
+		}
 		const approved = await approveSalesQuotation(
 			{
 				...mutationContext("quote-approve"),
@@ -93,7 +97,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!approved.ok) throw new Error(approved.message);
+		if (!approved.ok) {
+			throw new Error(approved.message);
+		}
 		const sent = await sendSalesQuotation(
 			{
 				...mutationContext("quote-send"),
@@ -102,7 +108,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!sent.ok) throw new Error(sent.message);
+		if (!sent.ok) {
+			throw new Error(sent.message);
+		}
 		const accepted = await acceptSalesQuotation(
 			{
 				...mutationContext("quote-accept"),
@@ -125,7 +133,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!order.ok) throw new Error(order.message);
+		if (!order.ok) {
+			throw new Error(order.message);
+		}
 		const line = await addSalesOrderLine(
 			{
 				...mutationContext("return-order-line"),
@@ -137,7 +147,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!line.ok) throw new Error(line.message);
+		if (!line.ok) {
+			throw new Error(line.message);
+		}
 		const submittedOrder = await submitSalesOrder(
 			{
 				...mutationContext("return-order-submit"),
@@ -146,7 +158,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!submittedOrder.ok) throw new Error(submittedOrder.message);
+		if (!submittedOrder.ok) {
+			throw new Error(submittedOrder.message);
+		}
 		const approvedOrder = await approveSalesOrder(
 			{
 				...mutationContext("return-order-approve"),
@@ -155,7 +169,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!approvedOrder.ok) throw new Error(approvedOrder.message);
+		if (!approvedOrder.ok) {
+			throw new Error(approvedOrder.message);
+		}
 		const released = await postSalesOrder(
 			{
 				...mutationContext("return-order-post"),
@@ -164,7 +180,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!released.ok) throw new Error(released.message);
+		if (!released.ok) {
+			throw new Error(released.message);
+		}
 		const fulfilled = await recordSalesOrderFulfillment(
 			{
 				...mutationContext("return-order-fulfill"),
@@ -185,7 +203,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!authorization.ok) throw new Error(authorization.message);
+		if (!authorization.ok) {
+			throw new Error(authorization.message);
+		}
 		const fetched = await getReturnAuthorization(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -227,7 +247,9 @@ describe("quotation and return lifecycles", () => {
 			},
 			options,
 		);
-		if (!submitted.ok) throw new Error(submitted.message);
+		if (!submitted.ok) {
+			throw new Error(submitted.message);
+		}
 		const approved = await approveReturnAuthorization(
 			{
 				...mutationContext("return-approve"),

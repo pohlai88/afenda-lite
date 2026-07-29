@@ -51,7 +51,7 @@ export function conflictMatchesMatter(
 	input: {
 		matterType: ConflictDisclosure["matterType"];
 		matterId: string;
-		includeCleared?: boolean;
+		includeCleared?: boolean | undefined;
 	},
 ): boolean {
 	return (

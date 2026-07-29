@@ -159,7 +159,16 @@ export async function acknowledgeHumanResourcesReliabilityWorkAction(input: {
 			}
 			const result = await acknowledgeProductionReliabilityWork({
 				organizationId: session.orgId,
-				...parsed.data,
+				workItemId: parsed.data.workItemId,
+				receiptId: parsed.data.receiptId,
+				expectedVersion: parsed.data.expectedVersion,
+				outcome: parsed.data.outcome,
+				...(parsed.data.errorCode === undefined
+					? {}
+					: { errorCode: parsed.data.errorCode }),
+				...(parsed.data.errorMessage === undefined
+					? {}
+					: { errorMessage: parsed.data.errorMessage }),
 			});
 			if (!result.ok) return mapPackageResult(result);
 			const audited = await auditReliabilityOperation({

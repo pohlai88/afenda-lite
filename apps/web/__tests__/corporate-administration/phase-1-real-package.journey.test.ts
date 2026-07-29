@@ -530,7 +530,9 @@ function createReferenceData(): CompanyReferenceDataPort {
 				currencyCode: input.currencyCode,
 				active: true,
 				displayName: input.currencyCode,
-				effectiveDate: input.effectiveDate,
+				...(input.effectiveDate === undefined
+					? {}
+					: { effectiveDate: input.effectiveDate }),
 			}),
 		resolveIdentifierAuthority: async (input) =>
 			ok({

@@ -73,7 +73,7 @@ function ModuleCombobox({
 
 	return (
 		<Combobox
-			id={id}
+			{...(id === undefined ? {} : { id })}
 			aria-label={ariaLabel}
 			options={[...MODULE_OPTIONS]}
 			value={value}
@@ -97,7 +97,7 @@ function MultiModuleCombobox({
 
 	return (
 		<Combobox
-			id={id}
+			{...(id === undefined ? {} : { id })}
 			aria-label="Multiple modules"
 			multiple
 			options={[...MODULE_OPTIONS]}
@@ -121,7 +121,7 @@ function SupplierCombobox({
 
 	return (
 		<Combobox
-			id={id}
+			{...(id === undefined ? {} : { id })}
 			aria-label="Supplier"
 			options={[...SUPPLIER_OPTIONS]}
 			value={value}

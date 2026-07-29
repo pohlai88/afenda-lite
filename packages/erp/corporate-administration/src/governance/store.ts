@@ -122,8 +122,8 @@ export interface GovernanceStore {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
-		bodyType?: GovernanceBodyType;
-		includeRetired?: boolean;
+		bodyType?: GovernanceBodyType | undefined;
+		includeRetired?: boolean | undefined;
 	}): Promise<Result<readonly GovernanceBody[]>>;
 	createGovernanceBody(
 		input: CreateGovernanceBodyStoreInput,
@@ -146,7 +146,7 @@ export interface GovernanceStore {
 		organizationId: OrganizationId;
 		governanceBodyId: GovernanceBodyId;
 		asOf: CanonicalDate;
-		memberPartyId?: string;
+		memberPartyId?: string | undefined;
 	}): Promise<Result<readonly GovernanceMembership[]>>;
 	appointGovernanceMember(
 		input: AppointGovernanceMemberStoreInput,

@@ -13,16 +13,16 @@ import { resolveMasterDataStore } from "./resolve-store";
 import type { DependencyInspector } from "./types";
 
 export type MasterCommandOptions = {
-	store?: MasterDataStore;
-	ports?: MutationPorts;
-	dependencyInspector?: DependencyInspector;
-	organizationDimensionStore?: OrganizationDimensionStore;
+	store?: MasterDataStore | undefined;
+	ports?: MutationPorts | undefined;
+	dependencyInspector?: DependencyInspector | undefined;
+	organizationDimensionStore?: OrganizationDimensionStore | undefined;
 	/** Optional derived search store for projectors (defaults to Drizzle). */
-	searchStore?: SearchStore;
+	searchStore?: SearchStore | undefined;
 	/** Composition-root injected — never import `@afenda/admin` here. */
-	authorization?: MasterAuthorizationPort;
+	authorization?: MasterAuthorizationPort | undefined;
 	/** Package-internal import row context; never accept this from a public boundary. */
-	importMutation?: ImportMutationContext;
+	importMutation?: ImportMutationContext | undefined;
 };
 
 export type MasterQueryOptions = Pick<

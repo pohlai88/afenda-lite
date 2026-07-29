@@ -27,6 +27,7 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@afenda/testing": "workspace:*",
 		"@axe-core/playwright": "^4.12.1",
 		"@playwright/test": "^1.61.1",
 		"@storybook/addon-a11y": "10.5.5",

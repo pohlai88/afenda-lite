@@ -975,9 +975,9 @@ export async function endCompanyActivityFormAction(
 
 function createCommandOptions(
 	input: {
-		idempotencyKey?: string;
-		approvalRequestId?: ApprovalRequestId;
-		approvalDecisionId?: ApprovalDecisionId;
+		idempotencyKey?: string | undefined;
+		approvalRequestId?: ApprovalRequestId | undefined;
+		approvalDecisionId?: ApprovalDecisionId | undefined;
 	},
 	session: { orgId: string; userId: string },
 	correlationId: string,

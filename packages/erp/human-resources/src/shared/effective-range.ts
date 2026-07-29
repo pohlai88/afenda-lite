@@ -23,7 +23,7 @@ function resolveEffectiveRange<TRecord>(
 	input: {
 		records: readonly TRecord[];
 		asOf: string;
-		isEligible?: (record: TRecord) => boolean;
+		isEligible?: (record: TRecord) => boolean | undefined;
 	} & EffectiveRangeAccessors<TRecord>,
 ): EffectiveRangeResolution<TRecord> {
 	const eligible = input.isEligible ?? (() => true);
@@ -74,7 +74,7 @@ export function resolveUniqueEffectiveRangeRecord<
 >(input: {
 	records: readonly TRecord[];
 	asOf: string;
-	isEligible?: (record: TRecord) => boolean;
+	isEligible?: (record: TRecord) => boolean | undefined;
 }): EffectiveRangeResolution<TRecord> {
 	return resolveEffectiveRange({
 		...input,
@@ -89,7 +89,7 @@ export function resolveUniqueEffectiveRangeRecordBy<TRecord>(
 	input: {
 		records: readonly TRecord[];
 		asOf: string;
-		isEligible?: (record: TRecord) => boolean;
+		isEligible?: (record: TRecord) => boolean | undefined;
 	} & EffectiveRangeAccessors<TRecord>,
 ): EffectiveRangeResolution<TRecord> {
 	return resolveEffectiveRange(input);
@@ -104,7 +104,7 @@ export function selectUniqueEffectiveRangeRecord<
 >(input: {
 	records: readonly TRecord[];
 	asOf: string;
-	isEligible?: (record: TRecord) => boolean;
+	isEligible?: (record: TRecord) => boolean | undefined;
 }): TRecord | null {
 	const resolution = resolveUniqueEffectiveRangeRecord(input);
 	return resolution.ok ? resolution.record : null;

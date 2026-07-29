@@ -35,13 +35,15 @@ type TalentReadQueryConfig<
 		data: z.infer<TSchema>;
 		store: HumanResourcesStore;
 	}) => Promise<Result<TOut>>;
-	project?: (
-		value: TOut,
-		projection: HumanResourcesFieldProjection | undefined,
-	) => TProjected;
-	resolveRequestedFields?: (
-		data: z.infer<TSchema>,
-	) => readonly string[] | undefined;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
+	resolveRequestedFields?:
+		| ((data: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
 };
 
 /**
@@ -61,9 +63,11 @@ export async function runAuthorizedTalentReadQuery<
 		invalidMessage: config.invalidMessage,
 		query: config.query,
 		resolveResource: (data, opts) => config.resolveResource(data, opts),
-		resolveRequestedFields: config.resolveRequestedFields,
-		project: config.project,
 		execute: (data, { store }) => config.execute({ data, store }),
+		...(config.resolveRequestedFields === undefined
+			? {}
+			: { resolveRequestedFields: config.resolveRequestedFields }),
+		...(config.project === undefined ? {} : { project: config.project }),
 	});
 }
 
@@ -93,13 +97,15 @@ type TalentLoadedReadConfig<
 		loaded: TLoaded;
 		store: HumanResourcesStore;
 	}) => Promise<Result<TOut>>;
-	project?: (
-		value: TOut,
-		projection: HumanResourcesFieldProjection | undefined,
-	) => TProjected;
-	resolveRequestedFields?: (
-		data: z.infer<TSchema>,
-	) => readonly string[] | undefined;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
+	resolveRequestedFields?:
+		| ((data: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
 };
 
 /** Load-by-id talent read with NOT_FOUND when missing, then facade authorize. */
@@ -139,14 +145,16 @@ export async function runAuthorizedTalentLoadedReadQuery<
 		options,
 		resolveResource: async () =>
 			config.resolveResourceFromLoaded(parsed.data, loadedRow, options),
-		resolveRequestedFields: config.resolveRequestedFields,
-		project: config.project,
 		execute: () =>
 			config.execute({
 				data: parsed.data,
 				loaded: loadedRow,
 				store,
 			}),
+		...(config.resolveRequestedFields === undefined
+			? {}
+			: { resolveRequestedFields: config.resolveRequestedFields }),
+		...(config.project === undefined ? {} : { project: config.project }),
 	});
 }
 
@@ -179,9 +187,9 @@ export async function runAuthorizedTalentSubjectListQuery<
 			item: TItem,
 			projection: HumanResourcesFieldProjection | undefined,
 		) => TProjectedItem;
-		resolveRequestedFields?: (
-			data: z.infer<TSchema>,
-		) => readonly string[] | undefined;
+		resolveRequestedFields?:
+			| ((data: z.infer<TSchema>) => readonly string[] | undefined)
+			| undefined;
 	},
 ): Promise<
 	Result<Omit<TPage, TItemsKey> & Record<TItemsKey, TProjectedItem[]>>
@@ -194,7 +202,6 @@ export async function runAuthorizedTalentSubjectListQuery<
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
 		query: config.query,
-		resolveRequestedFields: config.resolveRequestedFields,
 		project: (page, projection) => {
 			const items = page[config.itemsKey];
 			return {
@@ -205,5 +212,8 @@ export async function runAuthorizedTalentSubjectListQuery<
 			} as Omit<TPage, TItemsKey> & Record<TItemsKey, TProjectedItem[]>;
 		},
 		execute: (data, { store }) => config.loadPage({ data, store }),
+		...(config.resolveRequestedFields === undefined
+			? {}
+			: { resolveRequestedFields: config.resolveRequestedFields }),
 	});
 }

@@ -73,7 +73,7 @@ describe("@afenda/metrics export surface contract", () => {
 		const { readFileSync } = await import("node:fs");
 		const { join } = await import("node:path");
 
-		const pkgPath = join(__dirname, "..", "package.json");
+		const pkgPath = join(import.meta.dirname, "..", "package.json");
 		const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 
 		// Verify exports field structure
@@ -94,7 +94,7 @@ describe("@afenda/metrics export surface contract", () => {
 		const { join } = await import("node:path");
 		const { readdirSync } = await import("node:fs");
 
-		const coreDir = join(__dirname, "..", "src", "core");
+		const coreDir = join(import.meta.dirname, "..", "src", "core");
 		const files = readdirSync(coreDir).filter((f) => f.endsWith(".ts"));
 
 		for (const file of files) {

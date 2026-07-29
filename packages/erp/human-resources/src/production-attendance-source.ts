@@ -67,11 +67,11 @@ async function pullWithRetry(input: {
 	organizationId: string;
 	pullCursor?: string;
 	retry: { maxAttempts: number; backoffMs: number };
-	observability?: HrObservabilityPorts;
+	observability?: HrObservabilityPorts | undefined;
 }): Promise<
 	Result<{
 		events: readonly AttendanceSourceEvent[];
-		nextCursor?: string;
+		nextCursor?: string | undefined;
 	}>
 > {
 	let lastFailure: Result<never> | undefined;
@@ -80,7 +80,7 @@ async function pullWithRetry(input: {
 		try {
 			const pulled = await input.pull.pull({
 				organizationId: input.organizationId,
-				cursor: input.pullCursor,
+				...(input.pullCursor === undefined ? {} : { cursor: input.pullCursor }),
 			});
 			if (pulled.ok) {
 				await observeAttendanceConnectorHealth("healthy", input.observability);
@@ -159,9 +159,9 @@ function failClosedAttendanceSource(): AttendanceSourcePort {
 async function pullNormalizedBatch(input: {
 	pull: AttendanceConnectorPullPort;
 	organizationId: string;
-	cursor?: string;
+	cursor?: string | undefined;
 	retry: { maxAttempts: number; backoffMs: number };
-	observability?: HrObservabilityPorts;
+	observability?: HrObservabilityPorts | undefined;
 }): Promise<
 	Result<{
 		batch: AttendanceSourceBatch;
@@ -175,7 +175,7 @@ async function pullNormalizedBatch(input: {
 
 	const resolvedCursor = resolveAttendanceConnectorPullCursor({
 		organizationId: input.organizationId,
-		cursor: input.cursor,
+		...(input.cursor === undefined ? {} : { cursor: input.cursor }),
 	});
 	if (!resolvedCursor.ok) {
 		return resolvedCursor;
@@ -184,9 +184,13 @@ async function pullNormalizedBatch(input: {
 	const pulled = await pullWithRetry({
 		pull: input.pull,
 		organizationId: input.organizationId,
-		pullCursor: resolvedCursor.data.pullCursor,
 		retry: input.retry,
-		observability: input.observability,
+		...(resolvedCursor.data.pullCursor === undefined
+			? {}
+			: { pullCursor: resolvedCursor.data.pullCursor }),
+		...(input.observability === undefined
+			? {}
+			: { observability: input.observability }),
 	});
 	if (!pulled.ok) {
 		return pulled;
@@ -194,23 +198,26 @@ async function pullNormalizedBatch(input: {
 
 	const boundCursor = bindAttendanceConnectorCursor({
 		organizationId: input.organizationId,
-		nextToken: pulled.data.nextCursor,
+		...(pulled.data.nextCursor === undefined
+			? {}
+			: { nextToken: pulled.data.nextCursor }),
 	});
 	const artifacts = buildAttendanceConnectorArtifacts({
 		organizationId: input.organizationId,
-		cursor: input.cursor,
 		events: pulled.data.events,
-		nextCursor: boundCursor,
+		...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+		...(boundCursor === undefined ? {} : { nextCursor: boundCursor }),
 	});
 
 	return ok({
 		batch: {
 			events: artifacts.batch.events,
-			nextCursor: artifacts.batch.nextCursor,
-			rejectedRows:
-				artifacts.batch.rejectedRows.length > 0
-					? artifacts.batch.rejectedRows
-					: undefined,
+			...(artifacts.batch.nextCursor === undefined
+				? {}
+				: { nextCursor: artifacts.batch.nextCursor }),
+			...(artifacts.batch.rejectedRows.length > 0
+				? { rejectedRows: artifacts.batch.rejectedRows }
+				: {}),
 		},
 		preview: artifacts.preview,
 	});
@@ -219,15 +226,20 @@ async function pullNormalizedBatch(input: {
 function createConfiguredAttendanceSource(input: {
 	pull: AttendanceConnectorPullPort;
 	retry: { maxAttempts: number; backoffMs: number };
-	observability?: HrObservabilityPorts;
+	observability?: HrObservabilityPorts | undefined;
 }): AttendanceSourcePort {
-	const resolve = (fetchInput: { organizationId: string; cursor?: string }) =>
+	const resolve = (fetchInput: {
+		organizationId: string;
+		cursor?: string | undefined;
+	}) =>
 		pullNormalizedBatch({
 			pull: input.pull,
 			organizationId: fetchInput.organizationId,
-			cursor: fetchInput.cursor,
 			retry: input.retry,
-			observability: input.observability,
+			...(fetchInput.cursor === undefined ? {} : { cursor: fetchInput.cursor }),
+			...(input.observability === undefined
+				? {}
+				: { observability: input.observability }),
 		});
 
 	return {
@@ -255,7 +267,7 @@ function createConfiguredAttendanceSource(input: {
 export function createProductionAttendanceSource(deps?: {
 	pull?: AttendanceConnectorPullPort;
 	retry?: { maxAttempts: number; backoffMs: number };
-	observability?: HrObservabilityPorts;
+	observability?: HrObservabilityPorts | undefined;
 }): AttendanceSourcePort {
 	if (deps?.pull === undefined) {
 		return failClosedAttendanceSource();
@@ -264,7 +276,9 @@ export function createProductionAttendanceSource(deps?: {
 	return createConfiguredAttendanceSource({
 		pull: deps.pull,
 		retry: deps.retry ?? DEFAULT_RETRY,
-		observability: deps.observability,
+		...(deps.observability === undefined
+			? {}
+			: { observability: deps.observability }),
 	});
 }
 

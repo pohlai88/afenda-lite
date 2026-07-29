@@ -41,13 +41,15 @@ type QueryDeps = {
 type TalentCommandRunnerConfig<TSchema extends z.ZodType<ActorScoped>, TOut> = {
 	schema: TSchema;
 	invalidMessage: string;
-	resolveResource?: (
-		input: z.infer<TSchema>,
-		options: HumanResourcesCommandOptions,
-	) => Promise<HumanResourcesResourceContext | undefined>;
-	resolveRequestedFields?: (
-		input: z.infer<TSchema>,
-	) => readonly string[] | undefined;
+	resolveResource?:
+		| ((
+				input: z.infer<TSchema>,
+				options: HumanResourcesCommandOptions,
+		  ) => Promise<HumanResourcesResourceContext | undefined>)
+		| undefined;
+	resolveRequestedFields?:
+		| ((input: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
 	execute: (data: z.infer<TSchema>, deps: CommandDeps) => Promise<Result<TOut>>;
 };
 
@@ -58,17 +60,21 @@ type TalentQueryRunnerConfig<
 > = {
 	schema: TSchema;
 	invalidMessage: string;
-	resolveResource?: (
-		input: z.infer<TSchema>,
-		options: HumanResourcesCommandOptions,
-	) => Promise<HumanResourcesResourceContext | undefined>;
-	resolveRequestedFields?: (
-		input: z.infer<TSchema>,
-	) => readonly string[] | undefined;
-	project?: (
-		value: TOut,
-		projection: HumanResourcesFieldProjection | undefined,
-	) => TProjected;
+	resolveResource?:
+		| ((
+				input: z.infer<TSchema>,
+				options: HumanResourcesCommandOptions,
+		  ) => Promise<HumanResourcesResourceContext | undefined>)
+		| undefined;
+	resolveRequestedFields?:
+		| ((input: z.infer<TSchema>) => readonly string[] | undefined)
+		| undefined;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
 	execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 };
 

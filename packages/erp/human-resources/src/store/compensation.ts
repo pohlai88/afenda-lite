@@ -100,7 +100,7 @@ export type HumanResourcesCompensationStore = {
 		input: {
 			organizationId: string;
 			gradeId: HumanResourcesCompensationGradeId;
-			name?: string;
+			name?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -123,7 +123,7 @@ export type HumanResourcesCompensationStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CompensationGradeStatus;
+		status?: CompensationGradeStatus | undefined;
 	}): Promise<Result<CompensationGradeListPage>>;
 	// Salary Band
 	getSalaryBand(input: {
@@ -157,7 +157,7 @@ export type HumanResourcesCompensationStore = {
 			maxAmount: string;
 			effectiveFrom: string;
 			effectiveTo: string | null;
-			supersededSalaryBandId?: HumanResourcesSalaryBandId;
+			supersededSalaryBandId?: HumanResourcesSalaryBandId | undefined;
 			actorUserId: string;
 		},
 		ports: MutationPorts,
@@ -180,7 +180,7 @@ export type HumanResourcesCompensationStore = {
 		gradeId: HumanResourcesCompensationGradeId;
 		page: number;
 		pageSize: number;
-		status?: SalaryBandStatus;
+		status?: SalaryBandStatus | undefined;
 	}): Promise<Result<SalaryBandListPage>>;
 
 	findSalaryBandByGradeAndCurrencyAsOf(input: {
@@ -226,7 +226,7 @@ export type HumanResourcesCompensationStore = {
 		fromGradeId: HumanResourcesCompensationGradeId;
 		page: number;
 		pageSize: number;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<CompensationGradeProgressionRuleListPage>>;
 
 	listEligibleProgressionTargets(input: {
@@ -273,15 +273,15 @@ export type HumanResourcesCompensationStore = {
 		input: {
 			organizationId: string;
 			compensationId: HumanResourcesEmployeeCompensationId;
-			baseAmount?: string;
-			currencyCode?: string;
-			payFrequency?: PayFrequency;
-			effectiveFrom?: string;
-			effectiveTo?: string | null;
-			reason?: string;
-			gradeId?: HumanResourcesCompensationGradeId | null;
-			salaryBandId?: HumanResourcesSalaryBandId | null;
-			confidentialNote?: string | null;
+			baseAmount?: string | undefined;
+			currencyCode?: string | undefined;
+			payFrequency?: PayFrequency | undefined;
+			effectiveFrom?: string | undefined;
+			effectiveTo?: string | null | undefined;
+			reason?: string | undefined;
+			gradeId?: HumanResourcesCompensationGradeId | null | undefined;
+			salaryBandId?: HumanResourcesSalaryBandId | null | undefined;
+			confidentialNote?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -436,7 +436,7 @@ export type HumanResourcesCompensationStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CompensationReviewCycleStatus;
+		status?: CompensationReviewCycleStatus | undefined;
 	}): Promise<Result<CompensationReviewCycleListPage>>;
 
 	listCompensationReviewsByCycle(input: {
@@ -539,11 +539,11 @@ export type HumanResourcesCompensationStore = {
 		input: {
 			organizationId: string;
 			proposalId: HumanResourcesCompensationProposalId;
-			proposedBaseAmount?: string | null;
-			proposedCurrencyCode?: string | null;
-			proposedGradeId?: HumanResourcesCompensationGradeId | null;
-			proposedSalaryBandId?: HumanResourcesSalaryBandId | null;
-			confidentialNote?: string | null;
+			proposedBaseAmount?: string | null | undefined;
+			proposedCurrencyCode?: string | null | undefined;
+			proposedGradeId?: HumanResourcesCompensationGradeId | null | undefined;
+			proposedSalaryBandId?: HumanResourcesSalaryBandId | null | undefined;
+			confidentialNote?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -564,7 +564,7 @@ export type HumanResourcesCompensationStore = {
 
 	listCompensationProposals(input: {
 		organizationId: string;
-		applicationId?: HumanResourcesApplicationId;
+		applicationId?: HumanResourcesApplicationId | undefined;
 		page: number;
 		pageSize: number;
 	}): Promise<Result<CompensationProposalListPage>>;
@@ -595,8 +595,8 @@ export type HumanResourcesCompensationStore = {
 		input: {
 			organizationId: string;
 			planId: HumanResourcesBenefitPlanId;
-			name?: string;
-			eligibilityNote?: string | null;
+			name?: string | undefined;
+			eligibilityNote?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -619,7 +619,7 @@ export type HumanResourcesCompensationStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: BenefitPlanStatus;
+		status?: BenefitPlanStatus | undefined;
 	}): Promise<Result<BenefitPlanListPage>>;
 
 	getBenefitPlanEligibility(input: {

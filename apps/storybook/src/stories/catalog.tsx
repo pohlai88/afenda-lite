@@ -315,7 +315,12 @@ function ComboboxDemo() {
 
 function DatePickerDemo() {
 	const [date, setDate] = React.useState<Date | undefined>(fixedDate);
-	return <DatePicker value={date} onChange={setDate} />;
+	return (
+		<DatePicker
+			{...(date === undefined ? {} : { value: date })}
+			onChange={setDate}
+		/>
+	);
 }
 
 function DataTableDemo() {

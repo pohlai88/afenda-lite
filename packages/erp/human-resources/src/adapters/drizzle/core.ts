@@ -798,9 +798,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeNumberPrefix?: string;
-		legalNamePrefix?: string;
-		employmentStatus?: string;
+		employeeNumberPrefix?: string | undefined;
+		legalNamePrefix?: string | undefined;
+		employmentStatus?: string | undefined;
 	}): Promise<Result<EmployeeListPage>> {
 		try {
 			const conditions = [eq(hrEmployee.organizationId, input.organizationId)];
@@ -1251,10 +1251,10 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 		input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
-			status?: string;
-			startsOn?: string;
-			endsOn?: string | null;
-			lifecycleEffectiveOn?: string;
+			status?: string | undefined;
+			startsOn?: string | undefined;
+			endsOn?: string | null | undefined;
+			lifecycleEffectiveOn?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},

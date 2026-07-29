@@ -68,7 +68,7 @@ function matchesTimeZoneSearch(row: RefTimeZone, search?: string): boolean {
 
 function pageFromCursor<TItem>(
 	rows: TItem[],
-	input: { cursor?: string; pageSize: number },
+	input: { cursor?: string | undefined; pageSize: number },
 ): ListPage<TItem> {
 	const offset =
 		input.cursor === undefined ? 0 : Number.parseInt(input.cursor, 10);

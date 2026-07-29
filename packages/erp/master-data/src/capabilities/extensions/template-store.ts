@@ -30,7 +30,7 @@ export type ItemTemplateUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string;
+	name?: string | undefined;
 };
 
 export type ItemTemplateAttributeCreateRecord = {

@@ -5,21 +5,21 @@
 
 export type CacheAccessResult = "hit" | "miss";
 
-export type RecordHttpRequestInput = {
+export interface RecordHttpRequestInput {
+	readonly durationSeconds: number;
 	readonly method: string;
 	/** Static route template — never raw URLs or query strings. */
 	readonly routeTemplate: string;
 	readonly statusCode: number;
-	readonly durationSeconds: number;
-};
+}
 
-export type RecordDbQueryInput = {
+export interface RecordDbQueryInput {
+	readonly durationSeconds: number;
 	readonly operation: string;
 	readonly table: string;
-	readonly durationSeconds: number;
-};
+}
 
-export type RecordCacheAccessInput = {
+export interface RecordCacheAccessInput {
 	readonly operation: string;
 	readonly result: CacheAccessResult;
-};
+}

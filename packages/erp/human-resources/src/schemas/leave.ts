@@ -50,13 +50,17 @@ const leavePolicyBalanceRuleFields = {
 
 function refineLeavePolicyBalanceRules(
 	data: {
-		accrualBasis?: "none" | "periodic" | "anniversary";
-		accrualFrequency?: "monthly" | "annual" | null;
-		accrualQuantityPerPeriod?: string | null;
-		carryForwardEnabled?: boolean;
-		carryForwardMaxQuantity?: string | null;
-		entitlementExpiryRule?: "none" | "period_end" | "days_after_period_end";
-		entitlementExpiryDays?: number | null;
+		accrualBasis?: "none" | "periodic" | "anniversary" | undefined;
+		accrualFrequency?: "monthly" | "annual" | null | undefined;
+		accrualQuantityPerPeriod?: string | null | undefined;
+		carryForwardEnabled?: boolean | undefined;
+		carryForwardMaxQuantity?: string | null | undefined;
+		entitlementExpiryRule?:
+			| "none"
+			| "period_end"
+			| "days_after_period_end"
+			| undefined;
+		entitlementExpiryDays?: number | null | undefined;
 	},
 	ctx: z.RefinementCtx,
 ): void {

@@ -87,19 +87,22 @@ export async function getPriceBook(
 	options: SalesQueryOptions = {},
 ) {
 	const parsed = getPriceBookInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid price-book ID",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.pricing.price_book.get",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.getPriceBook({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.id,
@@ -111,19 +114,22 @@ export async function listPriceBooks(
 	options: SalesQueryOptions = {},
 ) {
 	const parsed = listPriceBooksInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter valid price-book filters",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.pricing.price_book.list",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.listPriceBooks(parsed.data);
 }
 
@@ -132,19 +138,22 @@ export async function createPriceBook(
 	options: SalesCommandOptions = {},
 ): Promise<Result<PriceBook>> {
 	const parsed = createPriceBookInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid price book",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.pricing.price_book.create",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.createPriceBook(
 		{
 			organizationId: parsed.data.organizationId,
@@ -173,19 +182,22 @@ export async function addPriceBookEntry(
 	options: SalesCommandOptions = {},
 ): Promise<Result<PriceBookEntry>> {
 	const parsed = addPriceBookEntryInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid price-book entry",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.pricing.price_book.entry.add",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.addPriceBookEntry(
 		{ ...parsed.data, actorUserId: parsed.data.actorUserId },
 		salesEvidence({
@@ -202,19 +214,22 @@ export async function activatePriceBook(
 	options: SalesCommandOptions = {},
 ): Promise<Result<PriceBook>> {
 	const parsed = activatePriceBookInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid price-book activation",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.pricing.price_book.activate",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.updatePriceBookStatus(
 		{
 			organizationId: parsed.data.organizationId,
@@ -237,43 +252,55 @@ export async function calculateSalesPrice(
 	options: SalesQueryOptions = {},
 ): Promise<Result<PriceCalculationTrace>> {
 	const parsed = calculateSalesPriceInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter valid pricing inputs",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.pricing.calculate",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	const matches = await deps.store.findPriceEntries({
 		...parsed.data,
 		at: parsed.data.at ?? deps.clock.now(),
 	});
-	if (!matches.ok) return matches;
-	const match = matches.data.sort(
+	if (!matches.ok) {
+		return matches;
+	}
+	const [match] = matches.data.sort(
 		(a, b) =>
 			a.book.priority - b.book.priority ||
 			b.entry.minimumQuantity.localeCompare(a.entry.minimumQuantity),
-	)[0];
-	if (!match)
+	);
+	if (!match) {
 		return fail("NOT_FOUND", "No applicable sales price was found", {
 			reason: "SALES_PRICE_NOT_FOUND",
 		});
+	}
 	const base = parsed.data.override?.unitPrice ?? match.entry.unitPrice;
 	const discountScaled = decimalToScaled(match.entry.discountPercent);
 	const baseScaled = decimalToScaled(base);
-	if (!discountScaled.ok) return discountScaled;
-	if (!baseScaled.ok) return baseScaled;
+	if (!discountScaled.ok) {
+		return discountScaled;
+	}
+	if (!baseScaled.ok) {
+		return baseScaled;
+	}
 	const netScaled =
 		baseScaled.data - (baseScaled.data * discountScaled.data) / 100_000_000n;
 	const netUnitPrice = scaledToDecimal(netScaled);
 	const amount = multiplyDecimal(netUnitPrice, parsed.data.quantity);
-	if (!amount.ok) return amount;
+	if (!amount.ok) {
+		return amount;
+	}
 	return ok({
 		priceBookId: match.book.id,
 		priceBookEntryId: match.entry.id,

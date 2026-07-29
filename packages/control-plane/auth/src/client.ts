@@ -6,6 +6,7 @@ export type {
 	PublicAuthPath,
 	RejectedAuthPathAlias,
 } from "./auth-paths";
+// biome-ignore lint/performance/noBarrelFile: This file is the declared browser-safe package entrypoint.
 export {
 	AFENDA_AUTH_VIEW_PATHS,
 	AUTH_ACCEPT_INVITATION_PATH,

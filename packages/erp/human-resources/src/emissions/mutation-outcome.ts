@@ -15,20 +15,22 @@ export type HumanResourcesMutationOutcome = {
 	aggregateId: string;
 	audit: {
 		entity: string;
-		entityId?: string;
+		entityId?: string | undefined;
 		action: "CREATE" | "UPDATE" | "DELETE";
 		changes: readonly Change[];
-		oldValue?: Record<string, unknown> | null;
-		newValue?: Record<string, unknown> | null;
+		oldValue?: Record<string, unknown> | null | undefined;
+		newValue?: Record<string, unknown> | null | undefined;
 	};
-	event?: {
-		type: HumanResourcesEventType;
-		payload: Readonly<Record<string, unknown>>;
-		entityId?: string;
-		entityType?: string;
-	};
+	event?:
+		| {
+				type: HumanResourcesEventType;
+				payload: Readonly<Record<string, unknown>>;
+				entityId?: string | undefined;
+				entityType?: string | undefined;
+		  }
+		| undefined;
 	/** Runtime-conditional paths that audit without emitting a declared domain event. */
-	conditionalEventSuppressed?: boolean;
+	conditionalEventSuppressed?: boolean | undefined;
 };
 
 export type PlannedHumanResourcesMutationOutcome = {
@@ -41,16 +43,18 @@ export type PlannedHumanResourcesMutationOutcome = {
 		entityId: string;
 		action: "CREATE" | "UPDATE" | "DELETE";
 		changes: Change[];
-		oldValue?: Record<string, unknown> | null;
-		newValue?: Record<string, unknown> | null;
+		oldValue?: Record<string, unknown> | null | undefined;
+		newValue?: Record<string, unknown> | null | undefined;
 	};
-	outboxInput?: {
-		organizationId: string;
-		actorUserId: string;
-		correlationId: string;
-		type: HumanResourcesEventType;
-		payload: Record<string, unknown>;
-	};
+	outboxInput?:
+		| {
+				organizationId: string;
+				actorUserId: string;
+				correlationId: string;
+				type: HumanResourcesEventType;
+				payload: Record<string, unknown>;
+		  }
+		| undefined;
 };
 
 const AGGREGATE_ENTITY_MAP: Record<string, string> = {

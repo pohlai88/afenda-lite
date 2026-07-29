@@ -179,7 +179,14 @@ const referenceData: CompanyReferenceDataPort = {
 			.limit(1);
 		const row = rows[0];
 		return ok(
-			row === undefined ? null : { ...row, effectiveDate: input.effectiveDate },
+			row === undefined
+				? null
+				: {
+						...row,
+						...(input.effectiveDate === undefined
+							? {}
+							: { effectiveDate: input.effectiveDate }),
+					},
 		);
 	},
 	resolveIdentifierAuthority: async (input) =>

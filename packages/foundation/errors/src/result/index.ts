@@ -10,17 +10,17 @@ import { normalizeUnknown } from "../core/normalize";
 import { type SafeDetails, sanitizeErrorDetails } from "../core/safe-details";
 import { serializeAppError } from "../core/serialize";
 
-export type ResultSuccess<T> = {
-	ok: true;
+export interface ResultSuccess<T> {
 	data: T;
-};
+	ok: true;
+}
 
-export type ResultFailure = {
-	ok: false;
+export interface ResultFailure {
 	code: ErrorCode;
-	message: string;
 	details?: SafeDetails;
-};
+	message: string;
+	ok: false;
+}
 
 export type Result<T> = ResultSuccess<T> | ResultFailure;
 

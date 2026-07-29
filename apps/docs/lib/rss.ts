@@ -2,6 +2,8 @@ import { docsEnv } from "@afenda/env/docs";
 import { Feed } from "feed";
 import { docsAppName, source } from "@/lib/source";
 
+const TRAILING_SLASH_PATTERN = /\/$/;
+
 /**
  * Docs RSS 2.0 — docs-V2/docs/rss.md
  * Item set: human guide pages only (exclude generated OpenAPI under /docs/api/*).
@@ -29,7 +31,7 @@ function itemDate(page: (typeof source)["$inferPage"]): Date {
 }
 
 export function getRSS(): string {
-	const baseUrl = docsEnv.DOCS_URL.replace(/\/$/, "");
+	const baseUrl = docsEnv.DOCS_URL.replace(TRAILING_SLASH_PATTERN, "");
 	const feed = new Feed({
 		title: docsAppName,
 		id: `${baseUrl}/docs`,
@@ -48,7 +50,9 @@ export function getRSS(): string {
 		feed.addItem({
 			id: page.url,
 			title: page.data.title,
-			description: page.data.description,
+			...(page.data.description === undefined
+				? {}
+				: { description: page.data.description }),
 			link: `${baseUrl}${page.url}`,
 			date: itemDate(page),
 		});

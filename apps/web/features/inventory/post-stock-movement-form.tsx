@@ -22,8 +22,8 @@ const initialState: PostStockMovementActionState = null;
 
 type PostStockMovementFormProps = {
 	canPost: boolean;
-	defaultMovementId?: string;
-	defaultExpectedVersion?: number;
+	defaultMovementId?: string | undefined;
+	defaultExpectedVersion?: number | undefined;
 };
 
 /**

@@ -1420,7 +1420,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				correlationId: meta.correlationId,
 				expiryAdjustmentId: expiryAdjustmentId.data,
 				createRequestFingerprint: existing.data.fingerprint,
-				eventType: expiryEventType,
+				...(expiryEventType === undefined
+					? {}
+					: { eventType: expiryEventType }),
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveEntitlementSqlRow[]]>(
@@ -1540,11 +1542,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				action: "CREATE",
 				changes: [],
 			},
-			eventType: shouldEmitEvent
-				? getRegistryDomainEventType(
-						HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
-					)
-				: undefined,
+			...(shouldEmitEvent
+				? {
+						eventType: getRegistryDomainEventType(
+							HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+						),
+					}
+				: {}),
 			eventEntityId: record.entitlementId,
 			eventEntityType: "hr_leave_entitlement",
 			conditionalEventSuppressed: !shouldEmitEvent,
@@ -1564,7 +1568,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				createRequestFingerprint: record.createRequestFingerprint,
 				createdBy: record.createdBy,
 				correlationId: meta.correlationId,
-				eventType: plannedEventType,
+				...(plannedEventType === undefined
+					? {}
+					: { eventType: plannedEventType }),
 			});
 
 			const [rows] = await runLeaveTransaction<[LeaveAdjustmentSqlRow[]]>(

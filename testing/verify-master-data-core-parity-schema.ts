@@ -1,12 +1,13 @@
-// This global setup lives outside a workspace member, so package-name resolution is unavailable.
+// Master-data schema probes still use the DB package source while runner setup is root-owned.
+
+import { setupDatabaseTestLane } from "@afenda/testing/setups/database";
 import { db, sql } from "../packages/data-plane/db/src/index.ts";
-import { resolveDatabaseUrlForTests } from "../packages/foundation/testing/src/require-database-for-ci.ts";
 
 const REQUIRED_CORE_SCHEMA_MARKERS = 4;
 
 export async function verifyMasterDataCoreParitySchema(): Promise<void> {
 	process.env.REQUIRE_DATABASE_TESTS = "1";
-	resolveDatabaseUrlForTests();
+	setupDatabaseTestLane();
 	const currentSchema = await db.execute(sql`
 		SELECT table_name, column_name
 		FROM information_schema.columns

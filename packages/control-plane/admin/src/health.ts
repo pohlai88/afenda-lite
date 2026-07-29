@@ -1,6 +1,5 @@
 import { db, sql } from "@afenda/db";
 import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
-import { fromPostgresUnknown } from "@afenda/errors/adapters/postgres";
 
 import {
 	type HealthAggregate,
@@ -24,10 +23,10 @@ type AuthConfigStatus = ReadinessResponse["checks"]["auth"]["status"];
 type AuthReachability = ReadinessResponse["checks"]["auth"]["reachability"];
 type OverallStatus = ReadinessResponse["status"];
 
-type BoundedProbeResult = {
-	ok: boolean;
+interface BoundedProbeResult {
 	latencyMs: number;
-};
+	ok: boolean;
+}
 
 /**
  * Race async work against `timeoutMs`; always return wall-clock `latencyMs`.
@@ -55,8 +54,7 @@ async function runBoundedProbe(
 			ok: true,
 			latencyMs: Math.round(performance.now() - started),
 		};
-	} catch (error) {
-		void fromPostgresUnknown(error);
+	} catch {
 		return {
 			ok: false,
 			latencyMs: Math.round(performance.now() - started),
@@ -126,10 +124,10 @@ function aggregateReadinessStatus(
 	return "ready";
 }
 
-type TimedProbe = {
-	status: "reachable" | "unreachable";
+interface TimedProbe {
 	latencyMs: number;
-};
+	status: "reachable" | "unreachable";
+}
 
 /**
  * Bounded `select 1`. Exceeding `MAX_SELECT1_LATENCY_MS` loses the race →

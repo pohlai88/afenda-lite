@@ -12,18 +12,17 @@ import type { Role } from "./role";
 import { toSessionRole } from "./roles";
 import { buildSyncSessionCookiesUrl } from "./sync-session-cookies";
 
-export { getNeonAuth } from "./neon-auth";
 export type { Role } from "./role";
 
 /**
  * Typed Afenda session. `orgId` is always present when this value exists —
  * `getSession()` never returns null and never invents a missing org.
  */
-export type Session = {
-	userId: string;
+export interface Session {
 	orgId: string;
 	role: Role;
-};
+	userId: string;
+}
 
 /**
  * Route Handler session — includes normalized email for ownership checks.
@@ -117,10 +116,10 @@ async function loadApiSession(): Promise<
 	return {
 		ok: true,
 		session: {
-			userId: data.user.id,
+			email,
 			orgId,
 			role,
-			email,
+			userId: data.user.id,
 		},
 	};
 }
@@ -161,9 +160,9 @@ async function resolveSession(): Promise<Session> {
 	}
 
 	return {
-		userId: loaded.session.userId,
 		orgId: loaded.session.orgId,
 		role: loaded.session.role,
+		userId: loaded.session.userId,
 	};
 }
 
@@ -212,7 +211,7 @@ export async function getAuthBootstrap(
 ): Promise<AuthBootstrap> {
 	const loaded = await loadApiSessionCached();
 	if (loaded.ok) {
-		return { state: "ready", session: loaded.session };
+		return { session: loaded.session, state: "ready" };
 	}
 	if (loaded.reason === "needs_cookie_sync") {
 		return {
@@ -231,7 +230,7 @@ export async function getAuthBootstrap(
 		loaded.reason === "missing_role" ||
 		loaded.reason === "missing_email"
 	) {
-		return { state: "unresolved_organization", reason: loaded.reason };
+		return { reason: loaded.reason, state: "unresolved_organization" };
 	}
 	return { state: "anonymous" };
 }

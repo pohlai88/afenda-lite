@@ -86,7 +86,7 @@ function setValidProductionWebEnv(
 ) {
 	const values: Record<string, string | undefined> = {
 		NODE_ENV: "production",
-		VERCEL_ENV: undefined,
+		VERCEL_ENV: "production",
 		SKIP_ENV_VALIDATION: undefined,
 		DATABASE_URL: POOLER_URL,
 		NEON_AUTH_BASE_URL: AUTH_BASE,
@@ -338,10 +338,10 @@ describe("@afenda/env neon-contract", () => {
 		).toBe(false);
 		expect(isProductionDeployment({ vercelEnv: "production" })).toBe(true);
 		expect(isProductionDeployment({ nodeEnv: "test" })).toBe(false);
-		expect(isProductionDeployment({ nodeEnv: "production" })).toBe(true);
+		expect(isProductionDeployment({ nodeEnv: "production" })).toBe(false);
 		expect(
 			isProductionDeployment({ nodeEnv: "production", vercelEnv: "" }),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			isProductionDeployment({ nodeEnv: "production", vercelEnv: "staging" }),
 		).toBe(true);
@@ -487,7 +487,7 @@ describe("@afenda/env neon-contract", () => {
 				UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
 				UPSTASH_REDIS_REST_TOKEN: "token",
 			},
-			{ nodeEnv: "production" },
+			{ vercelEnv: "production" },
 		);
 		expect(missingProdIds.ok).toBe(false);
 		expect(missingProdIds.issues.map((i) => i.variable)).toEqual(
@@ -510,7 +510,7 @@ describe("@afenda/env neon-contract", () => {
 				UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
 				UPSTASH_REDIS_REST_TOKEN: "token",
 			},
-			{ nodeEnv: "production" },
+			{ vercelEnv: "production" },
 		);
 		expect(validProduction.ok).toBe(true);
 
@@ -524,7 +524,7 @@ describe("@afenda/env neon-contract", () => {
 				NEON_PROJECT_ID: APPROVED_NEON_PROJECT_ID,
 				NEON_BRANCH_ID: APPROVED_NEON_BRANCH_ID,
 			},
-			{ nodeEnv: "production" },
+			{ vercelEnv: "production" },
 		);
 		expect(missingProdUpstash.ok).toBe(false);
 		expect(missingProdUpstash.issues[0]?.variable).toBe(
@@ -557,7 +557,7 @@ describe("@afenda/env neon-contract", () => {
 				NEON_BRANCH_ID: APPROVED_NEON_BRANCH_ID,
 				UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
 			},
-			{ nodeEnv: "production" },
+			{ vercelEnv: "production" },
 		);
 		expect(partialProductionUpstash.ok).toBe(false);
 		expect(
@@ -596,11 +596,23 @@ describe("@afenda/env createEnv export", () => {
 	it("exports the current production deployment helper through the package barrel", async () => {
 		setValidProductionWebEnv();
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		const barrel = await import("../src/index");
 
 		expect(barrel.isProductionDeploymentNow()).toBe(true);
+	});
+
+	it("does not classify local production-mode builds as deployments", async () => {
+		setValidProductionWebEnv({
+			VERCEL_ENV: undefined,
+		});
+		process.env.NODE_ENV = "production";
+		delete process.env.VERCEL_ENV;
+
+		const barrel = await importFreshWebEnv();
+
+		expect(barrel.isProductionDeploymentNow()).toBe(false);
 	});
 
 	it("exports the current local-development runtime helper through the package barrel", async () => {
@@ -809,14 +821,28 @@ describe("docs environment", () => {
 		expect(docsEnv.DOCS_URL).toBe("http://localhost:3001");
 	});
 
-	it("requires DOCS_URL in production", async () => {
+	it("uses localhost for local production-mode builds when DOCS_URL is absent", async () => {
 		delete process.env.DOCS_URL;
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
 		delete process.env.VERCEL_ENV;
 
-		await expect(importFreshDocsEnv()).rejects.toThrow();
+		const { docsEnv } = await importFreshDocsEnv();
+
+		expect(docsEnv.DOCS_URL).toBe("http://localhost:3001");
+	});
+
+	it("requires DOCS_URL in Vercel production", async () => {
+		delete process.env.DOCS_URL;
+		delete process.env.GITHUB_APP_ID;
+		delete process.env.GITHUB_APP_PRIVATE_KEY;
+		process.env.NODE_ENV = "production";
+		process.env.VERCEL_ENV = "production";
+
+		await expect(importFreshDocsEnv()).rejects.toThrow(
+			"Invalid environment variables",
+		);
 	});
 
 	it("treats Vercel preview as non-production even when NODE_ENV is production", async () => {
@@ -848,7 +874,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -860,7 +886,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -872,7 +898,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -884,7 +910,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -901,7 +927,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -913,7 +939,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		const { docsEnv } = await importFreshDocsEnv();
 
@@ -926,7 +952,7 @@ describe("docs environment", () => {
 		process.env.GITHUB_APP_ID = "123";
 		process.env.GITHUB_APP_PRIVATE_KEY = GITHUB_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		const { docsEnv } = await importFreshDocsEnv();
 
@@ -939,7 +965,7 @@ describe("docs environment", () => {
 		process.env.GITHUB_APP_ID = "app-123";
 		process.env.GITHUB_APP_PRIVATE_KEY = GITHUB_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -951,7 +977,7 @@ describe("docs environment", () => {
 		process.env.GITHUB_APP_ID = "123";
 		delete process.env.GITHUB_APP_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",
@@ -963,7 +989,7 @@ describe("docs environment", () => {
 		delete process.env.GITHUB_APP_ID;
 		process.env.GITHUB_APP_PRIVATE_KEY = GITHUB_PRIVATE_KEY;
 		process.env.NODE_ENV = "production";
-		delete process.env.VERCEL_ENV;
+		process.env.VERCEL_ENV = "production";
 
 		await expect(importFreshDocsEnv()).rejects.toThrow(
 			"Invalid environment variables",

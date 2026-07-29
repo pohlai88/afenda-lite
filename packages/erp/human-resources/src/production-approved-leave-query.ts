@@ -68,9 +68,9 @@ function dayMinutesFromContext(
  */
 export function createProductionApprovedLeaveQuery(deps: {
 	store: LeaveStoreSlice;
-	lookup?: WorkCalendarLookupPort;
+	lookup?: WorkCalendarLookupPort | undefined;
 	/** IANA timezone stamped on leave timesheet entries when calendar timezone is unavailable. */
-	defaultTimezone?: string;
+	defaultTimezone?: string | undefined;
 }): ApprovedLeaveQueryPort {
 	const { store, lookup } = deps;
 	const defaultTimezone = deps.defaultTimezone ?? "UTC";

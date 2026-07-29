@@ -85,8 +85,8 @@ const optionalEffectiveDateSchema = z.coerce.date().optional();
 const nullableEffectiveDatePatchSchema = z.coerce.date().nullable().optional();
 
 type NullableDateRange = {
-	effectiveFrom?: Date | null;
-	effectiveTo?: Date | null;
+	effectiveFrom?: Date | null | undefined;
+	effectiveTo?: Date | null | undefined;
 };
 
 function validateSuppliedEffectiveRange(

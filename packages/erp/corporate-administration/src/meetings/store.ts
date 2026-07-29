@@ -139,8 +139,8 @@ export interface MeetingStore {
 	listGovernanceMeetings(input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
-		governanceBodyId?: GovernanceBodyId;
-		status?: GovernanceMeetingStatus;
+		governanceBodyId?: GovernanceBodyId | undefined;
+		status?: GovernanceMeetingStatus | undefined;
 	}): Promise<Result<readonly GovernanceMeeting[]>>;
 	scheduleGovernanceMeeting(
 		input: ScheduleGovernanceMeetingStoreInput,

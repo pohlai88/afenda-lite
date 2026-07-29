@@ -40,7 +40,9 @@ describe("@afenda/fulfillment authorization", () => {
 			{ store, ports, masters, authorization: readOnly },
 		);
 		expect(deniedCreate.ok).toBe(false);
-		if (!deniedCreate.ok) expect(deniedCreate.code).toBe("FORBIDDEN");
+		if (!deniedCreate.ok) {
+			expect(deniedCreate.code).toBe("FORBIDDEN");
+		}
 		const deniedGet = await getDeliveryById(
 			{ organizationId: ORG, actorUserId: "user-1", id: WAREHOUSE },
 			{ store, ports, masters, authorization: none },

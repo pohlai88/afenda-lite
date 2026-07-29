@@ -121,9 +121,9 @@ export type HumanResourcesWorkforcePlanningStore = {
 		input: {
 			organizationId: string;
 			planId: HumanResourcesHeadcountPlanId;
-			title?: string;
-			costEnvelopeAmount?: string | null;
-			costEnvelopeCurrencyCode?: string | null;
+			title?: string | undefined;
+			costEnvelopeAmount?: string | null | undefined;
+			costEnvelopeCurrencyCode?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -138,7 +138,7 @@ export type HumanResourcesWorkforcePlanningStore = {
 			status: HeadcountPlanStatus;
 			expectedVersion: number;
 			actorUserId: string;
-			rejectionReason?: string;
+			rejectionReason?: string | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -154,8 +154,8 @@ export type HumanResourcesWorkforcePlanningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: HeadcountPlanStatus;
-		planningScopeKey?: string;
+		status?: HeadcountPlanStatus | undefined;
+		planningScopeKey?: string | undefined;
 	}): Promise<Result<HeadcountPlanListPage>>;
 	// Workforce planning — headcount plan line
 	getHeadcountPlanLineById(input: {
@@ -178,15 +178,15 @@ export type HumanResourcesWorkforcePlanningStore = {
 		input: {
 			organizationId: string;
 			planLineId: HumanResourcesHeadcountPlanLineId;
-			departmentId?: HumanResourcesDepartmentId | null;
-			jobId?: HumanResourcesJobId | null;
-			positionId?: HumanResourcesPositionId | null;
-			locationCode?: string | null;
-			employmentType?: HeadcountEmploymentType | null;
-			plannedFte?: string;
-			plannedHeadcount?: number;
-			costEnvelopeAmount?: string | null;
-			costEnvelopeCurrencyCode?: string | null;
+			departmentId?: HumanResourcesDepartmentId | null | undefined;
+			jobId?: HumanResourcesJobId | null | undefined;
+			positionId?: HumanResourcesPositionId | null | undefined;
+			locationCode?: string | null | undefined;
+			employmentType?: HeadcountEmploymentType | null | undefined;
+			plannedFte?: string | undefined;
+			plannedHeadcount?: number | undefined;
+			costEnvelopeAmount?: string | null | undefined;
+			costEnvelopeCurrencyCode?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -272,8 +272,8 @@ export type HumanResourcesWorkforcePlanningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		planId?: HumanResourcesHeadcountPlanId;
-		requisitionId?: HumanResourcesRequisitionId;
+		planId?: HumanResourcesHeadcountPlanId | undefined;
+		requisitionId?: HumanResourcesRequisitionId | undefined;
 	}): Promise<Result<HeadcountReservationListPage>>;
 
 	listHeadcountReservationsByPlanLineId(input: {
@@ -294,6 +294,6 @@ export type HumanResourcesWorkforcePlanningStore = {
 	getWorkforcePlanVariance(input: {
 		organizationId: string;
 		planId: HumanResourcesHeadcountPlanId;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<WorkforcePlanVariance>>;
 };

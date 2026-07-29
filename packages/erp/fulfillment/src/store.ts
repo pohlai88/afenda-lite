@@ -10,42 +10,42 @@ import type {
 	ProofOfDelivery,
 } from "./types";
 
-export type DeliveryCreateRecord = {
-	organizationId: string;
-	idempotencyKey: string;
+export interface DeliveryCreateRecord {
 	code: string;
-	normalizedCode: string;
-	salesOrderId: string | null;
-	warehouseId: string;
-	warehouseCode: string;
-	warehouseName: string;
-	shipToPartyId: string | null;
-	shipToPartyCode: string | null;
-	shipToPartyName: string | null;
 	createdBy: string;
-};
-export type DeliveryLineCreateRecord = {
-	organizationId: string;
 	idempotencyKey: string;
+	normalizedCode: string;
+	organizationId: string;
+	salesOrderId: string | null;
+	shipToPartyCode: string | null;
+	shipToPartyId: string | null;
+	shipToPartyName: string | null;
+	warehouseCode: string;
+	warehouseId: string;
+	warehouseName: string;
+}
+export interface DeliveryLineCreateRecord {
+	baseUomCode: string;
+	baseUomId: string;
+	createdBy: string;
 	deliveryId: string;
 	expectedVersion: number;
-	itemId: string;
+	idempotencyKey: string;
 	itemCode: string;
+	itemId: string;
 	itemName: string;
-	baseUomId: string;
-	baseUomCode: string;
+	organizationId: string;
 	quantityOrdered: string | null;
 	quantityToDeliver: string;
 	salesOrderLineId: string | null;
-	createdBy: string;
-};
-export type DeliveryStateRecord = {
-	organizationId: string;
+}
+export interface DeliveryStateRecord {
+	actorUserId: string;
 	deliveryId: string;
 	expectedVersion: number;
-	actorUserId: string;
 	idempotencyKey: string;
-};
+	organizationId: string;
+}
 export type DeliveryPickCreateRecord = DeliveryStateRecord & {
 	deliveryLineId: string;
 	quantityPicked: string;
@@ -64,70 +64,72 @@ export type ProofOfDeliveryCreateRecord = DeliveryStateRecord & {
 	notes: string | null;
 	recordedAt: Date;
 };
-export type DeliveryListFilter = {
+export interface DeliveryListFilter {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: DeliveryStatus;
-	warehouseId?: string;
-	salesOrderId?: string;
+	salesOrderId?: string | undefined;
 	sort?: "created_at" | "code" | "status";
-};
-export type MutationMeta = { correlationId: string };
+	status?: DeliveryStatus | undefined;
+	warehouseId?: string | undefined;
+}
+export interface MutationMeta {
+	correlationId: string;
+}
 
-export type FulfillmentStore = {
-	createDelivery(
-		record: DeliveryCreateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-	): Promise<Result<Delivery>>;
-	addLine(
+export interface FulfillmentStore {
+	addLine: (
 		record: DeliveryLineCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<DeliveryLine>>;
-	startPicking(
+	) => Promise<Result<DeliveryLine>>;
+	cancelDelivery: (
 		record: DeliveryStateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<Delivery>>;
-	confirmPick(
-		record: DeliveryPickCreateRecord,
+	) => Promise<Result<Delivery>>;
+	closeDelivery: (
+		record: DeliveryStateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<DeliveryPick>>;
-	confirmPack(
+	) => Promise<Result<Delivery>>;
+	confirmPack: (
 		record: DeliveryPackCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<DeliveryPack>>;
-	postDelivery(
+	) => Promise<Result<DeliveryPack>>;
+	confirmPick: (
+		record: DeliveryPickCreateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	) => Promise<Result<DeliveryPick>>;
+	createDelivery: (
+		record: DeliveryCreateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	) => Promise<Result<Delivery>>;
+	getDeliveryById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<Delivery | null>>;
+	listDeliveries: (filter: DeliveryListFilter) => Promise<Result<Delivery[]>>;
+	postDelivery: (
 		record: DeliveryStateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<Delivery>>;
-	recordProofOfDelivery(
+	) => Promise<Result<Delivery>>;
+	recordProofOfDelivery: (
 		record: ProofOfDeliveryCreateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<ProofOfDelivery>>;
-	cancelDelivery(
+	) => Promise<Result<ProofOfDelivery>>;
+	startPicking: (
 		record: DeliveryStateRecord,
 		ports: MutationPorts,
 		meta: MutationMeta,
-	): Promise<Result<Delivery>>;
-	closeDelivery(
-		record: DeliveryStateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-	): Promise<Result<Delivery>>;
-	getDeliveryById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<Delivery | null>>;
-	listDeliveries(filter: DeliveryListFilter): Promise<Result<Delivery[]>>;
-	sumPostedQuantityForSalesOrderLine(
+	) => Promise<Result<Delivery>>;
+	sumPostedQuantityForSalesOrderLine: (
 		organizationId: string,
 		salesOrderLineId: string,
-	): Promise<Result<string>>;
-};
+	) => Promise<Result<string>>;
+}

@@ -12,6 +12,7 @@ export type CredentialAuthResult =
 
 const AUTHENTICATION_FAILED_MESSAGE = "Invalid email or password.";
 const SIGN_OUT_FAILED_MESSAGE = "Sign out failed.";
+const PUBLIC_ERROR_CODE_PATTERN = /^[A-Z0-9_.:-]+$/u;
 
 function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
 	return typeof value === "object" && value !== null;
@@ -32,12 +33,12 @@ function readStringProperty(value: unknown, key: PropertyKey): string {
 function toFailure(error: unknown, message: string): CredentialAuthResult {
 	const rawCode = readStringProperty(error, "code");
 	const code =
-		rawCode.length > 0 && /^[A-Z0-9_.:-]+$/u.test(rawCode)
+		rawCode.length > 0 && PUBLIC_ERROR_CODE_PATTERN.test(rawCode)
 			? rawCode
 			: undefined;
 	return code === undefined
-		? { ok: false, message }
-		: { ok: false, message, code };
+		? { message, ok: false }
+		: { code, message, ok: false };
 }
 
 /** Email/password sign-in via Managed Better Auth server SDK. */

@@ -100,7 +100,7 @@ export type OrderListFilter = {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: PurchaseOrderStatus;
+	status?: PurchaseOrderStatus | undefined;
 };
 
 /**

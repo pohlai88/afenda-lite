@@ -8,8 +8,8 @@ export function createGrantingFulfillmentAuthorization(
 ): FulfillmentAuthorizationPort {
 	const granted = new Set(permissions);
 	return {
-		async can(input) {
-			return granted.has(input.permission);
+		can(input) {
+			return Promise.resolve(granted.has(input.permission));
 		},
 	};
 }

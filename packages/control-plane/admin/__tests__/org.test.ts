@@ -195,20 +195,20 @@ describe("@afenda/admin org services", () => {
 
 		it("runs create → setActive → invite and returns organization + invitationId", async () => {
 			const callOrder: string[] = [];
-			createNeonOrganization.mockImplementation(async () => {
+			createNeonOrganization.mockImplementation(() => {
 				callOrder.push("create");
-				return { ok: true, data: createdOrg };
+				return Promise.resolve({ ok: true, data: createdOrg });
 			});
-			persistActiveOrganization.mockImplementation(async () => {
+			persistActiveOrganization.mockImplementation(() => {
 				callOrder.push("setActive");
-				return { ok: true, data: undefined };
+				return Promise.resolve({ ok: true, data: undefined });
 			});
-			inviteOrgMember.mockImplementation(async () => {
+			inviteOrgMember.mockImplementation(() => {
 				callOrder.push("invite");
-				return {
+				return Promise.resolve({
 					ok: true,
 					data: { data: null, invitationId: "inv-1" },
-				};
+				});
 			});
 
 			const { provisionOrganization } = await import("../src/org");

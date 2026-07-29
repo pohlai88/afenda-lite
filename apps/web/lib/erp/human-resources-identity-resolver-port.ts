@@ -18,7 +18,7 @@ export function createHumanResourcesIdentityResolverPort(): HumanResourcesIdenti
 			return store.getUserEmployeeMapping({
 				organizationId: input.organizationId,
 				userId: input.actorUserId,
-				asOf: input.asOf,
+				...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 			});
 		},
 
@@ -30,7 +30,7 @@ export function createHumanResourcesIdentityResolverPort(): HumanResourcesIdenti
 			return store.getManagerEmployeesForUser({
 				organizationId: input.organizationId,
 				userId: input.actorUserId,
-				asOf: input.asOf,
+				...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 			});
 		},
 	};

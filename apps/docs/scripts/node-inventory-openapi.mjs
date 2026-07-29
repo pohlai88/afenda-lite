@@ -9,7 +9,7 @@
 export function createOpenAPI() {
 	return {
 		loaderPlugin() {
-			return undefined;
+			// Inventory generation only needs the plugin interface shape.
 		},
 	};
 }

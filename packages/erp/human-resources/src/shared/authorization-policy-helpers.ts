@@ -144,7 +144,7 @@ export async function requirePrivilegedAccess(input: {
 	request: HumanResourcesAuthorizationRequest;
 	policyId: string;
 	privilegedPermissions: readonly HumanResourcesPermission[];
-	options?: HumanResourcesCommandOptions;
+	options?: HumanResourcesCommandOptions | undefined;
 }): Promise<HumanResourcesAuthorizationDecision | null> {
 	const { request, policyId, privilegedPermissions, options } = input;
 	const resource = request.resource;
@@ -179,7 +179,7 @@ export function resolveActorPermissions(
 export function decisionFromProjection(input: {
 	policyId: string;
 	projection: HumanResourcesFieldProjection;
-	denyReason?: string;
+	denyReason?: string | undefined;
 }): HumanResourcesAuthorizationDecision {
 	const { policyId, projection } = input;
 	if (

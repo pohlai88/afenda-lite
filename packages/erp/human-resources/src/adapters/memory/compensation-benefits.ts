@@ -483,7 +483,7 @@ export function createMemoryCompensationBenefitsMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			status?: string;
+			status?: string | undefined;
 		}): Promise<Result<CompensationGradeListPage>> {
 			let grades = Array.from(state.compensationGrades.values()).filter(
 				(g) => g.organizationId === input.organizationId,
@@ -866,7 +866,7 @@ export function createMemoryCompensationBenefitsMethods(
 			gradeId: HumanResourcesCompensationGradeId;
 			page: number;
 			pageSize: number;
-			status?: string;
+			status?: string | undefined;
 		}): Promise<Result<SalaryBandListPage>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
@@ -1150,7 +1150,40 @@ export function createMemoryCompensationBenefitsMethods(
 		},
 
 		async amendEmployeeCompensation(input, ports, meta) {
-			return memoryAmendEmployeeCompensation(state, input, ports, meta);
+			return memoryAmendEmployeeCompensation(
+				state,
+				{
+					organizationId: input.organizationId,
+					compensationId: input.compensationId,
+					expectedVersion: input.expectedVersion,
+					actorUserId: input.actorUserId,
+					...(input.baseAmount === undefined
+						? {}
+						: { baseAmount: input.baseAmount }),
+					...(input.currencyCode === undefined
+						? {}
+						: { currencyCode: input.currencyCode }),
+					...(input.payFrequency === undefined
+						? {}
+						: { payFrequency: input.payFrequency }),
+					...(input.effectiveFrom === undefined
+						? {}
+						: { effectiveFrom: input.effectiveFrom }),
+					...(input.effectiveTo === undefined
+						? {}
+						: { effectiveTo: input.effectiveTo }),
+					...(input.reason === undefined ? {} : { reason: input.reason }),
+					...(input.gradeId === undefined ? {} : { gradeId: input.gradeId }),
+					...(input.salaryBandId === undefined
+						? {}
+						: { salaryBandId: input.salaryBandId }),
+					...(input.confidentialNote === undefined
+						? {}
+						: { confidentialNote: input.confidentialNote }),
+				},
+				ports,
+				meta,
+			);
 		},
 
 		async approveEmployeeCompensation(input, ports, meta) {

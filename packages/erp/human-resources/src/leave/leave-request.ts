@@ -202,7 +202,9 @@ export async function createDraftLeaveRequest(
 				startDate: data.startDate,
 				endDate: data.endDate,
 				unit: policy.data.unit,
-				partialDay: data.dayPortion,
+				...(data.dayPortion === undefined
+					? {}
+					: { partialDay: data.dayPortion }),
 			});
 			if (!expanded.ok) return expanded;
 
@@ -285,7 +287,9 @@ export async function amendLeaveRequest(
 				startDate: data.startDate,
 				endDate: data.endDate,
 				unit: policy.data.unit,
-				partialDay: data.dayPortion,
+				...(data.dayPortion === undefined
+					? {}
+					: { partialDay: data.dayPortion }),
 			});
 			if (!expanded.ok) return expanded;
 

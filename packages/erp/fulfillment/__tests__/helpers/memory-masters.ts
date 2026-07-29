@@ -21,26 +21,31 @@ export function createMemoryMasterLookup(
 		(seed.warehouses ?? []).map((row) => [row.id, row]),
 	);
 	return {
-		async getItemById(organizationId, id): Promise<Result<Item | null>> {
+		getItemById(organizationId, id): Promise<Result<Item | null>> {
 			const row = items.get(id);
-			return ok(
-				row === undefined || row.organizationId !== organizationId ? null : row,
+			return Promise.resolve(
+				ok(
+					row === undefined || row.organizationId !== organizationId
+						? null
+						: row,
+				),
 			);
 		},
-		async getRefUomById(
+		getRefUomById(
 			_organizationId,
 			id,
 			_actorUserId,
 		): Promise<Result<RefUom | null>> {
-			return ok(uoms.get(id) ?? null);
+			return Promise.resolve(ok(uoms.get(id) ?? null));
 		},
-		async getWarehouseById(
-			organizationId,
-			id,
-		): Promise<Result<Warehouse | null>> {
+		getWarehouseById(organizationId, id): Promise<Result<Warehouse | null>> {
 			const row = warehouses.get(id);
-			return ok(
-				row === undefined || row.organizationId !== organizationId ? null : row,
+			return Promise.resolve(
+				ok(
+					row === undefined || row.organizationId !== organizationId
+						? null
+						: row,
+				),
 			);
 		},
 	};

@@ -46,7 +46,9 @@
 			"persistent": true
 		},
 		"lint": {},
-		"typecheck": {},
+		"typecheck": {
+			"dependsOn": ["^typecheck"]
+		},
 		"test": {
 			"inputs": [
 				"$TURBO_DEFAULT$",

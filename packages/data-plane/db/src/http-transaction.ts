@@ -61,8 +61,10 @@ export async function runNeonHttpTransaction<T extends unknown[]>(
 
 	const result = await sql.transaction(queries, {
 		isolationLevel: options?.isolationLevel ?? "ReadCommitted",
-		readOnly: options?.readOnly,
-		deferrable: options?.deferrable,
+		...(options?.readOnly === undefined ? {} : { readOnly: options.readOnly }),
+		...(options?.deferrable === undefined
+			? {}
+			: { deferrable: options.deferrable }),
 	});
 
 	return result as T;

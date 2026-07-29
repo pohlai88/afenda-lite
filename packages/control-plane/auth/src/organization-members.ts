@@ -8,12 +8,12 @@ const PAGE_SIZE = 100;
 const MAX_PAGES = 50;
 
 /** Minimal org member row — never expose Neon Auth response envelopes. */
-export type OrgMember = {
-	userId: string;
+export interface OrgMember {
 	email: string;
 	name: string;
 	role: NeonOrgRole;
-};
+	userId: string;
+}
 
 const NEON_ORG_ROLES = new Set<NeonOrgRole>(["owner", "admin", "member"]);
 
@@ -70,10 +70,10 @@ function memberFromUnknown(row: unknown): OrgMember | null {
 	}
 
 	return {
-		userId,
 		email,
 		name: normalizeName(user?.name ?? record.name, email),
 		role: record.role,
+		userId,
 	};
 }
 
@@ -82,14 +82,17 @@ function memberFromUnknown(row: unknown): OrgMember | null {
  * Accepts `{ members: [...] }` envelopes or raw arrays. Invalid rows are dropped.
  */
 export function normalizeOrgMembers(data: unknown): OrgMember[] {
-	const rows = Array.isArray(data)
-		? data
-		: typeof data === "object" &&
-				data !== null &&
-				"members" in data &&
-				Array.isArray((data as { members: unknown }).members)
-			? (data as { members: unknown[] }).members
-			: null;
+	let rows: unknown[] | null = null;
+	if (Array.isArray(data)) {
+		rows = data;
+	} else if (
+		typeof data === "object" &&
+		data !== null &&
+		"members" in data &&
+		Array.isArray((data as { members: unknown }).members)
+	) {
+		rows = (data as { members: unknown[] }).members;
+	}
 
 	if (!rows) {
 		return [];
@@ -118,9 +121,9 @@ async function fetchOrgMemberPage(
 	const auth = getNeonAuth();
 	const { data, error } = await auth.organization.listMembers({
 		query: {
-			organizationId,
 			limit: PAGE_SIZE,
 			offset,
+			organizationId,
 		},
 	});
 
@@ -154,6 +157,7 @@ export async function listOrgMembers(
 	let offset = 0;
 
 	for (let page = 0; page < MAX_PAGES; page += 1) {
+		// biome-ignore lint/performance/noAwaitInLoops: Offset pagination must remain sequential to stop at the first exhausted page.
 		const { members, total } = await fetchOrgMemberPage(organizationId, offset);
 
 		for (const member of members) {
@@ -190,12 +194,12 @@ export async function findOrgMember(
 	const auth = getNeonAuth();
 	const { data, error } = await auth.organization.listMembers({
 		query: {
-			organizationId,
+			filterField: "userId",
+			filterOperator: "eq",
+			filterValue: trimmedUserId,
 			limit: PAGE_SIZE,
 			offset: 0,
-			filterField: "userId",
-			filterValue: trimmedUserId,
-			filterOperator: "eq",
+			organizationId,
 		},
 	});
 

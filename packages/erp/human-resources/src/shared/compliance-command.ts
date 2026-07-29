@@ -149,15 +149,19 @@ export async function runComplianceQuery<
 
 /** Query path for employee-scoped or org-wide compliance reads. */
 export async function runComplianceEmployeeScopedQuery<
-	TSchema extends z.ZodType<ActorScoped & { employeeId?: string }>,
+	TSchema extends z.ZodType,
 	TOut,
 >(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
-		schema: TSchema;
+		schema: TSchema &
+			z.ZodType<ActorScoped & { employeeId?: string | undefined }>;
 		invalidMessage: string;
-		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
+		execute: (
+			data: z.output<TSchema>,
+			deps: QueryDeps,
+		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
 	const parsed = parseHumanResourcesInput(
@@ -209,8 +213,8 @@ export async function requireComplianceEmployeeReadScope(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		employeeId?: string;
-		asOf?: string;
+		employeeId?: string | undefined;
+		asOf?: string | undefined;
 	},
 ): Promise<Result<void>> {
 	const { authorization } = resolveCommandDeps(options);
@@ -248,7 +252,7 @@ export async function requireComplianceEmployeeReadScope(
 	const identity = await identityResolver.resolveEmployeeForActor({
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
-		asOf: input.asOf,
+		...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 	});
 	if (!identity.ok) return identity;
 	if (!identity.data) {
@@ -282,7 +286,7 @@ export async function requireComplianceEmployeeReadScope(
 		const managed = await identityResolver.resolveManagerEmployeesForActor({
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
-			asOf: input.asOf,
+			...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 		});
 		if (!managed.ok) {
 			return managed;

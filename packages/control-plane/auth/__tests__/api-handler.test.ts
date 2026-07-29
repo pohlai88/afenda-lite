@@ -16,19 +16,19 @@ vi.mock("@neondatabase/auth/next/server", () => ({
 	createNeonAuth: () => ({
 		getSession: vi.fn(),
 		handler: () => getHandlerMock(),
+		middleware: vi.fn(),
 		organization: {
 			getActiveMemberRole: vi.fn(),
 		},
-		middleware: vi.fn(),
 	}),
 }));
 
 vi.mock("@afenda/env", () => ({
 	env: {
+		APP_URL: "https://www.nexuscanon.com",
+		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
 		NEON_AUTH_BASE_URL: "https://auth.example.test",
 		NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
-		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-		APP_URL: "https://www.nexuscanon.com",
 	},
 	isProductionDeploymentNow: envMocks.isProductionDeploymentNow,
 }));
@@ -46,11 +46,14 @@ vi.mock("@afenda/rate-limit", async () => {
 
 const APP_ORIGIN = "https://www.nexuscanon.com";
 const CORRELATION_ID = "11111111-1111-4111-8111-111111111111";
+const SERVER_TIMING_PATTERN = /^auth_bff;dur=\d+(\.\d)?$/;
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function authRequest(method: "GET" | "POST", headers?: HeadersInit): Request {
 	return new Request(`${APP_ORIGIN}/api/auth/get-session`, {
-		method,
 		headers,
+		method,
 	});
 }
 
@@ -90,11 +93,11 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 	it("stamps x-correlation-id and preserves provider Set-Cookie", async () => {
 		handlerGet.mockResolvedValue(
 			new Response(JSON.stringify({ ok: true }), {
-				status: 200,
 				headers: {
-					"set-cookie": "session_data=abc; Path=/; HttpOnly",
 					"content-type": "application/json",
+					"set-cookie": "session_data=abc; Path=/; HttpOnly",
 				},
+				status: 200,
 			}),
 		);
 
@@ -211,9 +214,9 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		const resetEpochMs = 1_700_000_042_000;
 		rateLimitMocks.checkRateLimit.mockResolvedValue({
 			ok: false,
+			quota: { limit: 20, remaining: 0, resetEpochMs },
 			reason: "rate_limited",
 			retryAfterSeconds: 42,
-			quota: { limit: 20, remaining: 0, resetEpochMs },
 		});
 		const chunks: string[] = [];
 		const writeSpy = vi
@@ -243,7 +246,7 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
 		expect(response.headers.get("X-RateLimit-Reset")).toBe("1700000042");
 		expect(response.headers.get("Server-Timing")).toMatch(
-			/^auth_bff;dur=\d+(\.\d)?$/,
+			SERVER_TIMING_PATTERN,
 		);
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
@@ -251,8 +254,8 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		await expect(response.json()).resolves.toEqual({
 			error: {
 				code: "RATE_LIMITED",
-				message: "Too many requests. Try again later.",
 				details: { retryAfter: 42 },
+				message: "Too many requests. Try again later.",
 			},
 		});
 		const logged =
@@ -327,8 +330,6 @@ describe("auth BFF helpers (PL-S7)", () => {
 		expect(resolveAuthBffCorrelationId(CORRELATION_ID)).toBe(CORRELATION_ID);
 		const minted = resolveAuthBffCorrelationId("not-a-uuid");
 		expect(minted).not.toBe("not-a-uuid");
-		expect(minted).toMatch(
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-		);
+		expect(minted).toMatch(UUID_PATTERN);
 	});
 });

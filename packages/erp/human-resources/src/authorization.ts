@@ -93,8 +93,8 @@ export async function requireHumanResourcesResourceAwarePermission(
 ): Promise<
 	Result<{
 		allowed: boolean;
-		projectedFields?: string[];
-		reason?: string;
+		projectedFields?: string[] | undefined;
+		reason?: string | undefined;
 	}>
 > {
 	if (!resourceAwareAuthorization) {

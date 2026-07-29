@@ -86,8 +86,8 @@ export type TimesheetGenerationDeps = {
 };
 
 export type AttendanceImportStoreInput = AttendanceImportBatchInput & {
-	sourceRejectedRows?: readonly AttendanceImportRejectedRow[];
-	sourceRowIndexes?: readonly number[];
+	sourceRejectedRows?: readonly AttendanceImportRejectedRow[] | undefined;
+	sourceRowIndexes?: readonly number[] | undefined;
 };
 
 export type TimePolicyCreateRecord = {
@@ -287,12 +287,12 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			calendarId: HumanResourcesWorkCalendarId;
-			name?: string;
-			timezone?: string;
-			calendarVersion?: string;
-			workWeek?: readonly WorkWeekDayPatternJson[];
-			standardHoursPerDay?: string;
-			effectiveTo?: string | null;
+			name?: string | undefined;
+			timezone?: string | undefined;
+			calendarVersion?: string | undefined;
+			workWeek?: readonly WorkWeekDayPatternJson[] | undefined;
+			standardHoursPerDay?: string | undefined;
+			effectiveTo?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -318,9 +318,9 @@ export type HumanResourcesTimeStore = {
 
 	listWorkCalendars(input: {
 		organizationId: string;
-		status?: "active" | "superseded" | "archived";
-		page?: number;
-		pageSize?: number;
+		status?: "active" | "superseded" | "archived" | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<WorkCalendar[]>>;
 
 	addWorkCalendarHoliday(
@@ -341,8 +341,8 @@ export type HumanResourcesTimeStore = {
 	listWorkCalendarHolidays(input: {
 		organizationId: string;
 		calendarId: HumanResourcesWorkCalendarId;
-		fromDate?: string;
-		toDate?: string;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
 	}): Promise<Result<WorkCalendarHolidayRecord[]>>;
 
 	assignEmploymentCalendar(
@@ -506,22 +506,22 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			shiftId: HumanResourcesShiftId;
-			name?: string;
-			shiftKind?: ShiftKind;
-			startLocal?: string;
-			endLocal?: string;
-			isOvernight?: boolean;
-			expectedMinutes?: number;
-			graceEarlyMinutes?: number;
-			graceLateMinutes?: number;
-			minDurationMinutes?: number | null;
-			maxDurationMinutes?: number | null;
-			earliestClockInLocal?: string | null;
-			latestClockOutLocal?: string | null;
-			overtimeEligible?: boolean;
-			timezone?: string | null;
-			locationKey?: string | null;
-			effectiveTo?: string | null;
+			name?: string | undefined;
+			shiftKind?: ShiftKind | undefined;
+			startLocal?: string | undefined;
+			endLocal?: string | undefined;
+			isOvernight?: boolean | undefined;
+			expectedMinutes?: number | undefined;
+			graceEarlyMinutes?: number | undefined;
+			graceLateMinutes?: number | undefined;
+			minDurationMinutes?: number | null | undefined;
+			maxDurationMinutes?: number | null | undefined;
+			earliestClockInLocal?: string | null | undefined;
+			latestClockOutLocal?: string | null | undefined;
+			overtimeEligible?: boolean | undefined;
+			timezone?: string | null | undefined;
+			locationKey?: string | null | undefined;
+			effectiveTo?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -558,9 +558,9 @@ export type HumanResourcesTimeStore = {
 
 	listShifts(input: {
 		organizationId: string;
-		status?: "draft" | "active" | "superseded" | "inactive";
-		page?: number;
-		pageSize?: number;
+		status?: "draft" | "active" | "superseded" | "inactive" | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<Shift[]>>;
 
 	addShiftBreak(
@@ -620,12 +620,12 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			assignmentId: HumanResourcesShiftAssignmentId;
-			shiftId?: HumanResourcesShiftId;
-			scheduledDate?: string;
-			startsAt?: Date;
-			endsAt?: Date;
-			locationKey?: string | null;
-			timezone?: string;
+			shiftId?: HumanResourcesShiftId | undefined;
+			scheduledDate?: string | undefined;
+			startsAt?: Date | undefined;
+			endsAt?: Date | undefined;
+			locationKey?: string | null | undefined;
+			timezone?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -651,14 +651,14 @@ export type HumanResourcesTimeStore = {
 
 	listShiftAssignments(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		fromDate?: string;
-		toDate?: string;
-		scheduledDate?: string;
-		locationKey?: string;
-		publicationStatus?: ShiftAssignment["publicationStatus"];
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		scheduledDate?: string | undefined;
+		locationKey?: string | undefined;
+		publicationStatus?: ShiftAssignment["publicationStatus"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<ShiftAssignment[]>>;
 
 	listShiftAssignmentSegments(input: {
@@ -675,11 +675,11 @@ export type HumanResourcesTimeStore = {
 	listLocationSchedule(input: {
 		organizationId: string;
 		locationKey: string;
-		fromDate?: string;
-		toDate?: string;
-		publicationStatus?: ShiftAssignment["publicationStatus"];
-		page?: number;
-		pageSize?: number;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		publicationStatus?: ShiftAssignment["publicationStatus"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<ShiftAssignment[]>>;
 
 	findOverlappingShiftAssignments(input: {
@@ -687,7 +687,7 @@ export type HumanResourcesTimeStore = {
 		employeeId: HumanResourcesEmployeeId;
 		startsAt: Date;
 		endsAt: Date;
-		excludeAssignmentId?: HumanResourcesShiftAssignmentId;
+		excludeAssignmentId?: HumanResourcesShiftAssignmentId | undefined;
 	}): Promise<Result<ShiftAssignment[]>>;
 
 	// Attendance events
@@ -722,9 +722,9 @@ export type HumanResourcesTimeStore = {
 			organizationId: string;
 			eventId: HumanResourcesAttendanceEventId;
 			occurredAt: Date;
-			notes?: string | null;
+			notes?: string | null | undefined;
 			adjustmentReason: string;
-			evidenceReference?: string | null;
+			evidenceReference?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -756,12 +756,12 @@ export type HumanResourcesTimeStore = {
 
 	listAttendanceEvents(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		fromDate?: string;
-		toDate?: string;
-		eventType?: AttendanceEventType;
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		eventType?: AttendanceEventType | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<AttendanceEvent[]>>;
 
 	// Attendance sessions
@@ -803,11 +803,11 @@ export type HumanResourcesTimeStore = {
 
 	listAttendanceSessions(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		fromDate?: string;
-		toDate?: string;
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		fromDate?: string | undefined;
+		toDate?: string | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<AttendanceSession[]>>;
 
 	getPreviousCompletedAttendanceSession(input: {
@@ -839,7 +839,7 @@ export type HumanResourcesTimeStore = {
 			organizationId: string;
 			exceptionId: HumanResourcesAttendanceExceptionId;
 			resolution: string;
-			evidenceReference?: string | null;
+			evidenceReference?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -878,17 +878,17 @@ export type HumanResourcesTimeStore = {
 
 	listAttendanceExceptions(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		reviewStatus?: AttendanceException["reviewStatus"];
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		reviewStatus?: AttendanceException["reviewStatus"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<AttendanceException[]>>;
 
 	listUnresolvedAttendanceExceptions(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<AttendanceException[]>>;
 
 	getDailyAttendanceSummary(input: {
@@ -930,18 +930,18 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			entryId: HumanResourcesTimesheetEntryId;
-			workDate?: string;
-			timeType?: TimesheetEntryTimeType;
-			startedAt?: Date | null;
-			endedAt?: Date | null;
-			recordedMinutes?: number;
-			approvedMinutes?: number;
-			costCenterId?: string | null;
-			projectId?: string | null;
-			locationId?: string | null;
-			departmentId?: string | null;
-			approvalReference?: string | null;
-			evidenceReference?: string | null;
+			workDate?: string | undefined;
+			timeType?: TimesheetEntryTimeType | undefined;
+			startedAt?: Date | null | undefined;
+			endedAt?: Date | null | undefined;
+			recordedMinutes?: number | undefined;
+			approvedMinutes?: number | undefined;
+			costCenterId?: string | null | undefined;
+			projectId?: string | null | undefined;
+			locationId?: string | null | undefined;
+			departmentId?: string | null | undefined;
+			approvalReference?: string | null | undefined;
+			evidenceReference?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -978,7 +978,7 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			timesheetId: HumanResourcesTimesheetId;
-			approverNotes?: string | null;
+			approverNotes?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -990,7 +990,7 @@ export type HumanResourcesTimeStore = {
 		input: {
 			organizationId: string;
 			timesheetId: HumanResourcesTimesheetId;
-			approverNotes?: string | null;
+			approverNotes?: string | null | undefined;
 			authority: TimeApprovalAuthority;
 			authorityAssignmentId: HumanResourcesTimeApprovalAuthorityAssignmentId;
 			expectedVersion: number;
@@ -1003,7 +1003,7 @@ export type HumanResourcesTimeStore = {
 	listTimesheetApprovalDecisions(input: {
 		organizationId: string;
 		timesheetId: HumanResourcesTimesheetId;
-		submissionReference?: string;
+		submissionReference?: string | undefined;
 	}): Promise<Result<TimesheetApprovalDecision[]>>;
 
 	rejectTimesheet(
@@ -1067,11 +1067,11 @@ export type HumanResourcesTimeStore = {
 
 	listTimesheets(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		status?: TimesheetStatus;
-		periodStart?: string;
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		status?: TimesheetStatus | undefined;
+		periodStart?: string | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<Timesheet[]>>;
 
 	listTimesheetEntries(input: {
@@ -1106,7 +1106,7 @@ export type HumanResourcesTimeStore = {
 			requestId: HumanResourcesOvertimeRequestId;
 			authority: TimeApprovalAuthority;
 			approvedMaximumMinutes: number;
-			comment?: string | null;
+			comment?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 			correlationId: string;
@@ -1168,9 +1168,9 @@ export type HumanResourcesTimeStore = {
 
 	listOvertimeRequests(input: {
 		organizationId: string;
-		employeeId?: HumanResourcesEmployeeId;
-		status?: OvertimeRequest["status"];
-		page?: number;
-		pageSize?: number;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		status?: OvertimeRequest["status"] | undefined;
+		page?: number | undefined;
+		pageSize?: number | undefined;
 	}): Promise<Result<OvertimeRequest[]>>;
 };

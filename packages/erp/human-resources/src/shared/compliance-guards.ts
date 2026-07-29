@@ -190,7 +190,7 @@ export function assertWorkEligibilityExpiredAsOf(input: {
 export function isNearingExpiry(input: {
 	expiresOn: string | null;
 	asOf: string;
-	withinDays?: number;
+	withinDays?: number | undefined;
 }): boolean {
 	return isWithinInclusiveDateWindow({
 		date: input.expiresOn,

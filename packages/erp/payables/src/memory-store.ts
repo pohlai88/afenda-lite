@@ -13,6 +13,7 @@ import type {
 } from "./model";
 
 const SCALE = 1_000_000n;
+const TRAILING_ZERO_PATTERN = /0+$/;
 
 function decimal(value: string): bigint {
 	const [whole = "0", fraction = ""] = value.split(".");
@@ -25,7 +26,7 @@ function format(value: bigint): string {
 	const fraction = (absolute % SCALE)
 		.toString()
 		.padStart(6, "0")
-		.replace(/0+$/, "");
+		.replace(TRAILING_ZERO_PATTERN, "");
 	return `${sign}${absolute / SCALE}${fraction.length > 0 ? `.${fraction}` : ""}`;
 }
 
@@ -42,6 +43,11 @@ function cloneInvoice(invoice: SupplierInvoice): SupplierInvoice {
 	};
 }
 
+/**
+ * Deterministic contract-test adapter with no concurrent transaction isolation.
+ * Command rollback is explicit per mutation; nested transactions are unsupported.
+ * It mirrors domain behavior, not production database mechanics.
+ */
 export class MemoryPayablesStore implements PayablesStore {
 	private readonly invoices = new Map<string, SupplierInvoice>();
 	private readonly allocations = new Map<string, SupplierAllocation>();
@@ -51,15 +57,15 @@ export class MemoryPayablesStore implements PayablesStore {
 		const key = `${invoice.organizationId}:${invoice.supplierId}:${invoice.currencyCode}`;
 		const existing = this.balances.get(key);
 		this.balances.set(key, {
-			organizationId: invoice.organizationId,
-			supplierId: invoice.supplierId,
-			currencyCode: invoice.currencyCode,
-			openBalance: format(decimal(existing?.openBalance ?? "0") + amount),
-			invoicedAmount: existing?.invoicedAmount ?? "0",
-			creditedAmount: existing?.creditedAmount ?? "0",
-			paidAmount: existing?.paidAmount ?? "0",
-			outstandingAmount: format(decimal(existing?.openBalance ?? "0") + amount),
 			asOf: new Date(),
+			creditedAmount: existing?.creditedAmount ?? "0",
+			currencyCode: invoice.currencyCode,
+			invoicedAmount: existing?.invoicedAmount ?? "0",
+			openBalance: format(decimal(existing?.openBalance ?? "0") + amount),
+			organizationId: invoice.organizationId,
+			outstandingAmount: format(decimal(existing?.openBalance ?? "0") + amount),
+			paidAmount: existing?.paidAmount ?? "0",
+			supplierId: invoice.supplierId,
 			updatedAt: new Date(),
 		});
 	}
@@ -87,31 +93,31 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const now = new Date();
 		return ok({
-			id: randomUUID(),
-			organizationId: record.organizationId,
-			code: record.code,
-			normalizedCode: record.normalizedCode,
-			documentType: record.documentType,
-			status: "draft",
-			supplierId: record.supplierId,
-			supplierCode: record.supplierCode,
-			supplierName: record.supplierName,
-			currencyCode: record.currencyCode,
-			totalAmount: record.creditAmount ?? "0",
-			openAmount: "0",
-			version: 1,
-			createdBy: record.actorUserId,
-			updatedBy: record.actorUserId,
-			matchedAt: null,
-			matchedBy: null,
-			postedAt: null,
-			postedBy: null,
 			cancelledAt: null,
 			cancelledBy: null,
+			code: record.code,
 			createdAt: now,
-			updatedAt: now,
+			createdBy: record.actorUserId,
+			currencyCode: record.currencyCode,
+			documentType: record.documentType,
+			id: randomUUID(),
 			lines: [],
+			matchedAt: null,
+			matchedBy: null,
 			matchResult: null,
+			normalizedCode: record.normalizedCode,
+			openAmount: "0",
+			organizationId: record.organizationId,
+			postedAt: null,
+			postedBy: null,
+			status: "draft",
+			supplierCode: record.supplierCode,
+			supplierId: record.supplierId,
+			supplierName: record.supplierName,
+			totalAmount: record.creditAmount ?? "0",
+			updatedAt: now,
+			updatedBy: record.actorUserId,
+			version: 1,
 		});
 	}
 
@@ -119,22 +125,24 @@ export class MemoryPayablesStore implements PayablesStore {
 		record: SupplierInvoiceCreateRecord,
 	): Promise<Result<SupplierInvoice>> {
 		const created = this.newInvoice(record);
-		if (!created.ok) return created;
+		if (!created.ok) {
+			return created;
+		}
 		this.invoices.set(created.data.id, created.data);
 		const emitted = await record.effects.emit({
-			type: "payables.invoice.created.v1",
-			organizationId: record.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			organizationId: record.organizationId,
 			payload: {
-				organizationId: record.organizationId,
-				entityId: created.data.id,
-				supplierId: record.supplierId,
-				amount: created.data.totalAmount,
-				currencyCode: record.currencyCode,
 				actorId: record.actorUserId,
+				amount: created.data.totalAmount,
 				correlationId: record.correlationId,
+				currencyCode: record.currencyCode,
+				entityId: created.data.id,
+				organizationId: record.organizationId,
+				supplierId: record.supplierId,
 			},
+			type: "payables.invoice.created.v1",
 		});
 		if (!emitted.ok) {
 			this.invoices.delete(created.data.id);
@@ -143,11 +151,14 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok(cloneInvoice(created.data));
 	}
 
+	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
 	async addLine(
 		record: Parameters<PayablesStore["addLine"]>[0],
 	): Promise<Result<SupplierInvoiceLine>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
-		if (!found.ok) return found;
+		if (!found.ok) {
+			return found;
+		}
 		const invoice = found.data;
 		if (invoice.status !== "draft") {
 			return fail(
@@ -157,17 +168,17 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const now = new Date();
 		const line: SupplierInvoiceLine = {
-			id: randomUUID(),
-			organizationId: record.organizationId,
-			invoiceId: record.invoiceId,
-			lineNo: invoice.lines.length + 1,
-			itemId: record.itemId,
+			createdAt: now,
+			createdBy: record.actorUserId,
 			description: record.description,
+			id: randomUUID(),
+			invoiceId: record.invoiceId,
+			itemId: record.itemId,
+			lineAmount: multiply(record.quantity, record.unitPrice),
+			lineNo: invoice.lines.length + 1,
+			organizationId: record.organizationId,
 			quantity: record.quantity,
 			unitPrice: record.unitPrice,
-			lineAmount: multiply(record.quantity, record.unitPrice),
-			createdBy: record.actorUserId,
-			createdAt: now,
 		};
 		invoice.lines.push(line);
 		invoice.totalAmount = format(
@@ -183,7 +194,9 @@ export class MemoryPayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["matchInvoice"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
-		if (!found.ok) return found;
+		if (!found.ok) {
+			return found;
+		}
 		const invoice = found.data;
 		if (invoice.status !== "draft" || invoice.documentType !== "invoice") {
 			return fail("CONFLICT", "Only draft supplier invoices can be matched");
@@ -200,17 +213,17 @@ export class MemoryPayablesStore implements PayablesStore {
 		const previous = cloneInvoice(invoice);
 		const now = new Date();
 		const result: ThreeWayMatchResult = {
-			id: randomUUID(),
-			organizationId: record.organizationId,
-			invoiceId: invoice.id,
-			purchaseOrderId: record.purchaseOrderId,
-			goodsReceiptId: record.goodsReceiptId,
-			result: record.matchStatus,
 			evidence: record.evidence,
-			purchaseOrderVersion: record.purchaseOrderVersion,
+			goodsReceiptId: record.goodsReceiptId,
 			goodsReceiptVersion: record.goodsReceiptVersion,
-			matchedBy: record.actorUserId,
+			id: randomUUID(),
+			invoiceId: invoice.id,
 			matchedAt: now,
+			matchedBy: record.actorUserId,
+			organizationId: record.organizationId,
+			purchaseOrderId: record.purchaseOrderId,
+			purchaseOrderVersion: record.purchaseOrderVersion,
+			result: record.matchStatus,
 		};
 		invoice.matchResult = result;
 		if (record.matchStatus !== "exception") {
@@ -221,21 +234,23 @@ export class MemoryPayablesStore implements PayablesStore {
 			invoice.updatedBy = record.actorUserId;
 			invoice.version += 1;
 		}
-		if (record.matchStatus === "exception") return ok(cloneInvoice(invoice));
+		if (record.matchStatus === "exception") {
+			return ok(cloneInvoice(invoice));
+		}
 		const emitted = await record.effects.emit({
-			type: "payables.invoice.matched.v1",
-			organizationId: invoice.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			organizationId: invoice.organizationId,
 			payload: {
-				organizationId: invoice.organizationId,
-				entityId: invoice.id,
-				supplierId: invoice.supplierId,
-				amount: invoice.totalAmount,
-				currencyCode: invoice.currencyCode,
 				actorId: record.actorUserId,
+				amount: invoice.totalAmount,
 				correlationId: record.correlationId,
+				currencyCode: invoice.currencyCode,
+				entityId: invoice.id,
+				organizationId: invoice.organizationId,
+				supplierId: invoice.supplierId,
 			},
+			type: "payables.invoice.matched.v1",
 		});
 		if (!emitted.ok) {
 			this.invoices.set(invoice.id, previous);
@@ -248,7 +263,9 @@ export class MemoryPayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["postInvoice"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
-		if (!found.ok) return found;
+		if (!found.ok) {
+			return found;
+		}
 		const invoice = found.data;
 		if (invoice.status !== "matched" || invoice.documentType !== "invoice") {
 			return fail(
@@ -271,40 +288,44 @@ export class MemoryPayablesStore implements PayablesStore {
 		invoice.version += 1;
 		this.adjustBalance(invoice, decimal(invoice.totalAmount));
 		const emitted = await record.effects.emit({
-			type: "payables.invoice.posted.v1",
-			organizationId: invoice.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			organizationId: invoice.organizationId,
 			payload: {
-				organizationId: invoice.organizationId,
-				entityId: invoice.id,
-				supplierId: invoice.supplierId,
-				amount: invoice.totalAmount,
-				currencyCode: invoice.currencyCode,
 				actorId: record.actorUserId,
+				amount: invoice.totalAmount,
 				correlationId: record.correlationId,
+				currencyCode: invoice.currencyCode,
+				entityId: invoice.id,
+				organizationId: invoice.organizationId,
+				supplierId: invoice.supplierId,
 			},
+			type: "payables.invoice.posted.v1",
 		});
 		if (!emitted.ok) {
 			this.invoices.set(invoice.id, previous);
 			this.balances.clear();
-			for (const [key, value] of previousBalances)
+			for (const [key, value] of previousBalances) {
 				this.balances.set(key, value);
+			}
 			return emitted;
 		}
 		return ok(cloneInvoice(invoice));
 	}
 
+	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
 	async createCredit(
 		record: SupplierInvoiceCreateRecord,
 	): Promise<Result<SupplierInvoice>> {
 		const created = this.newInvoice(record);
-		if (!created.ok) return created;
+		if (!created.ok) {
+			return created;
+		}
 		this.invoices.set(created.data.id, created.data);
 		return ok(cloneInvoice(created.data));
 	}
 
-	async addCreditLine(
+	addCreditLine(
 		record: Parameters<PayablesStore["addCreditLine"]>[0],
 	): Promise<Result<SupplierInvoiceLine>> {
 		return this.addLine({ ...record, invoiceId: record.creditNoteId });
@@ -314,7 +335,9 @@ export class MemoryPayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["postCredit"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		const found = this.findInvoice(record.organizationId, record.creditNoteId);
-		if (!found.ok) return found;
+		if (!found.ok) {
+			return found;
+		}
 		const invoice = found.data;
 		if (invoice.documentType !== "credit_note" || invoice.status !== "draft") {
 			return fail("CONFLICT", "Only draft supplier credit notes can be posted");
@@ -336,19 +359,19 @@ export class MemoryPayablesStore implements PayablesStore {
 		invoice.version += 1;
 		this.adjustBalance(invoice, -decimal(invoice.totalAmount));
 		const emitted = await record.effects.emit({
-			type: "payables.credit_note.posted.v1",
-			organizationId: invoice.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			organizationId: invoice.organizationId,
 			payload: {
-				organizationId: invoice.organizationId,
-				entityId: invoice.id,
-				supplierId: invoice.supplierId,
-				amount: invoice.totalAmount,
-				currencyCode: invoice.currencyCode,
 				actorId: record.actorUserId,
+				amount: invoice.totalAmount,
 				correlationId: record.correlationId,
+				currencyCode: invoice.currencyCode,
+				entityId: invoice.id,
+				organizationId: invoice.organizationId,
+				supplierId: invoice.supplierId,
 			},
+			type: "payables.credit_note.posted.v1",
 		});
 		if (!emitted.ok) {
 			invoice.status = "draft";
@@ -357,8 +380,9 @@ export class MemoryPayablesStore implements PayablesStore {
 			invoice.postedBy = null;
 			invoice.version -= 1;
 			this.balances.clear();
-			for (const [key, value] of previousBalances)
+			for (const [key, value] of previousBalances) {
 				this.balances.set(key, value);
+			}
 			return emitted;
 		}
 		return ok(cloneInvoice(invoice));
@@ -368,7 +392,9 @@ export class MemoryPayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["applyPayment"]>[0],
 	): Promise<Result<SupplierAllocation>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
-		if (!found.ok) return found;
+		if (!found.ok) {
+			return found;
+		}
 		const invoice = found.data;
 		const amount = decimal(record.amount);
 		if (invoice.status !== "posted" || invoice.documentType !== "invoice") {
@@ -384,28 +410,30 @@ export class MemoryPayablesStore implements PayablesStore {
 			);
 		}
 		const replay = [...this.allocations.values()].find(
-			(allocation) =>
-				allocation.organizationId === record.organizationId &&
-				allocation.applyIdempotencyKey === record.idempotencyKey,
+			(candidateAllocation) =>
+				candidateAllocation.organizationId === record.organizationId &&
+				candidateAllocation.applyIdempotencyKey === record.idempotencyKey,
 		);
-		if (replay !== undefined) return ok({ ...replay });
+		if (replay !== undefined) {
+			return ok({ ...replay });
+		}
 		const previous = cloneInvoice(invoice);
 		const previousBalances = new Map(this.balances);
 		const allocation: SupplierAllocation = {
-			id: randomUUID(),
-			organizationId: record.organizationId,
-			invoiceId: invoice.id,
-			supplierId: invoice.supplierId,
-			paymentId: record.paymentId,
-			paymentApplicationInstructionId: record.paymentApplicationInstructionId,
-			creditNoteId: null,
-			status: "active",
 			amount: record.amount,
 			applyIdempotencyKey: record.idempotencyKey,
+			createdAt: new Date(),
+			createdBy: record.actorUserId,
+			creditNoteId: null,
+			id: randomUUID(),
+			invoiceId: invoice.id,
+			organizationId: record.organizationId,
+			paymentApplicationInstructionId: record.paymentApplicationInstructionId,
+			paymentId: record.paymentId,
 			reversedAt: null,
 			reversedBy: null,
-			createdBy: record.actorUserId,
-			createdAt: new Date(),
+			status: "active",
+			supplierId: invoice.supplierId,
 		};
 		invoice.openAmount = format(decimal(invoice.openAmount) - amount);
 		invoice.version += 1;
@@ -414,31 +442,33 @@ export class MemoryPayablesStore implements PayablesStore {
 		this.allocations.set(allocation.id, allocation);
 		this.adjustBalance(invoice, -amount);
 		const emitted = await record.effects.emit({
-			type: "payables.allocation.posted.v1",
-			organizationId: invoice.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			organizationId: invoice.organizationId,
 			payload: {
-				organizationId: invoice.organizationId,
-				entityId: allocation.id,
-				supplierId: invoice.supplierId,
-				amount: record.amount,
-				currencyCode: invoice.currencyCode,
 				actorId: record.actorUserId,
+				amount: record.amount,
 				correlationId: record.correlationId,
+				currencyCode: invoice.currencyCode,
+				entityId: allocation.id,
+				organizationId: invoice.organizationId,
+				supplierId: invoice.supplierId,
 			},
+			type: "payables.allocation.posted.v1",
 		});
 		if (!emitted.ok) {
 			this.invoices.set(invoice.id, previous);
 			this.allocations.delete(allocation.id);
 			this.balances.clear();
-			for (const [key, value] of previousBalances)
+			for (const [key, value] of previousBalances) {
 				this.balances.set(key, value);
+			}
 			return emitted;
 		}
 		return ok({ ...allocation });
 	}
 
+	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
 	async applyCredit(
 		record: Parameters<PayablesStore["applyCredit"]>[0],
 	): Promise<Result<SupplierAllocation>> {
@@ -446,12 +476,16 @@ export class MemoryPayablesStore implements PayablesStore {
 			record.organizationId,
 			record.invoiceId,
 		);
-		if (!invoiceResult.ok) return invoiceResult;
+		if (!invoiceResult.ok) {
+			return invoiceResult;
+		}
 		const creditResult = this.findInvoice(
 			record.organizationId,
 			record.creditNoteId,
 		);
-		if (!creditResult.ok) return creditResult;
+		if (!creditResult.ok) {
+			return creditResult;
+		}
 		const invoice = invoiceResult.data;
 		const credit = creditResult.data;
 		if (
@@ -468,11 +502,13 @@ export class MemoryPayablesStore implements PayablesStore {
 			);
 		}
 		const replay = [...this.allocations.values()].find(
-			(allocation) =>
-				allocation.organizationId === record.organizationId &&
-				allocation.applyIdempotencyKey === record.idempotencyKey,
+			(candidateAllocation) =>
+				candidateAllocation.organizationId === record.organizationId &&
+				candidateAllocation.applyIdempotencyKey === record.idempotencyKey,
 		);
-		if (replay !== undefined) return ok({ ...replay });
+		if (replay !== undefined) {
+			return ok({ ...replay });
+		}
 		const amount = decimal(record.amount);
 		if (
 			amount <= 0n ||
@@ -486,20 +522,20 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const now = new Date();
 		const allocation: SupplierAllocation = {
-			id: randomUUID(),
-			organizationId: record.organizationId,
-			invoiceId: invoice.id,
-			supplierId: invoice.supplierId,
-			paymentId: null,
-			paymentApplicationInstructionId: null,
-			creditNoteId: credit.id,
-			status: "active",
 			amount: record.amount,
 			applyIdempotencyKey: record.idempotencyKey,
+			createdAt: now,
+			createdBy: record.actorUserId,
+			creditNoteId: credit.id,
+			id: randomUUID(),
+			invoiceId: invoice.id,
+			organizationId: record.organizationId,
+			paymentApplicationInstructionId: null,
+			paymentId: null,
 			reversedAt: null,
 			reversedBy: null,
-			createdBy: record.actorUserId,
-			createdAt: now,
+			status: "active",
+			supplierId: invoice.supplierId,
 		};
 		invoice.openAmount = format(decimal(invoice.openAmount) - amount);
 		credit.openAmount = format(decimal(credit.openAmount) - amount);
@@ -530,8 +566,9 @@ export class MemoryPayablesStore implements PayablesStore {
 				record.organizationId,
 				allocation.invoiceId,
 			);
-			if (!found.ok)
+			if (!found.ok) {
 				return fail("INTERNAL_ERROR", "Supplier allocation invoice is missing");
+			}
 			const invoice = found.data;
 			invoices.set(invoice.id, cloneInvoice(invoice));
 			const amount = decimal(allocation.amount);
@@ -543,27 +580,33 @@ export class MemoryPayablesStore implements PayablesStore {
 			allocation.status = "reversed";
 			allocation.reversedAt = new Date();
 			allocation.reversedBy = record.actorUserId;
+			// biome-ignore lint/performance/noAwaitInLoops: Events must remain ordered so rollback can restore the exact prior state.
 			const emitted = await record.effects.emit({
-				type: "payables.payment_application.reversed.v1",
-				organizationId: invoice.organizationId,
 				actorUserId: record.actorUserId,
 				correlationId: record.correlationId,
+				organizationId: invoice.organizationId,
 				payload: {
-					organizationId: invoice.organizationId,
-					entityId: allocation.id,
-					supplierId: invoice.supplierId,
-					amount: allocation.amount,
-					currencyCode: invoice.currencyCode,
 					actorId: record.actorUserId,
+					amount: allocation.amount,
 					correlationId: record.correlationId,
+					currencyCode: invoice.currencyCode,
+					entityId: allocation.id,
+					organizationId: invoice.organizationId,
+					supplierId: invoice.supplierId,
 				},
+				type: "payables.payment_application.reversed.v1",
 			});
 			if (!emitted.ok) {
-				for (const [id, previous] of invoices) this.invoices.set(id, previous);
+				for (const [id, previous] of invoices) {
+					this.invoices.set(id, previous);
+				}
 				this.balances.clear();
-				for (const [key, balance] of balances) this.balances.set(key, balance);
-				for (const removed of allocations)
+				for (const [key, balance] of balances) {
+					this.balances.set(key, balance);
+				}
+				for (const removed of allocations) {
 					this.allocations.set(removed.id, removed);
+				}
 				return emitted;
 			}
 		}
@@ -574,7 +617,9 @@ export class MemoryPayablesStore implements PayablesStore {
 		record: Parameters<PayablesStore["cancel"]>[0],
 	): Promise<Result<SupplierInvoice>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
-		if (!found.ok) return found;
+		if (!found.ok) {
+			return found;
+		}
 		const invoice = found.data;
 		if (invoice.status === "cancelled") {
 			return fail("CONFLICT", "Supplier invoice is already cancelled");
@@ -598,19 +643,19 @@ export class MemoryPayablesStore implements PayablesStore {
 		invoice.updatedBy = record.actorUserId;
 		invoice.version += 1;
 		const emitted = await record.effects.emit({
-			type: "payables.invoice.cancelled.v1",
-			organizationId: invoice.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: record.correlationId,
+			organizationId: invoice.organizationId,
 			payload: {
-				organizationId: invoice.organizationId,
-				entityId: invoice.id,
-				supplierId: invoice.supplierId,
-				amount: invoice.totalAmount,
-				currencyCode: invoice.currencyCode,
 				actorId: record.actorUserId,
+				amount: invoice.totalAmount,
 				correlationId: record.correlationId,
+				currencyCode: invoice.currencyCode,
+				entityId: invoice.id,
+				organizationId: invoice.organizationId,
+				supplierId: invoice.supplierId,
 			},
+			type: "payables.invoice.cancelled.v1",
 		});
 		if (!emitted.ok) {
 			this.invoices.set(invoice.id, previous);
@@ -619,6 +664,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok(cloneInvoice(invoice));
 	}
 
+	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
 	async getById(
 		organizationId: string,
 		id: string,
@@ -631,6 +677,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		);
 	}
 
+	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
 	async list(
 		filter: Parameters<PayablesStore["list"]>[0],
 	): Promise<Result<SupplierInvoice[]>> {
@@ -666,6 +713,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		);
 	}
 
+	// biome-ignore lint/suspicious/useAwait: Async signature implements the PayablesStore contract.
 	async getBalance(
 		organizationId: string,
 		supplierId: string,
@@ -713,11 +761,11 @@ export class MemoryPayablesStore implements PayablesStore {
 						);
 					return {
 						...row,
-						invoicedAmount: format(invoicedAmount),
-						creditedAmount: format(creditedAmount),
-						paidAmount: format(paidAmount),
-						outstandingAmount: row.openBalance,
 						asOf: new Date(),
+						creditedAmount: format(creditedAmount),
+						invoicedAmount: format(invoicedAmount),
+						outstandingAmount: row.openBalance,
+						paidAmount: format(paidAmount),
 					};
 				}),
 		);

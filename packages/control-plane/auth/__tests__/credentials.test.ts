@@ -33,15 +33,15 @@ describe("credential auth (Path A SDK)", () => {
 	it("signInWithEmail maps Neon errors to stable public messages", async () => {
 		signInEmail.mockResolvedValue({
 			data: null,
-			error: { message: "password=secret", code: "INVALID" },
+			error: { code: "INVALID", message: "password=secret" },
 		});
 		const { signInWithEmail } = await import("../src/credentials");
 		await expect(
 			signInWithEmail({ email: "a@b.c", password: "bad" }),
 		).resolves.toEqual({
-			ok: false,
-			message: "Invalid email or password.",
 			code: "INVALID",
+			message: "Invalid email or password.",
+			ok: false,
 		});
 	});
 
@@ -61,8 +61,8 @@ describe("credential auth (Path A SDK)", () => {
 		await expect(
 			signInWithEmail({ email: "a@b.c", password: "bad" }),
 		).resolves.toEqual({
-			ok: false,
 			message: "Invalid email or password.",
+			ok: false,
 		});
 	});
 
@@ -75,15 +75,15 @@ describe("credential auth (Path A SDK)", () => {
 	it("signOutSession maps Neon errors to a stable public message", async () => {
 		signOut.mockResolvedValue({
 			data: null,
-			error: { message: "session token leaked", code: "SESSION_EXPIRED" },
+			error: { code: "SESSION_EXPIRED", message: "session token leaked" },
 		});
 
 		const { signOutSession } = await import("../src/credentials");
 
 		await expect(signOutSession()).resolves.toEqual({
-			ok: false,
-			message: "Sign out failed.",
 			code: "SESSION_EXPIRED",
+			message: "Sign out failed.",
+			ok: false,
 		});
 	});
 });

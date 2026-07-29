@@ -1,5 +1,5 @@
 {
-	"extends": "@afenda/config/tsconfig/base.json",
+	"extends": "@afenda/config/tsconfig/node-library.json",
 	"compilerOptions": {
 		"rootDir": "."
 	},

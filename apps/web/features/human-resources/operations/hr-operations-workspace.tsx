@@ -32,7 +32,7 @@ import {
 } from "./hr-operations-journey-forms";
 import type { HrOperationsCapabilities, HrOperationsData } from "./types";
 
-function ErrorNotice({ message }: { message?: string }) {
+function ErrorNotice({ message }: { message?: string | undefined }) {
 	return message ? (
 		<Alert variant="destructive" role="alert">
 			<AlertTitle>Operations data unavailable</AlertTitle>

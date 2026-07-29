@@ -10,7 +10,7 @@ import { datesOverlap } from "./organization-guards";
 export type EmploymentContractLineageStatus = "active" | "superseded";
 
 export function assertNoEmploymentContractOverlap(input: {
-	candidateContractId?: string;
+	candidateContractId?: string | undefined;
 	candidateStartsOn: string;
 	candidateEndsOn: string | null;
 	existing: readonly {

@@ -140,7 +140,7 @@ export function assertExceptionStatusTransition(
 
 export function assertNoSelfApprove(input: {
 	actorUserId: string;
-	subjectUserId?: string | null;
+	subjectUserId?: string | null | undefined;
 	createdBy: string;
 }): Result<void> {
 	const subject = input.subjectUserId ?? input.createdBy;

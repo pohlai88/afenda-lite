@@ -12,8 +12,8 @@ export type AuditFactInput = {
 	entityId: string;
 	action: "CREATE" | "UPDATE" | "DELETE";
 	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
-	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null | undefined;
+	newValue?: Record<string, unknown> | null | undefined;
 };
 
 export type AuditFactPort = {

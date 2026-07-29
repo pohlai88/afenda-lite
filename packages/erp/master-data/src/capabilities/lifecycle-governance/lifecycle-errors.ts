@@ -23,18 +23,18 @@ export type LifecycleFailureCode = (typeof LIFECYCLE_FAILURE_CODES)[number];
 export type LifecycleErrorDetails = MasterFailureDetails &
 	Readonly<{
 		lifecycleCode: LifecycleFailureCode;
-		entityType?: string;
-		entityId?: string;
-		currentState?: string;
-		attemptedOperation?: string;
-		allowedStates?: readonly string[];
-		expectedVersion?: number;
-		actualVersion?: number;
-		dependencyCodes?: readonly string[];
-		fields?: readonly string[];
-		effectiveFrom?: Date | null;
-		effectiveTo?: Date | null;
-		asOf?: Date;
+		entityType?: string | undefined;
+		entityId?: string | undefined;
+		currentState?: string | undefined;
+		attemptedOperation?: string | undefined;
+		allowedStates?: readonly string[] | undefined;
+		expectedVersion?: number | undefined;
+		actualVersion?: number | undefined;
+		dependencyCodes?: readonly string[] | undefined;
+		fields?: readonly string[] | undefined;
+		effectiveFrom?: Date | null | undefined;
+		effectiveTo?: Date | null | undefined;
+		asOf?: Date | undefined;
 	}>;
 
 export function lifecycleTransitionNotAllowed(

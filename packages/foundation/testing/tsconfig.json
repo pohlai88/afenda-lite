@@ -1,9 +1,8 @@
 {
-	"extends": "@afenda/config/tsconfig/base.json",
+	"extends": "@afenda/config/tsconfig/node-library.json",
 	"compilerOptions": {
-		"lib": ["ES2022"],
-		"rootDir": "src",
-		"types": ["node"]
+		"allowImportingTsExtensions": true,
+		"rootDir": "src"
 	},
 	"include": ["src/**/*.ts"],
 	"exclude": ["node_modules", "dist"]

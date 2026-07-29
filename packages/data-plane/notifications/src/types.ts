@@ -65,7 +65,7 @@ export type NotificationListOptions = {
 	userId: string;
 	page: number;
 	pageSize: number;
-	unreadOnly?: boolean;
+	unreadOnly?: boolean | undefined;
 };
 
 export type NotificationUnreadCountOptions = {
@@ -92,5 +92,5 @@ export type NotificationDeleteOptions = {
 
 export type NotificationPurgeOptions = {
 	organizationId: string;
-	olderThan?: Date;
+	olderThan?: Date | undefined;
 };

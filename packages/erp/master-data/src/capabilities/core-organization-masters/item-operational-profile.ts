@@ -57,11 +57,11 @@ export function defaultItemOperationalProfile(
 
 export function resolveItemOperationalProfile(input: {
 	itemType: ItemType;
-	trackingPolicy?: ItemTrackingPolicy;
-	sellable?: boolean;
-	purchasable?: boolean;
-	stocked?: boolean;
-	serviceIndicator?: boolean;
+	trackingPolicy?: ItemTrackingPolicy | undefined;
+	sellable?: boolean | undefined;
+	purchasable?: boolean | undefined;
+	stocked?: boolean | undefined;
+	serviceIndicator?: boolean | undefined;
 }): ItemOperationalProfile {
 	const defaults = defaultItemOperationalProfile(input.itemType);
 	return {

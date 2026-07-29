@@ -329,7 +329,7 @@ export async function requirePerformanceEmployeeReadScope(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		employeeId?: string;
+		employeeId?: string | undefined;
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {

@@ -54,7 +54,7 @@ function JourneyCard({
 	);
 }
 
-function LoadError({ message }: { message?: string }) {
+function LoadError({ message }: { message?: string | undefined }) {
 	return message ? (
 		<Alert variant="destructive">
 			<AlertTitle>Compensation data unavailable</AlertTitle>

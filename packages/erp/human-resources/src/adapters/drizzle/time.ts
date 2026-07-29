@@ -242,7 +242,7 @@ async function audit(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		correlationId?: string;
+		correlationId?: string | undefined;
 		entity: string;
 		entityId: string;
 		action: "CREATE" | "UPDATE" | "DELETE";
@@ -916,7 +916,7 @@ function mapSession(
 		grossMinutes: row.grossMinutes,
 		provenance: {
 			automaticBreak,
-			breakIntervals: provenanceResult.data.breakIntervals,
+			breakIntervals: provenanceResult.data.breakIntervals ?? [],
 		},
 		resolutionStatus: row.resolutionStatus,
 		requiresReview: row.requiresReview,
@@ -3780,11 +3780,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		return this.listShiftAssignments({
 			organizationId: input.organizationId,
 			locationKey: input.locationKey,
-			fromDate: input.fromDate,
-			toDate: input.toDate,
-			publicationStatus: input.publicationStatus,
-			page: input.page,
-			pageSize: input.pageSize,
+			...(input.fromDate === undefined ? {} : { fromDate: input.fromDate }),
+			...(input.toDate === undefined ? {} : { toDate: input.toDate }),
+			...(input.publicationStatus === undefined
+				? {}
+				: { publicationStatus: input.publicationStatus }),
+			...(input.page === undefined ? {} : { page: input.page }),
+			...(input.pageSize === undefined ? {} : { pageSize: input.pageSize }),
 		});
 	},
 
@@ -4186,7 +4188,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					skipped: skipped.length,
 					rejected: rejected.length,
 				},
-				nextCursor: input.nextCursor,
+				...(input.nextCursor === undefined
+					? {}
+					: { nextCursor: input.nextCursor }),
 			};
 
 			try {
@@ -4232,7 +4236,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const audited = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
+				...(input.correlationId === undefined
+					? {}
+					: { correlationId: input.correlationId }),
 				entity: "hr_attendance_import_batch",
 				entityId: importBatchId,
 				action: "CREATE",
@@ -4259,10 +4265,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					),
 				);
 			const sourceSequence = resolveAttendanceEventSourceSequence({
-				explicit: input.sourceSequence,
 				existingEvents: maxRows.map((row) => ({
 					sourceSequence: row.maxSequence,
 				})),
+				...(input.sourceSequence === undefined
+					? {}
+					: { explicit: input.sourceSequence }),
 			});
 			const id = randomUUID();
 			const now = new Date();
@@ -5191,7 +5199,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async excuseAttendanceException(input, ports) {
 		return transitionException(this, ports, input, "excused", {
 			resolution: input.resolution,
-			evidenceReference: input.evidenceReference,
+			...(input.evidenceReference === undefined
+				? {}
+				: { evidenceReference: input.evidenceReference }),
 		});
 	},
 	async rejectAttendanceException(input, ports) {
@@ -7092,7 +7102,10 @@ async function transitionException(
 		correlationId: string;
 	},
 	next: AttendanceException["reviewStatus"],
-	extra?: { resolution?: string; evidenceReference?: string | null },
+	extra?: {
+		resolution?: string | undefined;
+		evidenceReference?: string | null | undefined;
+	},
 ): Promise<Result<AttendanceException>> {
 	const existing = await store.getAttendanceException({
 		organizationId: input.organizationId,

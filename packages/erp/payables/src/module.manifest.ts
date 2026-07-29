@@ -10,12 +10,54 @@ import {
 } from "@afenda/events/schemas";
 
 export const payablesModuleManifest = {
-	id: "payables",
-	category: "commercial",
-	packageName: "@afenda/payables",
-	band: "R1-F",
-	lifecycle: "active",
 	activationMode: "organization_toggle",
+	authorization: {
+		commands: {
+			"payables.credit_note.create": "payables.manage",
+			"payables.credit_note.issue": "payables.manage",
+			"payables.credit_note.line.add": "payables.manage",
+			"payables.credit_note.post": "payables.manage",
+			"payables.credit.apply": "payables.manage",
+			"payables.invoice.cancel": "payables.manage",
+			"payables.invoice.create": "payables.manage",
+			"payables.invoice.line.add": "payables.manage",
+			"payables.invoice.match": "payables.manage",
+			"payables.invoice.post": "payables.manage",
+			"payables.payment_application.reverse": "payables.manage",
+			"payables.payment.apply": "payables.manage",
+		},
+		queries: {
+			"payables.balance.get": "payables.read",
+			"payables.invoice.get": "payables.read",
+			"payables.invoice.list": "payables.read",
+		},
+	},
+	band: "R1-F",
+	category: "commercial",
+	events: {
+		consumes: [],
+		emits: [
+			PAYABLES_INVOICE_CREATED_EVENT,
+			PAYABLES_INVOICE_MATCHED_EVENT,
+			PAYABLES_INVOICE_POSTED_EVENT,
+			PAYABLES_CREDIT_NOTE_POSTED_EVENT,
+			PAYABLES_ALLOCATION_POSTED_EVENT,
+			PAYABLES_INVOICE_CANCELLED_EVENT,
+			PAYABLES_PAYMENT_APPLICATION_REVERSED_EVENT,
+		],
+		namespace: "payables",
+	},
+	id: "payables",
+	lifecycle: "active",
+	moduleDependencies: {
+		required: ["master-data"],
+	},
+	optionalIntegratesWith: [
+		{ moduleId: "purchasing", style: "ports" },
+		{ moduleId: "receiving", style: "ports" },
+		{ moduleId: "payments", style: "ports" },
+		{ moduleId: "accounting", style: "events" },
+	],
 	owns: {
 		aggregates: [
 			"supplier_invoice",
@@ -38,15 +80,19 @@ export const payablesModuleManifest = {
 			"payables.payment_application.reverse",
 			"payables.invoice.cancel",
 		],
-		queryNamespace: "payables",
 		queries: [
 			"payables.invoice.get",
 			"payables.invoice.list",
 			"payables.balance.get",
 		],
+		queryNamespace: "payables",
+	},
+	packageName: "@afenda/payables",
+	permissions: {
+		codes: ["payables.read", "payables.manage"],
+		namespace: "payables",
 	},
 	persistence: {
-		schemaOwner: "@afenda/db",
 		mutationTables: [
 			"supplier_invoice",
 			"supplier_invoice_line",
@@ -56,52 +102,6 @@ export const payablesModuleManifest = {
 			"supplier_balance_projection",
 			"three_way_match_result",
 		],
+		schemaOwner: "@afenda/db",
 	},
-	events: {
-		namespace: "payables",
-		emits: [
-			PAYABLES_INVOICE_CREATED_EVENT,
-			PAYABLES_INVOICE_MATCHED_EVENT,
-			PAYABLES_INVOICE_POSTED_EVENT,
-			PAYABLES_CREDIT_NOTE_POSTED_EVENT,
-			PAYABLES_ALLOCATION_POSTED_EVENT,
-			PAYABLES_INVOICE_CANCELLED_EVENT,
-			PAYABLES_PAYMENT_APPLICATION_REVERSED_EVENT,
-		],
-		consumes: [],
-	},
-	permissions: {
-		namespace: "payables",
-		codes: ["payables.read", "payables.manage"],
-	},
-	authorization: {
-		commands: {
-			"payables.invoice.create": "payables.manage",
-			"payables.invoice.line.add": "payables.manage",
-			"payables.invoice.match": "payables.manage",
-			"payables.invoice.post": "payables.manage",
-			"payables.credit_note.issue": "payables.manage",
-			"payables.credit_note.create": "payables.manage",
-			"payables.credit_note.line.add": "payables.manage",
-			"payables.credit_note.post": "payables.manage",
-			"payables.payment.apply": "payables.manage",
-			"payables.credit.apply": "payables.manage",
-			"payables.payment_application.reverse": "payables.manage",
-			"payables.invoice.cancel": "payables.manage",
-		},
-		queries: {
-			"payables.invoice.get": "payables.read",
-			"payables.invoice.list": "payables.read",
-			"payables.balance.get": "payables.read",
-		},
-	},
-	moduleDependencies: {
-		required: ["master-data"],
-	},
-	optionalIntegratesWith: [
-		{ moduleId: "purchasing", style: "ports" },
-		{ moduleId: "receiving", style: "ports" },
-		{ moduleId: "payments", style: "ports" },
-		{ moduleId: "accounting", style: "events" },
-	],
 } as const satisfies AfendaModuleManifest;

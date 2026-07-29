@@ -137,12 +137,12 @@ export function createExtensionEventPayload(
 	if (input.reasonCode !== undefined) {
 		assertNonEmpty(input.reasonCode, "reasonCode");
 	}
+	const { classification, ...payload } = input;
 	return {
-		...input,
-		classification:
-			input.classification === undefined
-				? undefined
-				: { ...input.classification },
+		...payload,
+		...(classification === undefined
+			? {}
+			: { classification: { ...classification } }),
 	};
 }
 

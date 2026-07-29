@@ -62,7 +62,7 @@ type LegalCompanyLifecycleOptions = CorporateAdministrationCommandOptions &
 type ParsedLegalCompanyStatusInput = Readonly<{
 	legalCompanyId: CompanyStatusHistory["legalCompanyId"];
 	effectiveFrom: CompanyStatusHistory["effectiveFrom"];
-	reason?: string;
+	reason?: string | undefined;
 	sourceDocumentId: string;
 	expectedCompanyVersion: number;
 }>;

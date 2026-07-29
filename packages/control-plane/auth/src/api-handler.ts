@@ -42,10 +42,10 @@ type AuthRouteHandler = (
 ) => Response | Promise<Response>;
 
 /** Next.js App Router GET/POST handlers for `/api/auth/[...path]`. */
-export type AuthApiHandlers = {
+export interface AuthApiHandlers {
 	GET: AuthRouteHandler;
 	POST: AuthRouteHandler;
-};
+}
 
 /**
  * Prefer a valid inbound correlation id; otherwise mint a new UUID.
@@ -80,7 +80,7 @@ export function redactAuthHeaderValue(name: string, value: string): string {
 
 function firstHeaderValue(value: string | null): string | undefined {
 	if (!value) {
-		return undefined;
+		return;
 	}
 	const first = value.split(",")[0]?.trim();
 	return first && first.length > 0 ? first : undefined;
@@ -185,8 +185,8 @@ function forbiddenResponse(
 ): Response {
 	return appErrorResponse({
 		correlationId,
-		startTimeMs,
 		error: forbidden("Forbidden."),
+		startTimeMs,
 	});
 }
 
@@ -196,8 +196,8 @@ function safeInternalErrorResponse(
 ): Response {
 	return appErrorResponse({
 		correlationId,
-		startTimeMs,
 		error: internalError("An unexpected error occurred"),
+		startTimeMs,
 	});
 }
 
@@ -227,8 +227,8 @@ function appErrorResponse(input: {
 			httpErrorBody(serialized.code, serialized.message, serialized.details),
 		),
 		{
-			status: ERROR_HTTP_STATUS[serialized.code],
 			headers,
+			status: ERROR_HTTP_STATUS[serialized.code],
 		},
 	);
 }
@@ -254,7 +254,7 @@ function wrapProviderHandler(
 		const correlationId = resolveAuthBffCorrelationId(
 			request.headers.get(AUTH_BFF_CORRELATION_HEADER),
 		);
-		const pathname = new URL(request.url).pathname;
+		const { pathname } = new URL(request.url);
 
 		if (method === "POST" && !isTrustedAuthBffPost(request)) {
 			return forbiddenResponse(correlationId, startTimeMs);
@@ -273,14 +273,14 @@ function wrapProviderHandler(
 						? "auth_bff.rate_limit_unavailable"
 						: "auth_bff.rate_limited";
 				authBffLogger.child({ correlationId }).warn({
+					code: error.code,
 					event,
 					path: pathname,
-					code: error.code,
 				});
 				return appErrorResponse({
 					correlationId,
-					startTimeMs,
 					error,
+					startTimeMs,
 					...(limit.reason === "rate_limited" ? { quota: limit.quota } : {}),
 				});
 			}
@@ -292,7 +292,7 @@ function wrapProviderHandler(
 			return stampBffResponse(response, {
 				correlationId,
 				startTimeMs,
-				...(postQuota !== undefined ? { quota: postQuota } : {}),
+				...(postQuota === undefined ? {} : { quota: postQuota }),
 			});
 		} catch {
 			logAuthBffUnexpectedError({

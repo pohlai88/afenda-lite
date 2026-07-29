@@ -19,10 +19,11 @@ function createError(
 	details: unknown,
 	isOperational: boolean,
 ): AppError {
+	const safeDetails = sanitizeErrorDetails(details);
 	return new AppError({
 		code,
 		message,
-		details: sanitizeErrorDetails(details),
+		...(safeDetails === undefined ? {} : { details: safeDetails }),
 		isOperational,
 	});
 }

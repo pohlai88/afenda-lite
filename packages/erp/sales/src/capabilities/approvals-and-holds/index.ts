@@ -24,19 +24,22 @@ export async function placeSalesOrderHold(
 	options: SalesCommandOptions = {},
 ) {
 	const parsed = placeSalesOrderHoldInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid sales-order hold",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.order.hold.place",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.placeHold(
 		{ ...parsed.data },
 		salesEvidence({
@@ -53,19 +56,22 @@ export async function resolveSalesOrderHold(
 	options: SalesCommandOptions = {},
 ) {
 	const parsed = resolveSalesOrderHoldInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid sales-order hold resolution",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.order.hold.resolve",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.resolveHold(
 		{
 			organizationId: parsed.data.organizationId,

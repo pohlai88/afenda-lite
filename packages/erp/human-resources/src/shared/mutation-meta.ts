@@ -9,8 +9,8 @@ import type { HumanResourcesCommandId } from "../module-ids";
 export type HumanResourcesMutationMeta = {
 	correlationId: string;
 	operationId: HumanResourcesCommandId;
-	causationId?: string;
-	idempotencyKey?: string;
+	causationId?: string | undefined;
+	idempotencyKey?: string | undefined;
 };
 
 /** Execution boundary metadata required for audit/outbox emission. */
@@ -24,8 +24,8 @@ export type HumanResourcesMutationExecutionMeta = HumanResourcesMutationMeta & {
 export function buildMutationMeta(input: {
 	correlationId: string;
 	operationId: HumanResourcesCommandId;
-	causationId?: string;
-	idempotencyKey?: string;
+	causationId?: string | undefined;
+	idempotencyKey?: string | undefined;
 }): HumanResourcesMutationMeta {
 	const meta: HumanResourcesMutationMeta = {
 		correlationId: input.correlationId,
@@ -47,8 +47,8 @@ export function attachMutationExecutionContext(
 	context: {
 		organizationId: string;
 		actorUserId: string;
-		requestedAt?: string;
-		idempotencyKey?: string;
+		requestedAt?: string | undefined;
+		idempotencyKey?: string | undefined;
 	},
 ): HumanResourcesMutationExecutionMeta {
 	return {

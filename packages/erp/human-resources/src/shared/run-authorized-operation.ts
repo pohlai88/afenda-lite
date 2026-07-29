@@ -35,8 +35,8 @@ const AUTHORIZATION_DENIED_MESSAGE =
 export type HumanResourcesAuthorizedActorInput = {
 	organizationId: string;
 	actorUserId: string;
-	correlationId?: string;
-	actorEmployeeId?: string;
+	correlationId?: string | undefined;
+	actorEmployeeId?: string | undefined;
 };
 
 async function enrichActorFromIdentityResolver(
@@ -74,19 +74,23 @@ export interface RunHumanResourcesOperationOptions<
 	input: Input;
 	options: HumanResourcesCommandOptions;
 
-	resolveResource?: (
-		input: Input,
-		options: HumanResourcesCommandOptions,
-	) => Promise<HumanResourcesResourceContext | undefined>;
+	resolveResource?:
+		| ((
+				input: Input,
+				options: HumanResourcesCommandOptions,
+		  ) => Promise<HumanResourcesResourceContext | undefined>)
+		| undefined;
 
-	requestedFields?: readonly string[];
+	requestedFields?: readonly string[] | undefined;
 
 	execute: () => Promise<Result<Output>>;
 
-	project?: (
-		value: Output,
-		projection: HumanResourcesFieldProjection | undefined,
-	) => Projected;
+	project?:
+		| ((
+				value: Output,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => Projected)
+		| undefined;
 }
 
 export function authorizationDecisionToFailure(
@@ -287,17 +291,23 @@ export async function runDomainAuthorizedOperation<
 	data: TData;
 	options: HumanResourcesCommandOptions;
 	/** When set and no resolveResource, supplies privilegedActor parity shell. */
-	parityResourceKind?: HumanResourcesResourceKind;
-	resolveResource?: (
-		input: TData,
-		options: HumanResourcesCommandOptions,
-	) => Promise<HumanResourcesResourceContext | undefined>;
-	requestedFields?: readonly string[];
-	resolveRequestedFields?: (input: TData) => readonly string[] | undefined;
-	project?: (
-		value: TOut,
-		projection: HumanResourcesFieldProjection | undefined,
-	) => TProjected;
+	parityResourceKind?: HumanResourcesResourceKind | undefined;
+	resolveResource?:
+		| ((
+				input: TData,
+				options: HumanResourcesCommandOptions,
+		  ) => Promise<HumanResourcesResourceContext | undefined>)
+		| undefined;
+	requestedFields?: readonly string[] | undefined;
+	resolveRequestedFields?:
+		| ((input: TData) => readonly string[] | undefined)
+		| undefined;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
 	execute: () => Promise<Result<TOut>>;
 }): Promise<Result<TProjected>> {
 	const startedAtMs = Date.now();
@@ -339,10 +349,10 @@ export async function runDomainAuthorizedOperation<
 		requiredPermission,
 		input: params.data,
 		options: params.options,
-		resolveResource,
 		requestedFields:
 			params.requestedFields ?? params.resolveRequestedFields?.(params.data),
 		execute: params.execute,
-		project: params.project,
+		...(resolveResource === undefined ? {} : { resolveResource }),
+		...(params.project === undefined ? {} : { project: params.project }),
 	});
 }

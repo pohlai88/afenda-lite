@@ -15,14 +15,14 @@ export const USAGE_BANDS = ["quiet", "active", "heavy", "critical"] as const;
 
 export type UsageBand = (typeof USAGE_BANDS)[number];
 
-type BandThresholds = {
-	/** Inclusive max for `quiet`. */
-	readonly quietMax: number;
+interface BandThresholds {
 	/** Inclusive max for `active`. */
 	readonly activeMax: number;
 	/** Inclusive max for `heavy`; above → `critical`. */
 	readonly heavyMax: number;
-};
+	/** Inclusive max for `quiet`. */
+	readonly quietMax: number;
+}
 
 const BAND_THRESHOLDS = {
 	activeMembers: { quietMax: 4, activeMax: 24, heavyMax: 99 },

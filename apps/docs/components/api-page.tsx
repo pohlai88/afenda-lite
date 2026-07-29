@@ -9,11 +9,7 @@
  */
 import type { OpenAPIPageProps_Preloaded } from "fumadocs-openapi/server";
 import { createOpenAPIPage } from "fumadocs-openapi/ui";
-import {
-	createContext,
-	type ReactNode,
-	useContext,
-} from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
 export type DocsOpenAPIPreloaded = OpenAPIPageProps_Preloaded["preloaded"];
 

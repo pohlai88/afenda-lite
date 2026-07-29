@@ -22,7 +22,9 @@ function req(partial: {
 		pathname: partial.pathname,
 		searchParams,
 		hasHeader: (name: string) => headerSet.has(name.toLowerCase()),
-		playgroundEnabled: partial.playgroundEnabled,
+		...(partial.playgroundEnabled === undefined
+			? {}
+			: { playgroundEnabled: partial.playgroundEnabled }),
 	};
 }
 

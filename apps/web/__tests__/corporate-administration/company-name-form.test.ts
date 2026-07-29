@@ -4,9 +4,30 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/actions/legal-company-identity-actions", () => ({
 	addCompanyNameFormAction: vi.fn(),
+	endCompanyActivityFormAction: vi.fn(),
+	registerCompanyActivityFormAction: vi.fn(),
+	registerCompanyIdentifierFormAction: vi.fn(),
+	setCompanyFinancialYearFormAction: vi.fn(),
 	setCompanyLegalFormFormAction: vi.fn(),
+	supersedeCompanyIdentifierFormAction: vi.fn(),
 	supersedeCompanyNameFormAction: vi.fn(),
 	supersedeCompanyLegalFormFormAction: vi.fn(),
+}));
+
+vi.mock("@/app/actions/register-legal-company-draft", () => ({
+	registerLegalCompanyDraftFormAction: vi.fn(),
+}));
+
+vi.mock("@/app/actions/set-company-jurisdiction-profile", () => ({
+	setCompanyJurisdictionProfileFormAction: vi.fn(),
+}));
+
+vi.mock("@/app/actions/supersede-company-jurisdiction-profile", () => ({
+	supersedeCompanyJurisdictionProfileFormAction: vi.fn(),
+}));
+
+vi.mock("@/app/actions/update-legal-company-profile", () => ({
+	updateLegalCompanyProfileFormAction: vi.fn(),
 }));
 
 import {

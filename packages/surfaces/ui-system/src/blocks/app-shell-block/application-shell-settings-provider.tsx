@@ -54,6 +54,7 @@ export function AppShellThemeProvider({
 
 	const setSettings = useCallback((next: ApplicationShellSettings) => {
 		setSettingsState(next);
+		// biome-ignore lint/suspicious/noDocumentCookie: first-party shell preferences must remain readable by the server-rendered app shell.
 		document.cookie = `${APPLICATION_SHELL_SETTINGS_COOKIE}=${encodeURIComponent(
 			JSON.stringify(next),
 		)}; path=/; max-age=31536000`;

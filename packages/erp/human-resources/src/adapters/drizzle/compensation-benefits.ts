@@ -2016,7 +2016,40 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 	},
 
 	async amendEmployeeCompensation(input, ports, meta) {
-		return drizzleAmendEmployeeCompensation(this, input, ports, meta);
+		return drizzleAmendEmployeeCompensation(
+			this,
+			{
+				organizationId: input.organizationId,
+				compensationId: input.compensationId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				...(input.baseAmount === undefined
+					? {}
+					: { baseAmount: input.baseAmount }),
+				...(input.currencyCode === undefined
+					? {}
+					: { currencyCode: input.currencyCode }),
+				...(input.payFrequency === undefined
+					? {}
+					: { payFrequency: input.payFrequency }),
+				...(input.effectiveFrom === undefined
+					? {}
+					: { effectiveFrom: input.effectiveFrom }),
+				...(input.effectiveTo === undefined
+					? {}
+					: { effectiveTo: input.effectiveTo }),
+				...(input.reason === undefined ? {} : { reason: input.reason }),
+				...(input.gradeId === undefined ? {} : { gradeId: input.gradeId }),
+				...(input.salaryBandId === undefined
+					? {}
+					: { salaryBandId: input.salaryBandId }),
+				...(input.confidentialNote === undefined
+					? {}
+					: { confidentialNote: input.confidentialNote }),
+			},
+			ports,
+			meta,
+		);
 	},
 
 	async approveEmployeeCompensation(input, ports, meta) {

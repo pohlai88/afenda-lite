@@ -42,11 +42,11 @@ export async function listJournalsAction(input?: {
 			const mapped = mapPackageResult(
 				await listJournals(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						page: parsed.data?.page ?? 1,
 						pageSize: parsed.data?.pageSize ?? 20,
-						...parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

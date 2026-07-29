@@ -6,6 +6,7 @@ import {
 	postStockMovement,
 	reserveStock,
 } from "@afenda/inventory";
+import type { z } from "zod";
 
 import {
 	requireFulfillmentCommandPermission,
@@ -30,6 +31,7 @@ import {
 	FULFILLMENT_QUERY_LIST,
 } from "./module-ids";
 import { parseFulfillmentInput } from "./parse-input";
+import type { SalesFulfillmentQueryPort } from "./ports";
 import {
 	addDeliveryLineInputSchema,
 	cancelDeliveryInputSchema,
@@ -44,6 +46,7 @@ import {
 	startPickingInputSchema,
 } from "./schemas";
 import { normalizeDeliveryCode } from "./shared/code";
+import type { FulfillmentStore } from "./store";
 import type {
 	Delivery,
 	DeliveryLine,
@@ -54,6 +57,204 @@ import type {
 
 const DELIVERY_INVENTORY_POST_FAILED_MESSAGE =
 	"Delivery posted but inventory stock movement failed";
+
+type AddDeliveryLineInput = z.infer<typeof addDeliveryLineInputSchema>;
+type ConfirmPickInput = z.infer<typeof confirmPickInputSchema>;
+type CreateDraftDeliveryInput = z.infer<typeof createDraftDeliveryInputSchema>;
+
+interface ShipToSnapshot {
+	shipToPartyCode: string | null;
+	shipToPartyId: string | null;
+	shipToPartyName: string | null;
+}
+
+async function resolveShipToSnapshot(
+	data: CreateDraftDeliveryInput,
+	sales: SalesFulfillmentQueryPort | undefined,
+): Promise<Result<ShipToSnapshot>> {
+	const provided = {
+		shipToPartyId: data.shipToPartyId ?? null,
+		shipToPartyCode: data.shipToPartyCode ?? null,
+		shipToPartyName: data.shipToPartyName ?? null,
+	};
+	if (!data.salesOrderId) {
+		return ok(provided);
+	}
+	if (!sales) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Sales query port is required when fulfilling a sales order",
+		);
+	}
+	const salesOrder = await sales.getFulfillableSalesOrder({
+		organizationId: data.organizationId,
+		salesOrderId: data.salesOrderId,
+		actorUserId: data.actorUserId,
+	});
+	if (!salesOrder.ok) {
+		return salesOrder;
+	}
+	if (salesOrder.data === null) {
+		return fail("NOT_FOUND", "Sales order not found");
+	}
+	if (salesOrder.data.status !== "posted") {
+		return fail("CONFLICT", "Sales order is not fulfillable");
+	}
+	if (
+		provided.shipToPartyId !== null ||
+		provided.shipToPartyCode !== null ||
+		provided.shipToPartyName !== null ||
+		!salesOrder.data.shipToSnapshot
+	) {
+		return ok(provided);
+	}
+	return ok({
+		shipToPartyId: salesOrder.data.customerPartyId,
+		shipToPartyCode: salesOrder.data.customerPartyCode,
+		shipToPartyName: salesOrder.data.shipToSnapshot.name,
+	});
+}
+
+async function validateSalesOrderLine(
+	data: AddDeliveryLineInput,
+	delivery: Delivery,
+	sales: SalesFulfillmentQueryPort | undefined,
+	store: FulfillmentStore,
+): Promise<Result<void>> {
+	if (!delivery.salesOrderId) {
+		return data.salesOrderLineId
+			? fail(
+					"CONFLICT",
+					"Sales order line ID cannot be set when delivery is not linked to a sales order",
+				)
+			: ok(undefined);
+	}
+	if (!sales) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Sales query port is required when fulfilling a sales order",
+		);
+	}
+	if (!data.salesOrderLineId) {
+		return fail(
+			"VALIDATION_ERROR",
+			"Sales order line ID is required when delivery is linked to a sales order",
+		);
+	}
+	const salesOrder = await sales.getFulfillableSalesOrder({
+		organizationId: data.organizationId,
+		salesOrderId: delivery.salesOrderId,
+		actorUserId: data.actorUserId,
+	});
+	if (!salesOrder.ok) {
+		return salesOrder;
+	}
+	if (!salesOrder.data) {
+		return fail("NOT_FOUND", "Sales order not found");
+	}
+	const salesLine = salesOrder.data.lines.find(
+		(line) => line.salesOrderLineId === data.salesOrderLineId,
+	);
+	if (!salesLine) {
+		return fail("NOT_FOUND", "Sales order line not found");
+	}
+	if (salesLine.itemId !== data.itemId) {
+		return fail("CONFLICT", "Item must match sales order line item");
+	}
+	const sumResult = await store.sumPostedQuantityForSalesOrderLine(
+		data.organizationId,
+		data.salesOrderLineId,
+	);
+	if (!sumResult.ok) {
+		return sumResult;
+	}
+	const remaining = Number(salesLine.orderedQuantity) - Number(sumResult.data);
+	const toDeliver = Number(data.quantityToDeliver);
+	return toDeliver > remaining
+		? fail(
+				"CONFLICT",
+				`Delivery quantity ${toDeliver} exceeds remaining ${remaining} for sales order line`,
+			)
+		: ok(undefined);
+}
+
+async function reservePickStock(
+	data: ConfirmPickInput,
+	delivery: Delivery,
+	line: DeliveryLine,
+	inventory: InventoryCommandOptions | undefined,
+): Promise<Result<string>> {
+	if (!inventory) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Inventory command options are required to reserve stock for pick",
+		);
+	}
+	const reserved = await reserveStock(
+		{
+			organizationId: data.organizationId,
+			actorUserId: data.actorUserId,
+			correlationId: data.correlationId,
+			idempotencyKey: `ful-pick-reserve:${data.idempotencyKey}`,
+			code: `RSV-${delivery.code}-${line.lineNo}`,
+			warehouseId: delivery.warehouseId,
+			itemId: line.itemId,
+			quantity: data.quantityPicked,
+		},
+		inventory,
+	);
+	return reserved.ok ? ok(reserved.data.id) : reserved;
+}
+
+async function validatePickReservation(
+	data: ConfirmPickInput,
+	delivery: Delivery,
+	line: DeliveryLine,
+	reservationId: string,
+	inventory: InventoryCommandOptions,
+): Promise<Result<string>> {
+	if (!inventory.store) {
+		return ok(reservationId);
+	}
+	const reservation = await inventory.store.getReservationById(
+		data.organizationId,
+		reservationId,
+	);
+	if (!reservation.ok) {
+		return reservation;
+	}
+	if (!reservation.data) {
+		return fail("NOT_FOUND", "Reservation not found in organization");
+	}
+	if (
+		reservation.data.status !== "active" &&
+		reservation.data.status !== "partially_consumed"
+	) {
+		return fail("CONFLICT", "Reservation must be active or partially consumed");
+	}
+	if (reservation.data.organizationId !== data.organizationId) {
+		return fail("CONFLICT", "Reservation must belong to the same organization");
+	}
+	if (reservation.data.itemId !== line.itemId) {
+		return fail("CONFLICT", "Reservation item must match delivery line item");
+	}
+	if (reservation.data.warehouseId !== delivery.warehouseId) {
+		return fail(
+			"CONFLICT",
+			"Reservation warehouse must match delivery warehouse",
+		);
+	}
+	const remaining =
+		Number(reservation.data.quantity) -
+		Number(reservation.data.consumedQuantity);
+	const pickQuantity = Number(data.quantityPicked);
+	return remaining < pickQuantity
+		? fail(
+				"CONFLICT",
+				`Insufficient reservation quantity: ${remaining} available, ${pickQuantity} requested`,
+			)
+		: ok(reservationId);
+}
 
 async function postDeliveryInventoryMovement(
 	delivery: Delivery,
@@ -99,6 +300,7 @@ async function postDeliveryInventoryMovement(
 
 	let expectedVersion = created.data.version;
 	for (const line of delivery.lines) {
+		// biome-ignore lint/performance/noAwaitInLoops: Each line advances the optimistic version required by the next write.
 		const added = await addStockMovementLine(
 			{
 				organizationId: delivery.organizationId,
@@ -145,7 +347,9 @@ export async function createDraftDelivery(
 		input,
 		"Invalid delivery create input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, ports, masters, authorization, sales } =
 		resolveCommandDeps(options);
 	const authorized = await requireFulfillmentCommandPermission(authorization, {
@@ -153,9 +357,13 @@ export async function createDraftDelivery(
 		actorUserId: parsed.data.actorUserId,
 		command: FULFILLMENT_COMMAND_CREATE,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	const code = normalizeDeliveryCode(parsed.data.code);
-	if (!code.ok) return code;
+	if (!code.ok) {
+		return code;
+	}
 	const warehouse = requireMaster(
 		await masters.getWarehouseById(
 			parsed.data.organizationId,
@@ -164,45 +372,16 @@ export async function createDraftDelivery(
 		),
 		"Warehouse not found in organization",
 	);
-	if (!warehouse.ok) return warehouse;
-	if (warehouse.data.status !== "active")
+	if (!warehouse.ok) {
+		return warehouse;
+	}
+	if (warehouse.data.status !== "active") {
 		return fail("CONFLICT", "Warehouse must be active");
+	}
 
-	// If salesOrderId set, require options.sales and validate
-	let shipToPartyId = parsed.data.shipToPartyId ?? null;
-	let shipToPartyCode = parsed.data.shipToPartyCode ?? null;
-	let shipToPartyName = parsed.data.shipToPartyName ?? null;
-
-	if (parsed.data.salesOrderId) {
-		if (!sales) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Sales query port is required when fulfilling a sales order",
-			);
-		}
-		const salesOrder = await sales.getFulfillableSalesOrder({
-			organizationId: parsed.data.organizationId,
-			salesOrderId: parsed.data.salesOrderId,
-			actorUserId: parsed.data.actorUserId,
-		});
-		if (!salesOrder.ok) return salesOrder;
-		if (salesOrder.data === null) {
-			return fail("NOT_FOUND", "Sales order not found");
-		}
-		if (salesOrder.data.status !== "posted") {
-			return fail("CONFLICT", "Sales order is not fulfillable");
-		}
-		// Snapshot ship-to from sales if not provided
-		if (
-			shipToPartyId === null &&
-			shipToPartyCode === null &&
-			shipToPartyName === null &&
-			salesOrder.data.shipToSnapshot
-		) {
-			shipToPartyId = salesOrder.data.customerPartyId;
-			shipToPartyCode = salesOrder.data.customerPartyCode;
-			shipToPartyName = salesOrder.data.shipToSnapshot.name;
-		}
+	const shipTo = await resolveShipToSnapshot(parsed.data, sales);
+	if (!shipTo.ok) {
+		return shipTo;
 	}
 
 	return store.createDelivery(
@@ -215,9 +394,9 @@ export async function createDraftDelivery(
 			warehouseId: warehouse.data.id,
 			warehouseCode: warehouse.data.code,
 			warehouseName: warehouse.data.name,
-			shipToPartyId,
-			shipToPartyCode,
-			shipToPartyName,
+			shipToPartyId: shipTo.data.shipToPartyId,
+			shipToPartyCode: shipTo.data.shipToPartyCode,
+			shipToPartyName: shipTo.data.shipToPartyName,
 			createdBy: parsed.data.actorUserId,
 		},
 		ports,
@@ -234,7 +413,9 @@ export async function addDeliveryLine(
 		input,
 		"Invalid delivery line input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, ports, masters, authorization, sales } =
 		resolveCommandDeps(options);
 	const authorized = await requireFulfillmentCommandPermission(authorization, {
@@ -242,73 +423,30 @@ export async function addDeliveryLine(
 		actorUserId: parsed.data.actorUserId,
 		command: FULFILLMENT_COMMAND_LINE_ADD,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	// Load delivery to check if it has salesOrderId
 	const delivery = await store.getDeliveryById(
 		parsed.data.organizationId,
 		parsed.data.deliveryId,
 	);
-	if (!delivery.ok) return delivery;
+	if (!delivery.ok) {
+		return delivery;
+	}
 	if (!delivery.data) {
 		return fail("NOT_FOUND", "Delivery not found");
 	}
 
-	// Validate sales order line if delivery has salesOrderId
-	if (delivery.data.salesOrderId) {
-		if (!sales) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Sales query port is required when fulfilling a sales order",
-			);
-		}
-		if (!parsed.data.salesOrderLineId) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Sales order line ID is required when delivery is linked to a sales order",
-			);
-		}
-		const salesOrder = await sales.getFulfillableSalesOrder({
-			organizationId: parsed.data.organizationId,
-			salesOrderId: delivery.data.salesOrderId,
-			actorUserId: parsed.data.actorUserId,
-		});
-		if (!salesOrder.ok) return salesOrder;
-		if (!salesOrder.data) {
-			return fail("NOT_FOUND", "Sales order not found");
-		}
-		// Find the sales order line
-		const salesLine = salesOrder.data.lines.find(
-			(l) => l.salesOrderLineId === parsed.data.salesOrderLineId,
-		);
-		if (!salesLine) {
-			return fail("NOT_FOUND", "Sales order line not found");
-		}
-		// Validate item matches
-		if (salesLine.itemId !== parsed.data.itemId) {
-			return fail("CONFLICT", "Item must match sales order line item");
-		}
-		// Compute remaining quantity via store.sumPostedQuantityForSalesOrderLine
-		const sumResult = await store.sumPostedQuantityForSalesOrderLine(
-			parsed.data.organizationId,
-			parsed.data.salesOrderLineId,
-		);
-		if (!sumResult.ok) return sumResult;
-		const alreadyFulfilled = Number(sumResult.data);
-		const ordered = Number(salesLine.orderedQuantity);
-		const remaining = ordered - alreadyFulfilled;
-		const toDeliver = Number(parsed.data.quantityToDeliver);
-		if (toDeliver > remaining) {
-			return fail(
-				"CONFLICT",
-				`Delivery quantity ${toDeliver} exceeds remaining ${remaining} for sales order line`,
-			);
-		}
-	} else if (parsed.data.salesOrderLineId) {
-		return fail(
-			"CONFLICT",
-			"Sales order line ID cannot be set when delivery is not linked to a sales order",
-		);
+	const salesLine = await validateSalesOrderLine(
+		parsed.data,
+		delivery.data,
+		sales,
+		store,
+	);
+	if (!salesLine.ok) {
+		return salesLine;
 	}
 
 	const item = requireMaster(
@@ -319,9 +457,12 @@ export async function addDeliveryLine(
 		),
 		"Item not found in organization",
 	);
-	if (!item.ok) return item;
-	if (item.data.status !== "active")
+	if (!item.ok) {
+		return item;
+	}
+	if (item.data.status !== "active") {
 		return fail("CONFLICT", "Item must be active");
+	}
 	const uom = requireMaster(
 		await masters.getRefUomById(
 			parsed.data.organizationId,
@@ -330,7 +471,9 @@ export async function addDeliveryLine(
 		),
 		"Base UoM not found for item",
 	);
-	if (!uom.ok) return uom;
+	if (!uom.ok) {
+		return uom;
+	}
 	return store.addLine(
 		{
 			organizationId: parsed.data.organizationId,
@@ -379,7 +522,9 @@ async function loadAndAuthorizeStateChange(
 	}>
 > {
 	const parsed = parseFulfillmentInput(schema, input, "Invalid delivery input");
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const authorized = await requireFulfillmentCommandPermission(
 		deps.authorization,
@@ -389,7 +534,9 @@ async function loadAndAuthorizeStateChange(
 			command,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return { ok: true, data: { data: parsed.data, deps } };
 }
 
@@ -403,7 +550,9 @@ export async function startPicking(
 		FULFILLMENT_COMMAND_PICK_START,
 		options,
 	);
-	if (!context.ok) return context;
+	if (!context.ok) {
+		return context;
+	}
 	const { data, deps } = context.data;
 	return deps.store.startPicking(
 		{
@@ -429,7 +578,9 @@ export async function confirmPick(
 		input,
 		"Invalid pick confirmation input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const authorized = await requireFulfillmentCommandPermission(
 		deps.authorization,
@@ -439,14 +590,18 @@ export async function confirmPick(
 			command: FULFILLMENT_COMMAND_PICK_CONFIRM,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	// Load delivery and line to validate reservation
 	const delivery = await deps.store.getDeliveryById(
 		parsed.data.organizationId,
 		parsed.data.deliveryId,
 	);
-	if (!delivery.ok) return delivery;
+	if (!delivery.ok) {
+		return delivery;
+	}
 	if (!delivery.data) {
 		return fail("NOT_FOUND", "Delivery not found");
 	}
@@ -457,75 +612,19 @@ export async function confirmPick(
 		return fail("NOT_FOUND", "Delivery line not found");
 	}
 
-	let reservationId = parsed.data.reservationId;
-
-	if (reservationId === undefined) {
-		if (!deps.inventory) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Inventory command options are required to reserve stock for pick",
-			);
-		}
-		const reserved = await reserveStock(
-			{
-				organizationId: parsed.data.organizationId,
-				actorUserId: parsed.data.actorUserId,
-				correlationId: parsed.data.correlationId,
-				idempotencyKey: `ful-pick-reserve:${parsed.data.idempotencyKey}`,
-				code: `RSV-${delivery.data.code}-${line.lineNo}`,
-				warehouseId: delivery.data.warehouseId,
-				itemId: line.itemId,
-				quantity: parsed.data.quantityPicked,
-			},
-			deps.inventory,
-		);
-		if (!reserved.ok) {
-			return reserved;
-		}
-		reservationId = reserved.data.id;
-	} else if (deps.inventory?.store) {
-		const reservation = await deps.inventory.store.getReservationById(
-			parsed.data.organizationId,
-			reservationId,
-		);
-		if (!reservation.ok) return reservation;
-		if (!reservation.data) {
-			return fail("NOT_FOUND", "Reservation not found in organization");
-		}
-		if (
-			reservation.data.status !== "active" &&
-			reservation.data.status !== "partially_consumed"
-		) {
-			return fail(
-				"CONFLICT",
-				"Reservation must be active or partially consumed",
-			);
-		}
-		if (reservation.data.organizationId !== parsed.data.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Reservation must belong to the same organization",
-			);
-		}
-		if (reservation.data.itemId !== line.itemId) {
-			return fail("CONFLICT", "Reservation item must match delivery line item");
-		}
-		if (reservation.data.warehouseId !== delivery.data.warehouseId) {
-			return fail(
-				"CONFLICT",
-				"Reservation warehouse must match delivery warehouse",
-			);
-		}
-		const remaining =
-			Number(reservation.data.quantity) -
-			Number(reservation.data.consumedQuantity);
-		const pickQty = Number(parsed.data.quantityPicked);
-		if (remaining < pickQty) {
-			return fail(
-				"CONFLICT",
-				`Insufficient reservation quantity: ${remaining} available, ${pickQty} requested`,
-			);
-		}
+	const { reservationId: requestedReservationId } = parsed.data;
+	const reservation =
+		requestedReservationId === undefined
+			? await reservePickStock(parsed.data, delivery.data, line, deps.inventory)
+			: await validatePickReservation(
+					parsed.data,
+					delivery.data,
+					line,
+					requestedReservationId,
+					deps.inventory ?? {},
+				);
+	if (!reservation.ok) {
+		return reservation;
 	}
 
 	return deps.store.confirmPick(
@@ -537,7 +636,7 @@ export async function confirmPick(
 			idempotencyKey: parsed.data.idempotencyKey,
 			deliveryLineId: parsed.data.deliveryLineId,
 			quantityPicked: parsed.data.quantityPicked,
-			reservationId,
+			reservationId: reservation.data,
 		},
 		deps.ports,
 		{
@@ -555,7 +654,9 @@ export async function confirmPack(
 		input,
 		"Invalid pack confirmation input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const authorized = await requireFulfillmentCommandPermission(
 		deps.authorization,
@@ -565,7 +666,9 @@ export async function confirmPack(
 			command: FULFILLMENT_COMMAND_PACK_CONFIRM,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return deps.store.confirmPack(
 		{
 			organizationId: parsed.data.organizationId,
@@ -591,7 +694,9 @@ export async function postDelivery(
 		FULFILLMENT_COMMAND_POST,
 		options,
 	);
-	if (!context.ok) return context;
+	if (!context.ok) {
+		return context;
+	}
 	const { data, deps } = context.data;
 	if (!deps.inventory) {
 		return fail(
@@ -605,7 +710,9 @@ export async function postDelivery(
 		data.organizationId,
 		data.deliveryId,
 	);
-	if (!delivery.ok) return delivery;
+	if (!delivery.ok) {
+		return delivery;
+	}
 	if (!delivery.data) {
 		return fail("NOT_FOUND", "Delivery not found");
 	}
@@ -623,7 +730,9 @@ export async function postDelivery(
 			salesOrderId: delivery.data.salesOrderId,
 			actorUserId: data.actorUserId,
 		});
-		if (!salesOrder.ok) return salesOrder;
+		if (!salesOrder.ok) {
+			return salesOrder;
+		}
 		if (!salesOrder.data) {
 			return fail("NOT_FOUND", "Sales order not found");
 		}
@@ -645,7 +754,9 @@ export async function postDelivery(
 			correlationId: data.correlationId,
 		},
 	);
-	if (!posted.ok) return posted;
+	if (!posted.ok) {
+		return posted;
+	}
 
 	const inventoryPosted = await postDeliveryInventoryMovement(
 		posted.data,
@@ -673,7 +784,9 @@ export async function recordProofOfDelivery(
 		input,
 		"Invalid proof of delivery input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const deps = resolveCommandDeps(options);
 	const authorized = await requireFulfillmentCommandPermission(
 		deps.authorization,
@@ -683,7 +796,9 @@ export async function recordProofOfDelivery(
 			command: FULFILLMENT_COMMAND_POD_RECORD,
 		},
 	);
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return deps.store.recordProofOfDelivery(
 		{
 			organizationId: parsed.data.organizationId,
@@ -714,7 +829,9 @@ export async function cancelDelivery(
 		FULFILLMENT_COMMAND_CANCEL,
 		options,
 	);
-	if (!context.ok) return context;
+	if (!context.ok) {
+		return context;
+	}
 	const { data, deps } = context.data;
 	return deps.store.cancelDelivery(
 		{
@@ -741,7 +858,9 @@ export async function closeDelivery(
 		FULFILLMENT_COMMAND_CLOSE,
 		options,
 	);
-	if (!context.ok) return context;
+	if (!context.ok) {
+		return context;
+	}
 	const { data, deps } = context.data;
 	return deps.store.closeDelivery(
 		{
@@ -767,14 +886,18 @@ export async function getDeliveryById(
 		input,
 		"Invalid delivery get input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolveCommandDeps(options);
 	const authorized = await requireFulfillmentQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: FULFILLMENT_QUERY_GET,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.getDeliveryById(parsed.data.organizationId, parsed.data.id);
 }
 
@@ -787,14 +910,18 @@ export async function listDeliveries(
 		input,
 		"Invalid delivery list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const { store, authorization } = resolveCommandDeps(options);
 	const authorized = await requireFulfillmentQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: FULFILLMENT_QUERY_LIST,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 	return store.listDeliveries({
 		organizationId: parsed.data.organizationId,
 		page: parsed.data.page,
@@ -838,14 +965,20 @@ export async function getInvoiceableDelivery(
 		actorUserId: input.actorUserId,
 		query: FULFILLMENT_QUERY_GET,
 	});
-	if (!authorized.ok) return authorized;
+	if (!authorized.ok) {
+		return authorized;
+	}
 
 	const delivery = await store.getDeliveryById(
 		input.organizationId,
 		input.deliveryId,
 	);
-	if (!delivery.ok) return delivery;
-	if (delivery.data === null) return ok(null);
+	if (!delivery.ok) {
+		return delivery;
+	}
+	if (delivery.data === null) {
+		return ok(null);
+	}
 	if (
 		delivery.data.status !== "posted" &&
 		delivery.data.status !== "delivered" &&

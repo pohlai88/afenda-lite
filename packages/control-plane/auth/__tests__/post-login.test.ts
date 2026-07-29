@@ -75,22 +75,22 @@ describe("sanitizeCallbackUrl (N7 same-origin allowlist)", () => {
 describe("resolvePostLoginPath (N7 governed resolver)", () => {
 	it("prefers a safe same-origin callback over the role home", () => {
 		expect(
-			resolvePostLoginPath({ role: "operator", callbackUrl: "/admin/users" }),
+			resolvePostLoginPath({ callbackUrl: "/admin/users", role: "operator" }),
 		).toBe("/admin/users");
 		expect(
 			resolvePostLoginPath({
-				role: "client",
 				callbackUrl: "/client",
+				role: "client",
 			}),
 		).toBe("/client");
 	});
 
 	it("falls back to the role home when the callback is unsafe", () => {
 		expect(
-			resolvePostLoginPath({ role: "operator", callbackUrl: "//evil.com" }),
+			resolvePostLoginPath({ callbackUrl: "//evil.com", role: "operator" }),
 		).toBe(OPERATOR_HOME_PATH);
 		expect(
-			resolvePostLoginPath({ role: "client", callbackUrl: "https://evil.com" }),
+			resolvePostLoginPath({ callbackUrl: "https://evil.com", role: "client" }),
 		).toBe(CLIENT_HOME_PATH);
 	});
 
@@ -103,7 +103,7 @@ describe("resolvePostLoginPath (N7 governed resolver)", () => {
 		// A client deep-linking an operator path lands there, then the shell's
 		// requireRole redirects to /403 — the resolver stays coarse.
 		expect(
-			resolvePostLoginPath({ role: "client", callbackUrl: "/admin" }),
+			resolvePostLoginPath({ callbackUrl: "/admin", role: "client" }),
 		).toBe("/admin");
 	});
 

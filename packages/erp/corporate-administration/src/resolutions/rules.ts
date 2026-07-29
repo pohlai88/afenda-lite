@@ -13,7 +13,7 @@ import type {
 export function requiredVotesForThreshold(input: {
 	eligibleVotes: number;
 	thresholdType: VoteThresholdType;
-	requiredFor?: number;
+	requiredFor?: number | undefined;
 }): Result<number> {
 	if (input.thresholdType === "custom") {
 		return input.requiredFor === undefined
@@ -33,7 +33,7 @@ export function calculateVoteOutcome(input: {
 	votesAgainst: number;
 	abstentions: number;
 	thresholdType: VoteThresholdType;
-	requiredFor?: number;
+	requiredFor?: number | undefined;
 }): Result<Readonly<{ requiredFor: number; outcome: "adopted" | "rejected" }>> {
 	if (
 		input.votesFor + input.votesAgainst + input.abstentions >
@@ -53,7 +53,7 @@ export function calculateVoteOutcome(input: {
 export function resolutionMatchesAsOf(input: {
 	resolution: Resolution;
 	asOf: CanonicalDate;
-	status?: Resolution["status"];
+	status?: Resolution["status"] | undefined;
 }): boolean {
 	return (
 		input.resolution.effectiveFrom <= input.asOf &&

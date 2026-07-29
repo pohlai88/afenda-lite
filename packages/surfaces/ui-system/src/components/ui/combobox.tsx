@@ -210,7 +210,9 @@ function Combobox(props: ComboboxProps) {
 									<CommandItem
 										key={option.value}
 										value={option.value}
-										disabled={option.disabled}
+										{...(option.disabled === undefined
+											? {}
+											: { disabled: option.disabled })}
 										onSelect={() => handleSelect(option.value)}
 									>
 										<CheckIcon

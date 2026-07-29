@@ -8,18 +8,18 @@ import {
 	persistActiveOrganization as persistActiveOrganizationWithClient,
 } from "./organization-membership";
 
-export type { MemberOrganization };
+export type { MemberOrganization } from "./organization-membership";
 
-export type CreateOrganizationInput = {
+export interface CreateOrganizationInput {
 	name: string;
 	slug: string;
-};
+}
 
-export type CreatedOrganization = {
+export interface CreatedOrganization {
 	id: string;
-	slug: string;
 	name: string;
-};
+	slug: string;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
@@ -35,11 +35,12 @@ export function parseCreatedOrganization(
 		return null;
 	}
 
-	const nestedCandidate = isRecord(data.organization)
-		? data.organization
-		: isRecord(data.data)
-			? data.data
-			: data;
+	let nestedCandidate = data;
+	if (isRecord(data.organization)) {
+		nestedCandidate = data.organization;
+	} else if (isRecord(data.data)) {
+		nestedCandidate = data.data;
+	}
 
 	if (
 		typeof nestedCandidate.id !== "string" ||
@@ -54,8 +55,8 @@ export function parseCreatedOrganization(
 
 	return {
 		id: nestedCandidate.id.trim(),
-		slug: nestedCandidate.slug.trim(),
 		name: nestedCandidate.name.trim(),
+		slug: nestedCandidate.slug.trim(),
 	};
 }
 

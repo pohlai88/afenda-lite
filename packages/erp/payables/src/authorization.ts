@@ -2,13 +2,13 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 export type PayablesPermission = "payables.read" | "payables.manage";
 
-export type PayablesAuthorizationPort = {
-	can(input: {
+export interface PayablesAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: PayablesPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
 export async function requirePayablesPermission(
 	authorization: PayablesAuthorizationPort | undefined,

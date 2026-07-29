@@ -43,7 +43,7 @@ type Props = {
 	snapshot: SelfServiceSnapshot;
 };
 
-function LoadError({ message }: { message?: string }) {
+function LoadError({ message }: { message?: string | undefined }) {
 	if (!message) return null;
 	return (
 		<Alert variant="destructive" role="alert">

@@ -22,8 +22,8 @@ const initialState: CreateReversalMovementActionState = null;
 
 type CreateReversalMovementFormProps = {
 	canPost: boolean;
-	defaultMovementId?: string;
-	defaultExpectedVersion?: number;
+	defaultMovementId?: string | undefined;
+	defaultExpectedVersion?: number | undefined;
 };
 
 export function CreateReversalMovementForm({

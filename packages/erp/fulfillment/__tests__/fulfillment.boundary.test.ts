@@ -13,8 +13,11 @@ const FORBIDDEN_WRITE =
 function sourceFiles(dir: string, out: string[] = []): string[] {
 	for (const entry of readdirSync(dir)) {
 		const full = path.join(dir, entry);
-		if (statSync(full).isDirectory()) sourceFiles(full, out);
-		else if (entry.endsWith(".ts")) out.push(full);
+		if (statSync(full).isDirectory()) {
+			sourceFiles(full, out);
+		} else if (entry.endsWith(".ts")) {
+			out.push(full);
+		}
 	}
 	return out;
 }

@@ -34,8 +34,8 @@ export default function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<body className="flex min-h-screen flex-col">
 				<Banner id="afenda-lite-docs">
-					Afenda-Lite Docs — official documentation site. OpenAPI machine
-					SSOT stays under docs-V2/api (not Living DOC-001).
+					Afenda-Lite Docs — official documentation site. OpenAPI machine SSOT
+					stays under docs-V2/api (not Living DOC-001).
 				</Banner>
 				<RootProvider>{children}</RootProvider>
 			</body>

@@ -32,9 +32,9 @@ export type SearchUpsertInput = {
 	entity: string;
 	documentId: string;
 	title: string;
-	description?: string | null;
-	url?: string | null;
-	metadata?: Record<string, unknown> | null;
+	description?: string | null | undefined;
+	url?: string | null | undefined;
+	metadata?: Record<string, unknown> | null | undefined;
 };
 
 export type SearchDeleteInput = {
@@ -51,7 +51,7 @@ export type SearchListIdsInput = {
 export type SearchQueryOptions = {
 	organizationId: string;
 	query: string;
-	entity?: string;
+	entity?: string | undefined;
 	limit: number;
 	offset: number;
 };

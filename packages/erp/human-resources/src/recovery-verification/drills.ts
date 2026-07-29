@@ -120,7 +120,7 @@ async function executeClaimedReliabilityWork(
 			organizationId: ORGANIZATION_ID,
 			workItemId,
 			leaseOwner: "recovery-drill",
-			policy,
+			...(policy === undefined ? {} : { policy }),
 		},
 		ports,
 	);

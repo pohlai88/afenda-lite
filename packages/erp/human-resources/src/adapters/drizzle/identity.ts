@@ -78,7 +78,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 			const userEmployeeResult = await this.getUserEmployeeMapping({
 				organizationId: input.organizationId,
 				userId: input.userId,
-				asOf: input.asOf,
+				...(input.asOf === undefined ? {} : { asOf: input.asOf }),
 			});
 
 			if (!userEmployeeResult.ok || !userEmployeeResult.data) {

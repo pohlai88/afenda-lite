@@ -15,16 +15,16 @@ import {
 import type { WorkAssignment } from "../types";
 
 type AssignmentLineageRow = {
-	predecessorAssignmentId?: string | null;
-	predecessor_assignment_id?: string | null;
-	successorAssignmentId?: string | null;
-	successor_assignment_id?: string | null;
-	transferMovementId?: string | null;
-	transfer_movement_id?: string | null;
-	managerEmployeeIdSnapshot?: string | null;
-	manager_employee_id_snapshot?: string | null;
-	workCalendarIdSnapshot?: string | null;
-	work_calendar_id_snapshot?: string | null;
+	predecessorAssignmentId?: string | null | undefined;
+	predecessor_assignment_id?: string | null | undefined;
+	successorAssignmentId?: string | null | undefined;
+	successor_assignment_id?: string | null | undefined;
+	transferMovementId?: string | null | undefined;
+	transfer_movement_id?: string | null | undefined;
+	managerEmployeeIdSnapshot?: string | null | undefined;
+	manager_employee_id_snapshot?: string | null | undefined;
+	workCalendarIdSnapshot?: string | null | undefined;
+	work_calendar_id_snapshot?: string | null | undefined;
 };
 
 function readOptionalString(

@@ -58,17 +58,17 @@ function mapLine(
 	row: typeof supplierInvoiceLine.$inferSelect,
 ): SupplierInvoiceLine {
 	return {
-		id: row.id,
-		organizationId: row.organizationId,
-		invoiceId: row.invoiceId,
-		lineNo: row.lineNo,
-		itemId: row.itemId,
+		createdAt: row.createdAt,
+		createdBy: row.createdBy,
 		description: row.itemName,
+		id: row.id,
+		invoiceId: row.invoiceId,
+		itemId: row.itemId,
+		lineAmount: row.lineAmount,
+		lineNo: row.lineNo,
+		organizationId: row.organizationId,
 		quantity: row.quantity,
 		unitPrice: row.unitPrice,
-		lineAmount: row.lineAmount,
-		createdBy: row.createdBy,
-		createdAt: row.createdAt,
 	};
 }
 
@@ -93,24 +93,24 @@ function mapMatch(
 		);
 	}
 	return {
-		id: row.id,
-		organizationId: row.organizationId,
-		invoiceId: row.supplierInvoiceId,
-		purchaseOrderId: row.purchaseOrderId,
-		goodsReceiptId: row.goodsReceiptId,
-		result: mapMatchStatus(row.matchStatus),
 		evidence:
 			row.evidenceJson === null
 				? {
-						quantityTolerancePct: "0",
-						priceTolerancePct: "0",
 						lineResults: [],
+						priceTolerancePct: "0",
+						quantityTolerancePct: "0",
 					}
 				: (JSON.parse(row.evidenceJson) as ThreeWayMatchResult["evidence"]),
-		purchaseOrderVersion: row.poEvidenceVersion ?? 0,
+		goodsReceiptId: row.goodsReceiptId,
 		goodsReceiptVersion: row.grEvidenceVersion ?? 0,
-		matchedBy: row.createdBy,
+		id: row.id,
+		invoiceId: row.supplierInvoiceId,
 		matchedAt: row.createdAt,
+		matchedBy: row.createdBy,
+		organizationId: row.organizationId,
+		purchaseOrderId: row.purchaseOrderId,
+		purchaseOrderVersion: row.poEvidenceVersion ?? 0,
+		result: mapMatchStatus(row.matchStatus),
 	};
 }
 
@@ -118,20 +118,20 @@ function mapAllocation(
 	row: typeof supplierAllocation.$inferSelect,
 ): SupplierAllocation {
 	return {
-		id: row.id,
-		organizationId: row.organizationId,
-		invoiceId: row.supplierInvoiceId,
-		supplierId: row.supplierPartyId,
-		paymentId: row.paymentId,
-		paymentApplicationInstructionId: row.paymentApplicationInstructionId,
-		creditNoteId: row.creditNoteId,
-		status: row.status === "reversed" ? "reversed" : "active",
 		amount: row.amount,
 		applyIdempotencyKey: row.applyIdempotencyKey,
+		createdAt: row.createdAt,
+		createdBy: row.createdBy,
+		creditNoteId: row.creditNoteId,
+		id: row.id,
+		invoiceId: row.supplierInvoiceId,
+		organizationId: row.organizationId,
+		paymentApplicationInstructionId: row.paymentApplicationInstructionId,
+		paymentId: row.paymentId,
 		reversedAt: row.reversedAt,
 		reversedBy: row.reversedBy,
-		createdBy: row.createdBy,
-		createdAt: row.createdAt,
+		status: row.status === "reversed" ? "reversed" : "active",
+		supplierId: row.supplierPartyId,
 	};
 }
 
@@ -143,34 +143,34 @@ function mapInvoice(
 ): SupplierInvoice {
 	const total = lines.reduce((sum, line) => sum + Number(line.lineAmount), 0);
 	return {
-		id: row.id,
-		organizationId: row.organizationId,
+		cancelledAt: row.cancelledAt,
+		cancelledBy: row.cancelledBy,
 		code: row.code,
-		normalizedCode: row.normalizedCode,
-		documentType: "invoice",
-		status: invoiceStatus(row.status),
-		supplierId: row.supplierPartyId,
-		supplierCode: row.supplierPartyCode,
-		supplierName: row.supplierPartyName,
+		createdAt: row.createdAt,
+		createdBy: row.createdBy,
 		currencyCode: row.currencyCode,
-		totalAmount: String(total),
+		documentType: "invoice",
+		id: row.id,
+		lines,
+		matchedAt: matchResult?.matchedAt ?? null,
+		matchedBy: matchResult?.matchedBy ?? null,
+		matchResult,
+		normalizedCode: row.normalizedCode,
 		openAmount:
 			row.status === "posted"
 				? String(Math.max(0, total - allocatedAmount))
 				: "0",
-		version: row.version,
-		createdBy: row.createdBy,
-		updatedBy: row.updatedBy,
-		matchedAt: matchResult?.matchedAt ?? null,
-		matchedBy: matchResult?.matchedBy ?? null,
+		organizationId: row.organizationId,
 		postedAt: row.postedAt,
 		postedBy: row.postedBy,
-		cancelledAt: row.cancelledAt,
-		cancelledBy: row.cancelledBy,
-		createdAt: row.createdAt,
+		status: invoiceStatus(row.status),
+		supplierCode: row.supplierPartyCode,
+		supplierId: row.supplierPartyId,
+		supplierName: row.supplierPartyName,
+		totalAmount: String(total),
 		updatedAt: row.updatedAt,
-		lines,
-		matchResult,
+		updatedBy: row.updatedBy,
+		version: row.version,
 	};
 }
 
@@ -181,7 +181,9 @@ async function reload(
 	message: string,
 ): Promise<Result<SupplierInvoice>> {
 	const result = await store.getById(organizationId, id);
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? fail("INTERNAL_ERROR", message)
 		: ok(result.data);
@@ -197,13 +199,13 @@ function eventPayload(record: {
 	correlationId: string;
 }): string {
 	return JSON.stringify({
-		organizationId: record.organizationId,
-		entityId: record.entityId,
-		supplierId: record.supplierId,
-		amount: record.amount,
-		currencyCode: record.currencyCode,
 		actorId: record.actorUserId,
+		amount: record.amount,
 		correlationId: record.correlationId,
+		currencyCode: record.currencyCode,
+		entityId: record.entityId,
+		organizationId: record.organizationId,
+		supplierId: record.supplierId,
 	});
 }
 
@@ -215,13 +217,13 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const eventId = randomUUID();
 		try {
 			const payload = eventPayload({
-				organizationId: record.organizationId,
-				entityId: id,
-				supplierId: record.supplierId,
-				amount: "0",
-				currencyCode: record.currencyCode,
 				actorUserId: record.actorUserId,
+				amount: "0",
 				correlationId: record.correlationId,
+				currencyCode: record.currencyCode,
+				entityId: id,
+				organizationId: record.organizationId,
+				supplierId: record.supplierId,
 			});
 			await runNeonHttpTransaction((sql) => [
 				sql`
@@ -296,8 +298,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					SELECT inserted.id FROM inserted, bumped
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier invoice line conflict");
+			}
 			const [line] = await db
 				.select()
 				.from(supplierInvoiceLine)
@@ -323,10 +326,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const eventId = randomUUID();
 		try {
 			const payload = eventPayload({
-				organizationId: record.organizationId,
-				entityId: record.invoiceId,
 				actorUserId: record.actorUserId,
 				correlationId: record.correlationId,
+				entityId: record.invoiceId,
+				organizationId: record.organizationId,
 			});
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
 				sql`
@@ -381,8 +384,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					SELECT mutated.id FROM mutated, matched, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier invoice match conflict");
+			}
 			return reload(
 				this,
 				record.organizationId,
@@ -401,10 +405,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const eventId = randomUUID();
 		try {
 			const payload = eventPayload({
-				organizationId: record.organizationId,
-				entityId: record.invoiceId,
 				actorUserId: record.actorUserId,
 				correlationId: record.correlationId,
+				entityId: record.invoiceId,
+				organizationId: record.organizationId,
 			});
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
 				sql`
@@ -454,8 +458,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					SELECT totaled.id FROM totaled, projected, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier invoice post conflict");
+			}
 			return reload(
 				this,
 				record.organizationId,
@@ -473,19 +478,19 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const id = randomUUID();
 		try {
 			await db.insert(supplierCreditNote).values({
-				id,
-				organizationId: record.organizationId,
-				code: record.code,
-				normalizedCode: record.normalizedCode,
-				status: "draft",
-				supplierPartyId: record.supplierId,
-				supplierPartyCode: record.supplierCode,
-				supplierPartyName: record.supplierName,
-				currencyCode: record.currencyCode,
 				amount: "0",
-				version: 1,
+				code: record.code,
 				createdBy: record.actorUserId,
+				currencyCode: record.currencyCode,
+				id,
+				normalizedCode: record.normalizedCode,
+				organizationId: record.organizationId,
+				status: "draft",
+				supplierPartyCode: record.supplierCode,
+				supplierPartyId: record.supplierId,
+				supplierPartyName: record.supplierName,
 				updatedBy: record.actorUserId,
+				version: 1,
 			});
 			const [credit] = await db
 				.select()
@@ -497,34 +502,35 @@ export class DrizzlePayablesStore implements PayablesStore {
 					),
 				)
 				.limit(1);
-			if (credit === undefined)
+			if (credit === undefined) {
 				return fail("INTERNAL_ERROR", "Created supplier credit note missing");
+			}
 			return ok({
-				id: credit.id,
-				organizationId: credit.organizationId,
-				code: credit.code,
-				normalizedCode: credit.normalizedCode,
-				documentType: "credit_note",
-				status: invoiceStatus(credit.status),
-				supplierId: credit.supplierPartyId,
-				supplierCode: credit.supplierPartyCode,
-				supplierName: credit.supplierPartyName,
-				currencyCode: credit.currencyCode,
-				totalAmount: credit.amount,
-				openAmount: "0",
-				version: credit.version,
-				createdBy: credit.createdBy,
-				updatedBy: credit.updatedBy,
-				matchedAt: null,
-				matchedBy: null,
-				postedAt: credit.postedAt,
-				postedBy: credit.postedBy,
 				cancelledAt: null,
 				cancelledBy: null,
+				code: credit.code,
 				createdAt: credit.createdAt,
-				updatedAt: credit.updatedAt,
+				createdBy: credit.createdBy,
+				currencyCode: credit.currencyCode,
+				documentType: "credit_note",
+				id: credit.id,
 				lines: [],
+				matchedAt: null,
+				matchedBy: null,
 				matchResult: null,
+				normalizedCode: credit.normalizedCode,
+				openAmount: "0",
+				organizationId: credit.organizationId,
+				postedAt: credit.postedAt,
+				postedBy: credit.postedBy,
+				status: invoiceStatus(credit.status),
+				supplierCode: credit.supplierPartyCode,
+				supplierId: credit.supplierPartyId,
+				supplierName: credit.supplierPartyName,
+				totalAmount: credit.amount,
+				updatedAt: credit.updatedAt,
+				updatedBy: credit.updatedBy,
+				version: credit.version,
 			});
 		} catch (error) {
 			return failFromPersistence(
@@ -566,23 +572,23 @@ export class DrizzlePayablesStore implements PayablesStore {
 					) SELECT * FROM inserted
 				`,
 			]);
-			const row = rows[0];
+			const [row] = rows;
 			return row === undefined
 				? fail("CONFLICT", "Supplier credit note line conflict")
 				: ok({
-						id,
-						organizationId: record.organizationId,
-						invoiceId: record.creditNoteId,
-						lineNo: row.line_no,
-						itemId: record.itemId,
+						createdAt: row.created_at,
+						createdBy: record.actorUserId,
 						description: record.description,
-						quantity: record.quantity,
-						unitPrice: record.unitPrice,
+						id,
+						invoiceId: record.creditNoteId,
+						itemId: record.itemId,
 						lineAmount: String(
 							Number(record.quantity) * Number(record.unitPrice),
 						),
-						createdBy: record.actorUserId,
-						createdAt: row.created_at,
+						lineNo: row.line_no,
+						organizationId: record.organizationId,
+						quantity: record.quantity,
+						unitPrice: record.unitPrice,
 					});
 		} catch (error) {
 			return failFromPersistence(
@@ -618,8 +624,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					) SELECT id FROM mutated
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier credit note post conflict");
+			}
 			const [credit] = await db
 				.select()
 				.from(supplierCreditNote)
@@ -630,8 +637,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					),
 				)
 				.limit(1);
-			if (credit === undefined)
+			if (credit === undefined) {
 				return fail("INTERNAL_ERROR", "Posted supplier credit note missing");
+			}
 			const lines = await db
 				.select()
 				.from(supplierCreditNoteLine)
@@ -643,61 +651,63 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.orderBy(asc(supplierCreditNoteLine.lineNo));
 			const emitted = await record.effects.emit({
-				type: "payables.credit_note.posted.v1",
-				organizationId: record.organizationId,
 				actorUserId: record.actorUserId,
 				correlationId: record.correlationId,
+				organizationId: record.organizationId,
 				payload: JSON.parse(
 					eventPayload({
-						organizationId: record.organizationId,
-						entityId: credit.id,
-						supplierId: credit.supplierPartyId,
-						amount: credit.amount,
-						currencyCode: credit.currencyCode,
 						actorUserId: record.actorUserId,
+						amount: credit.amount,
 						correlationId: record.correlationId,
+						currencyCode: credit.currencyCode,
+						entityId: credit.id,
+						organizationId: record.organizationId,
+						supplierId: credit.supplierPartyId,
 					}),
 				),
+				type: "payables.credit_note.posted.v1",
 			});
-			if (!emitted.ok) return emitted;
+			if (!emitted.ok) {
+				return emitted;
+			}
 			return ok({
-				id: credit.id,
-				organizationId: credit.organizationId,
-				code: credit.code,
-				normalizedCode: credit.normalizedCode,
-				documentType: "credit_note",
-				status: invoiceStatus(credit.status),
-				supplierId: credit.supplierPartyId,
-				supplierCode: credit.supplierPartyCode,
-				supplierName: credit.supplierPartyName,
-				currencyCode: credit.currencyCode,
-				totalAmount: credit.amount,
-				openAmount: credit.amount,
-				version: credit.version,
-				createdBy: credit.createdBy,
-				updatedBy: credit.updatedBy,
-				matchedAt: null,
-				matchedBy: null,
-				postedAt: credit.postedAt,
-				postedBy: credit.postedBy,
 				cancelledAt: null,
 				cancelledBy: null,
+				code: credit.code,
 				createdAt: credit.createdAt,
-				updatedAt: credit.updatedAt,
+				createdBy: credit.createdBy,
+				currencyCode: credit.currencyCode,
+				documentType: "credit_note",
+				id: credit.id,
 				lines: lines.map((line) => ({
-					id: line.id,
-					organizationId: line.organizationId,
-					invoiceId: line.creditNoteId,
-					lineNo: line.lineNo,
-					itemId: line.itemId,
+					createdAt: line.createdAt,
+					createdBy: line.createdBy,
 					description: line.itemName,
+					id: line.id,
+					invoiceId: line.creditNoteId,
+					itemId: line.itemId,
+					lineAmount: line.lineAmount,
+					lineNo: line.lineNo,
+					organizationId: line.organizationId,
 					quantity: line.quantity,
 					unitPrice: line.unitPrice,
-					lineAmount: line.lineAmount,
-					createdBy: line.createdBy,
-					createdAt: line.createdAt,
 				})),
+				matchedAt: null,
+				matchedBy: null,
 				matchResult: null,
+				normalizedCode: credit.normalizedCode,
+				openAmount: credit.amount,
+				organizationId: credit.organizationId,
+				postedAt: credit.postedAt,
+				postedBy: credit.postedBy,
+				status: invoiceStatus(credit.status),
+				supplierCode: credit.supplierPartyCode,
+				supplierId: credit.supplierPartyId,
+				supplierName: credit.supplierPartyName,
+				totalAmount: credit.amount,
+				updatedAt: credit.updatedAt,
+				updatedBy: credit.updatedBy,
+				version: credit.version,
 			});
 		} catch (error) {
 			return failFromPersistence(error, "Failed to post supplier credit note");
@@ -712,13 +722,13 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const eventId = randomUUID();
 		try {
 			const payload = eventPayload({
-				organizationId: record.organizationId,
-				entityId: id,
-				supplierId: record.supplierId,
-				amount: record.amount,
-				currencyCode: record.currencyCode,
 				actorUserId: record.actorUserId,
+				amount: record.amount,
 				correlationId: record.correlationId,
+				currencyCode: record.currencyCode,
+				entityId: id,
+				organizationId: record.organizationId,
+				supplierId: record.supplierId,
 			});
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
 				sql`
@@ -763,8 +773,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					SELECT mutated.id FROM mutated, projected, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier credit note issue conflict");
+			}
 			const [credit] = await db
 				.select()
 				.from(supplierCreditNote)
@@ -775,34 +786,35 @@ export class DrizzlePayablesStore implements PayablesStore {
 					),
 				)
 				.limit(1);
-			if (credit === undefined)
+			if (credit === undefined) {
 				return fail("INTERNAL_ERROR", "Issued supplier credit note missing");
+			}
 			return ok({
-				id: credit.id,
-				organizationId: credit.organizationId,
-				code: credit.code,
-				normalizedCode: credit.normalizedCode,
-				documentType: "credit_note",
-				status: invoiceStatus(credit.status),
-				supplierId: credit.supplierPartyId,
-				supplierCode: credit.supplierPartyCode,
-				supplierName: credit.supplierPartyName,
-				currencyCode: credit.currencyCode,
-				totalAmount: record.amount,
-				openAmount: "0",
-				version: credit.version,
-				createdBy: credit.createdBy,
-				updatedBy: credit.updatedBy,
-				matchedAt: null,
-				matchedBy: null,
-				postedAt: credit.postedAt,
-				postedBy: credit.postedBy,
 				cancelledAt: null,
 				cancelledBy: null,
+				code: credit.code,
 				createdAt: credit.createdAt,
-				updatedAt: credit.updatedAt,
+				createdBy: credit.createdBy,
+				currencyCode: credit.currencyCode,
+				documentType: "credit_note",
+				id: credit.id,
 				lines: [],
+				matchedAt: null,
+				matchedBy: null,
 				matchResult: null,
+				normalizedCode: credit.normalizedCode,
+				openAmount: "0",
+				organizationId: credit.organizationId,
+				postedAt: credit.postedAt,
+				postedBy: credit.postedBy,
+				status: invoiceStatus(credit.status),
+				supplierCode: credit.supplierPartyCode,
+				supplierId: credit.supplierPartyId,
+				supplierName: credit.supplierPartyName,
+				totalAmount: record.amount,
+				updatedAt: credit.updatedAt,
+				updatedBy: credit.updatedBy,
+				version: credit.version,
 			});
 		} catch (error) {
 			return failFromPersistence(error, "Failed to issue supplier credit note");
@@ -825,7 +837,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					),
 				)
 				.limit(1);
-			if (replay !== undefined) return ok(mapAllocation(replay));
+			if (replay !== undefined) {
+				return ok(mapAllocation(replay));
+			}
 			const [rows] = await runNeonHttpTransaction<
 				[
 					Array<{
@@ -908,24 +922,25 @@ export class DrizzlePayablesStore implements PayablesStore {
 					FROM allocated, projected, outboxed
 				`,
 			]);
-			const row = rows[0];
-			if (row === undefined)
+			const [row] = rows;
+			if (row === undefined) {
 				return fail("CONFLICT", "Supplier allocation conflict");
+			}
 			return ok({
-				id: row.id,
-				organizationId: row.organization_id,
-				invoiceId: row.invoice_id,
-				supplierId: row.supplier_id,
-				paymentId: row.payment_id,
-				paymentApplicationInstructionId: record.paymentApplicationInstructionId,
-				creditNoteId: null,
-				status: "active",
 				amount: row.amount,
 				applyIdempotencyKey: record.idempotencyKey,
+				createdAt: row.created_at,
+				createdBy: row.created_by,
+				creditNoteId: null,
+				id: row.id,
+				invoiceId: row.invoice_id,
+				organizationId: row.organization_id,
+				paymentApplicationInstructionId: record.paymentApplicationInstructionId,
+				paymentId: row.payment_id,
 				reversedAt: null,
 				reversedBy: null,
-				createdBy: row.created_by,
-				createdAt: row.created_at,
+				status: "active",
+				supplierId: row.supplier_id,
 			});
 		} catch (error) {
 			return failFromPersistence(error, "Failed to apply supplier payment");
@@ -947,7 +962,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					),
 				)
 				.limit(1);
-			if (replay !== undefined) return ok(mapAllocation(replay));
+			if (replay !== undefined) {
+				return ok(mapAllocation(replay));
+			}
 			const [rows] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
 				(sql) => [
 					sql`
@@ -991,8 +1008,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 				],
 			);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail("CONFLICT", "Supplier credit application conflict");
+			}
 			const [allocation] = await db
 				.select()
 				.from(supplierAllocation)
@@ -1087,20 +1105,20 @@ export class DrizzlePayablesStore implements PayablesStore {
 			]);
 			return ok(
 				rows.map((row) => ({
-					id: row.id,
-					organizationId: row.organization_id,
-					invoiceId: row.invoice_id,
-					supplierId: row.supplier_id,
-					paymentId: row.payment_id,
-					paymentApplicationInstructionId: null,
-					creditNoteId: null,
-					status: "reversed",
 					amount: row.amount,
 					applyIdempotencyKey: null,
+					createdAt: row.created_at,
+					createdBy: row.created_by,
+					creditNoteId: null,
+					id: row.id,
+					invoiceId: row.invoice_id,
+					organizationId: row.organization_id,
+					paymentApplicationInstructionId: null,
+					paymentId: row.payment_id,
 					reversedAt: new Date(),
 					reversedBy: record.actorUserId,
-					createdBy: row.created_by,
-					createdAt: row.created_at,
+					status: "reversed",
+					supplierId: row.supplier_id,
 				})),
 			);
 		} catch (error) {
@@ -1144,11 +1162,12 @@ export class DrizzlePayablesStore implements PayablesStore {
 					SELECT mutated.id FROM mutated, outboxed
 				`,
 			]);
-			if (rows[0] === undefined)
+			if (rows[0] === undefined) {
 				return fail(
 					"CONFLICT",
 					"Supplier invoice cancel conflict — only draft or matched invoices may be cancelled",
 				);
+			}
 			return reload(
 				this,
 				record.organizationId,
@@ -1175,7 +1194,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 					),
 				)
 				.limit(1);
-			if (header === undefined) return ok(null);
+			if (header === undefined) {
+				return ok(null);
+			}
 			const [lines, matches, allocations] = await Promise.all([
 				db
 					.select()
@@ -1232,8 +1253,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 			const conditions = [
 				eq(supplierInvoice.organizationId, filter.organizationId),
 			];
-			if (filter.status !== undefined)
+			if (filter.status !== undefined) {
 				conditions.push(eq(supplierInvoice.status, filter.status));
+			}
 			const headers = await db
 				.select()
 				.from(supplierInvoice)
@@ -1241,7 +1263,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				.orderBy(desc(supplierInvoice.updatedAt), desc(supplierInvoice.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			if (headers.length === 0) return ok([]);
+			if (headers.length === 0) {
+				return ok([]);
+			}
 			const ids = headers.map((row) => row.id);
 			const [lines, matches, allocations] = await Promise.all([
 				db
@@ -1356,15 +1380,15 @@ export class DrizzlePayablesStore implements PayablesStore {
 			]);
 			return ok(
 				rows.map((row) => ({
-					organizationId: row.organization_id,
-					supplierId: row.supplier_id,
-					currencyCode: row.currency_code,
-					openBalance: row.open_balance,
-					invoicedAmount: row.invoiced_amount,
-					creditedAmount: row.credited_amount,
-					paidAmount: row.paid_amount,
-					outstandingAmount: row.open_balance,
 					asOf: new Date(),
+					creditedAmount: row.credited_amount,
+					currencyCode: row.currency_code,
+					invoicedAmount: row.invoiced_amount,
+					openBalance: row.open_balance,
+					organizationId: row.organization_id,
+					outstandingAmount: row.open_balance,
+					paidAmount: row.paid_amount,
+					supplierId: row.supplier_id,
 					updatedAt: row.updated_at,
 				})),
 			);

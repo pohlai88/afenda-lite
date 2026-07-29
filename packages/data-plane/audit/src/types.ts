@@ -70,14 +70,14 @@ export type AuditWriteInput = {
 
 export type AuditQueryFilter = {
 	organizationId: string;
-	module?: string;
-	entity?: string;
-	entityId?: string;
-	actorUserId?: string;
-	action?: AuditAction;
-	correlationId?: string;
-	from?: Date;
-	to?: Date;
+	module?: string | undefined;
+	entity?: string | undefined;
+	entityId?: string | undefined;
+	actorUserId?: string | undefined;
+	action?: AuditAction | undefined;
+	correlationId?: string | undefined;
+	from?: Date | undefined;
+	to?: Date | undefined;
 };
 
 export type AuditQueryOptions = AuditQueryFilter & {

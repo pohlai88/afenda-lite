@@ -9,7 +9,7 @@ import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operat
 export function employeeProfileResource(input: {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
-	resourceId?: string;
+	resourceId?: string | undefined;
 }): HumanResourcesResourceContext {
 	return {
 		organizationId: input.organizationId,
@@ -43,7 +43,7 @@ export async function resolveEmployeeProfileResource(
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		asOf: string;
-		resourceId?: string;
+		resourceId?: string | undefined;
 	},
 	options: HumanResourcesCommandOptions,
 ): Promise<HumanResourcesResourceContext> {

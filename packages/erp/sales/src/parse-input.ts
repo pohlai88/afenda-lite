@@ -8,10 +8,11 @@ export function parseSalesInput<TSchema extends z.ZodType>(
 	message: string,
 ): Result<z.infer<TSchema>> {
 	const parsed = schema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail("BAD_REQUEST", message, {
 			reason: "SALES_VALIDATION_FAILED",
 			fieldErrors: parsed.error.flatten().fieldErrors,
 		} satisfies SalesFailureDetails);
+	}
 	return { ok: true, data: parsed.data };
 }

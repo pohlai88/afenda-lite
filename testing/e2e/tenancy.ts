@@ -5,6 +5,10 @@
  * so `E2E_FACTORY_PASSWORD` must match that template’s plaintext.
  */
 
+import {
+	hasE2eDatabaseUrl,
+	requireE2eDatabaseUrl,
+} from "@afenda/testing/e2e-database";
 import { createNeonSql, type NeonSql } from "./neon-sql";
 
 export type FactoryCredential = {
@@ -32,11 +36,7 @@ export type WorkerTenantHandle = {
 };
 
 function requireDatabaseUrl(): string {
-	const databaseUrl = process.env.DATABASE_URL?.trim();
-	if (!databaseUrl) {
-		throw new Error("N13 factory requires DATABASE_URL");
-	}
-	return databaseUrl;
+	return requireE2eDatabaseUrl();
 }
 
 /**
@@ -58,7 +58,7 @@ function resolveHashTemplateEmail(): string {
 
 /** True when provision/cleanup can run (honest skip when false). */
 export function isFactoryEnvReady(): boolean {
-	return Boolean(process.env.DATABASE_URL?.trim() && resolveFactoryPassword());
+	return Boolean(hasE2eDatabaseUrl() && resolveFactoryPassword());
 }
 
 async function readTemplatePasswordHash(
@@ -384,12 +384,11 @@ export async function clearOperatorPlatformAssignments(
 export async function cleanupWorkerTenant(
 	handle: WorkerTenantHandle,
 ): Promise<void> {
-	const databaseUrl = process.env.DATABASE_URL?.trim();
-	if (!databaseUrl) {
+	if (!hasE2eDatabaseUrl()) {
 		return;
 	}
 
-	const sql = await createNeonSql(databaseUrl);
+	const sql = await createNeonSql(requireDatabaseUrl());
 	const userIds = [
 		handle.operator.userId,
 		handle.client.userId,

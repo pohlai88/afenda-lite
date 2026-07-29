@@ -203,7 +203,7 @@ export type HumanResourcesWorkforceFoundationStore = {
 			contactId: string;
 			valueText: string;
 			normalizedValue: string;
-			isPrimary?: boolean;
+			isPrimary?: boolean | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},

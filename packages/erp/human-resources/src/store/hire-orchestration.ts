@@ -27,14 +27,14 @@ export type HireAttemptProgressUpdate = {
 	attemptId: HireAttempt["id"];
 	expectedVersion: number;
 	currentStep: HireSagaStep | null;
-	personId?: HireAttempt["personId"];
-	employeeId?: HireAttempt["employeeId"];
-	employmentId?: HireAttempt["employmentId"];
-	workerId?: HireAttempt["workerId"];
-	assignmentId?: HireAttempt["assignmentId"];
-	onboardingCaseId?: HireAttempt["onboardingCaseId"];
-	compensationLog?: readonly HireCompensationLogEntry[];
-	status?: HireAttempt["status"];
+	personId?: HireAttempt["personId"] | undefined;
+	employeeId?: HireAttempt["employeeId"] | undefined;
+	employmentId?: HireAttempt["employmentId"] | undefined;
+	workerId?: HireAttempt["workerId"] | undefined;
+	assignmentId?: HireAttempt["assignmentId"] | undefined;
+	onboardingCaseId?: HireAttempt["onboardingCaseId"] | undefined;
+	compensationLog?: readonly HireCompensationLogEntry[] | undefined;
+	status?: HireAttempt["status"] | undefined;
 	actorUserId: string;
 };
 

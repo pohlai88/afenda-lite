@@ -1,6 +1,6 @@
 import { generate as DefaultImage } from "fumadocs-ui/og";
-import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
+import { ImageResponse } from "next/og";
 import { docsAppName, getPageImage, source } from "@/lib/source";
 
 /** Dynamic OG images for docs pages — docs-V2/docs/og-next.md */
@@ -22,12 +22,12 @@ export async function GET(
 
 	return new ImageResponse(
 		<DefaultImage
-			title={page.data.title}
 			description={page.data.description}
-			site={docsAppName}
 			/** Align with Themes=`neutral` — not stock pink/purple defaults */
 			primaryColor="rgba(113,113,122,0.35)"
 			primaryTextColor="rgb(63,63,70)"
+			site={docsAppName}
+			title={page.data.title}
 		/>,
 		{
 			width: 1200,

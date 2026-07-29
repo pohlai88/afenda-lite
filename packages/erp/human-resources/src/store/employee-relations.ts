@@ -113,7 +113,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 
 	listEmployeeCases(input: {
 		organizationId: string;
-		status?: EmployeeCaseStatus;
+		status?: EmployeeCaseStatus | undefined;
 	}): Promise<Result<EmployeeCase[]>>;
 
 	listCasesAssignedToActor(input: {
@@ -172,7 +172,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 			organizationId: string;
 			caseId: HumanResourcesEmployeeCaseId;
 			eventKind: EmployeeCaseEventKind;
-			payloadJson?: Record<string, unknown> | null;
+			payloadJson?: Record<string, unknown> | null | undefined;
 			actorUserId: string;
 		},
 		ports: MutationPorts,

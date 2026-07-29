@@ -41,9 +41,9 @@ function resolveFile(absBase) {
 /**
  * @param {{ appRoot?: string } | undefined} data
  */
-export async function initialize(data) {
+export function initialize(data) {
 	if (data && typeof data.appRoot === "string") {
-		appRoot = data.appRoot;
+		({ appRoot } = data);
 	}
 }
 
@@ -52,7 +52,7 @@ export async function initialize(data) {
  * @param {object} context
  * @param {(specifier: string, context: object) => Promise<object>} nextResolve
  */
-export async function resolve(specifier, context, nextResolve) {
+export function resolve(specifier, context, nextResolve) {
 	if (
 		specifier === "fumadocs-openapi" ||
 		specifier.startsWith("fumadocs-openapi/")
@@ -63,10 +63,7 @@ export async function resolve(specifier, context, nextResolve) {
 		);
 		return nextResolve(pathToFileURL(inventoryOpenapi).href, context);
 	}
-	if (
-		specifier === "@/lib/source" ||
-		specifier.startsWith("@/lib/source.")
-	) {
+	if (specifier === "@/lib/source" || specifier.startsWith("@/lib/source.")) {
 		return nextResolve(
 			pathToFileURL(join(appRoot, "scripts/node-inventory-source.mjs")).href,
 			context,
@@ -77,9 +74,8 @@ export async function resolve(specifier, context, nextResolve) {
 		specifier.startsWith("@/lib/build-graph.")
 	) {
 		return nextResolve(
-			pathToFileURL(
-				join(appRoot, "scripts/node-inventory-build-graph.mjs"),
-			).href,
+			pathToFileURL(join(appRoot, "scripts/node-inventory-build-graph.mjs"))
+				.href,
 			context,
 		);
 	}
@@ -104,7 +100,7 @@ export async function resolve(specifier, context, nextResolve) {
  * @param {object} context
  * @param {(url: string, context: object) => Promise<object>} nextLoad
  */
-export async function load(url, context, nextLoad) {
+export function load(url, context, nextLoad) {
 	const pathOnly = url.split("?")[0] ?? url;
 	if (ASSET_EXT.test(pathOnly)) {
 		return {

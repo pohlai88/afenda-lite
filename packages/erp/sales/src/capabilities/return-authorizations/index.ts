@@ -53,19 +53,22 @@ export async function createReturnAuthorization(
 	options: SalesCommandOptions = {},
 ) {
 	const parsed = createReturnAuthorizationInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid return authorization",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.return.create",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.createReturnAuthorization(
 		{
 			organizationId: parsed.data.organizationId,
@@ -91,19 +94,22 @@ export async function addReturnAuthorizationLine(
 	options: SalesCommandOptions = {},
 ) {
 	const parsed = addReturnAuthorizationLineInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid return line",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command: "sales.return.line.add",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.addReturnLine(
 		{ ...parsed.data, actorUserId: parsed.data.actorUserId },
 		salesEvidence({
@@ -120,19 +126,22 @@ export async function getReturnAuthorization(
 	options: SalesQueryOptions = {},
 ) {
 	const parsed = getReturnAuthorizationInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid return-authorization ID",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.return.get",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.getReturnAuthorization({
 		organizationId: parsed.data.organizationId,
 		id: parsed.data.id,
@@ -144,19 +153,22 @@ export async function listReturnAuthorizations(
 	options: SalesQueryOptions = {},
 ) {
 	const parsed = listReturnAuthorizationsInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter valid return-authorization filters",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		query: "sales.return.list",
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.listReturnAuthorizations(parsed.data);
 }
 async function transition(
@@ -171,19 +183,22 @@ async function transition(
 	options: SalesCommandOptions,
 ) {
 	const parsed = returnTransitionInputSchema.safeParse(input);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail(
 			"BAD_REQUEST",
 			"Enter a valid return transition",
 			parsed.error.flatten(),
 		);
+	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
 		command,
 	});
-	if (!auth.ok) return auth;
+	if (!auth.ok) {
+		return auth;
+	}
 	return deps.store.transitionReturn(
 		{
 			organizationId: parsed.data.organizationId,

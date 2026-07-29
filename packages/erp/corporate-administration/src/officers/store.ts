@@ -125,8 +125,8 @@ export interface OfficerStore {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
-		jurisdictionCode?: string;
-		includeOptional?: boolean;
+		jurisdictionCode?: string | undefined;
+		includeOptional?: boolean | undefined;
 	}): Promise<Result<readonly StatutoryOffice[]>>;
 	defineStatutoryOffice(
 		input: DefineStatutoryOfficeStoreInput,
@@ -143,8 +143,8 @@ export interface OfficerStore {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
-		statutoryOfficeId?: StatutoryOfficeId;
-		officerPartyId?: string;
+		statutoryOfficeId?: StatutoryOfficeId | undefined;
+		officerPartyId?: string | undefined;
 	}): Promise<Result<readonly OfficerAppointment[]>>;
 	appointOfficer(
 		input: AppointOfficerStoreInput,

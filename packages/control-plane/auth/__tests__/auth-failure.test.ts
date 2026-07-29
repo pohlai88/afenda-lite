@@ -10,20 +10,20 @@ describe("auth-failure taxonomy", () => {
 	it("classifies Neon org probes without leaking probe text", () => {
 		expect(failFromNeonOrgProbe({ message: "slug taken" }, "fallback")).toEqual(
 			{
-				ok: false,
 				code: "CONFLICT",
 				message: "Organization already exists",
+				ok: false,
 			},
 		);
 		expect(failFromNeonOrgProbe({ message: "not owner" }, "fallback")).toEqual({
-			ok: false,
 			code: "FORBIDDEN",
 			message: "Not authorized for this organization action",
+			ok: false,
 		});
 		expect(failFromNeonOrgProbe({ message: "boom" }, "safe fallback")).toEqual({
-			ok: false,
 			code: "INTERNAL_ERROR",
 			message: "safe fallback",
+			ok: false,
 		});
 	});
 
@@ -36,17 +36,17 @@ describe("auth-failure taxonomy", () => {
 
 		expect(() => failFromNeonOrgProbe(hostile, "safe fallback")).not.toThrow();
 		expect(failFromNeonOrgProbe(hostile, "safe fallback")).toEqual({
-			ok: false,
 			code: "INTERNAL_ERROR",
 			message: "safe fallback",
+			ok: false,
 		});
 	});
 
 	it("maps invite HTTP status to closed codes", () => {
 		expect(failFromInviteHttpStatus(403)).toEqual({
-			ok: false,
 			code: "FORBIDDEN",
 			message: "Invitation is not permitted for this session",
+			ok: false,
 		});
 		expect(failFromInviteHttpStatus(503).code).toBe("SERVICE_UNAVAILABLE");
 		expect(failFromInviteHttpStatus(418).code).toBe("INTERNAL_ERROR");

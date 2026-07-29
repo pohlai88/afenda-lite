@@ -18,50 +18,54 @@ import {
 	runDomainAuthorizedOperation,
 } from "./run-authorized-operation";
 
-type ActorScopedSchema = z.ZodType<HumanResourcesAuthorizedActorInput>;
-
 type ResourceResolution =
 	| HumanResourcesResourceContext
 	| undefined
 	| Result<HumanResourcesResourceContext | undefined>;
 
 type ParsedAuthorizedConfig<
-	TSchema extends ActorScopedSchema,
+	TSchema extends z.ZodType,
 	TDeps,
 	TOut,
 	TProjected = TOut,
 > = {
-	schema: TSchema;
+	schema: TSchema & z.ZodType<HumanResourcesAuthorizedActorInput>;
 	invalidMessage: string;
-	parityResourceKind?: HumanResourcesResourceKind;
-	resolveResource?: (
-		input: z.infer<TSchema>,
-		options: HumanResourcesCommandOptions,
-		deps: TDeps,
-	) => ResourceResolution | Promise<ResourceResolution>;
-	project?: (
-		value: TOut,
-		projection: HumanResourcesFieldProjection | undefined,
-	) => TProjected;
-	resolveRequestedFields?: (
-		input: z.infer<TSchema>,
-	) => readonly string[] | undefined;
+	parityResourceKind?: HumanResourcesResourceKind | undefined;
+	resolveResource?:
+		| ((
+				input: z.output<TSchema>,
+				options: HumanResourcesCommandOptions,
+				deps: TDeps,
+		  ) => ResourceResolution | Promise<ResourceResolution>)
+		| undefined;
+	project?:
+		| ((
+				value: TOut,
+				projection: HumanResourcesFieldProjection | undefined,
+		  ) => TProjected)
+		| undefined;
+	resolveRequestedFields?:
+		| ((input: z.output<TSchema>) => readonly string[] | undefined)
+		| undefined;
 	/**
 	 * Optional options override after parse (e.g. leave custom authorize proof).
 	 */
-	resolveOptions?: (
-		options: HumanResourcesCommandOptions,
-		data: z.infer<TSchema>,
-	) => Promise<Result<HumanResourcesCommandOptions>>;
+	resolveOptions?:
+		| ((
+				options: HumanResourcesCommandOptions,
+				data: z.output<TSchema>,
+		  ) => Promise<Result<HumanResourcesCommandOptions>>)
+		| undefined;
 	resolveDeps: (
 		options: HumanResourcesCommandOptions,
-		data: z.infer<TSchema>,
+		data: z.output<TSchema>,
 	) => Result<TDeps> | Promise<Result<TDeps>>;
-	execute: (data: z.infer<TSchema>, deps: TDeps) => Promise<Result<TOut>>;
+	execute: (data: z.output<TSchema>, deps: TDeps) => Promise<Result<TOut>>;
 };
 
 async function runParsedAuthorizedOperation<
-	TSchema extends ActorScopedSchema,
+	TSchema extends z.ZodType,
 	TDeps,
 	TOut,
 	TProjected = TOut,
@@ -133,17 +137,22 @@ async function runParsedAuthorizedOperation<
 		operationKind: params.operationKind,
 		data: parsed.data,
 		options: operationOptions,
-		parityResourceKind: config.parityResourceKind,
-		resolveResource:
-			resolvedResource === undefined ? undefined : async () => resolvedResource,
-		resolveRequestedFields: config.resolveRequestedFields,
-		project: config.project,
+		...(config.parityResourceKind === undefined
+			? {}
+			: { parityResourceKind: config.parityResourceKind }),
+		...(resolvedResource === undefined
+			? {}
+			: { resolveResource: async () => resolvedResource }),
+		...(config.resolveRequestedFields === undefined
+			? {}
+			: { resolveRequestedFields: config.resolveRequestedFields }),
+		...(config.project === undefined ? {} : { project: config.project }),
 		execute: () => config.execute(parsed.data, depsResult.data),
 	});
 }
 
 export async function runParsedAuthorizedCommand<
-	TSchema extends ActorScopedSchema,
+	TSchema extends z.ZodType,
 	TDeps,
 	TOut,
 	TProjected = TOut,
@@ -164,7 +173,7 @@ export async function runParsedAuthorizedCommand<
 }
 
 export async function runParsedAuthorizedQuery<
-	TSchema extends ActorScopedSchema,
+	TSchema extends z.ZodType,
 	TDeps,
 	TOut,
 	TProjected = TOut,

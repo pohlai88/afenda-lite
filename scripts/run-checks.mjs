@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+const SCRIPT_PATH_PATTERN = /scripts\/([A-Za-z0-9._/-]+\.(?:mjs|mts))/;
+
 /**
  * Run only forward gates whose executable scripts and required surfaces exist on disk.
  */
@@ -9,8 +11,11 @@ const preferred = [
 	"check:docs-naming",
 	"check:docs-trunk-ban",
 	"check:tsconfig-no-baseurl",
+	"check:tsconfig-governance",
 	"check:editor-biome",
+	"check:biome-governance",
 	"check:env-consumers",
+	"check:testing-governance",
 	"check:module-quality",
 	"check:doc-integrity",
 	"check:openapi",
@@ -20,7 +25,9 @@ const preferred = [
 function scriptExists(scriptName) {
 	const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
 	const cmd = pkg.scripts?.[scriptName];
-	if (!cmd) return false;
+	if (!cmd) {
+		return false;
+	}
 	// Living docs/ removed (cutover 71176a0) — Scratch docs-V2; skip Living gates.
 	if (
 		(scriptName === "check:docs-naming" ||
@@ -39,9 +46,13 @@ function scriptExists(scriptName) {
 	if (scriptName === "check:docs-app" && !fs.existsSync("apps/docs")) {
 		return false;
 	}
-	if (String(cmd).includes(".cursor/skills/")) return true;
-	const m = String(cmd).match(/scripts\/([A-Za-z0-9._/-]+\.(?:mjs|mts))/);
-	if (!m) return true;
+	if (String(cmd).includes(".cursor/skills/")) {
+		return true;
+	}
+	const m = String(cmd).match(SCRIPT_PATH_PATTERN);
+	if (!m) {
+		return true;
+	}
 	return fs.existsSync(path.join("scripts", m[1]));
 }
 

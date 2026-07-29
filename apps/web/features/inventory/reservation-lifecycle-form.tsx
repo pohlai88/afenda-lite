@@ -31,8 +31,8 @@ type ReservationLifecycleFormProps = {
 	submitLabel: string;
 	fieldIdPrefix: string;
 	idempotencyPrefix: string;
-	defaultReservationId?: string;
-	defaultExpectedVersion?: number;
+	defaultReservationId?: string | undefined;
+	defaultExpectedVersion?: number | undefined;
 	action: (
 		prev: ReservationLifecycleActionState,
 		formData: FormData,

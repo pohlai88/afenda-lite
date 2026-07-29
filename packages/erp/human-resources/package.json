@@ -57,6 +57,7 @@
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project human-resources-unit",
+		"test:benchmark": "node --conditions react-server --import tsx ./src/performance-verification/run-local-benchmarks.ts",
 		"test:parity": "vitest run --config ../../../testing/vitest.hr-parity.config.ts --project human-resources-parity",
 		"check": "pnpm typecheck && pnpm test"
 	},

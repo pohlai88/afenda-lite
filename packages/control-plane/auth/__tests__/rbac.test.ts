@@ -22,25 +22,25 @@ describe("requireRole (I1.4)", () => {
 
 	it("returns the session when the role satisfies the shell gate", async () => {
 		getSessionMock.mockResolvedValue({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "operator",
+			userId: "user-1",
 		});
 		const { requireRole } = await import("../src/rbac");
 		const session = await requireRole("operator");
 		expect(session).toEqual({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "operator",
+			userId: "user-1",
 		});
 		expect(redirectMock).not.toHaveBeenCalled();
 	});
 
 	it("lets admin satisfy the operator shell", async () => {
 		getSessionMock.mockResolvedValue({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "admin",
+			userId: "user-1",
 		});
 		const { requireRole } = await import("../src/rbac");
 		await expect(requireRole("operator")).resolves.toMatchObject({
@@ -51,9 +51,9 @@ describe("requireRole (I1.4)", () => {
 
 	it("redirects wrong role to AUTH_FORBIDDEN_PATH", async () => {
 		getSessionMock.mockResolvedValue({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "client",
+			userId: "user-1",
 		});
 		const { requireRole } = await import("../src/rbac");
 		const { AUTH_FORBIDDEN_PATH } = await import("../src/auth-paths");
@@ -65,9 +65,9 @@ describe("requireRole (I1.4)", () => {
 
 	it("keeps client shell exclusive (operator cannot enter)", async () => {
 		getSessionMock.mockResolvedValue({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "operator",
+			userId: "user-1",
 		});
 		const { requireRole } = await import("../src/rbac");
 		const { AUTH_FORBIDDEN_PATH } = await import("../src/auth-paths");
@@ -79,9 +79,9 @@ describe("requireRole (I1.4)", () => {
 
 	it("rejects operator for admin-only gates", async () => {
 		getSessionMock.mockResolvedValue({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "operator",
+			userId: "user-1",
 		});
 		const { requireRole } = await import("../src/rbac");
 		const { AUTH_FORBIDDEN_PATH } = await import("../src/auth-paths");

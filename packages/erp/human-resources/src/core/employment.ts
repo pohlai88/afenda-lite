@@ -160,7 +160,9 @@ export async function amendEmployment(
 							status: nextStatus,
 							startsOn,
 							endsOn: endsOnResolved.data,
-							requestedEffectiveOn: data.effectiveOn,
+							...(data.effectiveOn === undefined
+								? {}
+								: { requestedEffectiveOn: data.effectiveOn }),
 						})
 					: undefined;
 
@@ -168,10 +170,12 @@ export async function amendEmployment(
 				{
 					organizationId: data.organizationId,
 					employmentId: data.employmentId,
-					status: data.status,
-					startsOn: data.startsOn,
+					...(data.status === undefined ? {} : { status: data.status }),
+					...(data.startsOn === undefined ? {} : { startsOn: data.startsOn }),
 					endsOn: endsOnResolved.data,
-					lifecycleEffectiveOn,
+					...(lifecycleEffectiveOn === undefined
+						? {}
+						: { lifecycleEffectiveOn }),
 					expectedVersion: data.expectedVersion,
 					actorUserId: data.actorUserId,
 				},

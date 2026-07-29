@@ -162,9 +162,9 @@ export type HumanResourcesLearningStore = {
 		input: {
 			organizationId: string;
 			courseId: HumanResourcesCourseId;
-			title?: string;
-			description?: string | null;
-			durationHours?: string | null;
+			title?: string | undefined;
+			description?: string | null | undefined;
+			durationHours?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -198,7 +198,7 @@ export type HumanResourcesLearningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CourseStatus;
+		status?: CourseStatus | undefined;
 	}): Promise<Result<CourseListPage>>;
 
 	countActiveAssignmentsForCourse(input: {
@@ -273,8 +273,8 @@ export type HumanResourcesLearningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		courseId?: HumanResourcesCourseId;
-		status?: SessionStatus;
+		courseId?: HumanResourcesCourseId | undefined;
+		status?: SessionStatus | undefined;
 	}): Promise<Result<SessionListPage>>;
 
 	countEnrolledInSession(input: {
@@ -302,7 +302,7 @@ export type HumanResourcesLearningStore = {
 		input: {
 			organizationId: string;
 			assignmentId: HumanResourcesLearningAssignmentId;
-			sessionId?: HumanResourcesSessionId;
+			sessionId?: HumanResourcesSessionId | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -325,9 +325,9 @@ export type HumanResourcesLearningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
-		courseId?: HumanResourcesCourseId;
-		status?: AssignmentStatus;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		courseId?: HumanResourcesCourseId | undefined;
+		status?: AssignmentStatus | undefined;
 	}): Promise<Result<LearningAssignmentListPage>>;
 	// Learning Completion
 	getCompletionById(input: {
@@ -355,8 +355,8 @@ export type HumanResourcesLearningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
-		courseId?: HumanResourcesCourseId;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		courseId?: HumanResourcesCourseId | undefined;
 	}): Promise<Result<CompletionListPage>>;
 	// Learning Attendance
 	getLearningAttendanceById(input: {
@@ -385,8 +385,8 @@ export type HumanResourcesLearningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		sessionId?: HumanResourcesSessionId;
-		employeeId?: HumanResourcesEmployeeId;
+		sessionId?: HumanResourcesSessionId | undefined;
+		employeeId?: HumanResourcesEmployeeId | undefined;
 	}): Promise<Result<LearningAttendanceListPage>>;
 	// Employee Certification
 	getCertificationById(input: {
@@ -463,9 +463,9 @@ export type HumanResourcesLearningStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
-		courseId?: HumanResourcesCourseId;
-		status?: CertificationStatus;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		courseId?: HumanResourcesCourseId | undefined;
+		status?: CertificationStatus | undefined;
 	}): Promise<Result<CertificationListPage>>;
 
 	listExpiringCertifications(input: {

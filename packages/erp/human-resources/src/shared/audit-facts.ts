@@ -103,7 +103,7 @@ export type AuditFactContext = {
 export function buildCreateAuditFact(input: {
 	context: AuditFactContext;
 	newValue: Record<string, unknown>;
-	changes?: Change[];
+	changes?: Change[] | undefined;
 }): AuditFactInput {
 	const newValue = maskHrSnapshot(input.newValue);
 	const changes =
@@ -127,7 +127,7 @@ export function buildUpdateAuditFact(input: {
 	context: AuditFactContext;
 	oldValue: Record<string, unknown>;
 	newValue: Record<string, unknown>;
-	changes?: Change[];
+	changes?: Change[] | undefined;
 }): AuditFactInput {
 	const oldValue = maskHrSnapshot(input.oldValue);
 	const newValue = maskHrSnapshot(input.newValue);
@@ -150,11 +150,11 @@ export function buildUpdateAuditFact(input: {
 
 export function buildStatusTransitionAuditFact(input: {
 	context: AuditFactContext;
-	field?: string;
+	field?: string | undefined;
 	oldStatus: string | null;
 	newStatus: string;
-	oldValue?: Record<string, unknown> | null;
-	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null | undefined;
+	newValue?: Record<string, unknown> | null | undefined;
 }): AuditFactInput {
 	const field = input.field ?? "status";
 	const changes: Change[] = [

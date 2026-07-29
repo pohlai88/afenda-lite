@@ -95,7 +95,7 @@ export function assertValidDateRange(
 }
 
 export function assertNoEmploymentOverlap(input: {
-	candidateEmploymentId?: string;
+	candidateEmploymentId?: string | undefined;
 	candidateStartsOn: string;
 	candidateEndsOn: string | null;
 	existing: readonly {

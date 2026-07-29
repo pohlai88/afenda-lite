@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const clientSourcePath = path.join(packageRoot, "../src/client.ts");
 const serverIndexPath = path.join(packageRoot, "../src/index.ts");
+const MIDDLEWARE_EXPORT_PATTERN = /from\s*["']\.\/middleware["']/;
 
 const FORBIDDEN_IMPORTS = [
 	/\bfrom\s*["']\.\/session["']/,
@@ -45,7 +46,7 @@ describe("@afenda/auth server barrel hygiene", () => {
 		const source = readFileSync(serverIndexPath, "utf-8");
 		expect(source).toContain("export type { CredentialAuthResult }");
 		expect(source).toContain("AuthBootstrap");
-		expect(source).not.toMatch(/from\s*["']\.\/middleware["']/);
+		expect(source).not.toMatch(MIDDLEWARE_EXPORT_PATTERN);
 		expect(source).not.toContain("./middleware");
 	});
 });

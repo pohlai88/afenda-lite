@@ -205,8 +205,8 @@ export async function requireCorporateAdministrationApprovalIfConfigured(
 	input: Readonly<{
 		organizationId: OrganizationId;
 		actorUserId: UserId;
-		approvalRequestId?: ApprovalRequestId;
-		approvalDecisionId?: ApprovalDecisionId;
+		approvalRequestId?: ApprovalRequestId | undefined;
+		approvalDecisionId?: ApprovalDecisionId | undefined;
 		commandFingerprint: CommandFingerprint;
 	}>,
 ): Promise<Result<void>> {

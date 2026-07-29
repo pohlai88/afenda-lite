@@ -239,9 +239,11 @@ export const workCalendarDateOverrideKindSchema = z.enum([
 
 function applyWorkCalendarOverrideDefaults<
 	T extends {
-		overrideKind?: z.infer<typeof workCalendarDateOverrideKindSchema>;
-		isWorkingDay?: boolean;
-		expectedMinutes?: number | null;
+		overrideKind?:
+			| z.infer<typeof workCalendarDateOverrideKindSchema>
+			| undefined;
+		isWorkingDay?: boolean | undefined;
+		expectedMinutes?: number | null | undefined;
 	},
 >(
 	data: T,

@@ -1,3 +1,5 @@
+import type { InternalOpenAPIMeta } from "fumadocs-openapi/server";
+import { InlineTOC } from "fumadocs-ui/components/inline-toc";
 import {
 	DocsBody,
 	DocsDescription,
@@ -6,11 +8,9 @@ import {
 	MarkdownCopyButton,
 	ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
-import { InlineTOC } from "fumadocs-ui/components/inline-toc";
 import { createRelativeLink } from "fumadocs-ui/mdx";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { InternalOpenAPIMeta } from "fumadocs-openapi/server";
 import type { ComponentProps } from "react";
 import { OpenAPIPreloadProvider } from "@/components/api-page";
 import { Feedback, FeedbackText } from "@/components/feedback/client";
@@ -40,7 +40,7 @@ function pageHasOpenApiPreload(
 	if (typeof meta !== "object" || meta === null) {
 		return false;
 	}
-	if (!("preload" in meta) || !Array.isArray(meta.preload)) {
+	if (!("preload" in meta && Array.isArray(meta.preload))) {
 		return false;
 	}
 	return (
@@ -53,12 +53,7 @@ function assertOpenApiPreloadedDocs(
 	preloaded: { docs: Record<string, unknown> },
 	preloadIds: readonly string[],
 ): void {
-	const docs = preloaded.docs;
-	if (typeof docs !== "object" || docs === null) {
-		throw new Error(
-			"[Afenda Docs] OpenAPI preload returned no docs map — check createOpenAPI input and _openapi.preload.",
-		);
-	}
+	const { docs } = preloaded;
 	const keys = Object.keys(docs);
 	if (keys.length === 0) {
 		throw new Error(
@@ -108,9 +103,9 @@ export default async function DocsPageRoute(props: DocsPageProperties) {
 				a: createRelativeLink(source, page),
 				InlineTOC: ({
 					items: _items,
-					...props
+					...inlineTocProps
 				}: ComponentProps<typeof InlineTOC>) => (
-					<InlineTOC {...props} items={page.data.toc} />
+					<InlineTOC {...inlineTocProps} items={page.data.toc} />
 				),
 			})}
 		/>
@@ -127,15 +122,14 @@ export default async function DocsPageRoute(props: DocsPageProperties) {
 	// Page Actions chrome (copy / view Markdown) — docs-V2/docs/llms.md · Ask AI Outside
 	// Last-edit Outside baseline — docs-V2/docs/git-last-edit.md
 	return (
-		<DocsPage toc={page.data.toc} full={page.data.full}>
+		<DocsPage full={page.data.full} toc={page.data.toc}>
 			<DocsTitle>{page.data.title}</DocsTitle>
-			<DocsDescription className="mb-0">{page.data.description}</DocsDescription>
+			<DocsDescription className="mb-0">
+				{page.data.description}
+			</DocsDescription>
 			<div className="flex flex-row items-center gap-2 border-b pb-6">
 				<MarkdownCopyButton markdownUrl={markdownUrl} />
-				<ViewOptionsPopover
-					markdownUrl={markdownUrl}
-					githubUrl={githubUrl}
-				/>
+				<ViewOptionsPopover githubUrl={githubUrl} markdownUrl={markdownUrl} />
 			</div>
 			<DocsBody>
 				<FeedbackText onSendAction={onBlockFeedbackAction}>

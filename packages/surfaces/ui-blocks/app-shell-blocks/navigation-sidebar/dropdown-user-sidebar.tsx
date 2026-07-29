@@ -13,22 +13,41 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@afenda/ui-system";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback } from "react";
 
-export type DropdownUserSidebarAction = {
+export interface DropdownUserSidebarAction {
+	icon?: ReactNode;
 	id: string;
 	label: string;
-	icon?: ReactNode;
-};
+}
 
-export type DropdownUserSidebarProps = {
-	name: string;
+export interface DropdownUserSidebarProps {
+	actions?: readonly DropdownUserSidebarAction[];
 	email?: string;
 	initials: string;
-	actions?: readonly DropdownUserSidebarAction[];
+	name: string;
 	onAction?: (actionId: string) => void;
 	onSignOut?: () => void;
-};
+}
+
+function DropdownActionItem({
+	action,
+	onAction,
+}: {
+	action: DropdownUserSidebarAction;
+	onAction: DropdownUserSidebarProps["onAction"];
+}) {
+	const handleSelect = useCallback(
+		() => onAction?.(action.id),
+		[action.id, onAction],
+	);
+	return (
+		<DropdownMenuItem onSelect={handleSelect}>
+			{action.icon}
+			{action.label}
+		</DropdownMenuItem>
+	);
+}
 
 export function DropdownUserSidebar({
 	name,
@@ -72,23 +91,18 @@ export function DropdownUserSidebar({
 							<>
 								<DropdownMenuSeparator />
 								{actions.map((action) => (
-									<DropdownMenuItem
+									<DropdownActionItem
+										action={action}
 										key={action.id}
-										onSelect={() => onAction?.(action.id)}
-									>
-										{action.icon}
-										{action.label}
-									</DropdownMenuItem>
+										onAction={onAction}
+									/>
 								))}
 							</>
 						) : null}
 						{onSignOut ? (
 							<>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									variant="destructive"
-									onSelect={() => onSignOut()}
-								>
+								<DropdownMenuItem onSelect={onSignOut} variant="destructive">
 									Sign out
 								</DropdownMenuItem>
 							</>

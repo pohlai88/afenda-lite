@@ -61,11 +61,22 @@ export async function runHumanResourcesBulkExportAction(
 		execute: async (session, correlationId) => {
 			const result = await enqueueHumanResourcesBulkExport(
 				{
-					...parsed.data,
+					exportType: parsed.data.exportType,
+					requestedFields: parsed.data.requestedFields,
+					idempotencyKey: parsed.data.idempotencyKey,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					requiredPermission: definition.requiredPermission,
+					...(parsed.data.dateFrom === undefined
+						? {}
+						: { dateFrom: parsed.data.dateFrom }),
+					...(parsed.data.dateTo === undefined
+						? {}
+						: { dateTo: parsed.data.dateTo }),
+					...(parsed.data.effectiveOn === undefined
+						? {}
+						: { effectiveOn: parsed.data.effectiveOn }),
 				},
 				createDrizzleHumanResourcesBulkJobStore(),
 			);

@@ -926,7 +926,7 @@ function planRecruitmentDrizzleOutbox(input: {
 	aggregateId: string;
 	entityType: string;
 	auditAction: "CREATE" | "UPDATE";
-	conditionalEventSuppressed?: boolean;
+	conditionalEventSuppressed?: boolean | undefined;
 }):
 	| {
 			eventType: NonNullable<

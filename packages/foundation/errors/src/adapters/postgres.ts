@@ -86,7 +86,7 @@ function readProperty(record: Record<string, unknown>, key: string): unknown {
 	try {
 		return record[key];
 	} catch {
-		return undefined;
+		// Hostile proxy/getter values are treated as absent database metadata.
 	}
 }
 
@@ -95,7 +95,7 @@ export function postgresSqlState(
 	depth = 0,
 ): string | undefined {
 	if (depth > MAX_CAUSE_DEPTH || typeof value !== "object" || value === null) {
-		return undefined;
+		return;
 	}
 	const record = value as Record<string, unknown>;
 	for (const key of SQLSTATE_KEYS) {
@@ -130,7 +130,7 @@ export function hasPostgresSqlState(error: unknown, expected: string): boolean {
 export function fromPostgresUnknown(error: unknown): AppError | undefined {
 	const sqlState = postgresSqlState(error);
 	if (sqlState === undefined) {
-		return undefined;
+		return;
 	}
 	const mapping = SQLSTATE_MAPPINGS[sqlState];
 	if (mapping === undefined) {
@@ -146,6 +146,6 @@ export function fromPostgresUnknown(error: unknown): AppError | undefined {
 		message: mapping.message,
 		isOperational: mapping.isOperational,
 		cause: error,
-		details: mapping.retryable === true ? { retryable: true } : undefined,
+		...(mapping.retryable === true ? { details: { retryable: true } } : {}),
 	});
 }

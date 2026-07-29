@@ -27,7 +27,7 @@ export function createMemorySalesFulfillmentQueryPort(
 	> = new Map(),
 ): SalesFulfillmentQueryPort {
 	return {
-		async getFulfillableSalesOrder(input: {
+		getFulfillableSalesOrder(input: {
 			organizationId: string;
 			salesOrderId: string;
 			actorUserId: string;
@@ -53,9 +53,9 @@ export function createMemorySalesFulfillmentQueryPort(
 		> {
 			const order = orders.get(input.salesOrderId);
 			if (!order || order.organizationId !== input.organizationId) {
-				return ok(null);
+				return Promise.resolve(ok(null));
 			}
-			return ok(order);
+			return Promise.resolve(ok(order));
 		},
 	};
 }

@@ -106,7 +106,7 @@ export function visibleAtKnownTime(
 export function resolveEstablishmentStatusAsOf(input: {
 	history: readonly EstablishmentStatusHistory[];
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): EstablishmentStatusHistory | null {
 	return (
 		input.history

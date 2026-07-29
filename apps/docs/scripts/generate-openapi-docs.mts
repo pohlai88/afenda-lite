@@ -25,8 +25,10 @@ import {
 } from "../lib/openapi-document-id.ts";
 
 const require = createRequire(import.meta.url);
-const { generateFiles } = require("fumadocs-openapi") as typeof import("fumadocs-openapi");
-const { createOpenAPI } = require("fumadocs-openapi/server") as typeof import("fumadocs-openapi/server");
+const { generateFiles } =
+	require("fumadocs-openapi") as typeof import("fumadocs-openapi");
+const { createOpenAPI } =
+	require("fumadocs-openapi/server") as typeof import("fumadocs-openapi/server");
 
 const openapi = createOpenAPI({
 	input: {
@@ -50,22 +52,20 @@ function assertOpenApiDocumentIdAligned(): void {
 	const serverSource = readFileSync(openApiServerPath, "utf8");
 	if (!documentIdSource.includes(OPENAPI_DOCUMENT_ID)) {
 		fail(
-			`OPENAPI_DOCUMENT_ID mismatch — update scripts/generate-openapi-docs.mts or lib/openapi-document-id.ts`,
+			"OPENAPI_DOCUMENT_ID mismatch — update scripts/generate-openapi-docs.mts or lib/openapi-document-id.ts",
 		);
 	}
 	if (!documentIdSource.includes("OPENAPI_DOCUMENT_PATH")) {
-		fail(
-			`lib/openapi-document-id.ts must export OPENAPI_DOCUMENT_PATH`,
-		);
+		fail("lib/openapi-document-id.ts must export OPENAPI_DOCUMENT_PATH");
 	}
 	if (!serverSource.includes("openapi-document-id")) {
 		fail(
-			`lib/openapi.server.ts must import OPENAPI_DOCUMENT_ID from openapi-document-id.ts`,
+			"lib/openapi.server.ts must import OPENAPI_DOCUMENT_ID from openapi-document-id.ts",
 		);
 	}
 	if (!serverSource.includes("OPENAPI_DOCUMENT_PATH")) {
 		fail(
-			`lib/openapi.server.ts must use OPENAPI_DOCUMENT_PATH in SchemaRecord input`,
+			"lib/openapi.server.ts must use OPENAPI_DOCUMENT_PATH in SchemaRecord input",
 		);
 	}
 }

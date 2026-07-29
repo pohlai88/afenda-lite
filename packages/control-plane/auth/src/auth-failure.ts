@@ -3,6 +3,10 @@ import { ERROR_HTTP_STATUS } from "@afenda/errors/http";
 import { fail, type ResultFailure } from "@afenda/errors/result";
 import { NextResponse } from "next/server";
 
+const NEON_ORG_CONFLICT_PATTERN = /slug taken|already exists|conflict/i;
+const NEON_ORG_FORBIDDEN_PATTERN =
+	/unauthor|forbidden|denied|not owner|not permitted/i;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
@@ -36,10 +40,10 @@ export function failFromNeonOrgProbe(
 	fallbackMessage: string,
 ): ResultFailure {
 	const probe = neonErrorProbe(error);
-	if (/slug taken|already exists|conflict/i.test(probe)) {
+	if (NEON_ORG_CONFLICT_PATTERN.test(probe)) {
 		return fail("CONFLICT", "Organization already exists");
 	}
-	if (/unauthor|forbidden|denied|not owner|not permitted/i.test(probe)) {
+	if (NEON_ORG_FORBIDDEN_PATTERN.test(probe)) {
 		return fail("FORBIDDEN", "Not authorized for this organization action");
 	}
 	return fail("INTERNAL_ERROR", fallbackMessage);

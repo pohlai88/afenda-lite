@@ -349,7 +349,9 @@ export async function runHumanResourcesBulkImport<Row, Validated, Output>(
 							rowIndex: nextRowIndex,
 							sourceReference: row.sourceReference,
 							status: "accepted",
-							output: execution.output,
+							...(execution.output === undefined
+								? {}
+								: { output: execution.output }),
 						}
 					: {
 							rowIndex: nextRowIndex,

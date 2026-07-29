@@ -15,7 +15,7 @@ export function createMasterDataLookupPort(
 	authorization?: MasterAuthorizationPort,
 ): MasterLookupPort {
 	return {
-		async getItemById(
+		getItemById(
 			organizationId: string,
 			id: string,
 			actorUserId: string,
@@ -25,7 +25,7 @@ export function createMasterDataLookupPort(
 				{ authorization },
 			);
 		},
-		async getRefUomById(
+		getRefUomById(
 			organizationId: string,
 			id: string,
 			actorUserId: string,
@@ -35,7 +35,7 @@ export function createMasterDataLookupPort(
 				{ authorization },
 			);
 		},
-		async getWarehouseById(
+		getWarehouseById(
 			organizationId: string,
 			id: string,
 			actorUserId: string,
@@ -52,7 +52,9 @@ export function requireMaster<T>(
 	result: Result<T | null>,
 	notFoundMessage: string,
 ): Result<T> {
-	if (!result.ok) return result;
+	if (!result.ok) {
+		return result;
+	}
 	return result.data === null
 		? fail("NOT_FOUND", notFoundMessage)
 		: ok(result.data);

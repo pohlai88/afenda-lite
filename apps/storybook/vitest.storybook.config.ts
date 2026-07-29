@@ -1,6 +1,9 @@
+import { getTestingLane } from "@afenda/testing";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+
+const lane = getTestingLane("storybook-stories");
 
 export default defineConfig({
 	plugins: [storybookTest({ configDir: ".storybook" })],
@@ -18,7 +21,7 @@ export default defineConfig({
 		dedupe: ["aria-query", "lz-string", "react", "react-dom"],
 	},
 	test: {
-		name: "storybook",
+		name: lane.id,
 		maxWorkers: 4,
 		browser: {
 			enabled: true,

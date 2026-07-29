@@ -126,23 +126,23 @@ export type MovementListFilter = {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: StockMovementStatus;
-	movementType?: StockMovementType;
+	status?: StockMovementStatus | undefined;
+	movementType?: StockMovementType | undefined;
 };
 
 export type ReservationListFilter = {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: StockReservationStatus;
-	warehouseId?: string;
-	itemId?: string;
+	status?: StockReservationStatus | undefined;
+	warehouseId?: string | undefined;
+	itemId?: string | undefined;
 };
 
 export type AvailabilityFilter = {
 	organizationId: string;
-	warehouseId?: string;
-	itemId?: string;
+	warehouseId?: string | undefined;
+	itemId?: string | undefined;
 };
 
 export type InventoryStore = {

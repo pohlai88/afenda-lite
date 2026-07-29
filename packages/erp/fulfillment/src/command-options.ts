@@ -12,15 +12,15 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolveFulfillmentStore } from "./resolve-store";
 import type { FulfillmentStore } from "./store";
 
-export type FulfillmentCommandOptions = {
-	store?: FulfillmentStore;
-	ports?: MutationPorts;
-	masters?: MasterLookupPort;
+export interface FulfillmentCommandOptions {
 	authorization?: FulfillmentAuthorizationPort;
-	masterAuthorization?: MasterAuthorizationPort;
 	inventory?: InventoryCommandOptions;
+	masterAuthorization?: MasterAuthorizationPort;
+	masters?: MasterLookupPort;
+	ports?: MutationPorts;
 	sales?: SalesFulfillmentQueryPort;
-};
+	store?: FulfillmentStore;
+}
 
 export function resolveCommandDeps(options: FulfillmentCommandOptions = {}): {
 	store: FulfillmentStore;

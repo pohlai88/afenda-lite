@@ -72,7 +72,7 @@ jobs:
         run: pnpm governance:packages
 
       - name: Typecheck · unit test
-        run: pnpm exec turbo run typecheck test --concurrency=50%
+        run: pnpm typecheck:root && pnpm exec turbo run typecheck test --concurrency=50%
 
       - name: Install Storybook Chromium
         run: pnpm exec playwright install --with-deps chromium

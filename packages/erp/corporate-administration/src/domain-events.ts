@@ -99,7 +99,7 @@ export type CorporateAdministrationDomainEventEnvelope<
 	occurredAt: CanonicalInstant;
 	actorUserId: UserId;
 	correlationId: CorrelationId;
-	causationId?: CausationId;
+	causationId?: CausationId | undefined;
 	payload: TPayload;
 }>;
 

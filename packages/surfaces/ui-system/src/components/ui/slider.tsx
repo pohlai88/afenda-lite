@@ -28,8 +28,8 @@ function Slider({
 	return (
 		<SliderPrimitive.Root
 			data-slot="slider"
-			defaultValue={defaultValue}
-			value={value}
+			{...(defaultValue === undefined ? {} : { defaultValue })}
+			{...(value === undefined ? {} : { value })}
 			min={min}
 			max={max}
 			className={cn(
@@ -55,14 +55,15 @@ function Slider({
 				<SliderPrimitive.Thumb
 					data-slot="slider-thumb"
 					key={index}
-					aria-label={
-						ariaLabel
-							? _values.length > 1
-								? `${ariaLabel} ${index + 1}`
-								: ariaLabel
-							: undefined
-					}
-					aria-labelledby={ariaLabelledBy}
+					{...(ariaLabel === undefined
+						? {}
+						: {
+								"aria-label":
+									_values.length > 1 ? `${ariaLabel} ${index + 1}` : ariaLabel,
+							})}
+					{...(ariaLabelledBy === undefined
+						? {}
+						: { "aria-labelledby": ariaLabelledBy })}
 					className="block size-4 shrink-0 rounded-full border border-primary bg-background ring-ring-focus transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
 				/>
 			))}

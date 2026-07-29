@@ -30,7 +30,7 @@ const effectiveRangeShape = {
 
 function hasValidInclusiveEffectiveRange(range: {
 	effectiveFrom: string;
-	effectiveTo?: string | null;
+	effectiveTo?: string | null | undefined;
 }): boolean {
 	return (
 		range.effectiveTo === null ||

@@ -274,8 +274,8 @@ export type PaymentsStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: PaymentStatus;
-		direction?: PaymentDirection;
+		status?: PaymentStatus | undefined;
+		direction?: PaymentDirection | undefined;
 	}): Promise<Result<Payment[]>>;
 	getApplicationAvailability(
 		organizationId: string,

@@ -50,7 +50,7 @@ export type PerformanceFieldAccessTier =
 
 export function partitionPerformanceFieldsByTier(input: {
 	tier: PerformanceFieldAccessTier;
-	requestedFields?: readonly string[];
+	requestedFields?: readonly string[] | undefined;
 }): string[] {
 	const allowed = performanceFieldsForTier(input.tier);
 	if (!input.requestedFields) {

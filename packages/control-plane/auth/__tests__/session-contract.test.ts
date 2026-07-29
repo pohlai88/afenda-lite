@@ -5,16 +5,19 @@ const getActiveMemberRoleMock = vi.fn();
 const listOrganizationsMock = vi.fn();
 const setActiveOrganizationMock = vi.fn();
 const middlewareMock = vi.fn();
+const MISSING_ACTIVE_ORG_PATTERN = /active organization missing from session/;
+const MISSING_EMAIL_PATTERN = /authenticated user email missing from session/;
+const MISSING_ROLE_PATTERN = /active organization membership role unresolved/;
 const redirectMock = vi.fn((url: string) => {
 	throw new Error(`NEXT_REDIRECT:${url}`);
 });
 const mockedEnv = vi.hoisted(() => ({
+	APP_URL: "https://www.nexuscanon.com",
+	DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
 	NEON_AUTH_BASE_URL: "https://auth.example.test",
 	NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
-	DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-	APP_URL: "https://www.nexuscanon.com",
-	PORTAL_ORGANIZATION_ID: undefined as string | undefined,
 	PORTAL_ORG_SLUG: undefined as string | undefined,
+	PORTAL_ORGANIZATION_ID: undefined as string | undefined,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -31,13 +34,13 @@ vi.mock("next/headers", () => ({
 vi.mock("@neondatabase/auth/next/server", () => ({
 	createNeonAuth: () => ({
 		getSession: (...args: unknown[]) => getSessionMock(...args),
+		middleware: (...args: unknown[]) => middlewareMock(...args),
 		organization: {
 			getActiveMemberRole: (...args: unknown[]) =>
 				getActiveMemberRoleMock(...args),
 			list: (...args: unknown[]) => listOrganizationsMock(...args),
 			setActive: (...args: unknown[]) => setActiveOrganizationMock(...args),
 		},
-		middleware: (...args: unknown[]) => middlewareMock(...args),
 	}),
 }));
 
@@ -52,16 +55,16 @@ function neonSession(partial?: {
 }) {
 	return {
 		data: {
-			user: {
-				id: partial?.userId ?? "user-1",
-				email:
-					partial && "email" in partial ? partial.email : "User@Example.COM",
-			},
 			session: {
 				activeOrganizationId:
 					partial && "activeOrganizationId" in partial
 						? partial.activeOrganizationId
 						: "org-1",
+			},
+			user: {
+				email:
+					partial && "email" in partial ? partial.email : "User@Example.COM",
+				id: partial?.userId ?? "user-1",
 			},
 		},
 		error: null,
@@ -98,10 +101,10 @@ describe("N6/N8 session contract", () => {
 			getSessionMock.mockResolvedValue(neonSession());
 			const { getApiSession } = await import("../src/session");
 			await expect(getApiSession()).resolves.toEqual({
-				userId: "user-1",
+				email: "user@example.com",
 				orgId: "org-1",
 				role: "client",
-				email: "user@example.com",
+				userId: "user-1",
 			});
 		});
 
@@ -137,7 +140,7 @@ describe("N6/N8 session contract", () => {
 				neonSession({ activeOrganizationId: null }),
 			);
 			listOrganizationsMock.mockResolvedValue({
-				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				data: [{ id: "org-sole", name: "Sole Org", slug: "sole-org" }],
 				error: null,
 			});
 			const { getApiSession } = await import("../src/session");
@@ -192,13 +195,13 @@ describe("N6/N8 session contract", () => {
 			getSessionMock.mockResolvedValue(neonSession());
 			const { getAuthBootstrap } = await import("../src/session");
 			await expect(getAuthBootstrap("/")).resolves.toEqual({
-				state: "ready",
 				session: {
-					userId: "user-1",
+					email: "user@example.com",
 					orgId: "org-1",
 					role: "client",
-					email: "user@example.com",
+					userId: "user-1",
 				},
+				state: "ready",
 			});
 		});
 
@@ -207,7 +210,7 @@ describe("N6/N8 session contract", () => {
 				neonSession({ activeOrganizationId: null }),
 			);
 			listOrganizationsMock.mockResolvedValue({
-				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				data: [{ id: "org-sole", name: "Sole Org", slug: "sole-org" }],
 				error: null,
 			});
 			const { getAuthBootstrap } = await import("../src/session");
@@ -228,8 +231,8 @@ describe("N6/N8 session contract", () => {
 			);
 			listOrganizationsMock.mockResolvedValue({
 				data: [
-					{ id: "org-other", slug: "other", name: "Other" },
-					{ id: "org-allowed", slug: "allowed", name: "Allowed" },
+					{ id: "org-other", name: "Other", slug: "other" },
+					{ id: "org-allowed", name: "Allowed", slug: "allowed" },
 				],
 				error: null,
 			});
@@ -246,15 +249,15 @@ describe("N6/N8 session contract", () => {
 			);
 			listOrganizationsMock.mockResolvedValue({
 				data: [
-					{ id: "org-1", slug: "one", name: "One" },
-					{ id: "org-2", slug: "two", name: "Two" },
+					{ id: "org-1", name: "One", slug: "one" },
+					{ id: "org-2", name: "Two", slug: "two" },
 				],
 				error: null,
 			});
 			const { getAuthBootstrap } = await import("../src/session");
 			await expect(getAuthBootstrap()).resolves.toEqual({
-				state: "unresolved_organization",
 				reason: "missing_org",
+				state: "unresolved_organization",
 			});
 			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
 		});
@@ -269,8 +272,8 @@ describe("N6/N8 session contract", () => {
 			});
 			const { getAuthBootstrap } = await import("../src/session");
 			await expect(getAuthBootstrap()).resolves.toEqual({
-				state: "unresolved_organization",
 				reason: "missing_org",
+				state: "unresolved_organization",
 			});
 		});
 
@@ -296,9 +299,9 @@ describe("N6/N8 session contract", () => {
 			getSessionMock.mockResolvedValue(neonSession());
 			const { getSession } = await import("../src/session");
 			await expect(getSession()).resolves.toEqual({
-				userId: "user-1",
 				orgId: "org-1",
 				role: "client",
+				userId: "user-1",
 			});
 			expect(redirectMock).not.toHaveBeenCalled();
 		});
@@ -321,9 +324,7 @@ describe("N6/N8 session contract", () => {
 				neonSession({ activeOrganizationId: null }),
 			);
 			const { getSession } = await import("../src/session");
-			await expect(getSession()).rejects.toThrow(
-				/active organization missing from session/,
-			);
+			await expect(getSession()).rejects.toThrow(MISSING_ACTIVE_ORG_PATTERN);
 			expect(redirectMock).not.toHaveBeenCalled();
 		});
 
@@ -332,7 +333,7 @@ describe("N6/N8 session contract", () => {
 				neonSession({ activeOrganizationId: null }),
 			);
 			listOrganizationsMock.mockResolvedValue({
-				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				data: [{ id: "org-sole", name: "Sole Org", slug: "sole-org" }],
 				error: null,
 			});
 			const { getSession } = await import("../src/session");
@@ -363,9 +364,7 @@ describe("N6/N8 session contract", () => {
 		it("throws when email is missing", async () => {
 			getSessionMock.mockResolvedValue(neonSession({ email: null }));
 			const { getSession } = await import("../src/session");
-			await expect(getSession()).rejects.toThrow(
-				/authenticated user email missing from session/,
-			);
+			await expect(getSession()).rejects.toThrow(MISSING_EMAIL_PATTERN);
 		});
 
 		it("throws when membership role is unresolved", async () => {
@@ -375,9 +374,7 @@ describe("N6/N8 session contract", () => {
 				error: null,
 			});
 			const { getSession } = await import("../src/session");
-			await expect(getSession()).rejects.toThrow(
-				/active organization membership role unresolved/,
-			);
+			await expect(getSession()).rejects.toThrow(MISSING_ROLE_PATTERN);
 		});
 	});
 
@@ -387,7 +384,7 @@ describe("N6/N8 session contract", () => {
 				neonSession({ activeOrganizationId: null }),
 			);
 			listOrganizationsMock.mockResolvedValue({
-				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				data: [{ id: "org-sole", name: "Sole Org", slug: "sole-org" }],
 				error: null,
 			});
 			getActiveMemberRoleMock.mockResolvedValue({
@@ -424,7 +421,7 @@ describe("N6/N8 session contract", () => {
 				neonSession({ activeOrganizationId: null }),
 			);
 			listOrganizationsMock.mockResolvedValue({
-				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				data: [{ id: "org-sole", name: "Sole Org", slug: "sole-org" }],
 				error: null,
 			});
 
@@ -529,11 +526,10 @@ describe("N6/N8 session contract", () => {
 			const { NextRequest, NextResponse } = await import("next/server");
 			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
 			const { POST_LOGIN_CALLBACK_PARAM } = await import("../src/post-login");
-			middlewareMock.mockImplementation(() => {
-				return async (request: NextRequest) => {
-					return NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url));
-				};
-			});
+			middlewareMock.mockImplementation(
+				() => async (request: NextRequest) =>
+					NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url)),
+			);
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
@@ -550,15 +546,13 @@ describe("N6/N8 session contract", () => {
 			const { NextRequest, NextResponse } = await import("next/server");
 			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
 			const { POST_LOGIN_CALLBACK_PARAM } = await import("../src/post-login");
-			middlewareMock.mockImplementation(() => {
-				return async (request: NextRequest) => {
-					const loginUrl = new URL(AUTH_LOGIN_PATH, request.url);
-					loginUrl.searchParams.set(
-						POST_LOGIN_CALLBACK_PARAM,
-						"https://evil.example",
-					);
-					return NextResponse.redirect(loginUrl);
-				};
+			middlewareMock.mockImplementation(() => (request: NextRequest) => {
+				const loginUrl = new URL(AUTH_LOGIN_PATH, request.url);
+				loginUrl.searchParams.set(
+					POST_LOGIN_CALLBACK_PARAM,
+					"https://evil.example",
+				);
+				return NextResponse.redirect(loginUrl);
 			});
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
@@ -577,8 +571,8 @@ describe("N6/N8 session contract", () => {
 
 		it("request-level: unauthenticated protected request redirects to /auth/login", async () => {
 			const { NextRequest, NextResponse } = await import("next/server");
-			middlewareMock.mockImplementation((options: { loginUrl: string }) => {
-				return async (request: NextRequest) => {
+			middlewareMock.mockImplementation(
+				(options: { loginUrl: string }) => async (request: NextRequest) => {
 					const session = await getSessionMock();
 					if (session?.error || !session?.data?.user?.id) {
 						return NextResponse.redirect(
@@ -586,8 +580,8 @@ describe("N6/N8 session contract", () => {
 						);
 					}
 					return NextResponse.next();
-				};
-			});
+				},
+			);
 			getSessionMock.mockResolvedValue({
 				data: null,
 				error: { message: "no session" },
@@ -614,8 +608,8 @@ describe("N6/N8 session contract", () => {
 
 		it("request-level: authenticated protected request continues (no login redirect)", async () => {
 			const { NextRequest, NextResponse } = await import("next/server");
-			middlewareMock.mockImplementation((options: { loginUrl: string }) => {
-				return async (request: NextRequest) => {
+			middlewareMock.mockImplementation(
+				(options: { loginUrl: string }) => async (request: NextRequest) => {
 					const session = await getSessionMock();
 					if (session?.error || !session?.data?.user?.id) {
 						return NextResponse.redirect(
@@ -623,8 +617,8 @@ describe("N6/N8 session contract", () => {
 						);
 					}
 					return NextResponse.next();
-				};
-			});
+				},
+			);
 			getSessionMock.mockResolvedValue(neonSession());
 
 			const { createSessionProxy } = await import("../src/proxy");

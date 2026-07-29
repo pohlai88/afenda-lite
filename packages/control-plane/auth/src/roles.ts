@@ -23,15 +23,15 @@ export function roleSatisfies(actual: Role, required: Role): boolean {
 export type NeonOrgRole = "owner" | "admin" | "member";
 
 const NEON_ORG_ROLE_TO_SESSION = {
-	owner: "admin",
 	admin: "operator",
 	member: "client",
+	owner: "admin",
 } as const satisfies Record<NeonOrgRole, Role>;
 
 const SESSION_ROLE_TO_NEON = {
 	admin: "owner",
-	operator: "admin",
 	client: "member",
+	operator: "admin",
 } as const satisfies Record<Role, NeonOrgRole>;
 
 /** Neon Auth membership role → Afenda shell Role. */

@@ -1,10 +1,12 @@
 import { env } from "@afenda/env";
-import { createNeonAuth, type NeonAuth } from "@neondatabase/auth/next/server";
+import { createNeonAuth } from "@neondatabase/auth/next/server";
 
-let neonAuth: NeonAuth | undefined;
+type NeonAuthClient = ReturnType<typeof createNeonAuth>;
+
+let neonAuth: NeonAuthClient | undefined;
 
 /** Package-internal Neon Auth singleton. Not a public export. */
-export function getNeonAuth(): NeonAuth {
+export function getNeonAuth(): NeonAuthClient {
 	if (!neonAuth) {
 		neonAuth = createNeonAuth({
 			baseUrl: env.NEON_AUTH_BASE_URL,

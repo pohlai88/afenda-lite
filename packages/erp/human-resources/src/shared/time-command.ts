@@ -28,18 +28,15 @@ type QueryDeps = {
 	store: HumanResourcesStore;
 };
 
-export async function runTimeCommand<
-	TSchema extends z.ZodType<ActorScoped>,
-	TOut,
->(
+export async function runTimeCommand<TSchema extends z.ZodType, TOut>(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
-		schema: TSchema;
+		schema: TSchema & z.ZodType<ActorScoped>;
 		invalidMessage: string;
 		command: HumanResourcesCommandId;
 		execute: (
-			data: z.infer<TSchema>,
+			data: z.output<TSchema>,
 			deps: CommandDeps,
 		) => Promise<Result<TOut>>;
 	},
@@ -57,17 +54,17 @@ export async function runTimeCommand<
 	});
 }
 
-export async function runTimeQuery<
-	TSchema extends z.ZodType<ActorScoped>,
-	TOut,
->(
+export async function runTimeQuery<TSchema extends z.ZodType, TOut>(
 	input: unknown,
 	options: HumanResourcesCommandOptions,
 	config: {
-		schema: TSchema;
+		schema: TSchema & z.ZodType<ActorScoped>;
 		invalidMessage: string;
 		query: HumanResourcesQueryId;
-		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
+		execute: (
+			data: z.output<TSchema>,
+			deps: QueryDeps,
+		) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
 	return runParsedAuthorizedQuery(input, options, {

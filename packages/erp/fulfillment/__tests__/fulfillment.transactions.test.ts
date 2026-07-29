@@ -26,13 +26,15 @@ describe("@afenda/fulfillment transactions", () => {
 		]);
 		const ports: MutationPorts = {
 			audit: {
-				async record() {
-					return ok({ id: "audit-1" });
+				record() {
+					return Promise.resolve(ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
-				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return fail("INTERNAL_ERROR", "forced outbox failure");
+				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return Promise.resolve(
+						fail("INTERNAL_ERROR", "forced outbox failure"),
+					);
 				},
 			},
 		};
@@ -61,7 +63,9 @@ describe("@afenda/fulfillment transactions", () => {
 			},
 		);
 		expect(listed.ok).toBe(true);
-		if (listed.ok) expect(listed.data).toEqual([]);
+		if (listed.ok) {
+			expect(listed.data).toEqual([]);
+		}
 		const retry = await createDraftDelivery(input, {
 			store,
 			ports: createMemoryMutationPorts(),

@@ -1,10 +1,10 @@
 import { env } from "@afenda/env";
 import type { NeonAuth } from "@neondatabase/auth/next/server";
 
-export type MemberOrganization = {
+export interface MemberOrganization {
 	id: string;
 	slug: string;
-};
+}
 
 /**
  * Normalize Neon `organization.list()` payload into membership rows.

@@ -21,6 +21,38 @@ function allocateSourceSequences(
 	}));
 }
 
+function normalizeSourceEvent(
+	event: AttendanceSourceEvent,
+): AttendanceSourceEvent {
+	return {
+		employeeId: event.employeeId,
+		eventType: event.eventType,
+		occurredAt: event.occurredAt,
+		sourceTimezone: event.sourceTimezone,
+		localWorkDate: event.localWorkDate,
+		sourceReference: event.sourceReference,
+		...(event.employmentId === undefined
+			? {}
+			: { employmentId: event.employmentId }),
+		...(event.shiftAssignmentId === undefined
+			? {}
+			: { shiftAssignmentId: event.shiftAssignmentId }),
+		...(event.locationKey === undefined
+			? {}
+			: { locationKey: event.locationKey }),
+		...(event.deviceMetadata === undefined
+			? {}
+			: { deviceMetadata: event.deviceMetadata }),
+		...(event.payloadChecksum === undefined
+			? {}
+			: { payloadChecksum: event.payloadChecksum }),
+		...(event.notes === undefined ? {} : { notes: event.notes }),
+		...(event.sourceSequence === undefined
+			? {}
+			: { sourceSequence: event.sourceSequence }),
+	};
+}
+
 function rejectConnectorRow(input: {
 	rowIndex: number;
 	sourceReference: string;
@@ -91,10 +123,10 @@ function partitionSourceEvents(events: readonly AttendanceSourceEvent[]): {
 			continue;
 		}
 
-		const acceptedEvent: AttendanceSourceEvent = {
+		const acceptedEvent = normalizeSourceEvent({
 			...event,
 			...parsed.data,
-		};
+		});
 		accepted.push(acceptedEvent);
 		previewRows.push({
 			status: "accepted",
@@ -112,7 +144,7 @@ function partitionSourceEvents(events: readonly AttendanceSourceEvent[]): {
 
 function buildReconciliationKey(input: {
 	organizationId: string;
-	cursor?: string;
+	cursor?: string | undefined;
 	events: readonly AttendanceSourceEvent[];
 }): string {
 	return createHash("sha256")
@@ -136,7 +168,7 @@ function buildReconciliationKey(input: {
 export type AttendanceConnectorArtifacts = {
 	batch: {
 		events: readonly AttendanceSourceEvent[];
-		nextCursor?: string;
+		nextCursor?: string | undefined;
 		rejectedRows: readonly AttendanceSourceRejectedRow[];
 		reconciliationKey: string;
 	};
@@ -145,23 +177,25 @@ export type AttendanceConnectorArtifacts = {
 
 export function buildAttendanceConnectorArtifacts(input: {
 	organizationId: string;
-	cursor?: string;
+	cursor?: string | undefined;
 	events: readonly AttendanceSourceEvent[];
-	nextCursor?: string;
+	nextCursor?: string | undefined;
 }): AttendanceConnectorArtifacts {
 	const partitioned = partitionSourceEvents(input.events);
 	const reconciliationKey = buildReconciliationKey({
 		organizationId: input.organizationId,
-		cursor: input.cursor,
 		events: partitioned.accepted,
+		...(input.cursor === undefined ? {} : { cursor: input.cursor }),
 	});
 
 	return {
 		batch: {
 			events: partitioned.accepted,
-			nextCursor: input.nextCursor,
 			rejectedRows: partitioned.rejected,
 			reconciliationKey,
+			...(input.nextCursor === undefined
+				? {}
+				: { nextCursor: input.nextCursor }),
 		},
 		preview: {
 			mode: "preview",
@@ -172,25 +206,27 @@ export function buildAttendanceConnectorArtifacts(input: {
 				accepted: partitioned.accepted.length,
 				rejected: partitioned.rejected.length,
 			},
-			nextCursor: input.nextCursor,
+			...(input.nextCursor === undefined
+				? {}
+				: { nextCursor: input.nextCursor }),
 		},
 	};
 }
 
 export function normalizeAttendanceConnectorBatch(input: {
 	organizationId: string;
-	cursor?: string;
+	cursor?: string | undefined;
 	events: readonly AttendanceSourceEvent[];
-	nextCursor?: string;
+	nextCursor?: string | undefined;
 }): AttendanceConnectorArtifacts["batch"] {
 	return buildAttendanceConnectorArtifacts(input).batch;
 }
 
 export function buildAttendanceConnectorPreview(input: {
 	organizationId: string;
-	cursor?: string;
+	cursor?: string | undefined;
 	events: readonly AttendanceSourceEvent[];
-	nextCursor?: string;
+	nextCursor?: string | undefined;
 }): AttendanceSourcePreviewResult {
 	return buildAttendanceConnectorArtifacts(input).preview;
 }

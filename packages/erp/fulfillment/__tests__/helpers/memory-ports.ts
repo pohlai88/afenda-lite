@@ -18,16 +18,16 @@ export function createMemoryMutationPorts(): MutationPorts & {
 	return {
 		audit: {
 			calls: auditCalls,
-			async record(input): Promise<Result<{ id: string }>> {
+			record(input): Promise<Result<{ id: string }>> {
 				auditCalls.push(input);
-				return ok({ id: randomUUID() });
+				return Promise.resolve(ok({ id: randomUUID() }));
 			},
 		},
 		outbox: {
 			calls: outboxCalls,
-			async append(input): Promise<Result<{ id: string }>> {
+			append(input): Promise<Result<{ id: string }>> {
 				outboxCalls.push(input);
-				return ok({ id: randomUUID() });
+				return Promise.resolve(ok({ id: randomUUID() }));
 			},
 		},
 	};

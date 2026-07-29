@@ -64,11 +64,11 @@ export type HumanResourcesComplianceStore = {
 		input: {
 			organizationId: string;
 			requirementId: HumanResourcesDocumentRequirementId;
-			name?: string;
-			documentType?: string;
-			issuingJurisdiction?: string | null;
-			appliesToNote?: string | null;
-			applicability?: DocumentRequirementApplicability;
+			name?: string | undefined;
+			documentType?: string | undefined;
+			issuingJurisdiction?: string | null | undefined;
+			appliesToNote?: string | null | undefined;
+			applicability?: DocumentRequirementApplicability | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -139,9 +139,9 @@ export type HumanResourcesComplianceStore = {
 		input: {
 			organizationId: string;
 			documentId: HumanResourcesEmployeeDocumentId;
-			issuingJurisdiction?: string | null;
-			expiresOn?: string | null;
-			metadata?: Record<string, unknown> | null;
+			issuingJurisdiction?: string | null | undefined;
+			expiresOn?: string | null | undefined;
+			metadata?: Record<string, unknown> | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -199,15 +199,15 @@ export type HumanResourcesComplianceStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
-		verificationStatus?: EmployeeDocumentVerificationStatus;
+		employeeId?: HumanResourcesEmployeeId | undefined;
+		verificationStatus?: EmployeeDocumentVerificationStatus | undefined;
 	}): Promise<Result<EmployeeDocumentListPage>>;
 
 	listMissingRequiredDocuments(input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
+		employeeId?: HumanResourcesEmployeeId | undefined;
 	}): Promise<Result<DocumentRequirementListPage>>;
 
 	listExpiringEmployeeDocuments(input: {
@@ -216,7 +216,7 @@ export type HumanResourcesComplianceStore = {
 		withinDays: number;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
+		employeeId?: HumanResourcesEmployeeId | undefined;
 	}): Promise<Result<EmployeeDocumentListPage>>;
 	// Work Eligibility
 	getWorkEligibilityById(input: {
@@ -371,14 +371,14 @@ export type HumanResourcesComplianceStore = {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
 		policyCode: string;
-		policyVersion?: string;
+		policyVersion?: string | undefined;
 	}): Promise<Result<PolicyAcknowledgement | null>>;
 
 	listOutstandingPolicyAcknowledgements(input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
+		employeeId?: HumanResourcesEmployeeId | undefined;
 	}): Promise<Result<PolicyAcknowledgementListPage>>;
 
 	listOverduePolicyAcknowledgements(input: {
@@ -386,12 +386,12 @@ export type HumanResourcesComplianceStore = {
 		asOf: string;
 		page: number;
 		pageSize: number;
-		employeeId?: HumanResourcesEmployeeId;
+		employeeId?: HumanResourcesEmployeeId | undefined;
 	}): Promise<Result<PolicyAcknowledgementListPage>>;
 
 	getEmployeeComplianceSummary(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<EmployeeComplianceSummary>>;
 };

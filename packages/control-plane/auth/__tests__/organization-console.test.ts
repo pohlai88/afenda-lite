@@ -10,10 +10,10 @@ const organizationDelete = vi.fn();
 vi.mock("../src/neon-auth", () => ({
 	getNeonAuth: () => ({
 		organization: {
-			list: organizationList,
 			create: organizationCreate,
-			setActive: organizationSetActive,
 			delete: organizationDelete,
+			list: organizationList,
+			setActive: organizationSetActive,
 		},
 	}),
 }));
@@ -35,15 +35,15 @@ describe("organization console (Neon Auth)", () => {
 			expect(
 				parseCreatedOrganization({
 					id: "org-1",
-					slug: "one",
 					name: "One",
+					slug: "one",
 				}),
-			).toEqual({ id: "org-1", slug: "one", name: "One" });
+			).toEqual({ id: "org-1", name: "One", slug: "one" });
 			expect(
 				parseCreatedOrganization({
-					organization: { id: "org-2", slug: "two", name: "Two" },
+					organization: { id: "org-2", name: "Two", slug: "two" },
 				}),
-			).toEqual({ id: "org-2", slug: "two", name: "Two" });
+			).toEqual({ id: "org-2", name: "Two", slug: "two" });
 			expect(
 				parseCreatedOrganization({ id: "org-3", slug: "three" }),
 			).toBeNull();
@@ -64,8 +64,8 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(listMemberOrganizations()).resolves.toEqual({
-				ok: true,
 				data: [{ id: "org-1", slug: "one" }],
+				ok: true,
 			});
 		});
 
@@ -78,9 +78,9 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(listMemberOrganizations()).resolves.toEqual({
-				ok: false,
 				code: "FORBIDDEN",
 				message: "Not authorized for this organization action",
+				ok: false,
 			});
 		});
 	});
@@ -93,23 +93,23 @@ describe("organization console (Neon Auth)", () => {
 			await expect(
 				createOrganization({ name: "  ", slug: "ok" }),
 			).resolves.toEqual({
-				ok: false,
 				code: "BAD_REQUEST",
 				message: "Organization name is required",
+				ok: false,
 			});
 			await expect(
 				createOrganization({ name: "Ok", slug: "  " }),
 			).resolves.toEqual({
-				ok: false,
 				code: "BAD_REQUEST",
 				message: "Organization slug is required",
+				ok: false,
 			});
 			expect(organizationCreate).not.toHaveBeenCalled();
 		});
 
 		it("returns parsed organization when Neon succeeds", async () => {
 			organizationCreate.mockResolvedValue({
-				data: { id: "org-new", slug: "new-org", name: "New Org" },
+				data: { id: "org-new", name: "New Org", slug: "new-org" },
 				error: null,
 			});
 			const { createOrganization } = await import(
@@ -118,12 +118,12 @@ describe("organization console (Neon Auth)", () => {
 			await expect(
 				createOrganization({ name: " New Org ", slug: " new-org " }),
 			).resolves.toEqual({
-				ok: true,
 				data: {
 					id: "org-new",
-					slug: "new-org",
 					name: "New Org",
+					slug: "new-org",
 				},
+				ok: true,
 			});
 			expect(organizationCreate).toHaveBeenCalledWith({
 				name: "New Org",
@@ -142,15 +142,15 @@ describe("organization console (Neon Auth)", () => {
 			await expect(
 				createOrganization({ name: "Dup", slug: "dup" }),
 			).resolves.toEqual({
-				ok: false,
 				code: "CONFLICT",
 				message: "Organization already exists",
+				ok: false,
 			});
 		});
 
 		it("returns INTERNAL_ERROR when Neon omits organization id", async () => {
 			organizationCreate.mockResolvedValue({
-				data: { slug: "no-id", name: "No Id" },
+				data: { name: "No Id", slug: "no-id" },
 				error: null,
 			});
 			const { createOrganization } = await import(
@@ -159,9 +159,9 @@ describe("organization console (Neon Auth)", () => {
 			await expect(
 				createOrganization({ name: "No Id", slug: "no-id" }),
 			).resolves.toEqual({
-				ok: false,
 				code: "INTERNAL_ERROR",
 				message: "Organization create returned no usable organization id",
+				ok: false,
 			});
 		});
 	});
@@ -172,9 +172,9 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(persistActiveOrganization("  ")).resolves.toEqual({
-				ok: false,
 				code: "BAD_REQUEST",
 				message: "Active organization id is required",
+				ok: false,
 			});
 			expect(organizationSetActive).not.toHaveBeenCalled();
 		});
@@ -185,8 +185,8 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(persistActiveOrganization(" org-1 ")).resolves.toEqual({
-				ok: true,
 				data: undefined,
+				ok: true,
 			});
 			expect(organizationSetActive).toHaveBeenCalledWith({
 				organizationId: "org-1",
@@ -202,9 +202,9 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(persistActiveOrganization("org-1")).resolves.toEqual({
-				ok: false,
 				code: "INTERNAL_ERROR",
 				message: "Failed to persist active organization on session",
+				ok: false,
 			});
 		});
 	});
@@ -215,9 +215,9 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(deleteOrganization("  ")).resolves.toEqual({
-				ok: false,
 				code: "BAD_REQUEST",
 				message: "Organization id is required",
+				ok: false,
 			});
 			expect(organizationDelete).not.toHaveBeenCalled();
 		});
@@ -231,9 +231,9 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(deleteOrganization("org-1")).resolves.toEqual({
-				ok: false,
 				code: "FORBIDDEN",
 				message: "Organization is not in the session memberships",
+				ok: false,
 			});
 			expect(organizationDelete).not.toHaveBeenCalled();
 		});
@@ -248,8 +248,8 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(deleteOrganization(" org-1 ")).resolves.toEqual({
-				ok: true,
 				data: undefined,
+				ok: true,
 			});
 			expect(organizationDelete).toHaveBeenCalledWith({
 				organizationId: "org-1",
@@ -269,9 +269,9 @@ describe("organization console (Neon Auth)", () => {
 				"../src/organization-console"
 			);
 			await expect(deleteOrganization("org-1")).resolves.toEqual({
-				ok: false,
 				code: "FORBIDDEN",
 				message: "Not authorized for this organization action",
+				ok: false,
 			});
 		});
 	});

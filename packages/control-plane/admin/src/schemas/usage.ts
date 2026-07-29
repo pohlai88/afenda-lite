@@ -3,7 +3,6 @@ import { z } from "zod";
 import {
 	USAGE_BANDS,
 	USAGE_METRIC_KEYS,
-	type UsageBand,
 	type UsageMetricKey,
 } from "../usage-bands";
 
@@ -68,4 +67,4 @@ export type OrganizationUsageMetrics = z.infer<
 	typeof organizationUsageMetricsSchema
 >;
 
-export type { UsageBand, UsageMetricKey };
+export type { UsageBand, UsageMetricKey } from "../usage-bands";

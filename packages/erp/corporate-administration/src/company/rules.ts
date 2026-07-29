@@ -258,7 +258,7 @@ export function validateCompanyIdentifierEffectiveRange(input: {
 	issuingAuthorityCode: string;
 	normalizedIdentifierValue: string;
 	existing: readonly CompanyIdentifier[];
-	ignoreCompanyIdentifierId?: string;
+	ignoreCompanyIdentifierId?: string | undefined;
 }): Result<void> {
 	return validateIdentifierEffectiveRange({
 		candidate: input.candidate,
@@ -280,9 +280,9 @@ export function validateIdentifierEffectiveRange(input: {
 	authorityCode: string;
 	normalizedValue: string;
 	existing: readonly CompanyIdentifier[];
-	ignoreCompanyIdentifierId?: string;
-	uniquenessScope?: CompanyIdentifierUniquenessScope;
-	legalCompanyId?: string;
+	ignoreCompanyIdentifierId?: string | undefined;
+	uniquenessScope?: CompanyIdentifierUniquenessScope | undefined;
+	legalCompanyId?: string | undefined;
 }): Result<void> {
 	const chronology = assertEffectivePeriodChronology(input.candidate);
 	if (!chronology.ok) return chronology;
@@ -472,7 +472,7 @@ export function validateFinancialYearSupersession(input: {
 export function resolveFinancialYearAsOf(input: {
 	financialYears: readonly CompanyFinancialYear[];
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): CompanyFinancialYear | null {
 	const knownAt =
 		input.knownAt === undefined ? undefined : new Date(input.knownAt);
@@ -613,7 +613,7 @@ export function resolveActivitiesAsOf(input: {
 	asOf: CanonicalDate;
 	activityType?: CompanyActivityType;
 	jurisdictionCode?: string | null;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): readonly CompanyActivity[] {
 	const knownAt =
 		input.knownAt === undefined ? undefined : new Date(input.knownAt);
@@ -1134,7 +1134,7 @@ export function resolveCompanyNameAsOf(input: {
 	nameType: CompanyName["nameType"];
 	languageCode: string;
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): CompanyName | null {
 	const matches = input.names
 		.filter(
@@ -1165,7 +1165,7 @@ export function legalFormMatchesAsOf(input: {
 export function resolveCompanyLegalFormAsOf(input: {
 	legalForms: readonly CompanyLegalForm[];
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): CompanyLegalForm | null {
 	const matches = input.legalForms
 		.filter(
@@ -1183,7 +1183,7 @@ export function resolveCompanyLegalFormAsOf(input: {
 
 export function isVisibleAtKnownTime(input: {
 	profile: CompanyJurisdictionProfile;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): boolean {
 	if (input.knownAt === undefined) {
 		return input.profile.supersededAt === null;
@@ -1197,7 +1197,7 @@ export function isVisibleAtKnownTime(input: {
 
 export function isCompanyNameVisibleAtKnownTime(input: {
 	name: CompanyName;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): boolean {
 	if (input.knownAt === undefined) {
 		return input.name.status === "active";
@@ -1212,7 +1212,7 @@ export function isCompanyNameVisibleAtKnownTime(input: {
 
 export function isLegalFormVisibleAtKnownTime(input: {
 	legalForm: CompanyLegalForm;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }): boolean {
 	if (input.knownAt === undefined) {
 		return input.legalForm.status === "active";
@@ -1268,7 +1268,7 @@ function companyActivityEffectiveRange(
 
 function identifierMatchesUniquenessScope(input: {
 	identifier: CompanyIdentifier;
-	legalCompanyId?: string;
+	legalCompanyId?: string | undefined;
 	uniquenessScope: CompanyIdentifierUniquenessScope;
 }): boolean {
 	if (input.uniquenessScope === "company_authority") {

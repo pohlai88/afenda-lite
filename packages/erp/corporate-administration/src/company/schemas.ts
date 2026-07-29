@@ -173,7 +173,7 @@ const commandEffectivePeriodFields = {
 } as const;
 
 function validateCommandEffectivePeriod(
-	value: { effectiveFrom: string; effectiveTo?: string | null },
+	value: { effectiveFrom: string; effectiveTo?: string | null | undefined },
 	context: z.RefinementCtx,
 ): void {
 	if (value.effectiveTo !== undefined && value.effectiveTo !== null) {

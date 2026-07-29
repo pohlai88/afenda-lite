@@ -1,8 +1,10 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getTestingLane } from "@afenda/testing";
 import { defineConfig, devices } from "@playwright/test";
 
 const configDirectory = path.dirname(fileURLToPath(import.meta.url));
+const lane = getTestingLane("storybook-visual");
 
 export default defineConfig({
 	testDir: "./visual-tests",
@@ -40,7 +42,7 @@ export default defineConfig({
 	},
 	projects: [
 		{
-			name: "chromium",
+			name: lane.id,
 			use: {
 				...devices["Desktop Chrome"],
 				viewport: { width: 1440, height: 900 },

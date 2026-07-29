@@ -21,8 +21,8 @@ function createGrantingInventoryAuthorization(
 ): InventoryAuthorizationPort {
 	const allowed = new Set(grants);
 	return {
-		async can(input) {
-			return allowed.has(input.permission);
+		can(input) {
+			return Promise.resolve(allowed.has(input.permission));
 		},
 	};
 }
@@ -36,13 +36,13 @@ export function createInventoryCommandTestOptions(
 ): InventoryCommandOptions {
 	const ports: MutationPorts = {
 		audit: {
-			async record() {
-				return ok({ id: randomUUID() });
+			record() {
+				return Promise.resolve(ok({ id: randomUUID() }));
 			},
 		},
 		outbox: {
-			async append() {
-				return ok({ id: randomUUID() });
+			append() {
+				return Promise.resolve(ok({ id: randomUUID() }));
 			},
 		},
 	};

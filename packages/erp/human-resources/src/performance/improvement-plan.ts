@@ -49,7 +49,7 @@ export type HumanResourcesImprovementPlanAggregate =
 
 function resolveImprovementPlanMilestones(input: {
 	dueDate: string;
-	milestones?: Array<{ dueDate: string }>;
+	milestones?: Array<{ dueDate: string }> | undefined;
 }): Result<Array<{ dueDate: string }>> {
 	const milestones = input.milestones ?? [{ dueDate: input.dueDate }];
 	const validation = assertImprovementPlanMilestones({
@@ -73,7 +73,9 @@ export async function createImprovementPlan(
 		execute: async (data, { store, ports }) => {
 			const milestones = resolveImprovementPlanMilestones({
 				dueDate: data.dueDate,
-				milestones: data.milestones,
+				...(data.milestones === undefined
+					? {}
+					: { milestones: data.milestones }),
 			});
 			if (!milestones.ok) {
 				return milestones;

@@ -112,16 +112,17 @@ export type NeonContractResult = Readonly<{
 }>;
 
 export type NeonRuntimeContext = Readonly<{
-	nodeEnv?: string;
-	vercelEnv?: string;
+	nodeEnv?: string | undefined;
+	vercelEnv?: string | undefined;
 }>;
 
 /**
  * Production runtime.
  *
- * Recognized Vercel environments are authoritative. Unexpected values fall
- * back to NODE_ENV so malformed VERCEL_ENV cannot disable production hard
- * stops.
+ * Recognized Vercel environments are authoritative. Local `next build` also
+ * runs with NODE_ENV=production, so a missing VERCEL_ENV is treated as a local
+ * production-mode build instead of a production deployment. Unexpected Vercel
+ * values still fail closed when NODE_ENV is production.
  */
 export function isProductionDeployment(ctx: NeonRuntimeContext = {}): boolean {
 	switch (ctx.vercelEnv) {
@@ -129,6 +130,10 @@ export function isProductionDeployment(ctx: NeonRuntimeContext = {}): boolean {
 			return true;
 		case "preview":
 		case "development":
+			return false;
+		case undefined:
+			return false;
+		case "":
 			return false;
 		default:
 			return ctx.nodeEnv === "production";
@@ -340,9 +345,9 @@ export function assertCookieSecret(secret: string): NeonContractResult {
 export function assertPairedSecretConfig(
 	input: Readonly<{
 		leftName: string;
-		leftValue?: string;
+		leftValue?: string | undefined;
 		rightName: string;
-		rightValue?: string;
+		rightValue?: string | undefined;
 	}>,
 ): NeonContractResult {
 	const leftPresent = input.leftValue !== undefined;
@@ -363,9 +368,9 @@ export function assertPairedSecretConfig(
 }
 
 export function assertNeonCloudIds(input: {
-	orgId?: string;
-	projectId?: string;
-	branchId?: string;
+	orgId?: string | undefined;
+	projectId?: string | undefined;
+	branchId?: string | undefined;
 	requireAll?: boolean;
 }): NeonContractResult {
 	const issues: NeonContractIssue[] = [];

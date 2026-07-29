@@ -1,5 +1,8 @@
 import { defineConfig, mergeConfig } from "vitest/config";
 import {
+	laneIncludeForProject,
+	laneProjectName,
+	laneTimeoutOptions,
 	masterDataRoot,
 	serverOnlyAlias,
 	sharedVitestConfig,
@@ -12,11 +15,15 @@ export default mergeConfig(
 			alias: serverOnlyAlias,
 		},
 		test: {
-			name: "master-data-memory-parity",
+			name: laneProjectName("master-data-memory-parity"),
 			root: masterDataRoot,
-			include: ["__tests__/parity/**/*.parity.test.ts"],
+			include: laneIncludeForProject(
+				"master-data-memory-parity",
+				"packages/erp/master-data",
+			),
 			testNamePattern: /MemoryMasterDataStore/,
 			environment: "node",
+			...laneTimeoutOptions("master-data-memory-parity"),
 			fileParallelism: false,
 			maxWorkers: 1,
 			env: {

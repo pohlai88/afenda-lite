@@ -21,7 +21,7 @@ function readProperty(value: object, key: PropertyKey): unknown {
 	try {
 		return Reflect.get(value, key);
 	} catch {
-		return undefined;
+		// Throwing getters are omitted from the public error representation.
 	}
 }
 

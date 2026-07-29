@@ -1,7 +1,14 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
-	// Workspace root delegates to @afenda/config (ARCH-028 S1.2).
-	"extends": ["@afenda/config/biome.json"],
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	// Biome does not support transitive extends. Compose vendor policy directly,
+	// then apply Afenda policy and repository-only overrides in that order.
+	"extends": [
+		"ultracite/biome/core",
+		"ultracite/biome/react",
+		"ultracite/biome/next",
+		"ultracite/biome/vitest",
+		"@afenda/config/biome.json"
+	],
 	"files": {
 		"includes": [
 			"**",
@@ -24,7 +31,7 @@
 			"!!**/storybook-static",
 			"!!**/playwright/.cache",
 			"!!**/*.{md,mdx}",
-			"!!**/docs",
+			"!!docs-V2",
 			"!!**/packages/data-plane/db/drizzle",
 			// Agent/tooling trees + legacy reference dumps (not product CI surface).
 			"!!**/.cursor",
@@ -39,6 +46,172 @@
 		]
 	},
 	"overrides": [
+		{
+			// The root intentionally retains an explicit positive baseline so static
+			// governance remains valid even if the vendor include policy changes.
+			"includes": ["biome.jsonc"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noBiomeFirstException": "off"
+					}
+				}
+			}
+		},
+		{
+			// Regex literals in static test assertions are not a runtime hot path.
+			"includes": ["**/*.{test,spec}.{ts,tsx,js,jsx}", "**/__tests__/**"],
+			"linter": {
+				"rules": {
+					"performance": {
+						"useTopLevelRegex": "off"
+					}
+				}
+			}
+		},
+		{
+			// This disk-contract test deliberately models package.json fields as
+			// optional and checks both dependency locations at runtime.
+			"includes": ["apps/docs/__tests__/docs-openapi-wire.test.ts"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noUselessStringConcat": "off"
+					},
+					"suspicious": {
+						"noUnnecessaryConditions": "off"
+					}
+				}
+			}
+		},
+		{
+			// Fumadocs requires a page-specific InlineTOC adapter so Loader TOC data
+			// is captured for each route render.
+			"includes": ["apps/docs/app/docs/\\[\\[...slug\\]\\]/page.tsx"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNestedComponentDefinitions": "off"
+					}
+				}
+			}
+		},
+		{
+			// Fumadocs AutoTypeTable fixtures are intentionally type aliases because
+			// the docs contract demonstrates that source form explicitly.
+			"includes": ["apps/docs/lib/demo-types.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useConsistentTypeDefinitions": "off"
+					}
+				}
+			}
+		},
+		{
+			// Docs components intentionally pass local event callbacks through JSX.
+			// React's compiler/runtime handles these normal component patterns; forcing
+			// callback wrappers here adds churn without a measured rerender benefit.
+			"includes": ["apps/docs/**/*.tsx"],
+			"linter": {
+				"rules": {
+					"performance": {
+						"noJsxPropsBind": "off"
+					}
+				}
+			}
+		},
+		{
+			// Radix publishes primitives as namespaces; retain its canonical API shape.
+			"includes": [
+				"apps/docs/components/ui/**",
+				"apps/docs/components/tabs.tsx"
+			],
+			"linter": {
+				"rules": {
+					"performance": {
+						"noNamespaceImport": "off"
+					}
+				}
+			}
+		},
+		{
+			// The banner's base32 encoder requires integer bit operations, and its
+			// generated storage-key bootstrap is composed solely from local constants.
+			"includes": ["apps/docs/components/banner.tsx"],
+			"linter": {
+				"rules": {
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					},
+					"suspicious": {
+						"noBitwiseOperators": "off"
+					}
+				}
+			}
+		},
+		{
+			// Sequential registry installation preserves dependency discovery order.
+			"includes": ["apps/docs/scripts/cli-add-silent.mts"],
+			"linter": {
+				"rules": {
+					"performance": {
+						"noAwaitInLoops": "off"
+					}
+				}
+			}
+		},
+		{
+			// Package discovery is a linear validation pipeline over workspace metadata.
+			"includes": ["apps/docs/scripts/generate-package-docs.mts"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveCognitiveComplexity": "off"
+					}
+				}
+			}
+		},
+		{
+			// Progressive CSS fallback: static viewport units precede dynamic units.
+			"includes": ["apps/docs/app/image-zoom.css"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noDuplicateProperties": "off"
+					}
+				}
+			}
+		},
+		{
+			// The generated code icon is trusted Fumadocs highlighting output. The
+			// scroll viewport is deliberately keyboard-focusable for horizontal access.
+			"includes": ["apps/docs/components/codeblock.tsx"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noNoninteractiveTabindex": "off"
+					},
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					}
+				}
+			}
+		},
+		{
+			// Non-string MDX image sources cannot pass through Next Image's URL loader.
+			"includes": ["apps/docs/components/mdx.tsx"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"useImageSize": "off"
+					},
+					"performance": {
+						"noImgElement": "off"
+					}
+				}
+			}
+		},
 		{
 			// Vendored shadcn/ui primitives in @afenda/ui-system are regenerated by
 			// the shadcn CLI; these rules flag canonical upstream patterns (Radix

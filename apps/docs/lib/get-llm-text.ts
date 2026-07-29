@@ -1,4 +1,4 @@
-import { source } from "@/lib/source";
+import type { source } from "@/lib/source";
 
 /** Processed MDX → Markdown for LLM surfaces — docs-V2/docs/llms.md */
 export async function getLLMText(

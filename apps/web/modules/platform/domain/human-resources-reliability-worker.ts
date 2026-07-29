@@ -215,7 +215,7 @@ export async function processReliabilityWork(
 			area: "integration",
 			outcome: failed ? "failure" : "success",
 			durationMs: Date.now() - startedAt,
-			failureReason: reason,
+			...(reason === undefined ? {} : { failureReason: reason }),
 		},
 		observability,
 	);

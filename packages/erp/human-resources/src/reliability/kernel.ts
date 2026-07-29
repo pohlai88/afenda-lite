@@ -123,7 +123,7 @@ export async function executeReliabilityWork(
 		organizationId: string;
 		workItemId: string;
 		leaseOwner: string;
-		policy?: ExponentialRetryPolicy;
+		policy?: ExponentialRetryPolicy | undefined;
 	},
 	ports: ReliabilityKernelPorts,
 ): Promise<Result<ReliabilityWorkItem>> {

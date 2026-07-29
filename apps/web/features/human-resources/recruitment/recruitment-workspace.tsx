@@ -38,7 +38,7 @@ import type {
 	RecruitmentWorkspaceData,
 } from "./types";
 
-function ErrorNotice({ message }: { message?: string }) {
+function ErrorNotice({ message }: { message?: string | undefined }) {
 	if (!message) return null;
 	return (
 		<Alert variant="destructive" role="alert">

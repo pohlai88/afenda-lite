@@ -30,7 +30,9 @@ async function draftWithLine() {
 		},
 		options,
 	);
-	if (!created.ok) throw new Error(created.message);
+	if (!created.ok) {
+		throw new Error(created.message);
+	}
 	const line = await addSalesOrderLine(
 		{
 			...mutationContext("order-line"),
@@ -43,7 +45,9 @@ async function draftWithLine() {
 		},
 		options,
 	);
-	if (!line.ok) throw new Error(line.message);
+	if (!line.ok) {
+		throw new Error(line.message);
+	}
 	return { options, order: created.data, line: line.data };
 }
 
@@ -60,7 +64,9 @@ describe("Sales order lifecycle", () => {
 		const replay = await createDraftSalesOrder(input, options);
 		expect(first).toEqual(replay);
 		expect(first.ok && first.data.customer.name).toBe("Acme Trading");
-		if (!first.ok) return;
+		if (!first.ok) {
+			return;
+		}
 		const crossTenant = await getSalesOrderById(
 			{
 				organizationId: OTHER_ORGANIZATION_ID,
@@ -92,7 +98,9 @@ describe("Sales order lifecycle", () => {
 			},
 			options,
 		);
-		if (!submitted.ok) throw new Error(submitted.message);
+		if (!submitted.ok) {
+			throw new Error(submitted.message);
+		}
 		const approved = await approveSalesOrder(
 			{
 				...mutationContext("approve"),
@@ -101,7 +109,9 @@ describe("Sales order lifecycle", () => {
 			},
 			options,
 		);
-		if (!approved.ok) throw new Error(approved.message);
+		if (!approved.ok) {
+			throw new Error(approved.message);
+		}
 
 		const hold = await placeSalesOrderHold(
 			{
@@ -112,7 +122,9 @@ describe("Sales order lifecycle", () => {
 			},
 			options,
 		);
-		if (!hold.ok) throw new Error(hold.message);
+		if (!hold.ok) {
+			throw new Error(hold.message);
+		}
 		const blocked = await postSalesOrder(
 			{
 				...mutationContext("post-blocked"),
@@ -126,7 +138,9 @@ describe("Sales order lifecycle", () => {
 			{ ...mutationContext("hold-resolve"), holdId: hold.data.id },
 			options,
 		);
-		if (!resolved.ok) throw new Error(JSON.stringify(resolved));
+		if (!resolved.ok) {
+			throw new Error(JSON.stringify(resolved));
+		}
 		const released = await postSalesOrder(
 			{
 				...mutationContext("post"),
@@ -135,7 +149,9 @@ describe("Sales order lifecycle", () => {
 			},
 			options,
 		);
-		if (!released.ok) throw new Error(JSON.stringify(released));
+		if (!released.ok) {
+			throw new Error(JSON.stringify(released));
+		}
 		expect(released.ok && released.data.status).toBe("released");
 		expect(released.ok && released.data.documentTotal).toBe("50");
 	});

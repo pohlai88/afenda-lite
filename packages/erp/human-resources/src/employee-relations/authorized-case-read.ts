@@ -52,10 +52,12 @@ export async function runAuthorizedEmployeeCaseReadQuery<
 			employeeCase: EmployeeCase;
 			store: HumanResourcesStore;
 		}) => Promise<Result<TOut>>;
-		project?: (
-			value: TOut,
-			projection: HumanResourcesFieldProjection | undefined,
-		) => TProjected;
+		project?:
+			| ((
+					value: TOut,
+					projection: HumanResourcesFieldProjection | undefined,
+			  ) => TProjected)
+			| undefined;
 	},
 ): Promise<Result<TProjected>> {
 	const parsed = parseHumanResourcesInput(
@@ -96,7 +98,7 @@ export async function runAuthorizedEmployeeCaseReadQuery<
 				employeeCase,
 				store,
 			}),
-		project: config.project,
+		...(config.project === undefined ? {} : { project: config.project }),
 	});
 }
 

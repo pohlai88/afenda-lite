@@ -12,10 +12,11 @@ export default async function AdminInventoryPage({
 	searchParams,
 }: AdminInventoryPageProps) {
 	const params = await searchParams;
+	const movementId = firstSearchParam(params.movementId);
 	return (
 		<InventoryShell
 			surface="admin"
-			movementId={firstSearchParam(params.movementId)}
+			{...(movementId === undefined ? {} : { movementId })}
 		/>
 	);
 }

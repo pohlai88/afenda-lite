@@ -23,24 +23,28 @@ export function mutationContext(idempotencyKey: string) {
 }
 
 export const masterData: MasterDataSnapshotPort = {
-	async resolveCustomer(input) {
-		return ok({
-			partyId: input.partyId,
-			code: "CUST-001",
-			name: "Acme Trading",
-			paymentTermCode: "NET30",
-			paymentTermName: "Net 30",
-			netDays: 30,
-		});
+	resolveCustomer(input) {
+		return Promise.resolve(
+			ok({
+				partyId: input.partyId,
+				code: "CUST-001",
+				name: "Acme Trading",
+				paymentTermCode: "NET30",
+				paymentTermName: "Net 30",
+				netDays: 30,
+			}),
+		);
 	},
-	async resolveItem(input) {
-		return ok({
-			itemId: input.itemId,
-			code: "ITEM-001",
-			name: "Industrial Widget",
-			baseUomId: input.requestedUomId ?? UOM_ID,
-			baseUomCode: "EA",
-		});
+	resolveItem(input) {
+		return Promise.resolve(
+			ok({
+				itemId: input.itemId,
+				code: "ITEM-001",
+				name: "Industrial Widget",
+				baseUomId: input.requestedUomId ?? UOM_ID,
+				baseUomCode: "EA",
+			}),
+		);
 	},
 };
 

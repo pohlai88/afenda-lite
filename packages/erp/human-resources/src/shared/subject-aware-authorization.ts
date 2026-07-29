@@ -14,13 +14,33 @@ import type { HumanResourcesStore } from "../store";
 import type { HumanResourcesAuthorizationPort } from "./authorization-types";
 import { requireHumanResourcesManifestPermission } from "./contextual-authorization";
 
+function commandOptions(input: {
+	authorization?: HumanResourcesAuthorizationPort | undefined;
+}): { authorization?: HumanResourcesAuthorizationPort } {
+	return input.authorization === undefined
+		? {}
+		: { authorization: input.authorization };
+}
+
+function actorIdentityInput(input: {
+	organizationId: string;
+	actorUserId: string;
+	asOf?: string | undefined;
+}): { organizationId: string; actorUserId: string; asOf?: string } {
+	return {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		...(input.asOf === undefined ? {} : { asOf: input.asOf }),
+	};
+}
+
 /** Resolve actor → employee server-side. Never trust a client-supplied employee id alone. */
 export async function resolveActorEmployeeIdentity(
 	identityResolver: HumanResourcesIdentityResolverPort | undefined,
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	},
 ): Promise<Result<HumanResourcesEmployeeIdentity>> {
 	if (!identityResolver) {
@@ -30,7 +50,9 @@ export async function resolveActorEmployeeIdentity(
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 		);
 	}
-	const identity = await identityResolver.resolveEmployeeForActor(input);
+	const identity = await identityResolver.resolveEmployeeForActor(
+		actorIdentityInput(input),
+	);
 	if (!identity.ok) return identity;
 	if (!identity.data) {
 		return fail(
@@ -45,18 +67,18 @@ export async function resolveActorEmployeeIdentity(
 export async function requireOwnResourceAccess(
 	identityResolver: HumanResourcesIdentityResolverPort,
 	options: {
-		authorization?: HumanResourcesAuthorizationPort;
+		authorization?: HumanResourcesAuthorizationPort | undefined;
 	},
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		targetEmployeeId: HumanResourcesEmployeeId;
 		permission: HumanResourcesPermission;
-		asOf?: string;
+		asOf?: string | undefined;
 	},
 ): Promise<Result<void>> {
 	const permissionCheck = await requireHumanResourcesManifestPermission(
-		options,
+		commandOptions(options),
 		{
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -68,11 +90,9 @@ export async function requireOwnResourceAccess(
 	}
 
 	// Resolve actor's employee identity
-	const identity = await identityResolver.resolveEmployeeForActor({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		asOf: input.asOf,
-	});
+	const identity = await identityResolver.resolveEmployeeForActor(
+		actorIdentityInput(input),
+	);
 	if (!identity.ok) return identity;
 	if (!identity.data) {
 		return fail(
@@ -98,18 +118,18 @@ export async function requireManagerResourceAccess(
 	identityResolver: HumanResourcesIdentityResolverPort,
 	store: HumanResourcesStore,
 	options: {
-		authorization?: HumanResourcesAuthorizationPort;
+		authorization?: HumanResourcesAuthorizationPort | undefined;
 	},
 	input: {
 		organizationId: string;
 		actorUserId: string;
 		targetEmployeeId: HumanResourcesEmployeeId;
 		permission: HumanResourcesPermission;
-		asOf?: string;
+		asOf?: string | undefined;
 	},
 ): Promise<Result<void>> {
 	const permissionCheck = await requireHumanResourcesManifestPermission(
-		options,
+		commandOptions(options),
 		{
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -121,11 +141,9 @@ export async function requireManagerResourceAccess(
 	}
 
 	// Resolve actor's employee identity
-	const identity = await identityResolver.resolveEmployeeForActor({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		asOf: input.asOf,
-	});
+	const identity = await identityResolver.resolveEmployeeForActor(
+		actorIdentityInput(input),
+	);
 	if (!identity.ok) return identity;
 	if (!identity.data) {
 		return fail(
@@ -160,7 +178,7 @@ export async function requireManagerResourceAccess(
 
 export async function requireAdminResourceAccess(
 	options: {
-		authorization?: HumanResourcesAuthorizationPort;
+		authorization?: HumanResourcesAuthorizationPort | undefined;
 	},
 	input: {
 		organizationId: string;
@@ -168,5 +186,8 @@ export async function requireAdminResourceAccess(
 		permission: HumanResourcesPermission;
 	},
 ): Promise<Result<void>> {
-	return requireHumanResourcesManifestPermission(options, input);
+	return requireHumanResourcesManifestPermission(
+		commandOptions(options),
+		input,
+	);
 }

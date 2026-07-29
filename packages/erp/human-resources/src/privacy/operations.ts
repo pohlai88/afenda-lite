@@ -209,7 +209,9 @@ async function exportHumanResourcesSubjectDataCore(
 		subjectEmployeeId: input.personId,
 		correlationId: input.correlationId,
 		store,
-		generatedAt: input.requestedAt,
+		...(input.requestedAt === undefined
+			? {}
+			: { generatedAt: input.requestedAt }),
 	});
 	if (!collected.ok) {
 		return collected;

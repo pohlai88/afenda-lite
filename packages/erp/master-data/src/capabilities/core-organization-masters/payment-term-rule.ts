@@ -9,15 +9,15 @@ import {
 
 export type PaymentTermRuleInput = {
 	netDays: number;
-	discountDays?: number | null;
-	discountPercent?: string | null;
-	dueDayRule?: PaymentTermDueDayRule;
-	endOfMonth?: boolean;
-	installmentPolicy?: PaymentTermInstallmentPolicy;
-	installmentCount?: number | null;
-	validFrom?: Date | null;
-	validTo?: Date | null;
-	currencyRestrictionId?: string | null;
+	discountDays?: number | null | undefined;
+	discountPercent?: string | null | undefined;
+	dueDayRule?: PaymentTermDueDayRule | undefined;
+	endOfMonth?: boolean | undefined;
+	installmentPolicy?: PaymentTermInstallmentPolicy | undefined;
+	installmentCount?: number | null | undefined;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
+	currencyRestrictionId?: string | null | undefined;
 };
 
 export type PaymentTermRule = Pick<

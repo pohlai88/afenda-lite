@@ -65,14 +65,16 @@ export type CompanyNameRetirementRecord = RetireCompanyNameStoreInput;
 export type CompanyNameListQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
-	nameType?: CompanyNameType;
-	languageCode?: string;
-	activeAt?: CanonicalDate;
-	includeFormer?: boolean;
-	cursor?: OpaqueCursor;
-	pageSize?: number;
-	knownAt?: CanonicalInstant;
-	ordering?: "name_type_language_effective_from_desc_recorded_at_desc_id";
+	nameType?: CompanyNameType | undefined;
+	languageCode?: string | undefined;
+	activeAt?: CanonicalDate | undefined;
+	includeFormer?: boolean | undefined;
+	cursor?: OpaqueCursor | undefined;
+	pageSize?: number | undefined;
+	knownAt?: CanonicalInstant | undefined;
+	ordering?:
+		| "name_type_language_effective_from_desc_recorded_at_desc_id"
+		| undefined;
 }>;
 
 export type CompanyNameListPage = Readonly<{
@@ -86,7 +88,7 @@ export type CompanyNameAsOfQuery = Readonly<{
 	nameType: CompanyNameType;
 	languageCode: string;
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyNameOverlapQuery = Readonly<{
@@ -108,9 +110,9 @@ export type CompanyLegalFormSupersessionRecord =
 export type CompanyLegalFormAsOfQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
-	jurisdictionCode?: string;
+	jurisdictionCode?: string | undefined;
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyLegalFormOverlapQuery = Readonly<{
@@ -124,24 +126,24 @@ export type CompanyLegalFormOverlapQuery = Readonly<{
 export type CompanyIdentifierListQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
-	identifierType?: CompanyIdentifierType;
-	jurisdictionCode?: string;
-	issuingAuthorityCode?: string;
-	activeAt?: CanonicalDate;
-	includeRetired?: boolean;
-	cursor?: OpaqueCursor;
-	pageSize?: number;
-	knownAt?: CanonicalInstant;
+	identifierType?: CompanyIdentifierType | undefined;
+	jurisdictionCode?: string | undefined;
+	issuingAuthorityCode?: string | undefined;
+	activeAt?: CanonicalDate | undefined;
+	includeRetired?: boolean | undefined;
+	cursor?: OpaqueCursor | undefined;
+	pageSize?: number | undefined;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyIdentifierAsOfQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
 	identifierType: CompanyIdentifierType;
-	jurisdictionCode?: string;
-	issuingAuthorityCode?: string;
+	jurisdictionCode?: string | undefined;
+	issuingAuthorityCode?: string | undefined;
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyIdentifierOverlapQuery = Readonly<{
@@ -160,7 +162,7 @@ export type CompanyFinancialYearAsOfQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyFinancialYearOverlapQuery = Readonly<{
@@ -174,39 +176,39 @@ export type CompanyActivitiesAsOfQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
 	asOf: CanonicalDate;
-	classification?: CompanyActivityClassification;
-	classificationSystem?: string;
-	jurisdictionCode?: string;
-	regulatorCode?: string;
-	primaryOnly?: boolean;
-	knownAt?: CanonicalInstant;
+	classification?: CompanyActivityClassification | undefined;
+	classificationSystem?: string | undefined;
+	jurisdictionCode?: string | undefined;
+	regulatorCode?: string | undefined;
+	primaryOnly?: boolean | undefined;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyStatusAsOfQuery = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
 	asOf: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompaniesByStatusQuery = Readonly<{
 	organizationId: OrganizationId;
 	status: LegalCompanyStatus;
-	asOf?: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	asOf?: CanonicalDate | undefined;
+	knownAt?: CanonicalInstant | undefined;
 	pagination: CursorPagination;
 }>;
 
 export type LegalCompanyLookupInput = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type ListLegalCompaniesStoreInput = Readonly<{
 	organizationId: OrganizationId;
-	asOf?: CanonicalDate;
-	knownAt?: CanonicalInstant;
+	asOf?: CanonicalDate | undefined;
+	knownAt?: CanonicalInstant | undefined;
 	pagination: CursorPagination;
 }>;
 
@@ -286,7 +288,7 @@ export type AddCompanyNameStoreInput = Readonly<{
 	recordedAt: CanonicalInstant;
 	recordedByUserId: CorporateAdministrationCommandOptions["actorUserId"];
 	sourceDocumentId: string | null;
-	correctionReason?: string;
+	correctionReason?: string | undefined;
 	expectedCompanyVersion: number;
 	correlationId: CorporateAdministrationCommandOptions["correlationId"];
 	causationId?: CorporateAdministrationCommandOptions["causationId"];
@@ -337,7 +339,7 @@ export type SetCompanyLegalFormStoreInput = Readonly<{
 	recordedAt: CanonicalInstant;
 	recordedByUserId: CorporateAdministrationCommandOptions["actorUserId"];
 	sourceDocumentId: string | null;
-	correctionReason?: string;
+	correctionReason?: string | undefined;
 	expectedCompanyVersion: number;
 	correlationId: CorporateAdministrationCommandOptions["correlationId"];
 	causationId?: CorporateAdministrationCommandOptions["causationId"];
@@ -376,7 +378,7 @@ export type RegisterCompanyIdentifierStoreInput = Readonly<{
 	recordedAt: CanonicalInstant;
 	recordedByUserId: CorporateAdministrationCommandOptions["actorUserId"];
 	sourceDocumentId: string;
-	correctionReason?: string;
+	correctionReason?: string | undefined;
 	expectedCompanyVersion: number;
 	correlationId: CorporateAdministrationCommandOptions["correlationId"];
 	causationId?: CorporateAdministrationCommandOptions["causationId"];
@@ -428,7 +430,7 @@ export type SetCompanyFinancialYearStoreInput = Readonly<{
 	recordedAt: CanonicalInstant;
 	recordedByUserId: CorporateAdministrationCommandOptions["actorUserId"];
 	sourceDocumentId: string;
-	correctionReason?: string;
+	correctionReason?: string | undefined;
 	expectedCompanyVersion: number;
 	correlationId: CorporateAdministrationCommandOptions["correlationId"];
 	causationId?: CorporateAdministrationCommandOptions["causationId"];
@@ -484,7 +486,7 @@ export type ChangeLegalCompanyStatusStoreInput = Readonly<{
 export type LegalCompanyTimelineStoreInput = Readonly<{
 	organizationId: OrganizationId;
 	legalCompanyId: LegalCompanyId;
-	knownAt?: CanonicalInstant;
+	knownAt?: CanonicalInstant | undefined;
 }>;
 
 export type CompanyNameStore = Readonly<{
@@ -507,7 +509,7 @@ export type CompanyNameStore = Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyNameId: CompanyNameId;
-			knownAt?: CanonicalInstant;
+			knownAt?: CanonicalInstant | undefined;
 		}>,
 	): Promise<Result<CompanyName | null>>;
 	listCompanyNames(
@@ -545,14 +547,14 @@ export type CompanyLegalFormStore = Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyLegalFormHistoryId: CompanyLegalFormHistoryId;
-			knownAt?: CanonicalInstant;
+			knownAt?: CanonicalInstant | undefined;
 		}>,
 	): Promise<Result<CompanyLegalFormHistory | null>>;
 	listCompanyLegalForms(
 		input: Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
-			knownAt?: CanonicalInstant;
+			knownAt?: CanonicalInstant | undefined;
 		}>,
 	): Promise<Result<readonly CompanyLegalFormHistory[]>>;
 	findCompanyLegalFormAsOf(
@@ -585,7 +587,7 @@ export type CompanyIdentifierStore = Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyIdentifierId: CompanyIdentifierId;
-			knownAt?: CanonicalInstant;
+			knownAt?: CanonicalInstant | undefined;
 		}>,
 	): Promise<Result<CompanyIdentifier | null>>;
 	listCompanyIdentifiers(
@@ -635,7 +637,7 @@ export type CompanyActivityStore = Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			companyActivityId: CompanyActivityId;
-			knownAt?: CanonicalInstant;
+			knownAt?: CanonicalInstant | undefined;
 		}>,
 	): Promise<Result<CompanyActivity | null>>;
 	listCompanyActivitiesAsOf(
@@ -667,7 +669,7 @@ export type LegalCompanyStore = Readonly<{
 			organizationId: OrganizationId;
 			legalCompanyId: LegalCompanyId;
 			asOf: CanonicalDate;
-			knownAt?: CanonicalInstant;
+			knownAt?: CanonicalInstant | undefined;
 		}>,
 	): Promise<Result<CompanyJurisdictionProfile | null>>;
 	listJurisdictionProfiles(
@@ -789,12 +791,12 @@ export type CompanyReferenceDataPort = ReferenceDataPort &
 		resolveCountry(input: {
 			organizationId: OrganizationId;
 			countryCode: string;
-			effectiveDate?: CanonicalDate;
+			effectiveDate?: CanonicalDate | undefined;
 		}): Promise<Result<ReferenceResolution | null>>;
 		resolveCurrency(input: {
 			organizationId: OrganizationId;
 			currencyCode: string;
-			effectiveDate?: CanonicalDate;
+			effectiveDate?: CanonicalDate | undefined;
 		}): Promise<Result<CurrencyReferenceResolution | null>>;
 		resolveIdentifierAuthority(input: {
 			organizationId: OrganizationId;

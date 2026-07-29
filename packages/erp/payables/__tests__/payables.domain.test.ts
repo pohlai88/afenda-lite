@@ -25,52 +25,58 @@ const purchaseOrderId = "00000000-0000-4000-8000-000000000003";
 const goodsReceiptId = "00000000-0000-4000-8000-000000000004";
 const paymentId = "00000000-0000-4000-8000-000000000005";
 const authorization = {
-	async can() {
-		return true;
+	can() {
+		return Promise.resolve(true);
 	},
 };
 const effects = {
-	async emit() {
-		return ok(undefined);
+	emit() {
+		return Promise.resolve(ok(undefined));
 	},
 };
 
 const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
-	async getPurchaseOrderMatchBasis() {
-		return ok({
-			purchaseOrderId,
-			supplierPartyId: supplierId,
-			status: "posted",
-			currencyCode: "USD",
-			version: 1,
-			priceTolerancePct: "100",
-			lines: [{ itemId, quantity: "10", unitPrice: "50" }],
-		});
+	getPurchaseOrderMatchBasis() {
+		return Promise.resolve(
+			ok({
+				currencyCode: "USD",
+				lines: [{ itemId, quantity: "10", unitPrice: "50" }],
+				priceTolerancePct: "100",
+				purchaseOrderId,
+				status: "posted",
+				supplierPartyId: supplierId,
+				version: 1,
+			}),
+		);
 	},
 };
 
 const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
-	async getGoodsReceiptMatchBasis() {
-		return ok({
-			goodsReceiptId,
-			purchaseOrderId,
-			status: "posted",
-			sourceType: "purchase_order",
-			sourceId: purchaseOrderId,
-			version: 1,
-			lines: [{ itemId, quantityReceived: "10" }],
-		});
+	getGoodsReceiptMatchBasis() {
+		return Promise.resolve(
+			ok({
+				goodsReceiptId,
+				lines: [{ itemId, quantityReceived: "10" }],
+				purchaseOrderId,
+				sourceId: purchaseOrderId,
+				sourceType: "purchase_order",
+				status: "posted",
+				version: 1,
+			}),
+		);
 	},
 };
 
 const postedPayment: PostedPaymentQueryPort = {
-	async getPostedPayment() {
-		return ok({
-			paymentId,
-			status: "posted",
-			currencyCode: "USD",
-			direction: "outbound",
-		});
+	getPostedPayment() {
+		return Promise.resolve(
+			ok({
+				currencyCode: "USD",
+				direction: "outbound",
+				paymentId,
+				status: "posted",
+			}),
+		);
 	},
 };
 
@@ -78,36 +84,38 @@ describe("payables lifecycle", () => {
 	it("matches before posting and updates supplier balance for every financial operation", async () => {
 		const store = createMemoryPayablesStore();
 		const options = {
-			store,
 			authorization,
 			effects,
-			purchaseOrderMatch,
 			goodsReceiptMatch,
 			postedPayment,
+			purchaseOrderMatch,
+			store,
 		};
 		const created = await createDraftSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "create",
 				code: "SI-1",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
+				correlationId: "create",
 				currencyCode: "usd",
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
 		expect(created.ok).toBe(true);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		await addSupplierInvoiceLine(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "line",
+				description: "Materials",
 				invoiceId: created.data.id,
 				itemId,
-				description: "Materials",
+				organizationId,
 				quantity: "2",
 				unitPrice: "50",
 			},
@@ -115,13 +123,13 @@ describe("payables lifecycle", () => {
 		);
 		const matched = await matchSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "match",
-				invoiceId: created.data.id,
-				purchaseOrderId,
-				goodsReceiptId,
 				expectedVersion: 2,
+				goodsReceiptId,
+				invoiceId: created.data.id,
+				organizationId,
+				purchaseOrderId,
 			},
 			options,
 		);
@@ -129,71 +137,73 @@ describe("payables lifecycle", () => {
 		expect(matched.ok && matched.data.matchResult?.result).toBe("matched");
 		const posted = await postSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "post",
-				invoiceId: created.data.id,
 				expectedVersion: 3,
+				invoiceId: created.data.id,
+				organizationId,
 			},
 			options,
 		);
 		expect(posted.ok && posted.data.openAmount).toBe("100");
 		await applySupplierPayment(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "apply",
-				invoiceId: created.data.id,
-				paymentId,
-				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
-				idempotencyKey: "apply-1",
 				amount: "25",
+				correlationId: "apply",
+				idempotencyKey: "apply-1",
+				invoiceId: created.data.id,
+				organizationId,
+				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
+				paymentId,
 			},
 			options,
 		);
 		await issueSupplierCreditNote(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "credit",
-				code: "SCN-1",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
-				currencyCode: "USD",
 				amount: "10",
+				code: "SCN-1",
+				correlationId: "credit",
+				currencyCode: "USD",
 				itemId,
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
 		const balance = await getSupplierBalance(
-			{ organizationId, actorUserId, supplierId, currencyCode: "USD" },
+			{ actorUserId, currencyCode: "USD", organizationId, supplierId },
 			options,
 		);
 		expect(balance.ok && balance.data[0]?.openBalance).toBe("65");
 
 		const cancellable = await createDraftSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "create-cancel",
 				code: "SI-2",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
+				correlationId: "create-cancel",
 				currencyCode: "USD",
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
-		if (!cancellable.ok) return;
+		if (!cancellable.ok) {
+			return;
+		}
 		await addSupplierInvoiceLine(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "line-cancel",
+				description: "Cancellation",
 				invoiceId: cancellable.data.id,
 				itemId,
-				description: "Cancellation",
+				organizationId,
 				quantity: "1",
 				unitPrice: "20",
 			},
@@ -201,25 +211,27 @@ describe("payables lifecycle", () => {
 		);
 		const matchedCancel = await matchSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "match-cancel",
-				invoiceId: cancellable.data.id,
-				purchaseOrderId,
-				goodsReceiptId,
 				expectedVersion: 2,
+				goodsReceiptId,
+				invoiceId: cancellable.data.id,
+				organizationId,
+				purchaseOrderId,
 			},
 			options,
 		);
 		expect(matchedCancel.ok).toBe(true);
-		if (!matchedCancel.ok) return;
+		if (!matchedCancel.ok) {
+			return;
+		}
 		const cancelledMatched = await cancelSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "cancel-matched",
-				invoiceId: cancellable.data.id,
 				expectedVersion: matchedCancel.data.version,
+				invoiceId: cancellable.data.id,
+				organizationId,
 			},
 			options,
 		);
@@ -227,26 +239,28 @@ describe("payables lifecycle", () => {
 
 		const postedReject = await createDraftSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "create-posted-cancel",
 				code: "SI-3",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
+				correlationId: "create-posted-cancel",
 				currencyCode: "USD",
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
-		if (!postedReject.ok) return;
+		if (!postedReject.ok) {
+			return;
+		}
 		await addSupplierInvoiceLine(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "line-posted-cancel",
+				description: "Posted cancel reject",
 				invoiceId: postedReject.data.id,
 				itemId,
-				description: "Posted cancel reject",
+				organizationId,
 				quantity: "1",
 				unitPrice: "15",
 			},
@@ -254,42 +268,44 @@ describe("payables lifecycle", () => {
 		);
 		await matchSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "match-posted-cancel",
-				invoiceId: postedReject.data.id,
-				purchaseOrderId,
-				goodsReceiptId,
 				expectedVersion: 2,
+				goodsReceiptId,
+				invoiceId: postedReject.data.id,
+				organizationId,
+				purchaseOrderId,
 			},
 			options,
 		);
 		const postedInvoice = await postSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "post-posted-cancel",
-				invoiceId: postedReject.data.id,
 				expectedVersion: 3,
+				invoiceId: postedReject.data.id,
+				organizationId,
 			},
 			options,
 		);
 		expect(postedInvoice.ok).toBe(true);
-		if (!postedInvoice.ok) return;
+		if (!postedInvoice.ok) {
+			return;
+		}
 		const cancelPosted = await cancelSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "cancel-posted",
-				invoiceId: postedReject.data.id,
 				expectedVersion: postedInvoice.data.version,
+				invoiceId: postedReject.data.id,
+				organizationId,
 			},
 			options,
 		);
 		expect(cancelPosted.ok).toBe(false);
 
 		const finalBalance = await getSupplierBalance(
-			{ organizationId, actorUserId, supplierId },
+			{ actorUserId, organizationId, supplierId },
 			options,
 		);
 		// SI-1 remaining 65 + SI-3 posted 15 (cancel rejected) = 80
@@ -299,47 +315,51 @@ describe("payables lifecycle", () => {
 	it("rejects currency mismatch on three-way match", async () => {
 		const store = createMemoryPayablesStore();
 		const fxPo: PurchaseOrderMatchQueryPort = {
-			async getPurchaseOrderMatchBasis() {
-				return ok({
-					purchaseOrderId,
-					supplierPartyId: supplierId,
-					status: "posted",
-					currencyCode: "EUR",
-					version: 1,
-					lines: [{ itemId, quantity: "10", unitPrice: "50" }],
-				});
+			getPurchaseOrderMatchBasis() {
+				return Promise.resolve(
+					ok({
+						currencyCode: "EUR",
+						lines: [{ itemId, quantity: "10", unitPrice: "50" }],
+						purchaseOrderId,
+						status: "posted",
+						supplierPartyId: supplierId,
+						version: 1,
+					}),
+				);
 			},
 		};
 		const options = {
-			store,
 			authorization,
 			effects,
-			purchaseOrderMatch: fxPo,
 			goodsReceiptMatch,
 			postedPayment,
+			purchaseOrderMatch: fxPo,
+			store,
 		};
 		const created = await createDraftSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "create-match-fx",
 				code: "SI-MATCH-FX",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
+				correlationId: "create-match-fx",
 				currencyCode: "USD",
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		await addSupplierInvoiceLine(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "line-match-fx",
+				description: "FX match",
 				invoiceId: created.data.id,
 				itemId,
-				description: "FX match",
+				organizationId,
 				quantity: "1",
 				unitPrice: "10",
 			},
@@ -347,53 +367,57 @@ describe("payables lifecycle", () => {
 		);
 		const matched = await matchSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "match-fx",
-				invoiceId: created.data.id,
-				purchaseOrderId,
-				goodsReceiptId,
 				expectedVersion: 2,
+				goodsReceiptId,
+				invoiceId: created.data.id,
+				organizationId,
+				purchaseOrderId,
 			},
 			options,
 		);
 		expect(matched.ok).toBe(false);
-		if (matched.ok) return;
+		if (matched.ok) {
+			return;
+		}
 		expect(matched.message).toMatch(/currenc/i);
 	});
 
 	it("restores the supplier invoice and balance when reversing payment allocations", async () => {
 		const store = createMemoryPayablesStore();
 		const options = {
-			store,
 			authorization,
 			effects,
-			purchaseOrderMatch,
 			goodsReceiptMatch,
 			postedPayment,
+			purchaseOrderMatch,
+			store,
 		};
 		const created = await createDraftSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "reverse-create",
 				code: "SI-REVERSE",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
+				correlationId: "reverse-create",
 				currencyCode: "USD",
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		await addSupplierInvoiceLine(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "reverse-line",
+				description: "Materials",
 				invoiceId: created.data.id,
 				itemId,
-				description: "Materials",
+				organizationId,
 				quantity: "1",
 				unitPrice: "100",
 			},
@@ -401,46 +425,46 @@ describe("payables lifecycle", () => {
 		);
 		await matchSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "reverse-match",
-				invoiceId: created.data.id,
-				purchaseOrderId,
-				goodsReceiptId,
 				expectedVersion: 2,
+				goodsReceiptId,
+				invoiceId: created.data.id,
+				organizationId,
+				purchaseOrderId,
 			},
 			options,
 		);
 		await postSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "reverse-post",
-				invoiceId: created.data.id,
 				expectedVersion: 3,
+				invoiceId: created.data.id,
+				organizationId,
 			},
 			options,
 		);
 		await applySupplierPayment(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "reverse-apply",
-				invoiceId: created.data.id,
-				paymentId,
-				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
-				idempotencyKey: "reverse-apply-1",
 				amount: "25",
+				correlationId: "reverse-apply",
+				idempotencyKey: "reverse-apply-1",
+				invoiceId: created.data.id,
+				organizationId,
+				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
+				paymentId,
 			},
 			options,
 		);
 		const reversed = await reverseSupplierPaymentApplication(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "reverse",
-				paymentId,
 				idempotencyKey: "reverse-supplier-1",
+				organizationId,
+				paymentId,
 			},
 			options,
 		);
@@ -448,7 +472,7 @@ describe("payables lifecycle", () => {
 		const invoice = await store.getById(organizationId, created.data.id);
 		expect(invoice.ok && invoice.data?.openAmount).toBe("100");
 		const balance = await getSupplierBalance(
-			{ organizationId, actorUserId, supplierId, currencyCode: "USD" },
+			{ actorUserId, currencyCode: "USD", organizationId, supplierId },
 			options,
 		);
 		expect(balance.ok && balance.data[0]?.openBalance).toBe("100");
@@ -457,45 +481,49 @@ describe("payables lifecycle", () => {
 	it("rejects currency mismatch on payment application", async () => {
 		const store = createMemoryPayablesStore();
 		const mismatchedPayment: PostedPaymentQueryPort = {
-			async getPostedPayment() {
-				return ok({
-					paymentId,
-					status: "posted",
-					currencyCode: "EUR",
-					direction: "outbound",
-				});
+			getPostedPayment() {
+				return Promise.resolve(
+					ok({
+						currencyCode: "EUR",
+						direction: "outbound",
+						paymentId,
+						status: "posted",
+					}),
+				);
 			},
 		};
 		const options = {
-			store,
 			authorization,
 			effects,
-			purchaseOrderMatch,
 			goodsReceiptMatch,
 			postedPayment: mismatchedPayment,
+			purchaseOrderMatch,
+			store,
 		};
 		const created = await createDraftSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "create-fx",
 				code: "SI-FX",
-				supplierId,
-				supplierCode: "S-1",
-				supplierName: "Supplier One",
+				correlationId: "create-fx",
 				currencyCode: "USD",
+				organizationId,
+				supplierCode: "S-1",
+				supplierId,
+				supplierName: "Supplier One",
 			},
 			options,
 		);
-		if (!created.ok) return;
+		if (!created.ok) {
+			return;
+		}
 		await addSupplierInvoiceLine(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "line-fx",
+				description: "FX",
 				invoiceId: created.data.id,
 				itemId,
-				description: "FX",
+				organizationId,
 				quantity: "1",
 				unitPrice: "10",
 			},
@@ -503,41 +531,43 @@ describe("payables lifecycle", () => {
 		);
 		await matchSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "match-fx",
-				invoiceId: created.data.id,
-				purchaseOrderId,
-				goodsReceiptId,
 				expectedVersion: 2,
+				goodsReceiptId,
+				invoiceId: created.data.id,
+				organizationId,
+				purchaseOrderId,
 			},
 			options,
 		);
 		await postSupplierInvoice(
 			{
-				organizationId,
 				actorUserId,
 				correlationId: "post-fx",
-				invoiceId: created.data.id,
 				expectedVersion: 3,
+				invoiceId: created.data.id,
+				organizationId,
 			},
 			options,
 		);
 		const applied = await applySupplierPayment(
 			{
-				organizationId,
 				actorUserId,
-				correlationId: "apply-fx",
-				invoiceId: created.data.id,
-				paymentId,
-				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
-				idempotencyKey: "apply-fx",
 				amount: "5",
+				correlationId: "apply-fx",
+				idempotencyKey: "apply-fx",
+				invoiceId: created.data.id,
+				organizationId,
+				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
+				paymentId,
 			},
 			options,
 		);
 		expect(applied.ok).toBe(false);
-		if (applied.ok) return;
+		if (applied.ok) {
+			return;
+		}
 		expect(applied.message).toMatch(/currenc/i);
 	});
 });

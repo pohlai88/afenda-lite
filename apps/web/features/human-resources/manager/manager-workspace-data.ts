@@ -61,7 +61,9 @@ export async function loadManagerWorkspace(
 		throw new AppError({
 			code: scopeResult.code,
 			message: scopeResult.message,
-			details: scopeResult.details,
+			...(scopeResult.details === undefined
+				? {}
+				: { details: scopeResult.details }),
 		});
 	}
 	const scope = scopeResult.data;

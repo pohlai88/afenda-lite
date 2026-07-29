@@ -8,6 +8,8 @@ import {
 	toSessionRole,
 } from "../src/roles";
 
+const UNHANDLED_NEON_ROLE_PATTERN = /unhandled Neon org role/;
+
 describe("roleSatisfies", () => {
 	it("lets admin satisfy operator shells", () => {
 		expect(roleSatisfies("admin", "operator")).toBe(true);
@@ -32,7 +34,9 @@ describe("Neon ↔ session role map", () => {
 	});
 
 	it("rejects unknown Neon roles", () => {
-		expect(() => toSessionRole("superuser")).toThrow(/unhandled Neon org role/);
+		expect(() => toSessionRole("superuser")).toThrow(
+			UNHANDLED_NEON_ROLE_PATTERN,
+		);
 	});
 });
 

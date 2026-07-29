@@ -92,7 +92,9 @@ export async function recordOrgRoleAssignedEvent(
 					throw new AppError({
 						code: notification.code,
 						message: ORG_ROLE_NOTIFICATION_FAILED_MESSAGE,
-						details: notification.details,
+						...(notification.details === undefined
+							? {}
+							: { details: notification.details }),
 					});
 				}
 				notificationId = notification.data.id;

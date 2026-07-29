@@ -144,7 +144,7 @@ export type RunDurableCompanyCommandInput<TResult> = Readonly<{
 				occurredAt: string;
 				actorUserId: string;
 				correlationId: string;
-				causationId?: string;
+				causationId?: string | undefined;
 			}>,
 		): unknown;
 		safeMetadata?: Readonly<Record<string, string | number | boolean | null>>;

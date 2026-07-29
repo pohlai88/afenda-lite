@@ -89,9 +89,11 @@ export async function runHumanResourcesBulkExport(
 
 	const listed = await source.list({
 		organizationId: request.organizationId,
-		dateFrom: request.dateFrom,
-		dateTo: request.dateTo,
-		effectiveOn: request.effectiveOn,
+		...(request.dateFrom === undefined ? {} : { dateFrom: request.dateFrom }),
+		...(request.dateTo === undefined ? {} : { dateTo: request.dateTo }),
+		...(request.effectiveOn === undefined
+			? {}
+			: { effectiveOn: request.effectiveOn }),
 	});
 	if (!listed.ok) return listed;
 	if (

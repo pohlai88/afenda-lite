@@ -102,7 +102,7 @@ export function buildSubmitLeaveRequestSql(params: {
 	expectedVersion: number;
 	actorUserId: string;
 	correlationId: string;
-	eventType?: OutboxFactInput["type"];
+	eventType?: OutboxFactInput["type"] | undefined;
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
 	const changesJson = fieldChangeJson("status", null, "submitted");
@@ -657,7 +657,7 @@ export function buildCreateLeaveAdjustmentSql(params: {
 	createRequestFingerprint: string;
 	createdBy: string;
 	correlationId: string;
-	eventType?: OutboxFactInput["type"];
+	eventType?: OutboxFactInput["type"] | undefined;
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
 
@@ -748,11 +748,11 @@ export function buildStatusTransitionSql(params: {
 	actorUserId: string;
 	correlationId: string;
 	nextStatus: string;
-	decision?: string;
-	decisionId?: string;
-	note?: string | null;
-	eventType?: OutboxFactInput["type"];
-	approvedAt?: Date;
+	decision?: string | undefined;
+	decisionId?: string | undefined;
+	note?: string | null | undefined;
+	eventType?: OutboxFactInput["type"] | undefined;
+	approvedAt?: Date | undefined;
 }): string {
 	const { auditId, eventId } = generateTransactionIds();
 
@@ -1005,7 +1005,7 @@ export function buildExpireEntitlementSql(params: {
 	correlationId: string;
 	expiryAdjustmentId: string;
 	createRequestFingerprint: string;
-	eventType?: OutboxFactInput["type"];
+	eventType?: OutboxFactInput["type"] | undefined;
 }): string {
 	const { auditId: entitlementAuditId, eventId } = generateTransactionIds();
 	const { auditId: expiryAuditId } = generateTransactionIds();

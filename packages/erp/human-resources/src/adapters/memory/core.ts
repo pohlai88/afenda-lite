@@ -378,9 +378,9 @@ export function createMemoryCoreMethods(
 			organizationId: string;
 			page: number;
 			pageSize: number;
-			employeeNumberPrefix?: string;
-			legalNamePrefix?: string;
-			employmentStatus?: string;
+			employeeNumberPrefix?: string | undefined;
+			legalNamePrefix?: string | undefined;
+			employmentStatus?: string | undefined;
 		}): Promise<Result<EmployeeListPage>> {
 			let filtered = Array.from(state.employees.values()).filter(
 				(e) => e.organizationId === input.organizationId,

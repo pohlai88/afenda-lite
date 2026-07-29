@@ -568,7 +568,7 @@ export async function endPremise(
 async function prepareAddressMutation(
 	input: {
 		legalCompanyId: LegalCompanyId;
-		legalEstablishmentId?: LegalEstablishmentId | null;
+		legalEstablishmentId?: LegalEstablishmentId | null | undefined;
 		sourcePartyAddressId: string;
 		effectiveFrom: CanonicalDate;
 		sourceDocumentId: string;

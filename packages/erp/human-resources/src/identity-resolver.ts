@@ -13,12 +13,12 @@ export type HumanResourcesIdentityResolverPort = {
 	resolveEmployeeForActor(input: {
 		organizationId: string;
 		actorUserId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<HumanResourcesEmployeeIdentity | null>>;
 
 	resolveManagerEmployeesForActor(input: {
 		organizationId: string;
 		actorUserId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<HumanResourcesEmployeeId[]>>;
 };

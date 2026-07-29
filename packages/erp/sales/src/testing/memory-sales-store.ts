@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: The deterministic in-memory adapter implements the asynchronous SalesStore contract.
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
@@ -141,17 +142,20 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		if (
 			[...this.books.values()].some(
 				(v) =>
 					v.organizationId === input.organizationId &&
 					v.normalizedCode === input.normalizedCode,
 			)
-		)
+		) {
 			return fail("CONFLICT", "Price-book code already exists", {
 				reason: "SALES_DUPLICATE_CODE",
 			});
+		}
 		const value: PriceBook = {
 			...input,
 			id: priceBookIdSchema.parse(randomUUID()),
@@ -175,14 +179,17 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		const book = this.books.get(
 			this.key(input.organizationId, input.priceBookId),
 		);
-		if (!book || book.status === "archived")
+		if (!book || book.status === "archived") {
 			return fail("NOT_FOUND", "Price book not found", {
 				reason: "SALES_NOT_FOUND",
 			});
+		}
 		const value: PriceBookEntry = {
 			...input,
 			id: priceBookEntryIdSchema.parse(randomUUID()),
@@ -220,9 +227,12 @@ export class MemorySalesStore implements SalesStore {
 		evidence: EvidenceSeed,
 	) {
 		const current = this.books.get(this.key(input.organizationId, input.id));
-		if (!current) return fail("NOT_FOUND", "Price book not found");
-		if (current.version !== input.expectedVersion)
+		if (!current) {
+			return fail("NOT_FOUND", "Price book not found");
+		}
+		if (current.version !== input.expectedVersion) {
 			return conflict(current, input.expectedVersion);
+		}
 		const value = {
 			...current,
 			status: input.status,
@@ -251,8 +261,9 @@ export class MemorySalesStore implements SalesStore {
 				(entry.validTo && entry.validTo < input.at) ||
 				book.validFrom > input.at ||
 				(book.validTo && book.validTo < input.at)
-			)
+			) {
 				return [];
+			}
 			return [{ book, entry }];
 		});
 		return ok(values);
@@ -266,7 +277,9 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		if (
 			[...this.quotations.values()].some(
 				(v) =>
@@ -274,10 +287,11 @@ export class MemorySalesStore implements SalesStore {
 					v.normalizedCode === input.normalizedCode &&
 					v.revision === input.revision,
 			)
-		)
+		) {
 			return fail("CONFLICT", "Quotation code and revision already exist", {
 				reason: "SALES_DUPLICATE_CODE",
 			});
+		}
 		const value: SalesQuotation = {
 			...input,
 			id: salesQuotationIdSchema.parse(randomUUID()),
@@ -301,17 +315,23 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		const quotation = this.quotations.get(
 			this.key(input.organizationId, input.quotationId),
 		);
-		if (!quotation) return fail("NOT_FOUND", "Sales quotation not found");
-		if (quotation.version !== input.expectedVersion)
+		if (!quotation) {
+			return fail("NOT_FOUND", "Sales quotation not found");
+		}
+		if (quotation.version !== input.expectedVersion) {
 			return conflict(quotation, input.expectedVersion);
-		if (quotation.status !== "draft")
+		}
+		if (quotation.status !== "draft") {
 			return fail("CONFLICT", "Only draft quotations can be changed", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		const lineNo =
 			[...this.quotationLines.values()].filter(
 				(v) =>
@@ -351,15 +371,19 @@ export class MemorySalesStore implements SalesStore {
 		const current = this.quotations.get(
 			this.key(input.organizationId, input.id),
 		);
-		if (!current) return fail("NOT_FOUND", "Sales quotation not found");
-		if (current.version !== input.expectedVersion)
+		if (!current) {
+			return fail("NOT_FOUND", "Sales quotation not found");
+		}
+		if (current.version !== input.expectedVersion) {
 			return conflict(current, input.expectedVersion);
-		if (!QUOTE_TRANSITIONS[current.status].includes(input.status))
+		}
+		if (!QUOTE_TRANSITIONS[current.status].includes(input.status)) {
 			return fail("CONFLICT", "Invalid quotation lifecycle transition", {
 				reason: "SALES_INVALID_STATE",
 				from: current.status,
 				to: input.status,
 			});
+		}
 		const value = {
 			...current,
 			status: input.status,
@@ -415,17 +439,20 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		if (
 			[...this.orders.values()].some(
 				(v) =>
 					v.organizationId === input.organizationId &&
 					v.normalizedCode === input.normalizedCode,
 			)
-		)
+		) {
 			return fail("CONFLICT", "Sales-order code already exists", {
 				reason: "SALES_DUPLICATE_CODE",
 			});
+		}
 		const value: SalesOrder = {
 			...input,
 			id: salesOrderIdSchema.parse(randomUUID()),
@@ -450,17 +477,23 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		const order = this.orders.get(
 			this.key(input.organizationId, input.orderId),
 		);
-		if (!order) return fail("NOT_FOUND", "Sales order not found");
-		if (order.version !== input.expectedVersion)
+		if (!order) {
+			return fail("NOT_FOUND", "Sales order not found");
+		}
+		if (order.version !== input.expectedVersion) {
 			return conflict(order, input.expectedVersion);
-		if (order.status !== "draft")
+		}
+		if (order.status !== "draft") {
 			return fail("CONFLICT", "Only draft orders can be changed", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		const lineNo =
 			[...this.orderLines.values()].filter(
 				(v) =>
@@ -513,15 +546,19 @@ export class MemorySalesStore implements SalesStore {
 		evidence: EvidenceSeed,
 	) {
 		const current = this.orders.get(this.key(input.organizationId, input.id));
-		if (!current) return fail("NOT_FOUND", "Sales order not found");
-		if (current.version !== input.expectedVersion)
+		if (!current) {
+			return fail("NOT_FOUND", "Sales order not found");
+		}
+		if (current.version !== input.expectedVersion) {
 			return conflict(current, input.expectedVersion);
-		if (!ORDER_TRANSITIONS[current.status].includes(input.status))
+		}
+		if (!ORDER_TRANSITIONS[current.status].includes(input.status)) {
 			return fail("CONFLICT", "Invalid sales-order lifecycle transition", {
 				reason: "SALES_INVALID_STATE",
 				from: current.status,
 				to: input.status,
 			});
+		}
 		const value: SalesOrder = {
 			...current,
 			status: input.status,
@@ -546,15 +583,19 @@ export class MemorySalesStore implements SalesStore {
 		evidence: EvidenceSeed,
 	) {
 		const current = this.orders.get(this.key(input.organizationId, input.id));
-		if (!current) return fail("NOT_FOUND", "Sales order not found");
-		if (current.version !== input.expectedVersion)
+		if (!current) {
+			return fail("NOT_FOUND", "Sales order not found");
+		}
+		if (current.version !== input.expectedVersion) {
 			return conflict(current, input.expectedVersion);
-		if (!ORDER_TRANSITIONS[current.status].includes("released"))
+		}
+		if (!ORDER_TRANSITIONS[current.status].includes("released")) {
 			return fail(
 				"CONFLICT",
 				"Sales order cannot be released from its current state",
 				{ reason: "SALES_INVALID_STATE", status: current.status },
 			);
+		}
 		const totals = await this.orderTotals(
 			input.organizationId,
 			input.id,
@@ -569,16 +610,18 @@ export class MemorySalesStore implements SalesStore {
 			...updatedStamp(current, input.actorUserId, input.at),
 		};
 		this.orders.set(this.key(input.organizationId, input.id), value);
-		for (const schedule of this.schedules.values())
+		for (const schedule of this.schedules.values()) {
 			if (
 				schedule.organizationId === input.organizationId &&
 				schedule.orderId === input.id
-			)
+			) {
 				this.schedules.set(this.key(input.organizationId, schedule.id), {
 					...schedule,
 					releasedQuantity: schedule.quantity,
 					...updatedStamp(schedule, input.actorUserId, input.at),
 				});
+			}
+		}
 		this.evidence.push({
 			...evidence,
 			entityId: value.id,
@@ -637,11 +680,15 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		const order = this.orders.get(
 			this.key(input.organizationId, input.orderId),
 		);
-		if (!order) return fail("NOT_FOUND", "Sales order not found");
+		if (!order) {
+			return fail("NOT_FOUND", "Sales order not found");
+		}
 		const value: SalesHold = {
 			id: salesHoldIdSchema.parse(randomUUID()),
 			organizationId: input.organizationId,
@@ -666,8 +713,12 @@ export class MemorySalesStore implements SalesStore {
 		evidence: EvidenceSeed,
 	) {
 		const current = this.holds.get(this.key(input.organizationId, input.id));
-		if (!current) return fail("NOT_FOUND", "Sales-order hold not found");
-		if (current.status === "resolved") return ok(current);
+		if (!current) {
+			return fail("NOT_FOUND", "Sales-order hold not found");
+		}
+		if (current.status === "resolved") {
+			return ok(current);
+		}
 		const now = new Date();
 		const value: SalesHold = {
 			...current,
@@ -704,25 +755,31 @@ export class MemorySalesStore implements SalesStore {
 		const line = this.orderLines.get(
 			this.key(input.organizationId, input.lineId),
 		);
-		if (!order || !line || line.orderId !== input.orderId)
+		if (!(order && line) || line.orderId !== input.orderId) {
 			return fail("NOT_FOUND", "Sales order line not found");
-		if (order.version !== input.expectedVersion)
+		}
+		if (order.version !== input.expectedVersion) {
 			return conflict(order, input.expectedVersion);
+		}
 		if (
 			!(order.status === "released" || order.status === "partially_fulfilled")
-		)
+		) {
 			return fail("CONFLICT", "Sales order is not open for fulfillment", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		const fulfilled = await addDecimals([
 			line.fulfilledQuantity,
 			input.fulfilledQuantity,
 		]);
-		if (!fulfilled.ok) return fulfilled;
-		if (Number(fulfilled.data) > Number(line.quantity))
+		if (!fulfilled.ok) {
+			return fulfilled;
+		}
+		if (Number(fulfilled.data) > Number(line.quantity)) {
 			return fail("CONFLICT", "Fulfilled quantity exceeds ordered quantity", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		this.orderLines.set(this.key(input.organizationId, line.id), {
 			...line,
 			fulfilledQuantity: fulfilled.data,
@@ -764,9 +821,12 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
-		if (!this.orders.has(this.key(input.organizationId, input.orderId)))
+		if (replay) {
+			return ok(replay);
+		}
+		if (!this.orders.has(this.key(input.organizationId, input.orderId))) {
 			return fail("NOT_FOUND", "Sales order not found");
+		}
 		const value: ReturnAuthorization = {
 			...input,
 			id: returnAuthorizationIdSchema.parse(randomUUID()),
@@ -790,20 +850,25 @@ export class MemorySalesStore implements SalesStore {
 			input.organizationId,
 			input.idempotencyKey,
 		);
-		if (replay) return ok(replay);
+		if (replay) {
+			return ok(replay);
+		}
 		const parent = this.returns.get(
 			this.key(input.organizationId, input.returnAuthorizationId),
 		);
-		if (!parent)
+		if (!parent) {
 			return fail("NOT_FOUND", "Return authorization was not found", {
 				reason: "SALES_NOT_FOUND",
 			});
-		if (parent.version !== input.expectedVersion)
+		}
+		if (parent.version !== input.expectedVersion) {
 			return conflict(parent, input.expectedVersion);
-		if (parent?.status !== "draft")
+		}
+		if (parent?.status !== "draft") {
 			return fail("CONFLICT", "Return authorization is not editable", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		const line = this.orderLines.get(
 			this.key(input.organizationId, input.orderLineId),
 		);
@@ -811,10 +876,11 @@ export class MemorySalesStore implements SalesStore {
 			!line ||
 			line.orderId !== parent.orderId ||
 			Number(input.quantity) > Number(line.fulfilledQuantity)
-		)
+		) {
 			return fail("CONFLICT", "Return quantity exceeds fulfilled quantity", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		const value: ReturnAuthorizationLine = {
 			...input,
 			id: returnAuthorizationLineIdSchema.parse(randomUUID()),
@@ -871,13 +937,17 @@ export class MemorySalesStore implements SalesStore {
 		evidence: EvidenceSeed,
 	) {
 		const current = this.returns.get(this.key(input.organizationId, input.id));
-		if (!current) return fail("NOT_FOUND", "Return authorization not found");
-		if (current.version !== input.expectedVersion)
+		if (!current) {
+			return fail("NOT_FOUND", "Return authorization not found");
+		}
+		if (current.version !== input.expectedVersion) {
 			return conflict(current, input.expectedVersion);
-		if (!RETURN_TRANSITIONS[current.status].includes(input.status))
+		}
+		if (!RETURN_TRANSITIONS[current.status].includes(input.status)) {
 			return fail("CONFLICT", "Invalid return lifecycle transition", {
 				reason: "SALES_INVALID_STATE",
 			});
+		}
 		const value = {
 			...current,
 			status: input.status,

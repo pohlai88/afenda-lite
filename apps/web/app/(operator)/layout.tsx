@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 
 import { OperatorPlatformShell } from "@/features/portal-chrome/operator-platform-shell";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Operator route group — `/admin` (ARCH-022).
  * Coarse `requireRole('operator')` fail-closed; shared ERP platform shell (N16)

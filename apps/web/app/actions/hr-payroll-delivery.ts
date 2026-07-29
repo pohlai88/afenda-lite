@@ -64,10 +64,17 @@ export async function queuePayrollDeliveryAction(input: {
 				);
 			const result = await queuePayrollDelivery(
 				{
-					...parsed.data,
+					idempotencyKey: parsed.data.idempotencyKey,
+					payload: parsed.data.payload,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId: parsed.data.payload.approvalEvidence.correlationId,
+					...(parsed.data.maxAttempts === undefined
+						? {}
+						: { maxAttempts: parsed.data.maxAttempts }),
+					...(parsed.data.supersedesDeliveryId === undefined
+						? {}
+						: { supersedesDeliveryId: parsed.data.supersedesDeliveryId }),
 				},
 				createProductionPayrollDeliveryPorts(undefined, session.userId),
 			);
@@ -126,10 +133,15 @@ export async function queuePayrollDeliveryCorrectionAction(input: {
 			return mapPackageResult(
 				await queuePayrollDelivery(
 					{
-						...parsed.data,
+						idempotencyKey: parsed.data.idempotencyKey,
+						payload: parsed.data.payload,
+						supersedesDeliveryId: parsed.data.supersedesDeliveryId,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId: parsed.data.payload.approvalEvidence.correlationId,
+						...(parsed.data.maxAttempts === undefined
+							? {}
+							: { maxAttempts: parsed.data.maxAttempts }),
 					},
 					createProductionPayrollDeliveryPorts(undefined, session.userId),
 				),
@@ -158,9 +170,13 @@ export async function recordPayrollDeliveryFeedbackAction(input: {
 			return mapPackageResult(
 				await recordPayrollDeliveryFeedback(
 					{
-						...parsed.data,
+						deliveryId: parsed.data.deliveryId,
+						status: parsed.data.status,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
+						...(parsed.data.reason === undefined
+							? {}
+							: { reason: parsed.data.reason }),
 					},
 					createProductionPayrollDeliveryPorts(undefined, session.userId),
 				),

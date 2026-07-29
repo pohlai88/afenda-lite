@@ -118,7 +118,7 @@ export interface OfficerComplianceStore {
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
 		windowDays: number;
-		declarationType?: OfficerDeclarationType;
+		declarationType?: OfficerDeclarationType | undefined;
 	}): Promise<Result<readonly OfficerDeclaration[]>>;
 	recordOfficerDeclaration(
 		input: RecordOfficerDeclarationStoreInput,
@@ -138,7 +138,7 @@ export interface OfficerComplianceStore {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
-		officerAppointmentId?: OfficerAppointmentId;
+		officerAppointmentId?: OfficerAppointmentId | undefined;
 	}): Promise<Result<readonly OfficerDisqualification[]>>;
 	recordOfficerDisqualification(
 		input: RecordOfficerDisqualificationStoreInput,
@@ -155,7 +155,7 @@ export interface OfficerComplianceStore {
 		legalCompanyId: LegalCompanyId;
 		matterType: ConflictMatterType;
 		matterId: string;
-		includeCleared?: boolean;
+		includeCleared?: boolean | undefined;
 	}): Promise<Result<readonly ConflictDisclosure[]>>;
 	discloseConflict(
 		input: DiscloseConflictStoreInput,

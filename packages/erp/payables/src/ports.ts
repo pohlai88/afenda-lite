@@ -1,64 +1,64 @@
 import type { Result } from "@afenda/errors/result";
 
 /** Posted payment snapshot for AP application — Payments owns the payment row. */
-export type PostedPaymentBasis = {
-	paymentId: string;
-	status: "posted";
+export interface PostedPaymentBasis {
 	currencyCode: string;
 	direction: string;
-};
+	paymentId: string;
+	status: "posted";
+}
 
-export type PostedPaymentQueryPort = {
-	getPostedPayment(input: {
+export interface PostedPaymentQueryPort {
+	getPostedPayment: (input: {
 		organizationId: string;
 		paymentId: string;
-	}): Promise<Result<PostedPaymentBasis | null>>;
-};
+	}) => Promise<Result<PostedPaymentBasis | null>>;
+}
 
-export type PurchaseOrderMatchLineBasis = {
+export interface PurchaseOrderMatchLineBasis {
 	itemId: string;
 	quantity: string;
 	unitPrice: string;
-};
+}
 
 /** PO match basis from composition-root adapter — Payables never queries PO tables. */
-export type PurchaseOrderMatchBasis = {
-	purchaseOrderId: string;
-	supplierPartyId: string;
-	status: string;
+export interface PurchaseOrderMatchBasis {
 	currencyCode: string;
-	version: number;
-	quantityTolerancePct?: string;
-	priceTolerancePct?: string;
 	lines: PurchaseOrderMatchLineBasis[];
-};
+	priceTolerancePct?: string;
+	purchaseOrderId: string;
+	quantityTolerancePct?: string;
+	status: string;
+	supplierPartyId: string;
+	version: number;
+}
 
-export type PurchaseOrderMatchQueryPort = {
-	getPurchaseOrderMatchBasis(input: {
+export interface PurchaseOrderMatchQueryPort {
+	getPurchaseOrderMatchBasis: (input: {
 		organizationId: string;
 		purchaseOrderId: string;
-	}): Promise<Result<PurchaseOrderMatchBasis | null>>;
-};
+	}) => Promise<Result<PurchaseOrderMatchBasis | null>>;
+}
 
-export type GoodsReceiptMatchLineBasis = {
+export interface GoodsReceiptMatchLineBasis {
 	itemId: string;
 	quantityReceived: string;
-};
+}
 
 /** GR match basis from composition-root adapter — Payables never queries GR tables. */
-export type GoodsReceiptMatchBasis = {
+export interface GoodsReceiptMatchBasis {
 	goodsReceiptId: string;
-	purchaseOrderId: string;
-	status: string;
-	sourceType: string;
-	sourceId: string;
-	version: number;
 	lines: GoodsReceiptMatchLineBasis[];
-};
+	purchaseOrderId: string;
+	sourceId: string;
+	sourceType: string;
+	status: string;
+	version: number;
+}
 
-export type GoodsReceiptMatchQueryPort = {
-	getGoodsReceiptMatchBasis(input: {
+export interface GoodsReceiptMatchQueryPort {
+	getGoodsReceiptMatchBasis: (input: {
 		organizationId: string;
 		goodsReceiptId: string;
-	}): Promise<Result<GoodsReceiptMatchBasis | null>>;
-};
+	}) => Promise<Result<GoodsReceiptMatchBasis | null>>;
+}

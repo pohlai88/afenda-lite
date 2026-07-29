@@ -13,7 +13,7 @@ export const JOIN_INVITATION_ID_MAX_LENGTH = 256 as const;
 
 /** C0 controls + DEL — char codes avoid Biome `noControlCharactersInRegex`. */
 function joinInvitationHasControlChars(value: string): boolean {
-	for (let i = 0; i < value.length; i++) {
+	for (let i = 0; i < value.length; i += 1) {
 		const code = value.charCodeAt(i);
 		if (code <= 0x1f || code === 0x7f) {
 			return true;
@@ -22,11 +22,11 @@ function joinInvitationHasControlChars(value: string): boolean {
 	return false;
 }
 
-export type BuildJoinUrlInput = {
+export interface BuildJoinUrlInput {
 	invitationId: string;
 	/** Absolute origin (`https://…`). Defaults to relative `/join?…` when omitted. */
 	origin?: string;
-};
+}
 
 /**
  * Join query parse result — structural only.
@@ -66,7 +66,7 @@ export function parseJoinInvitationQuery(
 		return { kind: "invalid" };
 	}
 
-	return { kind: "present", invitationId: trimmed };
+	return { invitationId: trimmed, kind: "present" };
 }
 
 /**
@@ -96,7 +96,7 @@ export function buildJoinUrl(input: BuildJoinUrlInput): string {
 		return path;
 	}
 
-	const origin = new URL(input.origin).origin;
+	const { origin } = new URL(input.origin);
 	return `${origin}${path}`;
 }
 

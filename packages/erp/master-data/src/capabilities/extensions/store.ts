@@ -45,8 +45,8 @@ export type PartyRoleCreateRecord = {
 	partyId: string;
 	roleCode: PartyRoleCode;
 	createdBy: string;
-	validFrom?: Date | null;
-	validTo?: Date | null;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
 };
 
 export type PartyRoleUpdateRecord = {
@@ -54,9 +54,9 @@ export type PartyRoleUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	roleCode?: PartyRoleCode;
-	validFrom?: Date | null;
-	validTo?: Date | null;
+	roleCode?: PartyRoleCode | undefined;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
 };
 
 export type PartyRoleListFilter = {
@@ -78,17 +78,17 @@ export type PartyAddressCreateRecord = {
 	addressType: PartyAddressType;
 	purpose: PartyAddressPurpose;
 	line1: string;
-	line2?: string | null;
-	line3?: string | null;
+	line2?: string | null | undefined;
+	line3?: string | null | undefined;
 	city: string;
-	administrativeArea?: string | null;
-	postalCode?: string | null;
+	administrativeArea?: string | null | undefined;
+	postalCode?: string | null | undefined;
 	countryId: string;
-	attention?: string | null;
-	isPrimary?: boolean;
-	validationStatus?: PartyAddressValidationStatus;
-	effectiveFrom?: Date | null;
-	effectiveTo?: Date | null;
+	attention?: string | null | undefined;
+	isPrimary?: boolean | undefined;
+	validationStatus?: PartyAddressValidationStatus | undefined;
+	effectiveFrom?: Date | null | undefined;
+	effectiveTo?: Date | null | undefined;
 	createdBy: string;
 };
 
@@ -97,20 +97,20 @@ export type PartyAddressUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	addressType?: PartyAddressType;
-	purpose?: PartyAddressPurpose;
-	line1?: string;
-	line2?: string | null;
-	line3?: string | null;
-	city?: string;
-	administrativeArea?: string | null;
-	postalCode?: string | null;
-	countryId?: string;
-	attention?: string | null;
-	isPrimary?: boolean;
-	validationStatus?: PartyAddressValidationStatus;
-	effectiveFrom?: Date | null;
-	effectiveTo?: Date | null;
+	addressType?: PartyAddressType | undefined;
+	purpose?: PartyAddressPurpose | undefined;
+	line1?: string | undefined;
+	line2?: string | null | undefined;
+	line3?: string | null | undefined;
+	city?: string | undefined;
+	administrativeArea?: string | null | undefined;
+	postalCode?: string | null | undefined;
+	countryId?: string | undefined;
+	attention?: string | null | undefined;
+	isPrimary?: boolean | undefined;
+	validationStatus?: PartyAddressValidationStatus | undefined;
+	effectiveFrom?: Date | null | undefined;
+	effectiveTo?: Date | null | undefined;
 };
 
 export type PartyContactCreateRecord = {
@@ -119,11 +119,11 @@ export type PartyContactCreateRecord = {
 	contactType: PartyContactType;
 	value: string;
 	normalizedValue: string;
-	label?: string | null;
-	purpose?: string | null;
-	isPrimary?: boolean;
-	effectiveFrom?: Date | null;
-	effectiveTo?: Date | null;
+	label?: string | null | undefined;
+	purpose?: string | null | undefined;
+	isPrimary?: boolean | undefined;
+	effectiveFrom?: Date | null | undefined;
+	effectiveTo?: Date | null | undefined;
 	createdBy: string;
 };
 
@@ -132,16 +132,16 @@ export type PartyContactUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	contactType?: PartyContactType;
-	value?: string;
-	normalizedValue?: string;
-	label?: string | null;
-	purpose?: string | null;
-	isPrimary?: boolean;
-	effectiveFrom?: Date | null;
-	effectiveTo?: Date | null;
-	verificationStatus?: PartyContactVerificationStatus;
-	verifiedAt?: Date | null;
+	contactType?: PartyContactType | undefined;
+	value?: string | undefined;
+	normalizedValue?: string | undefined;
+	label?: string | null | undefined;
+	purpose?: string | null | undefined;
+	isPrimary?: boolean | undefined;
+	effectiveFrom?: Date | null | undefined;
+	effectiveTo?: Date | null | undefined;
+	verificationStatus?: PartyContactVerificationStatus | undefined;
+	verifiedAt?: Date | null | undefined;
 };
 
 export type PartyContactVerificationRecord = {
@@ -287,11 +287,11 @@ export type ItemAliasCreateRecord = {
 export type ItemAliasLookup = {
 	organizationId: string;
 	normalizedValue: string;
-	aliasType?: ItemAliasType;
+	aliasType?: ItemAliasType | undefined;
 	/**
 	 * undefined searches any language; null searches language-neutral aliases only.
 	 */
-	languageId?: string | null;
+	languageId?: string | null | undefined;
 };
 
 export type ExtensionListPage<TItem> = {

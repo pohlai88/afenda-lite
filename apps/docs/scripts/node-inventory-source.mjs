@@ -13,7 +13,7 @@ export const source = {
 		return [];
 	},
 	getPage() {
-		return undefined;
+		// Inventory generation intentionally resolves no content pages.
 	},
 	pageTree: { name: "docs", children: [] },
 };

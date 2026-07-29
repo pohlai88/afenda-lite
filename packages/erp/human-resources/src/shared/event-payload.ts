@@ -7,8 +7,8 @@ export type HumanResourcesEntityEventPayload = {
 	actorId: string;
 	correlationId: string;
 	operation: string;
-	causationId?: string;
-	idempotencyKey?: string;
+	causationId?: string | undefined;
+	idempotencyKey?: string | undefined;
 };
 
 export function buildHumanResourcesEntityEventPayload(input: {

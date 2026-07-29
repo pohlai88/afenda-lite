@@ -30,7 +30,7 @@ function readRetryAfter(details: object): unknown {
 	try {
 		return Reflect.get(details, "retryAfter");
 	} catch {
-		return undefined;
+		// Throwing getters cannot provide a trustworthy retry hint.
 	}
 }
 
@@ -42,11 +42,11 @@ function readRetryAfter(details: object): unknown {
  */
 export function retryAfterSeconds(details: unknown): number | undefined {
 	if (typeof details !== "object" || details === null) {
-		return undefined;
+		return;
 	}
 	const value = readRetryAfter(details);
 	if (typeof value !== "number" || !Number.isFinite(value)) {
-		return undefined;
+		return;
 	}
 	const seconds = Math.floor(value);
 	return seconds >= MIN_RETRY_AFTER_SECONDS &&

@@ -23,37 +23,35 @@ export const THREE_WAY_MATCH_STATUSES = [
 ] as const;
 export type ThreeWayMatchStatus = (typeof THREE_WAY_MATCH_STATUSES)[number];
 
-export type SupplierInvoiceLine = {
-	id: string;
-	organizationId: string;
-	invoiceId: string;
-	lineNo: number;
-	itemId: string;
+export interface SupplierInvoiceLine {
+	createdAt: Date;
+	createdBy: string;
 	description: string;
+	id: string;
+	invoiceId: string;
+	itemId: string;
+	lineAmount: string;
+	lineNo: number;
+	organizationId: string;
 	quantity: string;
 	unitPrice: string;
-	lineAmount: string;
-	createdBy: string;
-	createdAt: Date;
-};
+}
 
-export type ThreeWayMatchResult = {
-	id: string;
-	organizationId: string;
-	invoiceId: string;
-	purchaseOrderId: string;
-	goodsReceiptId: string;
-	result: ThreeWayMatchStatus;
+export interface ThreeWayMatchResult {
 	evidence: ThreeWayMatchEvidence;
-	purchaseOrderVersion: number;
+	goodsReceiptId: string;
 	goodsReceiptVersion: number;
-	matchedBy: string;
+	id: string;
+	invoiceId: string;
 	matchedAt: Date;
-};
+	matchedBy: string;
+	organizationId: string;
+	purchaseOrderId: string;
+	purchaseOrderVersion: number;
+	result: ThreeWayMatchStatus;
+}
 
-export type ThreeWayMatchEvidence = {
-	quantityTolerancePct: string;
-	priceTolerancePct: string;
+export interface ThreeWayMatchEvidence {
 	lineResults: Array<{
 		itemId: string;
 		invoicedQuantity: string;
@@ -65,65 +63,67 @@ export type ThreeWayMatchEvidence = {
 		priceVariancePct: string;
 		outcome: "matched" | "matched_with_tolerance" | "exception";
 	}>;
-};
+	priceTolerancePct: string;
+	quantityTolerancePct: string;
+}
 
-export type SupplierInvoice = {
-	id: string;
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	documentType: "invoice" | "credit_note";
-	status: SupplierInvoiceStatus;
-	supplierId: string;
-	supplierCode: string;
-	supplierName: string;
-	currencyCode: string;
-	totalAmount: string;
-	openAmount: string;
-	version: number;
-	createdBy: string;
-	updatedBy: string;
-	matchedAt: Date | null;
-	matchedBy: string | null;
-	postedAt: Date | null;
-	postedBy: string | null;
+export interface SupplierInvoice {
 	cancelledAt: Date | null;
 	cancelledBy: string | null;
+	code: string;
 	createdAt: Date;
-	updatedAt: Date;
-	lines: SupplierInvoiceLine[];
-	matchResult: ThreeWayMatchResult | null;
-};
-
-export type SupplierAllocation = {
+	createdBy: string;
+	currencyCode: string;
+	documentType: "invoice" | "credit_note";
 	id: string;
+	lines: SupplierInvoiceLine[];
+	matchedAt: Date | null;
+	matchedBy: string | null;
+	matchResult: ThreeWayMatchResult | null;
+	normalizedCode: string;
+	openAmount: string;
 	organizationId: string;
-	invoiceId: string;
+	postedAt: Date | null;
+	postedBy: string | null;
+	status: SupplierInvoiceStatus;
+	supplierCode: string;
 	supplierId: string;
-	paymentId: string | null;
-	paymentApplicationInstructionId: string | null;
-	creditNoteId: string | null;
-	status: "active" | "reversed";
+	supplierName: string;
+	totalAmount: string;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface SupplierAllocation {
 	amount: string;
 	applyIdempotencyKey: string | null;
+	createdAt: Date;
+	createdBy: string;
+	creditNoteId: string | null;
+	id: string;
+	invoiceId: string;
+	organizationId: string;
+	paymentApplicationInstructionId: string | null;
+	paymentId: string | null;
 	reversedAt: Date | null;
 	reversedBy: string | null;
-	createdBy: string;
-	createdAt: Date;
-};
-
-export type SupplierBalance = {
-	organizationId: string;
+	status: "active" | "reversed";
 	supplierId: string;
-	currencyCode: string;
-	openBalance: string;
-	invoicedAmount: string;
-	creditedAmount: string;
-	paidAmount: string;
-	outstandingAmount: string;
+}
+
+export interface SupplierBalance {
 	asOf: Date;
+	creditedAmount: string;
+	currencyCode: string;
+	invoicedAmount: string;
+	openBalance: string;
+	organizationId: string;
+	outstandingAmount: string;
+	paidAmount: string;
+	supplierId: string;
 	updatedAt: Date;
-};
+}
 
 export type PayablesEventType =
 	| "payables.invoice.created.v1"
@@ -135,36 +135,42 @@ export type PayablesEventType =
 	| "payables.allocation.reversed.v1"
 	| "payables.payment_application.reversed.v1";
 
-export type PayablesEffects = {
-	emit(event: {
+export interface PayablesEffects {
+	emit: (event: {
 		type: PayablesEventType;
 		organizationId: string;
 		actorUserId: string;
 		correlationId: string;
 		payload: Record<string, unknown>;
-	}): Promise<Result<void>>;
-};
+	}) => Promise<Result<void>>;
+}
 
-export type SupplierInvoiceCreateRecord = {
-	organizationId: string;
-	code: string;
-	normalizedCode: string;
-	documentType: "invoice" | "credit_note";
-	supplierId: string;
-	supplierCode: string;
-	supplierName: string;
-	currencyCode: string;
-	creditAmount?: string;
+export interface SupplierInvoiceCreateRecord {
 	actorUserId: string;
+	code: string;
 	correlationId: string;
+	creditAmount?: string;
+	currencyCode: string;
+	documentType: "invoice" | "credit_note";
 	effects: PayablesEffects;
-};
+	normalizedCode: string;
+	organizationId: string;
+	supplierCode: string;
+	supplierId: string;
+	supplierName: string;
+}
 
-export type PayablesStore = {
-	createInvoice(
-		record: SupplierInvoiceCreateRecord,
-	): Promise<Result<SupplierInvoice>>;
-	addLine(record: {
+export interface PayablesStore {
+	addCreditLine: (record: {
+		organizationId: string;
+		creditNoteId: string;
+		itemId: string;
+		description: string;
+		quantity: string;
+		unitPrice: string;
+		actorUserId: string;
+	}) => Promise<Result<SupplierInvoiceLine>>;
+	addLine: (record: {
 		organizationId: string;
 		invoiceId: string;
 		itemId: string;
@@ -172,8 +178,61 @@ export type PayablesStore = {
 		quantity: string;
 		unitPrice: string;
 		actorUserId: string;
-	}): Promise<Result<SupplierInvoiceLine>>;
-	matchInvoice(record: {
+	}) => Promise<Result<SupplierInvoiceLine>>;
+	applyCredit: (record: {
+		organizationId: string;
+		invoiceId: string;
+		creditNoteId: string;
+		amount: string;
+		actorUserId: string;
+		correlationId: string;
+		idempotencyKey: string;
+		effects: PayablesEffects;
+	}) => Promise<Result<SupplierAllocation>>;
+	applyPayment: (record: {
+		organizationId: string;
+		invoiceId: string;
+		amount: string;
+		paymentId: string;
+		paymentApplicationInstructionId: string;
+		idempotencyKey: string;
+		actorUserId: string;
+		correlationId: string;
+		effects: PayablesEffects;
+	}) => Promise<Result<SupplierAllocation>>;
+	cancel: (record: {
+		organizationId: string;
+		invoiceId: string;
+		expectedVersion: number;
+		actorUserId: string;
+		correlationId: string;
+		effects: PayablesEffects;
+	}) => Promise<Result<SupplierInvoice>>;
+	createCredit: (
+		record: SupplierInvoiceCreateRecord,
+	) => Promise<Result<SupplierInvoice>>;
+	createInvoice: (
+		record: SupplierInvoiceCreateRecord,
+	) => Promise<Result<SupplierInvoice>>;
+	getBalance: (
+		organizationId: string,
+		supplierId: string,
+		currencyCode?: string,
+	) => Promise<Result<SupplierBalance[]>>;
+	getById: (
+		organizationId: string,
+		id: string,
+	) => Promise<Result<SupplierInvoice | null>>;
+	list: (filter: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: SupplierInvoiceStatus | undefined;
+		supplierId?: string | undefined;
+		currencyCode?: string | undefined;
+		documentType?: SupplierInvoice["documentType"] | undefined;
+	}) => Promise<Result<SupplierInvoice[]>>;
+	matchInvoice: (record: {
 		organizationId: string;
 		invoiceId: string;
 		purchaseOrderId: string;
@@ -186,99 +245,40 @@ export type PayablesStore = {
 		actorUserId: string;
 		correlationId: string;
 		effects: PayablesEffects;
-	}): Promise<Result<SupplierInvoice>>;
-	postInvoice(record: {
-		organizationId: string;
-		invoiceId: string;
-		expectedVersion: number;
-		actorUserId: string;
-		correlationId: string;
-		effects: PayablesEffects;
-	}): Promise<Result<SupplierInvoice>>;
-	createCredit(
-		record: SupplierInvoiceCreateRecord,
-	): Promise<Result<SupplierInvoice>>;
-	addCreditLine(record: {
-		organizationId: string;
-		creditNoteId: string;
-		itemId: string;
-		description: string;
-		quantity: string;
-		unitPrice: string;
-		actorUserId: string;
-	}): Promise<Result<SupplierInvoiceLine>>;
-	postCredit(record: {
+	}) => Promise<Result<SupplierInvoice>>;
+	postCredit: (record: {
 		organizationId: string;
 		creditNoteId: string;
 		expectedVersion: number;
 		actorUserId: string;
 		correlationId: string;
 		effects: PayablesEffects;
-	}): Promise<Result<SupplierInvoice>>;
-	applyPayment(record: {
+	}) => Promise<Result<SupplierInvoice>>;
+	postInvoice: (record: {
 		organizationId: string;
 		invoiceId: string;
-		amount: string;
-		paymentId: string;
-		paymentApplicationInstructionId: string;
-		idempotencyKey: string;
+		expectedVersion: number;
 		actorUserId: string;
 		correlationId: string;
 		effects: PayablesEffects;
-	}): Promise<Result<SupplierAllocation>>;
-	applyCredit(record: {
-		organizationId: string;
-		invoiceId: string;
-		creditNoteId: string;
-		amount: string;
-		actorUserId: string;
-		correlationId: string;
-		idempotencyKey: string;
-		effects: PayablesEffects;
-	}): Promise<Result<SupplierAllocation>>;
-	reversePaymentApplication(record: {
+	}) => Promise<Result<SupplierInvoice>>;
+	reversePaymentApplication: (record: {
 		organizationId: string;
 		paymentId: string;
 		actorUserId: string;
 		correlationId: string;
 		effects: PayablesEffects;
-	}): Promise<Result<SupplierAllocation[]>>;
-	cancel(record: {
-		organizationId: string;
-		invoiceId: string;
-		expectedVersion: number;
-		actorUserId: string;
-		correlationId: string;
-		effects: PayablesEffects;
-	}): Promise<Result<SupplierInvoice>>;
-	getById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<SupplierInvoice | null>>;
-	list(filter: {
-		organizationId: string;
-		page: number;
-		pageSize: number;
-		status?: SupplierInvoiceStatus;
-		supplierId?: string;
-		currencyCode?: string;
-		documentType?: SupplierInvoice["documentType"];
-	}): Promise<Result<SupplierInvoice[]>>;
-	getBalance(
-		organizationId: string,
-		supplierId: string,
-		currencyCode?: string,
-	): Promise<Result<SupplierBalance[]>>;
-};
+	}) => Promise<Result<SupplierAllocation[]>>;
+}
 
-export type PayablesCommandOptions = {
-	store?: PayablesStore;
+export interface PayablesCommandOptions {
 	authorization?: PayablesAuthorizationPort;
 	effects?: PayablesEffects;
+	goodsReceiptMatch?: GoodsReceiptMatchQueryPort;
 	postedPayment?: PostedPaymentQueryPort;
 	purchaseOrderMatch?: PurchaseOrderMatchQueryPort;
-	goodsReceiptMatch?: GoodsReceiptMatchQueryPort;
-};
+	store?: PayablesStore;
+}
 
 export type {
 	GoodsReceiptMatchBasis,

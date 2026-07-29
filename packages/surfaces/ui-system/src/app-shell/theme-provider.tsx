@@ -44,7 +44,9 @@ export function AppShellThemeProvider({
 			enableSystem={enableSystem}
 			storageKey="theme"
 		>
-			<ControlledThemeSync controlledTheme={controlledTheme} />
+			<ControlledThemeSync
+				{...(controlledTheme === undefined ? {} : { controlledTheme })}
+			/>
 			{children}
 		</ThemeProvider>
 	);

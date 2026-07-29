@@ -115,8 +115,8 @@ export interface EstablishmentStore {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
-		knownAt?: CanonicalInstant;
-		status?: LegalEstablishmentStatus;
+		knownAt?: CanonicalInstant | undefined;
+		status?: LegalEstablishmentStatus | undefined;
 	}): Promise<Result<readonly LegalEstablishment[]>>;
 	listEstablishmentStatusHistory(input: {
 		organizationId: OrganizationId;
@@ -137,7 +137,7 @@ export interface EstablishmentStore {
 		legalEstablishmentId: LegalEstablishmentId | null;
 		addressType: RegisteredAddressType;
 		asOf: CanonicalDate;
-		knownAt?: CanonicalInstant;
+		knownAt?: CanonicalInstant | undefined;
 	}): Promise<Result<RegisteredAddress | null>>;
 	listRegisteredAddresses(input: {
 		organizationId: OrganizationId;
@@ -155,10 +155,10 @@ export interface EstablishmentStore {
 	listPremisesAsOf(input: {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
-		legalEstablishmentId?: LegalEstablishmentId;
-		premiseType?: PremiseType;
+		legalEstablishmentId?: LegalEstablishmentId | undefined;
+		premiseType?: PremiseType | undefined;
 		asOf: CanonicalDate;
-		knownAt?: CanonicalInstant;
+		knownAt?: CanonicalInstant | undefined;
 	}): Promise<Result<readonly Premise[]>>;
 	registerPremise(input: RegisterPremiseStoreInput): Promise<Result<Premise>>;
 	endPremise(input: EndPremiseStoreInput): Promise<Result<Premise>>;
@@ -188,7 +188,7 @@ export type EstablishmentCommandDependencies = Readonly<{
 		resolveCountry(input: {
 			organizationId: OrganizationId;
 			countryCode: string;
-			effectiveDate?: CanonicalDate;
+			effectiveDate?: CanonicalDate | undefined;
 		}): Promise<Result<{ code: string; active: boolean } | null>>;
 		validateSourceDocument(input: {
 			organizationId: OrganizationId;

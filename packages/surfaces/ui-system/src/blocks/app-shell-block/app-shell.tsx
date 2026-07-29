@@ -12,6 +12,9 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
 	SidebarProvider,
 } from "../../components/ui/sidebar";
 import { cn } from "../../lib/utils";
@@ -109,11 +112,13 @@ function renderItem(
 				>
 					{item.label}
 				</button>
-				{active
-					? item.items?.map((child) =>
-							renderItem(child, currentPath, LinkComponent),
-						)
-					: null}
+				{active ? (
+					<SidebarMenuSub>
+						{item.items?.map((child) =>
+							renderSubItem(child, currentPath, LinkComponent),
+						)}
+					</SidebarMenuSub>
+				) : null}
 			</SidebarMenuItem>
 		);
 	}
@@ -128,14 +133,45 @@ function renderItem(
 			<SidebarMenuButton asChild isActive={active}>
 				<LinkComponent
 					href={item.href}
-					aria-current={active ? "page" : undefined}
-					target={external ? "_blank" : undefined}
-					rel={external ? "noopener noreferrer" : undefined}
+					{...(active ? { "aria-current": "page" } : {})}
+					{...(external
+						? { target: "_blank", rel: "noopener noreferrer" }
+						: {})}
 				>
 					{item.label}
 				</LinkComponent>
 			</SidebarMenuButton>
 		</SidebarMenuItem>
+	);
+}
+
+function renderSubItem(
+	item: AppShellNavItem,
+	currentPath: string,
+	LinkComponent: NavigationLinkComponent,
+) {
+	if (item.href === undefined) {
+		return null;
+	}
+
+	const active = isActive(currentPath, item);
+	const external =
+		item.href.startsWith("http://") || item.href.startsWith("https://");
+
+	return (
+		<SidebarMenuSubItem key={item.id}>
+			<SidebarMenuSubButton asChild isActive={active}>
+				<LinkComponent
+					href={item.href}
+					{...(active ? { "aria-current": "page" } : {})}
+					{...(external
+						? { target: "_blank", rel: "noopener noreferrer" }
+						: {})}
+				>
+					{item.label}
+				</LinkComponent>
+			</SidebarMenuSubButton>
+		</SidebarMenuSubItem>
 	);
 }
 
@@ -221,7 +257,9 @@ function AppShellInner({
 			<SidebarInset className="bg-background">
 				<AppShellHeader
 					header={shellHeader}
-					profileName={profile?.name}
+					{...(profile?.name === undefined
+						? {}
+						: { profileName: profile.name })}
 					unreadCount={unreadCount}
 				/>
 				<main
@@ -256,7 +294,9 @@ export function AppShell({
 				{...props}
 				defaultSettings={defaultSettings}
 				initialSettings={settings}
-				resolvedDefaultSidebarOpen={defaultSidebarOpen}
+				{...(defaultSidebarOpen === undefined
+					? {}
+					: { resolvedDefaultSidebarOpen: defaultSidebarOpen })}
 			/>
 		</AppShellThemeProvider>
 	);

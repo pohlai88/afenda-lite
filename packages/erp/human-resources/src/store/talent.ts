@@ -229,9 +229,9 @@ export type HumanResourcesTalentStore = {
 		input: {
 			organizationId: string;
 			competencyId: HumanResourcesCompetencyId;
-			name?: string;
-			description?: string | null;
-			category?: string | null;
+			name?: string | undefined;
+			description?: string | null | undefined;
+			category?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -254,7 +254,7 @@ export type HumanResourcesTalentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: CompetencyStatus;
+		status?: CompetencyStatus | undefined;
 	}): Promise<Result<CompetencyListPage>>;
 	// Talent — Job competency
 	mapCompetencyToJob(
@@ -356,7 +356,7 @@ export type HumanResourcesTalentStore = {
 		input: {
 			organizationId: string;
 			talentProfileId: HumanResourcesTalentProfileId;
-			summary?: string | null;
+			summary?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -462,8 +462,8 @@ export type HumanResourcesTalentStore = {
 		input: {
 			organizationId: string;
 			poolId: HumanResourcesTalentPoolId;
-			name?: string;
-			description?: string | null;
+			name?: string | undefined;
+			description?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -521,7 +521,7 @@ export type HumanResourcesTalentStore = {
 		poolId: HumanResourcesTalentPoolId;
 		page: number;
 		pageSize: number;
-		status?: TalentPoolMemberStatus;
+		status?: TalentPoolMemberStatus | undefined;
 	}): Promise<Result<TalentPoolMemberListPage>>;
 	// Talent — Career plan
 	findCareerPlanByIdempotencyKey(input: {
@@ -539,7 +539,7 @@ export type HumanResourcesTalentStore = {
 		input: {
 			organizationId: string;
 			careerPlanId: HumanResourcesCareerPlanId;
-			title?: string;
+			title?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -579,7 +579,7 @@ export type HumanResourcesTalentStore = {
 		employeeId: HumanResourcesEmployeeId;
 		page: number;
 		pageSize: number;
-		status?: CareerPlanStatus;
+		status?: CareerPlanStatus | undefined;
 	}): Promise<Result<CareerPlanListPage>>;
 	// Talent — Career plan action
 	addCareerPlanAction(
@@ -626,8 +626,8 @@ export type HumanResourcesTalentStore = {
 		input: {
 			organizationId: string;
 			successionPlanId: HumanResourcesSuccessionPlanId;
-			title?: string;
-			allowsExternalCandidates?: boolean;
+			title?: string | undefined;
+			allowsExternalCandidates?: boolean | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -655,8 +655,8 @@ export type HumanResourcesTalentStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		positionId?: HumanResourcesPositionId;
-		status?: SuccessionPlanStatus;
+		positionId?: HumanResourcesPositionId | undefined;
+		status?: SuccessionPlanStatus | undefined;
 	}): Promise<Result<SuccessionPlanListPage>>;
 	// Talent — Succession candidate
 	findSuccessionCandidateByIdempotencyKey(input: {
@@ -711,7 +711,7 @@ export type HumanResourcesTalentStore = {
 		successionPlanId: HumanResourcesSuccessionPlanId;
 		page: number;
 		pageSize: number;
-		status?: SuccessionCandidateStatus;
+		status?: SuccessionCandidateStatus | undefined;
 	}): Promise<Result<SuccessionCandidateListPage>>;
 
 	getPositionSuccessionCoverage(input: {

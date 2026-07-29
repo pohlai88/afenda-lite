@@ -10,31 +10,31 @@ describe("payables authorization", () => {
 	it("requires manage for commands and read for queries", async () => {
 		const seen: string[] = [];
 		const options = {
-			store: createMemoryPayablesStore(),
 			authorization: {
-				async can(input: { permission: string }) {
+				can(input: { permission: string }) {
 					seen.push(input.permission);
-					return false;
+					return Promise.resolve(false);
 				},
 			},
+			store: createMemoryPayablesStore(),
 		};
 		await createDraftSupplierInvoice(
 			{
-				organizationId: "org-1",
 				actorUserId: "user-1",
-				correlationId: "corr-1",
 				code: "SI-1",
-				supplierId: "00000000-0000-4000-8000-000000000001",
-				supplierCode: "S-1",
-				supplierName: "Supplier",
+				correlationId: "corr-1",
 				currencyCode: "USD",
+				organizationId: "org-1",
+				supplierCode: "S-1",
+				supplierId: "00000000-0000-4000-8000-000000000001",
+				supplierName: "Supplier",
 			},
 			options,
 		);
 		await getSupplierBalance(
 			{
-				organizationId: "org-1",
 				actorUserId: "user-1",
+				organizationId: "org-1",
 				supplierId: "00000000-0000-4000-8000-000000000001",
 			},
 			options,

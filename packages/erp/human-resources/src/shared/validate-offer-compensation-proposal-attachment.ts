@@ -23,7 +23,7 @@ export async function validateOfferCompensationProposalAttachment(
 			| HumanResourcesCompensationProposalId
 			| null
 			| undefined;
-		offerStatus?: OfferStatus;
+		offerStatus?: OfferStatus | undefined;
 	},
 ): Promise<Result<void>> {
 	if (

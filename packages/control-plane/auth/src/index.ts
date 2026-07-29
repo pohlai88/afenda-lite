@@ -1,5 +1,6 @@
 import "server-only";
 
+// biome-ignore lint/performance/noBarrelFile: This file is the declared server package entrypoint.
 export { createAuthApiHandlers } from "./api-handler";
 export type {
 	PreLoginPublicPath,

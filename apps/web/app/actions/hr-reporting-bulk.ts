@@ -103,6 +103,15 @@ type BulkActionInput<Row> = {
 	batchId: string;
 	mode: "dry_run" | "commit";
 	idempotencyKey: string;
+	maxRowsPerRun?: number | undefined;
+	expectedCheckpointVersion?: number | undefined;
+	rows: Array<{ sourceReference: string; payload: Row }>;
+};
+
+type CompactBulkActionInput<Row> = {
+	batchId: string;
+	mode: "dry_run" | "commit";
+	idempotencyKey: string;
 	maxRowsPerRun?: number;
 	expectedCheckpointVersion?: number;
 	rows: Array<{ sourceReference: string; payload: Row }>;
@@ -111,7 +120,7 @@ type BulkActionInput<Row> = {
 type BulkWorkerRequest<
 	Row,
 	Entity extends HumanResourcesBulkEntityType,
-> = BulkActionInput<Row> & {
+> = CompactBulkActionInput<Row> & {
 	organizationId: string;
 	actorUserId: string;
 	correlationId: string;
@@ -121,6 +130,23 @@ type BulkWorkerRequest<
 type BulkActionResult =
 	| { mode: "dry_run"; result: BulkImportResult<BulkCommandOutput> }
 	| { mode: "queued"; job: HumanResourcesBulkImportJob };
+
+function toBulkRequest<Row>(
+	input: BulkActionInput<Row>,
+): CompactBulkActionInput<Row> {
+	return {
+		batchId: input.batchId,
+		mode: input.mode,
+		idempotencyKey: input.idempotencyKey,
+		rows: input.rows,
+		...(input.maxRowsPerRun === undefined
+			? {}
+			: { maxRowsPerRun: input.maxRowsPerRun }),
+		...(input.expectedCheckpointVersion === undefined
+			? {}
+			: { expectedCheckpointVersion: input.expectedCheckpointVersion }),
+	};
+}
 
 async function runBulkAction<
 	Row,
@@ -152,10 +178,11 @@ async function runBulkAction<
 					parsed.details,
 				);
 			}
+			const request = toBulkRequest(parsed.data);
 			if (parsed.data.mode === "commit") {
 				const queued = await enqueueHumanResourcesBulkImport(
 					{
-						...parsed.data,
+						...request,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
@@ -170,7 +197,7 @@ async function runBulkAction<
 					: mapped;
 			}
 			const result = await input.worker({
-				...parsed.data,
+				...request,
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 				correlationId,

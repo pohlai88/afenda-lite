@@ -9,9 +9,16 @@ Use this package when adding or revising a workspace `tsconfig.json`, or when th
 Workspace **devDependency** — extend by export path (not a JS import):
 
 ```json
-// packages/*/tsconfig.json — Node / library packages
+// packages/*/tsconfig.json — runtime-neutral libraries
 {
   "extends": "@afenda/config/tsconfig/base.json"
+}
+```
+
+```json
+// Node-backed packages consumed as source by the workspace bundlers
+{
+  "extends": "@afenda/config/tsconfig/node-library.json"
 }
 ```
 
@@ -55,11 +62,12 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Path | Role |
 |------|------|
 | `@afenda/config/biome` · `@afenda/config/biome.json` | Shared Biome config (Ultracite presets + ignore defaults) |
-| `@afenda/config/tsconfig/base.json` | Strict ES2022 / bundler resolution — Node & non-UI packages |
+| `@afenda/config/tsconfig/base.json` | Strict ES2022 / preserve + bundler resolution with no ambient type packages |
+| `@afenda/config/tsconfig/node-library.json` | Extends base + explicit Node ambient types; still source-consumed/no-emit |
 | `@afenda/config/tsconfig/nextjs.json` | Extends base + DOM · `jsx` · Next plugin — apps |
 | `@afenda/config/tsconfig/react-library.json` | Extends base + DOM · `jsx` — React libraries |
 
-On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/tsconfig/{base,nextjs,react-library}.json`.
+On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/tsconfig/{base,node-library,nextjs,react-library}.json`.
 
 ## Ownership
 

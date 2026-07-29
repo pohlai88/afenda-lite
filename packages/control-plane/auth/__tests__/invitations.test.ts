@@ -31,9 +31,9 @@ describe("inviteOrgMember (I1.3)", () => {
 			get: (name: string) => (name === "cookie" ? "session=abc" : null),
 		});
 		getSessionMock.mockResolvedValue({
-			userId: "user-1",
 			orgId: "org-1",
 			role: "operator",
+			userId: "user-1",
 		});
 	});
 
@@ -46,10 +46,10 @@ describe("inviteOrgMember (I1.3)", () => {
 				role: "client",
 			}),
 		).resolves.toEqual({
-			ok: false,
 			code: "FORBIDDEN",
 			message:
 				"Invitation refuses an organization other than the active session org",
+			ok: false,
 		});
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
@@ -79,9 +79,9 @@ describe("inviteOrgMember (I1.3)", () => {
 		expect(init.headers.Referer).toBe("https://www.nexuscanon.com/");
 		expect(JSON.parse(init.body)).toEqual({
 			email: "client@example.com",
-			role: "member",
 			organizationId: "org-1",
 			resend: true,
+			role: "member",
 		});
 	});
 
@@ -100,9 +100,9 @@ describe("inviteOrgMember (I1.3)", () => {
 			role: "client",
 		});
 		expect(result).toEqual({
-			ok: false,
 			code: "FORBIDDEN",
 			message: "Invitation is not permitted for this session",
+			ok: false,
 		});
 		expect(JSON.stringify(result)).not.toContain("xyz");
 	});
@@ -113,7 +113,7 @@ describe("inviteOrgMember (I1.3)", () => {
 			status: 200,
 			text: async () =>
 				JSON.stringify({
-					invitation: { id: "inv-from-neon", email: "client@example.com" },
+					invitation: { email: "client@example.com", id: "inv-from-neon" },
 				}),
 		});
 
@@ -125,13 +125,13 @@ describe("inviteOrgMember (I1.3)", () => {
 				role: "client",
 			}),
 		).resolves.toEqual({
-			ok: true,
 			data: {
 				data: {
-					invitation: { id: "inv-from-neon", email: "client@example.com" },
+					invitation: { email: "client@example.com", id: "inv-from-neon" },
 				},
 				invitationId: "inv-from-neon",
 			},
+			ok: true,
 		});
 	});
 });

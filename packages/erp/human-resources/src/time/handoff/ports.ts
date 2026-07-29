@@ -46,17 +46,17 @@ export type ApprovedLeaveQueryPort = {
 export type AttendanceSourceEvent = {
 	sourceReference: string;
 	employeeId: HumanResourcesEmployeeId;
-	employmentId?: HumanResourcesEmploymentId | null;
-	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null;
+	employmentId?: HumanResourcesEmploymentId | null | undefined;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	eventType: AttendanceEventType;
 	occurredAt: string;
 	sourceTimezone: string;
 	localWorkDate: string;
-	locationKey?: string | null;
-	deviceMetadata?: Record<string, unknown> | null;
-	payloadChecksum?: string | null;
-	notes?: string | null;
-	sourceSequence?: number;
+	locationKey?: string | null | undefined;
+	deviceMetadata?: Record<string, unknown> | null | undefined;
+	payloadChecksum?: string | null | undefined;
+	notes?: string | null | undefined;
+	sourceSequence?: number | undefined;
 };
 
 export type AttendanceSourceRejectedRow = {
@@ -71,8 +71,8 @@ export type AttendanceSourceRejectedRow = {
 
 export type AttendanceSourceBatch = {
 	events: readonly AttendanceSourceEvent[];
-	nextCursor?: string;
-	rejectedRows?: readonly AttendanceSourceRejectedRow[];
+	nextCursor?: string | undefined;
+	rejectedRows?: readonly AttendanceSourceRejectedRow[] | undefined;
 };
 
 export type AttendanceSourcePreviewRow =
@@ -98,17 +98,17 @@ export type AttendanceSourcePreviewResult = {
 		accepted: number;
 		rejected: number;
 	};
-	nextCursor?: string;
+	nextCursor?: string | undefined;
 };
 
 /**
  * Thin pull transport wired at composition root. HR does not implement device drivers.
  */
 export type AttendanceConnectorPullPort = {
-	pull(input: { organizationId: string; cursor?: string }): Promise<
+	pull(input: { organizationId: string; cursor?: string | undefined }): Promise<
 		Result<{
 			events: readonly AttendanceSourceEvent[];
-			nextCursor?: string;
+			nextCursor?: string | undefined;
 		}>
 	>;
 };
@@ -120,11 +120,11 @@ export type AttendanceConnectorPullPort = {
 export type AttendanceSourcePort = {
 	fetchEvents(input: {
 		organizationId: string;
-		cursor?: string;
+		cursor?: string | undefined;
 	}): Promise<Result<AttendanceSourceBatch>>;
 	previewEvents(input: {
 		organizationId: string;
-		cursor?: string;
+		cursor?: string | undefined;
 	}): Promise<Result<AttendanceSourcePreviewResult>>;
 };
 

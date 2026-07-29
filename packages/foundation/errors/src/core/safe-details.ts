@@ -15,7 +15,7 @@ export interface SafeDetails
 const MAX_DEPTH = 4;
 const MAX_ENTRIES = 50;
 const MAX_ARRAY_LENGTH = 50;
-const MAX_STRING_LENGTH = 2_000;
+const MAX_STRING_LENGTH = 2000;
 
 const BLOCKED_KEY_PATTERN =
 	/^(?:password|passwd|secret|client[_-]?secret|token|access[_-]?token|refresh[_-]?token|authorization|proxy[_-]?authorization|cookie|set[_-]?cookie|api[_-]?key|database[_-]?url|connection[_-]?string|private[_-]?key|cause|stack|sql|query|statement|parameters?)$/i;
@@ -47,7 +47,7 @@ function readProperty(value: Record<string, unknown>, key: string): unknown {
 	try {
 		return value[key];
 	} catch {
-		return undefined;
+		// Throwing getters are omitted from public-safe details.
 	}
 }
 
@@ -60,13 +60,12 @@ function sanitizeScalar(value: unknown): SafeDetailScalar | undefined {
 	}
 	if (typeof value === "string") {
 		if (SQL_LEAK_PATTERN.test(value)) {
-			return undefined;
+			return;
 		}
 		return value.length <= MAX_STRING_LENGTH
 			? value
 			: value.slice(0, MAX_STRING_LENGTH);
 	}
-	return undefined;
 }
 
 function sanitizeScalarArray(
@@ -86,13 +85,30 @@ function sanitizeScalarArray(
 	return output.length > 0 ? output : undefined;
 }
 
+function sanitizeValue(
+	value: unknown,
+	seen: WeakSet<object>,
+	depth: number,
+): SafeDetailValue | undefined {
+	const scalar = sanitizeScalar(value);
+	if (scalar !== undefined) {
+		return scalar;
+	}
+	if (Array.isArray(value)) {
+		return sanitizeScalarArray(value);
+	}
+	return isPlainRecord(value)
+		? sanitizeRecord(value, seen, depth + 1)
+		: undefined;
+}
+
 function sanitizeRecord(
 	value: Record<string, unknown>,
 	seen: WeakSet<object>,
 	depth: number,
 ): SafeDetails | undefined {
 	if (depth > MAX_DEPTH || seen.has(value)) {
-		return undefined;
+		return;
 	}
 	seen.add(value);
 
@@ -107,29 +123,10 @@ function sanitizeRecord(
 				continue;
 			}
 
-			const candidate = readProperty(value, key);
-			const scalar = sanitizeScalar(candidate);
-			if (scalar !== undefined) {
-				output[key] = scalar;
+			const sanitized = sanitizeValue(readProperty(value, key), seen, depth);
+			if (sanitized !== undefined) {
+				output[key] = sanitized;
 				count += 1;
-				continue;
-			}
-
-			if (Array.isArray(candidate)) {
-				const items = sanitizeScalarArray(candidate);
-				if (items !== undefined) {
-					output[key] = items;
-					count += 1;
-				}
-				continue;
-			}
-
-			if (isPlainRecord(candidate)) {
-				const nested = sanitizeRecord(candidate, seen, depth + 1);
-				if (nested !== undefined) {
-					output[key] = nested;
-					count += 1;
-				}
 			}
 		}
 
@@ -149,7 +146,7 @@ export function sanitizeErrorDetails(
 	details: unknown,
 ): SafeDetails | undefined {
 	if (!isPlainRecord(details)) {
-		return undefined;
+		return;
 	}
 	return sanitizeRecord(details, new WeakSet<object>(), 0);
 }

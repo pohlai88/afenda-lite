@@ -62,31 +62,31 @@ export const RETURN_AUTHORIZATION_STATUSES = [
 export type ReturnAuthorizationStatus =
 	(typeof RETURN_AUTHORIZATION_STATUSES)[number];
 
-export type AuditStamp = {
+export interface AuditStamp {
 	createdAt: Date;
 	createdBy: string;
 	updatedAt: Date;
 	updatedBy: string;
 	version: number;
-};
-export type PartySnapshot = {
+}
+export interface PartySnapshot {
+	billToAddress?: string | undefined;
+	code: string;
+	name: string;
+	netDays?: number | undefined;
 	partyId: PartyId;
-	code: string;
-	name: string;
-	billToAddress?: string;
-	shipToAddress?: string;
-	paymentTermId?: PaymentTermId;
-	paymentTermCode?: string;
-	paymentTermName?: string;
-	netDays?: number;
-};
-export type ItemSnapshot = {
-	itemId: ItemId;
-	code: string;
-	name: string;
-	baseUomId: string;
+	paymentTermCode?: string | undefined;
+	paymentTermId?: PaymentTermId | undefined;
+	paymentTermName?: string | undefined;
+	shipToAddress?: string | undefined;
+}
+export interface ItemSnapshot {
 	baseUomCode: string;
-};
+	baseUomId: string;
+	code: string;
+	itemId: ItemId;
+	name: string;
+}
 
 export type PriceBook = AuditStamp & {
 	id: PriceBookId;
@@ -96,7 +96,7 @@ export type PriceBook = AuditStamp & {
 	name: string;
 	currencyCode: string;
 	validFrom: Date;
-	validTo?: Date;
+	validTo?: Date | undefined;
 	priority: number;
 	status: PriceBookStatus;
 };
@@ -110,18 +110,20 @@ export type PriceBookEntry = AuditStamp & {
 	unitPrice: string;
 	discountPercent: string;
 	validFrom: Date;
-	validTo?: Date;
+	validTo?: Date | undefined;
 };
-export type PriceCalculationTrace = {
-	priceBookId: PriceBookId;
-	priceBookEntryId: PriceBookEntryId;
+export interface PriceCalculationTrace {
 	baseUnitPrice: string;
 	discountPercent: string;
-	netUnitPrice: string;
-	quantity: string;
 	lineNetAmount: string;
-	override?: { unitPrice: string; reason: string; approvedBy: string };
-};
+	netUnitPrice: string;
+	override?:
+		| { unitPrice: string; reason: string; approvedBy: string }
+		| undefined;
+	priceBookEntryId: PriceBookEntryId;
+	priceBookId: PriceBookId;
+	quantity: string;
+}
 
 export type SalesQuotation = AuditStamp & {
 	id: SalesQuotationId;
@@ -137,7 +139,7 @@ export type SalesQuotation = AuditStamp & {
 	discountTotal: string;
 	taxTotal: string;
 	documentTotal: string;
-	convertedOrderId?: SalesOrderId;
+	convertedOrderId?: SalesOrderId | undefined;
 };
 export type SalesQuotationLine = AuditStamp & {
 	id: SalesQuotationLineId;
@@ -150,7 +152,7 @@ export type SalesQuotationLine = AuditStamp & {
 	discountAmount: string;
 	taxAmount: string;
 	lineAmount: string;
-	pricingTrace?: PriceCalculationTrace;
+	pricingTrace?: PriceCalculationTrace | undefined;
 };
 
 export type SalesOrder = AuditStamp & {
@@ -161,16 +163,16 @@ export type SalesOrder = AuditStamp & {
 	status: SalesOrderStatus;
 	customer: PartySnapshot;
 	currencyCode: string;
-	exchangeRate?: string;
+	exchangeRate?: string | undefined;
 	subtotalAmount: string;
 	discountTotal: string;
 	taxTotal: string;
 	documentTotal: string;
-	sourceQuotationId?: SalesQuotationId;
-	confirmedAt?: Date;
-	releasedAt?: Date;
-	cancelledAt?: Date;
-	closedAt?: Date;
+	sourceQuotationId?: SalesQuotationId | undefined;
+	confirmedAt?: Date | undefined;
+	releasedAt?: Date | undefined;
+	cancelledAt?: Date | undefined;
+	closedAt?: Date | undefined;
 };
 export type SalesOrderLine = AuditStamp & {
 	id: SalesOrderLineId;
@@ -184,7 +186,7 @@ export type SalesOrderLine = AuditStamp & {
 	discountAmount: string;
 	taxAmount: string;
 	lineAmount: string;
-	pricingTrace?: PriceCalculationTrace;
+	pricingTrace?: PriceCalculationTrace | undefined;
 };
 export type SalesOrderSchedule = AuditStamp & {
 	id: SalesOrderScheduleId;
@@ -192,7 +194,7 @@ export type SalesOrderSchedule = AuditStamp & {
 	orderId: SalesOrderId;
 	orderLineId: SalesOrderLineId;
 	requestedDate: Date;
-	promisedDate?: Date;
+	promisedDate?: Date | undefined;
 	quantity: string;
 	releasedQuantity: string;
 	fulfilledQuantity: string;
@@ -204,8 +206,8 @@ export type SalesHold = AuditStamp & {
 	kind: SalesHoldKind;
 	reason: string;
 	status: "open" | "resolved";
-	resolvedAt?: Date;
-	resolvedBy?: string;
+	resolvedAt?: Date | undefined;
+	resolvedBy?: string | undefined;
 };
 
 export type ReturnAuthorization = AuditStamp & {
@@ -227,8 +229,8 @@ export type ReturnAuthorizationLine = AuditStamp & {
 	requestedDisposition: "refund" | "replacement" | "repair" | "reject";
 };
 
-export type FulfillableSalesOrder = {
-	order: SalesOrder;
+export interface FulfillableSalesOrder {
 	lines: SalesOrderLine[];
+	order: SalesOrder;
 	schedules: SalesOrderSchedule[];
-};
+}

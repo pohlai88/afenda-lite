@@ -938,8 +938,8 @@ function resolveUniqueEffectiveMatch(
 	context: {
 		kind: OrganizationDimensionKind;
 		asOf: string;
-		id?: string;
-		key?: string;
+		id?: string | undefined;
+		key?: string | undefined;
 	},
 ): Result<OrganizationDimensionReference | null> {
 	if (matches.length === 0) return ok(null);
@@ -1006,8 +1006,8 @@ async function resolveSingleEffectiveDimension(
 		organizationId: string;
 		kind: OrganizationDimensionKind;
 		asOf: string;
-		id?: string;
-		key?: string;
+		id?: string | undefined;
+		key?: string | undefined;
 	},
 ): Promise<Result<OrganizationDimensionReference | null>> {
 	if (input.id) {

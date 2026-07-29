@@ -113,8 +113,8 @@ export async function searchHumanResourcesEmployees(
 		organizationId: input.session.orgId,
 		query: input.query,
 		entity: HUMAN_RESOURCES_EMPLOYEE_SEARCH_ENTITY,
-		limit: input.limit,
-		offset: input.offset,
+		...(input.limit === undefined ? {} : { limit: input.limit }),
+		...(input.offset === undefined ? {} : { offset: input.offset }),
 	});
 	if (!searched.ok) return searched;
 

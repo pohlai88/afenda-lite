@@ -133,7 +133,7 @@ export type ReceivablesStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: SalesInvoiceStatus;
+		status?: SalesInvoiceStatus | undefined;
 	}): Promise<Result<SalesInvoice[]>>;
 	getBalance(
 		organizationId: string,

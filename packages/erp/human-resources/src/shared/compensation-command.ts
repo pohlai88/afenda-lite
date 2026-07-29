@@ -62,7 +62,7 @@ const COMPENSATION_RESOURCE_ID_FIELDS = [
 
 type CompensationSubjectResolution = {
 	organizationId: string;
-	subjectEmployeeId?: HumanResourcesEmployeeId;
+	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
 };
 
 function readStringField(input: object, field: string): string | undefined {
@@ -256,7 +256,7 @@ export async function projectCompensationRecord<
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		resourceId?: string;
+		resourceId?: string | undefined;
 		operationId: HumanResourcesCommandId | HumanResourcesQueryId;
 		operationKind: "command" | "query";
 		options: HumanResourcesCommandOptions;

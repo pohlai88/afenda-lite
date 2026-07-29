@@ -3,76 +3,79 @@ import type { Result } from "@afenda/errors/result";
 import type { FulfillmentEventType } from "@afenda/events/schemas";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 
-export type AuditFactInput = {
-	organizationId: string;
+export interface AuditFactInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
 	actorUserId: string;
+	changes: Change[];
 	correlationId: string;
 	entity: string;
 	entityId: string;
-	action: "CREATE" | "UPDATE" | "DELETE";
-	changes: Change[];
-	oldValue?: Record<string, unknown> | null;
 	newValue?: Record<string, unknown> | null;
-};
-export type AuditFactPort = {
-	record(input: AuditFactInput): Promise<Result<{ id: string }>>;
-};
-
-export type OutboxFactInput = {
+	oldValue?: Record<string, unknown> | null;
 	organizationId: string;
+}
+export interface AuditFactPort {
+	record: (input: AuditFactInput) => Promise<Result<{ id: string }>>;
+}
+
+export interface OutboxFactInput {
 	actorUserId: string;
 	correlationId: string;
-	type: FulfillmentEventType;
+	organizationId: string;
 	payload: Record<string, unknown>;
-};
-export type OutboxPort = {
-	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
-};
-export type MutationPorts = { audit: AuditFactPort; outbox: OutboxPort };
+	type: FulfillmentEventType;
+}
+export interface OutboxPort {
+	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
+}
+export interface MutationPorts {
+	audit: AuditFactPort;
+	outbox: OutboxPort;
+}
 
-export type MasterLookupPort = {
-	getItemById(
+export interface MasterLookupPort {
+	getItemById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Item | null>>;
-	getRefUomById(
+	) => Promise<Result<Item | null>>;
+	getRefUomById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<RefUom | null>>;
-	getWarehouseById(
+	) => Promise<Result<RefUom | null>>;
+	getWarehouseById: (
 		organizationId: string,
 		id: string,
 		actorUserId: string,
-	): Promise<Result<Warehouse | null>>;
-};
+	) => Promise<Result<Warehouse | null>>;
+}
 
-export type FulfillableSalesOrderLine = {
-	salesOrderLineId: string;
+export interface FulfillableSalesOrderLine {
 	itemId: string;
-	uomId: string;
 	orderedQuantity: string;
-};
+	salesOrderLineId: string;
+	uomId: string;
+}
 
-export type FulfillableSalesOrder = {
-	status: string;
-	version: number;
-	customerPartyId: string;
+export interface FulfillableSalesOrder {
 	customerPartyCode: string;
+	customerPartyId: string;
 	customerPartyName: string;
+	lines: FulfillableSalesOrderLine[];
 	shipToSnapshot: {
 		name: string;
 		addressLines: string[];
 		countryCode: string;
 	} | null;
-	lines: FulfillableSalesOrderLine[];
-};
+	status: string;
+	version: number;
+}
 
-export type SalesFulfillmentQueryPort = {
-	getFulfillableSalesOrder(input: {
+export interface SalesFulfillmentQueryPort {
+	getFulfillableSalesOrder: (input: {
 		organizationId: string;
 		salesOrderId: string;
 		actorUserId: string;
-	}): Promise<Result<FulfillableSalesOrder | null>>;
-};
+	}) => Promise<Result<FulfillableSalesOrder | null>>;
+}

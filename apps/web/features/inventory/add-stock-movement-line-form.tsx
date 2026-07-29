@@ -26,8 +26,8 @@ const initialState: AddStockMovementLineActionState = null;
 type AddStockMovementLineFormProps = {
 	canCreate: boolean;
 	items: InventoryMasterOption[];
-	defaultMovementId?: string;
-	defaultExpectedVersion?: number;
+	defaultMovementId?: string | undefined;
+	defaultExpectedVersion?: number | undefined;
 };
 
 /**

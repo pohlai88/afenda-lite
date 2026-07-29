@@ -274,15 +274,15 @@ export async function memoryAmendEmployeeCompensation(
 	input: {
 		organizationId: string;
 		compensationId: HumanResourcesEmployeeCompensationId;
-		baseAmount?: string;
-		currencyCode?: string;
-		payFrequency?: PayFrequency;
-		effectiveFrom?: string;
-		effectiveTo?: string | null;
-		reason?: string;
-		gradeId?: HumanResourcesCompensationGradeId | null;
-		salaryBandId?: HumanResourcesSalaryBandId | null;
-		confidentialNote?: string | null;
+		baseAmount?: string | undefined;
+		currencyCode?: string | undefined;
+		payFrequency?: PayFrequency | undefined;
+		effectiveFrom?: string | undefined;
+		effectiveTo?: string | null | undefined;
+		reason?: string | undefined;
+		gradeId?: HumanResourcesCompensationGradeId | null | undefined;
+		salaryBandId?: HumanResourcesSalaryBandId | null | undefined;
+		confidentialNote?: string | null | undefined;
 		expectedVersion: number;
 		actorUserId: string;
 	},

@@ -4,8 +4,6 @@ import { AUTH_LOGIN_PATH } from "./auth-paths";
 import { getNeonAuth } from "./neon-auth";
 import { POST_LOGIN_CALLBACK_PARAM, sanitizeCallbackUrl } from "./post-login";
 
-export { AUTH_LOGIN_PATH };
-
 export type SessionProxy = (
 	request: NextRequest,
 ) => Promise<NextResponse<unknown>>;

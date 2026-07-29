@@ -16,8 +16,8 @@ export function fingerprintEmployeeCreate(input: {
 
 export function fingerprintPersonCreate(input: {
 	legalName: string;
-	preferredName?: string | null;
-	privacyClassification?: string;
+	preferredName?: string | null | undefined;
+	privacyClassification?: string | undefined;
 }): string {
 	return sha256Fingerprint({
 		legalName: input.legalName.trim(),
@@ -61,7 +61,7 @@ export function fingerprintRequisitionCreate(input: {
 	jobId: string | null;
 	positionId: string | null;
 	departmentId: string | null;
-	hiringManagerEmployeeId?: string | null;
+	hiringManagerEmployeeId?: string | null | undefined;
 }): string {
 	return sha256Fingerprint({
 		code: input.code.trim(),
@@ -226,11 +226,11 @@ export function fingerprintBenefitEnrollment(input: {
 	employmentId: string;
 	planId: string;
 	effectiveFrom: string;
-	effectiveTo?: string | null;
-	employeeContributionAmount?: string | null;
-	employerContributionAmount?: string | null;
-	contributionCurrencyCode?: string | null;
-	contributionFrequency?: string | null;
+	effectiveTo?: string | null | undefined;
+	employeeContributionAmount?: string | null | undefined;
+	employerContributionAmount?: string | null | undefined;
+	contributionCurrencyCode?: string | null | undefined;
+	contributionFrequency?: string | null | undefined;
 }): string {
 	return sha256Fingerprint({
 		employeeId: input.employeeId,
@@ -409,7 +409,7 @@ export function fingerprintLeaveAdjustment(input: {
 	kind: string;
 	delta: string;
 	reason: string;
-	source?: string;
+	source?: string | undefined;
 }): string {
 	return sha256Fingerprint(input);
 }

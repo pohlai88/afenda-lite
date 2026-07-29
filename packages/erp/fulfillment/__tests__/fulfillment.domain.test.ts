@@ -51,7 +51,7 @@ function harness() {
 	};
 }
 
-async function create(ctx: ReturnType<typeof harness>, code = "DLV-100") {
+function create(ctx: ReturnType<typeof harness>, code = "DLV-100") {
 	return createDraftDelivery(
 		{
 			organizationId: ORG,
@@ -65,7 +65,7 @@ async function create(ctx: ReturnType<typeof harness>, code = "DLV-100") {
 	);
 }
 
-async function load(ctx: ReturnType<typeof harness>, id: string) {
+function load(ctx: ReturnType<typeof harness>, id: string) {
 	return getDeliveryById(
 		{ organizationId: ORG, actorUserId: "user-1", id },
 		ctx,
@@ -95,7 +95,9 @@ describe("@afenda/fulfillment domain", () => {
 		});
 		const draft = await create(ctx);
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const line = await addDeliveryLine(
 			{
 				organizationId: ORG,
@@ -123,7 +125,9 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		expect(picking.ok).toBe(true);
-		if (!picking.ok || !line.ok) return;
+		if (!(picking.ok && line.ok)) {
+			return;
+		}
 		const firstPick = await confirmPick(
 			{
 				organizationId: ORG,
@@ -179,7 +183,9 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		expect(posted.ok).toBe(true);
-		if (!posted.ok) return;
+		if (!posted.ok) {
+			return;
+		}
 		const movement =
 			await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
 				ORG,
@@ -240,7 +246,9 @@ describe("@afenda/fulfillment domain", () => {
 		});
 		const draft = await create(ctx, "DLV-AUTO");
 		expect(draft.ok).toBe(true);
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const line = await addDeliveryLine(
 			{
 				organizationId: ORG,
@@ -256,7 +264,9 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		expect(line.ok).toBe(true);
-		if (!line.ok) return;
+		if (!line.ok) {
+			return;
+		}
 		const picking = await startPicking(
 			{
 				organizationId: ORG,
@@ -269,7 +279,9 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		expect(picking.ok).toBe(true);
-		if (!picking.ok) return;
+		if (!picking.ok) {
+			return;
+		}
 		const pick = await confirmPick(
 			{
 				organizationId: ORG,
@@ -284,10 +296,14 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		expect(pick.ok).toBe(true);
-		if (!pick.ok) return;
-		const reservationId = pick.data.reservationId;
+		if (!pick.ok) {
+			return;
+		}
+		const { reservationId } = pick.data;
 		expect(reservationId).toBeTruthy();
-		if (reservationId === null) return;
+		if (reservationId === null) {
+			return;
+		}
 		const reservation = await ctx.inventory.store?.getReservationById(
 			ORG,
 			reservationId,
@@ -320,7 +336,9 @@ describe("@afenda/fulfillment domain", () => {
 			quantity: 5,
 		});
 		const draft = await create(ctx, "DLV-RULES");
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const empty = await startPicking(
 			{
 				organizationId: ORG,
@@ -346,7 +364,9 @@ describe("@afenda/fulfillment domain", () => {
 			},
 			ctx,
 		);
-		if (!line.ok) return;
+		if (!line.ok) {
+			return;
+		}
 		const stale = await startPicking(
 			{
 				organizationId: ORG,
@@ -402,7 +422,9 @@ describe("@afenda/fulfillment domain", () => {
 	it("allows cancellation before posting and rejects it after posting", async () => {
 		const draftCtx = harness();
 		const draft = await create(draftCtx, "DLV-CANCEL");
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const cancelled = await cancelDelivery(
 			{
 				organizationId: ORG,
@@ -427,7 +449,9 @@ describe("@afenda/fulfillment domain", () => {
 			quantity: 2,
 		});
 		const postedDraft = await create(ctx, "DLV-POSTED");
-		if (!postedDraft.ok) return;
+		if (!postedDraft.ok) {
+			return;
+		}
 		const line = await addDeliveryLine(
 			{
 				organizationId: ORG,
@@ -441,7 +465,9 @@ describe("@afenda/fulfillment domain", () => {
 			},
 			ctx,
 		);
-		if (!line.ok) return;
+		if (!line.ok) {
+			return;
+		}
 		const reservationId = await seedReservation(ctx.inventory, {
 			organizationId: ORG,
 			actorUserId: "user-1",
@@ -498,7 +524,9 @@ describe("@afenda/fulfillment domain", () => {
 			},
 			ctx,
 		);
-		if (!posted.ok) return;
+		if (!posted.ok) {
+			return;
+		}
 		const rejected = await cancelDelivery(
 			{
 				organizationId: ORG,
@@ -525,7 +553,9 @@ describe("@afenda/fulfillment domain", () => {
 			quantity: 2,
 		});
 		const draft = await create(ctx, "DLV-CLOSE");
-		if (!draft.ok) return;
+		if (!draft.ok) {
+			return;
+		}
 		const early = await closeDelivery(
 			{
 				organizationId: ORG,
@@ -551,7 +581,9 @@ describe("@afenda/fulfillment domain", () => {
 			},
 			ctx,
 		);
-		if (!line.ok) return;
+		if (!line.ok) {
+			return;
+		}
 		const reservationId2 = await seedReservation(ctx.inventory, {
 			organizationId: ORG,
 			actorUserId: "user-1",
@@ -608,7 +640,9 @@ describe("@afenda/fulfillment domain", () => {
 			},
 			ctx,
 		);
-		if (!posted.ok) return;
+		if (!posted.ok) {
+			return;
+		}
 		const proof = await recordProofOfDelivery(
 			{
 				organizationId: ORG,
@@ -622,9 +656,13 @@ describe("@afenda/fulfillment domain", () => {
 			},
 			ctx,
 		);
-		if (!proof.ok) return;
+		if (!proof.ok) {
+			return;
+		}
 		const delivered = await load(ctx, draft.data.id);
-		if (!delivered.ok || delivered.data === null) return;
+		if (!delivered.ok || delivered.data === null) {
+			return;
+		}
 		const closed = await closeDelivery(
 			{
 				organizationId: ORG,
@@ -637,7 +675,9 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		expect(closed.ok).toBe(true);
-		if (!closed.ok) return;
+		if (!closed.ok) {
+			return;
+		}
 		expect(closed.data.status).toBe("closed");
 		expect(closed.data.closedBy).toBe("user-1");
 	});

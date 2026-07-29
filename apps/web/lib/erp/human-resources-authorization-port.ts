@@ -77,8 +77,8 @@ export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResou
 
 			return ok({
 				allowed: true,
-				projectedFields,
 				reason: "Full access granted",
+				...(projectedFields === undefined ? {} : { projectedFields }),
 			});
 		},
 	};

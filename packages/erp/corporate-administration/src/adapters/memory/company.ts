@@ -17,7 +17,6 @@ import type {
 	CompanyIdentifierStore,
 	CompanyLegalFormAsOfQuery,
 	CompanyLegalFormStore,
-	CompanyNameAsOfQuery,
 	CompanyNameListPage,
 	CompanyNameListQuery,
 	CompanyNameStore,
@@ -1142,8 +1141,8 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 	function findCurrentProfile(input: {
 		organizationId: string;
 		legalCompanyId: string;
-		asOf?: string;
-		knownAt?: string;
+		asOf?: string | undefined;
+		knownAt?: string | undefined;
 	}): CompanyJurisdictionProfile | null {
 		const asOf = canonicalDateSchema.parse(input.asOf ?? "9999-12-31");
 		const knownAt =
@@ -1164,11 +1163,10 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 	}
 
 	function listCompanyNameRecords(
-		input: Pick<CompanyNameListQuery, "organizationId" | "legalCompanyId"> &
-			Partial<
-				Pick<CompanyNameListQuery, "nameType" | "languageCode"> &
-					Pick<CompanyNameAsOfQuery, "nameType" | "languageCode">
-			>,
+		input: Pick<CompanyNameListQuery, "organizationId" | "legalCompanyId"> & {
+			nameType?: CompanyName["nameType"] | undefined;
+			languageCode?: string | undefined;
+		},
 	): CompanyName[] {
 		return Array.from(companyNames.values()).filter(
 			(name) =>
@@ -1255,8 +1253,8 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 	function companyStatusMatchesAsOf(
 		input: Pick<CompaniesByStatusQuery, "organizationId" | "status"> & {
 			legalCompanyId: string;
-			asOf?: string;
-			knownAt?: string;
+			asOf?: string | undefined;
+			knownAt?: string | undefined;
 		},
 	): boolean {
 		if (input.asOf === undefined) {

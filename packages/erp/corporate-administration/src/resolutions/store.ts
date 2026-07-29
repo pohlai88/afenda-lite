@@ -130,7 +130,7 @@ export interface ResolutionStore {
 		organizationId: OrganizationId;
 		legalCompanyId: LegalCompanyId;
 		asOf: CanonicalDate;
-		status?: ResolutionStatus;
+		status?: ResolutionStatus | undefined;
 	}): Promise<Result<readonly Resolution[]>>;
 	recordResolution(
 		input: RecordResolutionStoreInput,

@@ -53,7 +53,7 @@ function readProperty(
 	try {
 		return value[key];
 	} catch {
-		return undefined;
+		// Throwing getters are intentionally treated as absent error metadata.
 	}
 }
 

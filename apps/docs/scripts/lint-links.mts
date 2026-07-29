@@ -15,6 +15,7 @@ import {
 
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const contentDocsDir = join(appRoot, "content/docs");
+const MDX_EXTENSION_PATTERN = /\.mdx$/;
 
 interface DocsPageRef {
 	readonly absolutePath: string;
@@ -39,7 +40,7 @@ function walkMdx(dir: string): string[] {
 
 function pathToSlug(absolutePath: string): string[] {
 	const rel = relative(contentDocsDir, absolutePath).replaceAll("\\", "/");
-	const withoutExt = rel.replace(/\.mdx$/, "");
+	const withoutExt = rel.replace(MDX_EXTENSION_PATTERN, "");
 	const parts = withoutExt.split("/");
 	if (parts.at(-1) === "index") {
 		parts.pop();

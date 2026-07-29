@@ -12,10 +12,11 @@ export default async function ClientInventoryPage({
 	searchParams,
 }: ClientInventoryPageProps) {
 	const params = await searchParams;
+	const movementId = firstSearchParam(params.movementId);
 	return (
 		<InventoryShell
 			surface="client"
-			movementId={firstSearchParam(params.movementId)}
+			{...(movementId === undefined ? {} : { movementId })}
 		/>
 	);
 }

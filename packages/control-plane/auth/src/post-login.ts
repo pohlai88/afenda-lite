@@ -106,10 +106,10 @@ export function sanitizeCallbackUrl(raw: unknown): string | null {
 }
 
 /** Post-login destination inputs — coarse role plus an optional raw callback. */
-export type PostLoginTarget = {
-	role: Role;
+export interface PostLoginTarget {
 	callbackUrl?: unknown;
-};
+	role: Role;
+}
 
 /**
  * Resolve the single post-login destination.

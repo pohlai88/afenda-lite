@@ -7,14 +7,29 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-import { isProductionDeployment } from "./neon-contract";
-
 const runtimeCtx = {
 	nodeEnv: process.env.NODE_ENV,
 	vercelEnv: process.env.VERCEL_ENV,
 } as const;
 
-const productionDeployment = isProductionDeployment(runtimeCtx);
+function isDocsProductionDeployment({
+	nodeEnv,
+	vercelEnv,
+}: typeof runtimeCtx): boolean {
+	if (vercelEnv === "production") {
+		return true;
+	}
+
+	if (vercelEnv === "preview" || vercelEnv === "development") {
+		return false;
+	}
+
+	return (
+		nodeEnv === "production" && vercelEnv !== undefined && vercelEnv !== ""
+	);
+}
+
+const productionDeployment = isDocsProductionDeployment(runtimeCtx);
 
 function isOriginUrl(value: string): boolean {
 	const url = new URL(value);

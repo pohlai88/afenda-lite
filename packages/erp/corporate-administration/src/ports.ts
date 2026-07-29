@@ -35,7 +35,7 @@ export type LegalFormReferenceResolution = ReferenceResolution &
 export type CurrencyReferenceResolution = ReferenceResolution &
 	Readonly<{
 		currencyCode: string;
-		effectiveDate?: CanonicalDate;
+		effectiveDate?: CanonicalDate | undefined;
 	}>;
 
 export type IdentifierAuthorityResolution = ReferenceResolution &
@@ -87,12 +87,12 @@ export type ReferenceDataPort = Readonly<{
 	resolveCountry(input: {
 		organizationId: OrganizationId;
 		countryCode: string;
-		effectiveDate?: CanonicalDate;
+		effectiveDate?: CanonicalDate | undefined;
 	}): Promise<Result<ReferenceResolution | null>>;
 	resolveCurrency(input: {
 		organizationId: OrganizationId;
 		currencyCode: string;
-		effectiveDate?: CanonicalDate;
+		effectiveDate?: CanonicalDate | undefined;
 	}): Promise<Result<CurrencyReferenceResolution | null>>;
 	resolveIdentifierAuthority(input: {
 		organizationId: OrganizationId;

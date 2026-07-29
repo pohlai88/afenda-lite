@@ -3,7 +3,10 @@ import { salesQueryContextSchema } from "./contracts/context";
 
 export const DEFAULT_SALES_PAGE_SIZE = 25 as const;
 export const MAX_SALES_PAGE_SIZE = 100 as const;
-export type SalesPage<T> = { items: T[]; nextCursor?: string };
+export interface SalesPage<T> {
+	items: T[];
+	nextCursor?: string | undefined;
+}
 export const salesPageRequestSchema = salesQueryContextSchema
 	.extend({
 		cursor: z.string().trim().min(1).max(512).optional(),

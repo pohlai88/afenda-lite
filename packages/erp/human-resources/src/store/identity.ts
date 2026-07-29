@@ -7,13 +7,13 @@ export interface HumanResourcesIdentityStore {
 	getUserEmployeeMapping(input: {
 		organizationId: string;
 		userId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<HumanResourcesEmployeeIdentity | null>>;
 
 	getManagerEmployeesForUser(input: {
 		organizationId: string;
 		userId: string;
-		asOf?: string;
+		asOf?: string | undefined;
 	}): Promise<Result<HumanResourcesEmployeeId[]>>;
 
 	createUserEmployeeMapping(input: {
@@ -22,7 +22,7 @@ export interface HumanResourcesIdentityStore {
 		employeeId: HumanResourcesEmployeeId;
 		relationshipType: "self" | "proxy";
 		effectiveFrom: string;
-		effectiveUntil?: string;
+		effectiveUntil?: string | undefined;
 		actorUserId: string;
 	}): Promise<Result<{ id: string }>>;
 }

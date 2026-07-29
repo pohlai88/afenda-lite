@@ -2,16 +2,16 @@ import path from "node:path";
 
 import { defineConfig, mergeConfig } from "vitest/config";
 import {
-	humanResourcesParityIncludes,
 	humanResourcesRoot,
-	masterDataParityIncludes,
+	laneExcludeOptions,
+	laneIncludeForProject,
 	masterDataRoot,
+	nextServerAlias,
 	nodeProject,
 	nodeProjectWithServerOnly,
 	repoRoot,
 	serverOnlyAlias,
 	sharedVitestConfig,
-	TESTS_DIR,
 	webAlias,
 } from "./vitest.shared";
 
@@ -19,6 +19,8 @@ const authProject = nodeProject(
 	"auth",
 	path.join(repoRoot, "packages/control-plane/auth"),
 );
+
+const repoToolingProject = nodeProject("repo-tooling", repoRoot);
 
 const humanResourcesUnitProject = nodeProject(
 	"human-resources-unit",
@@ -29,13 +31,41 @@ const masterDataUnitProject = nodeProjectWithServerOnly(
 	"master-data",
 	masterDataRoot,
 );
-masterDataUnitProject.test.exclude = masterDataParityIncludes;
+const masterDataUnitProjectWithExclude = {
+	...masterDataUnitProject,
+	test: {
+		...masterDataUnitProject.test,
+		...laneExcludeOptions("master-data-parity"),
+	},
+};
+
+const corporateAdministrationUnitProject = nodeProjectWithServerOnly(
+	"corporate-administration",
+	path.join(repoRoot, "packages/erp/corporate-administration"),
+);
+const corporateAdministrationUnitProjectWithExclude = {
+	...corporateAdministrationUnitProject,
+	test: {
+		...corporateAdministrationUnitProject.test,
+		exclude: laneIncludeForProject(
+			"corporate-administration-parity",
+			"packages/erp/corporate-administration",
+		),
+	},
+};
 
 export default mergeConfig(
 	sharedVitestConfig,
 	defineConfig({
 		test: {
 			projects: [
+				{
+					...repoToolingProject,
+					test: {
+						...repoToolingProject.test,
+						include: ["scripts/check-tsconfig-governance.test.mjs"],
+					},
+				},
 				{
 					...authProject,
 					test: {
@@ -62,6 +92,10 @@ export default mergeConfig(
 					"errors",
 					path.join(repoRoot, "packages/foundation/errors"),
 				),
+				nodeProject(
+					"testing",
+					path.join(repoRoot, "packages/foundation/testing"),
+				),
 				nodeProject("logger", path.join(repoRoot, "packages/runtime/logger")),
 				nodeProject(
 					"rate-limit",
@@ -81,7 +115,7 @@ export default mergeConfig(
 					"events",
 					path.join(repoRoot, "packages/data-plane/events"),
 				),
-				masterDataUnitProject,
+				masterDataUnitProjectWithExclude,
 				nodeProjectWithServerOnly(
 					"sales",
 					path.join(repoRoot, "packages/erp/sales"),
@@ -117,7 +151,7 @@ export default mergeConfig(
 					},
 					test: {
 						...humanResourcesUnitProject.test,
-						exclude: humanResourcesParityIncludes,
+						...laneExcludeOptions("human-resources-parity"),
 						fileParallelism: true,
 						maxWorkers: 2,
 					},
@@ -126,10 +160,7 @@ export default mergeConfig(
 					"payroll",
 					path.join(repoRoot, "packages/erp/payroll"),
 				),
-				nodeProjectWithServerOnly(
-					"corporate-administration",
-					path.join(repoRoot, "packages/erp/corporate-administration"),
-				),
+				corporateAdministrationUnitProjectWithExclude,
 				nodeProjectWithServerOnly(
 					"fulfillment",
 					path.join(repoRoot, "packages/erp/fulfillment"),
@@ -154,7 +185,7 @@ export default mergeConfig(
 					test: {
 						name: "env",
 						root: path.join(repoRoot, "packages/foundation/env"),
-						include: [`${TESTS_DIR}/**/*.test.ts`],
+						include: nodeProject("env", "").test.include,
 						environment: "node",
 						maxWorkers: 1,
 						env: {
@@ -171,13 +202,15 @@ export default mergeConfig(
 					resolve: {
 						alias: {
 							...webAlias,
+							...nextServerAlias,
 							...serverOnlyAlias,
 						},
 					},
 					test: {
 						name: "web",
 						root: path.join(repoRoot, "apps/web"),
-						include: [`${TESTS_DIR}/**/*.test.ts`],
+						include: nodeProject("web", "").test.include,
+						...laneExcludeOptions("unit"),
 						environment: "node",
 						testTimeout: 15_000,
 						hookTimeout: 30_000,

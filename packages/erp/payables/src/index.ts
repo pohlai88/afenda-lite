@@ -55,8 +55,8 @@ export {
 } from "./model";
 
 const identity = {
-	organizationId: z.string().trim().min(1),
 	actorUserId: z.string().trim().min(1),
+	organizationId: z.string().trim().min(1),
 };
 const correlated = { ...identity, correlationId: z.string().trim().min(1) };
 const uuid = z.string().uuid();
@@ -73,67 +73,63 @@ const positiveDecimal = z
 const createSchema = z.object({
 	...correlated,
 	code: z.string().trim().min(1).max(64),
-	supplierId: uuid,
-	supplierCode: z.string().trim().min(1).max(64),
-	supplierName: z.string().trim().min(1).max(256),
 	currencyCode: z
 		.string()
 		.trim()
 		.length(3)
 		.transform((value) => value.toUpperCase()),
+	supplierCode: z.string().trim().min(1).max(64),
+	supplierId: uuid,
+	supplierName: z.string().trim().min(1).max(256),
 });
 const addLineSchema = z.object({
 	...correlated,
+	description: z.string().trim().min(1).max(512),
 	invoiceId: uuid,
 	itemId: uuid,
-	description: z.string().trim().min(1).max(512),
 	quantity: positiveDecimal,
 	unitPrice: positiveDecimal,
 });
 const matchSchema = z.object({
 	...correlated,
+	expectedVersion: z.number().int().positive(),
+	goodsReceiptId: uuid,
 	invoiceId: uuid,
 	purchaseOrderId: uuid,
-	goodsReceiptId: uuid,
-	expectedVersion: z.number().int().positive(),
 });
 const versionedSchema = z.object({
 	...correlated,
-	invoiceId: uuid,
 	expectedVersion: z.number().int().positive(),
+	invoiceId: uuid,
 });
 const creditSchema = createSchema.extend({
 	amount: positiveDecimal,
-	itemId: uuid,
 	description: z.string().trim().min(1).max(512).default("Supplier credit"),
+	itemId: uuid,
 });
 const applySchema = z.object({
 	...correlated,
-	invoiceId: uuid,
 	amount: positiveDecimal,
-	paymentId: uuid,
-	paymentApplicationInstructionId: uuid,
 	idempotencyKey: z.string().trim().min(1).max(128),
+	invoiceId: uuid,
+	paymentApplicationInstructionId: uuid,
+	paymentId: uuid,
 });
 const applyCreditSchema = z.object({
 	...correlated,
-	invoiceId: uuid,
-	creditNoteId: uuid,
 	amount: positiveDecimal,
+	creditNoteId: uuid,
 	idempotencyKey: z.string().trim().min(1).max(128),
+	invoiceId: uuid,
 });
 const reversePaymentApplicationSchema = z.object({
 	...correlated,
-	paymentId: uuid,
 	idempotencyKey: z.string().trim().min(1).max(128),
+	paymentId: uuid,
 });
 const getSchema = z.object({ ...identity, id: uuid });
 const listSchema = z.object({
 	...identity,
-	page: z.number().int().positive().default(1),
-	pageSize: z.number().int().positive().max(100).default(50),
-	status: z.enum(["draft", "matched", "posted", "cancelled"]).optional(),
-	supplierId: uuid.optional(),
 	currencyCode: z
 		.string()
 		.trim()
@@ -141,12 +137,16 @@ const listSchema = z.object({
 		.transform((value) => value.toUpperCase())
 		.optional(),
 	documentType: z.enum(["invoice", "credit_note"]).optional(),
+	page: z.number().int().positive().default(1),
+	pageSize: z.number().int().positive().max(100).default(50),
+	status: z.enum(["draft", "matched", "posted", "cancelled"]).optional(),
+	supplierId: uuid.optional(),
 });
 const creditLineSchema = z.object({
 	...correlated,
 	creditNoteId: uuid,
-	itemId: uuid,
 	description: z.string().trim().min(1).max(512),
+	itemId: uuid,
 	quantity: positiveDecimal,
 	unitPrice: positiveDecimal,
 });
@@ -157,19 +157,21 @@ const creditPostSchema = z.object({
 });
 const balanceSchema = z.object({
 	...identity,
-	supplierId: uuid,
 	currencyCode: z
 		.string()
 		.trim()
 		.length(3)
 		.transform((value) => value.toUpperCase())
 		.optional(),
+	supplierId: uuid,
 });
 
 let productionStore: PayablesStore | undefined;
 
 function resolveStore(store?: PayablesStore): PayablesStore {
-	if (store !== undefined) return store;
+	if (store !== undefined) {
+		return store;
+	}
 	if (productionStore === undefined) {
 		productionStore = createDrizzlePayablesStore();
 	}
@@ -177,17 +179,19 @@ function resolveStore(store?: PayablesStore): PayablesStore {
 }
 
 function resolveEffects(effects?: PayablesEffects): PayablesEffects {
-	if (effects !== undefined) return effects;
+	if (effects !== undefined) {
+		return effects;
+	}
 	const publisher = createEventPublisher();
 	return {
 		async emit(event) {
 			const result = await publisher.publish({
-				type: event.type,
-				sourceModule: "payables",
-				organizationId: event.organizationId,
 				actorUserId: event.actorUserId,
 				correlationId: event.correlationId,
+				organizationId: event.organizationId,
 				payload: event.payload,
+				sourceModule: "payables",
+				type: event.type,
 			});
 			return result.ok ? ok(undefined) : result;
 		},
@@ -207,7 +211,7 @@ function parse<T>(
 			});
 }
 
-async function authorize(
+function authorize(
 	authorization: PayablesAuthorizationPort | undefined,
 	input: { organizationId: string; actorUserId: string },
 	permission: PayablesPermission,
@@ -228,18 +232,22 @@ export async function createDraftSupplierInvoice(
 		input,
 		"Invalid supplier invoice create input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).createInvoice({
 		...parsed.data,
-		normalizedCode: normalizedCode(parsed.data.code),
 		documentType: "invoice",
 		effects: resolveEffects(options.effects),
+		normalizedCode: normalizedCode(parsed.data.code),
 	});
 }
 
@@ -252,13 +260,17 @@ export async function addSupplierInvoiceLine(
 		input,
 		"Invalid supplier invoice line input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).addLine(parsed.data);
 }
 
@@ -271,13 +283,17 @@ export async function matchSupplierInvoice(
 		input,
 		"Invalid supplier invoice match input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 
 	if (
 		options.purchaseOrderMatch === undefined ||
@@ -294,7 +310,9 @@ export async function matchSupplierInvoice(
 		parsed.data.organizationId,
 		parsed.data.invoiceId,
 	);
-	if (!invoiceResult.ok) return invoiceResult;
+	if (!invoiceResult.ok) {
+		return invoiceResult;
+	}
 	if (invoiceResult.data === null) {
 		return fail("NOT_FOUND", "Supplier invoice not found");
 	}
@@ -316,34 +334,40 @@ export async function matchSupplierInvoice(
 		organizationId: parsed.data.organizationId,
 		purchaseOrderId: parsed.data.purchaseOrderId,
 	});
-	if (!poBasis.ok) return poBasis;
+	if (!poBasis.ok) {
+		return poBasis;
+	}
 	if (poBasis.data === null) {
 		return fail("NOT_FOUND", "Purchase order not found for matching");
 	}
 
 	const grBasis = await options.goodsReceiptMatch.getGoodsReceiptMatchBasis({
-		organizationId: parsed.data.organizationId,
 		goodsReceiptId: parsed.data.goodsReceiptId,
+		organizationId: parsed.data.organizationId,
 	});
-	if (!grBasis.ok) return grBasis;
+	if (!grBasis.ok) {
+		return grBasis;
+	}
 	if (grBasis.data === null) {
 		return fail("NOT_FOUND", "Goods receipt not found for matching");
 	}
 
 	const matchEvaluation = evaluateThreeWayMatch({
+		goodsReceipt: grBasis.data,
 		invoice,
 		purchaseOrder: poBasis.data,
-		goodsReceipt: grBasis.data,
 	});
-	if (!matchEvaluation.ok) return matchEvaluation;
+	if (!matchEvaluation.ok) {
+		return matchEvaluation;
+	}
 
 	return store.matchInvoice({
 		...parsed.data,
-		matchStatus: matchEvaluation.data.status,
-		evidence: matchEvaluation.data.evidence,
-		purchaseOrderVersion: poBasis.data.version,
-		goodsReceiptVersion: grBasis.data.version,
 		effects: resolveEffects(options.effects),
+		evidence: matchEvaluation.data.evidence,
+		goodsReceiptVersion: grBasis.data.version,
+		matchStatus: matchEvaluation.data.status,
+		purchaseOrderVersion: poBasis.data.version,
 	});
 }
 
@@ -356,21 +380,28 @@ export async function postSupplierInvoice(
 		input,
 		"Invalid supplier invoice post input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	const store = resolveStore(options.store);
 	const current = await store.getById(
 		parsed.data.organizationId,
 		parsed.data.invoiceId,
 	);
-	if (!current.ok) return current;
-	if (current.data === null)
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
 		return fail("NOT_FOUND", "Supplier invoice not found");
+	}
 	const match = current.data.matchResult;
 	if (match === null || match.result === "exception") {
 		return fail(
@@ -390,12 +421,16 @@ export async function postSupplierInvoice(
 			purchaseOrderId: match.purchaseOrderId,
 		}),
 		options.goodsReceiptMatch.getGoodsReceiptMatchBasis({
-			organizationId: parsed.data.organizationId,
 			goodsReceiptId: match.goodsReceiptId,
+			organizationId: parsed.data.organizationId,
 		}),
 	]);
-	if (!purchaseOrder.ok) return purchaseOrder;
-	if (!goodsReceipt.ok) return goodsReceipt;
+	if (!purchaseOrder.ok) {
+		return purchaseOrder;
+	}
+	if (!goodsReceipt.ok) {
+		return goodsReceipt;
+	}
 	if (
 		purchaseOrder.data === null ||
 		goodsReceipt.data === null ||
@@ -422,27 +457,35 @@ export async function issueSupplierCreditNote(
 		input,
 		"Invalid supplier credit note input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	const created = await createDraftSupplierCreditNote(parsed.data, options);
-	if (!created.ok) return created;
+	if (!created.ok) {
+		return created;
+	}
 	const line = await addSupplierCreditNoteLine(
 		{
 			...parsed.data,
 			creditNoteId: created.data.id,
-			itemId: parsed.data.itemId,
 			description: parsed.data.description,
+			itemId: parsed.data.itemId,
 			quantity: "1",
 			unitPrice: parsed.data.amount,
 		},
 		options,
 	);
-	if (!line.ok) return line;
+	if (!line.ok) {
+		return line;
+	}
 	return postSupplierCreditNote(
 		{
 			...parsed.data,
@@ -462,18 +505,22 @@ export async function createDraftSupplierCreditNote(
 		input,
 		"Invalid supplier credit note create input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).createCredit({
 		...parsed.data,
-		normalizedCode: normalizedCode(parsed.data.code),
 		documentType: "credit_note",
 		effects: resolveEffects(options.effects),
+		normalizedCode: normalizedCode(parsed.data.code),
 	});
 }
 
@@ -486,13 +533,17 @@ export async function addSupplierCreditNoteLine(
 		input,
 		"Invalid supplier credit note line input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).addCreditLine(parsed.data);
 }
 
@@ -505,13 +556,17 @@ export async function postSupplierCreditNote(
 		input,
 		"Invalid supplier credit note post input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).postCredit({
 		...parsed.data,
 		effects: resolveEffects(options.effects),
@@ -531,13 +586,17 @@ export async function applySupplierPayment(
 		input,
 		"Invalid supplier payment apply input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 
 	if (options.postedPayment === undefined) {
 		return fail("UNAUTHORIZED", "Posted payment query port is required");
@@ -548,7 +607,9 @@ export async function applySupplierPayment(
 		parsed.data.organizationId,
 		parsed.data.invoiceId,
 	);
-	if (!invoiceResult.ok) return invoiceResult;
+	if (!invoiceResult.ok) {
+		return invoiceResult;
+	}
 	if (invoiceResult.data === null) {
 		return fail("NOT_FOUND", "Supplier invoice not found");
 	}
@@ -564,7 +625,9 @@ export async function applySupplierPayment(
 		organizationId: parsed.data.organizationId,
 		paymentId: parsed.data.paymentId,
 	});
-	if (!paymentBasis.ok) return paymentBasis;
+	if (!paymentBasis.ok) {
+		return paymentBasis;
+	}
 	if (paymentBasis.data === null) {
 		return fail("NOT_FOUND", "Posted payment not found for application");
 	}
@@ -576,8 +639,8 @@ export async function applySupplierPayment(
 			"CONFLICT",
 			"Payment and invoice currencies must match for application",
 			{
-				paymentCurrency: paymentBasis.data.currencyCode,
 				invoiceCurrency: invoice.currencyCode,
+				paymentCurrency: paymentBasis.data.currencyCode,
 			},
 		);
 	}
@@ -597,13 +660,17 @@ export async function applySupplierCredit(
 		input,
 		"Invalid supplier credit application input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).applyCredit({
 		...parsed.data,
 		effects: resolveEffects(options.effects),
@@ -619,13 +686,17 @@ export async function reverseSupplierPaymentApplication(
 		input,
 		"Invalid supplier allocation reversal input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).reversePaymentApplication({
 		...parsed.data,
 		effects: resolveEffects(options.effects),
@@ -641,13 +712,17 @@ export async function cancelSupplierInvoice(
 		input,
 		"Invalid supplier invoice cancel input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.manage",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).cancel({
 		...parsed.data,
 		effects: resolveEffects(options.effects),
@@ -659,13 +734,17 @@ export async function getSupplierInvoiceById(
 	options: PayablesCommandOptions = {},
 ): Promise<Result<SupplierInvoice | null>> {
 	const parsed = parse(getSchema, input, "Invalid supplier invoice get input");
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.read",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).getById(
 		parsed.data.organizationId,
 		parsed.data.id,
@@ -681,13 +760,17 @@ export async function listSupplierInvoices(
 		input,
 		"Invalid supplier invoice list input",
 	);
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.read",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).list(parsed.data);
 }
 
@@ -696,13 +779,17 @@ export async function getSupplierBalance(
 	options: PayablesCommandOptions = {},
 ): Promise<Result<SupplierBalance[]>> {
 	const parsed = parse(balanceSchema, input, "Invalid supplier balance input");
-	if (!parsed.ok) return parsed;
+	if (!parsed.ok) {
+		return parsed;
+	}
 	const allowed = await authorize(
 		options.authorization,
 		parsed.data,
 		"payables.read",
 	);
-	if (!allowed.ok) return allowed;
+	if (!allowed.ok) {
+		return allowed;
+	}
 	return resolveStore(options.store).getBalance(
 		parsed.data.organizationId,
 		parsed.data.supplierId,

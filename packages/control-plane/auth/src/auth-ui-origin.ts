@@ -22,7 +22,7 @@ export async function resolveAuthUiOrigin(): Promise<string> {
 
 function firstHeaderValue(value: string | null): string | undefined {
 	if (!value) {
-		return undefined;
+		return;
 	}
 	const first = value.split(",")[0]?.trim();
 	return first && first.length > 0 ? first : undefined;

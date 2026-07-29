@@ -10,15 +10,15 @@ import type {
 import { createSystemClock } from "./production-ports";
 import { resolveSalesStore } from "./resolve-store";
 
-export type SalesCommandOptions = {
-	store?: SalesStore;
+export interface SalesCommandOptions {
 	authorization?: SalesAuthorizationPort;
-	masterData?: MasterDataSnapshotPort;
-	tax?: TaxCalculationPort;
-	credit?: CreditCheckPort;
 	availability?: AvailabilityCheckPort;
 	clock?: ClockPort;
-};
+	credit?: CreditCheckPort;
+	masterData?: MasterDataSnapshotPort;
+	store?: SalesStore;
+	tax?: TaxCalculationPort;
+}
 export type SalesQueryOptions = Pick<
 	SalesCommandOptions,
 	"store" | "authorization" | "clock"

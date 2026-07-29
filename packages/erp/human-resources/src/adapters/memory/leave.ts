@@ -158,8 +158,8 @@ function activeLeaveOverlapRequestIds(
 	input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
-		excludeRequestId?: HumanResourcesLeaveRequestId;
-		includeDraft?: boolean;
+		excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
+		includeDraft?: boolean | undefined;
 	},
 ): Set<HumanResourcesLeaveRequestId> {
 	const activeRequests = Array.from(state.leaveRequests.values()).filter(
@@ -253,10 +253,10 @@ async function emitLeaveSideEffects(
 			entityId?: string;
 			action: "CREATE" | "UPDATE" | "DELETE";
 		};
-		eventType?: HumanResourcesEventType;
-		eventEntityId?: string;
-		eventEntityType?: string;
-		conditionalEventSuppressed?: boolean;
+		eventType?: HumanResourcesEventType | undefined;
+		eventEntityId?: string | undefined;
+		eventEntityType?: string | undefined;
+		conditionalEventSuppressed?: boolean | undefined;
 	},
 ): Promise<Result<void>> {
 	const definition = getHumanResourcesMutationEmission(input.commandId);

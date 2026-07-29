@@ -67,8 +67,12 @@ export async function revokeOrgRoleAction(
 			assignmentId: parsed.data.assignmentId,
 			actorUserId: session.userId,
 			correlationId,
-			ipAddress: attribution.ipAddress,
-			userAgent: attribution.userAgent,
+			...(attribution.ipAddress === undefined
+				? {}
+				: { ipAddress: attribution.ipAddress }),
+			...(attribution.userAgent === undefined
+				? {}
+				: { userAgent: attribution.userAgent }),
 		});
 	} catch {
 		logProductEvent({

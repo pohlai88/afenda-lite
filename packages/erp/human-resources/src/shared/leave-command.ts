@@ -152,7 +152,7 @@ export async function requireLeaveRequestBackdatePermission(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		correlationId?: string;
+		correlationId?: string | undefined;
 		operationId: HumanResourcesCommandId;
 	},
 ): Promise<Result<void>> {
@@ -176,7 +176,7 @@ export async function requireLeaveCancelApprovedPermission(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		correlationId?: string;
+		correlationId?: string | undefined;
 		operationId: HumanResourcesCommandId;
 	},
 ): Promise<Result<void>> {
@@ -196,7 +196,7 @@ export async function requireLeaveRequestSensitiveRead(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		correlationId?: string;
+		correlationId?: string | undefined;
 		operationId: HumanResourcesQueryId | HumanResourcesCommandId;
 		operationKind: "command" | "query";
 	},
@@ -222,7 +222,7 @@ export async function assertLeaveRequestSensitiveReadAllowed(
 	input: {
 		organizationId: string;
 		actorUserId: string;
-		correlationId?: string;
+		correlationId?: string | undefined;
 		operationId: HumanResourcesQueryId | HumanResourcesCommandId;
 		operationKind: "command" | "query";
 		request: LeaveRequest;

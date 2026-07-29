@@ -21,7 +21,7 @@ export function jsonData<T>(
 ): NextResponse<{ data: T }> {
 	return NextResponse.json(apiData(data), {
 		status: init?.status ?? 200,
-		headers: init?.headers,
+		...(init?.headers === undefined ? {} : { headers: init.headers }),
 	});
 }
 

@@ -10,17 +10,17 @@ import { getSession } from "./session";
 
 const NEON_AUTH_SERVER_PROXY_HEADER = "x-neon-auth-server-proxy";
 
-export type InviteOrgMemberInput = {
+export interface InviteOrgMemberInput {
 	email: string;
 	orgId: string;
 	role: Role;
-};
+}
 
-export type InviteOrgMemberData = {
+export interface InviteOrgMemberData {
 	data: unknown;
 	/** Neon invitation id when the invite response includes one; otherwise null. */
 	invitationId: string | null;
-};
+}
 
 function normalizeInviteEmail(email: string): string {
 	return email.trim().toLowerCase();
@@ -96,7 +96,12 @@ export async function inviteOrgMember(
 	);
 
 	const response = await fetch(url.toString(), {
-		method: "POST",
+		body: JSON.stringify({
+			email,
+			organizationId: input.orgId,
+			resend: true,
+			role: toNeonOrgRole(input.role),
+		}),
 		headers: {
 			"Content-Type": "application/json",
 			Cookie: cookieHeader,
@@ -104,12 +109,7 @@ export async function inviteOrgMember(
 			Referer: `${appOrigin}/`,
 			[NEON_AUTH_SERVER_PROXY_HEADER]: "nextjs",
 		},
-		body: JSON.stringify({
-			email,
-			role: toNeonOrgRole(input.role),
-			organizationId: input.orgId,
-			resend: true,
-		}),
+		method: "POST",
 	});
 
 	if (!response.ok) {

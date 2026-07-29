@@ -5,13 +5,13 @@ import type {
 } from "./leave-status";
 
 export type LeavePolicyBalanceRuleInput = {
-	accrualBasis?: LeavePolicyAccrualBasis;
-	accrualFrequency?: LeavePolicyAccrualFrequency | null;
-	accrualQuantityPerPeriod?: string | null;
-	carryForwardEnabled?: boolean;
-	carryForwardMaxQuantity?: string | null;
-	entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule;
-	entitlementExpiryDays?: number | null;
+	accrualBasis?: LeavePolicyAccrualBasis | undefined;
+	accrualFrequency?: LeavePolicyAccrualFrequency | null | undefined;
+	accrualQuantityPerPeriod?: string | null | undefined;
+	carryForwardEnabled?: boolean | undefined;
+	carryForwardMaxQuantity?: string | null | undefined;
+	entitlementExpiryRule?: LeavePolicyEntitlementExpiryRule | undefined;
+	entitlementExpiryDays?: number | null | undefined;
 };
 
 export type ResolvedLeavePolicyBalanceRules = {

@@ -70,9 +70,6 @@ describe("result helpers", () => {
 			"Operation failed",
 		);
 		expect(result.ok).toBe(false);
-		if (result.ok) {
-			return;
-		}
 		expect(result.code).toBe("INTERNAL_ERROR");
 		expect(result.message).toBe("Operation failed");
 		expect(result.message).not.toMatch(/SELECT/i);

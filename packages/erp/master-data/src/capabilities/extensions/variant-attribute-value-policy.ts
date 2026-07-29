@@ -8,14 +8,14 @@ import type {
 import { compareCanonicalDecimalValues } from "./template-attribute-policy";
 
 export type VariantAttributeValueInput = Readonly<{
-	textValue?: string;
-	integerValue?: number | string;
-	decimalValue?: number | string;
-	booleanValue?: boolean;
-	dateValue?: string;
-	optionId?: string;
-	optionIds?: readonly string[];
-	referenceValue?: string;
+	textValue?: string | undefined;
+	integerValue?: number | string | undefined;
+	decimalValue?: number | string | undefined;
+	booleanValue?: boolean | undefined;
+	dateValue?: string | undefined;
+	optionId?: string | undefined;
+	optionIds?: readonly string[] | undefined;
+	referenceValue?: string | undefined;
 }>;
 
 export type NormalizedVariantAttributeValue = Readonly<{

@@ -44,7 +44,9 @@ function ColumnVisibilityMenu({
 					<DropdownMenuCheckboxItem
 						key={column.id}
 						checked={column.visible}
-						disabled={column.disabled}
+						{...(column.disabled === undefined
+							? {}
+							: { disabled: column.disabled })}
 						onCheckedChange={(checked) =>
 							onVisibilityChange(column.id, checked === true)
 						}

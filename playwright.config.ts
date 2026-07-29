@@ -1,11 +1,20 @@
+import { getTestingLane } from "@afenda/testing";
 import { defineConfig, devices } from "@playwright/test";
 import { loadPlaywrightEnv } from "./testing/e2e/env";
 
 loadPlaywrightEnv();
 
+const smokeLane = getTestingLane("e2e-smoke");
+const journeyLane = getTestingLane("e2e-journey");
+const allLane = getTestingLane("e2e-all");
 const port = process.env.PLAYWRIGHT_PORT?.trim() || "3000";
 const baseURL =
 	process.env.PLAYWRIGHT_BASE_URL?.trim() || `http://localhost:${port}`;
+const inheritedEnvironment = Object.fromEntries(
+	Object.entries(process.env).filter(
+		(entry): entry is [string, string] => entry[1] !== undefined,
+	),
+);
 
 const sharedUse = {
 	baseURL,
@@ -22,17 +31,17 @@ export default defineConfig({
 	use: sharedUse,
 	projects: [
 		{
-			name: "smoke",
+			name: smokeLane.id.replace("e2e-", ""),
 			grep: /@smoke/,
 			use: { ...devices["Desktop Chrome"] },
 		},
 		{
-			name: "journey",
+			name: journeyLane.id.replace("e2e-", ""),
 			grep: /@journey/,
 			use: { ...devices["Desktop Chrome"] },
 		},
 		{
-			name: "all",
+			name: allLane.id.replace("e2e-", ""),
 			use: { ...devices["Desktop Chrome"] },
 		},
 	],
@@ -42,7 +51,7 @@ export default defineConfig({
 		reuseExistingServer: Boolean(process.env.PLAYWRIGHT_REUSE_SERVER),
 		timeout: 120_000,
 		env: {
-			...process.env,
+			...inheritedEnvironment,
 			APP_URL: baseURL,
 			PORT: port,
 		},

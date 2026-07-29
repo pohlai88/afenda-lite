@@ -19,10 +19,10 @@ export type UpdateOrganizationDimensionStoreRecord = {
 	organizationId: string;
 	id: string;
 	expectedVersion: number;
-	name?: string;
-	parentId?: string | null;
+	name?: string | undefined;
+	parentId?: string | null | undefined;
 	parentIdProvided: boolean;
-	effectiveTo?: string | null;
+	effectiveTo?: string | null | undefined;
 	updatedBy: string;
 	correlationId: string;
 };
@@ -59,9 +59,9 @@ export type OrganizationDimensionStore = {
 	}): Promise<Result<OrganizationDimension | null>>;
 	list(input: {
 		organizationId: string;
-		kind?: OrganizationDimensionKind;
-		status?: OrganizationDimensionLifecycleStatus | "all";
-		parentId?: string | null;
+		kind?: OrganizationDimensionKind | undefined;
+		status?: OrganizationDimensionLifecycleStatus | "all" | undefined;
+		parentId?: string | null | undefined;
 		page: number;
 		pageSize: number;
 	}): Promise<Result<{ items: OrganizationDimension[]; total: number }>>;

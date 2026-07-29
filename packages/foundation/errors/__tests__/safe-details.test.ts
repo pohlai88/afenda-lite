@@ -61,12 +61,12 @@ describe("sanitizeErrorDetails", () => {
 	});
 
 	it("truncates long strings and arrays", () => {
-		const longString = "x".repeat(2_100);
+		const longString = "x".repeat(2100);
 		const values = Array.from({ length: 60 }, (_, index) => index);
 
 		const result = sanitizeErrorDetails({ longString, values });
 
-		expect(result?.longString).toBe("x".repeat(2_000));
+		expect(result?.longString).toBe("x".repeat(2000));
 		expect(result?.values).toEqual(values.slice(0, 50));
 	});
 

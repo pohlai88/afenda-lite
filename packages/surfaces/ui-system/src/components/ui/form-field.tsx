@@ -9,12 +9,12 @@ import { Label } from "./label";
 import { Textarea } from "./textarea";
 
 interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
-	label?: string;
-	description?: string;
-	error?: string;
-	required?: boolean;
+	label?: string | undefined;
+	description?: string | undefined;
+	error?: string | undefined;
+	required?: boolean | undefined;
 	children?: React.ReactNode;
-	fieldId?: string;
+	fieldId?: string | undefined;
 }
 
 const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(

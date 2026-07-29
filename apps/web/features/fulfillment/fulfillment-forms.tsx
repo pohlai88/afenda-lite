@@ -107,8 +107,8 @@ function DeliveryVersionFields({
 }: {
 	prefix: string;
 	pending: boolean;
-	deliveryError?: string;
-	versionError?: string;
+	deliveryError?: string | undefined;
+	versionError?: string | undefined;
 }) {
 	return (
 		<>

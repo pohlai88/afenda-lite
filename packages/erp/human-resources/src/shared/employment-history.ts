@@ -65,7 +65,7 @@ export function resolveLifecycleEffectiveOn(input: {
 	status: EmploymentStatus;
 	startsOn: string;
 	endsOn: string | null;
-	requestedEffectiveOn?: string;
+	requestedEffectiveOn?: string | undefined;
 }): string {
 	if (input.requestedEffectiveOn !== undefined) {
 		return input.requestedEffectiveOn;

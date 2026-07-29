@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const NON_EMPTY_INVITATION_ID_PATTERN = /non-empty invitationId/;
+
 vi.mock("@afenda/env", () => ({
 	env: {
 		APP_URL: "https://www.nexuscanon.com",
@@ -36,7 +38,7 @@ describe("join paths (I1.3)", () => {
 	it("rejects empty invitationId", async () => {
 		const { buildJoinUrl } = await import("../src/join-paths");
 		expect(() => buildJoinUrl({ invitationId: "  " })).toThrow(
-			/non-empty invitationId/,
+			NON_EMPTY_INVITATION_ID_PATTERN,
 		);
 	});
 
@@ -49,7 +51,9 @@ describe("join paths (I1.3)", () => {
 
 	it("buildInviteJoinUrl rejects empty invitationId", async () => {
 		const { buildInviteJoinUrl } = await import("../src/join-paths");
-		expect(() => buildInviteJoinUrl("  ")).toThrow(/non-empty invitationId/);
+		expect(() => buildInviteJoinUrl("  ")).toThrow(
+			NON_EMPTY_INVITATION_ID_PATTERN,
+		);
 	});
 });
 
@@ -82,12 +86,12 @@ describe("parseJoinInvitationQuery (PL-S4)", () => {
 	it("accepts opaque printable ids including the acceptance probe", async () => {
 		const { parseJoinInvitationQuery } = await import("../src/join-paths");
 		expect(parseJoinInvitationQuery("test")).toEqual({
-			kind: "present",
 			invitationId: "test",
+			kind: "present",
 		});
 		expect(parseJoinInvitationQuery("  inv-neon-1  ")).toEqual({
-			kind: "present",
 			invitationId: "inv-neon-1",
+			kind: "present",
 		});
 	});
 });

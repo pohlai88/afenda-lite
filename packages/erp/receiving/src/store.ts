@@ -69,7 +69,7 @@ export type ReceiptPostRecord = {
 		baseUomCode: string;
 	}>;
 	/** When set, post TX locks PO consumption and re-validates accepted ceilings. */
-	poConsumptionGuard?: PoConsumptionGuard;
+	poConsumptionGuard?: PoConsumptionGuard | undefined;
 };
 export type ReceiptCancelRecord = {
 	organizationId: string;
@@ -119,8 +119,8 @@ export type ReceiptListFilter = {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: GoodsReceiptStatus;
-	sourceType?: GoodsReceiptSourceType;
+	status?: GoodsReceiptStatus | undefined;
+	sourceType?: GoodsReceiptSourceType | undefined;
 };
 export type PostedAcceptedByPoLine = {
 	purchaseOrderLineId: string;

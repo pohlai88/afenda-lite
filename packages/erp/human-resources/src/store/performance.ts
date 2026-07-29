@@ -131,11 +131,11 @@ export type HumanResourcesPerformanceStore = {
 		input: {
 			organizationId: string;
 			cycleId: HumanResourcesPerformanceCycleId;
-			name?: string;
-			periodStart?: string;
-			periodEnd?: string;
-			ratingScale?: PerformanceRatingScale;
-			weightingModel?: PerformanceWeightingModel;
+			name?: string | undefined;
+			periodStart?: string | undefined;
+			periodEnd?: string | undefined;
+			ratingScale?: PerformanceRatingScale | undefined;
+			weightingModel?: PerformanceWeightingModel | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -244,7 +244,7 @@ export type HumanResourcesPerformanceStore = {
 			employeeId: HumanResourcesEmployeeId;
 			employmentId: HumanResourcesEmploymentId;
 			actorUserId: string;
-			asOfDate?: string;
+			asOfDate?: string | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -266,7 +266,7 @@ export type HumanResourcesPerformanceStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: PerformanceCycleStatus;
+		status?: PerformanceCycleStatus | undefined;
 	}): Promise<Result<PerformanceCycleListPage>>;
 
 	listCycleParticipants(input: {
@@ -294,11 +294,11 @@ export type HumanResourcesPerformanceStore = {
 		input: {
 			organizationId: string;
 			goalId: HumanResourcesGoalId;
-			title?: string;
-			description?: string | null;
-			weight?: string | null;
-			periodStart?: string;
-			periodEnd?: string;
+			title?: string | undefined;
+			description?: string | null | undefined;
+			weight?: string | null | undefined;
+			periodStart?: string | undefined;
+			periodEnd?: string | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -404,7 +404,7 @@ export type HumanResourcesPerformanceStore = {
 		employeeId: HumanResourcesEmployeeId;
 		page: number;
 		pageSize: number;
-		status?: PerformanceGoalStatus;
+		status?: PerformanceGoalStatus | undefined;
 	}): Promise<Result<PerformanceGoalListPage>>;
 
 	listGoalProgress(input: {
@@ -621,13 +621,13 @@ export type HumanResourcesPerformanceStore = {
 		input: {
 			organizationId: string;
 			planId: HumanResourcesImprovementPlanId;
-			performanceGap?: string;
-			expectedOutcome?: string;
-			measurableActions?: string;
-			supportResources?: string;
-			dueDate?: string;
-			extensionReason?: string;
-			extensionEvidenceReference?: string | null;
+			performanceGap?: string | undefined;
+			expectedOutcome?: string | undefined;
+			measurableActions?: string | undefined;
+			supportResources?: string | undefined;
+			dueDate?: string | undefined;
+			extensionReason?: string | undefined;
+			extensionEvidenceReference?: string | null | undefined;
 			expectedVersion: number;
 			actorUserId: string;
 		},
@@ -641,8 +641,8 @@ export type HumanResourcesPerformanceStore = {
 			planId: HumanResourcesImprovementPlanId;
 			expectedVersion: number;
 			actorUserId: string;
-			outcomeReason?: string;
-			outcomeEvidenceReference?: string | null;
+			outcomeReason?: string | undefined;
+			outcomeEvidenceReference?: string | null | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,
@@ -654,8 +654,8 @@ export type HumanResourcesPerformanceStore = {
 			planId: HumanResourcesImprovementPlanId;
 			expectedVersion: number;
 			actorUserId: string;
-			outcomeReason?: string;
-			outcomeEvidenceReference?: string | null;
+			outcomeReason?: string | undefined;
+			outcomeEvidenceReference?: string | null | undefined;
 		},
 		ports: MutationPorts,
 		meta: HumanResourcesMutationMeta,

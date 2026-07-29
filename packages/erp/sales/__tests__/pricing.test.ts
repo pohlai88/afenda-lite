@@ -30,7 +30,9 @@ describe("commercial pricing", () => {
 			},
 			options,
 		);
-		if (!book.ok) throw new Error(book.message);
+		if (!book.ok) {
+			throw new Error(book.message);
+		}
 		const fetched = await getPriceBook(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -82,8 +84,9 @@ describe("commercial pricing", () => {
 			quantity: "12",
 			at: new Date("2026-07-28"),
 		});
-		if (!directMatches.ok || directMatches.data.length === 0)
+		if (!directMatches.ok || directMatches.data.length === 0) {
 			throw new Error(JSON.stringify(directMatches));
+		}
 		const trace = await calculateSalesPrice(
 			{
 				organizationId: ORGANIZATION_ID,
@@ -97,7 +100,9 @@ describe("commercial pricing", () => {
 			},
 			options,
 		);
-		if (!trace.ok) throw new Error(JSON.stringify(trace));
+		if (!trace.ok) {
+			throw new Error(JSON.stringify(trace));
+		}
 		expect(trace.ok && trace.data.netUnitPrice).toBe("22.5");
 		expect(trace.ok && trace.data.lineNetAmount).toBe("270");
 	});

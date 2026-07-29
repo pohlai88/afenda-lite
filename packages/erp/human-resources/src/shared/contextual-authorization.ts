@@ -42,16 +42,16 @@ const AUTHORIZATION_DENIED_MESSAGE =
 
 export type HumanResourcesAuthorizeOperationOptions =
 	HumanResourcesCommandOptions & {
-		policies?: readonly HumanResourcesAuthorizationPolicy[];
+		policies?: readonly HumanResourcesAuthorizationPolicy[] | undefined;
 	};
 
 export type HumanResourcesAuthorizationDeniedDetails = {
 	humanResourcesCode: typeof HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED;
 	operationId: HumanResourcesOperationId;
-	policyId?: string;
+	policyId?: string | undefined;
 	denyCode: HumanResourcesAuthorizationDenyCode;
-	resourceKind?: string;
-	resourceId?: string;
+	resourceKind?: string | undefined;
+	resourceId?: string | undefined;
 };
 
 export const HUMAN_RESOURCES_ACTOR_SCOPES = [
@@ -202,16 +202,18 @@ export type HumanResourcesContextualAuthorizationInput = {
 	organizationId: string;
 	resourceOrganizationId: string;
 	actorUserId: string;
-	actorEmployeeId?: HumanResourcesEmployeeId;
+	actorEmployeeId?: HumanResourcesEmployeeId | undefined;
 	actorEmploymentStatus: "active" | "terminated";
 	directScopes: readonly HumanResourcesActorScope[];
-	delegatedAuthorities?: readonly HumanResourcesDelegatedAuthority[];
-	actorDuties?: readonly HumanResourcesSensitiveDuty[];
-	requestedDuty?: HumanResourcesSensitiveDuty;
+	delegatedAuthorities?:
+		| readonly HumanResourcesDelegatedAuthority[]
+		| undefined;
+	actorDuties?: readonly HumanResourcesSensitiveDuty[] | undefined;
+	requestedDuty?: HumanResourcesSensitiveDuty | undefined;
 	resourceType: HumanResourcesSensitiveResourceType;
 	resourceId: string;
-	subjectEmployeeId?: HumanResourcesEmployeeId;
-	ownerActorUserId?: string;
+	subjectEmployeeId?: HumanResourcesEmployeeId | undefined;
+	ownerActorUserId?: string | undefined;
 	action:
 		| "read"
 		| "create"
@@ -232,7 +234,7 @@ export type HumanResourcesContextualAuthorizationInput = {
 export type HumanResourcesContextualAuthorizationDecision = {
 	allowedScope: HumanResourcesActorScope | "break_glass";
 	fieldClasses: readonly HumanResourcesSensitiveFieldClass[];
-	breakGlassAuditId?: string;
+	breakGlassAuditId?: string | undefined;
 };
 
 function activeDelegatedScopes(
@@ -368,10 +370,10 @@ export function authorizationAllowed(
 
 export function authorizationDenied(input: {
 	operationId: HumanResourcesOperationId;
-	policyId?: string;
+	policyId?: string | undefined;
 	code: HumanResourcesAuthorizationDenyCode;
-	resourceKind?: string;
-	resourceId?: string;
+	resourceKind?: string | undefined;
+	resourceId?: string | undefined;
 }): Result<HumanResourcesAuthorizationDecision> {
 	const details: HumanResourcesAuthorizationDeniedDetails = {
 		humanResourcesCode: HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,

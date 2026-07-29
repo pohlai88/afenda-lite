@@ -482,7 +482,7 @@ export function assertReadinessAssessmentValid(input: {
 export function assertReadinessNotStale(input: {
 	readinessEffectiveOn: string;
 	asOfDate: string;
-	maxAgeDays?: number;
+	maxAgeDays?: number | undefined;
 }): Result<void> {
 	const maxAgeDays = input.maxAgeDays ?? SUCCESSION_READINESS_MAX_AGE_DAYS;
 	const effective = new Date(`${input.readinessEffectiveOn}T00:00:00.000Z`);

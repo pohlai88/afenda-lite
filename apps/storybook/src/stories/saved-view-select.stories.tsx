@@ -139,8 +139,8 @@ function ControlledSavedViewSelect({
 			value={value}
 			views={views}
 			onValueChange={setValue}
-			disabled={disabled}
-			placeholder={placeholder}
+			{...(disabled === undefined ? {} : { disabled })}
+			{...(placeholder === undefined ? {} : { placeholder })}
 		/>
 	);
 }

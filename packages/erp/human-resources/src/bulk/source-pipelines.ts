@@ -143,7 +143,7 @@ function validationIssues(error: z.ZodError) {
 	return error.issues.map((issue) => ({
 		code: "INVALID_ROW",
 		message: issue.message,
-		field: issue.path.join(".") || undefined,
+		...(issue.path.length === 0 ? {} : { field: issue.path.join(".") }),
 	}));
 }
 

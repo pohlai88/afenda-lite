@@ -8,6 +8,7 @@
 		"generate:source": "fumadocs-mdx",
 		"generate:openapi-docs": "pnpm exec tsx scripts/generate-openapi-docs.mts",
 		"generate:package-docs": "pnpm exec tsx scripts/generate-package-docs.mts",
+		"lint": "biome check .",
 		"lint:links": "pnpm exec tsx scripts/lint-links.mts",
 		"list:source-pages": "node --import tsx ./scripts/list-source-pages.mjs",
 		"fd": "cli",

@@ -12,8 +12,8 @@ export const SALES_REASONS = [
 	"SALES_INTEGRATION_REJECTED",
 ] as const;
 export type SalesReason = (typeof SALES_REASONS)[number];
-export type SalesFailureDetails = {
-	reason: SalesReason;
+export interface SalesFailureDetails {
 	fieldErrors?: Record<string, string[] | undefined>;
+	reason: SalesReason;
 	[key: string]: unknown;
-};
+}

@@ -1,6 +1,7 @@
 {
-	"extends": "@afenda/config/tsconfig/base.json",
+	"extends": "@afenda/config/tsconfig/node-library.json",
 	"compilerOptions": {
+		"allowImportingTsExtensions": true,
 		"lib": ["ES2022", "DOM"],
 		"types": ["node", "@playwright/test"],
 		"paths": {

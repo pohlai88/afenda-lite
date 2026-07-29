@@ -11,5 +11,7 @@ import {
 export function createHumanResourcesDocumentReferencePort(
 	resolver?: DocumentObjectResolverPort,
 ): DocumentReferencePort {
-	return createVaultDocumentReferenceAdapter({ resolver });
+	return createVaultDocumentReferenceAdapter(
+		resolver === undefined ? {} : { resolver },
+	);
 }

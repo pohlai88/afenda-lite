@@ -38,7 +38,7 @@ type ImportPanelProps = {
 type RowPreview = {
 	code: string;
 	outcome: string;
-	message?: string;
+	message?: string | undefined;
 };
 
 /**

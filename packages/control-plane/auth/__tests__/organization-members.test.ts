@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getSessionMock = vi.fn();
 const listMembersMock = vi.fn();
+const SECRET_PATTERN = /xyz/;
 
 vi.mock("../src/session", () => ({
 	getSession: () => getSessionMock(),
@@ -21,10 +22,10 @@ describe("organization members adapter", () => {
 		getSessionMock.mockReset();
 		listMembersMock.mockReset();
 		getSessionMock.mockResolvedValue({
-			userId: "user-actor",
+			email: "actor@example.com",
 			orgId: "org-1",
 			role: "operator",
-			email: "actor@example.com",
+			userId: "user-actor",
 		});
 	});
 
@@ -40,16 +41,16 @@ describe("organization members adapter", () => {
 				normalizeOrgMembers({
 					members: [
 						{
-							userId: "u-1",
 							role: "member",
-							user: { id: "u-1", email: "  Ada@Example.COM ", name: " Ada " },
+							user: { email: "  Ada@Example.COM ", id: "u-1", name: " Ada " },
+							userId: "u-1",
 						},
 						{
-							userId: "u-2",
 							role: "owner",
-							user: { id: "u-2", email: "bob@example.com", name: "" },
+							user: { email: "bob@example.com", id: "u-2", name: "" },
+							userId: "u-2",
 						},
-						{ userId: "u-bad", role: "superuser", user: { email: "x@y.z" } },
+						{ role: "superuser", user: { email: "x@y.z" }, userId: "u-bad" },
 						{ role: "member", user: { email: "missing-id@example.com" } },
 						null,
 						"x",
@@ -58,16 +59,16 @@ describe("organization members adapter", () => {
 				}),
 			).toEqual([
 				{
-					userId: "u-1",
 					email: "ada@example.com",
 					name: "Ada",
 					role: "member",
+					userId: "u-1",
 				},
 				{
-					userId: "u-2",
 					email: "bob@example.com",
 					name: "bob@example.com",
 					role: "owner",
+					userId: "u-2",
 				},
 			]);
 		});
@@ -79,22 +80,22 @@ describe("organization members adapter", () => {
 			expect(
 				normalizeOrgMembers([
 					{
-						userId: "u-1",
 						role: "admin",
 						user: { email: "a@example.com", name: "A" },
+						userId: "u-1",
 					},
 					{
-						userId: "u-1",
 						role: "member",
 						user: { email: "a@example.com", name: "A updated" },
+						userId: "u-1",
 					},
 				]),
 			).toEqual([
 				{
-					userId: "u-1",
 					email: "a@example.com",
 					name: "A updated",
 					role: "member",
+					userId: "u-1",
 				},
 			]);
 		});
@@ -112,12 +113,12 @@ describe("organization members adapter", () => {
 
 		it("paginates until a short page and never leaks upstream errors", async () => {
 			const pageOne = Array.from({ length: 100 }, (_, index) => ({
-				userId: `u-page-${index}`,
 				role: "member" as const,
 				user: {
 					email: `u${index}@example.com`,
 					name: `User ${index}`,
 				},
+				userId: `u-page-${index}`,
 			}));
 
 			listMembersMock
@@ -132,9 +133,9 @@ describe("organization members adapter", () => {
 					data: {
 						members: [
 							{
-								userId: "u-last",
 								role: "admin",
 								user: { email: "last@example.com", name: "Last" },
+								userId: "u-last",
 							},
 						],
 						total: 101,
@@ -147,10 +148,10 @@ describe("organization members adapter", () => {
 
 			expect(listMembersMock).toHaveBeenCalledTimes(2);
 			expect(listMembersMock.mock.calls[0]?.[0]).toEqual({
-				query: { organizationId: "org-1", limit: 100, offset: 0 },
+				query: { limit: 100, offset: 0, organizationId: "org-1" },
 			});
 			expect(listMembersMock.mock.calls[1]?.[0]).toEqual({
-				query: { organizationId: "org-1", limit: 100, offset: 100 },
+				query: { limit: 100, offset: 100, organizationId: "org-1" },
 			});
 			expect(members).toHaveLength(101);
 			expect(members.some((member) => member.userId === "u-last")).toBe(true);
@@ -160,18 +161,18 @@ describe("organization members adapter", () => {
 			listMembersMock.mockResolvedValue({
 				data: null,
 				error: {
-					message: "secret token xyz leaked",
 					code: "FORBIDDEN",
+					message: "secret token xyz leaked",
 				},
 			});
 
 			const { listOrgMembers } = await import("../src/organization-members");
 			await expect(listOrgMembers("org-1")).rejects.toMatchObject({
 				code: "SERVICE_UNAVAILABLE",
-				message: "A required service is temporarily unavailable.",
 				details: { service: "neon-auth" },
+				message: "A required service is temporarily unavailable.",
 			});
-			await expect(listOrgMembers("org-1")).rejects.not.toThrow(/xyz/);
+			await expect(listOrgMembers("org-1")).rejects.not.toThrow(SECRET_PATTERN);
 		});
 	});
 
@@ -181,14 +182,14 @@ describe("organization members adapter", () => {
 				data: {
 					members: [
 						{
-							userId: "u-keep",
 							role: "member",
 							user: { email: "keep@example.com", name: "Keep" },
+							userId: "u-keep",
 						},
 						{
-							userId: "u-other",
 							role: "admin",
 							user: { email: "other@example.com", name: "Other" },
+							userId: "u-other",
 						},
 					],
 					total: 2,
@@ -198,19 +199,19 @@ describe("organization members adapter", () => {
 
 			const { findOrgMember } = await import("../src/organization-members");
 			await expect(findOrgMember("org-1", "u-keep")).resolves.toEqual({
-				userId: "u-keep",
 				email: "keep@example.com",
 				name: "Keep",
 				role: "member",
+				userId: "u-keep",
 			});
 			expect(listMembersMock).toHaveBeenCalledWith({
 				query: {
-					organizationId: "org-1",
+					filterField: "userId",
+					filterOperator: "eq",
+					filterValue: "u-keep",
 					limit: 100,
 					offset: 0,
-					filterField: "userId",
-					filterValue: "u-keep",
-					filterOperator: "eq",
+					organizationId: "org-1",
 				},
 			});
 
@@ -234,18 +235,20 @@ describe("organization members adapter", () => {
 			listMembersMock.mockResolvedValue({
 				data: null,
 				error: {
-					message: "secret token xyz leaked",
 					code: "FORBIDDEN",
+					message: "secret token xyz leaked",
 				},
 			});
 
 			const { findOrgMember } = await import("../src/organization-members");
 			await expect(findOrgMember("org-1", "u-1")).rejects.toMatchObject({
 				code: "SERVICE_UNAVAILABLE",
-				message: "A required service is temporarily unavailable.",
 				details: { service: "neon-auth" },
+				message: "A required service is temporarily unavailable.",
 			});
-			await expect(findOrgMember("org-1", "u-1")).rejects.not.toThrow(/xyz/);
+			await expect(findOrgMember("org-1", "u-1")).rejects.not.toThrow(
+				SECRET_PATTERN,
+			);
 		});
 	});
 });

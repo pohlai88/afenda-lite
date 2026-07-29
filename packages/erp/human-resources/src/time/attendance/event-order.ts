@@ -46,14 +46,14 @@ export function filterAttendanceEventsForWorkDay(
 
 /** Import batch row: explicit sequence wins; otherwise 0-based row index (replay-stable). */
 export function resolveImportRowSourceSequence(
-	row: { sourceSequence?: number },
+	row: { sourceSequence?: number | undefined },
 	rowIndex: number,
 ): number {
 	return row.sourceSequence ?? rowIndex;
 }
 
 export function resolveAttendanceEventSourceSequence(input: {
-	explicit?: number;
+	explicit?: number | undefined;
 	existingEvents: readonly Pick<AttendanceEvent, "sourceSequence">[];
 }): number {
 	if (input.explicit !== undefined) {

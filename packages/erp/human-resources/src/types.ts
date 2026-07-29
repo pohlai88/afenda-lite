@@ -2635,7 +2635,7 @@ export type AttendanceImportResult = {
 		skipped: number;
 		rejected: number;
 	};
-	nextCursor?: string;
+	nextCursor?: string | undefined;
 };
 
 export type IdempotentAttendanceImportBatchRecord = {
@@ -2668,10 +2668,12 @@ export type AttendanceSession = {
 			minutes: number;
 			applied: boolean;
 		} | null;
-		breakIntervals?: readonly {
-			startedAt: string;
-			endedAt: string;
-		}[];
+		breakIntervals?:
+			| readonly {
+					startedAt: string;
+					endedAt: string;
+			  }[]
+			| undefined;
 	};
 	resolutionStatus: AttendanceSessionResolutionStatus;
 	requiresReview: boolean;
@@ -2990,19 +2992,19 @@ export type ShiftCreateRecord = {
 export type AttendanceEventRecordInput = {
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
-	employmentId?: HumanResourcesEmploymentId | null;
-	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null;
+	employmentId?: HumanResourcesEmploymentId | null | undefined;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	eventType: AttendanceEventType;
 	occurredAt: Date;
 	sourceTimezone: string;
 	localWorkDate: string;
 	source: AttendanceEventSource;
-	sourceReference?: string | null;
-	locationKey?: string | null;
-	deviceMetadata?: Record<string, unknown> | null;
-	payloadChecksum?: string | null;
-	notes?: string | null;
-	sourceSequence?: number;
+	sourceReference?: string | null | undefined;
+	locationKey?: string | null | undefined;
+	deviceMetadata?: Record<string, unknown> | null | undefined;
+	payloadChecksum?: string | null | undefined;
+	notes?: string | null | undefined;
+	sourceSequence?: number | undefined;
 	idempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
@@ -3011,18 +3013,18 @@ export type AttendanceEventRecordInput = {
 
 export type AttendanceImportEventRowInput = {
 	employeeId: HumanResourcesEmployeeId;
-	employmentId?: HumanResourcesEmploymentId | null;
-	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null;
+	employmentId?: HumanResourcesEmploymentId | null | undefined;
+	shiftAssignmentId?: HumanResourcesShiftAssignmentId | null | undefined;
 	eventType: AttendanceEventType;
 	occurredAt: Date;
 	sourceTimezone: string;
 	localWorkDate: string;
 	sourceReference: string;
-	locationKey?: string | null;
-	deviceMetadata?: Record<string, unknown> | null;
-	payloadChecksum?: string | null;
-	notes?: string | null;
-	sourceSequence?: number;
+	locationKey?: string | null | undefined;
+	deviceMetadata?: Record<string, unknown> | null | undefined;
+	payloadChecksum?: string | null | undefined;
+	notes?: string | null | undefined;
+	sourceSequence?: number | undefined;
 };
 
 export type AttendanceImportBatchInput = {
@@ -3033,8 +3035,8 @@ export type AttendanceImportBatchInput = {
 	idempotencyKey: string;
 	createRequestFingerprint: string;
 	createdBy: string;
-	correlationId?: string;
-	nextCursor?: string;
+	correlationId?: string | undefined;
+	nextCursor?: string | undefined;
 };
 
 export type AttendanceSessionResolveInput = {

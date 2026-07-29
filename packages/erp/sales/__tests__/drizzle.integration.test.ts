@@ -42,8 +42,10 @@ describe.runIf(runIntegration)(
 			VALUES (${ITEM_GROUP_ID}::uuid, ${ORGANIZATION_ID}, 'SALES-IT-GROUP', 'SALES-IT-GROUP', 'Sales Integration Group', 'active', ${ACTOR_USER_ID}, ${ACTOR_USER_ID})`,
 				sql`INSERT INTO md_item (id, organization_id, code, normalized_code, name, item_type, status, base_uom_id, item_group_id, created_by, updated_by)
 			VALUES (${ITEM_ID}::uuid, ${ORGANIZATION_ID}, 'SALES-IT-ITEM', 'SALES-IT-ITEM', 'Sales Integration Item', 'stock', 'active', ${UOM_ID}::uuid, ${ITEM_GROUP_ID}::uuid, ${ACTOR_USER_ID}, ${ACTOR_USER_ID})`,
-			])
+			]) {
+				// biome-ignore lint/performance/noAwaitInLoops: Fixture statements must execute in dependency order.
 				await db.execute(statement);
+			}
 		});
 
 		afterAll(async () => {
@@ -58,8 +60,10 @@ describe.runIf(runIntegration)(
 				sql`DELETE FROM md_party WHERE id = ${PARTY_ID}::uuid`,
 				sql`DELETE FROM ref_uom WHERE id = ${UOM_ID}::uuid`,
 				sql`DELETE FROM ref_uom_dimension WHERE id = ${UOM_DIMENSION_ID}::uuid`,
-			])
+			]) {
+				// biome-ignore lint/performance/noAwaitInLoops: Cleanup reverses fixture dependencies deterministically.
 				await db.execute(statement);
+			}
 		});
 
 		it("persists state, audit and outbox atomically with tenant isolation", async () => {
@@ -79,7 +83,9 @@ describe.runIf(runIntegration)(
 				},
 				options,
 			);
-			if (!created.ok) throw new Error(created.message);
+			if (!created.ok) {
+				throw new Error(created.message);
+			}
 			const line = await addSalesOrderLine(
 				{
 					...mutationContext("drizzle-line"),
@@ -91,7 +97,9 @@ describe.runIf(runIntegration)(
 				},
 				options,
 			);
-			if (!line.ok) throw new Error(line.message);
+			if (!line.ok) {
+				throw new Error(line.message);
+			}
 			const submitted = await submitSalesOrder(
 				{
 					...mutationContext("drizzle-submit"),
@@ -100,7 +108,9 @@ describe.runIf(runIntegration)(
 				},
 				options,
 			);
-			if (!submitted.ok) throw new Error(submitted.message);
+			if (!submitted.ok) {
+				throw new Error(submitted.message);
+			}
 			const approved = await approveSalesOrder(
 				{
 					...mutationContext("drizzle-approve"),
@@ -109,7 +119,9 @@ describe.runIf(runIntegration)(
 				},
 				options,
 			);
-			if (!approved.ok) throw new Error(approved.message);
+			if (!approved.ok) {
+				throw new Error(approved.message);
+			}
 			const released = await postSalesOrder(
 				{
 					...mutationContext("drizzle-post"),
@@ -118,7 +130,9 @@ describe.runIf(runIntegration)(
 				},
 				options,
 			);
-			if (!released.ok) throw new Error(released.message);
+			if (!released.ok) {
+				throw new Error(released.message);
+			}
 			expect(released.data.status).toBe("released");
 			expect(released.data.documentTotal).toBe("25.000000");
 

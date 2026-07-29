@@ -306,12 +306,12 @@ export type AccountingStore = {
 		organizationId: string;
 		page: number;
 		pageSize: number;
-		status?: JournalStatus;
-		periodId?: string;
+		status?: JournalStatus | undefined;
+		periodId?: string | undefined;
 	}): Promise<Result<Journal[]>>;
 	trialBalance(filter: {
 		organizationId: string;
-		periodId?: string;
+		periodId?: string | undefined;
 	}): Promise<Result<TrialBalanceRow[]>>;
 	createChartOfAccounts(record: {
 		organizationId: string;
@@ -348,8 +348,8 @@ export type AccountingStore = {
 	}): Promise<Result<LedgerAccount>>;
 	listLedgerAccounts(filter: {
 		organizationId: string;
-		chartOfAccountId?: string;
-		status?: "active" | "inactive";
+		chartOfAccountId?: string | undefined;
+		status?: "active" | "inactive" | undefined;
 	}): Promise<Result<LedgerAccount[]>>;
 	resolveLedgerAccountByCode(
 		organizationId: string,
@@ -411,7 +411,7 @@ export type AccountingStore = {
 	}): Promise<Result<PostingException>>;
 	listPostingExceptions(filter: {
 		organizationId: string;
-		status?: PostingExceptionStatus;
+		status?: PostingExceptionStatus | undefined;
 	}): Promise<Result<PostingException[]>>;
 	resolvePostingException(record: {
 		organizationId: string;
@@ -422,15 +422,15 @@ export type AccountingStore = {
 	}): Promise<Result<PostingException>>;
 	getSourcePostingTrace(filter: {
 		organizationId: string;
-		journalId?: string;
-		sourceModule?: string;
-		sourceAggregateId?: string;
-		sourceEventId?: string;
+		journalId?: string | undefined;
+		sourceModule?: string | undefined;
+		sourceAggregateId?: string | undefined;
+		sourceEventId?: string | undefined;
 	}): Promise<Result<SourcePostingTrace[]>>;
 	getLedgerAccountActivity(filter: {
 		organizationId: string;
-		accountCode?: string;
-		periodId?: string;
+		accountCode?: string | undefined;
+		periodId?: string | undefined;
 	}): Promise<Result<LedgerAccountActivityRow[]>>;
 };
 

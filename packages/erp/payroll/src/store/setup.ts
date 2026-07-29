@@ -67,7 +67,7 @@ export type PayrollSetupStore = {
 
 	listCalendars(input: {
 		organizationId: string;
-		status?: "active" | "archived";
+		status?: "active" | "archived" | undefined;
 	}): Promise<Result<PayrollCalendar[]>>;
 
 	updateCalendar(
@@ -92,7 +92,7 @@ export type PayrollSetupStore = {
 
 	listPayGroups(input: {
 		organizationId: string;
-		status?: "active" | "archived";
+		status?: "active" | "archived" | undefined;
 	}): Promise<Result<PayrollPayGroup[]>>;
 
 	updatePayGroup(
@@ -118,7 +118,7 @@ export type PayrollSetupStore = {
 	listPeriodsForPayGroup(input: {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
-		status?: "open" | "closed";
+		status?: "open" | "closed" | undefined;
 	}): Promise<Result<PayrollPeriod[]>>;
 
 	updatePeriod(

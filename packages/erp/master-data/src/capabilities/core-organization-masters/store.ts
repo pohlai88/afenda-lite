@@ -27,22 +27,24 @@ export type ImportMutationContext = {
 	leaseOwner: string;
 	intendedOperation: Extract<ImportRowOperation, "create" | "update">;
 	matchedEntityId: string | null;
-	partyExternalIds?: readonly {
-		id: string;
-		sourceSystem: string;
-		externalIdType: string;
-		externalValue: string;
-		normalizedValue: string;
-		caseSensitivity: "sensitive" | "insensitive";
-		isPrimary: boolean;
-		createdBy: string;
-	}[];
+	partyExternalIds?:
+		| readonly {
+				id: string;
+				sourceSystem: string;
+				externalIdType: string;
+				externalValue: string;
+				normalizedValue: string;
+				caseSensitivity: "sensitive" | "insensitive";
+				isPrimary: boolean;
+				createdBy: string;
+		  }[]
+		| undefined;
 };
 
 export type MutationMeta = {
 	correlationId: string;
 	/** Internal import execution context; the store commits the row result with the mutation. */
-	importMutation?: ImportMutationContext;
+	importMutation?: ImportMutationContext | undefined;
 };
 
 export type {
@@ -106,12 +108,12 @@ export type PartyCreateRecord = {
 	name: string;
 	partyKind: PartyKind;
 	createdBy: string;
-	legalName?: string | null;
-	tradingName?: string | null;
-	registrationNumber?: string | null;
-	registrationCountryId?: string | null;
-	preferredLanguageId?: string | null;
-	defaultCurrencyId?: string | null;
+	legalName?: string | null | undefined;
+	tradingName?: string | null | undefined;
+	registrationNumber?: string | null | undefined;
+	registrationCountryId?: string | null | undefined;
+	preferredLanguageId?: string | null | undefined;
+	defaultCurrencyId?: string | null | undefined;
 };
 
 export type PartyUpdateRecord = {
@@ -119,13 +121,13 @@ export type PartyUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string;
-	legalName?: string | null;
-	tradingName?: string | null;
-	registrationNumber?: string | null;
-	registrationCountryId?: string | null;
-	preferredLanguageId?: string | null;
-	defaultCurrencyId?: string | null;
+	name?: string | undefined;
+	legalName?: string | null | undefined;
+	tradingName?: string | null | undefined;
+	registrationNumber?: string | null | undefined;
+	registrationCountryId?: string | null | undefined;
+	preferredLanguageId?: string | null | undefined;
+	defaultCurrencyId?: string | null | undefined;
 };
 
 export type PartyMergeFieldDecision = "source" | "target";
@@ -140,13 +142,13 @@ export type PartyMergeRecord = {
 	/** Approved CR claimed → applied in same TX as merge. */
 	changeRequestId: string;
 	fieldDecisions: {
-		name?: PartyMergeFieldDecision;
-		legalName?: PartyMergeFieldDecision;
-		tradingName?: PartyMergeFieldDecision;
-		registrationNumber?: PartyMergeFieldDecision;
-		registrationCountryId?: PartyMergeFieldDecision;
-		preferredLanguageId?: PartyMergeFieldDecision;
-		defaultCurrencyId?: PartyMergeFieldDecision;
+		name?: PartyMergeFieldDecision | undefined;
+		legalName?: PartyMergeFieldDecision | undefined;
+		tradingName?: PartyMergeFieldDecision | undefined;
+		registrationNumber?: PartyMergeFieldDecision | undefined;
+		registrationCountryId?: PartyMergeFieldDecision | undefined;
+		preferredLanguageId?: PartyMergeFieldDecision | undefined;
+		defaultCurrencyId?: PartyMergeFieldDecision | undefined;
 	};
 };
 
@@ -198,8 +200,8 @@ export type ChangeRequestListFilter = {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: ChangeRequestStatus;
-	commandKind?: ChangeRequestCommandKind;
+	status?: ChangeRequestStatus | undefined;
+	commandKind?: ChangeRequestCommandKind | undefined;
 };
 
 export type ItemGroupCreateRecord = {
@@ -208,7 +210,7 @@ export type ItemGroupCreateRecord = {
 	normalizedCode: string;
 	name: string;
 	createdBy: string;
-	parentId?: string | null;
+	parentId?: string | null | undefined;
 };
 
 export type ItemGroupUpdateRecord = {
@@ -216,8 +218,8 @@ export type ItemGroupUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string;
-	parentId?: string | null;
+	name?: string | undefined;
+	parentId?: string | null | undefined;
 };
 
 export type ItemGroupLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
@@ -229,15 +231,15 @@ export type ItemCreateRecord = {
 	code: string;
 	normalizedCode: string;
 	name: string;
-	description?: string | null;
+	description?: string | null | undefined;
 	itemType: ItemType;
 	baseUomId: string;
 	itemGroupId: string;
-	trackingPolicy?: ItemTrackingPolicy;
-	sellable?: boolean;
-	purchasable?: boolean;
-	stocked?: boolean;
-	serviceIndicator?: boolean;
+	trackingPolicy?: ItemTrackingPolicy | undefined;
+	sellable?: boolean | undefined;
+	purchasable?: boolean | undefined;
+	stocked?: boolean | undefined;
+	serviceIndicator?: boolean | undefined;
 	createdBy: string;
 };
 
@@ -246,16 +248,16 @@ export type ItemUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string;
-	description?: string | null;
-	itemType?: ItemType;
-	baseUomId?: string;
-	itemGroupId?: string;
-	trackingPolicy?: ItemTrackingPolicy;
-	sellable?: boolean;
-	purchasable?: boolean;
-	stocked?: boolean;
-	serviceIndicator?: boolean;
+	name?: string | undefined;
+	description?: string | null | undefined;
+	itemType?: ItemType | undefined;
+	baseUomId?: string | undefined;
+	itemGroupId?: string | undefined;
+	trackingPolicy?: ItemTrackingPolicy | undefined;
+	sellable?: boolean | undefined;
+	purchasable?: boolean | undefined;
+	stocked?: boolean | undefined;
+	serviceIndicator?: boolean | undefined;
 };
 
 export type ItemLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
@@ -269,13 +271,13 @@ export type WarehouseCreateRecord = {
 	name: string;
 	locationType: WarehouseLocationType;
 	createdBy: string;
-	parentId?: string | null;
-	addressCountryId?: string | null;
-	addressLine1?: string | null;
-	addressLine2?: string | null;
-	addressCity?: string | null;
-	addressRegion?: string | null;
-	addressPostalCode?: string | null;
+	parentId?: string | null | undefined;
+	addressCountryId?: string | null | undefined;
+	addressLine1?: string | null | undefined;
+	addressLine2?: string | null | undefined;
+	addressCity?: string | null | undefined;
+	addressRegion?: string | null | undefined;
+	addressPostalCode?: string | null | undefined;
 };
 
 export type WarehouseUpdateRecord = {
@@ -283,14 +285,14 @@ export type WarehouseUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string;
-	locationType?: WarehouseLocationType;
-	addressCountryId?: string | null;
-	addressLine1?: string | null;
-	addressLine2?: string | null;
-	addressCity?: string | null;
-	addressRegion?: string | null;
-	addressPostalCode?: string | null;
+	name?: string | undefined;
+	locationType?: WarehouseLocationType | undefined;
+	addressCountryId?: string | null | undefined;
+	addressLine1?: string | null | undefined;
+	addressLine2?: string | null | undefined;
+	addressCity?: string | null | undefined;
+	addressRegion?: string | null | undefined;
+	addressPostalCode?: string | null | undefined;
 };
 
 export type WarehouseMoveRecord = {
@@ -312,15 +314,15 @@ export type PaymentTermCreateRecord = {
 	name: string;
 	netDays: number;
 	createdBy: string;
-	discountDays?: number | null;
-	discountPercent?: string | null;
-	dueDayRule?: PaymentTerm["dueDayRule"];
-	endOfMonth?: boolean;
-	installmentPolicy?: PaymentTerm["installmentPolicy"];
-	installmentCount?: number | null;
-	validFrom?: Date | null;
-	validTo?: Date | null;
-	currencyRestrictionId?: string | null;
+	discountDays?: number | null | undefined;
+	discountPercent?: string | null | undefined;
+	dueDayRule?: PaymentTerm["dueDayRule"] | undefined;
+	endOfMonth?: boolean | undefined;
+	installmentPolicy?: PaymentTerm["installmentPolicy"] | undefined;
+	installmentCount?: number | null | undefined;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
+	currencyRestrictionId?: string | null | undefined;
 };
 
 export type PaymentTermUpdateRecord = {
@@ -328,17 +330,17 @@ export type PaymentTermUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string;
-	netDays?: number;
-	discountDays?: number | null;
-	discountPercent?: string | null;
-	dueDayRule?: PaymentTerm["dueDayRule"];
-	endOfMonth?: boolean;
-	installmentPolicy?: PaymentTerm["installmentPolicy"];
-	installmentCount?: number | null;
-	validFrom?: Date | null;
-	validTo?: Date | null;
-	currencyRestrictionId?: string | null;
+	name?: string | undefined;
+	netDays?: number | undefined;
+	discountDays?: number | null | undefined;
+	discountPercent?: string | null | undefined;
+	dueDayRule?: PaymentTerm["dueDayRule"] | undefined;
+	endOfMonth?: boolean | undefined;
+	installmentPolicy?: PaymentTerm["installmentPolicy"] | undefined;
+	installmentCount?: number | null | undefined;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
+	currencyRestrictionId?: string | null | undefined;
 };
 
 export type PaymentTermLifecycleRecord = Omit<LifecycleRecord, "toStatus"> & {
@@ -363,9 +365,9 @@ export type TaxRegistrationUpdateRecord = {
 	id: string;
 	expectedVersion: number;
 	updatedBy: string;
-	name?: string | null;
-	validFrom?: Date | null;
-	validTo?: Date | null;
+	name?: string | null | undefined;
+	validFrom?: Date | null | undefined;
+	validTo?: Date | null | undefined;
 };
 
 export type TaxRegistrationOverlapQuery = {
@@ -389,8 +391,8 @@ export type ListFilter = {
 	organizationId: string;
 	page: number;
 	pageSize: number;
-	status?: MasterStatus;
-	updatedSince?: Date;
+	status?: MasterStatus | undefined;
+	updatedSince?: Date | undefined;
 };
 
 export type PartySearchFilter = ListFilter & {
@@ -410,11 +412,11 @@ export type PartyTaxRegistrationLookup = {
 };
 
 export type TaxRegistrationListFilter = ListFilter & {
-	partyId?: string;
+	partyId?: string | undefined;
 };
 
 export type ItemListFilter = ListFilter & {
-	itemGroupId?: string;
+	itemGroupId?: string | undefined;
 };
 
 /**

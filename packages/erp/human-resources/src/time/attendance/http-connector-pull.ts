@@ -19,6 +19,38 @@ const attendanceConnectorHttpResponseSchema = z
 	})
 	.strict();
 
+function toAttendanceSourceEvent(
+	event: z.infer<typeof attendanceImportEventRowSchema>,
+): AttendanceSourceEvent {
+	return {
+		employeeId: event.employeeId,
+		eventType: event.eventType,
+		occurredAt: event.occurredAt,
+		sourceTimezone: event.sourceTimezone,
+		localWorkDate: event.localWorkDate,
+		sourceReference: event.sourceReference,
+		...(event.employmentId === undefined
+			? {}
+			: { employmentId: event.employmentId }),
+		...(event.shiftAssignmentId === undefined
+			? {}
+			: { shiftAssignmentId: event.shiftAssignmentId }),
+		...(event.locationKey === undefined
+			? {}
+			: { locationKey: event.locationKey }),
+		...(event.deviceMetadata === undefined
+			? {}
+			: { deviceMetadata: event.deviceMetadata }),
+		...(event.payloadChecksum === undefined
+			? {}
+			: { payloadChecksum: event.payloadChecksum }),
+		...(event.notes === undefined ? {} : { notes: event.notes }),
+		...(event.sourceSequence === undefined
+			? {}
+			: { sourceSequence: event.sourceSequence }),
+	};
+}
+
 export function createHttpAttendanceConnectorPull(deps: {
 	baseUrl: string;
 	fetchImpl?: typeof fetch;
@@ -87,11 +119,15 @@ export function createHttpAttendanceConnectorPull(deps: {
 				);
 			}
 
-			const events: AttendanceSourceEvent[] = parsed.data.events ?? [];
+			const events: AttendanceSourceEvent[] = (parsed.data.events ?? []).map(
+				toAttendanceSourceEvent,
+			);
 
 			return ok({
 				events,
-				nextCursor: parsed.data.nextCursor,
+				...(parsed.data.nextCursor === undefined
+					? {}
+					: { nextCursor: parsed.data.nextCursor }),
 			});
 		},
 	};

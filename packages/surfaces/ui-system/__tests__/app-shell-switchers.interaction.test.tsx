@@ -312,6 +312,9 @@ describe("app-shell switchers", () => {
 	});
 
 	it("matches complete path segments and opens active branches after navigation", () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
 		const appShell = (currentPath: string) => (
 			<AppShell
 				header={{
@@ -383,5 +386,9 @@ describe("app-shell switchers", () => {
 		expect(
 			screen.getByRole("button", { name: "Administration" }),
 		).toHaveAttribute("data-state", "open");
+		expect(consoleError).not.toHaveBeenCalledWith(
+			expect.stringContaining("<li> cannot contain a nested <li>"),
+		);
+		consoleError.mockRestore();
 	});
 });

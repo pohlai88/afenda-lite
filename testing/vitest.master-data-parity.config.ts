@@ -2,7 +2,9 @@ import path from "node:path";
 
 import { defineConfig, mergeConfig } from "vitest/config";
 import {
-	masterDataParityIncludes,
+	laneIncludeForProject,
+	laneProjectName,
+	laneTimeoutOptions,
 	masterDataRoot,
 	repoRoot,
 	serverOnlyAlias,
@@ -16,18 +18,18 @@ export default mergeConfig(
 			alias: serverOnlyAlias,
 		},
 		test: {
-			name: "master-data-parity",
+			name: laneProjectName("master-data-parity"),
 			root: masterDataRoot,
-			include: masterDataParityIncludes,
+			include: laneIncludeForProject(
+				"master-data-parity",
+				"packages/erp/master-data",
+			),
 			environment: "node",
 			globalSetup: [
 				path.join(repoRoot, "testing/verify-master-data-parity-schema.ts"),
 			],
-			setupFiles: [
-				path.join(repoRoot, "testing/setup-master-data-parity-database.ts"),
-			],
-			testTimeout: 30_000,
-			hookTimeout: 90_000,
+			setupFiles: ["@afenda/testing/setups/required-database"],
+			...laneTimeoutOptions("master-data-parity"),
 			fileParallelism: false,
 			maxWorkers: 1,
 			env: {

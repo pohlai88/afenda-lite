@@ -60,7 +60,13 @@ const SKIP_DIR_NAMES = new Set([
 	"dist",
 ]);
 
-const PRODUCT_SOURCE_ROOTS = ["app", "components", "content", "lib", "scripts"] as const;
+const PRODUCT_SOURCE_ROOTS = [
+	"app",
+	"components",
+	"content",
+	"lib",
+	"scripts",
+] as const;
 
 function collectSourceFiles(dir: string): string[] {
 	const out: string[] = [];
@@ -116,9 +122,7 @@ describe("docs OpenAPI wire", () => {
 		expect(serverSource).toContain("OPENAPI_DOCUMENT_PATH");
 		expect(generateSource).toContain("OPENAPI_DOCUMENT_ID");
 		expect(generateSource).toContain("OPENAPI_DOCUMENT_PATH");
-		expect(generateSource).toContain(
-			'from "../lib/openapi-document-id.ts"',
-		);
+		expect(generateSource).toContain('from "../lib/openapi-document-id.ts"');
 		expect(generateSource).toContain(
 			"[OPENAPI_DOCUMENT_ID]: OPENAPI_DOCUMENT_PATH",
 		);
@@ -144,7 +148,9 @@ describe("docs OpenAPI wire", () => {
 		expect(serverSource).toContain("createOpenAPI");
 		expect(serverSource).toContain("OpenAPIOptions");
 		expect(serverSource).toContain("satisfies OpenAPIOptions");
-		expect(serverSource).toContain("[OPENAPI_DOCUMENT_ID]: OPENAPI_DOCUMENT_PATH");
+		expect(serverSource).toContain(
+			"[OPENAPI_DOCUMENT_ID]: OPENAPI_DOCUMENT_PATH",
+		);
 		expect(serverSource).not.toMatch(/input:\s*\[\s*OPENAPI_DOCUMENT_ID\s*\]/);
 		expect(readFileSync(openApiDocumentIdPath, "utf8")).toContain(
 			OPENAPI_DOCUMENT_ID,
@@ -161,7 +167,10 @@ describe("docs OpenAPI wire", () => {
 		expect(existsSync(join(appDir, "app/api/proxy/route.ts"))).toBe(false);
 		expect(existsSync(join(appDir, "app/api/proxy/route.js"))).toBe(false);
 
-		const apiPage = readFileSync(join(appDir, "components/api-page.tsx"), "utf8");
+		const apiPage = readFileSync(
+			join(appDir, "components/api-page.tsx"),
+			"utf8",
+		);
 		// Type-only `fumadocs-openapi/server` imports OK; no runtime createOpenAPI / openapi.server.
 		expect(apiPage).not.toMatch(/createOpenAPI\s*\(/);
 		expect(apiPage).not.toMatch(/openapi\.server/);
@@ -169,7 +178,10 @@ describe("docs OpenAPI wire", () => {
 	});
 
 	it("locks createOpenAPIPage (stock defaults · preload · no custom adapters)", () => {
-		const apiPage = readFileSync(join(appDir, "components/api-page.tsx"), "utf8");
+		const apiPage = readFileSync(
+			join(appDir, "components/api-page.tsx"),
+			"utf8",
+		);
 		expect(apiPage).toMatch(/^["']use client["']/m);
 		expect(apiPage).toContain("createOpenAPIPage");
 		expect(apiPage).toContain("createOpenAPIPage()");
@@ -222,7 +234,9 @@ describe("docs OpenAPI wire", () => {
 		expect(generateSource).not.toMatch(/\bindex\s*:\s*\{/);
 		expect(generateSource).not.toMatch(/\bimports\s*:/);
 		expect(generateSource).not.toMatch(/\bfrontmatter\s*:/);
-		expect(generateSource).not.toMatch(/per:\s*["']tag["']|per:\s*["']file["']|per:\s*["']custom["']/);
+		expect(generateSource).not.toMatch(
+			/per:\s*["']tag["']|per:\s*["']file["']|per:\s*["']custom["']/,
+		);
 		expect(generateSource).not.toMatch(/toPages\s*\(/);
 
 		const page = readFileSync(docsPagePath, "utf8");
@@ -242,12 +256,17 @@ describe("docs OpenAPI wire", () => {
 			/<OpenAPIPreloadProvider\s+preloaded=\{openApiPage\}/,
 		);
 
-		const apiPage = readFileSync(join(appDir, "components/api-page.tsx"), "utf8");
+		const apiPage = readFileSync(
+			join(appDir, "components/api-page.tsx"),
+			"utf8",
+		);
 		expect(apiPage).toContain("createOpenAPIPage");
 		expect(apiPage).toContain("OpenAPIPreloadProvider");
 		expect(apiPage).toContain("export function APIPage");
 		expect(apiPage).toContain("DocsOpenAPIPageProps");
-		expect(apiPage).toContain('Omit<\n\tOpenAPIPageProps_Preloaded,\n\t"preloaded"\n>');
+		expect(apiPage).toContain(
+			'Omit<\n\tOpenAPIPageProps_Preloaded,\n\t"preloaded"\n>',
+		);
 		expect(apiPage).not.toMatch(/OpenAPIPageProps_Spec/);
 
 		const mdx = readFileSync(mdxComponentsPath, "utf8");
@@ -291,7 +310,10 @@ describe("docs OpenAPI wire", () => {
 		expect(sourceSource).not.toMatch(/serializePageTree|useFumadocsLoader/);
 		expect(sourceSource).not.toMatch(/["']use client["']/);
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).not.toMatch(/getPageTree\s*\(/);
 
@@ -330,9 +352,7 @@ describe("docs OpenAPI wire", () => {
 		);
 		expect(sourceSource).toContain("lucideIconsPlugin()");
 		expect(sourceSource).toContain("openapi.loaderPlugin()");
-		expect(sourceSource).toContain(
-			'from "fumadocs-core/source/lucide-icons"',
-		);
+		expect(sourceSource).toContain('from "fumadocs-core/source/lucide-icons"');
 		expect(sourceSource).toContain("docs-V2/docs/loader-plugins.md");
 		expect(sourceSource).not.toMatch(/\btypedPlugin\b/);
 		expect(sourceSource).not.toMatch(/transformStorage/);
@@ -465,17 +485,13 @@ describe("docs OpenAPI wire", () => {
 		expect(sourceConfig).toContain("docs-V2/docs/fumadocs-mdx-global.md");
 		expect(sourceConfig).toContain("defineConfig");
 		expect(sourceConfig).toContain('providerImportSource: "@/components/mdx"');
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bcompiler\s*:/);
 		expect(sourceConfig).not.toMatch(/\bsatteriOptions\s*:/);
 		expect(sourceConfig).not.toMatch(/\bworkspaces\s*:/);
 		expect(sourceConfig).not.toMatch(/\bexperimentalBuildCache\s*:/);
 		expect(sourceConfig).not.toMatch(/\bpreset\s*:\s*['"]minimal['"]/);
-		expect(sourceConfig).toContain(
-			'from "fumadocs-mdx/plugins/last-modified"',
-		);
+		expect(sourceConfig).toContain('from "fumadocs-mdx/plugins/last-modified"');
 		expect(sourceConfig).toMatch(/plugins:\s*\[\s*lastModified\s*\(\s*\)\s*\]/);
 		expect(sourceConfig).not.toMatch(/satteri|Satteri/);
 	});
@@ -485,9 +501,7 @@ describe("docs OpenAPI wire", () => {
 		expect(sourceConfig).toContain("docs-V2/docs/fumadocs-mdx-preset.md");
 		expect(sourceConfig).toContain("defineConfig");
 		expect(sourceConfig).toContain('providerImportSource: "@/components/mdx"');
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bapplyMdxPreset\b/);
 		expect(sourceConfig).not.toMatch(/\bpreset\s*:\s*['"]minimal['"]/);
 		expect(sourceConfig).not.toMatch(/rehypePlugins\s*:/);
@@ -505,7 +519,9 @@ describe("docs OpenAPI wire", () => {
 		expect(typeof pkg.dependencies?.["fumadocs-mdx"]).toBe("string");
 		expect(typeof pkg.dependencies?.["fumadocs-core"]).toBe("string");
 		expect(
-			typeof (pkg.dependencies?.["@types/mdx"] ?? pkg.devDependencies?.["@types/mdx"]),
+			typeof (
+				pkg.dependencies?.["@types/mdx"] ?? pkg.devDependencies?.["@types/mdx"]
+			),
 		).toBe("string");
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
@@ -519,16 +535,16 @@ describe("docs OpenAPI wire", () => {
 		expect(sourceConfig).toContain('providerImportSource: "@/components/mdx"');
 		expect(sourceConfig).toContain("docs-V2/docs/fumadocs-mdx.md");
 		expect(sourceConfig).toContain("docs-V2/docs/fumadocs-mdx-next.md");
-		expect(sourceConfig).toContain(
-			'from "fumadocs-core/source/schema"',
-		);
+		expect(sourceConfig).toContain('from "fumadocs-core/source/schema"');
 		expect(sourceConfig).toContain("pageSchema");
 		expect(sourceConfig).toContain("metaSchema");
 		expect(sourceConfig).toContain("schema: pageSchema");
 		expect(sourceConfig).toContain("schema: metaSchema");
 		expect(sourceConfig).not.toMatch(/pageSchema\.extend|metaSchema\.extend/);
 		expect(sourceConfig).not.toMatch(/\bdefineCollections\b/);
-		expect(sourceConfig).not.toMatch(/createMDXSource|@fumadocs\/content-collections/);
+		expect(sourceConfig).not.toMatch(
+			/createMDXSource|@fumadocs\/content-collections/,
+		);
 
 		const nextConfig = readFileSync(join(appDir, "next.config.mjs"), "utf8");
 		expect(nextConfig).toContain("fumadocs-mdx/next");
@@ -571,9 +587,9 @@ describe("docs OpenAPI wire", () => {
 		expect(existsSync(join(appDir, "scripts/node-docs-resolve.mjs"))).toBe(
 			true,
 		);
-		expect(
-			existsSync(join(appDir, "scripts/node-inventory-openapi.mjs")),
-		).toBe(true);
+		expect(existsSync(join(appDir, "scripts/node-inventory-openapi.mjs"))).toBe(
+			true,
+		);
 		expect(existsSync(join(appDir, "scripts/example.js"))).toBe(false);
 
 		for (const root of ["lib", "app", "components"] as const) {
@@ -599,7 +615,9 @@ describe("docs OpenAPI wire", () => {
 		expect(typeof pkg.dependencies?.["fumadocs-mdx"]).toBe("string");
 		expect(typeof pkg.dependencies?.["fumadocs-core"]).toBe("string");
 		expect(
-			typeof (pkg.dependencies?.["@types/mdx"] ?? pkg.devDependencies?.["@types/mdx"]),
+			typeof (
+				pkg.dependencies?.["@types/mdx"] ?? pkg.devDependencies?.["@types/mdx"]
+			),
 		).toBe("string");
 		expect(pkg.scripts?.["generate:source"]).toMatch(/fumadocs-mdx/);
 
@@ -683,7 +701,10 @@ describe("docs OpenAPI wire", () => {
 		expect(existsSync(join(appDir, "lib/my-content-source.ts"))).toBe(false);
 		expect(existsSync(join(appDir, "lib/content-source.ts"))).toBe(false);
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).not.toMatch(/tree=\{\{/);
 		expect(docsLayout).not.toMatch(/getPageTree\s*\(/);
@@ -752,7 +773,10 @@ describe("docs OpenAPI wire", () => {
 		expect(page).not.toMatch(/page\.data\.load\s*\(/);
 		expect(page).not.toMatch(/\brenderToc\b/);
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).not.toMatch(/\bgetSource\s*\(/);
 
@@ -806,7 +830,10 @@ describe("docs OpenAPI wire", () => {
 		const nextConfig = readFileSync(join(appDir, "next.config.mjs"), "utf8");
 		expect(nextConfig).toContain("createMDX");
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).not.toMatch(/\bgetSource\s*\(/);
 		expect(docsLayout).not.toMatch(/getPageTree\s*\(/);
@@ -836,12 +863,13 @@ describe("docs OpenAPI wire", () => {
 	});
 
 	it("locks Page Tree Utils (source.pageTree · no fumadocs-core/page-tree helpers)", () => {
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).not.toMatch(/tree=\{\{/);
-		expect(docsLayout).not.toMatch(
-			/from\s+["']fumadocs-core\/page-tree["']/,
-		);
+		expect(docsLayout).not.toMatch(/from\s+["']fumadocs-core\/page-tree["']/);
 
 		for (const root of ["lib", "app", "components"] as const) {
 			const dir = join(appDir, root);
@@ -850,9 +878,7 @@ describe("docs OpenAPI wire", () => {
 			}
 			for (const file of collectSourceFiles(dir)) {
 				const body = readFileSync(file, "utf8");
-				expect(body).not.toMatch(
-					/from\s+["']fumadocs-core\/page-tree["']/,
-				);
+				expect(body).not.toMatch(/from\s+["']fumadocs-core\/page-tree["']/);
 				expect(body).not.toMatch(/\bfindNeighbour\b/);
 				expect(body).not.toMatch(/\bfindSiblings\b/);
 				expect(body).not.toMatch(/\bgetPageTreeRoots\b/);
@@ -869,10 +895,11 @@ describe("docs OpenAPI wire", () => {
 		expect(page).not.toMatch(/\bgetTableOfContents\b/);
 		expect(page).not.toMatch(/fumadocs-core\/content\/toc/);
 
-		const inlineToc = readFileSync(join(appDir, "components/inline-toc.tsx"), "utf8");
-		expect(inlineToc).toMatch(
-			/from\s+["']fumadocs-core\/toc["']/,
+		const inlineToc = readFileSync(
+			join(appDir, "components/inline-toc.tsx"),
+			"utf8",
 		);
+		expect(inlineToc).toMatch(/from\s+["']fumadocs-core\/toc["']/);
 		expect(inlineToc).toMatch(/import\s+type\s+\{\s*TOCItemType\s*\}/);
 		expect(inlineToc).not.toMatch(/\bgetTableOfContents\b/);
 		expect(inlineToc).not.toMatch(/fumadocs-core\/content\/toc/);
@@ -885,9 +912,7 @@ describe("docs OpenAPI wire", () => {
 			for (const file of collectSourceFiles(dir)) {
 				const body = readFileSync(file, "utf8");
 				expect(body).not.toMatch(/\bgetTableOfContents\b/);
-				expect(body).not.toMatch(
-					/from\s+["']fumadocs-core\/content\/toc["']/,
-				);
+				expect(body).not.toMatch(/from\s+["']fumadocs-core\/content\/toc["']/);
 			}
 		}
 	});
@@ -997,7 +1022,7 @@ describe("docs OpenAPI wire", () => {
 
 		const rss = readFileSync(join(appDir, "lib/rss.ts"), "utf8");
 		expect(rss).toContain('from "feed"');
-		expect(rss).toContain("from \"@afenda/env/docs\"");
+		expect(rss).toContain('from "@afenda/env/docs"');
 		expect(rss).toContain("docsEnv.DOCS_URL");
 		expect(rss).toContain("getRSS");
 		expect(rss).toContain('slugs[0] !== "api"');
@@ -1017,38 +1042,37 @@ describe("docs OpenAPI wire", () => {
 		expect(layout).toMatch(/\balternates\s*:/);
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toContain(
-			'from "fumadocs-mdx/plugins/last-modified"',
-		);
+		expect(sourceConfig).toContain('from "fumadocs-mdx/plugins/last-modified"');
 		expect(sourceConfig).toMatch(/plugins:\s*\[\s*lastModified\s*\(\s*\)\s*\]/);
 		expect(sourceConfig).toContain("docs-V2/docs/rss.md");
 	});
 
 	it("locks Last Modified Time Outside baseline (no GitHub Commits last-edit UI)", () => {
 		const page = readFileSync(docsPagePath, "utf8");
-		expect(page).toContain("<DocsPage toc={page.data.toc} full={page.data.full}>");
+		expect(page).toContain(
+			"<DocsPage full={page.data.full} toc={page.data.toc}>",
+		);
 		expect(page).not.toMatch(/\blastUpdate\b/);
 		expect(page).not.toMatch(/\bgetGithubLastEdit\b/);
 		expect(page).not.toMatch(/\bPageLastUpdate\b/);
 		expect(page).not.toMatch(/fumadocs-core\/content\/github/);
 		expect(page).not.toMatch(/\bGIT_TOKEN\b/);
 
-		const docsEnvPath = join(appDir, "../../packages/foundation/env/src/docs.ts");
+		const docsEnvPath = join(
+			appDir,
+			"../../packages/foundation/env/src/docs.ts",
+		);
 		const docsEnvSource = readFileSync(docsEnvPath, "utf8");
 		expect(docsEnvSource).toContain("DOCS_URL");
 		expect(docsEnvSource).toContain("GITHUB_APP_ID");
 		expect(docsEnvSource).toContain("GITHUB_APP_PRIVATE_KEY");
-		expect(docsEnvSource).not.toMatch(
-			/(?:GIT_TOKEN|GITHUB_TOKEN)\s*:/,
-		);
+		expect(docsEnvSource).not.toMatch(/(?:GIT_TOKEN|GITHUB_TOKEN)\s*:/);
 		expect(docsEnvSource).not.toMatch(
 			/process\.env\.(?:GIT_TOKEN|GITHUB_TOKEN)\b/,
 		);
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toContain(
-			'from "fumadocs-mdx/plugins/last-modified"',
-		);
+		expect(sourceConfig).toContain('from "fumadocs-mdx/plugins/last-modified"');
 		expect(sourceConfig).toContain("docs-V2/docs/rss.md");
 		expect(sourceConfig).toContain("git-last-edit.md");
 
@@ -1117,7 +1141,9 @@ describe("docs OpenAPI wire", () => {
 		expect(sourceSource).toContain("openapi.loaderPlugin()");
 		expect(sourceSource).not.toMatch(/@fumadocs\/asyncapi/);
 		expect(sourceSource).not.toMatch(/createAsyncAPI|asyncapiPlugin/);
-		expect(sourceSource).not.toMatch(/asyncapi\.loaderPlugin|asyncapi\.staticSource/);
+		expect(sourceSource).not.toMatch(
+			/asyncapi\.loaderPlugin|asyncapi\.staticSource/,
+		);
 
 		expect(existsSync(join(appDir, "components/asyncapi-page.tsx"))).toBe(
 			false,
@@ -1126,7 +1152,10 @@ describe("docs OpenAPI wire", () => {
 			false,
 		);
 
-		const apiPage = readFileSync(join(appDir, "components/api-page.tsx"), "utf8");
+		const apiPage = readFileSync(
+			join(appDir, "components/api-page.tsx"),
+			"utf8",
+		);
 		expect(apiPage).toContain("createOpenAPIPage");
 		expect(apiPage).toContain("OpenAPIPreloadProvider");
 		expect(apiPage).toContain("fumadocs-openapi");
@@ -1148,7 +1177,9 @@ describe("docs OpenAPI wire", () => {
 		expect(generateSource).toContain("fumadocs-openapi");
 		expect(generateSource).toContain("generateFiles");
 		expect(generateSource).not.toMatch(/@fumadocs\/asyncapi/);
-		expect(generateSource).not.toMatch(/fromExtractedOperation|OperationOutput/);
+		expect(generateSource).not.toMatch(
+			/fromExtractedOperation|OperationOutput/,
+		);
 		expect(generateSource).not.toMatch(/_asyncapi|includeDescription/);
 
 		const contentApiDir = join(appDir, "content/docs/api");
@@ -1266,7 +1297,7 @@ describe("docs OpenAPI wire", () => {
 		expect(mdx).toContain("AutoTypeTable");
 		expect(mdx).toContain("docsTypeGenerator");
 		expect(mdx).toContain("generator={docsTypeGenerator}");
-		expect(mdx).toContain('@/components/type-table');
+		expect(mdx).toContain("@/components/type-table");
 		expect(mdx).toContain("TypeTable");
 		expect(mdx).toContain("AutoTypeTable: (props) => (");
 
@@ -1305,7 +1336,10 @@ describe("docs OpenAPI wire", () => {
 		expect(sourceSource).not.toMatch(/\bi18n\s*:/);
 		expect(sourceSource).not.toMatch(/defineI18n|createI18nMiddleware/);
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).toContain("{...baseOptions()}");
 		expect(docsLayout).not.toMatch(/getPageTree\s*\(/);
@@ -1407,14 +1441,10 @@ describe("docs OpenAPI wire", () => {
 	it("locks MDX Plugins (defaults + remarkBlockId only)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
 		expect(sourceConfig).toContain('providerImportSource: "@/components/mdx"');
-		expect(sourceConfig).toContain(
-			'fumadocs-core/mdx-plugins/remark-block-id',
-		);
+		expect(sourceConfig).toContain("fumadocs-core/mdx-plugins/remark-block-id");
 		expect(sourceConfig).toContain("remarkBlockId");
 		expect(sourceConfig).toContain('addDataAttribute: "feedback"');
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/rehypePlugins\s*:/);
 		expect(sourceConfig).not.toMatch(/remarkCodeTabOptions/);
 		expect(sourceConfig).not.toMatch(/parseMdx\s*:\s*true/);
@@ -1474,9 +1504,7 @@ describe("docs OpenAPI wire", () => {
 		expect(pkg.devDependencies?.["@fumadocs/satteri"]).toBeUndefined();
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkTypeScriptToJavaScript\b/);
 		expect(sourceConfig).not.toMatch(/\bremarkTs2js\b/);
 		expect(sourceConfig).not.toMatch(/oxc-transform/);
@@ -1502,20 +1530,19 @@ describe("docs OpenAPI wire", () => {
 			/from\s+["']fumadocs-core\/mdx-plugins\/remark-llms/,
 		);
 		expect(sourceConfig).toContain("docs-V2/docs/remark-llms.md");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 
-		const getLlmText = readFileSync(join(appDir, "lib/get-llm-text.ts"), "utf8");
+		const getLlmText = readFileSync(
+			join(appDir, "lib/get-llm-text.ts"),
+			"utf8",
+		);
 		expect(getLlmText).toContain('getText("processed")');
 		expect(getLlmText).toContain("getLLMText");
 	});
 
 	it("locks Remark Image Active path (default sizes · ImageZoom · no options override)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkImage\b/);
 		expect(sourceConfig).not.toMatch(/useImport\s*:/);
 		expect(sourceConfig).not.toMatch(/publicDir\s*:/);
@@ -1526,7 +1553,10 @@ describe("docs OpenAPI wire", () => {
 		expect(mdx).toContain("ImageZoom");
 		expect(mdx).toContain("img: MdxZoomImage");
 
-		const imageZoom = readFileSync(join(appDir, "components/image-zoom.tsx"), "utf8");
+		const imageZoom = readFileSync(
+			join(appDir, "components/image-zoom.tsx"),
+			"utf8",
+		);
 		expect(imageZoom).toContain("fumadocs-core/framework");
 		expect(imageZoom).toContain("export function ImageZoom");
 		expect(imageZoom).toContain("react-medium-image-zoom");
@@ -1534,9 +1564,7 @@ describe("docs OpenAPI wire", () => {
 
 	it("locks Remark Structure Active path (default extract · Orama · no options override)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkStructure\b/);
 		expect(sourceConfig).not.toMatch(/remarkStructureOptions/);
 		expect(sourceConfig).not.toMatch(
@@ -1560,9 +1588,7 @@ describe("docs OpenAPI wire", () => {
 		expect(pkg.devDependencies?.["remark-directive"]).toBeUndefined();
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkDirective\b/);
 		expect(sourceConfig).not.toMatch(/\bremarkDirectiveAdmonition\b/);
 		expect(sourceConfig).not.toMatch(/remark-directive/);
@@ -1571,16 +1597,17 @@ describe("docs OpenAPI wire", () => {
 		const mdx = readFileSync(mdxComponentsPath, "utf8");
 		expect(mdx).toContain("Callout");
 
-		const callout = readFileSync(join(appDir, "components/callout.tsx"), "utf8");
+		const callout = readFileSync(
+			join(appDir, "components/callout.tsx"),
+			"utf8",
+		);
 		expect(callout).toContain("export function Callout");
 		expect(callout).toContain("CalloutContainer");
 	});
 
 	it("locks Remark Files Outside baseline (JSX Files · no remarkMdxFiles)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkMdxFiles\b/);
 		expect(sourceConfig).not.toMatch(/remark-mdx-files/);
 		expect(sourceConfig).toContain("JSX Files");
@@ -1602,9 +1629,7 @@ describe("docs OpenAPI wire", () => {
 
 	it("locks Remark Steps Outside baseline (JSX Steps · no remarkSteps)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkSteps\b/);
 		expect(sourceConfig).not.toMatch(/remark-steps/);
 		expect(sourceConfig).toContain("JSX Steps");
@@ -1625,9 +1650,7 @@ describe("docs OpenAPI wire", () => {
 
 	it("locks Rehype Code Active path (default Shiki · CodeBlock · no options override)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\brehypeCode\b/);
 		expect(sourceConfig).not.toMatch(/rehypeCodeOptions/);
 		expect(sourceConfig).not.toMatch(/rehypePlugins\s*:/);
@@ -1638,7 +1661,10 @@ describe("docs OpenAPI wire", () => {
 		expect(mdx).toContain("CodeBlock");
 		expect(mdx).toContain("Pre");
 
-		const codeblock = readFileSync(join(appDir, "components/codeblock.tsx"), "utf8");
+		const codeblock = readFileSync(
+			join(appDir, "components/codeblock.tsx"),
+			"utf8",
+		);
 		expect(codeblock).toContain("title");
 		expect(codeblock).toContain("icon");
 		expect(codeblock).toContain("dangerouslySetInnerHTML");
@@ -1666,9 +1692,7 @@ describe("docs OpenAPI wire", () => {
 
 	it("locks Headings Active path (default extract · Loader TOC · no rehypeToc)", () => {
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toMatch(
-			/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/,
-		);
+		expect(sourceConfig).toMatch(/remarkPlugins:\s*\[\s*\[\s*remarkBlockId/);
 		expect(sourceConfig).not.toMatch(/\bremarkHeading\b/);
 		expect(sourceConfig).not.toMatch(/\brehypeToc\b/);
 		expect(sourceConfig).not.toMatch(/rehypePlugins\s*:/);
@@ -1720,10 +1744,13 @@ describe("docs OpenAPI wire", () => {
 		expect(shared).not.toContain("Code2");
 		expect(shared).toContain('active: "nested-url"');
 		expect(shared).toContain('type: "custom"');
-		expect(shared).toContain('@/components/github-info');
+		expect(shared).toContain("@/components/github-info");
 		expect(shared).not.toContain('type: "menu"');
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("tree={source.pageTree}");
 		expect(docsLayout).toContain("{...baseOptions()}");
 		expect(docsLayout).toContain("tabs={false}");
@@ -1805,7 +1832,10 @@ describe("docs OpenAPI wire", () => {
 			/^---\r?\ntitle:\s+.+\r?\ndescription:\s+.+\r?\nicon:\s+\S+\r?\n---/m,
 		);
 
-		const indexBody = readFileSync(join(appDir, "content/docs/index.mdx"), "utf8");
+		const indexBody = readFileSync(
+			join(appDir, "content/docs/index.mdx"),
+			"utf8",
+		);
 		expect(indexBody).toMatch(
 			/^---\r?\ntitle:\s+.+\r?\ndescription:\s+.+\r?\n---/m,
 		);
@@ -1836,11 +1866,16 @@ describe("docs OpenAPI wire", () => {
 		for (const range of [tw, postcss] as string[]) {
 			const parsed = parseSemverMajorMinorPatch(range);
 			expect(parsed).not.toBeNull();
-			expect(parsed!.major).toBeGreaterThanOrEqual(4);
+			if (!parsed) {
+				throw new Error(
+					`Expected a semantic version range, received "${range}".`,
+				);
+			}
+			expect(parsed.major).toBeGreaterThanOrEqual(4);
 			expect(
-				parsed!.major > 4 ||
-					parsed!.minor > 3 ||
-					(parsed!.minor === 3 && parsed!.patch >= 1),
+				parsed.major > 4 ||
+					parsed.minor > 3 ||
+					(parsed.minor === 3 && parsed.patch >= 1),
 			).toBe(true);
 		}
 	});
@@ -1908,7 +1943,7 @@ describe("docs OpenAPI wire", () => {
 
 		const layout = readFileSync(rootLayoutPath, "utf8");
 		expect(layout).toContain("fumadocs-ui/provider/next");
-		expect(layout).toContain('@/components/banner');
+		expect(layout).toContain("@/components/banner");
 		expect(layout).toContain('<Banner id="afenda-lite-docs">');
 		expect(layout).toContain("official documentation site");
 		expect(layout).not.toMatch(/docs mirror|documentation mirror/i);
@@ -1934,14 +1969,17 @@ describe("docs OpenAPI wire", () => {
 
 	it("locks next/og Metadata Image (fumadocs-ui/og)", () => {
 		const layout = readFileSync(rootLayoutPath, "utf8");
-		expect(layout).toContain('@afenda/env/docs');
+		expect(layout).toContain("@afenda/env/docs");
 		expect(layout).toContain("docsEnv");
 		expect(layout).toContain("metadataBase");
 		expect(layout).toContain("docsEnv.DOCS_URL");
 		expect(layout).not.toMatch(/\bAPP_URL\b/);
 		expect(layout).not.toMatch(/process\.env\./);
 
-		const docsEnvPath = join(appDir, "../../packages/foundation/env/src/docs.ts");
+		const docsEnvPath = join(
+			appDir,
+			"../../packages/foundation/env/src/docs.ts",
+		);
 		const docsEnvSource = readFileSync(docsEnvPath, "utf8");
 		expect(docsEnvSource).toContain("DOCS_URL");
 		expect(docsEnvSource).toContain("http://localhost:3001");
@@ -2027,7 +2065,10 @@ describe("docs OpenAPI wire", () => {
 			existsSync(join(appDir, "app/llms.mdx/docs/[[...slug]]/route.ts")),
 		).toBe(true);
 
-		const getLlmText = readFileSync(join(appDir, "lib/get-llm-text.ts"), "utf8");
+		const getLlmText = readFileSync(
+			join(appDir, "lib/get-llm-text.ts"),
+			"utf8",
+		);
 		expect(getLlmText).toContain('getText("processed")');
 		expect(getLlmText).toContain("getLLMText");
 
@@ -2060,7 +2101,10 @@ describe("docs OpenAPI wire", () => {
 		expect(existsSync(join(appDir, "app/api/chat"))).toBe(false);
 		expect(existsSync(join(appDir, "proxy.ts"))).toBe(false);
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).not.toMatch(/AISearch|LLMCopyButton|ViewOptions/);
 
 		const docsPage = readFileSync(docsPagePath, "utf8");
@@ -2096,15 +2140,16 @@ describe("docs OpenAPI wire", () => {
 			}
 			for (const file of collectSourceFiles(dir)) {
 				const body = readFileSync(file, "utf8");
-				expect(body).not.toMatch(
-					/from\s+["']fumadocs-core\/negotiation["']/,
-				);
+				expect(body).not.toMatch(/from\s+["']fumadocs-core\/negotiation["']/);
 				expect(body).not.toMatch(/\bisMarkdownPreferred\b/);
 				expect(body).not.toMatch(/\brewritePath\s*\(/);
 			}
 		}
 
-		const nextConfigBody = readFileSync(join(appDir, "next.config.mjs"), "utf8");
+		const nextConfigBody = readFileSync(
+			join(appDir, "next.config.mjs"),
+			"utf8",
+		);
 		expect(nextConfigBody).not.toMatch(
 			/from\s+["']fumadocs-core\/negotiation["']/,
 		);
@@ -2113,7 +2158,7 @@ describe("docs OpenAPI wire", () => {
 
 	it("locks Feedback (page · block · GitHub Discussions)", () => {
 		const page = readFileSync(docsPagePath, "utf8");
-		expect(page).toContain('@/components/feedback/client');
+		expect(page).toContain("@/components/feedback/client");
 		expect(page).toContain("FeedbackText");
 		expect(page).toContain("<Feedback ");
 		expect(page).toContain("onSendAction={onBlockFeedbackAction}");
@@ -2124,7 +2169,7 @@ describe("docs OpenAPI wire", () => {
 		const githubFeedbackPath = join(appDir, "lib/github-feedback.ts");
 		expect(existsSync(githubFeedbackPath)).toBe(true);
 		const githubFeedback = readFileSync(githubFeedbackPath, "utf8");
-		expect(githubFeedback).toContain('@afenda/env/docs');
+		expect(githubFeedback).toContain("@afenda/env/docs");
 		expect(githubFeedback).toContain("docsEnv");
 		expect(githubFeedback).toContain("onPageFeedbackAction");
 		expect(githubFeedback).toContain("onBlockFeedbackAction");
@@ -2152,9 +2197,7 @@ describe("docs OpenAPI wire", () => {
 		);
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
-		expect(sourceConfig).toContain(
-			'fumadocs-core/mdx-plugins/remark-block-id',
-		);
+		expect(sourceConfig).toContain("fumadocs-core/mdx-plugins/remark-block-id");
 		expect(sourceConfig).toContain("remarkBlockId");
 		expect(sourceConfig).toContain('addDataAttribute: "feedback"');
 
@@ -2167,18 +2210,18 @@ describe("docs OpenAPI wire", () => {
 		const mdx = readFileSync(mdxComponentsPath, "utf8");
 		expect(mdx).toContain('from "fumadocs-ui/mdx"');
 		expect(mdx).toContain("...defaultMdxComponents");
-		expect(mdx).toContain('@/components/accordion');
-		expect(mdx).toContain('@/components/codeblock');
+		expect(mdx).toContain("@/components/accordion");
+		expect(mdx).toContain("@/components/codeblock");
 		expect(mdx).toContain("fumadocs-ui/components/dynamic-codeblock");
-		expect(mdx).toContain('@/components/files');
-		expect(mdx).toContain('@/components/image-zoom');
-		expect(mdx).toContain('@/components/inline-toc');
-		expect(mdx).toContain('@/components/steps');
-		expect(mdx).toContain('@/components/tabs');
-		expect(mdx).toContain('@/components/type-table');
-		expect(mdx).toContain('@/components/callout');
-		expect(mdx).toContain('@/components/card');
-		expect(mdx).toContain('@/components/heading');
+		expect(mdx).toContain("@/components/files");
+		expect(mdx).toContain("@/components/image-zoom");
+		expect(mdx).toContain("@/components/inline-toc");
+		expect(mdx).toContain("@/components/steps");
+		expect(mdx).toContain("@/components/tabs");
+		expect(mdx).toContain("@/components/type-table");
+		expect(mdx).toContain("@/components/callout");
+		expect(mdx).toContain("@/components/card");
+		expect(mdx).toContain("@/components/heading");
 		expect(mdx).toContain("fumadocs-typescript/ui");
 		expect(mdx).toContain("AutoTypeTable");
 		expect(mdx).toContain("DocsGraphView");
@@ -2190,7 +2233,7 @@ describe("docs OpenAPI wire", () => {
 		expect(page).toContain("a: createRelativeLink(source, page)");
 		expect(page).toContain("InlineTOC");
 		expect(page).toContain("items={page.data.toc}");
-		expect(page).toContain('@/components/feedback/client');
+		expect(page).toContain("@/components/feedback/client");
 
 		const shared = readFileSync(layoutSharedPath, "utf8");
 		expect(shared).toContain('title: "Afenda-Lite Docs"');
@@ -2204,9 +2247,9 @@ describe("docs OpenAPI wire", () => {
 		expect(shared).toContain('url: "/docs/api"');
 		expect(shared).toContain('url: "/docs/packages"');
 		expect(shared).toContain('active: "nested-url"');
-		expect(shared).toContain("type: \"custom\"");
+		expect(shared).toContain('type: "custom"');
 		expect(shared).toContain("secondary: true");
-		expect(shared).toContain('@/components/github-info');
+		expect(shared).toContain("@/components/github-info");
 		expect(shared).toContain('owner="pohlai88"');
 		expect(shared).toContain('repo="afenda-lite"');
 		expect(shared).not.toMatch(/GITHUB_TOKEN|token=/);
@@ -2214,9 +2257,12 @@ describe("docs OpenAPI wire", () => {
 		expect(shared).not.toContain("NavbarMenu");
 
 		const rootLayout = readFileSync(rootLayoutPath, "utf8");
-		expect(rootLayout).toContain('@/components/banner');
+		expect(rootLayout).toContain("@/components/banner");
 
-		const docsLayout = readFileSync(join(appDir, "app/docs/layout.tsx"), "utf8");
+		const docsLayout = readFileSync(
+			join(appDir, "app/docs/layout.tsx"),
+			"utf8",
+		);
 		expect(docsLayout).toContain("fumadocs-ui/layouts/docs");
 		expect(docsLayout).not.toMatch(/from ["']@\/layouts\//);
 		expect(docsLayout).not.toMatch(/from ["']@\/components\/layout\//);
@@ -2235,9 +2281,7 @@ describe("docs OpenAPI wire", () => {
 
 		const sourceConfig = readFileSync(sourceConfigPath, "utf8");
 		expect(sourceConfig).toContain("extractLinkReferences: true");
-		expect(sourceConfig).toContain(
-			'fumadocs-core/mdx-plugins/remark-block-id',
-		);
+		expect(sourceConfig).toContain("fumadocs-core/mdx-plugins/remark-block-id");
 		expect(sourceConfig).toContain("remarkBlockId");
 		expect(sourceConfig).toContain('addDataAttribute: "feedback"');
 
@@ -2280,7 +2324,10 @@ describe("docs OpenAPI wire", () => {
 		const cliJson = JSON.parse(readFileSync(cliJsonPath, "utf8")) as {
 			readonly uiLibrary?: string;
 			readonly framework?: string;
-			readonly aliases?: { readonly componentsDir?: string; readonly libDir?: string };
+			readonly aliases?: {
+				readonly componentsDir?: string;
+				readonly libDir?: string;
+			};
 		};
 		expect(cliJson.uiLibrary).toBe("radix-ui");
 		expect(cliJson.framework).toBe("next");

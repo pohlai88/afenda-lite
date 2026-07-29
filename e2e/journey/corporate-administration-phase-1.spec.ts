@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import type { Locator, Page } from "@playwright/test";
-
 import { loginAsClient } from "@/testing/e2e/flows";
 import { createNeonSql, type NeonSql } from "@/testing/e2e/neon-sql";
 import { expect, test } from "@/testing/e2e/playwright-base";
@@ -460,7 +460,7 @@ async function cleanupCorporateAdministrationJourney(
 }
 
 function requireDatabaseUrl(): string {
-	const databaseUrl = process.env.DATABASE_URL?.trim();
+	const { databaseUrl } = resolveDatabaseUrlForTests();
 	if (!databaseUrl) {
 		throw new Error("DATABASE_URL is required for CA Phase 1 journey.");
 	}

@@ -2466,7 +2466,9 @@ export function createMemoryTimeMethods(
 					skipped: skipped.length,
 					rejected: rejected.length,
 				},
-				nextCursor: input.nextCursor,
+				...(input.nextCursor === undefined
+					? {}
+					: { nextCursor: input.nextCursor }),
 			};
 
 			const batchKey = idempotencyMapKey(
@@ -2481,7 +2483,9 @@ export function createMemoryTimeMethods(
 			const audited = await audit(ports, {
 				organizationId: input.organizationId,
 				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
+				...(input.correlationId === undefined
+					? {}
+					: { correlationId: input.correlationId }),
 				entity: "hr_attendance_import_batch",
 				entityId: importBatchId,
 				action: "CREATE",
@@ -3144,7 +3148,9 @@ export function createMemoryTimeMethods(
 		async excuseAttendanceException(input, ports) {
 			return transitionException(state, ports, input, "excused", {
 				resolution: input.resolution,
-				evidenceReference: input.evidenceReference,
+				...(input.evidenceReference === undefined
+					? {}
+					: { evidenceReference: input.evidenceReference }),
 			});
 		},
 		async rejectAttendanceException(input, ports) {

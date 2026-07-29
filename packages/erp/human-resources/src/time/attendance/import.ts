@@ -41,18 +41,20 @@ function mapSourceRows(
 	sourceKey: string,
 	rows: readonly {
 		employeeId: AttendanceImportEventRowInput["employeeId"];
-		employmentId?: AttendanceImportEventRowInput["employmentId"];
-		shiftAssignmentId?: AttendanceImportEventRowInput["shiftAssignmentId"];
+		employmentId?: AttendanceImportEventRowInput["employmentId"] | undefined;
+		shiftAssignmentId?:
+			| AttendanceImportEventRowInput["shiftAssignmentId"]
+			| undefined;
 		eventType: AttendanceImportEventRowInput["eventType"];
 		occurredAt: string;
 		sourceTimezone: string;
 		localWorkDate: string;
 		sourceReference: string;
-		locationKey?: string | null;
-		deviceMetadata?: Record<string, unknown> | null;
-		payloadChecksum?: string | null;
-		notes?: string | null;
-		sourceSequence?: number;
+		locationKey?: string | null | undefined;
+		deviceMetadata?: Record<string, unknown> | null | undefined;
+		payloadChecksum?: string | null | undefined;
+		notes?: string | null | undefined;
+		sourceSequence?: number | undefined;
 	}[],
 ): AttendanceImportEventRowInput[] {
 	return rows.map((row) => ({
@@ -71,7 +73,9 @@ function mapSourceRows(
 		deviceMetadata: row.deviceMetadata ?? null,
 		payloadChecksum: row.payloadChecksum ?? null,
 		notes: row.notes ?? null,
-		sourceSequence: row.sourceSequence,
+		...(row.sourceSequence === undefined
+			? {}
+			: { sourceSequence: row.sourceSequence }),
 	}));
 }
 
@@ -96,7 +100,7 @@ export async function importAttendanceEvents(
 				if (!source.ok) return source;
 				const fetched = await source.data.fetchEvents({
 					organizationId: data.organizationId,
-					cursor: data.cursor,
+					...(data.cursor === undefined ? {} : { cursor: data.cursor }),
 				});
 				if (!fetched.ok) return fetched;
 				sourceRejectedRows = fetched.data.rejectedRows;
@@ -150,9 +154,9 @@ export async function importAttendanceEvents(
 				}),
 				createdBy: data.actorUserId,
 				correlationId: data.correlationId,
-				nextCursor,
-				sourceRejectedRows,
-				sourceRowIndexes,
+				...(nextCursor === undefined ? {} : { nextCursor }),
+				...(sourceRejectedRows === undefined ? {} : { sourceRejectedRows }),
+				...(sourceRowIndexes === undefined ? {} : { sourceRowIndexes }),
 			};
 
 			return store.importAttendanceEvents(storeInput, ports);

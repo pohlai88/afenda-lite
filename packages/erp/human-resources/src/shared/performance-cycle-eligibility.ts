@@ -30,7 +30,7 @@ export function isEmploymentEligibleForPerformanceCycle(input: {
 
 export function performanceCycleEligibilityAsOfDate(input: {
 	cyclePeriodStart: string;
-	eligibilityAsOfDate?: string;
+	eligibilityAsOfDate?: string | undefined;
 }): string {
 	return input.eligibilityAsOfDate ?? input.cyclePeriodStart;
 }

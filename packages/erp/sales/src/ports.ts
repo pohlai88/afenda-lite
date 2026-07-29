@@ -23,31 +23,31 @@ import type {
 	SalesQuotationLine,
 } from "./types";
 
-export type MasterDataSnapshotPort = {
-	resolveCustomer(input: {
+export interface MasterDataSnapshotPort {
+	resolveCustomer: (input: {
 		organizationId: string;
 		actorUserId: string;
 		partyId: PartyId;
-		paymentTermId?: PaymentTermId;
-	}): Promise<
+		paymentTermId?: PaymentTermId | undefined;
+	}) => Promise<
 		Result<{
 			partyId: PartyId;
 			code: string;
 			name: string;
-			billToAddress?: string;
-			shipToAddress?: string;
-			paymentTermId?: PaymentTermId;
-			paymentTermCode?: string;
-			paymentTermName?: string;
-			netDays?: number;
+			billToAddress?: string | undefined;
+			shipToAddress?: string | undefined;
+			paymentTermId?: PaymentTermId | undefined;
+			paymentTermCode?: string | undefined;
+			paymentTermName?: string | undefined;
+			netDays?: number | undefined;
 		}>
 	>;
-	resolveItem(input: {
+	resolveItem: (input: {
 		organizationId: string;
 		actorUserId: string;
 		itemId: ItemId;
-		requestedUomId?: string;
-	}): Promise<
+		requestedUomId?: string | undefined;
+	}) => Promise<
 		Result<{
 			itemId: ItemId;
 			code: string;
@@ -56,146 +56,58 @@ export type MasterDataSnapshotPort = {
 			baseUomCode: string;
 		}>
 	>;
-};
-export type TaxCalculationPort = {
-	calculate(input: {
+}
+export interface TaxCalculationPort {
+	calculate: (input: {
 		organizationId: string;
 		customerId: PartyId;
 		currencyCode: string;
 		lines: readonly { itemId: ItemId; quantity: string; netAmount: string }[];
-	}): Promise<
+	}) => Promise<
 		Result<{ totalTax: string; lineTaxes: string[]; jurisdiction?: string }>
 	>;
-};
-export type CreditCheckPort = {
-	check(input: {
+}
+export interface CreditCheckPort {
+	check: (input: {
 		organizationId: string;
 		customerId: PartyId;
 		currencyCode: string;
 		amount: string;
-	}): Promise<
+	}) => Promise<
 		Result<{ approved: boolean; reference: string; reason?: string }>
 	>;
-};
-export type AvailabilityCheckPort = {
-	check(input: {
+}
+export interface AvailabilityCheckPort {
+	check: (input: {
 		organizationId: string;
 		lines: readonly { itemId: ItemId; quantity: string; requestedDate: Date }[];
-	}): Promise<
+	}) => Promise<
 		Result<{
 			available: boolean;
 			reference: string;
 			shortages: readonly { itemId: ItemId; unavailableQuantity: string }[];
 		}>
 	>;
-};
-export type ClockPort = { now(): Date };
+}
+export interface ClockPort {
+	now: () => Date;
+}
 
-export type MutationEvidence = {
-	organizationId: string;
-	actorUserId: string;
-	correlationId: string;
-	idempotencyKey: string;
-	eventType: string;
-	entityType: string;
-	entityId: string;
-	code: string;
-	version: number;
+export interface MutationEvidence {
 	action: "CREATE" | "UPDATE" | "DELETE";
-};
+	actorUserId: string;
+	code: string;
+	correlationId: string;
+	entityId: string;
+	entityType: string;
+	eventType: string;
+	idempotencyKey: string;
+	organizationId: string;
+	version: number;
+}
 
-export type SalesStore = {
-	createPriceBook(
-		input: Omit<PriceBook, keyof import("./types").AuditStamp | "id"> & {
-			actorUserId: string;
-			idempotencyKey: string;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<PriceBook>>;
-	addPriceBookEntry(
-		input: Omit<PriceBookEntry, keyof import("./types").AuditStamp | "id"> & {
-			actorUserId: string;
-			idempotencyKey: string;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<PriceBookEntry>>;
-	updatePriceBookStatus(
-		input: {
-			organizationId: string;
-			id: PriceBookId;
-			expectedVersion: number;
-			status: PriceBook["status"];
-			actorUserId: string;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<PriceBook>>;
-	getPriceBook(input: {
-		organizationId: string;
-		id: PriceBookId;
-	}): Promise<Result<PriceBook | null>>;
-	listPriceBooks(input: {
-		organizationId: string;
-		cursor?: string;
-		pageSize: number;
-	}): Promise<Result<SalesPage<PriceBook>>>;
-	findPriceEntries(input: {
-		organizationId: string;
-		itemId: ItemId;
-		uomId: string;
-		currencyCode: string;
-		quantity: string;
-		at: Date;
-	}): Promise<Result<Array<{ book: PriceBook; entry: PriceBookEntry }>>>;
-	createQuotation(
-		input: Omit<SalesQuotation, keyof import("./types").AuditStamp | "id"> & {
-			actorUserId: string;
-			idempotencyKey: string;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesQuotation>>;
-	addQuotationLine(
-		input: Omit<
-			SalesQuotationLine,
-			keyof import("./types").AuditStamp | "id" | "lineNo"
-		> & {
-			actorUserId: string;
-			idempotencyKey: string;
-			expectedVersion: number;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesQuotationLine>>;
-	transitionQuotation(
-		input: {
-			organizationId: string;
-			id: SalesQuotationId;
-			expectedVersion: number;
-			status: SalesQuotation["status"];
-			actorUserId: string;
-			convertedOrderId?: SalesOrderId;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesQuotation>>;
-	getQuotation(input: {
-		organizationId: string;
-		id: SalesQuotationId;
-	}): Promise<Result<SalesQuotation | null>>;
-	listQuotationLines(input: {
-		organizationId: string;
-		quotationId: SalesQuotationId;
-	}): Promise<Result<SalesQuotationLine[]>>;
-	listQuotations(input: {
-		organizationId: string;
-		cursor?: string;
-		pageSize: number;
-	}): Promise<Result<SalesPage<SalesQuotation>>>;
-	createOrder(
-		input: Omit<SalesOrder, keyof import("./types").AuditStamp | "id"> & {
-			actorUserId: string;
-			idempotencyKey: string;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesOrder>>;
-	addOrderLine(
+export interface SalesStore {
+	addOrderLine: (
 		input: Omit<
 			SalesOrderLine,
 			keyof import("./types").AuditStamp | "id" | "lineNo"
@@ -206,87 +118,26 @@ export type SalesStore = {
 		},
 		schedule: { requestedDate: Date },
 		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesOrderLine>>;
-	transitionOrder(
-		input: {
-			organizationId: string;
-			id: SalesOrderId;
-			expectedVersion: number;
-			status: SalesOrder["status"];
-			actorUserId: string;
-			at: Date;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesOrder>>;
-	releaseOrder(
-		input: {
-			organizationId: string;
-			id: SalesOrderId;
-			expectedVersion: number;
-			taxTotal: string;
-			actorUserId: string;
-			at: Date;
-			creditReference?: string;
-			availabilityReference?: string;
-		},
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesOrder>>;
-	getOrder(input: {
-		organizationId: string;
-		id: SalesOrderId;
-	}): Promise<Result<SalesOrder | null>>;
-	listOrders(input: {
-		organizationId: string;
-		cursor?: string;
-		pageSize: number;
-		status?: SalesOrder["status"];
-	}): Promise<Result<SalesPage<SalesOrder>>>;
-	listOrderLines(input: {
-		organizationId: string;
-		orderId: SalesOrderId;
-	}): Promise<Result<SalesOrderLine[]>>;
-	listOrderSchedules(input: {
-		organizationId: string;
-		orderId: SalesOrderId;
-	}): Promise<Result<SalesOrderSchedule[]>>;
-	placeHold(
-		input: {
-			organizationId: string;
-			orderId: SalesOrderId;
-			kind: SalesHoldKind;
-			reason: string;
+	) => Promise<Result<SalesOrderLine>>;
+	addPriceBookEntry: (
+		input: Omit<PriceBookEntry, keyof import("./types").AuditStamp | "id"> & {
 			actorUserId: string;
 			idempotencyKey: string;
 		},
 		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesHold>>;
-	resolveHold(
-		input: { organizationId: string; id: SalesHoldId; actorUserId: string },
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesHold>>;
-	listOpenHolds(input: {
-		organizationId: string;
-		orderId: SalesOrderId;
-	}): Promise<Result<SalesHold[]>>;
-	recordFulfillment(
-		input: {
-			organizationId: string;
-			orderId: SalesOrderId;
-			lineId: SalesOrderLineId;
-			fulfilledQuantity: string;
-			expectedVersion: number;
+	) => Promise<Result<PriceBookEntry>>;
+	addQuotationLine: (
+		input: Omit<
+			SalesQuotationLine,
+			keyof import("./types").AuditStamp | "id" | "lineNo"
+		> & {
 			actorUserId: string;
+			idempotencyKey: string;
+			expectedVersion: number;
 		},
 		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<SalesOrder>>;
-	createReturnAuthorization(
-		input: Omit<
-			ReturnAuthorization,
-			keyof import("./types").AuditStamp | "id"
-		> & { actorUserId: string; idempotencyKey: string },
-		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<ReturnAuthorization>>;
-	addReturnLine(
+	) => Promise<Result<SalesQuotationLine>>;
+	addReturnLine: (
 		input: Omit<
 			ReturnAuthorizationLine,
 			keyof import("./types").AuditStamp | "id"
@@ -296,8 +147,162 @@ export type SalesStore = {
 			expectedVersion: number;
 		},
 		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<ReturnAuthorizationLine>>;
-	transitionReturn(
+	) => Promise<Result<ReturnAuthorizationLine>>;
+	createOrder: (
+		input: Omit<SalesOrder, keyof import("./types").AuditStamp | "id"> & {
+			actorUserId: string;
+			idempotencyKey: string;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesOrder>>;
+	createPriceBook: (
+		input: Omit<PriceBook, keyof import("./types").AuditStamp | "id"> & {
+			actorUserId: string;
+			idempotencyKey: string;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<PriceBook>>;
+	createQuotation: (
+		input: Omit<SalesQuotation, keyof import("./types").AuditStamp | "id"> & {
+			actorUserId: string;
+			idempotencyKey: string;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesQuotation>>;
+	createReturnAuthorization: (
+		input: Omit<
+			ReturnAuthorization,
+			keyof import("./types").AuditStamp | "id"
+		> & { actorUserId: string; idempotencyKey: string },
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<ReturnAuthorization>>;
+	findPriceEntries: (input: {
+		organizationId: string;
+		itemId: ItemId;
+		uomId: string;
+		currencyCode: string;
+		quantity: string;
+		at: Date;
+	}) => Promise<Result<Array<{ book: PriceBook; entry: PriceBookEntry }>>>;
+	getOrder: (input: {
+		organizationId: string;
+		id: SalesOrderId;
+	}) => Promise<Result<SalesOrder | null>>;
+	getPriceBook: (input: {
+		organizationId: string;
+		id: PriceBookId;
+	}) => Promise<Result<PriceBook | null>>;
+	getQuotation: (input: {
+		organizationId: string;
+		id: SalesQuotationId;
+	}) => Promise<Result<SalesQuotation | null>>;
+	getReturnAuthorization: (input: {
+		organizationId: string;
+		id: ReturnAuthorizationId;
+	}) => Promise<Result<ReturnAuthorization | null>>;
+	listOpenHolds: (input: {
+		organizationId: string;
+		orderId: SalesOrderId;
+	}) => Promise<Result<SalesHold[]>>;
+	listOrderLines: (input: {
+		organizationId: string;
+		orderId: SalesOrderId;
+	}) => Promise<Result<SalesOrderLine[]>>;
+	listOrderSchedules: (input: {
+		organizationId: string;
+		orderId: SalesOrderId;
+	}) => Promise<Result<SalesOrderSchedule[]>>;
+	listOrders: (input: {
+		organizationId: string;
+		cursor?: string | undefined;
+		pageSize: number;
+		status?: SalesOrder["status"] | undefined;
+	}) => Promise<Result<SalesPage<SalesOrder>>>;
+	listPriceBooks: (input: {
+		organizationId: string;
+		cursor?: string | undefined;
+		pageSize: number;
+	}) => Promise<Result<SalesPage<PriceBook>>>;
+	listQuotationLines: (input: {
+		organizationId: string;
+		quotationId: SalesQuotationId;
+	}) => Promise<Result<SalesQuotationLine[]>>;
+	listQuotations: (input: {
+		organizationId: string;
+		cursor?: string | undefined;
+		pageSize: number;
+	}) => Promise<Result<SalesPage<SalesQuotation>>>;
+	listReturnAuthorizations: (input: {
+		organizationId: string;
+		cursor?: string | undefined;
+		pageSize: number;
+	}) => Promise<Result<SalesPage<ReturnAuthorization>>>;
+	listReturnLines: (input: {
+		organizationId: string;
+		returnAuthorizationId: ReturnAuthorizationId;
+	}) => Promise<Result<ReturnAuthorizationLine[]>>;
+	placeHold: (
+		input: {
+			organizationId: string;
+			orderId: SalesOrderId;
+			kind: SalesHoldKind;
+			reason: string;
+			actorUserId: string;
+			idempotencyKey: string;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesHold>>;
+	recordFulfillment: (
+		input: {
+			organizationId: string;
+			orderId: SalesOrderId;
+			lineId: SalesOrderLineId;
+			fulfilledQuantity: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesOrder>>;
+	releaseOrder: (
+		input: {
+			organizationId: string;
+			id: SalesOrderId;
+			expectedVersion: number;
+			taxTotal: string;
+			actorUserId: string;
+			at: Date;
+			creditReference?: string | undefined;
+			availabilityReference?: string | undefined;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesOrder>>;
+	resolveHold: (
+		input: { organizationId: string; id: SalesHoldId; actorUserId: string },
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesHold>>;
+	transitionOrder: (
+		input: {
+			organizationId: string;
+			id: SalesOrderId;
+			expectedVersion: number;
+			status: SalesOrder["status"];
+			actorUserId: string;
+			at: Date;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesOrder>>;
+	transitionQuotation: (
+		input: {
+			organizationId: string;
+			id: SalesQuotationId;
+			expectedVersion: number;
+			status: SalesQuotation["status"];
+			actorUserId: string;
+			convertedOrderId?: SalesOrderId | undefined;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<SalesQuotation>>;
+	transitionReturn: (
 		input: {
 			organizationId: string;
 			id: ReturnAuthorizationId;
@@ -306,18 +311,15 @@ export type SalesStore = {
 			actorUserId: string;
 		},
 		evidence: Omit<MutationEvidence, "entityId" | "version">,
-	): Promise<Result<ReturnAuthorization>>;
-	getReturnAuthorization(input: {
-		organizationId: string;
-		id: ReturnAuthorizationId;
-	}): Promise<Result<ReturnAuthorization | null>>;
-	listReturnAuthorizations(input: {
-		organizationId: string;
-		cursor?: string;
-		pageSize: number;
-	}): Promise<Result<SalesPage<ReturnAuthorization>>>;
-	listReturnLines(input: {
-		organizationId: string;
-		returnAuthorizationId: ReturnAuthorizationId;
-	}): Promise<Result<ReturnAuthorizationLine[]>>;
-};
+	) => Promise<Result<ReturnAuthorization>>;
+	updatePriceBookStatus: (
+		input: {
+			organizationId: string;
+			id: PriceBookId;
+			expectedVersion: number;
+			status: PriceBook["status"];
+			actorUserId: string;
+		},
+		evidence: Omit<MutationEvidence, "entityId" | "version">,
+	) => Promise<Result<PriceBook>>;
+}

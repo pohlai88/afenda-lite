@@ -1,6 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
 
+const TRAILING_ZERO_PATTERN = /0+$/u;
+
 export const currencyCodeSchema = z
 	.string()
 	.trim()
@@ -19,10 +21,11 @@ const SCALE = 1_000_000n;
 
 export function decimalToScaled(value: string): Result<bigint> {
 	const parsed = decimalAmountSchema.safeParse(value);
-	if (!parsed.success)
+	if (!parsed.success) {
 		return fail("BAD_REQUEST", "Enter a valid decimal amount", {
 			reason: "SALES_INVALID_MONEY",
 		});
+	}
 	const negative = parsed.data.startsWith("-");
 	const unsigned = negative ? parsed.data.slice(1) : parsed.data;
 	const [whole = "0", fraction = ""] = unsigned.split(".");
@@ -37,15 +40,19 @@ export function scaledToDecimal(value: bigint): string {
 	const fraction = (absolute % SCALE)
 		.toString()
 		.padStart(6, "0")
-		.replace(/0+$/u, "");
+		.replace(TRAILING_ZERO_PATTERN, "");
 	return `${negative ? "-" : ""}${whole}${fraction.length > 0 ? `.${fraction}` : ""}`;
 }
 
 export function multiplyDecimal(left: string, right: string): Result<string> {
 	const a = decimalToScaled(left);
-	if (!a.ok) return a;
+	if (!a.ok) {
+		return a;
+	}
 	const b = decimalToScaled(right);
-	if (!b.ok) return b;
+	if (!b.ok) {
+		return b;
+	}
 	const product = a.data * b.data;
 	const rounded =
 		product >= 0n
@@ -58,7 +65,9 @@ export function addDecimals(values: readonly string[]): Result<string> {
 	let total = 0n;
 	for (const value of values) {
 		const parsed = decimalToScaled(value);
-		if (!parsed.ok) return parsed;
+		if (!parsed.ok) {
+			return parsed;
+		}
 		total += parsed.data;
 	}
 	return ok(scaledToDecimal(total));

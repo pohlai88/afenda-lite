@@ -6,13 +6,13 @@ import type { FULFILLMENT_PERMISSION_CODES } from "./permissions";
 
 export type FulfillmentPermission =
 	(typeof FULFILLMENT_PERMISSION_CODES)[number];
-export type FulfillmentAuthorizationPort = {
-	can(input: {
+export interface FulfillmentAuthorizationPort {
+	can: (input: {
 		organizationId: string;
 		actorUserId: string;
 		permission: FulfillmentPermission;
-	}): Promise<boolean>;
-};
+	}) => Promise<boolean>;
+}
 
 async function requirePermission(
 	authorization: FulfillmentAuthorizationPort | undefined,

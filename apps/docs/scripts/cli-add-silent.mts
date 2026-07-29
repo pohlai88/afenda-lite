@@ -33,12 +33,12 @@ const { ComponentInstaller } = requireFromCli(
 	};
 };
 
-type DependencyManager = {
-	hasRequired: () => boolean;
-	writeRequired: () => Promise<void>;
+interface DependencyManager {
 	dependencies: string[];
 	devDependencies: string[];
-};
+	hasRequired: () => boolean;
+	writeRequired: () => Promise<void>;
+}
 
 const UI_REGISTRY: Record<string, string> = {
 	"radix-ui": "fumadocs/radix-ui",

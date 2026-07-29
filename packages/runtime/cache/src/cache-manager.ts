@@ -244,8 +244,8 @@ export class CacheManager {
 	): Promise<void> {
 		for (const entry of entries) {
 			await this.set(entry.key, entry.value, {
-				ttl: entry.ttl,
-				tags: entry.tags,
+				...(entry.ttl === undefined ? {} : { ttl: entry.ttl }),
+				...(entry.tags === undefined ? {} : { tags: entry.tags }),
 			});
 		}
 	}

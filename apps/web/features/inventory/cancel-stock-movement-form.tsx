@@ -22,8 +22,8 @@ const initialState: CancelStockMovementActionState = null;
 
 type CancelStockMovementFormProps = {
 	canCancel: boolean;
-	defaultMovementId?: string;
-	defaultExpectedVersion?: number;
+	defaultMovementId?: string | undefined;
+	defaultExpectedVersion?: number | undefined;
 };
 
 export function CancelStockMovementForm({

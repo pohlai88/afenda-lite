@@ -40,10 +40,14 @@ function AsyncState(props: AsyncStateProps) {
 		case "filtered-empty":
 			return (
 				<Empty
-					className={props.className}
 					title={props.title}
-					description={props.description}
-					action={props.action}
+					{...(props.className === undefined
+						? {}
+						: { className: props.className })}
+					{...(props.description === undefined
+						? {}
+						: { description: props.description })}
+					{...(props.action === undefined ? {} : { action: props.action })}
 				/>
 			);
 		case "error":

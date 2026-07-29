@@ -111,11 +111,11 @@ type ImportRowResultDraft = Readonly<{
 	rowIndex: number;
 	code: string;
 	outcome: ImportRowOutcome;
-	entityId?: string;
-	entityVersion?: number;
-	matchedTargetId?: string | null;
-	message?: string;
-	reason?: string;
+	entityId?: string | undefined;
+	entityVersion?: number | undefined;
+	matchedTargetId?: string | null | undefined;
+	message?: string | undefined;
+	reason?: string | undefined;
 }>;
 
 const importReportPayloadSchema = z.record(z.string(), z.unknown());
@@ -184,9 +184,9 @@ const orgImportContextSchema = orgActorContextSchema.extend({
 function requireApprovedForApply(ctx: {
 	dryRun: boolean;
 	approved: boolean;
-	actorUserId?: string;
-	approvedByActorUserId?: string;
-	requireSegregatedApproval?: boolean;
+	actorUserId?: string | undefined;
+	approvedByActorUserId?: string | undefined;
+	requireSegregatedApproval?: boolean | undefined;
 }): Result<void> {
 	if (!ctx.dryRun && !ctx.approved) {
 		return fail("CONFLICT", "Import batch is not approved", {
@@ -227,7 +227,7 @@ function requireApprovedForApply(ctx: {
 
 function requireIdempotencyKeyForApply(ctx: {
 	dryRun: boolean;
-	idempotencyKey?: string;
+	idempotencyKey?: string | undefined;
 }): Result<string | undefined> {
 	if (ctx.dryRun) {
 		return ok(undefined);
@@ -1070,7 +1070,11 @@ async function upsertPartiesByCodeBody(
 }
 
 async function upsertByCodeGeneric<
-	TRow extends { code: string; name: string; expectedVersion?: number },
+	TRow extends {
+		code: string;
+		name: string;
+		expectedVersion?: number | undefined;
+	},
 >(
 	input: {
 		organizationId: string;
@@ -1080,9 +1084,9 @@ async function upsertByCodeGeneric<
 		mode: ImportMode;
 		dryRun: boolean;
 		approved: boolean;
-		approvedByActorUserId?: string;
-		requireSegregatedApproval?: boolean;
-		idempotencyKey?: string;
+		approvedByActorUserId?: string | undefined;
+		requireSegregatedApproval?: boolean | undefined;
+		idempotencyKey?: string | undefined;
 		entityType: "item" | "item_group" | "warehouse";
 		rows: TRow[];
 	},
@@ -1096,12 +1100,12 @@ async function upsertByCodeGeneric<
 			row: TRow,
 			code: string,
 			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number }>>;
+		) => Promise<Result<{ id: string; version?: number | undefined }>>;
 		update: (
 			row: TRow,
 			existing: { id: string; version: number },
 			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number }>>;
+		) => Promise<Result<{ id: string; version?: number | undefined }>>;
 		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
 		/** Reject when row tries to change fields outside the mutable allowlist. */
 		rejectImmutable?: (
@@ -1138,7 +1142,11 @@ async function upsertByCodeGeneric<
 }
 
 async function upsertByCodeGenericBody<
-	TRow extends { code: string; name: string; expectedVersion?: number },
+	TRow extends {
+		code: string;
+		name: string;
+		expectedVersion?: number | undefined;
+	},
 >(
 	input: {
 		organizationId: string;
@@ -1159,12 +1167,12 @@ async function upsertByCodeGenericBody<
 			row: TRow,
 			code: string,
 			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number }>>;
+		) => Promise<Result<{ id: string; version?: number | undefined }>>;
 		update: (
 			row: TRow,
 			existing: { id: string; version: number },
 			commandOptions: MasterCommandOptions,
-		) => Promise<Result<{ id: string; version?: number }>>;
+		) => Promise<Result<{ id: string; version?: number | undefined }>>;
 		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
 		rejectImmutable?: (
 			existing: { id: string; name: string; version: number },
@@ -1409,49 +1417,53 @@ export async function upsertItemGroupsByCode(
 		return authorized;
 	}
 	const ctx = parsed.data;
-	return upsertByCodeGeneric({ ...ctx, entityType: "item_group" }, options, {
-		getByCode: async (organizationId, normalizedCode) => {
-			const result = await store.getItemGroupByCode(
-				organizationId,
-				normalizedCode,
-			);
-			if (!result.ok) {
-				return result;
-			}
-			if (result.data === null) {
-				return ok(null);
-			}
-			return ok({
-				id: result.data.id,
-				name: result.data.name,
-				version: result.data.version,
-			});
+	return upsertByCodeGeneric<z.infer<typeof itemGroupImportRowSchema>>(
+		{ ...ctx, entityType: "item_group" },
+		options,
+		{
+			getByCode: async (organizationId, normalizedCode) => {
+				const result = await store.getItemGroupByCode(
+					organizationId,
+					normalizedCode,
+				);
+				if (!result.ok) {
+					return result;
+				}
+				if (result.data === null) {
+					return ok(null);
+				}
+				return ok({
+					id: result.data.id,
+					name: result.data.name,
+					version: result.data.version,
+				});
+			},
+			create: async (row, code, commandOptions) =>
+				createItemGroup(
+					{
+						organizationId: ctx.organizationId,
+						actorUserId: ctx.actorUserId,
+						correlationId: ctx.correlationId,
+						code,
+						name: row.name,
+					},
+					commandOptions,
+				),
+			update: async (row, existing, commandOptions) =>
+				updateItemGroup(
+					{
+						organizationId: ctx.organizationId,
+						actorUserId: ctx.actorUserId,
+						correlationId: ctx.correlationId,
+						id: existing.id,
+						expectedVersion: existing.version,
+						name: row.name,
+					},
+					commandOptions,
+				),
+			isUnchanged: (existing, row) => existing.name === row.name,
 		},
-		create: async (row, code, commandOptions) =>
-			createItemGroup(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					code,
-					name: row.name,
-				},
-				commandOptions,
-			),
-		update: async (row, existing, commandOptions) =>
-			updateItemGroup(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					id: existing.id,
-					expectedVersion: existing.version,
-					name: row.name,
-				},
-				commandOptions,
-			),
-		isUnchanged: (existing, row) => existing.name === row.name,
-	});
+	);
 }
 
 export async function upsertItemsByCode(
@@ -1480,74 +1492,81 @@ export async function upsertItemsByCode(
 		string,
 		{ itemType: string; baseUomId: string; itemGroupId: string }
 	>();
-	return upsertByCodeGeneric({ ...ctx, entityType: "item" }, options, {
-		getByCode: async (organizationId, normalizedCode) => {
-			const result = await store.getItemByCode(organizationId, normalizedCode);
-			if (!result.ok) {
-				return result;
-			}
-			if (result.data === null) {
-				return ok(null);
-			}
-			itemSnapshot.set(result.data.id, {
-				itemType: result.data.itemType,
-				baseUomId: result.data.baseUomId,
-				itemGroupId: result.data.itemGroupId,
-			});
-			return ok({
-				id: result.data.id,
-				name: result.data.name,
-				version: result.data.version,
-			});
+	return upsertByCodeGeneric<z.infer<typeof itemImportRowSchema>>(
+		{ ...ctx, entityType: "item" },
+		options,
+		{
+			getByCode: async (organizationId, normalizedCode) => {
+				const result = await store.getItemByCode(
+					organizationId,
+					normalizedCode,
+				);
+				if (!result.ok) {
+					return result;
+				}
+				if (result.data === null) {
+					return ok(null);
+				}
+				itemSnapshot.set(result.data.id, {
+					itemType: result.data.itemType,
+					baseUomId: result.data.baseUomId,
+					itemGroupId: result.data.itemGroupId,
+				});
+				return ok({
+					id: result.data.id,
+					name: result.data.name,
+					version: result.data.version,
+				});
+			},
+			create: async (row, code, commandOptions) =>
+				createItem(
+					{
+						organizationId: ctx.organizationId,
+						actorUserId: ctx.actorUserId,
+						correlationId: ctx.correlationId,
+						code,
+						name: row.name,
+						itemType: row.itemType,
+						baseUomId: row.baseUomId,
+						itemGroupId: row.itemGroupId,
+					},
+					commandOptions,
+				),
+			update: async (row, existing, commandOptions) =>
+				updateItem(
+					{
+						organizationId: ctx.organizationId,
+						actorUserId: ctx.actorUserId,
+						correlationId: ctx.correlationId,
+						id: existing.id,
+						expectedVersion: existing.version,
+						name: row.name,
+					},
+					commandOptions,
+				),
+			isUnchanged: (existing, row) => existing.name === row.name,
+			rejectImmutable: (existing, row, rowIndex, code) => {
+				const snap = itemSnapshot.get(existing.id);
+				if (
+					snap !== undefined &&
+					(snap.itemType !== row.itemType ||
+						snap.baseUomId !== row.baseUomId ||
+						snap.itemGroupId !== row.itemGroupId)
+				) {
+					return {
+						rowIndex,
+						code,
+						outcome: "rejected",
+						entityId: existing.id,
+						message:
+							"itemType, baseUomId, and itemGroupId are immutable on import; only name may update",
+						reason: "MASTER_VALIDATION_FAILED",
+					};
+				}
+				return null;
+			},
 		},
-		create: async (row, code, commandOptions) =>
-			createItem(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					code,
-					name: row.name,
-					itemType: row.itemType,
-					baseUomId: row.baseUomId,
-					itemGroupId: row.itemGroupId,
-				},
-				commandOptions,
-			),
-		update: async (row, existing, commandOptions) =>
-			updateItem(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					id: existing.id,
-					expectedVersion: existing.version,
-					name: row.name,
-				},
-				commandOptions,
-			),
-		isUnchanged: (existing, row) => existing.name === row.name,
-		rejectImmutable: (existing, row, rowIndex, code) => {
-			const snap = itemSnapshot.get(existing.id);
-			if (
-				snap !== undefined &&
-				(snap.itemType !== row.itemType ||
-					snap.baseUomId !== row.baseUomId ||
-					snap.itemGroupId !== row.itemGroupId)
-			) {
-				return {
-					rowIndex,
-					code,
-					outcome: "rejected",
-					entityId: existing.id,
-					message:
-						"itemType, baseUomId, and itemGroupId are immutable on import; only name may update",
-					reason: "MASTER_VALIDATION_FAILED",
-				};
-			}
-			return null;
-		},
-	});
+	);
 }
 
 export async function upsertWarehousesByCode(
@@ -1573,67 +1592,72 @@ export async function upsertWarehousesByCode(
 	}
 	const ctx = parsed.data;
 	const warehouseSnapshot = new Map<string, { locationType: string }>();
-	return upsertByCodeGeneric({ ...ctx, entityType: "warehouse" }, options, {
-		getByCode: async (organizationId, normalizedCode) => {
-			const result = await store.getWarehouseByCode(
-				organizationId,
-				normalizedCode,
-			);
-			if (!result.ok) {
-				return result;
-			}
-			if (result.data === null) {
-				return ok(null);
-			}
-			warehouseSnapshot.set(result.data.id, {
-				locationType: result.data.locationType,
-			});
-			return ok({
-				id: result.data.id,
-				name: result.data.name,
-				version: result.data.version,
-			});
+	return upsertByCodeGeneric<z.infer<typeof warehouseImportRowSchema>>(
+		{ ...ctx, entityType: "warehouse" },
+		options,
+		{
+			getByCode: async (organizationId, normalizedCode) => {
+				const result = await store.getWarehouseByCode(
+					organizationId,
+					normalizedCode,
+				);
+				if (!result.ok) {
+					return result;
+				}
+				if (result.data === null) {
+					return ok(null);
+				}
+				warehouseSnapshot.set(result.data.id, {
+					locationType: result.data.locationType,
+				});
+				return ok({
+					id: result.data.id,
+					name: result.data.name,
+					version: result.data.version,
+				});
+			},
+			create: async (row, code, commandOptions) =>
+				createWarehouse(
+					{
+						organizationId: ctx.organizationId,
+						actorUserId: ctx.actorUserId,
+						correlationId: ctx.correlationId,
+						code,
+						name: row.name,
+						locationType: row.locationType,
+					},
+					commandOptions,
+				),
+			update: async (row, existing, commandOptions) =>
+				updateWarehouse(
+					{
+						organizationId: ctx.organizationId,
+						actorUserId: ctx.actorUserId,
+						correlationId: ctx.correlationId,
+						id: existing.id,
+						expectedVersion: existing.version,
+						name: row.name,
+					},
+					commandOptions,
+				),
+			isUnchanged: (existing, row) => existing.name === row.name,
+			rejectImmutable: (existing, row, rowIndex, code) => {
+				const snap = warehouseSnapshot.get(existing.id);
+				if (snap !== undefined && snap.locationType !== row.locationType) {
+					return {
+						rowIndex,
+						code,
+						outcome: "rejected",
+						entityId: existing.id,
+						message:
+							"locationType is immutable on import; only name may update",
+						reason: "MASTER_VALIDATION_FAILED",
+					};
+				}
+				return null;
+			},
 		},
-		create: async (row, code, commandOptions) =>
-			createWarehouse(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					code,
-					name: row.name,
-					locationType: row.locationType,
-				},
-				commandOptions,
-			),
-		update: async (row, existing, commandOptions) =>
-			updateWarehouse(
-				{
-					organizationId: ctx.organizationId,
-					actorUserId: ctx.actorUserId,
-					correlationId: ctx.correlationId,
-					id: existing.id,
-					expectedVersion: existing.version,
-					name: row.name,
-				},
-				commandOptions,
-			),
-		isUnchanged: (existing, row) => existing.name === row.name,
-		rejectImmutable: (existing, row, rowIndex, code) => {
-			const snap = warehouseSnapshot.get(existing.id);
-			if (snap !== undefined && snap.locationType !== row.locationType) {
-				return {
-					rowIndex,
-					code,
-					outcome: "rejected",
-					entityId: existing.id,
-					message: "locationType is immutable on import; only name may update",
-					reason: "MASTER_VALIDATION_FAILED",
-				};
-			}
-			return null;
-		},
-	});
+	);
 }
 
 /** Validate-only alias — dry-run party upsert (`master_data.import_validate`). */
