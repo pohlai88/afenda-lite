@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Status | ENV-C1 inventory complete · ENV-C2 first migration slice complete |
+| Status | ENV-C1 inventory complete · ENV-C2 first migration slice complete · ENV-C3 governance gate integrated |
 | Date | 2026-07-29 |
 | Authority | Pasted ENV-DOWNSTREAM-01 brief · AGENTS.md · `@afenda/env` protected package |
 | Protected env gate | PASS: `pnpm --filter @afenda/env protect:check` |
@@ -210,6 +210,363 @@ Next recommended slice:
 ENV-C3: inspect @afenda/admin and @afenda/db exception documentation, then
 decide whether repository governance (`check:env-consumers`) should land before
 more migrations.
+```
+
+## ENV-C3 Governance Slice Result
+
+Result: repository env-consumer governance is integrated into package governance.
+
+Added gate:
+
+```text
+pnpm check:env-consumers
+pnpm test:env-consumers
+```
+
+Governance coverage:
+
+```text
+scripts/check-env-consumers.mjs
+scripts/check-env-consumers.test.mjs
+scripts/governance-packages.mjs
+scripts/run-checks.mjs
+```
+
+Current validation:
+
+```text
+pnpm check:env-consumers
+=> PASS, 2856 files scanned
+
+pnpm test:env-consumers
+=> PASS, 7 tests
+
+pnpm --filter @afenda/env protect:check
+=> PASS, protection hash current
+
+pnpm --filter @afenda/ui-blocks lint
+=> PASS
+
+pnpm --filter @afenda/ui-blocks typecheck
+=> PASS
+
+pnpm validate:modules
+=> PASS
+
+pnpm governance:packages
+=> PASS; validate:modules + check:env-consumers
+```
+
+Additional monorepo governance repair:
+
+```text
+packages/surfaces/ui-blocks
+```
+
+`@afenda/ui-blocks` was already tracked on disk but absent from the governed
+package catalog, so `pnpm governance:packages` stopped before the env consumer
+gate. The package is now registered in the catalog docs, validator expected
+package list, and workspace edge register with its single approved dependency:
+
+```text
+@afenda/ui-blocks -> @afenda/ui-system
+```
+
+Next recommended slice:
+
+```text
+ENV-C4: continue direct-consumer review with @afenda/admin, then @afenda/db
+exception documentation and migration guard evidence.
+```
+
+## ENV-C4 Admin and DB Slice Result
+
+`@afenda/admin`:
+
+```text
+Runtime env access uses @afenda/env.
+Raw env access appears only in tests through env mocks/fixtures.
+
+pnpm --filter @afenda/admin lint
+=> PASS
+
+pnpm --filter @afenda/admin typecheck
+=> PASS
+
+pnpm --filter @afenda/admin test
+=> PASS, 39 tests
+```
+
+`@afenda/db`:
+
+```text
+packages/data-plane/db/src/env.ts keeps the approved ARCH-024 exception:
+db must not import @afenda/env, so it owns the narrow DATABASE_URL bootstrap
+helper for product and migration classes.
+```
+
+Migration and production branch evidence:
+
+```text
+pnpm --filter @afenda/db lint
+=> PASS
+
+pnpm --filter @afenda/db typecheck
+=> PASS
+
+pnpm --filter @afenda/db test
+=> PASS, 192 tests
+
+pnpm validate:neon-env
+=> PASS, 15 passed / 0 failed
+=> PL-S9 production branch baseline-migrate posture PASS:
+   production branch identity confirmed; baseline migration is prohibited on
+   br-tiny-hill-ao82jp6f
+```
+
+No illegal `@afenda/db -> @afenda/env` dependency was introduced. The broader
+mission requirement to use the env posture object remains satisfied by the
+repository-level `validate:neon-env` gate, not by importing the env package into
+the DB package.
+
+Next recommended slice:
+
+```text
+ENV-C5: inspect @afenda/metrics route behavior and notifications/emails
+delivery adapters for secret-safe failures and no production console fallback.
+```
+
+## ENV-C5 Metrics, Notifications, Emails, AI, and App Route Slice Result
+
+Result: direct env-consuming routes use the typed product env contract, and
+template/persistence packages do not read environment configuration.
+
+Validated packages:
+
+```text
+@afenda/metrics
+=> no env reads; Prometheus library only
+=> pnpm --filter @afenda/metrics lint PASS
+=> pnpm --filter @afenda/metrics typecheck PASS
+=> pnpm --filter @afenda/metrics test PASS, 17 tests
+
+@afenda/notifications
+=> no env reads; in-app notification persistence only
+=> pnpm --filter @afenda/notifications lint PASS
+=> pnpm --filter @afenda/notifications typecheck PASS
+=> pnpm --filter @afenda/notifications test PASS, 10 tests
+
+@afenda/emails
+=> no env reads; React Email templates only
+=> pnpm --filter @afenda/emails lint PASS
+=> pnpm --filter @afenda/emails typecheck PASS
+=> pnpm --filter @afenda/emails test PASS, 2 tests
+
+@afenda/ai-the-machine
+=> no env reads; web composition root injects provider/model
+=> pnpm --filter @afenda/ai-the-machine lint PASS
+=> pnpm --filter @afenda/ai-the-machine typecheck PASS
+=> pnpm --filter @afenda/ai-the-machine test PASS, 12 tests
+```
+
+Validated app route behavior:
+
+```text
+apps/web/app/api/metrics/route.ts
+=> uses env.METRICS_SCRAPE_TOKEN
+=> token absent returns 404
+=> wrong/missing bearer returns 401
+=> token compare uses SHA-256 digests + timingSafeEqual
+
+apps/web/modules/platform/ai/create-web-machine.ts
+=> uses env.AI_GATEWAY_API_KEY and env.AI_THE_MACHINE_MODEL
+=> local without key fails closed before streaming
+=> Vercel runtime can use default Gateway/OIDC path
+
+apps/web/app/api/cron/hr-reliability/route.ts
+=> uses env.CRON_SECRET and typed HR_RELIABILITY_* numbers
+=> worker receives typed limits; no string parsing in route
+```
+
+Focused web validation:
+
+```text
+pnpm --filter @afenda/web exec vitest run --config ../../testing/vitest.unit.config.ts --project web api-metrics-route api-ai-chat-route hr-reliability-cron-route local-dev-login
+=> PASS, 4 files / 16 tests
+```
+
+Refactor:
+
+```text
+apps/web/lib/local-dev-login.ts
+```
+
+The local dev login helper no longer defaults from raw `process.env.NODE_ENV`.
+`@afenda/env` now exports `isDevelopmentRuntimeNow()`, keeping local-only
+runtime detection inside the protected environment contract. The helper still
+accepts an explicit boolean for tests.
+
+Protection and governance:
+
+```text
+pnpm --filter @afenda/env lint
+=> PASS
+
+pnpm --filter @afenda/env typecheck
+=> PASS
+
+pnpm --filter @afenda/env test
+=> PASS, 70 tests
+
+pnpm --filter @afenda/env protect:update
+pnpm --filter @afenda/env protect:check
+=> PASS, protection hash current
+
+pnpm check:env-consumers
+=> PASS, 2856 files scanned
+
+pnpm governance:packages
+=> PASS
+```
+
+Remaining app raw env reads:
+
+```text
+apps/web/next.config.ts
+```
+
+Classification: framework bootstrap exception. The config runs before normal
+runtime composition and reads `NODE_ENV` only for local source-map behavior.
+
+Next recommended slice:
+
+```text
+ENV-C6: stale env file and .env.example parity audit. Classify local ignored
+Vercel/env helper files, then remove or document only living exceptions.
+```
+
+## ENV-C6 Stale Env File Audit Result
+
+Tracked living env files:
+
+```text
+git ls-files ".env*" "**/.env*" ".vercel/.env*"
+=> .env.example
+```
+
+Local ignored env files observed:
+
+```text
+.env.local
+.env.local.vercel-backup
+.env.vercel.check
+.env.vercel.preview
+.env.vercel.production
+apps/web/.env.local
+```
+
+Archived reference env files exist only under:
+
+```text
+_reference/Viet-ERP/**
+```
+
+Classification:
+
+```text
+.env.example                 committed template; living
+.env.local                   approved local runtime; ignored
+apps/web/.env.local          ignored local app file; not committed
+.env.vercel.*                ignored operator/Vercel helper files; not committed
+.env.local.vercel-backup     ignored local backup; not committed
+_reference/Viet-ERP/**       archived reference material; not living runtime
+```
+
+Ignore evidence:
+
+```text
+git check-ignore -v .env.local apps/web/.env.local .vercel/.env.production.local .env.vercel.production
+=> .env* covers .env.local and apps/web/.env.local
+=> .env.vercel.* covers .env.vercel.production
+=> .vercel covers .vercel/.env.production.local
+```
+
+No committed stale runtime env files were found, so no env file deletion was
+performed. Ignored local files were not printed or removed because they can
+contain credentials and are outside committed source truth.
+
+Template parity evidence:
+
+```text
+pnpm --filter @afenda/env test
+=> PASS, includes .env.example representation test
+```
+
+Next recommended slice:
+
+```text
+ENV-C7: run final duplicate-alias and createEnv scans, then decide whether
+.env.example needs a stronger machine parity check beyond the current env test.
+```
+
+## ENV-C7 Repository Governance Tightening Result
+
+Result: `check:env-consumers` now covers the remaining repository-level
+environment controls instead of relying only on manual scans.
+
+New machine checks:
+
+```text
+COMMITTED_ENV_FILE
+=> only .env.example may be tracked; .env.local and other .env* files fail
+
+DOCS_PRODUCT_ENV_IMPORT
+=> apps/docs runtime must not import @afenda/env root; use @afenda/env/docs
+```
+
+Removed stale exception:
+
+```text
+apps/web/lib/local-dev-login.ts
+```
+
+That helper has been migrated to `isDevelopmentRuntimeNow()`, so the governance
+allowlist no longer permits raw env reads there.
+
+Alias and competing schema evidence:
+
+```text
+rg -n "POSTGRES_URL|POSTGRES_PRISMA_URL|NEON_DATABASE_URL|NEXTAUTH_URL|AUTH_URL|PUBLIC_APP_URL|REDIS_URL|UPSTASH_URL" apps packages scripts .env.example --glob "!**/node_modules/**"
+=> matches only check-env-consumers implementation and tests
+
+rg -n "createEnv" apps packages scripts --glob "!**/node_modules/**"
+=> createEnv runtime use only in packages/foundation/env/src/{web,docs}.ts
+```
+
+Validation:
+
+```text
+pnpm test:env-consumers
+=> PASS, 10 tests
+
+pnpm check:env-consumers
+=> PASS, 2856 files scanned
+
+pnpm governance:packages
+=> PASS
+
+pnpm check:docs-app
+=> PASS; generated docs stayed clean, lint-links 0 errors / 42 pages
+
+pnpm --filter @afenda/env protect:check
+=> PASS, protection hash current
+```
+
+Next recommended slice:
+
+```text
+ENV-C8: final repository gates — pnpm lint, pnpm typecheck, pnpm test, then
+completion audit against the full Definition of Done.
 ```
 
 ## Coverage

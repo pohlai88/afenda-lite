@@ -6,6 +6,8 @@ import { DefaultChatTransport } from "ai";
 import { useState } from "react";
 
 const AI_CHAT_API = "/api/ai/chat" as const;
+const AI_CHAT_ERROR_MESSAGE =
+	"The assistant could not complete the request. Please try again.";
 
 function messageText(
 	parts: ReadonlyArray<{ type: string; text?: string }>,
@@ -62,7 +64,7 @@ export function TheMachineChat() {
 
 			{error !== undefined ? (
 				<p className="text-sm text-destructive" role="alert">
-					{error.message}
+					{AI_CHAT_ERROR_MESSAGE}
 				</p>
 			) : null}
 

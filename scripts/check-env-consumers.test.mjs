@@ -22,6 +22,18 @@ function writeSource(root, relativePath, content) {
 	writeFileSync(fullPath, content);
 }
 
+function initGitRepo(root) {
+	execFileSync("git", ["init"], { cwd: root, stdio: "ignore" });
+	execFileSync("git", ["config", "user.email", "test@example.com"], {
+		cwd: root,
+		stdio: "ignore",
+	});
+	execFileSync("git", ["config", "user.name", "Test"], {
+		cwd: root,
+		stdio: "ignore",
+	});
+}
+
 function runCheck(root) {
 	try {
 		const stdout = execFileSync("node", [scriptPath], {
@@ -165,6 +177,63 @@ test("fails legacy environment aliases in runtime code", () => {
 
 		assert.equal(result.status, 1);
 		assert.match(result.output, /LEGACY_ENV_ALIAS/u);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("fails committed local env files", () => {
+	const root = createFixture();
+	try {
+		initGitRepo(root);
+		writeSource(root, ".env.example", "APP_URL=https://example.com\n");
+		writeSource(root, ".env.local", "APP_URL=https://secret.example.com\n");
+		execFileSync("git", ["add", ".env.example", ".env.local"], {
+			cwd: root,
+			stdio: "ignore",
+		});
+
+		const result = runCheck(root);
+
+		assert.equal(result.status, 1);
+		assert.match(result.output, /COMMITTED_ENV_FILE/u);
+		assert.match(result.output, /\.env\.local/u);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("allows only docs env imports in docs app runtime", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"apps/docs/lib/source.ts",
+			"import { docsEnv } from '@afenda/env/docs';\nexport const url = docsEnv.DOCS_URL;\n",
+		);
+
+		const result = runCheck(root);
+
+		assert.equal(result.status, 0);
+		assert.match(result.output, /check-env-consumers: ok/u);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("fails product env imports in docs app runtime", () => {
+	const root = createFixture();
+	try {
+		writeSource(
+			root,
+			"apps/docs/lib/source.ts",
+			"import { env } from '@afenda/env';\nexport const url = env.APP_URL;\n",
+		);
+
+		const result = runCheck(root);
+
+		assert.equal(result.status, 1);
+		assert.match(result.output, /DOCS_PRODUCT_ENV_IMPORT/u);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

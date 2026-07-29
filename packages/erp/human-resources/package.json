@@ -74,6 +74,7 @@
 		"@afenda/payroll": "workspace:*",
 		"@afenda/testing": "workspace:*",
 		"@types/node": "catalog:",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"vitest": "catalog:"
 	}
 }

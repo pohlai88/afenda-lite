@@ -603,6 +603,28 @@ describe("@afenda/env createEnv export", () => {
 		expect(barrel.isProductionDeploymentNow()).toBe(true);
 	});
 
+	it("exports the current local-development runtime helper through the package barrel", async () => {
+		setValidProductionWebEnv({
+			NODE_ENV: "development",
+			VERCEL_ENV: undefined,
+		});
+
+		const barrel = await importFreshWebEnv();
+
+		expect(barrel.isDevelopmentRuntimeNow()).toBe(true);
+	});
+
+	it("does not classify Vercel development as local development", async () => {
+		setValidProductionWebEnv({
+			NODE_ENV: "development",
+			VERCEL_ENV: "development",
+		});
+
+		const barrel = await importFreshWebEnv();
+
+		expect(barrel.isDevelopmentRuntimeNow()).toBe(false);
+	});
+
 	it("does not evaluate docs environment from the product barrel", async () => {
 		setValidProductionWebEnv();
 		delete process.env.DOCS_URL;

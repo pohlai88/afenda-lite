@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const envMocks = vi.hoisted(() => ({
-	isVercelRuntimeNow: vi.fn(() => false),
+	isDevelopmentRuntimeNow: vi.fn(() => false),
 	env: {
 		SHARED_ADMIN_EMAIL: undefined as string | undefined,
 		SHARED_ADMIN_PASSWORD: undefined as string | undefined,
@@ -12,13 +12,12 @@ const envMocks = vi.hoisted(() => ({
 
 vi.mock("@afenda/env", () => ({
 	env: envMocks.env,
-	isVercelRuntimeNow: () => envMocks.isVercelRuntimeNow(),
+	isDevelopmentRuntimeNow: () => envMocks.isDevelopmentRuntimeNow(),
 }));
 
 describe("local-dev-login runtime gate", () => {
 	afterEach(() => {
-		vi.unstubAllEnvs();
-		envMocks.isVercelRuntimeNow.mockReturnValue(false);
+		envMocks.isDevelopmentRuntimeNow.mockReturnValue(false);
 		envMocks.env.SHARED_ADMIN_EMAIL = undefined;
 		envMocks.env.SHARED_ADMIN_PASSWORD = undefined;
 		envMocks.env.PREVIEW_CLIENT_EMAIL = undefined;
@@ -27,7 +26,6 @@ describe("local-dev-login runtime gate", () => {
 	});
 
 	it("is closed outside development", async () => {
-		vi.stubEnv("NODE_ENV", "production");
 		const { isLocalDevLoginRuntime, hasAnyLocalDevLogin } = await import(
 			"../lib/local-dev-login"
 		);
@@ -36,8 +34,7 @@ describe("local-dev-login runtime gate", () => {
 	});
 
 	it("is closed on Vercel even in development", async () => {
-		vi.stubEnv("NODE_ENV", "development");
-		envMocks.isVercelRuntimeNow.mockReturnValue(true);
+		envMocks.isDevelopmentRuntimeNow.mockReturnValue(false);
 		envMocks.env.SHARED_ADMIN_EMAIL = "ops@example.com";
 		envMocks.env.SHARED_ADMIN_PASSWORD = "secret";
 		const { isLocalDevLoginRuntime, hasAnyLocalDevLogin } = await import(
@@ -48,7 +45,7 @@ describe("local-dev-login runtime gate", () => {
 	});
 
 	it("reports operator/client when local fixtures are set", async () => {
-		vi.stubEnv("NODE_ENV", "development");
+		envMocks.isDevelopmentRuntimeNow.mockReturnValue(true);
 		envMocks.env.SHARED_ADMIN_EMAIL = "ops@example.com";
 		envMocks.env.SHARED_ADMIN_PASSWORD = "secret";
 		envMocks.env.PREVIEW_CLIENT_EMAIL = "client@example.com";

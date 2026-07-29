@@ -745,6 +745,7 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"@afenda/testing": "workspace:*",
 			"@types/node": "catalog:",
 			typescript: "catalog:",
+			vitest: "catalog:",
 		});
 
 		const shippedSource = sourceFiles(sourceDirectory)

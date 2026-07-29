@@ -8,6 +8,13 @@ authority: docs-V2/monorepo
 updated: "2026-07-26"
 
 edges:
+  - from: "@afenda/ui-blocks"
+    to: "@afenda/ui-system"
+    status: approved
+    authority: ARCH-024
+    reason: "Surface app-shell blocks compose approved ui-system primitives"
+    effectiveDate: "2026-07-29"
+
   - from: "@afenda/auth"
     to: "@afenda/env"
     status: approved

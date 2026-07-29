@@ -94,6 +94,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | **No Living ARCH ghost SSOT** — do not recreate Living `docs/` or cite missing `docs/architecture/ARCH-*` as on-disk authority; Scratch `docs-V2` is operative | [`.cursor/rules/no-living-arch-ghost-ssot.mdc`](.cursor/rules/no-living-arch-ghost-ssot.mdc) |
 | **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` when Living docs reopen | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
 | **No git restore/reset/clean** without explicit user approval this turn | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
+| **No repository-wide `git clean` for routine cleanup** — use `pnpm run clean:artifacts` dry-run, then `pnpm run clean:artifacts:apply` only for allowlisted ignored noise | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
 | **Scratch docs** under **`docs-V2/`** — never recreate `doc/`; do **not** recreate Living `docs/` without Docs-lane reopen | [docs-V2/README.md](docs-V2/README.md) · cutover `71176a0` |
 | Shrink **scope** via Approved slices / MOD readiness — never shrink **quality** | Farm maps · module-readiness |
 

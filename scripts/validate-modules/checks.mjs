@@ -1053,6 +1053,7 @@ export function reconcileWorkspaceEdges(input) {
  */
 export const CATALOG_EXPECTED_PACKAGES = [
 	{ name: "@afenda/ui-system", path: "surfaces/ui-system" },
+	{ name: "@afenda/ui-blocks", path: "surfaces/ui-blocks" },
 	{ name: "@afenda/emails", path: "surfaces/emails" },
 	{ name: "@afenda/config", path: "foundation/config" },
 	{ name: "@afenda/env", path: "foundation/env" },

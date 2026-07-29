@@ -82,4 +82,9 @@ export {
 	TARGET_SNAPSHOT_HOUR_UTC,
 	TARGET_SNAPSHOT_RETAIN_DAYS,
 } from "./neon-recovery-posture";
-export { env, isProductionDeploymentNow, isVercelRuntimeNow } from "./web";
+export {
+	env,
+	isDevelopmentRuntimeNow,
+	isProductionDeploymentNow,
+	isVercelRuntimeNow,
+} from "./web";

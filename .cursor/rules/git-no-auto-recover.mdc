@@ -25,6 +25,26 @@ Agents **must not** recover, discard, or rewind work with git unless the user ex
 3. **Wait** for explicit user approval in chat (or Cursor hook “ask” approval).
 4. Only then run the approved command.
 
+## Workspace noise cleanup
+
+Never use repository-wide `git clean -fdX` / `git clean -fdx` for routine workspace cleanup.
+
+Use the committed allowlist instead:
+
+```bash
+pnpm run clean:artifacts        # dry-run only
+pnpm run clean:artifacts:apply  # removes approved ignored noise only
+```
+
+The allowlist is limited to reproducible dependency folders, build caches,
+reports, temporary logs, and TypeScript build metadata. It must continue to
+exclude `.env*`, `next-env.d.ts`, `.vercel`, `_reference`, and
+`apps/web/shadcn-studio` unless a separate cleanup rule explicitly approves one
+of those paths.
+
+Run the dry-run first. Review every path outside the allowlist. Stop after any
+unexpected deletion.
+
 ## Allowed without extra approval
 
 Read-only / non-destructive git that does **not** dump banned Collapse path contents: `status`, `diff` (working tree), `log`, `branch` (list), `stash list`, creating commits when the user asked to commit, normal `push`/`pull` when the user asked. `git show` of a **commit message** or of Target paths is fine; `git show <rev>:app/...` of banned trees is not.

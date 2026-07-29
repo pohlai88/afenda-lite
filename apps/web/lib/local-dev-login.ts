@@ -1,4 +1,4 @@
-import { env, isVercelRuntimeNow } from "@afenda/env";
+import { env, isDevelopmentRuntimeNow } from "@afenda/env";
 
 export type LocalDevLoginRole = "operator" | "client";
 
@@ -11,9 +11,9 @@ export type LocalDevLoginAvailability = {
  * Local `next dev` only — never Vercel, never production NODE_ENV.
  */
 export function isLocalDevLoginRuntime(
-	nodeEnv: string | undefined = process.env.NODE_ENV,
+	isDevelopmentRuntime: boolean = isDevelopmentRuntimeNow(),
 ): boolean {
-	return nodeEnv === "development" && !isVercelRuntimeNow();
+	return isDevelopmentRuntime;
 }
 
 export function getLocalDevLoginAvailability(): LocalDevLoginAvailability {

@@ -64,6 +64,11 @@ export function isProductionDeploymentNow(): boolean {
 	return productionDeployment;
 }
 
+/** True for local development runtime only; Vercel development remains remote. */
+export function isDevelopmentRuntimeNow(): boolean {
+	return runtimeCtx.nodeEnv === "development" && !isVercelRuntime(runtimeCtx);
+}
+
 /**
  * Typed Next.js environment contract for `@afenda/web`.
  *

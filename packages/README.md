@@ -21,7 +21,7 @@ Imports flow **down** only. No cycles. `@afenda/config` is devDep / tsconfig / B
 
 | Rank | Layer | Packages |
 |------|-------|----------|
-| 2 | Surfaces (R2) | [`ui-system`](./surfaces/ui-system/README.md) · [`emails`](./surfaces/emails/README.md) |
+| 2 | Surfaces (R2) | [`ui-system`](./surfaces/ui-system/README.md) · [`ui-blocks`](./surfaces/ui-blocks/README.md) · [`emails`](./surfaces/emails/README.md) |
 | 1 | Platform | See banded catalog below |
 
 Application (`apps/web` · `apps/docs`) is Rank 3 — outside this folder. Physical layout: `packages/<category>/<name>/`.
@@ -50,6 +50,7 @@ Same-band imports are allowed only when listed in the edge register. One data-pl
 | Package | Runtime | Status | Role |
 |---------|---------|--------|------|
 | [`@afenda/ui-system`](./surfaces/ui-system/README.md) | Browser/SSR | Active | Owned-source shadcn/Radix primitives + semantic tokens (flat barrel) |
+| [`@afenda/ui-blocks`](./surfaces/ui-blocks/README.md) | Browser/SSR | Active | Reusable app-shell blocks composed from `@afenda/ui-system` primitives |
 | [`@afenda/emails`](./surfaces/emails/README.md) | Node (React Email) | Active | React Email templates for app-owned mail composition |
 
 Unregistered package folders are not governed catalog entries until they are added to the module catalog, workspace edge register, and package governance checks in the same mission.

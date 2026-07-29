@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -35,6 +36,9 @@ const ENV_LOADER_PATTERN =
 	/\b(?:dotenv\/config|import\s+[^;]+?\s+from\s+["']dotenv["']|require\s*\(\s*["']dotenv["']\s*\)|loadEnvConfig|envsafe|envalid)/u;
 const LEGACY_ENV_ALIAS_PATTERN =
 	/\b(?:POSTGRES_URL|POSTGRES_PRISMA_URL|NEON_DATABASE_URL|NEXTAUTH_URL|AUTH_URL|PUBLIC_APP_URL|REDIS_URL|UPSTASH_URL)\b/u;
+const DOCS_PRODUCT_ENV_IMPORT_PATTERN =
+	/from\s+["']@afenda\/env["']|import\s*\(\s*["']@afenda\/env["']\s*\)/u;
+const ALLOWED_TRACKED_ENV_FILES = new Set([".env.example"]);
 
 const APPROVED_RUNTIME_PROCESS_ENV_EXCEPTIONS = new Map([
 	[
@@ -48,10 +52,6 @@ const APPROVED_RUNTIME_PROCESS_ENV_EXCEPTIONS = new Map([
 	[
 		"packages/erp/inventory/src/reconcile-cli.ts",
 		"Operator CLI loads DATABASE_URL from env or local .env.local.",
-	],
-	[
-		"apps/web/lib/local-dev-login.ts",
-		"Local-only development helper; queued for apps/web consumer slice review.",
 	],
 ]);
 
@@ -238,6 +238,20 @@ function analyzeFile({ relativePath, content }) {
 		});
 	}
 
+	if (
+		relativePath.startsWith("apps/docs/") &&
+		DOCS_PRODUCT_ENV_IMPORT_PATTERN.test(content) &&
+		!isTestLikePath(relativePath)
+	) {
+		addFinding(findings, {
+			category: "DOCS_PRODUCT_ENV_IMPORT",
+			file: relativePath,
+			line: lineNumberFor(content, content.search(DOCS_PRODUCT_ENV_IMPORT_PATTERN)),
+			variable: "@afenda/env",
+			message: "docs app must import docsEnv from @afenda/env/docs only",
+		});
+	}
+
 	return findings;
 }
 
@@ -245,14 +259,46 @@ function collectFiles(root) {
 	return AUDIT_ROOTS.flatMap((auditRoot) => walk(join(root, auditRoot), root));
 }
 
+function listTrackedFiles(root) {
+	const result = spawnSync("git", ["ls-files"], {
+		cwd: root,
+		encoding: "utf8",
+	});
+
+	if (result.status !== 0) {
+		return [];
+	}
+
+	return result.stdout.split(/\r?\n/u).filter((line) => line.length > 0);
+}
+
+function analyzeTrackedEnvFiles(root) {
+	return listTrackedFiles(root)
+		.filter((file) => {
+			const basename = file.split("/").at(-1) ?? file;
+			return basename.startsWith(".env");
+		})
+		.filter((file) => !ALLOWED_TRACKED_ENV_FILES.has(file))
+		.map((file) => ({
+			category: "COMMITTED_ENV_FILE",
+			file,
+			line: 1,
+			variable: ".env",
+			message: "only .env.example may be committed; local env files must stay ignored",
+		}));
+}
+
 export function buildEnvConsumerReport(root = DEFAULT_ROOT) {
 	const files = collectFiles(root);
-	const findings = files.flatMap(({ absolutePath, relativePath }) =>
-		analyzeFile({
-			relativePath,
-			content: stripComments(readFileSync(absolutePath, "utf8")),
-		}),
-	);
+	const findings = [
+		...files.flatMap(({ absolutePath, relativePath }) =>
+			analyzeFile({
+				relativePath,
+				content: stripComments(readFileSync(absolutePath, "utf8")),
+			}),
+		),
+		...analyzeTrackedEnvFiles(root),
+	];
 
 	return {
 		summary: {

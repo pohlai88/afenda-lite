@@ -37,6 +37,7 @@
 		"@types/react": "catalog:",
 		"next": "catalog:",
 		"react": "catalog:",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"vitest": "catalog:"
 	}
 }
