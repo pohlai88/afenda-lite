@@ -4,6 +4,7 @@
 		"allowJs": true,
 		"lib": ["ES2022", "DOM"],
 		"paths": {
+			"@/*": ["./apps/web/*"],
 			"@afenda/config/*": ["./packages/foundation/config/*"]
 		}
 	},

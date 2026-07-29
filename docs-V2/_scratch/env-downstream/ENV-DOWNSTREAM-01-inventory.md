@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Status | ENV-C1 inventory complete · ENV-C2 first migration slice complete · ENV-C3 governance gate integrated |
+| Status | ENV-C1-C8 complete · env authority sealed · repo gates green |
 | Date | 2026-07-29 |
 | Authority | Pasted ENV-DOWNSTREAM-01 brief · AGENTS.md · `@afenda/env` protected package |
 | Protected env gate | PASS: `pnpm --filter @afenda/env protect:check` |
@@ -562,24 +562,57 @@ pnpm --filter @afenda/env protect:check
 => PASS, protection hash current
 ```
 
-Next recommended slice:
+Completed by:
 
 ```text
-ENV-C8: final repository gates — pnpm lint, pnpm typecheck, pnpm test, then
-completion audit against the full Definition of Done.
+ENV-C8: final repository gates and completion audit.
 ```
 
-## Coverage
+## ENV-C8 Final Gate Result
+
+Result: ENV-DOWNSTREAM-01 is sealed for this checkout. Runtime consumers use
+`@afenda/env` or approved bootstrap/test exceptions, docs runtime is isolated to
+`@afenda/env/docs`, and `@afenda/env` protection is current after intentional
+changes.
+
+Final validation:
 
 ```text
-Applicable controls:       15
-Controls with checks:      6
-Checks executed:           6
-Checks passed:             5
-Checks failed:             1 (broad scans included missing tooling path; usable reruns narrowed scope)
-Controls without checks:   5
-Unevaluated controls:      4
-Coverage Status: Incomplete
+pnpm lint
+=> PASS, 37/37 tasks
+
+pnpm typecheck
+=> PASS, 37/37 tasks
+
+pnpm test
+=> PASS, 35/35 tasks
+
+pnpm check:env-consumers
+=> PASS, 2861 files scanned
+
+pnpm test:env-consumers
+=> PASS, 10 tests
+
+pnpm governance:packages
+=> PASS, validate:modules + check:env-consumers
+
+pnpm check:docs-app
+=> PASS, lint-links 0 errors / 42 pages
+
+pnpm validate:neon-env
+=> PASS, 15 passed / 0 failed
+
+pnpm --filter @afenda/env protect:update
+=> PASS, updated packages/foundation/env/.protected.sha256
+
+pnpm --filter @afenda/env protect:check
+=> PASS, protection hash current
 ```
 
-Incomplete coverage is expected at ENV-C1. Consumer migrations and the future `check:env-consumers` gate are not complete yet.
+Additional repository hygiene surfaced during final `pnpm test`: packages with
+Vitest scripts were relying on phantom dependency resolution. `vitest:
+"catalog:"` is now explicit where package test scripts invoke Vitest, and the
+corporate-administration package-boundary expectation was updated to keep that
+manifest contract honest.
+
+Coverage status: complete for ENV-DOWNSTREAM-01.

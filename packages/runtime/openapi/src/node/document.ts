@@ -44,17 +44,18 @@ export type AfendaDocumentMeta = {
 	generatedAt: string;
 };
 
-type OpenApiOperation = Record<string, unknown>;
+type OpenApiOperation = {
+	operationId?: string;
+	"x-afenda-status"?: AfendaOperationStatus;
+};
 
 type OpenApiPathItem = Partial<
 	Record<OpenApiHttpMethod, OpenApiOperation | undefined>
-> & {
-	[key: string]: OpenApiOperation | undefined;
-};
+>;
 
 export type StampableOpenApiDocument = {
 	paths?: Record<string, OpenApiPathItem | undefined>;
-	[key: string]: unknown;
+	"x-afenda-document"?: AfendaDocumentMeta;
 };
 
 function isOpenApiHttpMethod(value: string): value is OpenApiHttpMethod {
